@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { AppController } from "./app.controller";
 import { ApplicationsModule } from "./applications/applications.module";
+import { AuthModule } from "./auth/auth.module";
 import { JobsModule } from "./jobs/jobs.module";
 import { MinioModule } from "./minio/minio.module";
 import { PrismaService } from "./prisma.service";
@@ -12,6 +13,7 @@ import { UsersService } from "./users.service";
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     MinioModule,
+    AuthModule,
     JobsModule,
     ApplicationsModule,
   ],

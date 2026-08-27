@@ -1,9 +1,28 @@
 "use client";
 
 import React from "react";
-import { Briefcase, Users, Plus, Sparkles } from "lucide-react";
+import Link from "next/link";
+import {
+  Briefcase,
+  Users,
+  Plus,
+  Sparkles,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  UserCheck,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./theme-toggle";
+import { useAuth } from "@/context/auth-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 interface NavbarProps {
   activeTab: "jobs" | "kanban";
@@ -22,13 +41,38 @@ export function Navbar({
   jobsCount,
   candidatesCount,
 }: NavbarProps) {
+  const { user, logout, isAuthenticated } = useAuth();
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "ADMIN":
+        return "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-900/50";
+      case "HR":
+        return "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/50";
+      case "INTERVIEWER":
+        return "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900/50";
+      default:
+        return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+    }
+  };
+
+  const getUserInitials = (name?: string) => {
+    if (!name) return "HR";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/90 transition-colors duration-200">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-500/20">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
               <Briefcase className="h-5 w-5" />
             </div>
             <div>
@@ -44,7 +88,7 @@ export function Navbar({
                 Talent Acquisition & Hiring Pipeline
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Navigation Tabs */}
           <nav className="hidden md:flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60">
@@ -79,8 +123,8 @@ export function Navbar({
           </nav>
         </div>
 
-        {/* Action Buttons & Theme Switcher */}
-        <div className="flex items-center gap-3">
+        {/* Action Buttons, Recruiter Session & Theme Switcher */}
+        <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
             size="sm"
@@ -90,16 +134,69 @@ export function Navbar({
             Apply as Candidate
           </Button>
 
-          <Button
-            size="sm"
-            onClick={onOpenCreateJob}
-            className="text-xs font-semibold shadow-sm gap-1.5 bg-indigo-600 hover:bg-indigo-700"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Post New Job
-          </Button>
+          {isAuthenticated && (
+            <Button
+              size="sm"
+              onClick={onOpenCreateJob}
+              className="text-xs font-semibold shadow-sm gap-1.5 bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Post New Job
+            </Button>
+          )}
 
           <ThemeToggle />
+
+          {/* Recruiter Authentication Section */}
+          {isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1.5 pl-2 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 cursor-pointer shadow-xs transition-colors"
+                aria-label="User Profile"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-xs font-bold text-white shadow-xs">
+                  {getUserInitials(user.name)}
+                </div>
+                <div className="hidden sm:flex flex-col text-left pr-1">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                    {user.name}
+                  </span>
+                  <span
+                    className={`inline-block text-[9px] font-extrabold uppercase px-1 rounded-sm border ${getRoleBadgeColor(
+                      user.role,
+                    )}`}
+                  >
+                    {user.role}
+                  </span>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[180px]">
+                <DropdownMenuLabel className="flex flex-col gap-0.5">
+                  <span className="font-bold text-xs">{user.name}</span>
+                  <span className="text-[10px] text-slate-500 font-normal">{user.email}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={logout}
+                  variant="destructive"
+                  className="cursor-pointer gap-2 text-xs font-semibold"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/login">
+              <Button
+                size="sm"
+                className="text-xs font-semibold gap-1.5 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white cursor-pointer shadow-xs"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-indigo-400 dark:text-indigo-600" />
+                Recruiter Portal
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

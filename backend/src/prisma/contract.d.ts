@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'376619c041e7f22994bd321aa8091c0a90a5ab17e52df056ca547a9a682dcd23'>;
+  StorageHashBase<'3452271da3bfbf0a7b7a01d8e4153b52e23fd3c51a1a5c60bc25cc10f3e9886b'>;
 export type ExecutionHash =
   ExecutionHashBase<'f8c8bae0a8fc0e603418c3dd4f12f77fdcf1ec444bb9b0c1cdbb6ce09a90eeef'>;
 export type ProfileHash =
@@ -228,6 +228,7 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly password: CodecTypes['pg/text@1']['output'] | null;
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
       readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -271,6 +272,7 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly password: CodecTypes['pg/text@1']['input'] | null;
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -316,6 +318,7 @@ export type StorageColumnTypes = {
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly password: CodecTypes['pg/text@1']['output'] | null;
       readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
@@ -359,6 +362,7 @@ export type StorageColumnInputTypes = {
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly password: CodecTypes['pg/text@1']['input'] | null;
       readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
@@ -618,6 +622,11 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                };
+                readonly password: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly avatarUrl: {
                   readonly nativeType: 'text';
@@ -898,6 +907,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly password: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly avatarUrl: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -932,6 +945,7 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly email: { readonly column: 'email' };
                 readonly name: { readonly column: 'name' };
+                readonly password: { readonly column: 'password' };
                 readonly avatarUrl: { readonly column: 'avatarUrl' };
                 readonly role: { readonly column: 'role' };
                 readonly createdAt: { readonly column: 'createdAt' };

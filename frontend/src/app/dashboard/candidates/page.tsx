@@ -172,8 +172,18 @@ function CandidatesPageContent() {
   }, [selectedCandidate, applications]);
 
   const selectedCandidateDetails = useMemo(() => {
-    if (!selectedCandidate) return { gender: "—", dob: "—" };
-    return parseCandidateNotes(selectedCandidate.notes);
+    if (!selectedCandidate) {
+      return {
+        gender: "—",
+        dob: "—",
+        firstName: "—",
+        lastName: "—",
+        displayName: "—",
+        effectiveName: "—",
+        customNotes: "",
+      };
+    }
+    return parseCandidateNotes(selectedCandidate.notes, selectedCandidate.name);
   }, [selectedCandidate]);
 
   return (
@@ -595,6 +605,33 @@ function CandidatesPageContent() {
                   </h3>
 
                   <div className="grid grid-cols-2 gap-y-3.5 gap-x-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">
+                        First Name
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
+                        {selectedCandidateDetails.firstName || "—"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">
+                        Last Name
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
+                        {selectedCandidateDetails.lastName || "—"}
+                      </span>
+                    </div>
+
+                    <div className="col-span-2">
+                      <span className="text-slate-400 text-[11px] block">
+                        Display Name
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
+                        {selectedCandidateDetails.displayName || selectedCandidate.name || "—"}
+                      </span>
+                    </div>
+
                     <div>
                       <span className="text-slate-400 text-[11px] block">
                         Email

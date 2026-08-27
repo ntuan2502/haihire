@@ -27,6 +27,7 @@ import {
   X,
   CheckCircle2,
 } from "lucide-react";
+import { buildCandidateNotes } from "@/lib/utils";
 
 function AddCandidatePageContent() {
   const router = useRouter();
@@ -111,20 +112,25 @@ function AddCandidatePageContent() {
 
     try {
       setIsSubmitting(true);
-      const fullName = displayName.trim()
+      const effectiveDisplayName = displayName.trim()
         ? displayName.trim()
-        : `${firstName.trim()} ${lastName.trim()}`;
+        : `${firstName.trim()} ${lastName.trim()}`.trim();
 
       const formData = new FormData();
-      formData.append("candidateName", fullName);
+      formData.append("candidateName", effectiveDisplayName);
       formData.append("candidateEmail", email.trim());
       if (phone.trim()) formData.append("candidatePhone", phone.trim());
 
-      const notesArr: string[] = [];
-      if (gender && gender !== "Not specified") notesArr.push(`Gender: ${gender}`);
-      if (dateOfBirth) notesArr.push(`DOB: ${dateOfBirth}`);
-      if (notesArr.length > 0) {
-        formData.append("notes", notesArr.join(" | "));
+      const notes = buildCandidateNotes({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        displayName: displayName.trim() || undefined,
+        gender,
+        dob: dateOfBirth,
+      });
+
+      if (notes) {
+        formData.append("notes", notes);
       }
 
       if (selectedFile) {

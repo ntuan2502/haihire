@@ -33,7 +33,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ApplicationStage } from "@/types";
-import { getInitials, formatDate, isValidUuid } from "@/lib/utils";
+import {
+  getInitials,
+  formatDate,
+  isValidUuid,
+  getCandidateDisplayName,
+} from "@/lib/utils";
 
 function ApplicationDetailPageContent() {
   const params = useParams();
@@ -141,7 +146,7 @@ function ApplicationDetailPageContent() {
     );
   }
 
-  const candidateName = app?.candidateName || "—";
+  const candidateName = getCandidateDisplayName(app);
   const candidateEmail = app?.candidateEmail || "—";
   const candidatePhone = app?.candidatePhone || "";
   const jobTitle = job

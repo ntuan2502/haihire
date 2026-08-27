@@ -23,6 +23,7 @@ import {
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
   parseCandidateNotes,
+  buildCandidateNotes,
   normalizeDateForInput,
   isValidUuid,
 } from "@/lib/utils";
@@ -60,18 +61,13 @@ function EditCandidatePageContent() {
   // Pre-fill form when candidate data is loaded
   useEffect(() => {
     if (primaryApp && !isInitialized) {
-      const nameParts = (primaryApp.candidateName || "").trim().split(/\s+/);
-      if (nameParts.length > 1) {
-        setFirstName(nameParts[0]);
-        setLastName(nameParts.slice(1).join(" "));
-      } else {
-        setFirstName(nameParts[0] || "");
-        setLastName("");
-      }
+      const parsed = parseCandidateNotes(primaryApp.notes, primaryApp.candidateName);
+      setFirstName(parsed.firstName);
+      setLastName(parsed.lastName);
+      setDisplayName(parsed.displayName);
       setEmail(primaryApp.candidateEmail || "");
       setPhone(primaryApp.candidatePhone || "");
 
-      const parsed = parseCandidateNotes(primaryApp.notes);
       if (parsed.gender && parsed.gender !== "—") {
         setGender(parsed.gender);
       }
@@ -103,34 +99,28 @@ function EditCandidatePageContent() {
 
     try {
       setIsSubmitting(true);
-      const fullName = displayName.trim()
+      const effectiveDisplayName = displayName.trim()
         ? displayName.trim()
-        : `${firstName.trim()} ${lastName.trim()}`;
+        : `${firstName.trim()} ${lastName.trim()}`.trim();
 
-      // Build updated notes preserving any custom notes
-      let newNotes = primaryApp.notes || "";
-      newNotes = newNotes.replace(/Gender:\s*[^|]+\|?/i, "").replace(/DOB:\s*[^|]+\|?/i, "").trim();
+      const parsedOld = parseCandidateNotes(primaryApp.notes, primaryApp.candidateName);
 
-      const notesSegments: string[] = [];
-      if (gender && gender !== "Not specified" && gender !== "—") {
-        notesSegments.push(`Gender: ${gender}`);
-      }
-      if (dateOfBirth.trim() && dateOfBirth !== "—") {
-        notesSegments.push(`DOB: ${dateOfBirth.trim()}`);
-      }
-      if (newNotes) {
-        notesSegments.push(newNotes);
-      }
-
-      const finalNotes = notesSegments.join(" | ");
+      const notes = buildCandidateNotes({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        displayName: displayName.trim() || undefined,
+        gender,
+        dob: dateOfBirth,
+        customNotes: parsedOld.customNotes,
+      });
 
       await updateCandidateMutation.mutateAsync({
         id: primaryApp.id,
         data: {
-          candidateName: fullName,
+          candidateName: effectiveDisplayName,
           candidateEmail: email.trim(),
           candidatePhone: phone.trim() || undefined,
-          notes: finalNotes || undefined,
+          notes: notes || undefined,
         },
       });
 

@@ -86,7 +86,14 @@ function CandidateDetailPageContent() {
       )
     : [];
 
-  const { gender, dob } = parseCandidateNotes(primaryApp?.notes);
+  const parsedNotes = parseCandidateNotes(primaryApp?.notes, primaryApp?.candidateName);
+  const gender = parsedNotes.gender;
+  const dob = parsedNotes.dob;
+  const candidateName = parsedNotes.effectiveName;
+  const candidateEmail = primaryApp?.candidateEmail || "—";
+  const candidatePhone = primaryApp?.candidatePhone || "";
+  const candidateCreated = formatDate(primaryApp?.createdAt);
+  const candidateUpdated = formatDate(primaryApp?.updatedAt || primaryApp?.createdAt);
 
   if (loading) {
     return (
@@ -140,12 +147,6 @@ function CandidateDetailPageContent() {
       </div>
     );
   }
-
-  const candidateName = primaryApp?.candidateName || "—";
-  const candidateEmail = primaryApp?.candidateEmail || "—";
-  const candidatePhone = primaryApp?.candidatePhone || "";
-  const candidateCreated = formatDate(primaryApp?.createdAt);
-  const candidateUpdated = formatDate(primaryApp?.updatedAt || primaryApp?.createdAt);
 
   const handleDocumentUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -266,6 +267,30 @@ function CandidateDetailPageContent() {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-xs">
+            {/* First Name */}
+            <div>
+              <span className="text-slate-400 text-[11px] block">First Name</span>
+              <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
+                {parsedNotes.firstName || "—"}
+              </span>
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <span className="text-slate-400 text-[11px] block">Last Name</span>
+              <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
+                {parsedNotes.lastName || "—"}
+              </span>
+            </div>
+
+            {/* Display Name */}
+            <div>
+              <span className="text-slate-400 text-[11px] block">Display Name</span>
+              <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
+                {parsedNotes.displayName || candidateName || "—"}
+              </span>
+            </div>
+
             {/* Email */}
             <div>
               <span className="text-slate-400 text-[11px] block">Email</span>

@@ -79,21 +79,128 @@ export function getInitials(name?: string | null): string {
 }
 
 /**
- * Parse metadata fields (gender, dob) from candidate notes string
+ * Parse metadata fields (gender, dob, firstName, lastName, displayName) from candidate notes
  */
-export function parseCandidateNotes(notes?: string | null): {
+export function parseCandidateNotes(
+  notes?: string | null,
+  candidateName?: string | null,
+): {
   gender: string;
   dob: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  effectiveName: string;
+  customNotes: string;
 } {
-  if (!notes) return { gender: "—", dob: "—" };
+  if (!notes && !candidateName) {
+    return {
+      gender: "—",
+      dob: "—",
+      firstName: "",
+      lastName: "",
+      displayName: "",
+      effectiveName: "—",
+      customNotes: "",
+    };
+  }
 
-  const genderMatch = notes.match(/Gender:\s*([^|]+)/i);
-  const dobMatch = notes.match(/DOB:\s*([^|]+)/i);
+  const genderMatch = notes?.match(/Gender:\s*([^|]+)/i);
+  const dobMatch = notes?.match(/DOB:\s*([^|]+)/i);
+  const firstNameMatch = notes?.match(/FirstName:\s*([^|]+)/i);
+  const lastNameMatch = notes?.match(/LastName:\s*([^|]+)/i);
+  const displayNameMatch = notes?.match(/DisplayName:\s*([^|]+)/i);
+
+  let rawCustom = (notes || "")
+    .replace(/Gender:\s*[^|]+\|?/gi, "")
+    .replace(/DOB:\s*[^|]+\|?/gi, "")
+    .replace(/FirstName:\s*[^|]+\|?/gi, "")
+    .replace(/LastName:\s*[^|]+\|?/gi, "")
+    .replace(/DisplayName:\s*[^|]+\|?/gi, "")
+    .trim();
+  rawCustom = rawCustom.replace(/^\|\s*|\s*\|$/g, "").trim();
+
+  const parsedFirst = firstNameMatch ? firstNameMatch[1].trim() : "";
+  const parsedLast = lastNameMatch ? lastNameMatch[1].trim() : "";
+  const parsedDisplay = displayNameMatch ? displayNameMatch[1].trim() : "";
+
+  // If first/last are not in notes, infer from candidateName
+  let inferredFirst = parsedFirst;
+  let inferredLast = parsedLast;
+  if (!inferredFirst && !inferredLast && candidateName) {
+    const parts = candidateName.trim().split(/\s+/);
+    if (parts.length > 1) {
+      inferredFirst = parts[0];
+      inferredLast = parts.slice(1).join(" ");
+    } else {
+      inferredFirst = parts[0] || "";
+    }
+  }
+
+  // The unified display name shown across all views:
+  // 1. Explicit DisplayName -> 2. candidateName -> 3. "firstName lastName"
+  const effectiveName =
+    parsedDisplay ||
+    candidateName ||
+    [inferredFirst, inferredLast].filter(Boolean).join(" ") ||
+    "—";
 
   return {
     gender: genderMatch ? genderMatch[1].trim() : "—",
     dob: dobMatch ? dobMatch[1].trim() : "—",
+    firstName: inferredFirst,
+    lastName: inferredLast,
+    displayName: parsedDisplay,
+    effectiveName,
+    customNotes: rawCustom,
   };
+}
+
+/**
+ * Build packed metadata string for candidate notes
+ */
+export function buildCandidateNotes(params: {
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  gender?: string;
+  dob?: string;
+  customNotes?: string;
+}): string | undefined {
+  const segments: string[] = [];
+
+  if (params.firstName?.trim()) {
+    segments.push(`FirstName: ${params.firstName.trim()}`);
+  }
+  if (params.lastName?.trim()) {
+    segments.push(`LastName: ${params.lastName.trim()}`);
+  }
+  if (params.displayName?.trim()) {
+    segments.push(`DisplayName: ${params.displayName.trim()}`);
+  }
+  if (params.gender && params.gender !== "Not specified" && params.gender !== "—") {
+    segments.push(`Gender: ${params.gender.trim()}`);
+  }
+  if (params.dob?.trim() && params.dob !== "—") {
+    segments.push(`DOB: ${params.dob.trim()}`);
+  }
+  if (params.customNotes?.trim()) {
+    segments.push(params.customNotes.trim());
+  }
+
+  return segments.length > 0 ? segments.join(" | ") : undefined;
+}
+
+/**
+ * Get unified candidate display name from candidate application or notes
+ */
+export function getCandidateDisplayName(candidate?: {
+  candidateName?: string | null;
+  notes?: string | null;
+} | null): string {
+  if (!candidate) return "—";
+  const { effectiveName } = parseCandidateNotes(candidate.notes, candidate.candidateName);
+  return effectiveName || candidate.candidateName || "—";
 }
 
 /**
@@ -210,11 +317,12 @@ export function aggregateCandidates(applications: Application[]): CandidateItem[
   applications.forEach((app) => {
     const key = (app.candidateEmail || app.candidateName).toLowerCase().trim();
     const hasJob = Boolean(app.jobId && String(app.jobId).trim() !== "");
+    const effectiveName = getCandidateDisplayName(app);
 
     if (!map.has(key)) {
       map.set(key, {
         id: app.id,
-        name: app.candidateName,
+        name: effectiveName,
         email: app.candidateEmail,
         phone: app.candidatePhone || "",
         applicationsCount: hasJob ? 1 : 0,
@@ -233,6 +341,10 @@ export function aggregateCandidates(applications: Application[]): CandidateItem[
       }
       if (!existing.phone && app.candidatePhone) {
         existing.phone = app.candidatePhone;
+      }
+      if (app.notes) {
+        existing.notes = app.notes;
+        existing.name = effectiveName;
       }
     }
   });

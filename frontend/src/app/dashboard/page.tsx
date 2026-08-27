@@ -85,7 +85,7 @@ function DashboardContent() {
       <Navbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onOpenCreateJob={() => setCreateJobModalOpen(true)}
+        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
@@ -103,9 +103,9 @@ function DashboardContent() {
                 {jobs.length === 0 ? (
                   /* If no jobs yet, show Start Recruiting view */
                   <StartRecruiting
-                    onOpenCreateJob={() => setCreateJobModalOpen(true)}
+                    onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
                     onCreateTestJob={handleCreateTestJob}
-                    onImportFromFile={() => setCreateJobModalOpen(true)}
+                    onImportFromFile={() => router.push("/dashboard/jobs/new")}
                   />
                 ) : (
                   /* If jobs exist, show Dashboard Hub with Quick Shortcuts + Overview */
@@ -216,7 +216,7 @@ function DashboardContent() {
                 {/* Quick Navigation Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div
-                    onClick={() => setCreateJobModalOpen(true)}
+                    onClick={() => router.push("/dashboard/jobs/new")}
                     className="p-5 rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer shadow-xs group flex items-center justify-between"
                   >
                     <div>

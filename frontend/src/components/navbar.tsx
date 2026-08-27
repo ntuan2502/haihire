@@ -52,7 +52,7 @@ export type NavTab =
 interface NavbarProps {
   activeTab?: NavTab;
   onTabChange?: (tab: NavTab) => void;
-  onOpenCreateJob: () => void;
+  onOpenCreateJob?: () => void;
   onOpenApplyModal?: () => void;
   jobsCount?: number;
   candidatesCount?: number;
@@ -68,8 +68,16 @@ export function Navbar({
 }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleCreateJobClick = () => {
+    if (onOpenCreateJob) {
+      onOpenCreateJob();
+    } else {
+      router.push("/dashboard/jobs/new");
+    }
+  };
 
   // Derive active tab from URL pathname or prop
   let currentTab: NavTab = activeTab;
@@ -224,7 +232,7 @@ export function Navbar({
             {/* + New Job Button (Desktop Only) */}
             <Button
               size="sm"
-              onClick={onOpenCreateJob}
+              onClick={handleCreateJobClick}
               className="hidden sm:inline-flex h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 shadow-xs gap-1 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -401,7 +409,7 @@ export function Navbar({
               {/* + New Job Button */}
               <Button
                 onClick={() => {
-                  onOpenCreateJob();
+                  handleCreateJobClick();
                   setMobileMenuOpen(false);
                 }}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs gap-1.5 cursor-pointer"

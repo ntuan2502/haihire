@@ -67,7 +67,7 @@ function JobsPageContent() {
       {/* Navbar */}
       <Navbar
         activeTab="jobs"
-        onOpenCreateJob={() => setCreateJobModalOpen(true)}
+        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
@@ -79,9 +79,9 @@ function JobsPageContent() {
           <LoadingSpinner />
         ) : jobs.length === 0 ? (
           <StartRecruiting
-            onOpenCreateJob={() => setCreateJobModalOpen(true)}
+            onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
             onCreateTestJob={handleCreateTestJob}
-            onImportFromFile={() => setCreateJobModalOpen(true)}
+            onImportFromFile={() => router.push("/dashboard/jobs/new")}
           />
         ) : (
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -96,7 +96,7 @@ function JobsPageContent() {
                 setSelectedJobId(job.id);
                 setApplyModalOpen(true);
               }}
-              onOpenCreateJob={() => setCreateJobModalOpen(true)}
+              onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
               onDeleteJob={handleJobDeleted}
             />
           </div>

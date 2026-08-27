@@ -44,6 +44,7 @@ export class JobsService {
       { total: number; byStage: Record<string, number> }
     >();
     for (const app of allApps) {
+      if (!app.jobId) continue;
       if (!appCountMap.has(app.jobId)) {
         appCountMap.set(app.jobId, { total: 0, byStage: {} });
       }

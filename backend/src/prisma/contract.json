@@ -161,7 +161,7 @@
                 }
               },
               "jobId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -789,7 +789,7 @@
                 "jobId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "notes": {
                   "codecId": "pg/text@1",
@@ -1274,7 +1274,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e246ca3aa55af016c85479c1684a94e67b65983a32e9810cb4ff379d65774fc3"
+    "storageHash": "3366baad613ff919e4450e9b1964d41a15c42212a485091d06a43e3d09a35ea7"
   },
   "execution": {
     "executionHash": "2e7f12eb5902a5961745a5282e9d749384038cf3c175821463aa6d8e278fc799",

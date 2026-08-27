@@ -132,15 +132,24 @@ function DashboardContent() {
   // Real database metrics computation
   const openJobsCount = jobs.filter((j) => j.status === "PUBLISHED").length;
   const draftJobsCount = jobs.filter((j) => j.status === "DRAFT").length;
-  const totalCandidatesCount = applications.length;
+  const totalCandidatesCount = new Set(
+    applications.map((a) => (a.candidateEmail || a.candidateName).toLowerCase().trim()),
+  ).size;
+  const totalApplicationsCount = applications.filter(
+    (a) => a.jobId !== null && a.jobId !== undefined && Number(a.jobId) > 0,
+  ).length;
   const toReviewCount = applications.filter(
-    (a) => a.stage === "APPLIED",
+    (a) =>
+      a.jobId !== null &&
+      a.jobId !== undefined &&
+      Number(a.jobId) > 0 &&
+      a.stage === "APPLIED",
   ).length;
 
   // Filter applications for the active job
   const activeJobApps = activeJob
     ? applications.filter((a) => a.jobId === activeJob.id)
-    : applications;
+    : [];
 
   const countNew = activeJobApps.filter((a) => a.stage === "APPLIED").length;
   const countScreening = activeJobApps.filter(
@@ -166,8 +175,9 @@ function DashboardContent() {
   const pctRejected =
     totalPipeline > 0 ? (countRejected / totalPipeline) * 100 : 0;
 
-  // Recent applications sorted by createdAt descending
-  const recentApplications = [...applications]
+  // Recent applications (only active job applications) sorted by createdAt descending
+  const recentApplications = applications
+    .filter((a) => a.jobId !== null && a.jobId !== undefined && Number(a.jobId) > 0)
     .sort(
       (a, b) =>
         new Date(b.createdAt || 0).getTime() -
@@ -273,7 +283,7 @@ function DashboardContent() {
                       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all hover:shadow-sm">
                         <div className="relative z-10">
                           <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                            {totalCandidatesCount}.
+                            {totalApplicationsCount}.
                           </div>
                           <div className="mt-1 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
                             APPLICATIONS

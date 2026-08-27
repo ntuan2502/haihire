@@ -1,41 +1,249 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
-import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
-import { useJobs, useAllApplications } from "@/hooks/use-queries";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  useJobs,
+  useAllApplications,
+  useUpdateStageMutation,
+  useDeleteApplicationMutation,
+} from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Search,
   FileText,
   SlidersHorizontal,
   Columns3,
-  Filter,
   Maximize2,
   ChevronDown,
   ArrowUpDown,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Phone,
+  ArrowLeftRight,
+  X,
+  ExternalLink,
+  Calendar,
+  Clock,
+  Sparkles,
+  MessageSquare,
+  ArrowRight,
+  History,
+  FileCheck,
+  Building2,
+  Trash2,
 } from "lucide-react";
+import type { Application, ApplicationStage } from "@/types";
+
+type SortField = "candidate" | "email" | "job" | "status" | "score" | "applied";
+type SortDirection = "asc" | "desc";
+
+function getInitials(name: string) {
+  const parts = name.trim().split(" ");
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
+function timeAgo(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "0m ago";
+  const now = new Date();
+  const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+  if (diffSec < 60) return "0m ago";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
 
 function ApplicationsPageContent() {
+  const router = useRouter();
   const { user } = useAuth();
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: applications = [], isLoading: appsLoading } =
+  const { data: rawApplications = [], isLoading: appsLoading } =
     useAllApplications();
 
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const updateStageMutation = useUpdateStageMutation();
+  const deleteAppMutation = useDeleteApplicationMutation();
+
   const [search, setSearch] = useState("");
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const activeJobId = selectedJobId ?? (jobs.length > 0 ? jobs[0].id : null);
+  // Selected Application for Right Slide-over Sidebar Drawer
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [drawerTab, setDrawerTab] = useState<string>("overview");
+  const [drawerNoteInput, setDrawerNoteInput] = useState("");
+  const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Sorting State
+  const [sortField, setSortField] = useState<SortField>("applied");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  // Pagination State
+  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const activeJobId = jobs.length > 0 ? jobs[0].id : null;
   const loading = jobsLoading || appsLoading;
+
+  // Only consider records with valid jobId as active job applications
+  const applications = useMemo(() => {
+    return rawApplications.filter(
+      (a) => a.jobId !== null && a.jobId !== undefined && Number(a.jobId) > 0,
+    );
+  }, [rawApplications]);
+
+  // Create Job Map for Fast Lookup
+  const jobMap = useMemo(() => {
+    const map = new Map<number, (typeof jobs)[0]>();
+    jobs.forEach((j) => map.set(j.id, j));
+    return map;
+  }, [jobs]);
+
+  // Filter & Sort
+  const filteredApps = useMemo(() => {
+    return applications
+      .filter((app) => {
+        if (!search.trim()) return true;
+        const q = search.toLowerCase().trim();
+        const job = app.jobId ? jobMap.get(app.jobId) : null;
+        return (
+          app.candidateName.toLowerCase().includes(q) ||
+          app.candidateEmail.toLowerCase().includes(q) ||
+          (app.candidatePhone && app.candidatePhone.toLowerCase().includes(q)) ||
+          (job && job.title.toLowerCase().includes(q))
+        );
+      })
+      .sort((a, b) => {
+        const jobA = a.jobId ? jobMap.get(a.jobId)?.title || "" : "";
+        const jobB = b.jobId ? jobMap.get(b.jobId)?.title || "" : "";
+
+        let diff = 0;
+        switch (sortField) {
+          case "candidate":
+            diff = a.candidateName.localeCompare(b.candidateName);
+            break;
+          case "email":
+            diff = a.candidateEmail.localeCompare(b.candidateEmail);
+            break;
+          case "job":
+            diff = jobA.localeCompare(jobB);
+            break;
+          case "status":
+            diff = a.stage.localeCompare(b.stage);
+            break;
+          case "score":
+            diff = 0;
+            break;
+          case "applied":
+          default:
+            diff =
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            break;
+        }
+        return sortDirection === "asc" ? diff : -diff;
+      });
+  }, [applications, search, jobMap, sortField, sortDirection]);
+
+  // Pagination Slice
+  const totalCount = filteredApps.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedApps = filteredApps.slice(
+    startIndex,
+    startIndex + rowsPerPage,
+  );
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "8/27/2026";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "8/27/2026";
+    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  };
+
+  const handleStageChange = async (newStage: ApplicationStage) => {
+    if (!selectedApp) return;
+    try {
+      await updateStageMutation.mutateAsync({
+        id: selectedApp.id,
+        stage: newStage,
+      });
+      setSelectedApp((prev) => (prev ? { ...prev, stage: newStage } : null));
+    } catch (err) {
+      console.error("Failed to update stage:", err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedApp) return;
+    if (!confirm("Are you sure you want to delete this application?")) return;
+    try {
+      setIsDeleting(true);
+      await deleteAppMutation.mutateAsync(selectedApp.id);
+      setSelectedApp(null);
+    } catch (err) {
+      console.error("Failed to delete application:", err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const getStageDisplay = (stage: ApplicationStage) => {
+    switch (stage) {
+      case "APPLIED":
+        return { label: "New", dotColor: "bg-blue-600" };
+      case "SCREENING":
+        return { label: "Screening", dotColor: "bg-purple-600" };
+      case "INTERVIEW":
+        return { label: "Interview", dotColor: "bg-amber-600" };
+      case "OFFER":
+        return { label: "Offer", dotColor: "bg-emerald-600" };
+      case "HIRED":
+        return { label: "Hired", dotColor: "bg-emerald-700" };
+      case "REJECTED":
+        return { label: "Rejected", dotColor: "bg-rose-600" };
+      default:
+        return { label: stage, dotColor: "bg-slate-400" };
+    }
+  };
+
+  const selectedJob = selectedApp?.jobId ? jobMap.get(selectedApp.jobId) : null;
+  const selectedJobTitle = selectedJob
+    ? `${selectedJob.title} (${selectedJob.type === "FULL_TIME" ? "Full-Time" : selectedJob.type === "PART_TIME" ? "Part-Time" : selectedJob.type})`
+    : "Technical Writer (Part-Time)";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -45,62 +253,71 @@ function ApplicationsPageContent() {
         onOpenCreateJob={() => setCreateJobModalOpen(true)}
         onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={rawApplications.length}
       />
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-[1600px] w-full mx-auto space-y-6">
-        {/* Applications Toolbar matching Screenshot 2 */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-[1600px] w-full mx-auto space-y-4">
+        {/* Applications Toolbar matching Screenshot 1 */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search by candidate name, email, or job title..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 pl-9 text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs"
             />
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Views Button */}
+            <div className="relative">
+              <button
+                type="button"
+                className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <span>Views</span>
+                <ChevronDown className="h-3 w-3 text-slate-400 opacity-70" />
+              </button>
+            </div>
+
+            {/* Columns */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs cursor-pointer"
+              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-              Views
-              <ChevronDown className="h-3 w-3 text-slate-400 opacity-60" />
+              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+              <span>Columns</span>
             </button>
 
+            {/* Filters */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs cursor-pointer"
+              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
             >
-              <Columns3 className="h-3.5 w-3.5 text-slate-400" />
-              Columns
+              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+              <span>Filters</span>
             </button>
 
+            {/* Compare / Swap Icon */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs cursor-pointer"
+              className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer inline-flex items-center justify-center transition-colors"
+              title="Compare"
             >
-              <Filter className="h-3.5 w-3.5 text-slate-400" />
-              Filters
+              <ArrowLeftRight className="h-3.5 w-3.5" />
             </button>
 
+            {/* Fullscreen Icon */}
             <button
               type="button"
-              className="hidden sm:inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 shadow-xs cursor-pointer"
-              title="Sort"
-            >
-              <ArrowUpDown className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              className="hidden sm:inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 shadow-xs cursor-pointer"
+              className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer inline-flex items-center justify-center transition-colors"
               title="Fullscreen"
             >
               <Maximize2 className="h-3.5 w-3.5" />
@@ -108,10 +325,11 @@ function ApplicationsPageContent() {
           </div>
         </div>
 
-        {/* Empty State / Content Area */}
+        {/* Content Area */}
         {loading ? (
           <LoadingSpinner />
         ) : applications.length === 0 ? (
+          /* Empty State */
           <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-16 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs max-w-3xl mx-auto my-12">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-4">
               <FileText className="h-8 w-8 stroke-[1.5]" />
@@ -120,18 +338,624 @@ function ApplicationsPageContent() {
               No applications yet
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
-              Applications will appear here when candidates apply to your jobs or when you manually link candidates.
+              Applications will appear here when candidates apply to your jobs or when you apply candidates to jobs.
             </p>
+            <Button
+              onClick={() => router.push("/dashboard/jobs")}
+              className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+            >
+              View Active Jobs
+            </Button>
           </div>
         ) : (
-          <KanbanBoard
-            jobs={jobs}
-            selectedJobId={activeJobId}
-            onSelectJob={setSelectedJobId}
-            onOpenApplyModal={() => setApplyModalOpen(true)}
-          />
+          /* Main Applications Table View matching Screenshot 1 */
+          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                {/* Table Header */}
+                <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500">
+                  <tr>
+                    {/* Candidate */}
+                    <th
+                      onClick={() => handleSort("candidate")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Candidate
+                        {sortField === "candidate" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+
+                    {/* Email */}
+                    <th
+                      onClick={() => handleSort("email")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Email
+                        {sortField === "email" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+
+                    {/* Job */}
+                    <th
+                      onClick={() => handleSort("job")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Job
+                        {sortField === "job" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+
+                    {/* Status */}
+                    <th
+                      onClick={() => handleSort("status")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Status
+                        {sortField === "status" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+
+                    {/* Score */}
+                    <th
+                      onClick={() => handleSort("score")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Score
+                        {sortField === "score" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+
+                    {/* Applied */}
+                    <th
+                      onClick={() => handleSort("applied")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
+                        Applied
+                        {sortField === "applied" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+
+                {/* Table Body */}
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {paginatedApps.map((application) => {
+                    const job = application.jobId
+                      ? jobMap.get(application.jobId)
+                      : null;
+                    const stageInfo = getStageDisplay(application.stage);
+
+                    return (
+                      <tr
+                        key={application.id}
+                        onClick={() => setSelectedApp(application)}
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                      >
+                        {/* Candidate Name */}
+                        <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+                          <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            {application.candidateName}
+                          </span>
+                        </td>
+
+                        {/* Email */}
+                        <td className="py-4 px-5">
+                          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                            <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            <span>{application.candidateEmail}</span>
+                          </span>
+                        </td>
+
+                        {/* Job */}
+                        <td className="py-4 px-5">
+                          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                            <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            <span>
+                              {job?.title || "Role"}{" "}
+                              <span className="text-slate-400">
+                                ({job?.type === "FULL_TIME" ? "Full-Time" : job?.type === "PART_TIME" ? "Part-Time" : job?.type || "Full-Time"})
+                              </span>
+                            </span>
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-4 px-5">
+                          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${stageInfo.dotColor}`}
+                            />
+                            <span>{stageInfo.label}</span>
+                          </span>
+                        </td>
+
+                        {/* Score */}
+                        <td className="py-4 px-5 text-slate-400">—</td>
+
+                        {/* Applied */}
+                        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+                          {timeAgo(application.createdAt)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination & Rows Footer matching Screenshot 1 */}
+            <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 bg-slate-50/30 dark:bg-slate-950/30">
+              {/* Left: Showing X-Y of Z and Rows selector */}
+              <div className="flex items-center gap-3">
+                <span>
+                  Showing {totalCount > 0 ? startIndex + 1 : 0}-
+                  {Math.min(startIndex + rowsPerPage, totalCount)} of {totalCount}{" "}
+                  application{totalCount > 1 ? "s" : ""}
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  <span>Rows</span>
+                  <Select
+                    value={String(rowsPerPage)}
+                    onValueChange={(val) => {
+                      setRowsPerPage(Number(val));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-7 px-2 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg">
+                      <SelectValue placeholder="20" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10" className="text-xs">
+                        10
+                      </SelectItem>
+                      <SelectItem value="20" className="text-xs">
+                        20
+                      </SelectItem>
+                      <SelectItem value="50" className="text-xs">
+                        50
+                      </SelectItem>
+                      <SelectItem value="100" className="text-xs">
+                        100
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Right: Page X of Y and Next/Prev buttons */}
+              <div className="flex items-center gap-2">
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="p-1 rounded-lg border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer shadow-xs"
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-1 rounded-lg border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer shadow-xs"
+                    title="Next page"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </main>
+
+      {/* Slide-over Sidebar Drawer: Application Detail (Screenshot 2) */}
+      {selectedApp && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Backdrop */}
+          <div
+            onClick={() => setSelectedApp(null)}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+          />
+
+          {/* Slide-over Panel */}
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
+              <div className="p-6 space-y-5 flex-1">
+                {/* Drawer Top Bar */}
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    Application Detail
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(`/dashboard/applications/${selectedApp.id}`)
+                      }
+                      className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                      title="Open full page"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Open full page</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedApp(null)}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stage Action Pipeline Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleStageChange("SCREENING")}
+                      className={`h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs ${
+                        selectedApp.stage === "SCREENING"
+                          ? "bg-purple-700 text-white ring-2 ring-purple-400"
+                          : "bg-purple-600 hover:bg-purple-700 text-white"
+                      }`}
+                    >
+                      <span>Screening</span>
+                      <span className="opacity-80 text-[10px]">1</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleStageChange("INTERVIEW")}
+                      className={`h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs ${
+                        selectedApp.stage === "INTERVIEW"
+                          ? "bg-amber-700 text-white ring-2 ring-amber-400"
+                          : "bg-amber-600 hover:bg-amber-700 text-white"
+                      }`}
+                    >
+                      <span>Interview</span>
+                      <span className="opacity-80 text-[10px]">2</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleStageChange("REJECTED")}
+                      className={`h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs ${
+                        selectedApp.stage === "REJECTED"
+                          ? "bg-rose-700 text-white ring-2 ring-rose-400"
+                          : "bg-rose-600 hover:bg-rose-700 text-white"
+                      }`}
+                    >
+                      <span>Reject</span>
+                      <span className="opacity-80 text-[10px]">3</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="h-7 px-2 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Calendar className="h-3 w-3 text-slate-400" />
+                      <span>Schedule Interview</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={handleDelete}
+                      className="h-7 px-2 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Delete application</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Candidate Header Card */}
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-start gap-4">
+                  <div className="h-11 w-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                    {getInitials(selectedApp.candidateName)}
+                  </div>
+
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
+                        {selectedApp.candidateName}
+                      </h2>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-900">
+                        {selectedApp.stage === "APPLIED" ? "NEW" : selectedApp.stage}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                      <span className="flex items-center gap-1 truncate">
+                        <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        {selectedApp.candidateEmail}
+                      </span>
+                      {selectedApp.candidatePhone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          {selectedApp.candidatePhone}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-semibold truncate">
+                        <ArrowRight className="h-3 w-3 text-slate-400 shrink-0" />
+                        {selectedJobTitle}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-0.5">
+                      <Clock className="h-3 w-3" />
+                      <span>Applied {formatDate(selectedApp.createdAt)}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Sub-Navigation Tabs */}
+                <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto text-xs font-semibold scrollbar-none">
+                  {[
+                    { id: "overview", label: "Overview", icon: ChevronDown },
+                    { id: "inbox", label: "Inbox", icon: Mail },
+                    { id: "ai", label: "AI Analysis", icon: Sparkles },
+                    { id: "interviews", label: "Interviews", icon: Calendar },
+                    { id: "documents", label: "Documents", icon: FileText },
+                    { id: "responses", label: "Responses", icon: FileCheck },
+                    { id: "notes", label: "Notes", icon: MessageSquare },
+                    { id: "timeline", label: "Timeline", icon: History },
+                    { id: "properties", label: "Properties", icon: SlidersHorizontal },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setDrawerTab(tab.id)}
+                      className={`px-3 py-2 flex items-center gap-1 whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
+                        drawerTab === tab.id
+                          ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
+                          : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      {tab.id === "overview" && (
+                        <ChevronDown className="h-3 w-3 opacity-60" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Overview Tab Content Sections */}
+                <div className="space-y-4">
+                  {/* 1. AI Analysis Banner */}
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-3.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs text-blue-800 dark:text-blue-300 font-medium">
+                      <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <span>No AI analysis yet</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      <span>Run Analysis</span>
+                    </button>
+                  </div>
+
+                  {/* 2. Interviews Card */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                        <span>Interviews</span>
+                      </h3>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>+ Schedule Interview</span>
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center py-6 text-center space-y-1">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        No interviews scheduled
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Schedule an interview to start the process.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. Documents Card */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Documents</span>
+                    </h3>
+
+                    {selectedApp.resumeUrl ? (
+                      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {selectedApp.resumeFileName || "Resume.pdf"}
+                          </span>
+                        </div>
+                        <a
+                          href={selectedApp.resumeUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <span>View</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 py-1">
+                        No documents uploaded.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 4. Responses Card */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-1.5">
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <FileCheck className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Responses</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 py-1">
+                      No application form responses.
+                    </p>
+                  </div>
+
+                  {/* 5. Properties Card */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Properties</span>
+                    </h3>
+                    <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
+                      <button
+                        type="button"
+                        className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        + Add org-wide property
+                      </button>
+                      <button
+                        type="button"
+                        className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        Manage job-specific properties
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 6. Notes Card */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Notes</span>
+                    </h3>
+
+                    {drawerNotesList.length > 0 && (
+                      <div className="space-y-1.5 mb-2">
+                        {drawerNotesList.map((note, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300"
+                          >
+                            {note}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Add a note about this candidate..."
+                        value={drawerNoteInput}
+                        onChange={(e) => setDrawerNoteInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && drawerNoteInput.trim()) {
+                            setDrawerNotesList((prev) => [
+                              ...prev,
+                              drawerNoteInput.trim(),
+                            ]);
+                            setDrawerNoteInput("");
+                          }
+                        }}
+                        className="flex-1 h-8 px-2.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                      />
+                      {drawerNoteInput.trim() && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (drawerNoteInput.trim()) {
+                              setDrawerNotesList((prev) => [
+                                ...prev,
+                                drawerNoteInput.trim(),
+                              ]);
+                              setDrawerNoteInput("");
+                            }
+                          }}
+                          className="h-8 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
+                        >
+                          Save
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Apply Modal */}
       <ApplyModal

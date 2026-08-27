@@ -92,14 +92,17 @@ export class ApplicationsService {
       throw new NotFoundException(`Application with ID ${id} not found`);
     }
 
-    const job = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "location",
-    )
-      .where((j) => j.id.eq(app.jobId))
-      .first();
+    let job = null;
+    if (app.jobId) {
+      job = await this.prisma.db.orm.public.Job.select(
+        "id",
+        "title",
+        "department",
+        "location",
+      )
+        .where((j) => j.id.eq(app.jobId as number))
+        .first();
+    }
 
     return {
       ...app,
@@ -108,38 +111,55 @@ export class ApplicationsService {
   }
 
   async create(dto: CreateApplicationDto, file?: Express.Multer.File) {
-    const job = await this.prisma.db.orm.public.Job.select("id", "title")
-      .where((j) => j.id.eq(dto.jobId))
-      .first();
+    if (dto.jobId) {
+      const job = await this.prisma.db.orm.public.Job.select("id", "title")
+        .where((j) => j.id.eq(dto.jobId as number))
+        .first();
 
-    if (!job) {
-      throw new NotFoundException(`Job with ID ${dto.jobId} not found`);
+      if (!job) {
+        throw new NotFoundException(`Job with ID ${dto.jobId} not found`);
+      }
     }
 
-    if (!file) {
-      throw new BadRequestException("Resume PDF file is required");
+    // 1. Upload CV to MinIO S3 Object Storage if file is provided
+    let uploadResult: { url: string; originalName: string; size: number; mimeType: string } = {
+      url: "",
+      originalName: "Candidate Profile",
+      size: 0,
+      mimeType: "application/pdf",
+    };
+
+    if (file) {
+      uploadResult = await this.minioService.uploadFile(file, "resumes");
+    } else if (dto.resumeUrl) {
+      uploadResult = {
+        url: dto.resumeUrl,
+        originalName: dto.resumeFileName || "Candidate Profile",
+        size: 0,
+        mimeType: "application/pdf",
+      };
     }
 
-    // 1. Upload CV to MinIO S3 Object Storage
-    const uploadResult = await this.minioService.uploadFile(file, "resumes");
+    // 2. Determine highest orderIndex in APPLIED stage for the target job
+    let maxOrder = 0;
+    if (dto.jobId) {
+      const existingInStage = await this.prisma.db.orm.public.Application.select(
+        "id",
+        "orderIndex",
+      )
+        .where((a) => a.jobId.eq(dto.jobId as number))
+        .all();
 
-    // 2. Determine highest orderIndex in APPLIED stage
-    const existingInStage = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "orderIndex",
-    )
-      .where((a) => a.jobId.eq(dto.jobId))
-      .all();
-
-    const maxOrder = existingInStage.reduce(
-      (max, item) => Math.max(max, item.orderIndex),
-      -1,
-    );
+      maxOrder = existingInStage.reduce(
+        (max, item) => Math.max(max, item.orderIndex),
+        -1,
+      );
+    }
 
     // 3. Save Application record in PostgreSQL via Prisma 8
     const created = await this.prisma.db.orm.public.Application.upsert({
       create: {
-        jobId: dto.jobId,
+        jobId: dto.jobId ?? null,
         candidateName: dto.candidateName,
         candidateEmail: dto.candidateEmail,
         candidatePhone: dto.candidatePhone ?? null,
@@ -174,12 +194,28 @@ export class ApplicationsService {
   async remove(id: number) {
     const app = await this.findOne(id);
 
-    // Delete file from MinIO if path exists
-    if (app.resumeFileName) {
-      await this.minioService.deleteFile(app.resumeFileName);
-    }
+    // Check if candidate has other records
+    const allCandidateRecords = await this.prisma.db.orm.public.Application.select(
+      "id",
+      "jobId",
+      "candidateEmail",
+    )
+      .where((a) => a.candidateEmail.eq(app.candidateEmail))
+      .all();
 
-    await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).delete();
+    const otherRecords = allCandidateRecords.filter((r) => r.id !== id);
+
+    if (otherRecords.length > 0) {
+      // Other applications or talent pool records exist, delete this application record
+      await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).delete();
+    } else {
+      // This is the candidate's only record in database.
+      // Detach from the job so the application is deleted from the job/applications list,
+      // but the candidate is preserved in the Talent Pool.
+      await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).update({
+        jobId: null,
+      });
+    }
 
     return { success: true, message: `Application ${id} deleted successfully` };
   }

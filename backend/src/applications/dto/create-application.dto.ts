@@ -4,8 +4,8 @@ import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-valid
 export class CreateApplicationDto {
   @Type(() => Number)
   @IsNumber()
-  @IsNotEmpty()
-  jobId: number;
+  @IsOptional()
+  jobId?: number;
 
   @IsString()
   @IsNotEmpty()
@@ -22,4 +22,12 @@ export class CreateApplicationDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
+  resumeUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  resumeFileName?: string;
 }

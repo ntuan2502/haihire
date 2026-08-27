@@ -58,7 +58,7 @@ export interface Job {
 
 export interface Application {
   id: number;
-  jobId: number;
+  jobId?: number | null;
   candidateName: string;
   candidateEmail: string;
   candidatePhone?: string | null;

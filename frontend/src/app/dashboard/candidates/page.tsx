@@ -1,14 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
-import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
+import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useJobs, useAllApplications } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
@@ -17,13 +25,55 @@ import {
   Plus,
   SlidersHorizontal,
   Columns3,
-  Filter,
   Maximize2,
   UploadCloud,
   ChevronDown,
+  Mail,
+  Phone,
+  ArrowUpDown,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  ExternalLink,
+  Calendar,
+  Clock,
+  Briefcase,
+  FileText,
 } from "lucide-react";
+import type { Application } from "@/types";
+
+type SortField = "name" | "email" | "phone" | "applications" | "added";
+type SortDirection = "asc" | "desc";
+
+interface CandidateRow {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  applicationsCount: number;
+  createdAt: string;
+  updatedAt?: string;
+  notes: string;
+  rawApp: Application;
+}
+
+function parseCandidateNotes(notes?: string | null) {
+  let gender = "Male";
+  let dob = "06/23/1994";
+  if (!notes) return { gender, dob };
+
+  const genderMatch = notes.match(/Gender:\s*([^|]+)/i);
+  if (genderMatch) gender = genderMatch[1].trim();
+
+  const dobMatch = notes.match(/DOB:\s*([^|]+)/i);
+  if (dobMatch) dob = dobMatch[1].trim();
+
+  return { gender, dob };
+}
 
 function CandidatesPageContent() {
+  const router = useRouter();
   const { user } = useAuth();
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
@@ -31,13 +81,155 @@ function CandidatesPageContent() {
   const { data: applications = [], isLoading: appsLoading } =
     useAllApplications();
 
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const activeJobId = selectedJobId ?? (jobs.length > 0 ? jobs[0].id : null);
+  // Selected Candidate for Right Slide-over Sidebar Drawer
+  const [selectedCandidate, setSelectedCandidate] = useState<CandidateRow | null>(
+    null,
+  );
+  const [applyToJobModalCandidate, setApplyToJobModalCandidate] =
+    useState<CandidateRow | null>(null);
+  const [drawerTab, setDrawerTab] = useState<"applications" | "documents">(
+    "applications",
+  );
+
+  // Sorting State
+  const [sortField, setSortField] = useState<SortField>("added");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  // Pagination State
+  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const activeJobId = jobs.length > 0 ? jobs[0].id : null;
   const loading = jobsLoading || appsLoading;
+
+  // Aggregate Candidates from Applications
+  const candidateRows: CandidateRow[] = useMemo(() => {
+    const map = new Map<string, CandidateRow>();
+
+    applications.forEach((app) => {
+      const key = (app.candidateEmail || app.candidateName).toLowerCase().trim();
+      const hasJob = app.jobId !== null && app.jobId !== undefined && Number(app.jobId) > 0;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: app.id,
+          name: app.candidateName,
+          email: app.candidateEmail,
+          phone: app.candidatePhone || "",
+          applicationsCount: hasJob ? 1 : 0,
+          createdAt: app.createdAt,
+          updatedAt: app.updatedAt,
+          notes: app.notes || "",
+          rawApp: app,
+        });
+      } else {
+        const existing = map.get(key)!;
+        if (hasJob) {
+          existing.applicationsCount += 1;
+        }
+        if (new Date(app.createdAt) > new Date(existing.createdAt)) {
+          existing.createdAt = app.createdAt;
+        }
+        if (!existing.phone && app.candidatePhone) {
+          existing.phone = app.candidatePhone;
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [applications]);
+
+  // Filter & Sort
+  const filteredCandidates = useMemo(() => {
+    return candidateRows
+      .filter((cand) => {
+        if (!search.trim()) return true;
+        const q = search.toLowerCase().trim();
+        return (
+          cand.name.toLowerCase().includes(q) ||
+          cand.email.toLowerCase().includes(q) ||
+          cand.phone.toLowerCase().includes(q) ||
+          cand.notes.toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        let diff = 0;
+        switch (sortField) {
+          case "name":
+            diff = a.name.localeCompare(b.name);
+            break;
+          case "email":
+            diff = a.email.localeCompare(b.email);
+            break;
+          case "phone":
+            diff = a.phone.localeCompare(b.phone);
+            break;
+          case "applications":
+            diff = a.applicationsCount - b.applicationsCount;
+            break;
+          case "added":
+          default:
+            diff =
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            break;
+        }
+        return sortDirection === "asc" ? diff : -diff;
+      });
+  }, [candidateRows, search, sortField, sortDirection]);
+
+  // Pagination Slice
+  const totalCount = filteredCandidates.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedCandidates = filteredCandidates.slice(
+    startIndex,
+    startIndex + rowsPerPage,
+  );
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "08/27/2026";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "08/27/2026";
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  const formatShortDate = (dateStr?: string) => {
+    if (!dateStr) return "8/27/2026";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "8/27/2026";
+    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  };
+
+  // Find all applications of the selected candidate in drawer
+  const selectedCandidateApps = useMemo(() => {
+    if (!selectedCandidate) return [];
+    return applications.filter(
+      (a) =>
+        a.jobId &&
+        a.candidateEmail.toLowerCase() ===
+        selectedCandidate.email.toLowerCase(),
+    );
+  }, [selectedCandidate, applications]);
+
+  const selectedCandidateDetails = useMemo(() => {
+    if (!selectedCandidate) return { gender: "Male", dob: "06/23/1994" };
+    return parseCandidateNotes(selectedCandidate.notes);
+  }, [selectedCandidate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -51,79 +243,90 @@ function CandidatesPageContent() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-[1600px] w-full mx-auto space-y-6">
-        {/* Candidates Toolbar matching Screenshot 1 */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-[1600px] w-full mx-auto space-y-4">
+        {/* Candidates Toolbar matching Screenshot */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search by name or email..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 pl-9 text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs"
             />
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Views Button */}
+            <div className="relative">
+              <button
+                type="button"
+                className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <span>Views</span>
+                <ChevronDown className="h-3 w-3 text-slate-400 opacity-70" />
+              </button>
+            </div>
+
+            {/* Columns */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs cursor-pointer"
+              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-              Views
-              <ChevronDown className="h-3 w-3 text-slate-400 opacity-60" />
+              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+              <span>Columns</span>
             </button>
 
+            {/* Filters */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs cursor-pointer"
+              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
             >
-              <Columns3 className="h-3.5 w-3.5 text-slate-400" />
-              Columns
+              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+              <span>Filters</span>
             </button>
 
+            {/* Fullscreen icon */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs cursor-pointer"
-            >
-              <Filter className="h-3.5 w-3.5 text-slate-400" />
-              Filters
-            </button>
-
-            <button
-              type="button"
-              className="hidden sm:inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 shadow-xs cursor-pointer"
+              className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer inline-flex items-center justify-center transition-colors"
               title="Fullscreen"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
 
+            {/* Import CSV */}
             <button
               type="button"
-              onClick={() => setApplyModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs cursor-pointer"
+              onClick={() => router.push("/dashboard/candidates/new")}
+              className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
             >
-              <UploadCloud className="h-3.5 w-3.5 text-slate-400" />
-              Import CSV
+              <UploadCloud className="h-3.5 w-3.5 text-slate-500" />
+              <span>Import CSV</span>
             </button>
 
+            {/* Add Candidate button */}
             <Button
               size="sm"
-              onClick={() => setApplyModalOpen(true)}
-              className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 shadow-xs gap-1 cursor-pointer"
+              onClick={() => router.push("/dashboard/candidates/new")}
+              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs gap-1.5 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-              Add Candidate
+              <span>Add Candidate</span>
             </Button>
           </div>
         </div>
 
-        {/* Empty State / Content Area */}
+        {/* Content Area */}
         {loading ? (
           <LoadingSpinner />
-        ) : applications.length === 0 ? (
+        ) : candidateRows.length === 0 ? (
+          /* Empty State */
           <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-16 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs max-w-3xl mx-auto my-12">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-4">
               <Users className="h-8 w-8 stroke-[1.5]" />
@@ -135,22 +338,509 @@ function CandidatesPageContent() {
               Add your first candidate to start building your talent pool.
             </p>
             <Button
-              onClick={() => setApplyModalOpen(true)}
-              className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 rounded-lg shadow-xs gap-1.5 cursor-pointer"
+              onClick={() => router.push("/dashboard/candidates/new")}
+              className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 rounded-xl shadow-xs gap-1.5 cursor-pointer"
             >
               <Plus className="h-4 w-4 stroke-[2.5]" />
               Add Candidate
             </Button>
           </div>
         ) : (
-          <KanbanBoard
-            jobs={jobs}
-            selectedJobId={activeJobId}
-            onSelectJob={setSelectedJobId}
-            onOpenApplyModal={() => setApplyModalOpen(true)}
-          />
+          /* Main Candidates Table View matching Screenshot */
+          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                {/* Table Header */}
+                <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500">
+                  <tr>
+                    <th
+                      onClick={() => handleSort("name")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Name
+                        {sortField === "name" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSort("email")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Email
+                        {sortField === "email" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSort("phone")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Phone
+                        {sortField === "phone" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSort("applications")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1">
+                        Applications
+                        {sortField === "applications" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSort("added")}
+                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                    >
+                      <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
+                        Added
+                        {sortField === "added" ? (
+                          <ArrowDown
+                            className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
+                              sortDirection === "asc" ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                        )}
+                      </span>
+                    </th>
+                    <th className="py-3 px-5 font-semibold text-slate-500">
+                      Quick notes
+                    </th>
+                  </tr>
+                </thead>
+
+                {/* Table Body */}
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {paginatedCandidates.map((candidate) => (
+                    <tr
+                      key={candidate.id}
+                      onClick={() => setSelectedCandidate(candidate)}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                    >
+                      {/* Name */}
+                      <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+                        <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                          {candidate.name}
+                        </span>
+                      </td>
+
+                      {/* Email */}
+                      <td className="py-4 px-5">
+                        <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                          <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span>{candidate.email}</span>
+                        </span>
+                      </td>
+
+                      {/* Phone */}
+                      <td className="py-4 px-5">
+                        {candidate.phone ? (
+                          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                            <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            <span>{candidate.phone}</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600">—</span>
+                        )}
+                      </td>
+
+                      {/* Applications Count */}
+                      <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+                        {candidate.applicationsCount}
+                      </td>
+
+                      {/* Added Date */}
+                      <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+                        {formatDate(candidate.createdAt)}
+                      </td>
+
+                      {/* Quick notes - Empty as requested */}
+                      <td className="py-4 px-5"></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination & Rows Footer matching Screenshot */}
+            <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 bg-slate-50/30 dark:bg-slate-950/30">
+              {/* Left: Showing X-Y of Z and Rows selector */}
+              <div className="flex items-center gap-3">
+                <span>
+                  Showing {totalCount > 0 ? startIndex + 1 : 0}-
+                  {Math.min(startIndex + rowsPerPage, totalCount)} of {totalCount}{" "}
+                  candidate{totalCount > 1 ? "s" : ""}
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  <span>Rows</span>
+                  <Select
+                    value={String(rowsPerPage)}
+                    onValueChange={(val) => {
+                      setRowsPerPage(Number(val));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-7 px-2 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg">
+                      <SelectValue placeholder="20" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10" className="text-xs">
+                        10
+                      </SelectItem>
+                      <SelectItem value="20" className="text-xs">
+                        20
+                      </SelectItem>
+                      <SelectItem value="50" className="text-xs">
+                        50
+                      </SelectItem>
+                      <SelectItem value="100" className="text-xs">
+                        100
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Right: Page X of Y and Next/Prev buttons */}
+              <div className="flex items-center gap-2">
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="p-1 rounded-lg border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer shadow-xs"
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-1 rounded-lg border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer shadow-xs"
+                    title="Next page"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </main>
+
+      {/* Slide-over Sidebar Drawer: Candidate Detail (Screenshot 1) */}
+      {selectedCandidate && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Backdrop */}
+          <div
+            onClick={() => setSelectedCandidate(null)}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+          />
+
+          {/* Slide-over Panel */}
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-md bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
+              <div className="p-6 space-y-6 flex-1">
+                {/* Drawer Top Bar */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    Candidate Detail
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/candidates/${selectedCandidate.id}`,
+                        )
+                      }
+                      className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                      title="Open full page"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Open full page</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCandidate(null)}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Candidate Name & Contact Header */}
+                <div className="space-y-1">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                    {selectedCandidate.name}
+                  </h2>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-3.5 w-3.5 text-slate-400" />
+                      {selectedCandidate.email}
+                    </span>
+                    {selectedCandidate.phone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5 text-slate-400" />
+                        {selectedCandidate.phone}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card 1: Details */}
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Details
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-y-3.5 gap-x-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">
+                        Email
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
+                        {selectedCandidate.email}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">
+                        Phone
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
+                        {selectedCandidate.phone || "—"}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">
+                        Gender
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
+                        {selectedCandidateDetails.gender}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">
+                        Date of Birth
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
+                        {selectedCandidateDetails.dob}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Created
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
+                        {formatShortDate(selectedCandidate.createdAt)}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Updated
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
+                        {formatShortDate(
+                          selectedCandidate.updatedAt ||
+                            selectedCandidate.createdAt,
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Properties */}
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Properties
+                  </h3>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add org-wide property</span>
+                  </button>
+                </div>
+
+                {/* Card 3: Tabs */}
+                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+                  {/* Tabs Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-4 text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setDrawerTab("applications")}
+                        className={`relative pb-2.5 transition-colors cursor-pointer ${
+                          drawerTab === "applications"
+                            ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 -mb-[11px]"
+                            : "text-slate-400 hover:text-slate-700"
+                        }`}
+                      >
+                        Applications ({selectedCandidateApps.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDrawerTab("documents")}
+                        className={`relative pb-2.5 transition-colors cursor-pointer ${
+                          drawerTab === "documents"
+                            ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 -mb-[11px]"
+                            : "text-slate-400 hover:text-slate-700"
+                        }`}
+                      >
+                        Documents (
+                        {selectedCandidate.rawApp.resumeUrl ? 1 : 0})
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setApplyToJobModalCandidate(selectedCandidate)}
+                      className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span>Apply to Job</span>
+                    </button>
+                  </div>
+
+                  {/* Tab Body */}
+                  {drawerTab === "applications" && (
+                    <div>
+                      {selectedCandidateApps.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-1.5">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                            <Briefcase className="h-4 w-4" />
+                          </div>
+                          <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            No applications yet.
+                          </h4>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {selectedCandidateApps.map((app) => {
+                            const job = jobs.find((j) => j.id === app.jobId);
+                            return (
+                              <div
+                                key={app.id}
+                                className="py-2.5 flex items-center justify-between gap-3 text-xs"
+                              >
+                                <div>
+                                  <h4 className="font-bold text-slate-900 dark:text-white">
+                                    {job?.title || "Role"}
+                                  </h4>
+                                  <p className="text-[10px] text-slate-400">
+                                    Stage: {app.stage} • Applied{" "}
+                                    {formatShortDate(app.createdAt)}
+                                  </p>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900">
+                                  {app.stage}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {drawerTab === "documents" && (
+                    <div>
+                      {selectedCandidate.rawApp.resumeUrl ? (
+                        <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {selectedCandidate.rawApp.resumeFileName ||
+                                "Resume.pdf"}
+                            </span>
+                          </div>
+                          <a
+                            href={selectedCandidate.rawApp.resumeUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <span>View</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-1.5">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            No documents attached.
+                          </h4>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Apply to Job Modal */}
+      <ApplyToJobModal
+        isOpen={!!applyToJobModalCandidate}
+        onClose={() => setApplyToJobModalCandidate(null)}
+        candidate={applyToJobModalCandidate}
+        jobs={jobs}
+        existingApplications={applications}
+      />
 
       {/* Apply Modal */}
       <ApplyModal

@@ -77,8 +77,8 @@ model Job {
 
 model Application {
   id             Int              @id @default(autoincrement())
-  jobId          Int
-  job            Job              @relation(fields: [jobId], references: [id])
+  jobId          Int?
+  job            Job?             @relation(fields: [jobId], references: [id])
   candidateName  String
   candidateEmail String
   candidatePhone String?

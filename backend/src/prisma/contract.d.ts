@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'e246ca3aa55af016c85479c1684a94e67b65983a32e9810cb4ff379d65774fc3'>;
+  StorageHashBase<'3366baad613ff919e4450e9b1964d41a15c42212a485091d06a43e3d09a35ea7'>;
 export type ExecutionHash =
   ExecutionHashBase<'2e7f12eb5902a5961745a5282e9d749384038cf3c175821463aa6d8e278fc799'>;
 export type ProfileHash =
@@ -196,7 +196,7 @@ export type FieldOutputTypes = {
   readonly public: {
     readonly Application: {
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly jobId: CodecTypes['pg/int4@1']['output'];
+      readonly jobId: CodecTypes['pg/int4@1']['output'] | null;
       readonly candidateName: CodecTypes['pg/text@1']['output'];
       readonly candidateEmail: CodecTypes['pg/text@1']['output'];
       readonly candidatePhone: CodecTypes['pg/text@1']['output'] | null;
@@ -250,7 +250,7 @@ export type FieldInputTypes = {
   readonly public: {
     readonly Application: {
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly jobId: CodecTypes['pg/int4@1']['input'];
+      readonly jobId: CodecTypes['pg/int4@1']['input'] | null;
       readonly candidateName: CodecTypes['pg/text@1']['input'];
       readonly candidateEmail: CodecTypes['pg/text@1']['input'];
       readonly candidatePhone: CodecTypes['pg/text@1']['input'] | null;
@@ -308,7 +308,7 @@ export type StorageColumnTypes = {
       readonly candidatePhone: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly jobId: CodecTypes['pg/int4@1']['output'];
+      readonly jobId: CodecTypes['pg/int4@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['output'];
       readonly resumeFileName: CodecTypes['pg/text@1']['output'];
@@ -362,7 +362,7 @@ export type StorageColumnInputTypes = {
       readonly candidatePhone: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly jobId: CodecTypes['pg/int4@1']['input'];
+      readonly jobId: CodecTypes['pg/int4@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['input'];
       readonly resumeFileName: CodecTypes['pg/text@1']['input'];
@@ -440,7 +440,7 @@ type ContractBase = Omit<
                 readonly jobId: {
                   readonly nativeType: 'int4';
                   readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
+                  readonly nullable: true;
                 };
                 readonly candidateName: {
                   readonly nativeType: 'text';
@@ -857,7 +857,7 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly jobId: {
-                readonly nullable: false;
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly candidateName: {

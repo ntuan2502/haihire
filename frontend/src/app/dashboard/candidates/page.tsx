@@ -41,36 +41,16 @@ import {
   Briefcase,
   FileText,
 } from "lucide-react";
-import type { Application } from "@/types";
+
+import {
+  formatDate,
+  parseCandidateNotes,
+  aggregateCandidates,
+  type CandidateItem,
+} from "@/lib/utils";
 
 type SortField = "name" | "email" | "phone" | "applications" | "added";
 type SortDirection = "asc" | "desc";
-
-interface CandidateRow {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  applicationsCount: number;
-  createdAt: string;
-  updatedAt?: string;
-  notes: string;
-  rawApp: Application;
-}
-
-function parseCandidateNotes(notes?: string | null) {
-  let gender = "Male";
-  let dob = "06/23/1994";
-  if (!notes) return { gender, dob };
-
-  const genderMatch = notes.match(/Gender:\s*([^|]+)/i);
-  if (genderMatch) gender = genderMatch[1].trim();
-
-  const dobMatch = notes.match(/DOB:\s*([^|]+)/i);
-  if (dobMatch) dob = dobMatch[1].trim();
-
-  return { gender, dob };
-}
 
 function CandidatesPageContent() {
   const router = useRouter();
@@ -86,11 +66,10 @@ function CandidatesPageContent() {
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
   // Selected Candidate for Right Slide-over Sidebar Drawer
-  const [selectedCandidate, setSelectedCandidate] = useState<CandidateRow | null>(
-    null,
-  );
+  const [selectedCandidate, setSelectedCandidate] =
+    useState<CandidateItem | null>(null);
   const [applyToJobModalCandidate, setApplyToJobModalCandidate] =
-    useState<CandidateRow | null>(null);
+    useState<CandidateItem | null>(null);
   const [drawerTab, setDrawerTab] = useState<"applications" | "documents">(
     "applications",
   );
@@ -106,41 +85,11 @@ function CandidatesPageContent() {
   const activeJobId = jobs.length > 0 ? jobs[0].id : null;
   const loading = jobsLoading || appsLoading;
 
-  // Aggregate Candidates from Applications
-  const candidateRows: CandidateRow[] = useMemo(() => {
-    const map = new Map<string, CandidateRow>();
-
-    applications.forEach((app) => {
-      const key = (app.candidateEmail || app.candidateName).toLowerCase().trim();
-      const hasJob = app.jobId !== null && app.jobId !== undefined && Number(app.jobId) > 0;
-      if (!map.has(key)) {
-        map.set(key, {
-          id: app.id,
-          name: app.candidateName,
-          email: app.candidateEmail,
-          phone: app.candidatePhone || "",
-          applicationsCount: hasJob ? 1 : 0,
-          createdAt: app.createdAt,
-          updatedAt: app.updatedAt,
-          notes: app.notes || "",
-          rawApp: app,
-        });
-      } else {
-        const existing = map.get(key)!;
-        if (hasJob) {
-          existing.applicationsCount += 1;
-        }
-        if (new Date(app.createdAt) > new Date(existing.createdAt)) {
-          existing.createdAt = app.createdAt;
-        }
-        if (!existing.phone && app.candidatePhone) {
-          existing.phone = app.candidatePhone;
-        }
-      }
-    });
-
-    return Array.from(map.values());
-  }, [applications]);
+  // Aggregate Candidates from Applications using shared utility
+  const candidateRows: CandidateItem[] = useMemo(
+    () => aggregateCandidates(applications),
+    [applications],
+  );
 
   // Filter & Sort
   const filteredCandidates = useMemo(() => {
@@ -198,22 +147,7 @@ function CandidatesPageContent() {
     }
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "08/27/2026";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "08/27/2026";
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
 
-  const formatShortDate = (dateStr?: string) => {
-    if (!dateStr) return "8/27/2026";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "8/27/2026";
-    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-  };
 
   // Find all applications of the selected candidate in drawer
   const selectedCandidateApps = useMemo(() => {
@@ -227,7 +161,7 @@ function CandidatesPageContent() {
   }, [selectedCandidate, applications]);
 
   const selectedCandidateDetails = useMemo(() => {
-    if (!selectedCandidate) return { gender: "Male", dob: "06/23/1994" };
+    if (!selectedCandidate) return { gender: "—", dob: "—" };
     return parseCandidateNotes(selectedCandidate.notes);
   }, [selectedCandidate]);
 
@@ -679,7 +613,7 @@ function CandidatesPageContent() {
                         Created
                       </span>
                       <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
-                        {formatShortDate(selectedCandidate.createdAt)}
+                        {formatDate(selectedCandidate.createdAt, "short")}
                       </span>
                     </div>
 
@@ -689,9 +623,10 @@ function CandidatesPageContent() {
                         Updated
                       </span>
                       <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
-                        {formatShortDate(
+                        {formatDate(
                           selectedCandidate.updatedAt ||
                             selectedCandidate.createdAt,
+                          "short",
                         )}
                       </span>
                     </div>
@@ -779,7 +714,7 @@ function CandidatesPageContent() {
                                   </h4>
                                   <p className="text-[10px] text-slate-400">
                                     Stage: {app.stage} • Applied{" "}
-                                    {formatShortDate(app.createdAt)}
+                                    {formatDate(app.createdAt, "short")}
                                   </p>
                                 </div>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900">

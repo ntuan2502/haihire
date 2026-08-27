@@ -1216,11 +1216,10 @@ function CreateJobPageContent() {
                 {/* Dynamic Job Title */}
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-snug">
-                    {jobTitle.trim() || "Technical Writer (Part-Time)"}
+                    {jobTitle.trim() || "Untitled Job"}
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 whitespace-pre-wrap leading-relaxed">
-                    {description.trim() ||
-                      "We're hiring a part-time Technical Writer to make ATS documentation clear, actionable, and enterprise-ready. Your work will directly improve product adoption by helping recruiters, admins, and developers succeed quickly."}
+                    {description.trim() || "No job description provided yet."}
                   </p>
                 </div>
 
@@ -1774,7 +1773,7 @@ function CreateJobPageContent() {
                   <div>
                     <span className="text-slate-400 block text-[10px]">Title</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {jobTitle.trim() || "Technical Writer (Part-Time)"}
+                      {jobTitle.trim() || "Untitled Job"}
                     </span>
                   </div>
                 </div>

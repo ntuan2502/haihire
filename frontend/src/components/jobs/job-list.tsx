@@ -267,7 +267,7 @@ export function JobList({
                     <span>•</span>
                     <span className="flex items-center gap-0.5 truncate">
                       <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                      {job.location || "Ho Chi Minh City, Vietnam"}
+                      {job.location || job.department || "Remote"}
                     </span>
                   </div>
                 </div>
@@ -451,7 +451,7 @@ export function JobList({
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1">
                         <MapPin className="h-3 w-3 text-slate-400" />
-                        {job.location || "Ho Chi Minh City, Vietnam"}
+                        {job.location || job.department || "Remote"}
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
                         {counts.new}
@@ -510,7 +510,7 @@ export function JobList({
                       <span>•</span>
                       <span className="flex items-center gap-0.5">
                         <MapPin className="h-3 w-3 text-slate-400" />
-                        {job.location || "Ho Chi Minh City, Vietnam"}
+                        {job.location || job.department || "Remote"}
                       </span>
                     </div>
                   </div>

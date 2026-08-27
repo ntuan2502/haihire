@@ -26,20 +26,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-function parseCandidateNotes(notes?: string | null) {
-  let gender = "Male";
-  let dob = "06/23/1994";
-  if (!notes) return { gender, dob };
-
-  const genderMatch = notes.match(/Gender:\s*([^|]+)/i);
-  if (genderMatch) gender = genderMatch[1].trim();
-
-  const dobMatch = notes.match(/DOB:\s*([^|]+)/i);
-  if (dobMatch) dob = dobMatch[1].trim();
-
-  return { gender, dob };
-}
+import { formatDate, parseCandidateNotes } from "@/lib/utils";
 
 function CandidateDetailPageContent() {
   const params = useParams();
@@ -78,12 +65,7 @@ function CandidateDetailPageContent() {
 
   const { gender, dob } = parseCandidateNotes(primaryApp?.notes);
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "8/27/2026";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "8/27/2026";
-    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-  };
+
 
   if (loading) {
     return (
@@ -131,9 +113,9 @@ function CandidateDetailPageContent() {
     );
   }
 
-  const candidateName = primaryApp?.candidateName || "Jane Doe";
-  const candidateEmail = primaryApp?.candidateEmail || "jane.doe@gmail.com";
-  const candidatePhone = primaryApp?.candidatePhone || "+64155409586";
+  const candidateName = primaryApp?.candidateName || "—";
+  const candidateEmail = primaryApp?.candidateEmail || "—";
+  const candidatePhone = primaryApp?.candidatePhone || "";
   const candidateCreated = formatDate(primaryApp?.createdAt);
   const candidateUpdated = formatDate(primaryApp?.updatedAt || primaryApp?.createdAt);
 

@@ -33,14 +33,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ApplicationStage } from "@/types";
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
+import { getInitials, formatDate } from "@/lib/utils";
 
 function ApplicationDetailPageContent() {
   const params = useParams();
@@ -69,13 +62,6 @@ function ApplicationDetailPageContent() {
     (a) => String(a.id) === appIdStr || a.id === appId,
   );
   const job = jobs.find((j) => j.id === app?.jobId);
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "8/27/2026";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "8/27/2026";
-    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-  };
 
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!app) return;
@@ -148,10 +134,14 @@ function ApplicationDetailPageContent() {
     );
   }
 
-  const candidateName = app?.candidateName || "Jane Doe";
-  const candidateEmail = app?.candidateEmail || "jane.doe@gmail.com";
-  const candidatePhone = app?.candidatePhone || "+64155409586";
-  const jobTitle = job ? `${job.title} (${job.type === "FULL_TIME" ? "Full-Time" : job.type === "PART_TIME" ? "Part-Time" : job.type})` : "Technical Writer (Part-Time)";
+  const candidateName = app?.candidateName || "—";
+  const candidateEmail = app?.candidateEmail || "—";
+  const candidatePhone = app?.candidatePhone || "";
+  const jobTitle = job
+    ? `${job.title} (${job.type === "FULL_TIME" ? "Full-Time" : job.type === "PART_TIME" ? "Part-Time" : job.type})`
+    : app?.jobId
+      ? `Job #${app.jobId}`
+      : "Unassigned Role";
   const appliedDate = formatDate(app?.createdAt);
   const initials = getInitials(candidateName);
 

@@ -5,20 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar, type NavTab } from "@/components/navbar";
-import { JobList } from "@/components/jobs/job-list";
-import { KanbanBoard } from "@/components/kanban/kanban-board";
-import { CreateJobModal } from "@/components/jobs/create-job-modal";
-import { ApplyModal } from "@/components/applications/apply-modal";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
   useAllApplications,
   useCreateJobMutation,
-  useDeleteJobMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import type { Job } from "@/types";
 import {
   Briefcase,
   Users,
@@ -29,82 +23,8 @@ import {
   Calendar,
   MessageSquare,
   ArrowRight,
-  Inbox,
-  Settings,
 } from "lucide-react";
-
-function getInitials(name: string) {
-  if (!name) return "CA";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function getRelativeTime(dateString?: string) {
-  if (!dateString) return "Just now";
-  try {
-    const diff = Date.now() - new Date(dateString).getTime();
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  } catch {
-    return "Just now";
-  }
-}
-
-function formatStageLabel(stage: string): {
-  label: string;
-  badgeClass: string;
-} {
-  switch (stage) {
-    case "APPLIED":
-      return {
-        label: "New",
-        badgeClass:
-          "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 border border-blue-100 dark:border-blue-900/60",
-      };
-    case "SCREENING":
-      return {
-        label: "Screening",
-        badgeClass:
-          "bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400 border border-purple-100 dark:border-purple-900/60",
-      };
-    case "INTERVIEW":
-      return {
-        label: "Interview",
-        badgeClass:
-          "bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/60",
-      };
-    case "OFFER":
-      return {
-        label: "Offer",
-        badgeClass:
-          "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400 border border-amber-100 dark:border-amber-900/60",
-      };
-    case "HIRED":
-      return {
-        label: "Hired",
-        badgeClass:
-          "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/60",
-      };
-    case "REJECTED":
-      return {
-        label: "Rejected",
-        badgeClass:
-          "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-      };
-    default:
-      return {
-        label: "New",
-        badgeClass:
-          "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400",
-      };
-  }
-}
+import { getInitials, formatRelativeTime, getStageInfo } from "@/lib/utils";
 
 function DashboardContent() {
   const router = useRouter();
@@ -117,12 +37,9 @@ function DashboardContent() {
   const { data: applications = [], isLoading: appsLoading } =
     useAllApplications();
   const createJobMutation = useCreateJobMutation();
-  const deleteJobMutation = useDeleteJobMutation();
 
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
-  const [applyModalOpen, setApplyModalOpen] = useState(false);
 
   const loading = jobsLoading || appsLoading;
   const activeJob =
@@ -206,14 +123,6 @@ function DashboardContent() {
     }
   };
 
-  const handleJobDeleted = (id: number) => {
-    deleteJobMutation.mutate(id);
-    if (selectedJobId === id) {
-      const remaining = jobs.filter((j) => j.id !== id);
-      setSelectedJobId(remaining.length > 0 ? remaining[0].id : null);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/70 dark:bg-slate-950 font-sans transition-colors duration-200">
       {/* Top Navigation Bar */}
@@ -221,7 +130,7 @@ function DashboardContent() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => setApplyModalOpen(true)}
+        onOpenApplyModal={() => {}}
         jobsCount={jobs.length}
         candidatesCount={totalCandidatesCount}
       />
@@ -573,7 +482,7 @@ function DashboardContent() {
                           ) : (
                             <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
                               {recentApplications.map((app) => {
-                                const stageInfo = formatStageLabel(app.stage);
+                                const stageInfo = getStageInfo(app.stage);
                                 const candidateJob = jobs.find(
                                   (j) => j.id === app.jobId,
                                 );
@@ -601,7 +510,7 @@ function DashboardContent() {
                                             {app.candidateName}
                                           </span>
                                           <span
-                                            className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${stageInfo.badgeClass}`}
+                                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${stageInfo.badgeBg} ${stageInfo.textColor}`}
                                           >
                                             {stageInfo.label}
                                           </span>
@@ -614,7 +523,7 @@ function DashboardContent() {
 
                                     {/* Timestamp */}
                                     <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
-                                      {getRelativeTime(app.createdAt)}
+                                      {formatRelativeTime(app.createdAt)}
                                     </span>
                                   </div>
                                 );
@@ -688,126 +597,9 @@ function DashboardContent() {
                 )}
               </div>
             )}
-
-            {/* TAB 2: JOBS */}
-            {activeTab === "jobs" && (
-              <div>
-                {jobs.length === 0 && !loading ? (
-                  <StartRecruiting
-                    onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-                    onCreateTestJob={handleCreateTestJob}
-                    onImportFromFile={() => router.push("/dashboard/jobs/new")}
-                  />
-                ) : (
-                  <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                    <JobList
-                      jobs={jobs}
-                      applications={applications}
-                      loading={loading}
-                      onViewCandidates={(jobId: number) => {
-                        setSelectedJobId(jobId);
-                        router.push(`/dashboard/candidates?jobId=${jobId}`);
-                      }}
-                      onApply={(job: Job) => {
-                        setSelectedJobId(job.id);
-                        setApplyModalOpen(true);
-                      }}
-                      onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-                      onDeleteJob={handleJobDeleted}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TAB 3: CANDIDATES & APPLICATIONS (KANBAN) */}
-            {(activeTab === "candidates" || activeTab === "applications") && (
-              <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <KanbanBoard
-                  jobs={jobs}
-                  selectedJobId={activeJobId}
-                  onSelectJob={setSelectedJobId}
-                  onOpenApplyModal={() => setApplyModalOpen(true)}
-                />
-              </div>
-            )}
-
-            {/* TAB 4: INBOX */}
-            {activeTab === "inbox" && (
-              <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-400 mb-3">
-                  <Inbox className="h-6 w-6" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Candidate Communications Inbox
-                </h3>
-                <p className="text-xs text-slate-500 max-w-sm mt-1">
-                  Email synchronization and applicant messaging features will be available here.
-                </p>
-              </div>
-            )}
-
-            {/* TAB 5: INTERVIEWS */}
-            {activeTab === "interviews" && (
-              <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-400 mb-3">
-                  <Calendar className="h-6 w-6" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Interview Scheduling & Calendar
-                </h3>
-                <p className="text-xs text-slate-500 max-w-sm mt-1">
-                  Connect Google Calendar or Outlook to automate candidate interview scheduling.
-                </p>
-              </div>
-            )}
-
-            {/* TAB 6: ASSISTANT */}
-            {activeTab === "assistant" && (
-              <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 mb-3">
-                  <MessageSquare className="h-6 w-6" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  AI Recruiting Copilot
-                </h3>
-                <p className="text-xs text-slate-500 max-w-sm mt-1">
-                  AI-assisted candidate screening, resume ranking, and automated interview question generation.
-                </p>
-              </div>
-            )}
-
-            {/* TAB 7: SETTINGS */}
-            {activeTab === "settings" && (
-              <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-400 mb-3">
-                  <Settings className="h-6 w-6" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Workspace & Organization Settings
-                </h3>
-                <p className="text-xs text-slate-500 max-w-sm mt-1">
-                  Manage team members, roles, billing plans, and custom hiring stages.
-                </p>
-              </div>
-            )}
           </>
         )}
       </main>
-
-      {/* Create Job Modal */}
-      <CreateJobModal
-        isOpen={createJobModalOpen}
-        onClose={() => setCreateJobModalOpen(false)}
-      />
-
-      {/* Apply Modal */}
-      <ApplyModal
-        isOpen={applyModalOpen}
-        onClose={() => setApplyModalOpen(false)}
-        jobs={jobs}
-        selectedJobId={activeJobId}
-      />
     </div>
   );
 }

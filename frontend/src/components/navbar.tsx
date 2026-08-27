@@ -38,6 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { getInitials } from "@/lib/utils";
 
 export type NavTab =
   | "dashboard"
@@ -86,16 +87,6 @@ export function Navbar({
   else if (pathname.startsWith("/dashboard/applications")) currentTab = "applications";
   else if (pathname.startsWith("/dashboard/interviews")) currentTab = "interviews";
   else if (pathname === "/dashboard") currentTab = "dashboard";
-
-  const getUserInitials = (name?: string) => {
-    if (!name) return "NA";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   const navItems: { id: NavTab; label: string; icon: React.ElementType }[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -251,7 +242,7 @@ export function Navbar({
                   aria-label="User Profile"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-xs">
-                    {getUserInitials(user.name)}
+                    {getInitials(user.name)}
                   </div>
                   <ChevronDown className="h-3 w-3 text-slate-400 hidden sm:block" />
                 </DropdownMenuTrigger>

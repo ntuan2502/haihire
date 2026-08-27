@@ -141,7 +141,7 @@ export function ApplyToJobModal({
                       {jobTitle}
                     </h4>
                     <p className="text-[11px] text-slate-400 truncate">
-                      {job.location || job.department || "Ho Chi Minh City, Vietnam"}
+                      {job.location || job.department || "Remote"}
                     </p>
                   </div>
 

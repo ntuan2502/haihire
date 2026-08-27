@@ -51,30 +51,15 @@ import {
 } from "lucide-react";
 import type { Application, ApplicationStage } from "@/types";
 
+import {
+  getInitials,
+  formatRelativeTime,
+  formatDate,
+  getStageInfo,
+} from "@/lib/utils";
+
 type SortField = "candidate" | "email" | "job" | "status" | "score" | "applied";
 type SortDirection = "asc" | "desc";
-
-function getInitials(name: string) {
-  const parts = name.trim().split(" ");
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
-
-function timeAgo(dateStr: string) {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "0m ago";
-  const now = new Date();
-  const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
-  if (diffSec < 60) return "0m ago";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
-}
 
 function ApplicationsPageContent() {
   const router = useRouter();
@@ -187,13 +172,6 @@ function ApplicationsPageContent() {
     }
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "8/27/2026";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "8/27/2026";
-    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-  };
-
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!selectedApp) return;
     try {
@@ -221,29 +199,12 @@ function ApplicationsPageContent() {
     }
   };
 
-  const getStageDisplay = (stage: ApplicationStage) => {
-    switch (stage) {
-      case "APPLIED":
-        return { label: "New", dotColor: "bg-blue-600" };
-      case "SCREENING":
-        return { label: "Screening", dotColor: "bg-purple-600" };
-      case "INTERVIEW":
-        return { label: "Interview", dotColor: "bg-amber-600" };
-      case "OFFER":
-        return { label: "Offer", dotColor: "bg-emerald-600" };
-      case "HIRED":
-        return { label: "Hired", dotColor: "bg-emerald-700" };
-      case "REJECTED":
-        return { label: "Rejected", dotColor: "bg-rose-600" };
-      default:
-        return { label: stage, dotColor: "bg-slate-400" };
-    }
-  };
-
   const selectedJob = selectedApp?.jobId ? jobMap.get(selectedApp.jobId) : null;
   const selectedJobTitle = selectedJob
     ? `${selectedJob.title} (${selectedJob.type === "FULL_TIME" ? "Full-Time" : selectedJob.type === "PART_TIME" ? "Part-Time" : selectedJob.type})`
-    : "Technical Writer (Part-Time)";
+    : selectedApp?.jobId
+      ? `Job #${selectedApp.jobId}`
+      : "Unassigned Role";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -477,7 +438,7 @@ function ApplicationsPageContent() {
                     const job = application.jobId
                       ? jobMap.get(application.jobId)
                       : null;
-                    const stageInfo = getStageDisplay(application.stage);
+                    const stageInfo = getStageInfo(application.stage);
 
                     return (
                       <tr
@@ -528,7 +489,7 @@ function ApplicationsPageContent() {
 
                         {/* Applied */}
                         <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
-                          {timeAgo(application.createdAt)}
+                          {formatRelativeTime(application.createdAt)}
                         </td>
                       </tr>
                     );

@@ -36,7 +36,7 @@ interface ApplyModalProps {
   isOpen: boolean;
   onClose: () => void;
   jobs: Job[];
-  selectedJobId?: number | null;
+  selectedJobId?: string | null;
   onApplicationSubmitted?: () => void;
 }
 

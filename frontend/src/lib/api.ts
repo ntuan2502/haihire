@@ -16,13 +16,13 @@ export const jobsApi = {
     status?: string;
     department?: string;
     search?: string;
-    organizationId?: number;
+    organizationId?: string | null;
   }): Promise<Job[]> => {
     const response = await api.get<Job[]>("/jobs", { params });
     return response.data;
   },
 
-  getById: async (id: number): Promise<Job> => {
+  getById: async (id: string): Promise<Job> => {
     const response = await api.get<Job>(`/jobs/${id}`);
     return response.data;
   },
@@ -32,12 +32,12 @@ export const jobsApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<CreateJobInput>): Promise<Job> => {
+  update: async (id: string, data: Partial<CreateJobInput>): Promise<Job> => {
     const response = await api.patch<Job>(`/jobs/${id}`, data);
     return response.data;
   },
 
-  delete: async (id: number): Promise<{ success: boolean; message: string }> => {
+  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/jobs/${id}`);
     return response.data;
   },
@@ -49,12 +49,12 @@ export const applicationsApi = {
     return response.data;
   },
 
-  getByJob: async (jobId: number): Promise<Application[]> => {
+  getByJob: async (jobId: string): Promise<Application[]> => {
     const response = await api.get<Application[]>(`/applications/job/${jobId}`);
     return response.data;
   },
 
-  getById: async (id: number): Promise<Application> => {
+  getById: async (id: string): Promise<Application> => {
     const response = await api.get<Application>(`/applications/${id}`);
     return response.data;
   },
@@ -73,7 +73,7 @@ export const applicationsApi = {
   },
 
   updateStage: async (
-    id: number,
+    id: string,
     stage: string,
     orderIndex = 0,
   ): Promise<Application> => {
@@ -85,7 +85,7 @@ export const applicationsApi = {
   },
 
   updateCandidate: async (
-    id: number,
+    id: string,
     data: {
       candidateName?: string;
       candidateEmail?: string;
@@ -99,7 +99,7 @@ export const applicationsApi = {
     return response.data;
   },
 
-  uploadDocument: async (id: number, file: File): Promise<Application> => {
+  uploadDocument: async (id: string, file: File): Promise<Application> => {
     const formData = new FormData();
     formData.append("file", file);
     const response = await api.post<Application>(
@@ -114,7 +114,7 @@ export const applicationsApi = {
     return response.data;
   },
 
-  delete: async (id: number): Promise<{ success: boolean; message: string }> => {
+  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/applications/${id}`);
     return response.data;
   },

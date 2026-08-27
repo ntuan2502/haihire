@@ -44,7 +44,6 @@ function CandidateDetailPageContent() {
   const router = useRouter();
   const { user } = useAuth();
   const candidateIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const candidateId = Number(candidateIdStr);
 
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
@@ -66,9 +65,12 @@ function CandidateDetailPageContent() {
 
   const loading = jobsLoading || appsLoading;
 
-  // Find candidate application by ID
+  // Find candidate application by ID or email
   const primaryApp = applications.find(
-    (a) => String(a.id) === candidateIdStr || a.id === candidateId,
+    (a) =>
+      String(a.id) === String(candidateIdStr) ||
+      decodeURIComponent(candidateIdStr || "").toLowerCase() ===
+        a.candidateEmail.toLowerCase(),
   );
 
   // Find all applications belonging to this candidate email/name

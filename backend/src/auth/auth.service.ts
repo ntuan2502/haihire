@@ -19,7 +19,8 @@ export class AuthService {
   ) {}
 
   async validateRecruiter(dto: LoginDto) {
-    const user = await this.prisma.db.orm.public.User.select(
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    let user = await this.prisma.db.orm.public.User.select(
       "id",
       "email",
       "name",
@@ -29,8 +30,44 @@ export class AuthService {
       "organizationId",
       "createdAt",
     )
-      .where((u) => u.email.eq(dto.email.toLowerCase().trim()))
+      .where((u) => u.email.eq(normalizedEmail))
       .first();
+
+    // Auto-provision demo accounts if database is fresh
+    if (!user) {
+      const demoAccounts: Record<
+        string,
+        { name: string; role: "HR" | "ADMIN" | "INTERVIEWER" }
+      > = {
+        "demo@tun.io.vn": { name: "Demo Recruiter", role: "HR" },
+        "hr@tun.io.vn": { name: "HR Lead / Recruiter", role: "HR" },
+        "admin@tun.io.vn": { name: "Talent Acquisition Admin", role: "ADMIN" },
+        "interviewer@tun.io.vn": {
+          name: "Technical Interviewer",
+          role: "INTERVIEWER",
+        },
+      };
+
+      if (demoAccounts[normalizedEmail] && dto.password === "password123") {
+        const demoConfig = demoAccounts[normalizedEmail];
+        const hashedPassword = bcrypt.hashSync("password123", 10);
+        user = await this.prisma.db.orm.public.User.upsert({
+          create: {
+            email: normalizedEmail,
+            name: demoConfig.name,
+            role: demoConfig.role,
+            password: hashedPassword,
+            organizationId: null,
+          },
+          update: {
+            password: hashedPassword,
+            name: demoConfig.name,
+            role: demoConfig.role,
+          },
+          conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
+        });
+      }
+    }
 
     if (!user || !user.password) {
       throw new UnauthorizedException("Invalid email or password");
@@ -58,7 +95,7 @@ export class AuthService {
         "slug",
         "inviteCode",
       )
-        .where((o) => o.id.eq(sanitizedUser.organizationId as number))
+        .where((o) => o.id.eq(sanitizedUser.organizationId as string))
         .first();
     }
 
@@ -85,7 +122,7 @@ export class AuthService {
     };
   }
 
-  async getProfile(userId: number) {
+  async getProfile(userId: string) {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
       "email",
@@ -110,7 +147,7 @@ export class AuthService {
         "slug",
         "inviteCode",
       )
-        .where((o) => o.id.eq(user.organizationId as number))
+        .where((o) => o.id.eq(user.organizationId as string))
         .first();
     }
 

@@ -159,7 +159,7 @@ export function getStageInfo(stage?: ApplicationStage | string | null): {
 }
 
 export interface CandidateItem {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -178,8 +178,7 @@ export function aggregateCandidates(applications: Application[]): CandidateItem[
 
   applications.forEach((app) => {
     const key = (app.candidateEmail || app.candidateName).toLowerCase().trim();
-    const hasJob =
-      app.jobId !== null && app.jobId !== undefined && Number(app.jobId) > 0;
+    const hasJob = Boolean(app.jobId && String(app.jobId).trim() !== "");
 
     if (!map.has(key)) {
       map.set(key, {

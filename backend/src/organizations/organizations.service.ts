@@ -24,7 +24,7 @@ export class OrganizationsService {
     return code;
   }
 
-  async create(userId: number, dto: CreateOrgDto) {
+  async create(userId: string, dto: CreateOrgDto) {
     const normalizedSlug = dto.slug.toLowerCase().trim();
 
     const existing = await this.prisma.db.orm.public.Organization.select(
@@ -77,7 +77,7 @@ export class OrganizationsService {
     };
   }
 
-  async join(userId: number, dto: JoinOrgDto) {
+  async join(userId: string, dto: JoinOrgDto) {
     const rawInput = dto.inviteCodeOrSlug.trim();
     const normalized = rawInput.toLowerCase();
 
@@ -134,7 +134,7 @@ export class OrganizationsService {
       .slice(0, 10);
   }
 
-  async getMyOrg(userId: number) {
+  async getMyOrg(userId: string) {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
       "organizationId",
@@ -153,7 +153,7 @@ export class OrganizationsService {
       "inviteCode",
       "createdAt",
     )
-      .where((o) => o.id.eq(user.organizationId as number))
+      .where((o) => o.id.eq(user.organizationId as string))
       .first();
   }
 }

@@ -26,7 +26,7 @@ export class OrganizationsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
-    @Request() req: { user: { id: number } },
+    @Request() req: { user: { id: string } },
     @Body() dto: CreateOrgDto,
   ) {
     return this.orgsService.create(req.user.id, dto);
@@ -35,7 +35,7 @@ export class OrganizationsController {
   @Post("join")
   @HttpCode(HttpStatus.OK)
   async join(
-    @Request() req: { user: { id: number } },
+    @Request() req: { user: { id: string } },
     @Body() dto: JoinOrgDto,
   ) {
     return this.orgsService.join(req.user.id, dto);
@@ -47,7 +47,7 @@ export class OrganizationsController {
   }
 
   @Get("my")
-  async getMyOrg(@Request() req: { user: { id: number } }) {
+  async getMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMyOrg(req.user.id);
   }
 }

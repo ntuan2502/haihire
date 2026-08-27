@@ -12,7 +12,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   beforeEach(() => {
     mockOrgs = [
       {
-        id: 1,
+        id: "org-1",
         name: "Acme Corp",
         slug: "acme-corp",
         inviteCode: "ORG-ACME99",
@@ -22,16 +22,16 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
     mockUsers = [
       {
-        id: 1,
+        id: "usr-1",
         email: "hr@tun.io.vn",
         name: "HR Lead",
         organizationId: null,
       },
       {
-        id: 2,
+        id: "usr-2",
         email: "admin@tun.io.vn",
         name: "Admin",
-        organizationId: 1,
+        organizationId: "org-1",
       },
     ];
 
@@ -45,7 +45,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                   first: vi.fn().mockImplementation(async () => {
                     const match = mockOrgs.find((o) => {
                       const mockRecord = {
-                        id: { eq: (target: number) => o.id === target },
+                        id: { eq: (target: string) => o.id === target },
                         slug: {
                           eq: (target: string) =>
                             o.slug.toLowerCase() === target.toLowerCase(),
@@ -72,7 +72,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
               })),
               upsert: vi.fn().mockImplementation(async ({ create }) => {
                 const newOrg = {
-                  id: mockOrgs.length + 1,
+                  id: `org-${mockOrgs.length + 1}`,
                   name: create.name,
                   slug: create.slug,
                   inviteCode: create.inviteCode,
@@ -88,7 +88,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                   first: vi.fn().mockImplementation(async () => {
                     const match = mockUsers.find((u) => {
                       const mockRecord = {
-                        id: { eq: (target: number) => u.id === target },
+                        id: { eq: (target: string) => u.id === target },
                         email: {
                           eq: (target: string) =>
                             u.email.toLowerCase() === target.toLowerCase(),
@@ -110,7 +110,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                 update: vi.fn().mockImplementation(async (updates) => {
                   const targetUser = mockUsers.find((u) => {
                     const mockRecord = {
-                      id: { eq: (target: number) => u.id === target },
+                      id: { eq: (target: string) => u.id === target },
                     };
                     return predicateFn(mockRecord);
                   });
@@ -130,7 +130,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   });
 
   it("1. Should successfully create a new organization and link the user", async () => {
-    const result = await service.create(1, {
+    const result = await service.create("usr-1", {
       name: "Stark Industries",
       slug: "stark-industries",
     });
@@ -140,13 +140,13 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
     expect(result.organization.inviteCode).toMatch(/^ORG-[A-Z0-9]{6}$/);
 
     // Verify user was linked to the organization
-    const user = mockUsers.find((u) => u.id === 1);
+    const user = mockUsers.find((u) => u.id === "usr-1");
     expect(user.organizationId).toBe(result.organization.id);
   });
 
   it("2. Should throw ConflictException when creating organization with existing slug", async () => {
     await expect(
-      service.create(1, {
+      service.create("usr-1", {
         name: "Acme Duplicate",
         slug: "acme-corp",
       }),
@@ -154,18 +154,18 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   });
 
   it("3. Should successfully join an organization with valid invite code", async () => {
-    const result = await service.join(1, {
+    const result = await service.join("usr-1", {
       inviteCodeOrSlug: "ORG-ACME99",
     });
 
     expect(result.organization.name).toBe("Acme Corp");
-    const user = mockUsers.find((u) => u.id === 1);
-    expect(user.organizationId).toBe(1);
+    const user = mockUsers.find((u) => u.id === "usr-1");
+    expect(user.organizationId).toBe("org-1");
   });
 
   it("4. Should throw NotFoundException when invite code or slug is invalid", async () => {
     await expect(
-      service.join(1, {
+      service.join("usr-1", {
         inviteCodeOrSlug: "INVALID-CODE",
       }),
     ).rejects.toThrow(NotFoundException);

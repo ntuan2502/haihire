@@ -2,10 +2,9 @@ import { Type } from "class-transformer";
 import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateApplicationDto {
-  @Type(() => Number)
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  jobId?: number;
+  jobId?: string;
 
   @IsString()
   @IsNotEmpty()

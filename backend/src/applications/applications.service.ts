@@ -19,7 +19,7 @@ export class ApplicationsService {
     private readonly minioService: MinioService,
   ) {}
 
-  async findByJob(jobId: number) {
+  async findByJob(jobId: string) {
     const job = await this.prisma.db.orm.public.Job.select("id", "title")
       .where((j) => j.id.eq(jobId))
       .first();
@@ -69,7 +69,7 @@ export class ApplicationsService {
     ).all();
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const app = await this.prisma.db.orm.public.Application.select(
       "id",
       "jobId",
@@ -101,7 +101,7 @@ export class ApplicationsService {
         "department",
         "location",
       )
-        .where((j) => j.id.eq(app.jobId as number))
+        .where((j) => j.id.eq(app.jobId as string))
         .first();
     }
 
@@ -114,7 +114,7 @@ export class ApplicationsService {
   async create(dto: CreateApplicationDto, file?: Express.Multer.File) {
     if (dto.jobId) {
       const job = await this.prisma.db.orm.public.Job.select("id", "title")
-        .where((j) => j.id.eq(dto.jobId as number))
+        .where((j) => j.id.eq(dto.jobId as string))
         .first();
 
       if (!job) {
@@ -148,7 +148,7 @@ export class ApplicationsService {
         "id",
         "orderIndex",
       )
-        .where((a) => a.jobId.eq(dto.jobId as number))
+        .where((a) => a.jobId.eq(dto.jobId as string))
         .all();
 
       maxOrder = existingInStage.reduce(
@@ -157,7 +157,7 @@ export class ApplicationsService {
       );
     }
 
-    // 3. Save Application record in PostgreSQL via Prisma 8
+    // 3. Save Application record in PostgreSQL via Prisma
     const created = await this.prisma.db.orm.public.Application.upsert({
       create: {
         jobId: dto.jobId ?? null,
@@ -173,13 +173,13 @@ export class ApplicationsService {
         orderIndex: maxOrder + 1,
       },
       update: {},
-      conflictOn: { id: 0 },
+      conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
     });
 
     return created;
   }
 
-  async updateStage(id: number, dto: UpdateStageDto) {
+  async updateStage(id: string, dto: UpdateStageDto) {
     await this.findOne(id);
 
     const updated = await this.prisma.db.orm.public.Application.where(
@@ -192,7 +192,7 @@ export class ApplicationsService {
     return updated;
   }
 
-  async updateCandidate(id: number, dto: UpdateCandidateDto) {
+  async updateCandidate(id: string, dto: UpdateCandidateDto) {
     const existing = await this.findOne(id);
 
     const updatePayload: Record<string, any> = {};
@@ -222,7 +222,7 @@ export class ApplicationsService {
     return this.findOne(id);
   }
 
-  async uploadDocument(id: number, file: Express.Multer.File) {
+  async uploadDocument(id: string, file: Express.Multer.File) {
     await this.findOne(id);
 
     if (!file) {
@@ -257,7 +257,7 @@ export class ApplicationsService {
     return this.findOne(id);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const app = await this.findOne(id);
 
     // Check if candidate has other records

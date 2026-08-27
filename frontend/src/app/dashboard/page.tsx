@@ -39,7 +39,7 @@ function DashboardContent() {
   const createJobMutation = useCreateJobMutation();
 
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const loading = jobsLoading || appsLoading;
   const activeJob =
@@ -53,13 +53,11 @@ function DashboardContent() {
     applications.map((a) => (a.candidateEmail || a.candidateName).toLowerCase().trim()),
   ).size;
   const totalApplicationsCount = applications.filter(
-    (a) => a.jobId !== null && a.jobId !== undefined && Number(a.jobId) > 0,
+    (a) => Boolean(a.jobId && String(a.jobId).trim() !== ""),
   ).length;
   const toReviewCount = applications.filter(
     (a) =>
-      a.jobId !== null &&
-      a.jobId !== undefined &&
-      Number(a.jobId) > 0 &&
+      Boolean(a.jobId && String(a.jobId).trim() !== "") &&
       a.stage === "APPLIED",
   ).length;
 
@@ -94,7 +92,7 @@ function DashboardContent() {
 
   // Recent applications (only active job applications) sorted by createdAt descending
   const recentApplications = applications
-    .filter((a) => a.jobId !== null && a.jobId !== undefined && Number(a.jobId) > 0)
+    .filter((a) => Boolean(a.jobId && String(a.jobId).trim() !== ""))
     .sort(
       (a, b) =>
         new Date(b.createdAt || 0).getTime() -

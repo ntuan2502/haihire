@@ -30,7 +30,7 @@ function JobsPageContent() {
   const createJobMutation = useCreateJobMutation();
   const deleteJobMutation = useDeleteJobMutation();
 
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
 
@@ -54,7 +54,7 @@ function JobsPageContent() {
     }
   };
 
-  const handleJobDeleted = (id: number) => {
+  const handleJobDeleted = (id: string) => {
     deleteJobMutation.mutate(id);
     if (selectedJobId === id) {
       const remaining = jobs.filter((j) => j.id !== id);
@@ -89,7 +89,7 @@ function JobsPageContent() {
               jobs={jobs}
               applications={applications}
               loading={jobsLoading}
-              onViewCandidates={(jobId: number) => {
+              onViewCandidates={(jobId: string) => {
                 setSelectedJobId(jobId);
                 router.push(`/dashboard/candidates?jobId=${jobId}`);
               }}

@@ -9,7 +9,7 @@ interface ApplyToJobModalProps {
   isOpen: boolean;
   onClose: () => void;
   candidate: {
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone?: string;
@@ -27,8 +27,8 @@ export function ApplyToJobModal({
   jobs,
   existingApplications,
 }: ApplyToJobModalProps) {
-  const [submittingJobId, setSubmittingJobId] = useState<number | null>(null);
-  const [successJobId, setSuccessJobId] = useState<number | null>(null);
+  const [submittingJobId, setSubmittingJobId] = useState<string | null>(null);
+  const [successJobId, setSuccessJobId] = useState<string | null>(null);
   const createApplicationMutation = useCreateApplicationMutation();
 
   if (!isOpen || !candidate) return null;

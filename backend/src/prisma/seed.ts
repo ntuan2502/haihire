@@ -53,7 +53,7 @@ async function runSeed(): Promise<void> {
       role: singleDemoUser.role,
       organizationId: null,
     },
-    conflictOn: { email: singleDemoUser.email },
+    conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
   });
 
   console.log("Database reset & single user seed completed!");
@@ -65,4 +65,16 @@ export function seed(): Promise<void> {
     throw error;
   });
   return pendingSeed;
+}
+
+if (process.argv[1] && process.argv[1].includes("seed")) {
+  seed()
+    .then(() => {
+      console.log("Seed script finished successfully.");
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Seed failed:", err);
+      process.exit(1);
+    });
 }

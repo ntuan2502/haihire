@@ -33,10 +33,10 @@ interface JobListProps {
   jobs: Job[];
   applications?: Application[];
   loading: boolean;
-  onViewCandidates: (jobId: number) => void;
+  onViewCandidates: (jobId: string) => void;
   onApply: (job: Job) => void;
   onOpenCreateJob: () => void;
-  onDeleteJob: (jobId: number) => void;
+  onDeleteJob: (jobId: string) => void;
 }
 
 export function JobList({
@@ -130,7 +130,7 @@ export function JobList({
   }, [jobs, search, statusFilters, typeFilters, sortBy, sortOrder]);
 
   // Stage count helper for a job
-  const getJobStageCounts = (jobId: number) => {
+  const getJobStageCounts = (jobId: string) => {
     const jobApps = applications.filter((a) => a.jobId === jobId);
     return {
       new: jobApps.filter((a) => a.stage === "APPLIED").length,

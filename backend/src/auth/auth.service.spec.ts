@@ -13,7 +13,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
 
   const mockUsers = [
     {
-      id: 1,
+      id: "usr-1",
       email: "hr@tun.io.vn",
       name: "HR Lead / Recruiter",
       password: hashedPassword,
@@ -23,7 +23,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       createdAt: new Date(),
     },
     {
-      id: 2,
+      id: "usr-2",
       email: "admin@tun.io.vn",
       name: "Talent Acquisition Admin",
       password: hashedPassword,
@@ -33,7 +33,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       createdAt: new Date(),
     },
     {
-      id: 3,
+      id: "usr-3",
       email: "interviewer@tun.io.vn",
       name: "Technical Interviewer",
       password: hashedPassword,
@@ -43,7 +43,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       createdAt: new Date(),
     },
     {
-      id: 4,
+      id: "usr-4",
       email: "candidate@gmail.com",
       name: "John Doe Candidate",
       password: hashedPassword,
@@ -69,7 +69,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
                           eq: (target: string) =>
                             u.email.toLowerCase() === target.toLowerCase(),
                         },
-                        id: { eq: (target: number) => u.id === target },
+                        id: { eq: (target: string) => u.id === target },
                       };
                       return predicateFn(mockRecord);
                     });
@@ -119,7 +119,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       "mocked-jwt-access-token-tun-io-vn",
     );
     expect(result.user).toEqual({
-      id: 1,
+      id: "usr-1",
       email: "hr@tun.io.vn",
       name: "HR Lead / Recruiter",
       role: "HR",
@@ -129,7 +129,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       createdAt: expect.any(Date),
     });
     expect(mockJwtService.sign).toHaveBeenCalledWith({
-      sub: 1,
+      sub: "usr-1",
       email: "hr@tun.io.vn",
       role: "HR",
     });
@@ -183,9 +183,9 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
   });
 
   it("7. Should retrieve sanitized profile with getProfile(userId)", async () => {
-    const profile = await authService.getProfile(1);
+    const profile = await authService.getProfile("usr-1");
     expect(profile).toEqual({
-      id: 1,
+      id: "usr-1",
       email: "hr@tun.io.vn",
       name: "HR Lead / Recruiter",
       role: "HR",

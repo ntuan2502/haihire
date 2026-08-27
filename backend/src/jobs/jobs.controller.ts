@@ -5,7 +5,6 @@ import {
   Get,
   Inject,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -32,12 +31,12 @@ export class JobsController {
       status,
       department,
       search,
-      organizationId: organizationId ? parseInt(organizationId, 10) : undefined,
+      organizationId: organizationId || undefined,
     });
   }
 
   @Get(":id")
-  findOne(@Param("id", ParseIntPipe) id: number) {
+  findOne(@Param("id") id: string) {
     return this.jobsService.findOne(id);
   }
 
@@ -47,12 +46,12 @@ export class JobsController {
   }
 
   @Patch(":id")
-  update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdateJobDto) {
+  update(@Param("id") id: string, @Body() dto: UpdateJobDto) {
     return this.jobsService.update(id, dto);
   }
 
   @Delete(":id")
-  remove(@Param("id", ParseIntPipe) id: number) {
+  remove(@Param("id") id: string) {
     return this.jobsService.remove(id);
   }
 }

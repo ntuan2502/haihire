@@ -98,13 +98,13 @@ function ApplicationsPageContent() {
   // Only consider records with valid jobId as active job applications
   const applications = useMemo(() => {
     return rawApplications.filter(
-      (a) => a.jobId !== null && a.jobId !== undefined && Number(a.jobId) > 0,
+      (a) => Boolean(a.jobId && String(a.jobId).trim() !== ""),
     );
   }, [rawApplications]);
 
   // Create Job Map for Fast Lookup
   const jobMap = useMemo(() => {
-    const map = new Map<number, (typeof jobs)[0]>();
+    const map = new Map<string, (typeof jobs)[0]>();
     jobs.forEach((j) => map.set(j.id, j));
     return map;
   }, [jobs]);

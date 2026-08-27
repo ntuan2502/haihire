@@ -14,7 +14,7 @@ export class JobsService {
     status?: string;
     department?: string;
     search?: string;
-    organizationId?: number;
+    organizationId?: string;
   }) {
     const jobs = await this.prisma.db.orm.public.Job.select(
       "id",
@@ -40,7 +40,7 @@ export class JobsService {
     ).all();
 
     const appCountMap = new Map<
-      number,
+      string,
       { total: number; byStage: Record<string, number> }
     >();
     for (const app of allApps) {
@@ -84,7 +84,7 @@ export class JobsService {
     return result;
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const job = await this.prisma.db.orm.public.Job.select(
       "id",
       "title",
@@ -148,13 +148,13 @@ export class JobsService {
         createdById: dto.createdById ?? null,
       },
       update: {},
-      conflictOn: { id: 0 },
+      conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
     });
 
     return created;
   }
 
-  async update(id: number, dto: UpdateJobDto) {
+  async update(id: string, dto: UpdateJobDto) {
     await this.findOne(id);
 
     const updated = await this.prisma.db.orm.public.Job.where((j) =>
@@ -177,7 +177,7 @@ export class JobsService {
     return updated;
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     await this.findOne(id);
 
     // Delete associated applications first

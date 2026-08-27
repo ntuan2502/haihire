@@ -40,7 +40,6 @@ function ApplicationDetailPageContent() {
   const router = useRouter();
   const { user } = useAuth();
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const appId = Number(appIdStr);
 
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
@@ -58,9 +57,7 @@ function ApplicationDetailPageContent() {
 
   const loading = jobsLoading || appsLoading;
 
-  const app = applications.find(
-    (a) => String(a.id) === appIdStr || a.id === appId,
-  );
+  const app = applications.find((a) => String(a.id) === String(appIdStr));
   const job = jobs.find((j) => j.id === app?.jobId);
 
   const handleStageChange = async (newStage: ApplicationStage) => {

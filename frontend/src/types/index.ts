@@ -18,7 +18,7 @@ export type ApplicationStage =
   | "REJECTED";
 
 export interface Organization {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   inviteCode: string;
@@ -26,18 +26,18 @@ export interface Organization {
 }
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
   role: Role;
   avatarUrl?: string | null;
-  organizationId?: number | null;
+  organizationId?: string | null;
   organization?: Organization | null;
   createdAt: string;
 }
 
 export interface Job {
-  id: number;
+  id: string;
   title: string;
   department: string;
   location: string;
@@ -46,8 +46,8 @@ export interface Job {
   requirements?: string | null;
   salaryRange?: string | null;
   status: JobStatus;
-  createdById?: number | null;
-  organizationId?: number | null;
+  createdById?: string | null;
+  organizationId?: string | null;
   organization?: Organization | null;
   createdAt: string;
   updatedAt: string;
@@ -57,8 +57,8 @@ export interface Job {
 }
 
 export interface Application {
-  id: number;
-  jobId?: number | null;
+  id: string;
+  jobId?: string | null;
   candidateName: string;
   candidateEmail: string;
   candidatePhone?: string | null;
@@ -83,15 +83,15 @@ export interface CreateJobInput {
   requirements?: string;
   salaryRange?: string;
   status?: JobStatus;
-  organizationId?: number | null;
-  createdById?: number | null;
+  organizationId?: string | null;
+  createdById?: string | null;
 }
 
 export interface CreateApplicationInput {
-  jobId: number;
+  jobId?: string | null;
   candidateName: string;
   candidateEmail: string;
   candidatePhone?: string;
   notes?: string;
-  resume: File;
+  resume?: File;
 }

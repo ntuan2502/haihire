@@ -5,7 +5,6 @@ import {
   Get,
   Inject,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UploadedFile,
@@ -30,12 +29,12 @@ export class ApplicationsController {
   }
 
   @Get("job/:jobId")
-  findByJob(@Param("jobId", ParseIntPipe) jobId: number) {
+  findByJob(@Param("jobId") jobId: string) {
     return this.applicationsService.findByJob(jobId);
   }
 
   @Get(":id")
-  findOne(@Param("id", ParseIntPipe) id: number) {
+  findOne(@Param("id") id: string) {
     return this.applicationsService.findOne(id);
   }
 
@@ -54,7 +53,7 @@ export class ApplicationsController {
 
   @Patch(":id/stage")
   updateStage(
-    @Param("id", ParseIntPipe) id: number,
+    @Param("id") id: string,
     @Body() dto: UpdateStageDto,
   ) {
     return this.applicationsService.updateStage(id, dto);
@@ -62,7 +61,7 @@ export class ApplicationsController {
 
   @Patch(":id")
   updateCandidate(
-    @Param("id", ParseIntPipe) id: number,
+    @Param("id") id: string,
     @Body() dto: UpdateCandidateDto,
   ) {
     return this.applicationsService.updateCandidate(id, dto);
@@ -75,14 +74,14 @@ export class ApplicationsController {
     }),
   )
   uploadDocument(
-    @Param("id", ParseIntPipe) id: number,
+    @Param("id") id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.applicationsService.uploadDocument(id, file);
   }
 
   @Delete(":id")
-  remove(@Param("id", ParseIntPipe) id: number) {
+  remove(@Param("id") id: string) {
     return this.applicationsService.remove(id);
   }
 }

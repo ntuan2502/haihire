@@ -49,8 +49,8 @@ export class CreateJobDto {
   status?: JobStatus;
 
   @IsOptional()
-  organizationId?: number | null;
+  organizationId?: string | null;
 
   @IsOptional()
-  createdById?: number | null;
+  createdById?: string | null;
 }

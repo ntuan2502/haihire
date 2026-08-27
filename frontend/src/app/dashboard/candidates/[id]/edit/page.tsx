@@ -21,7 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { parseCandidateNotes } from "@/lib/utils";
+import {
+  parseCandidateNotes,
+  normalizeDateForInput,
+  isValidUuid,
+} from "@/lib/utils";
 
 function EditCandidatePageContent() {
   const params = useParams();
@@ -33,13 +37,11 @@ function EditCandidatePageContent() {
   const { data: applications = [], isLoading: loadingApps } = useAllApplications();
   const updateCandidateMutation = useUpdateCandidateMutation();
 
-  // Find candidate by application ID or candidate email
-  const primaryApp = applications.find((a) => {
-    if (String(a.id) === rawId) return true;
-    if (decodeURIComponent(rawId || "").toLowerCase() === a.candidateEmail.toLowerCase())
-      return true;
-    return false;
-  });
+  // Strict UUID validation — edit candidate URL MUST be a valid UUID
+  const isCandidateIdValid = isValidUuid(rawId);
+  const primaryApp = isCandidateIdValid
+    ? applications.find((a) => String(a.id) === String(rawId))
+    : undefined;
 
   // Form States
   const [firstName, setFirstName] = useState("");
@@ -74,7 +76,7 @@ function EditCandidatePageContent() {
         setGender(parsed.gender);
       }
       if (parsed.dob && parsed.dob !== "—") {
-        setDateOfBirth(parsed.dob);
+        setDateOfBirth(normalizeDateForInput(parsed.dob));
       }
       setIsInitialized(true);
     }
@@ -132,7 +134,8 @@ function EditCandidatePageContent() {
         },
       });
 
-      router.push(`/dashboard/candidates/${encodeURIComponent(email.trim())}`);
+      // Navigate back to Candidate Detail using UUID
+      router.push(`/dashboard/candidates/${primaryApp.id}`);
     } catch (err: unknown) {
       console.error("Failed to update candidate:", err);
       const maybeAxios = err as { response?: { data?: { message?: string } } };
@@ -145,7 +148,7 @@ function EditCandidatePageContent() {
     }
   };
 
-  if (loadingApps && !isInitialized) {
+  if (loadingApps && !isInitialized && isCandidateIdValid) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <Navbar
@@ -162,7 +165,7 @@ function EditCandidatePageContent() {
     );
   }
 
-  if (!primaryApp && !loadingApps) {
+  if ((!isCandidateIdValid || !primaryApp) && !loadingApps) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <Navbar
@@ -172,20 +175,27 @@ function EditCandidatePageContent() {
           jobsCount={jobs.length}
           candidatesCount={applications.length}
         />
-        <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-12 text-center space-y-4">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-            Candidate not found
+        <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-16 text-center space-y-4">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
+            <span className="text-lg font-black">404</span>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            Candidate Not Found
           </h2>
-          <p className="text-xs text-slate-500">
-            The candidate you are trying to edit does not exist or has been removed.
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            {!isCandidateIdValid
+              ? "The candidate ID provided is invalid. A valid UUID is required."
+              : "The candidate you are trying to edit does not exist or has been removed."}
           </p>
-          <Button
-            onClick={() => router.push("/dashboard/candidates")}
-            variant="outline"
-            className="text-xs"
-          >
-            Back to Candidates
-          </Button>
+          <div className="pt-2">
+            <Button
+              onClick={() => router.push("/dashboard/candidates")}
+              variant="outline"
+              className="text-xs font-semibold rounded-xl"
+            >
+              Back to Candidates
+            </Button>
+          </div>
         </main>
       </div>
     );
@@ -209,17 +219,17 @@ function EditCandidatePageContent() {
           <Link
             href={
               primaryApp
-                ? `/dashboard/candidates/${encodeURIComponent(primaryApp.candidateEmail)}`
+                ? `/dashboard/candidates/${primaryApp.id}`
                 : "/dashboard/candidates"
             }
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Candidates</span>
+            <span>Back to Candidate</span>
           </Link>
         </div>
 
-        {/* Heading matching Screenshot 1 */}
+        {/* Heading */}
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Edit Candidate
@@ -335,14 +345,13 @@ function EditCandidatePageContent() {
               </Select>
             </div>
 
-            {/* Date of Birth */}
+            {/* Date of Birth (Calendar date picker) */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Date of Birth
               </label>
               <Input
-                type="text"
-                placeholder="e.g. 06/23/1994"
+                type="date"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
                 className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -350,7 +359,7 @@ function EditCandidatePageContent() {
             </div>
           </div>
 
-          {/* Form Actions matching Screenshot 1 */}
+          {/* Form Actions */}
           <div className="flex items-center gap-3 pt-3">
             <Button
               type="submit"
@@ -367,7 +376,7 @@ function EditCandidatePageContent() {
               onClick={() =>
                 router.push(
                   primaryApp
-                    ? `/dashboard/candidates/${encodeURIComponent(primaryApp.candidateEmail)}`
+                    ? `/dashboard/candidates/${primaryApp.id}`
                     : "/dashboard/candidates",
                 )
               }

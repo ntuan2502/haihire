@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ApplicationStage } from "@/types";
-import { getInitials, formatDate } from "@/lib/utils";
+import { getInitials, formatDate, isValidUuid } from "@/lib/utils";
 
 function ApplicationDetailPageContent() {
   const params = useParams();
@@ -57,7 +57,10 @@ function ApplicationDetailPageContent() {
 
   const loading = jobsLoading || appsLoading;
 
-  const app = applications.find((a) => String(a.id) === String(appIdStr));
+  const isAppIdValid = isValidUuid(appIdStr);
+  const app = isAppIdValid
+    ? applications.find((a) => String(a.id) === String(appIdStr))
+    : undefined;
   const job = jobs.find((j) => j.id === app?.jobId);
 
   const handleStageChange = async (newStage: ApplicationStage) => {
@@ -102,7 +105,7 @@ function ApplicationDetailPageContent() {
     );
   }
 
-  if (!app && !loading) {
+  if ((!isAppIdValid || !app) && !loading) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <Navbar
@@ -112,20 +115,27 @@ function ApplicationDetailPageContent() {
           jobsCount={jobs.length}
           candidatesCount={applications.length}
         />
-        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-12 text-center space-y-4">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-            Application not found
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-16 text-center space-y-4">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
+            <span className="text-lg font-black">404</span>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            Application Not Found
           </h2>
-          <p className="text-xs text-slate-500">
-            The application you are looking for does not exist or has been removed.
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            {!isAppIdValid
+              ? "The application ID provided is invalid. A valid UUID is required."
+              : "The application you are looking for does not exist or has been removed."}
           </p>
-          <Button
-            onClick={() => router.push("/dashboard/applications")}
-            variant="outline"
-            className="text-xs"
-          >
-            Back to Applications
-          </Button>
+          <div className="pt-2">
+            <Button
+              onClick={() => router.push("/dashboard/applications")}
+              variant="outline"
+              className="text-xs font-semibold rounded-xl"
+            >
+              Back to Applications
+            </Button>
+          </div>
         </main>
       </div>
     );

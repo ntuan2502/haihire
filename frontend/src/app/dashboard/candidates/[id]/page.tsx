@@ -37,7 +37,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatDate, formatFileSize, parseCandidateNotes } from "@/lib/utils";
+import {
+  formatDate,
+  formatFileSize,
+  parseCandidateNotes,
+  isValidUuid,
+} from "@/lib/utils";
 
 function CandidateDetailPageContent() {
   const params = useParams();
@@ -65,13 +70,11 @@ function CandidateDetailPageContent() {
 
   const loading = jobsLoading || appsLoading;
 
-  // Find candidate application by ID or email
-  const primaryApp = applications.find(
-    (a) =>
-      String(a.id) === String(candidateIdStr) ||
-      decodeURIComponent(candidateIdStr || "").toLowerCase() ===
-        a.candidateEmail.toLowerCase(),
-  );
+  // Strict UUID validation — candidate URL MUST be a valid UUID
+  const isCandidateIdValid = isValidUuid(candidateIdStr);
+  const primaryApp = isCandidateIdValid
+    ? applications.find((a) => String(a.id) === String(candidateIdStr))
+    : undefined;
 
   // Find all applications belonging to this candidate email/name
   const candidateApps = primaryApp
@@ -84,8 +87,6 @@ function CandidateDetailPageContent() {
     : [];
 
   const { gender, dob } = parseCandidateNotes(primaryApp?.notes);
-
-
 
   if (loading) {
     return (
@@ -104,7 +105,7 @@ function CandidateDetailPageContent() {
     );
   }
 
-  if (!primaryApp && !loading) {
+  if ((!isCandidateIdValid || !primaryApp) && !loading) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <Navbar
@@ -114,20 +115,27 @@ function CandidateDetailPageContent() {
           jobsCount={jobs.length}
           candidatesCount={applications.length}
         />
-        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-12 text-center space-y-4">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
-            Candidate not found
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-16 text-center space-y-4">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
+            <span className="text-lg font-black">404</span>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            Candidate Not Found
           </h2>
-          <p className="text-xs text-slate-500">
-            The candidate you are looking for does not exist or has been removed.
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            {!isCandidateIdValid
+              ? "The candidate ID provided is invalid. A valid UUID is required."
+              : "The candidate you are looking for does not exist or has been removed."}
           </p>
-          <Button
-            onClick={() => router.push("/dashboard/candidates")}
-            variant="outline"
-            className="text-xs"
-          >
-            Back to Candidates
-          </Button>
+          <div className="pt-2">
+            <Button
+              onClick={() => router.push("/dashboard/candidates")}
+              variant="outline"
+              className="text-xs font-semibold rounded-xl"
+            >
+              Back to Candidates
+            </Button>
+          </div>
         </main>
       </div>
     );
@@ -227,7 +235,7 @@ function CandidateDetailPageContent() {
               type="button"
               onClick={() =>
                 router.push(
-                  `/dashboard/candidates/${primaryApp?.candidateEmail ? encodeURIComponent(primaryApp.candidateEmail) : candidateIdStr}/edit`,
+                  `/dashboard/candidates/${primaryApp?.id || candidateIdStr}/edit`,
                 )
               }
               className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"

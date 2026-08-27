@@ -97,6 +97,37 @@ export function parseCandidateNotes(notes?: string | null): {
 }
 
 /**
+ * Normalize date string to YYYY-MM-DD for HTML5 date picker input
+ */
+export function normalizeDateForInput(dateStr?: string | null): string {
+  if (!dateStr || dateStr === "—" || dateStr.trim() === "") return "";
+  const trimmed = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const parts = trimmed.split("/");
+  if (parts.length === 3 && parts[2].length === 4) {
+    const mm = parts[0].padStart(2, "0");
+    const dd = parts[1].padStart(2, "0");
+    const yyyy = parts[2];
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().split("T")[0];
+  }
+  return "";
+}
+
+/**
+ * Validate if a string is a valid UUID format (8-4-4-4-12 hexadecimal)
+ */
+export function isValidUuid(id?: string | null): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id.trim(),
+  );
+}
+
+/**
  * Get unified stage metadata (label, dot color, badge styles)
  */
 export function getStageInfo(stage?: ApplicationStage | string | null): {

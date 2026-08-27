@@ -8,6 +8,7 @@
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "strict": true,
+    "strictPropertyInitialization": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -15,8 +16,9 @@
     "experimentalDecorators": true,
     "outDir": "dist",
     "types": [
-      "node"
+      "node",
+      "multer"
     ]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "*.ts"]
 }

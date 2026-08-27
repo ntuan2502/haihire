@@ -1,12 +1,9 @@
-import { Inject, Injectable } from "@nestjs/common";
-
-import { PrismaService } from "./prisma.service";
+import { Injectable } from "@nestjs/common";
+import { listUsers } from "./prisma/users";
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
-
   async findAll() {
-    return this.prisma.listUsers(10);
+    return listUsers(10);
   }
 }

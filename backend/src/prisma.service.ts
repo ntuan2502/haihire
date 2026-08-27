@@ -1,11 +1,16 @@
 import { Injectable } from "@nestjs/common";
-import { db, listUsers, type StarterUser } from "./prisma/users";
+import type { OnModuleInit } from "@nestjs/common";
+import { connectDatabase, db } from "./prisma/db";
 
 @Injectable()
-export class PrismaService {
+export class PrismaService implements OnModuleInit {
   readonly db = db;
 
-  listUsers(limit = 10): Promise<StarterUser[]> {
-    return listUsers(limit);
+  async onModuleInit() {
+    try {
+      await connectDatabase();
+    } catch (error: any) {
+      console.warn("Database connection pending or initializing...", error?.message ?? error);
+    }
   }
 }

@@ -32,6 +32,7 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import type { ApplicationStage } from "@/types";
 import {
   getInitials,
@@ -59,6 +60,7 @@ function ApplicationDetailPageContent() {
   const [noteInput, setNoteInput] = useState("");
   const [notesList, setNotesList] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const loading = jobsLoading || appsLoading;
 
@@ -80,15 +82,16 @@ function ApplicationDetailPageContent() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleConfirmDelete = async () => {
     if (!app) return;
-    if (!confirm("Are you sure you want to delete this application?")) return;
     try {
       setIsDeleting(true);
       await deleteAppMutation.mutateAsync(app.id);
+      setIsDeleteModalOpen(false);
       router.push("/dashboard/applications");
     } catch (err) {
       console.error("Failed to delete application:", err);
+    } finally {
       setIsDeleting(false);
     }
   };
@@ -238,7 +241,7 @@ function ApplicationDetailPageContent() {
             <button
               type="button"
               disabled={isDeleting}
-              onClick={handleDelete}
+              onClick={() => setIsDeleteModalOpen(true)}
               className="h-8 px-3 rounded-xl border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -506,6 +509,18 @@ function ApplicationDetailPageContent() {
           </div>
         </div>
       </main>
+
+      {/* Delete Application Confirmation Modal */}
+      {app && (
+        <DeleteApplicationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          candidateName={getCandidateDisplayName(app)}
+          jobTitle={jobTitle}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
+import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ import {
   formatRelativeTime,
   formatDate,
   getStageInfo,
+  getCandidateDisplayName,
 } from "@/lib/utils";
 
 type SortField = "candidate" | "email" | "job" | "status" | "score" | "applied";
@@ -79,10 +81,27 @@ function ApplicationsPageContent() {
 
   // Selected Application for Right Slide-over Sidebar Drawer
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [deleteModalApp, setDeleteModalApp] = useState<Application | null>(null);
   const [drawerTab, setDrawerTab] = useState<string>("overview");
   const [drawerNoteInput, setDrawerNoteInput] = useState("");
   const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModalApp) return;
+    try {
+      setIsDeleting(true);
+      await deleteAppMutation.mutateAsync(deleteModalApp.id);
+      if (selectedApp?.id === deleteModalApp.id) {
+        setSelectedApp(null);
+      }
+      setDeleteModalApp(null);
+    } catch (err) {
+      console.error("Failed to delete application:", err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Sorting State
   const [sortField, setSortField] = useState<SortField>("applied");
@@ -182,20 +201,6 @@ function ApplicationsPageContent() {
       setSelectedApp((prev) => (prev ? { ...prev, stage: newStage } : null));
     } catch (err) {
       console.error("Failed to update stage:", err);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!selectedApp) return;
-    if (!confirm("Are you sure you want to delete this application?")) return;
-    try {
-      setIsDeleting(true);
-      await deleteAppMutation.mutateAsync(selectedApp.id);
-      setSelectedApp(null);
-    } catch (err) {
-      console.error("Failed to delete application:", err);
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -581,7 +586,7 @@ function ApplicationsPageContent() {
 
           {/* Slide-over Panel */}
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
+            <div className="w-screen max-w-2xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
               <div className="p-6 space-y-5 flex-1">
                 {/* Drawer Top Bar */}
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -611,12 +616,13 @@ function ApplicationsPageContent() {
                 </div>
 
                 {/* Stage Action Pipeline Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  {/* Left: Stage pipeline buttons */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
                       onClick={() => handleStageChange("SCREENING")}
-                      className={`h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs ${
+                      className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap ${
                         selectedApp.stage === "SCREENING"
                           ? "bg-purple-700 text-white ring-2 ring-purple-400"
                           : "bg-purple-600 hover:bg-purple-700 text-white"
@@ -629,7 +635,7 @@ function ApplicationsPageContent() {
                     <button
                       type="button"
                       onClick={() => handleStageChange("INTERVIEW")}
-                      className={`h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs ${
+                      className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap ${
                         selectedApp.stage === "INTERVIEW"
                           ? "bg-amber-700 text-white ring-2 ring-amber-400"
                           : "bg-amber-600 hover:bg-amber-700 text-white"
@@ -642,7 +648,7 @@ function ApplicationsPageContent() {
                     <button
                       type="button"
                       onClick={() => handleStageChange("REJECTED")}
-                      className={`h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs ${
+                      className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap ${
                         selectedApp.stage === "REJECTED"
                           ? "bg-rose-700 text-white ring-2 ring-rose-400"
                           : "bg-rose-600 hover:bg-rose-700 text-white"
@@ -653,22 +659,23 @@ function ApplicationsPageContent() {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Right: Quick actions */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
-                      className="h-7 px-2 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                      className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                     >
-                      <Calendar className="h-3 w-3 text-slate-400" />
+                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
                       <span>Schedule Interview</span>
                     </button>
 
                     <button
                       type="button"
                       disabled={isDeleting}
-                      onClick={handleDelete}
-                      className="h-7 px-2 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                      onClick={() => setDeleteModalApp(selectedApp)}
+                      className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                       <span>Delete application</span>
                     </button>
                   </div>
@@ -916,6 +923,28 @@ function ApplicationsPageContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Delete Application Confirmation Modal */}
+      {deleteModalApp && (
+        <DeleteApplicationModal
+          isOpen={Boolean(deleteModalApp)}
+          onClose={() => setDeleteModalApp(null)}
+          onConfirm={handleConfirmDelete}
+          candidateName={getCandidateDisplayName(deleteModalApp)}
+          jobTitle={
+            deleteModalApp.jobId && jobMap.get(deleteModalApp.jobId)
+              ? `${jobMap.get(deleteModalApp.jobId)!.title} (${
+                  jobMap.get(deleteModalApp.jobId)!.type === "FULL_TIME"
+                    ? "Full-Time"
+                    : jobMap.get(deleteModalApp.jobId)!.type === "PART_TIME"
+                      ? "Part-Time"
+                      : jobMap.get(deleteModalApp.jobId)!.type
+                })`
+              : "this position"
+          }
+          isDeleting={isDeleting}
+        />
       )}
 
       {/* Apply Modal */}

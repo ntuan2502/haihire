@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-08-27
 ---
 
 # Technical Decisions
@@ -15,3 +15,6 @@ updated: 2026-07-18
   - **Configuration**: Connection URL and ORM config live in `prisma.config.ts` via `definePrismaConfig` and `@prisma/orm-postgres/config`.
   - **Database Lifecycle**: Use `prisma db init`, `prisma db update`, `prisma db migrate` instead of legacy `prisma migrate dev`.
   - **Client Access**: Access models via namespace `db.orm.public.<Model>`.
+- **Shadcn UI Installation Convention**:
+  - **Official CLI**: Always initialize and add Shadcn components directly from the official Shadcn CLI (`pnpx shadcn@latest init`, `pnpx shadcn@latest add <component>`).
+  - **No Manual Components**: Never manually write/create Shadcn UI primitive files; always pull them directly from the official registry.

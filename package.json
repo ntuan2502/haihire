@@ -1,0 +1,12 @@
+{
+  "name": "ats-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter ./backend --filter ./frontend --parallel run dev",
+    "dev:backend": "pnpm --filter ./backend run dev",
+    "dev:frontend": "pnpm --filter ./frontend run dev",
+    "build": "pnpm --filter ./backend run build && pnpm --filter ./frontend run build",
+    "lint": "pnpm --filter ./backend run lint"
+  }
+}

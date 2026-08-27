@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Briefcase,
@@ -25,7 +25,6 @@ import {
   Clock,
   Radio,
   Bot,
-  Globe,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./theme-toggle";
@@ -51,8 +50,8 @@ export type NavTab =
   | "settings";
 
 interface NavbarProps {
-  activeTab: NavTab;
-  onTabChange: (tab: NavTab) => void;
+  activeTab?: NavTab;
+  onTabChange?: (tab: NavTab) => void;
   onOpenCreateJob: () => void;
   onOpenApplyModal?: () => void;
   jobsCount?: number;
@@ -60,16 +59,25 @@ interface NavbarProps {
 }
 
 export function Navbar({
-  activeTab,
+  activeTab = "dashboard",
   onTabChange,
   onOpenCreateJob,
-  onOpenApplyModal,
-  jobsCount = 0,
-  candidatesCount = 0,
+  onOpenApplyModal: _onOpenApplyModal,
+  jobsCount: _jobsCount = 0,
+  candidatesCount: _candidatesCount = 0,
 }: NavbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Derive active tab from URL pathname or prop
+  let currentTab: NavTab = activeTab;
+  if (pathname.startsWith("/dashboard/jobs")) currentTab = "jobs";
+  else if (pathname.startsWith("/dashboard/candidates")) currentTab = "candidates";
+  else if (pathname.startsWith("/dashboard/applications")) currentTab = "applications";
+  else if (pathname.startsWith("/dashboard/interviews")) currentTab = "interviews";
+  else if (pathname === "/dashboard") currentTab = "dashboard";
 
   const getUserInitials = (name?: string) => {
     if (!name) return "NA";
@@ -87,7 +95,9 @@ export function Navbar({
     { id: "candidates", label: "Candidates", icon: Users },
     { id: "applications", label: "Applications", icon: FileText },
     { id: "inbox", label: "Inbox", icon: Inbox },
+    { id: "interviews", label: "Interviews", icon: Calendar },
     { id: "assistant", label: "Assistant", icon: MessageSquare },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   // Locked features from the screenshot
@@ -97,8 +107,24 @@ export function Navbar({
     { label: "AI Analysis", icon: Bot },
   ];
 
+  const handleNavClick = (tab: NavTab) => {
+    if (tab === "jobs") {
+      router.push("/dashboard/jobs");
+    } else if (tab === "candidates") {
+      router.push("/dashboard/candidates");
+    } else if (tab === "applications") {
+      router.push("/dashboard/applications");
+    } else if (tab === "interviews") {
+      router.push("/dashboard/interviews");
+    } else if (tab === "dashboard") {
+      router.push("/dashboard");
+    } else {
+      onTabChange?.(tab);
+    }
+  };
+
   const handleMobileNavSelect = (tab: NavTab) => {
-    onTabChange(tab);
+    handleNavClick(tab);
     setMobileMenuOpen(false);
   };
 
@@ -126,12 +152,12 @@ export function Navbar({
             <nav className="hidden lg:flex items-center gap-0.5">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = activeTab === item.id;
+                const isActive = currentTab === item.id;
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => onTabChange(item.id)}
+                    onClick={() => handleNavClick(item.id)}
                     className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                       isActive
                         ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-bold"
@@ -150,46 +176,6 @@ export function Navbar({
                 );
               })}
 
-              {/* Interviews */}
-              <button
-                type="button"
-                onClick={() => onTabChange("interviews")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                  activeTab === "interviews"
-                    ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-bold"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <Calendar
-                  className={`h-3.5 w-3.5 ${
-                    activeTab === "interviews"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-slate-400"
-                  }`}
-                />
-                <span>Interviews</span>
-              </button>
-
-              {/* Settings */}
-              <button
-                type="button"
-                onClick={() => onTabChange("settings")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                  activeTab === "settings"
-                    ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-bold"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <Settings
-                  className={`h-3.5 w-3.5 ${
-                    activeTab === "settings"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-slate-400"
-                  }`}
-                />
-                <span>Settings</span>
-              </button>
-
               {/* More dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer">
@@ -198,13 +184,13 @@ export function Navbar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="min-w-[140px]">
                   <DropdownMenuItem
-                    onClick={() => onTabChange("dashboard")}
+                    onClick={() => router.push("/dashboard")}
                     className="text-xs cursor-pointer"
                   >
                     Analytics & Reports
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => onTabChange("candidates")}
+                    onClick={() => handleNavClick("candidates")}
                     className="text-xs cursor-pointer"
                   >
                     Talent Pools
@@ -222,10 +208,10 @@ export function Navbar({
 
           {/* Right: Upgrade, + New Job, Avatar, Theme, Mobile Hamburger */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Upgrade Button (Exact Purple Circle / Pill from screenshot) */}
+            {/* Upgrade Button (Purple Circle / Pill) */}
             <button
               type="button"
-              onClick={() => onTabChange("settings")}
+              onClick={() => handleNavClick("settings")}
               className="flex items-center justify-center h-8 w-8 sm:w-auto sm:px-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-xs transition-all cursor-pointer"
               title="Upgrade"
             >
@@ -316,7 +302,7 @@ export function Navbar({
               </Link>
             )}
 
-            {/* Mobile Hamburger / Close Button (Toggles between ☰ and ✕ exactly as in Screenshot 1 & 2) */}
+            {/* Mobile Hamburger / Close Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -333,7 +319,7 @@ export function Navbar({
         </div>
       </header>
 
-      {/* MOBILE TOP-DOWN DROPDOWN MENU (Xổ từ trên xuống) */}
+      {/* MOBILE TOP-DOWN DROPDOWN MENU */}
       {mobileMenuOpen && (
         <div className="fixed inset-x-0 top-14 bottom-0 z-40 lg:hidden">
           {/* Backdrop Overlay */}
@@ -348,7 +334,7 @@ export function Navbar({
             <div className="px-3 py-3 space-y-0.5">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = activeTab === item.id;
+                const isActive = currentTab === item.id;
                 return (
                   <button
                     key={item.id}
@@ -394,14 +380,14 @@ export function Navbar({
                 type="button"
                 onClick={() => handleMobileNavSelect("settings")}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${
-                  activeTab === "settings"
+                  currentTab === "settings"
                     ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
                     : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
                 }`}
               >
                 <Settings
                   className={`h-4 w-4 ${
-                    activeTab === "settings"
+                    currentTab === "settings"
                       ? "text-blue-600 dark:text-blue-400"
                       : "text-slate-500"
                   }`}

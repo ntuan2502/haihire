@@ -7,7 +7,7 @@
     "dev:backend": "pnpm --filter ./backend run dev",
     "dev:frontend": "pnpm --filter ./frontend run dev",
     "build": "pnpm --filter ./backend run build && pnpm --filter ./frontend run build",
-    "lint": "pnpm --filter ./backend run lint",
+    "lint": "pnpm --filter ./backend run lint && pnpm --filter ./frontend run lint",
     "test": "pnpm --filter ./backend run test"
   }
 }

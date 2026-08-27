@@ -11,6 +11,7 @@ import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { jobsApi, applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Job, Application } from "@/types";
+import { useRouter } from "next/navigation";
 import {
   Inbox,
   Calendar,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 function DashboardContent() {
+  const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -137,7 +139,7 @@ function DashboardContent() {
 
                   <div className="flex items-center gap-2.5">
                     <button
-                      onClick={() => setActiveTab("jobs")}
+                      onClick={() => router.push("/dashboard/jobs")}
                       className="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer shadow-xs"
                     >
                       View All Jobs ({jobs.length})
@@ -261,21 +263,31 @@ function DashboardContent() {
 
         {/* TAB 2: JOBS */}
         {activeTab === "jobs" && (
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <JobList
-              jobs={jobs}
-              loading={loading}
-              onViewCandidates={(jobId: number) => {
-                setSelectedJobId(jobId);
-                setActiveTab("candidates");
-              }}
-              onApply={(job: Job) => {
-                setSelectedJobId(job.id);
-                setApplyModalOpen(true);
-              }}
-              onOpenCreateJob={() => setCreateJobModalOpen(true)}
-              onDeleteJob={handleJobDeleted}
-            />
+          <div>
+            {jobs.length === 0 && !loading ? (
+              <StartRecruiting
+                onOpenCreateJob={() => setCreateJobModalOpen(true)}
+                onCreateTestJob={handleCreateTestJob}
+                onImportFromFile={() => setCreateJobModalOpen(true)}
+              />
+            ) : (
+              <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                <JobList
+                  jobs={jobs}
+                  loading={loading}
+                  onViewCandidates={(jobId: number) => {
+                    setSelectedJobId(jobId);
+                    setActiveTab("candidates");
+                  }}
+                  onApply={(job: Job) => {
+                    setSelectedJobId(job.id);
+                    setApplyModalOpen(true);
+                  }}
+                  onOpenCreateJob={() => setCreateJobModalOpen(true)}
+                  onDeleteJob={handleJobDeleted}
+                />
+              </div>
+            )}
           </div>
         )}
 

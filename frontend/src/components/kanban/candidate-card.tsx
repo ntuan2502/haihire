@@ -25,7 +25,6 @@ interface CandidateCardProps {
 
 export function CandidateCard({
   application,
-  onStageChange,
   onDelete,
 }: CandidateCardProps) {
   const {

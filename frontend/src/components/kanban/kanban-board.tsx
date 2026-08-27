@@ -227,6 +227,9 @@ export function KanbanBoard({
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
             <Briefcase className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             <span>Target Role:</span>
+            {loading && (
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+            )}
           </div>
 
           <div className="w-72">

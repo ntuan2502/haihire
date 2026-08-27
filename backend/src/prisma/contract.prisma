@@ -1,0 +1,78 @@
+// use prisma-next
+
+enum Role {
+  HR
+  ADMIN
+  INTERVIEWER
+  CANDIDATE
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  REMOTE
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStage {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  HIRED
+  REJECTED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  role      Role     @default(HR)
+  jobs      Job[]
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+}
+
+model Job {
+  id           Int           @id @default(autoincrement())
+  title        String
+  department   String
+  location     String
+  type         JobType       @default(FULL_TIME)
+  description  String
+  requirements String?
+  salaryRange  String?
+  status       JobStatus     @default(PUBLISHED)
+  createdById  Int?
+  createdBy    User?         @relation(fields: [createdById], references: [id])
+  applications Application[]
+  createdAt    DateTime      @default(now())
+  updatedAt    temporal.updatedAt()
+}
+
+model Application {
+  id             Int              @id @default(autoincrement())
+  jobId          Int
+  job            Job              @relation(fields: [jobId], references: [id])
+  candidateName  String
+  candidateEmail String
+  candidatePhone String?
+  stage          ApplicationStage @default(APPLIED)
+  resumeUrl      String
+  resumeFileName String
+  resumeFileSize Int?
+  resumeMimeType String?          @default("application/pdf")
+  notes          String?
+  orderIndex     Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      temporal.updatedAt()
+}

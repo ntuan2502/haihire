@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Briefcase,
@@ -16,8 +17,6 @@ import {
   Sparkles,
   Plus,
   LogOut,
-  Building2,
-  KeyRound,
   ShieldCheck,
   Menu,
   X,
@@ -25,20 +24,19 @@ import {
   Clock,
   Radio,
   Bot,
+  Moon,
+  Globe,
+  MessageSquareWarning,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { ThemeToggle } from "./theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { getInitials } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 
 export type NavTab =
   | "dashboard"
@@ -71,6 +69,19 @@ export function Navbar({
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted ? (resolvedTheme === "dark" || theme === "dark") : false;
+
+  const toggleDarkMode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTheme(isDark ? "light" : "dark");
+  };
 
   const handleCreateJobClick = () => {
     if (onOpenCreateJob) {
@@ -207,15 +218,15 @@ export function Navbar({
 
           {/* Right: Upgrade, + New Job, Avatar, Theme, Mobile Hamburger */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Upgrade Button (Purple Circle / Pill) */}
+            {/* Upgrade Button (Indigo pill with Sparkles) */}
             <button
               type="button"
               onClick={() => handleNavClick("settings")}
-              className="flex items-center justify-center h-8 w-8 sm:w-auto sm:px-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-xs transition-all cursor-pointer"
+              className="flex items-center justify-center h-8 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all cursor-pointer gap-1.5"
               title="Upgrade"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline ml-1.5 text-xs font-bold">
+              <span className="text-xs font-bold">
                 Upgrade
               </span>
             </button>
@@ -224,21 +235,17 @@ export function Navbar({
             <Button
               size="sm"
               onClick={handleCreateJobClick}
-              className="hidden sm:inline-flex h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 shadow-xs gap-1 cursor-pointer"
+              className="hidden sm:inline-flex h-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 shadow-xs gap-1.5 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
               New Job
             </Button>
 
-            <div className="hidden sm:block">
-              <ThemeToggle />
-            </div>
-
-            {/* User Profile Avatar */}
+            {/* User Profile Avatar with Dropdown matching Screenshot */}
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="flex items-center gap-1 rounded-full p-0.5 hover:ring-2 hover:ring-slate-300 dark:hover:ring-slate-700 transition-all cursor-pointer"
+                  className="flex items-center gap-1 rounded-full p-0.5 hover:ring-2 hover:ring-slate-200 dark:hover:ring-slate-800 transition-all cursor-pointer outline-none"
                   aria-label="User Profile"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-xs">
@@ -246,47 +253,104 @@ export function Navbar({
                   </div>
                   <ChevronDown className="h-3 w-3 text-slate-400 hidden sm:block" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[200px]">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="flex flex-col gap-0.5">
-                      <span className="font-bold text-xs">{user.name}</span>
-                      <span className="text-[10px] text-slate-500 font-normal">
-                        {user.email}
-                      </span>
-                      {user.organization && (
-                        <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800">
-                          <p className="text-[10px] uppercase font-bold text-slate-400">
-                            Organization
-                          </p>
-                          <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                            {user.organization.name}
-                          </p>
-                          <p className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
-                            <KeyRound className="h-2.5 w-2.5" /> Invite:{" "}
-                            {user.organization.inviteCode}
-                          </p>
-                        </div>
-                      )}
-                    </DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
+                <DropdownMenuContent
+                  align="end"
+                  className="w-64 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl space-y-1 z-50 text-slate-800 dark:text-slate-200"
+                >
+                  {/* 1. User Full Name & Email */}
+                  <div className="px-2 pt-1 pb-0.5">
+                    <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
+                      {user.name}
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5">
+                      {user.email}
+                    </span>
+                  </div>
+
+                  {/* 2. Organization Selector Box */}
+                  <div
                     onClick={() => router.push("/onboarding/create-org")}
-                    className="cursor-pointer gap-2 text-xs font-medium"
+                    className="w-full my-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
                   >
-                    <Building2 className="h-3.5 w-3.5" />
-                    {user.organization
-                      ? "Switch / Create Org"
-                      : "Setup Organization"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
+                      {user.organization?.name || "amt"}
+                    </span>
+                    <ChevronDown className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
+                  </div>
+
+                  {/* 3. Dark Mode Row */}
+                  <div
+                    onClick={toggleDarkMode}
+                    className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Moon className="h-4 w-4 text-slate-400" />
+                      <span>Dark mode</span>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-8 h-4.5 rounded-full transition-colors flex items-center p-0.5",
+                        isDark
+                          ? "bg-blue-600 justify-end"
+                          : "bg-slate-200 dark:bg-slate-700 justify-start",
+                      )}
+                    >
+                      <div className="w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform" />
+                    </div>
+                  </div>
+
+                  {/* 4. Language Row */}
+                  <div className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <Globe className="h-4 w-4 text-slate-400" />
+                      <span>Language</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
+                      us en <ChevronDown className="h-2.5 w-2.5 opacity-60" />
+                    </span>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                  {/* 5. Settings */}
+                  <div
+                    onClick={() => handleNavClick("settings")}
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
+                  >
+                    <Settings className="h-4 w-4 text-slate-400" />
+                    <span>Settings</span>
+                  </div>
+
+                  {/* 6. Updates & changelog */}
+                  <div
+                    onClick={() => {}}
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
+                  >
+                    <Sparkles className="h-4 w-4 text-slate-400" />
+                    <span>Updates & changelog</span>
+                  </div>
+
+                  {/* 7. Report issue */}
+                  <div
+                    onClick={() => {}}
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
+                  >
+                    <MessageSquareWarning className="h-4 w-4 text-slate-400" />
+                    <span>Report issue</span>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                  {/* 8. Sign out */}
+                  <div
                     onClick={logout}
-                    variant="destructive"
-                    className="cursor-pointer gap-2 text-xs font-semibold"
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer transition-colors"
                   >
-                    <LogOut className="h-3.5 w-3.5" />
-                    Sign Out
-                  </DropdownMenuItem>
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign out</span>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (

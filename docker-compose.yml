@@ -1,0 +1,133 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: ats-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ats_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ats_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ats_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ats-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ats_user} -d ${POSTGRES_DB:-ats_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # MinIO Object Storage (S3 Compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: ats-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - ats-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # MinIO Auto-Bucket Initialization Service (MinIO Client)
+  minio-create-bucket:
+    image: minio/mc:latest
+    container_name: ats-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - ats-network
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-ats-resumes}
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...';
+      /usr/bin/mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+      echo 'Creating default bucket: ' $${MINIO_BUCKET_NAME};
+      /usr/bin/mc mb myminio/$${MINIO_BUCKET_NAME} --ignore-existing;
+      echo 'Setting public download policy on bucket: ' $${MINIO_BUCKET_NAME};
+      /usr/bin/mc anonymous set download myminio/$${MINIO_BUCKET_NAME};
+      echo 'MinIO initialization complete.';
+      exit 0;
+      "
+
+  # NestJS Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ats-backend
+    restart: unless-stopped
+    environment:
+      PORT: ${BACKEND_PORT:-3001}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ats_user}:${POSTGRES_PASSWORD:-ats_password}@postgres:5432/${POSTGRES_DB:-ats_db}?schema=public
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-ats-resumes}
+      MINIO_PUBLIC_URL: http://localhost:9000
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-create-bucket:
+        condition: service_completed_successfully
+    networks:
+      - ats-network
+
+  # Next.js Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ats-frontend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
+      NEXT_PUBLIC_MINIO_URL: http://localhost:${MINIO_PORT:-9000}/${MINIO_BUCKET_NAME:-ats-resumes}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - ats-network
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  ats-network:
+    driver: bridge

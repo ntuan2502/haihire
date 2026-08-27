@@ -95,10 +95,10 @@ export function Navbar({
             className="flex items-center gap-2 mr-2 sm:mr-3 group"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs group-hover:scale-105 transition-transform">
-              <span className="font-black text-sm tracking-tighter">R</span>
+              <span className="font-black text-sm tracking-tighter">A</span>
             </div>
             <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight hidden sm:inline">
-              {user?.organization?.name || "Reqcore"}
+              {user?.organization?.name || "ATS"}
             </span>
           </Link>
 

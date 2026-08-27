@@ -47,7 +47,7 @@ export default function LoginPage() {
       if (!user.organizationId) {
         router.push("/onboarding/create-org");
       } else {
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch (err: unknown) {
       console.error(err);
@@ -90,11 +90,11 @@ export default function LoginPage() {
 
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
-              <span className="font-black text-xl tracking-tighter">R</span>
+              <span className="font-black text-xl tracking-tighter">A</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xl tracking-tight">Reqcore ATS</span>
+                <span className="font-bold text-xl tracking-tight">ATS</span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-blue-500/30">
                   <Sparkles className="h-2.5 w-2.5" /> Recruiter Portal
                 </span>
@@ -147,7 +147,7 @@ export default function LoginPage() {
 
         {/* Footer Note */}
         <div className="relative z-10 text-[11px] text-slate-500 border-t border-slate-800/80 pt-4">
-          Reqcore ATS &bull; Internal Hiring Team Workspace &bull; Domain @tun.io.vn
+          ATS &bull; Internal Hiring Team Workspace &bull; Domain @tun.io.vn
         </div>
       </div>
 
@@ -163,7 +163,7 @@ export default function LoginPage() {
               <ArrowLeft className="h-4 w-4" /> Public Job Board
             </Link>
             <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-              Reqcore ATS
+              ATS
             </span>
           </div>
 

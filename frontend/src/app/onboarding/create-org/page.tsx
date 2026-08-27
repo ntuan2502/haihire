@@ -3,23 +3,21 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { AuthGuard } from "@/components/auth-guard";
 import { api } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Link2,
   Search,
-  Building2,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
-  ArrowRight,
 } from "lucide-react";
 import type { Organization } from "@/types";
 
-export default function OnboardingCreateOrgPage() {
+function OnboardingContent() {
   const router = useRouter();
-  const { user, updateUserOrg, isAuthenticated, loading: authLoading } = useAuth();
+  const { updateUserOrg } = useAuth();
 
   // Mode: "create" | "join"
   const [mode, setMode] = useState<"create" | "join">("create");
@@ -39,20 +37,6 @@ export default function OnboardingCreateOrgPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  // Protect route
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  // If user already has organization, allow them to view or navigate to dashboard
-  useEffect(() => {
-    if (user?.organizationId && user.organization) {
-      // already has org
-    }
-  }, [user]);
 
   // Auto-generate slug from organization name
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +115,7 @@ export default function OnboardingCreateOrgPage() {
       setSuccessMsg(`Workspace for "${createdOrg.name}" successfully created!`);
 
       setTimeout(() => {
-        router.push("/");
+        router.push("/dashboard");
       }, 700);
     } catch (err: unknown) {
       console.error(err);
@@ -169,7 +153,7 @@ export default function OnboardingCreateOrgPage() {
       setSuccessMsg(`Successfully joined ${joinedOrg.name}!`);
 
       setTimeout(() => {
-        router.push("/");
+        router.push("/dashboard");
       }, 700);
     } catch (err: unknown) {
       console.error(err);
@@ -407,5 +391,13 @@ export default function OnboardingCreateOrgPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OnboardingCreateOrgPage() {
+  return (
+    <AuthGuard>
+      <OnboardingContent />
+    </AuthGuard>
   );
 }

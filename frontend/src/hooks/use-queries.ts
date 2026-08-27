@@ -104,6 +104,35 @@ export function useUpdateStageMutation() {
   });
 }
 
+export function useUpdateCandidateMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Parameters<typeof applicationsApi.updateCandidate>[1];
+    }) => applicationsApi.updateCandidate(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useUploadDocumentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) =>
+      applicationsApi.uploadDocument(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
 export function useDeleteApplicationMutation() {
   const queryClient = useQueryClient();
 

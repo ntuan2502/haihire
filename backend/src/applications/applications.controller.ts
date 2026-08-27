@@ -15,6 +15,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ApplicationsService } from "./applications.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
+import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -57,6 +58,27 @@ export class ApplicationsController {
     @Body() dto: UpdateStageDto,
   ) {
     return this.applicationsService.updateStage(id, dto);
+  }
+
+  @Patch(":id")
+  updateCandidate(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateCandidateDto,
+  ) {
+    return this.applicationsService.updateCandidate(id, dto);
+  }
+
+  @Post(":id/documents")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    }),
+  )
+  uploadDocument(
+    @Param("id", ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.applicationsService.uploadDocument(id, file);
   }
 
   @Delete(":id")

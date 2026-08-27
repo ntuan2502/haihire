@@ -84,6 +84,36 @@ export const applicationsApi = {
     return response.data;
   },
 
+  updateCandidate: async (
+    id: number,
+    data: {
+      candidateName?: string;
+      candidateEmail?: string;
+      candidatePhone?: string;
+      notes?: string;
+      resumeUrl?: string;
+      resumeFileName?: string;
+    },
+  ): Promise<Application> => {
+    const response = await api.patch<Application>(`/applications/${id}`, data);
+    return response.data;
+  },
+
+  uploadDocument: async (id: number, file: File): Promise<Application> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post<Application>(
+      `/applications/${id}/documents`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+    return response.data;
+  },
+
   delete: async (id: number): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/applications/${id}`);
     return response.data;

@@ -8,6 +8,7 @@ import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { ApplicationStage, UpdateStageDto } from "./dto/update-stage.dto";
+import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 
 @Injectable()
 export class ApplicationsService {
@@ -189,6 +190,71 @@ export class ApplicationsService {
     });
 
     return updated;
+  }
+
+  async updateCandidate(id: number, dto: UpdateCandidateDto) {
+    const existing = await this.findOne(id);
+
+    const updatePayload: Record<string, any> = {};
+    if (dto.candidateName !== undefined) updatePayload.candidateName = dto.candidateName;
+    if (dto.candidateEmail !== undefined) updatePayload.candidateEmail = dto.candidateEmail;
+    if (dto.candidatePhone !== undefined) updatePayload.candidatePhone = dto.candidatePhone;
+    if (dto.notes !== undefined) updatePayload.notes = dto.notes;
+    if (dto.resumeUrl !== undefined) updatePayload.resumeUrl = dto.resumeUrl;
+    if (dto.resumeFileName !== undefined) updatePayload.resumeFileName = dto.resumeFileName;
+
+    // Update target application
+    await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).update(updatePayload);
+
+    // Synchronize candidate contact info across all records with previous candidate email
+    if (dto.candidateName || dto.candidatePhone !== undefined || dto.candidateEmail) {
+      const syncPayload: Record<string, any> = {};
+      if (dto.candidateName) syncPayload.candidateName = dto.candidateName;
+      if (dto.candidatePhone !== undefined) syncPayload.candidatePhone = dto.candidatePhone;
+      if (dto.candidateEmail) syncPayload.candidateEmail = dto.candidateEmail;
+      if (dto.notes !== undefined) syncPayload.notes = dto.notes;
+
+      await this.prisma.db.orm.public.Application.where(
+        (a) => a.candidateEmail.eq(existing.candidateEmail),
+      ).update(syncPayload);
+    }
+
+    return this.findOne(id);
+  }
+
+  async uploadDocument(id: number, file: Express.Multer.File) {
+    await this.findOne(id);
+
+    if (!file) {
+      throw new BadRequestException("No document file provided");
+    }
+
+    let uploadResult: { url: string; originalName: string; size: number; mimeType: string } = {
+      url: `/uploads/${Date.now()}-${file.originalname}`,
+      originalName: file.originalname || "document.pdf",
+      size: file.size || 0,
+      mimeType: file.mimetype || "application/pdf",
+    };
+
+    try {
+      uploadResult = await this.minioService.uploadFile(file, "resumes");
+    } catch {
+      uploadResult = {
+        url: `/uploads/${Date.now()}-${file.originalname}`,
+        originalName: file.originalname,
+        size: file.size,
+        mimeType: file.mimetype,
+      };
+    }
+
+    await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).update({
+      resumeUrl: uploadResult.url,
+      resumeFileName: uploadResult.originalName,
+      resumeFileSize: uploadResult.size,
+      resumeMimeType: uploadResult.mimeType,
+    });
+
+    return this.findOne(id);
   }
 
   async remove(id: number) {

@@ -3,6 +3,7 @@
 import React from "react";
 import { Briefcase, Users, Plus, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
+import { ThemeToggle } from "./theme-toggle";
 
 interface NavbarProps {
   activeTab: "jobs" | "kanban";
@@ -22,7 +23,7 @@ export function Navbar({
   candidatesCount,
 }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/90">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/90 transition-colors duration-200">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-6">
@@ -49,7 +50,7 @@ export function Navbar({
           <nav className="hidden md:flex items-center rounded-lg bg-slate-100 p-1 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60">
             <button
               onClick={() => onTabChange("jobs")}
-              className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === "jobs"
                   ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -63,7 +64,7 @@ export function Navbar({
             </button>
             <button
               onClick={() => onTabChange("kanban")}
-              className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === "kanban"
                   ? "bg-white text-slate-900 shadow-xs dark:bg-slate-800 dark:text-white"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -78,7 +79,7 @@ export function Navbar({
           </nav>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons & Theme Switcher */}
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -97,6 +98,8 @@ export function Navbar({
             <Plus className="h-3.5 w-3.5" />
             Post New Job
           </Button>
+
+          <ThemeToggle />
         </div>
       </div>
     </header>

@@ -12,6 +12,10 @@
       "model": "Job",
       "namespace": "public"
     },
+    "organization": {
+      "model": "Organization",
+      "namespace": "public"
+    },
     "user": {
       "model": "User",
       "namespace": "public"
@@ -336,6 +340,13 @@
                   "kind": "scalar"
                 }
               },
+              "organizationId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "requirements": {
                 "nullable": true,
                 "type": {
@@ -421,6 +432,21 @@
                   "model": "User",
                   "namespace": "public"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -443,6 +469,9 @@
                 "location": {
                   "column": "location"
                 },
+                "organizationId": {
+                  "column": "organizationId"
+                },
                 "requirements": {
                   "column": "requirements"
                 },
@@ -464,6 +493,108 @@
               },
               "namespaceId": "public",
               "table": "job"
+            }
+          },
+          "Organization": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "inviteCode": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "slug": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "jobs": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "Job",
+                  "namespace": "public"
+                }
+              },
+              "users": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "inviteCode": {
+                  "column": "inviteCode"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "slug": {
+                  "column": "slug"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "organization"
             }
           },
           "User": {
@@ -500,6 +631,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -546,6 +684,21 @@
                   "model": "Job",
                   "namespace": "public"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -564,6 +717,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "password": {
                   "column": "password"
@@ -781,6 +937,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "organizationId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "requirements": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -848,6 +1009,22 @@
                     "namespaceId": "public",
                     "tableName": "user"
                   }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "job"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
                 }
               ],
               "indexes": [
@@ -858,6 +1035,14 @@
                   "name": "job_createdById_idx_8bf640ed",
                   "prefix": "job_createdById_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "job_organizationId_idx_2e17ef41",
+                  "prefix": "job_organizationId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -866,6 +1051,67 @@
                 ]
               },
               "uniques": []
+            },
+            "organization": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "inviteCode": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "slug": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "slug"
+                  ]
+                },
+                {
+                  "columns": [
+                    "inviteCode"
+                  ]
+                }
+              ]
             },
             "user": {
               "checks": [
@@ -909,6 +1155,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "organizationId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "password": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -935,8 +1186,34 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "user"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "user_organizationId_idx_2e17ef41",
+                  "prefix": "user_organizationId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -997,10 +1274,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "3452271da3bfbf0a7b7a01d8e4153b52e23fd3c51a1a5c60bc25cc10f3e9886b"
+    "storageHash": "e246ca3aa55af016c85479c1684a94e67b65983a32e9810cb4ff379d65774fc3"
   },
   "execution": {
-    "executionHash": "f8c8bae0a8fc0e603418c3dd4f12f77fdcf1ec444bb9b0c1cdbb6ce09a90eeef",
+    "executionHash": "2e7f12eb5902a5961745a5282e9d749384038cf3c175821463aa6d8e278fc799",
     "mutations": {
       "defaults": [
         {
@@ -1031,6 +1308,21 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "job"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "organization"
           }
         },
         {

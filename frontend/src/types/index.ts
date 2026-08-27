@@ -17,6 +17,25 @@ export type ApplicationStage =
   | "HIRED"
   | "REJECTED";
 
+export interface Organization {
+  id: number;
+  name: string;
+  slug: string;
+  inviteCode: string;
+  createdAt: string;
+}
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: Role;
+  avatarUrl?: string | null;
+  organizationId?: number | null;
+  organization?: Organization | null;
+  createdAt: string;
+}
+
 export interface Job {
   id: number;
   title: string;
@@ -28,6 +47,8 @@ export interface Job {
   salaryRange?: string | null;
   status: JobStatus;
   createdById?: number | null;
+  organizationId?: number | null;
+  organization?: Organization | null;
   createdAt: string;
   updatedAt: string;
   applicationsCount?: number;

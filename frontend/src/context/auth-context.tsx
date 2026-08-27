@@ -2,23 +2,15 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import type { Role } from "@/types";
-
-export interface RecruiterUser {
-  id: number;
-  email: string;
-  name: string;
-  role: Role;
-  avatarUrl?: string | null;
-  createdAt: string;
-}
+import type { User, Organization } from "@/types";
 
 interface AuthContextType {
-  user: RecruiterUser | null;
+  user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
+  updateUserOrg: (org: Organization) => void;
   isAuthenticated: boolean;
 }
 
@@ -28,7 +20,7 @@ const TOKEN_KEY = "ats_recruiter_token";
 const USER_KEY = "ats_recruiter_user";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<RecruiterUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -50,10 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{
       accessToken: string;
-      user: RecruiterUser;
+      user: User;
     }>("/auth/login", {
       email,
       password,
@@ -67,6 +59,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
 
     api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+    return userData;
+  };
+
+  const updateUserOrg = (org: Organization) => {
+    if (!user) return;
+    const updated: User = {
+      ...user,
+      organizationId: org.id,
+      organization: org,
+    };
+    setUser(updated);
+    localStorage.setItem(USER_KEY, JSON.stringify(updated));
   };
 
   const logout = () => {
@@ -85,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         login,
         logout,
+        updateUserOrg,
         isAuthenticated: !!user,
       }}
     >

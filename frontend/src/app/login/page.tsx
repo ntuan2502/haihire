@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   Sparkles,
   ArrowLeft,
-  Users,
   CheckCircle2,
   AlertCircle,
   Building2,
@@ -41,8 +40,14 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setError(null);
-      await login(email, password);
-      router.push("/");
+      const user = await login(email, password);
+
+      // Smart routing: If user has no organization yet -> redirect to onboarding flow
+      if (!user.organizationId) {
+        router.push("/onboarding/create-org");
+      } else {
+        router.push("/");
+      }
     } catch (err: unknown) {
       console.error(err);
       if (typeof err === "object" && err !== null && "response" in err) {

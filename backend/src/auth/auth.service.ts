@@ -26,6 +26,7 @@ export class AuthService {
       "password",
       "role",
       "avatarUrl",
+      "organizationId",
       "createdAt",
     )
       .where((u) => u.email.eq(dto.email.toLowerCase().trim()))
@@ -48,7 +49,23 @@ export class AuthService {
     }
 
     const { password: _, ...sanitizedUser } = user;
-    return sanitizedUser;
+
+    let organization = null;
+    if (sanitizedUser.organizationId) {
+      organization = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+        "inviteCode",
+      )
+        .where((o) => o.id.eq(sanitizedUser.organizationId as number))
+        .first();
+    }
+
+    return {
+      ...sanitizedUser,
+      organization,
+    };
   }
 
   async login(dto: LoginDto) {
@@ -75,6 +92,7 @@ export class AuthService {
       "name",
       "role",
       "avatarUrl",
+      "organizationId",
       "createdAt",
     )
       .where((u) => u.id.eq(userId))
@@ -84,6 +102,21 @@ export class AuthService {
       throw new UnauthorizedException("User session expired or not found");
     }
 
-    return user;
+    let organization = null;
+    if (user.organizationId) {
+      organization = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+        "inviteCode",
+      )
+        .where((o) => o.id.eq(user.organizationId as number))
+        .first();
+    }
+
+    return {
+      ...user,
+      organization,
+    };
   }
 }

@@ -31,33 +31,48 @@ enum ApplicationStage {
   REJECTED
 }
 
+model Organization {
+  id         Int      @id @default(autoincrement())
+  name       String
+  slug       String   @unique
+  inviteCode String   @unique
+  users      User[]
+  jobs       Job[]
+  createdAt  DateTime @default(now())
+  updatedAt  temporal.updatedAt()
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  password  String?
-  avatarUrl String?
-  role      Role     @default(HR)
-  jobs      Job[]
-  createdAt DateTime @default(now())
-  updatedAt temporal.updatedAt()
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  name           String
+  password       String?
+  avatarUrl      String?
+  role           Role          @default(HR)
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  jobs           Job[]
+  createdAt      DateTime      @default(now())
+  updatedAt      temporal.updatedAt()
 }
 
 model Job {
-  id           Int           @id @default(autoincrement())
-  title        String
-  department   String
-  location     String
-  type         JobType       @default(FULL_TIME)
-  description  String
-  requirements String?
-  salaryRange  String?
-  status       JobStatus     @default(PUBLISHED)
-  createdById  Int?
-  createdBy    User?         @relation(fields: [createdById], references: [id])
-  applications Application[]
-  createdAt    DateTime      @default(now())
-  updatedAt    temporal.updatedAt()
+  id             Int           @id @default(autoincrement())
+  title          String
+  department     String
+  location       String
+  type           JobType       @default(FULL_TIME)
+  description    String
+  requirements   String?
+  salaryRange    String?
+  status         JobStatus     @default(PUBLISHED)
+  createdById    Int?
+  createdBy      User?         @relation(fields: [createdById], references: [id])
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  applications   Application[]
+  createdAt      DateTime      @default(now())
+  updatedAt      temporal.updatedAt()
 }
 
 model Application {

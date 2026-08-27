@@ -19,6 +19,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       password: hashedPassword,
       role: "HR",
       avatarUrl: null,
+      organizationId: null,
       createdAt: new Date(),
     },
     {
@@ -28,6 +29,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       password: hashedPassword,
       role: "ADMIN",
       avatarUrl: null,
+      organizationId: null,
       createdAt: new Date(),
     },
     {
@@ -37,6 +39,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       password: hashedPassword,
       role: "INTERVIEWER",
       avatarUrl: null,
+      organizationId: null,
       createdAt: new Date(),
     },
     {
@@ -46,6 +49,7 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       password: hashedPassword,
       role: "CANDIDATE",
       avatarUrl: null,
+      organizationId: null,
       createdAt: new Date(),
     },
   ];
@@ -72,7 +76,6 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
 
                     if (!match) return null;
 
-                    // If specific fields were selected, return only those fields
                     if (fields.length > 0) {
                       const projected: Record<string, any> = {};
                       for (const field of fields) {
@@ -85,6 +88,13 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
                   }),
                 })),
               })),
+            },
+            Organization: {
+              select: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  first: vi.fn().mockResolvedValue(null),
+                }),
+              }),
             },
           },
         },
@@ -114,6 +124,8 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       name: "HR Lead / Recruiter",
       role: "HR",
       avatarUrl: null,
+      organizationId: null,
+      organization: null,
       createdAt: expect.any(Date),
     });
     expect(mockJwtService.sign).toHaveBeenCalledWith({
@@ -178,6 +190,8 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       name: "HR Lead / Recruiter",
       role: "HR",
       avatarUrl: null,
+      organizationId: null,
+      organization: null,
       createdAt: expect.any(Date),
     });
   });

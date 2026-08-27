@@ -2,15 +2,16 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Briefcase,
   Users,
   Plus,
   Sparkles,
-  LogIn,
   LogOut,
   ShieldCheck,
-  UserCheck,
+  Building2,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./theme-toggle";
@@ -41,6 +42,7 @@ export function Navbar({
   jobsCount,
   candidatesCount,
 }: NavbarProps) {
+  const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
 
   const getRoleBadgeColor = (role: string) => {
@@ -80,9 +82,16 @@ export function Navbar({
                 <span className="font-bold tracking-tight text-slate-900 dark:text-white text-lg">
                   Apex ATS
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
-                  <Sparkles className="h-2.5 w-2.5" /> Next-Gen
-                </span>
+                {user?.organization ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/50">
+                    <Building2 className="h-3 w-3" />
+                    {user.organization.name}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                    <Sparkles className="h-2.5 w-2.5" /> Next-Gen
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Talent Acquisition & Hiring Pipeline
@@ -170,12 +179,28 @@ export function Navbar({
                   </span>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[180px]">
+              <DropdownMenuContent align="end" className="min-w-[200px]">
                 <DropdownMenuLabel className="flex flex-col gap-0.5">
                   <span className="font-bold text-xs">{user.name}</span>
                   <span className="text-[10px] text-slate-500 font-normal">{user.email}</span>
+                  {user.organization && (
+                    <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Organization</p>
+                      <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">{user.organization.name}</p>
+                      <p className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                        <KeyRound className="h-2.5 w-2.5" /> Invite: {user.organization.inviteCode}
+                      </p>
+                    </div>
+                  )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => router.push("/onboarding/create-org")}
+                  className="cursor-pointer gap-2 text-xs font-medium"
+                >
+                  <Building2 className="h-3.5 w-3.5" />
+                  {user.organization ? "Switch / Create Org" : "Setup Organization"}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={logout}
                   variant="destructive"

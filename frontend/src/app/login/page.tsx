@@ -18,13 +18,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Building2,
+  UserCheck,
 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("hr@tun.io.vn");
+  const [email, setEmail] = useState("demo@tun.io.vn");
   const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -88,14 +89,14 @@ export default function LoginPage() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/30">
-              <Briefcase className="h-6 w-6" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
+              <span className="font-black text-xl tracking-tighter">R</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xl tracking-tight">Apex ATS</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
-                  <Sparkles className="h-2.5 w-2.5" /> Recruiter Workspace
+                <span className="font-bold text-xl tracking-tight">Reqcore ATS</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-blue-500/30">
+                  <Sparkles className="h-2.5 w-2.5" /> Recruiter Portal
                 </span>
               </div>
               <p className="text-xs text-slate-400">
@@ -122,10 +123,17 @@ export default function LoginPage() {
 
           <div className="space-y-3 pt-2">
             <div className="flex items-center gap-3 text-xs text-slate-300">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </div>
+              <span>Multi-tenant organization workspaces</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs text-slate-300">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <span>Realtime Kanban board candidate workflow</span>
+              <span>Interactive Kanban pipeline & candidate screening</span>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-slate-300">
@@ -134,19 +142,12 @@ export default function LoginPage() {
               </div>
               <span>MinIO S3 object storage for candidate resumes</span>
             </div>
-
-            <div className="flex items-center gap-3 text-xs text-slate-300">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-400">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </div>
-              <span>Type-safe Prisma 8 & PostgreSQL candidate metrics</span>
-            </div>
           </div>
         </div>
 
         {/* Footer Note */}
         <div className="relative z-10 text-[11px] text-slate-500 border-t border-slate-800/80 pt-4">
-          Apex ATS &bull; Internal Hiring Team Workspace &bull; Domain @tun.io.vn
+          Reqcore ATS &bull; Internal Hiring Team Workspace &bull; Domain @tun.io.vn
         </div>
       </div>
 
@@ -157,17 +158,17 @@ export default function LoginPage() {
           <div className="lg:hidden flex items-center justify-between pb-4">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-600"
             >
               <ArrowLeft className="h-4 w-4" /> Public Job Board
             </Link>
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-              Apex ATS
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+              Reqcore ATS
             </span>
           </div>
 
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+            <div className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
               <Building2 className="h-3.5 w-3.5" /> Recruiter Sign In
             </div>
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -192,54 +193,30 @@ export default function LoginPage() {
           {/* 1-Click Demo Recruiter Credentials */}
           <div className="space-y-2 pt-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              1-Click Demo Accounts (@tun.io.vn):
+              1-Click Demo Account:
             </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("hr@tun.io.vn")}
-                className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
-                  email === "hr@tun.io.vn"
-                    ? "border-indigo-600 bg-indigo-50/80 dark:border-indigo-500 dark:bg-indigo-950/60 shadow-xs"
-                    : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
-                }`}
-              >
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                  HR Lead
-                </p>
-                <p className="text-[10px] text-slate-500 truncate">hr@tun.io.vn</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("admin@tun.io.vn")}
-                className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
-                  email === "admin@tun.io.vn"
-                    ? "border-indigo-600 bg-indigo-50/80 dark:border-indigo-500 dark:bg-indigo-950/60 shadow-xs"
-                    : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
-                }`}
-              >
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                  Admin
-                </p>
-                <p className="text-[10px] text-slate-500 truncate">admin@tun.io.vn</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("interviewer@tun.io.vn")}
-                className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
-                  email === "interviewer@tun.io.vn"
-                    ? "border-indigo-600 bg-indigo-50/80 dark:border-indigo-500 dark:bg-indigo-950/60 shadow-xs"
-                    : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
-                }`}
-              >
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                  Interviewer
-                </p>
-                <p className="text-[10px] text-slate-500 truncate">interviewer@...</p>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("demo@tun.io.vn")}
+              className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                email === "demo@tun.io.vn"
+                  ? "border-blue-600 bg-blue-50/80 dark:border-blue-500 dark:bg-blue-950/60 shadow-xs"
+                  : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-xs">
+                  HR
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">
+                    Demo Recruiter
+                  </p>
+                  <p className="text-[11px] text-slate-500">demo@tun.io.vn &bull; password: password123</p>
+                </div>
+              </div>
+              <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </button>
           </div>
 
           {/* Error Message */}
@@ -258,7 +235,7 @@ export default function LoginPage() {
               </label>
               <Input
                 type="email"
-                placeholder="name@tun.io.vn"
+                placeholder="demo@tun.io.vn"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1"
@@ -300,7 +277,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm h-10 shadow-md shadow-indigo-500/20 cursor-pointer"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm h-10 shadow-md shadow-blue-500/20 cursor-pointer"
             >
               {loading ? "Authenticating Recruiter..." : "Sign In to Workspace"}
             </Button>
@@ -310,7 +287,7 @@ export default function LoginPage() {
           <div className="text-center pt-2">
             <Link
               href="/"
-              className="text-xs text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-medium"
+              className="text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 font-medium"
             >
               &larr; Return to Public Careers & Job Openings
             </Link>

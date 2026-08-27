@@ -4,32 +4,13 @@ import { db } from "./db.ts";
 
 const defaultPasswordHash = bcrypt.hashSync("password123", 10);
 
-const users = [
-  {
-    email: "hr@tun.io.vn",
-    name: "HR Lead / Recruiter",
-    role: "HR" as const,
-    password: defaultPasswordHash,
-  },
-  {
-    email: "admin@tun.io.vn",
-    name: "Talent Acquisition Admin",
-    role: "ADMIN" as const,
-    password: defaultPasswordHash,
-  },
-  {
-    email: "interviewer@tun.io.vn",
-    name: "Technical Interviewer",
-    role: "INTERVIEWER" as const,
-    password: defaultPasswordHash,
-  },
-  {
-    email: "candidate@gmail.com",
-    name: "John Doe",
-    role: "CANDIDATE" as const,
-    password: defaultPasswordHash,
-  },
-];
+const singleDemoUser = {
+  email: "demo@tun.io.vn",
+  name: "Demo Recruiter",
+  role: "HR" as const,
+  password: defaultPasswordHash,
+  organizationId: null,
+};
 
 let pendingSeed: Promise<void> | undefined;
 
@@ -44,17 +25,38 @@ async function runSeed(): Promise<void> {
     // already connected or composer client
   }
 
-  for (const user of users) {
-    await db.orm.public.User.upsert({
-      create: user,
-      update: {
-        password: user.password,
-        name: user.name,
-        role: user.role,
-      },
-      conflictOn: { email: user.email },
-    });
-  }
+  // 1. Clean all existing tables to guarantee 100% fresh start
+  console.log("Cleaning old database records...");
+  await db.orm.public.Application.all().then((apps) =>
+    Promise.all(apps.map((a) => db.orm.public.Application.where((x) => x.id.eq(a.id)).delete())),
+  );
+
+  await db.orm.public.Job.all().then((jobs) =>
+    Promise.all(jobs.map((j) => db.orm.public.Job.where((x) => x.id.eq(j.id)).delete())),
+  );
+
+  await db.orm.public.User.all().then((users) =>
+    Promise.all(users.map((u) => db.orm.public.User.where((x) => x.id.eq(u.id)).delete())),
+  );
+
+  await db.orm.public.Organization.all().then((orgs) =>
+    Promise.all(orgs.map((o) => db.orm.public.Organization.where((x) => x.id.eq(o.id)).delete())),
+  );
+
+  // 2. Seed ONLY the single demo user: demo@tun.io.vn
+  console.log("Seeding single demo user: demo@tun.io.vn ...");
+  await db.orm.public.User.upsert({
+    create: singleDemoUser,
+    update: {
+      password: singleDemoUser.password,
+      name: singleDemoUser.name,
+      role: singleDemoUser.role,
+      organizationId: null,
+    },
+    conflictOn: { email: singleDemoUser.email },
+  });
+
+  console.log("Database reset & single user seed completed!");
 }
 
 export function seed(): Promise<void> {

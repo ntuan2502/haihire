@@ -44,7 +44,7 @@ interface ApplyModalProps {
 export function ApplyModal({
   isOpen,
   onClose,
-  jobs,
+  jobs = [],
   selectedJobId,
   onApplicationSubmitted,
 }: ApplyModalProps) {
@@ -191,7 +191,7 @@ export function ApplyModal({
                   <SelectValue placeholder="Select target role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {jobs.map((job) => (
+                  {(jobs || []).map((job) => (
                     <SelectItem key={job.id} value={job.id.toString()}>
                       {job.title} ({job.department})
                     </SelectItem>

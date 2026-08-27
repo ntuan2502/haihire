@@ -43,6 +43,11 @@ export const jobsApi = {
 };
 
 export const applicationsApi = {
+  getAll: async (): Promise<Application[]> => {
+    const response = await api.get<Application[]>("/applications");
+    return response.data;
+  },
+
   getByJob: async (jobId: number): Promise<Application[]> => {
     const response = await api.get<Application[]>(`/applications/job/${jobId}`);
     return response.data;

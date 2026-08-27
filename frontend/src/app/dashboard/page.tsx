@@ -16,6 +16,7 @@ import {
   useCreateJobMutation,
   useDeleteJobMutation,
 } from "@/hooks/use-queries";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Job } from "@/types";
 import {
   Inbox,
@@ -92,19 +93,23 @@ function DashboardContent() {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {/* TAB 1: DASHBOARD */}
-        {activeTab === "dashboard" && (
-          <div>
-            {jobs.length === 0 && !loading ? (
-              /* If no jobs yet, show Start Recruiting view */
-              <StartRecruiting
-                onOpenCreateJob={() => setCreateJobModalOpen(true)}
-                onCreateTestJob={handleCreateTestJob}
-                onImportFromFile={() => setCreateJobModalOpen(true)}
-              />
-            ) : (
-              /* If jobs exist, show Dashboard Hub with Quick Shortcuts + Overview */
-              <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+        {loading ? (
+          <LoadingSpinner />
+        ) : (
+          <>
+            {/* TAB 1: DASHBOARD */}
+            {activeTab === "dashboard" && (
+              <div>
+                {jobs.length === 0 ? (
+                  /* If no jobs yet, show Start Recruiting view */
+                  <StartRecruiting
+                    onOpenCreateJob={() => setCreateJobModalOpen(true)}
+                    onCreateTestJob={handleCreateTestJob}
+                    onImportFromFile={() => setCreateJobModalOpen(true)}
+                  />
+                ) : (
+                  /* If jobs exist, show Dashboard Hub with Quick Shortcuts + Overview */
+                  <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
                 {/* Org Welcome Banner */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs">
                   <div>
@@ -345,6 +350,8 @@ function DashboardContent() {
               Manage team members, roles, billing plans, and custom hiring stages.
             </p>
           </div>
+        )}
+          </>
         )}
       </main>
 

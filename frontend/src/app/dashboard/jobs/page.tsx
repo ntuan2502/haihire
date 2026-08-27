@@ -15,6 +15,7 @@ import {
   useCreateJobMutation,
   useDeleteJobMutation,
 } from "@/hooks/use-queries";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Job } from "@/types";
 
 function JobsPageContent() {
@@ -74,7 +75,9 @@ function JobsPageContent() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {jobs.length === 0 && !jobsLoading ? (
+        {jobsLoading ? (
+          <LoadingSpinner />
+        ) : jobs.length === 0 ? (
           <StartRecruiting
             onOpenCreateJob={() => setCreateJobModalOpen(true)}
             onCreateTestJob={handleCreateTestJob}

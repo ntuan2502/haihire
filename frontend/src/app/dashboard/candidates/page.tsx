@@ -10,6 +10,7 @@ import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useJobs, useAllApplications } from "@/hooks/use-queries";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Search,
   Users,
@@ -120,7 +121,9 @@ function CandidatesPageContent() {
         </div>
 
         {/* Empty State / Content Area */}
-        {applications.length === 0 && !loading ? (
+        {loading ? (
+          <LoadingSpinner />
+        ) : applications.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-16 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs max-w-3xl mx-auto my-12">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-4">
               <Users className="h-8 w-8 stroke-[1.5]" />

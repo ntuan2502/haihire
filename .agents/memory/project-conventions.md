@@ -19,3 +19,7 @@ updated: 2026-07-12
 
 ## Brand Identity & Logos
 - Whenever reference images or mockups contain **Reqcore** (or other placeholder logos/names), ALWAYS replace with **ATS** (or "A" monogram / ATS logo) across all UI components, logos, and copy.
+
+## Validation & Testing Conventions
+- If only frontend UI is modified, only run frontend lint and build (`pnpm --filter frontend run build ; pnpm --filter frontend run lint`) without running backend tests or full test suites.
+- Always use `;` (not `&&`) for chaining commands in PowerShell.

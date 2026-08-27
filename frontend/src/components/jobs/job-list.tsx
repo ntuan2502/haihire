@@ -6,7 +6,7 @@ import {
   Search,
   LayoutGrid,
   List as ListIcon,
-  Maximize2,
+  Table,
   SlidersHorizontal,
   MapPin,
   Megaphone,
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import type { Job, Application } from "@/types";
 
-type ViewMode = "grid" | "list" | "full";
+type ViewMode = "grid" | "list" | "table";
 
 interface JobListProps {
   jobs: Job[];
@@ -187,11 +187,11 @@ export function JobList({
               <LayoutGrid className="h-4 w-4" />
             </button>
 
-            {/* View 2: List / Table View */}
+            {/* View 2: List View (Full-width Stacked Cards) */}
             <button
               type="button"
               onClick={() => setViewMode("list")}
-              title="List table view"
+              title="List view"
               className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === "list"
                   ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
@@ -201,18 +201,18 @@ export function JobList({
               <ListIcon className="h-4 w-4" />
             </button>
 
-            {/* View 3: Full-width Card */}
+            {/* View 3: Table View (Data Table) */}
             <button
               type="button"
-              onClick={() => setViewMode("full")}
-              title="Full-width card view"
+              onClick={() => setViewMode("table")}
+              title="Table view"
               className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === "full"
+                viewMode === "table"
                   ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                   : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
             >
-              <Maximize2 className="h-4 w-4" />
+              <Table className="h-4 w-4" />
             </button>
           </div>
 
@@ -376,103 +376,8 @@ export function JobList({
         </div>
       )}
 
-      {/* VIEW 2: LIST / TABLE VIEW (Screenshot 4) */}
+      {/* VIEW 2: LIST VIEW (Full-width Stacked Cards) */}
       {viewMode === "list" && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-[11px] font-semibold text-slate-500">
-                <tr>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      Title <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      Status <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      Type <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      Location <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      New <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      Active <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      Created <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                {filteredJobs.map((job) => {
-                  const counts = getJobStageCounts(job.id);
-                  const activeCounts = counts.new + counts.screening + counts.interview + counts.offer;
-                  const dateStr = new Date(job.createdAt).toLocaleDateString("en-US");
-
-                  return (
-                    <tr
-                      key={job.id}
-                      onClick={() => router.push(`/dashboard/candidates?jobId=${job.id}`)}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                    >
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                        {job.title}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
-                          {job.status === "PUBLISHED" ? "Open" : "Draft"}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
-                        {job.type === "FULL_TIME"
-                          ? "Full-time"
-                          : job.type === "PART_TIME"
-                            ? "Part-time"
-                            : job.type === "CONTRACT"
-                              ? "Contract"
-                              : "Internship"}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-slate-400" />
-                        {job.location || job.department || "Remote"}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
-                        {counts.new}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
-                        {activeCounts}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400">
-                        {dateStr}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* VIEW 3: FULL-WIDTH CARD VIEW (Screenshot 3) */}
-      {viewMode === "full" && (
         <div className="space-y-4">
           {filteredJobs.map((job) => {
             const counts = getJobStageCounts(job.id);
@@ -593,6 +498,101 @@ export function JobList({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* VIEW 3: TABLE VIEW (Data Table) */}
+      {viewMode === "table" && (
+        <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-[11px] font-semibold text-slate-500">
+                <tr>
+                  <th className="py-3 px-4">
+                    <span className="flex items-center gap-1">
+                      Title <ArrowUpDown className="h-3 w-3" />
+                    </span>
+                  </th>
+                  <th className="py-3 px-4">
+                    <span className="flex items-center gap-1">
+                      Status <ArrowUpDown className="h-3 w-3" />
+                    </span>
+                  </th>
+                  <th className="py-3 px-4">
+                    <span className="flex items-center gap-1">
+                      Type <ArrowUpDown className="h-3 w-3" />
+                    </span>
+                  </th>
+                  <th className="py-3 px-4">
+                    <span className="flex items-center gap-1">
+                      Location <ArrowUpDown className="h-3 w-3" />
+                    </span>
+                  </th>
+                  <th className="py-3 px-4">
+                    <span className="flex items-center gap-1">
+                      New <ArrowUpDown className="h-3 w-3" />
+                    </span>
+                  </th>
+                  <th className="py-3 px-4">
+                    <span className="flex items-center gap-1">
+                      Active <ArrowUpDown className="h-3 w-3" />
+                    </span>
+                  </th>
+                  <th className="py-3 px-4">
+                    <span className="flex items-center gap-1">
+                      Created <ArrowUpDown className="h-3 w-3" />
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {filteredJobs.map((job) => {
+                  const counts = getJobStageCounts(job.id);
+                  const activeCounts = counts.new + counts.screening + counts.interview + counts.offer;
+                  const dateStr = new Date(job.createdAt).toLocaleDateString("en-US");
+
+                  return (
+                    <tr
+                      key={job.id}
+                      onClick={() => router.push(`/dashboard/candidates?jobId=${job.id}`)}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                    >
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                        {job.title}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
+                          {job.status === "PUBLISHED" ? "Open" : "Draft"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                        {job.type === "FULL_TIME"
+                          ? "Full-time"
+                          : job.type === "PART_TIME"
+                            ? "Part-time"
+                            : job.type === "CONTRACT"
+                              ? "Contract"
+                              : "Internship"}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-slate-400" />
+                        {job.location || job.department || "Remote"}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                        {counts.new}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
+                        {activeCounts}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-400">
+                        {dateStr}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

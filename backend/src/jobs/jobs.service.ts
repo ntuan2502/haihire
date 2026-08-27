@@ -10,7 +10,12 @@ export class JobsService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async findAll(filter?: { status?: string; department?: string; search?: string }) {
+  async findAll(filter?: {
+    status?: string;
+    department?: string;
+    search?: string;
+    organizationId?: number;
+  }) {
     const jobs = await this.prisma.db.orm.public.Job.select(
       "id",
       "title",
@@ -21,6 +26,7 @@ export class JobsService {
       "requirements",
       "salaryRange",
       "status",
+      "organizationId",
       "createdById",
       "createdAt",
       "updatedAt",
@@ -33,7 +39,10 @@ export class JobsService {
       "stage",
     ).all();
 
-    const appCountMap = new Map<number, { total: number; byStage: Record<string, number> }>();
+    const appCountMap = new Map<
+      number,
+      { total: number; byStage: Record<string, number> }
+    >();
     for (const app of allApps) {
       if (!appCountMap.has(app.jobId)) {
         appCountMap.set(app.jobId, { total: 0, byStage: {} });
@@ -49,6 +58,10 @@ export class JobsService {
       applicationsByStage: appCountMap.get(job.id)?.byStage ?? {},
     }));
 
+    // Filter by Organization if specified
+    if (filter?.organizationId !== undefined) {
+      result = result.filter((j) => j.organizationId === filter.organizationId);
+    }
     if (filter?.status) {
       result = result.filter((j) => j.status === filter.status);
     }
@@ -81,6 +94,7 @@ export class JobsService {
       "requirements",
       "salaryRange",
       "status",
+      "organizationId",
       "createdById",
       "createdAt",
       "updatedAt",
@@ -129,6 +143,8 @@ export class JobsService {
         requirements: dto.requirements ?? null,
         salaryRange: dto.salaryRange ?? null,
         status: dto.status ?? "PUBLISHED",
+        organizationId: dto.organizationId ?? null,
+        createdById: dto.createdById ?? null,
       },
       update: {},
       conflictOn: { id: 0 },
@@ -140,14 +156,20 @@ export class JobsService {
   async update(id: number, dto: UpdateJobDto) {
     await this.findOne(id);
 
-    const updated = await this.prisma.db.orm.public.Job.where((j) => j.id.eq(id)).update({
+    const updated = await this.prisma.db.orm.public.Job.where((j) =>
+      j.id.eq(id),
+    ).update({
       ...(dto.title !== undefined ? { title: dto.title } : {}),
       ...(dto.department !== undefined ? { department: dto.department } : {}),
       ...(dto.location !== undefined ? { location: dto.location } : {}),
       ...(dto.type !== undefined ? { type: dto.type } : {}),
       ...(dto.description !== undefined ? { description: dto.description } : {}),
-      ...(dto.requirements !== undefined ? { requirements: dto.requirements } : {}),
-      ...(dto.salaryRange !== undefined ? { salaryRange: dto.salaryRange } : {}),
+      ...(dto.requirements !== undefined
+        ? { requirements: dto.requirements }
+        : {}),
+      ...(dto.salaryRange !== undefined
+        ? { salaryRange: dto.salaryRange }
+        : {}),
       ...(dto.status !== undefined ? { status: dto.status } : {}),
     });
 
@@ -158,7 +180,9 @@ export class JobsService {
     await this.findOne(id);
 
     // Delete associated applications first
-    await this.prisma.db.orm.public.Application.where((a) => a.jobId.eq(id)).delete();
+    await this.prisma.db.orm.public.Application.where((a) =>
+      a.jobId.eq(id),
+    ).delete();
     await this.prisma.db.orm.public.Job.where((j) => j.id.eq(id)).delete();
 
     return { success: true, message: `Job ${id} deleted successfully` };

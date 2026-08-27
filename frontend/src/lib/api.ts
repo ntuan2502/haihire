@@ -16,6 +16,7 @@ export const jobsApi = {
     status?: string;
     department?: string;
     search?: string;
+    organizationId?: number;
   }): Promise<Job[]> => {
     const response = await api.get<Job[]>("/jobs", { params });
     return response.data;

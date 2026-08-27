@@ -38,7 +38,11 @@ function DashboardContent() {
     try {
       setLoading(true);
       const [jobsData, appsData] = await Promise.all([
-        jobsApi.getAll(),
+        jobsApi.getAll(
+          user?.organizationId
+            ? { organizationId: user.organizationId }
+            : undefined,
+        ),
         applicationsApi.getAll(),
       ]);
       setJobs(jobsData);
@@ -51,7 +55,7 @@ function DashboardContent() {
     } finally {
       setLoading(false);
     }
-  }, [selectedJobId]);
+  }, [selectedJobId, user?.organizationId]);
 
   useEffect(() => {
     fetchData();
@@ -69,6 +73,7 @@ function DashboardContent() {
           "Internal test role for testing applicant pipeline and candidate screening workflow.",
         salaryRange: "$2,500 - $4,000 / month",
         status: "PUBLISHED",
+        organizationId: user?.organizationId ?? null,
       });
       await fetchData();
       setSelectedJobId(testJob.id);

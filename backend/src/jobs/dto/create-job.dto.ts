@@ -47,4 +47,10 @@ export class CreateJobDto {
   @IsEnum(JobStatus)
   @IsOptional()
   status?: JobStatus;
+
+  @IsOptional()
+  organizationId?: number | null;
+
+  @IsOptional()
+  createdById?: number | null;
 }

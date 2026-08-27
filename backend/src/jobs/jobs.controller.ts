@@ -26,8 +26,14 @@ export class JobsController {
     @Query("status") status?: string,
     @Query("department") department?: string,
     @Query("search") search?: string,
+    @Query("organizationId") organizationId?: string,
   ) {
-    return this.jobsService.findAll({ status, department, search });
+    return this.jobsService.findAll({
+      status,
+      department,
+      search,
+      organizationId: organizationId ? parseInt(organizationId, 10) : undefined,
+    });
   }
 
   @Get(":id")

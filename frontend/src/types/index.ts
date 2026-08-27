@@ -83,6 +83,8 @@ export interface CreateJobInput {
   requirements?: string;
   salaryRange?: string;
   status?: JobStatus;
+  organizationId?: number | null;
+  createdById?: number | null;
 }
 
 export interface CreateApplicationInput {

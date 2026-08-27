@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
-import { jobsApi, applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
-import type { Job, Application } from "@/types";
+import { useJobs, useAllApplications } from "@/hooks/use-queries";
 import {
   Search,
   Calendar,
@@ -18,49 +17,35 @@ import {
 
 function InterviewsPageContent() {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const { data: jobs = [] } = useJobs(user?.organizationId);
+  const { data: applications = [], isLoading: appsLoading } =
+    useAllApplications();
+
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<
     "ALL" | "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW"
   >("ALL");
   const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
-  const [loading, setLoading] = useState(true);
 
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [jobsData, appsData] = await Promise.all([
-        jobsApi.getAll(
-          user?.organizationId
-            ? { organizationId: user.organizationId }
-            : undefined,
-        ),
-        applicationsApi.getAll(),
-      ]);
-      setJobs(jobsData);
-      setApplications(appsData);
-    } catch (err) {
-      console.error("Failed to load interviews data", err);
-    } finally {
-      setLoading(false);
+  const interviewCandidates = applications.filter((a) => {
+    const isInterview = a.stage === "INTERVIEW";
+    if (!isInterview) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (
+        a.candidateName.toLowerCase().includes(q) ||
+        a.candidateEmail.toLowerCase().includes(q)
+      );
     }
-  }, [user?.organizationId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const interviewCandidates = applications.filter(
-    (a) => a.stage === "INTERVIEW",
-  );
+    return true;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Navbar with activeTab="interviews" */}
+      {/* Navbar */}
       <Navbar
         activeTab="interviews"
         onOpenCreateJob={() => setCreateJobModalOpen(true)}
@@ -183,7 +168,7 @@ function InterviewsPageContent() {
         </div>
 
         {/* Empty State / Content Area */}
-        {interviewCandidates.length === 0 && !loading ? (
+        {interviewCandidates.length === 0 && !appsLoading ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-16 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs max-w-3xl mx-auto my-12">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-4">
               <Calendar className="h-8 w-8 stroke-[1.5]" />
@@ -226,14 +211,12 @@ function InterviewsPageContent() {
         isOpen={applyModalOpen}
         onClose={() => setApplyModalOpen(false)}
         jobs={jobs}
-        onApplicationSubmitted={fetchData}
       />
 
       {/* Create Job Modal */}
       <CreateJobModal
         isOpen={createJobModalOpen}
         onClose={() => setCreateJobModalOpen(false)}
-        onJobCreated={fetchData}
       />
     </div>
   );

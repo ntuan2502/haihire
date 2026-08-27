@@ -37,7 +37,7 @@ interface ApplyModalProps {
   onClose: () => void;
   jobs: Job[];
   selectedJobId?: number | null;
-  onApplicationSubmitted: () => void;
+  onApplicationSubmitted?: () => void;
 }
 
 export function ApplyModal({
@@ -121,7 +121,7 @@ export function ApplyModal({
 
       await applicationsApi.apply(formData);
       setSuccess(true);
-      onApplicationSubmitted();
+      onApplicationSubmitted?.();
 
       setTimeout(() => {
         setSuccess(false);

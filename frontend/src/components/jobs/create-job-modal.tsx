@@ -19,15 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { jobsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { CreateJobInput, JobStatus, JobType } from "@/types";
+import { useCreateJobMutation } from "@/hooks/use-queries";
 import { Briefcase, Building2, MapPin, DollarSign } from "lucide-react";
 
 interface CreateJobModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onJobCreated: () => void;
+  onJobCreated?: () => void;
 }
 
 export function CreateJobModal({
@@ -36,6 +36,7 @@ export function CreateJobModal({
   onJobCreated,
 }: CreateJobModalProps) {
   const { user } = useAuth();
+  const createJobMutation = useCreateJobMutation();
   const [formData, setFormData] = useState<CreateJobInput>({
     title: "",
     department: "Engineering",
@@ -46,7 +47,6 @@ export function CreateJobModal({
     salaryRange: "",
     status: "PUBLISHED",
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,14 +57,13 @@ export function CreateJobModal({
     }
 
     try {
-      setLoading(true);
       setError(null);
-      await jobsApi.create({
+      await createJobMutation.mutateAsync({
         ...formData,
         organizationId: user?.organizationId ?? null,
         createdById: user?.id ?? null,
       });
-      onJobCreated();
+      onJobCreated?.();
       onClose();
       // Reset form
       setFormData({
@@ -80,8 +79,6 @@ export function CreateJobModal({
     } catch (err: unknown) {
       console.error(err);
       setError("Failed to create job opening. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -253,16 +250,16 @@ export function CreateJobModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              disabled={loading}
+              disabled={createJobMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={createJobMutation.isPending}
               className="bg-indigo-600 hover:bg-indigo-700"
             >
-              {loading ? "Publishing Job..." : "Publish Job Opening"}
+              {createJobMutation.isPending ? "Publishing Job..." : "Publish Job Opening"}
             </Button>
           </DialogFooter>
         </form>

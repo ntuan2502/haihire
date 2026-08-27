@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar, type NavTab } from "@/components/navbar";
 import { JobList } from "@/components/jobs/job-list";
@@ -8,10 +8,15 @@ import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
-import { jobsApi, applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Job, Application } from "@/types";
 import { useRouter } from "next/navigation";
+import {
+  useJobs,
+  useAllApplications,
+  useCreateJobMutation,
+  useDeleteJobMutation,
+} from "@/hooks/use-queries";
+import type { Job } from "@/types";
 import {
   Inbox,
   Calendar,
@@ -26,47 +31,28 @@ import {
 function DashboardContent() {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  // TanStack Query
+  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+    user?.organizationId,
+  );
+  const { data: applications = [], isLoading: appsLoading } =
+    useAllApplications();
+  const createJobMutation = useCreateJobMutation();
+  const deleteJobMutation = useDeleteJobMutation();
+
+  const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
 
-  // Fetch initial data
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [jobsData, appsData] = await Promise.all([
-        jobsApi.getAll(
-          user?.organizationId
-            ? { organizationId: user.organizationId }
-            : undefined,
-        ),
-        applicationsApi.getAll(),
-      ]);
-      setJobs(jobsData);
-      setApplications(appsData);
-      if (jobsData.length > 0 && selectedJobId === null) {
-        setSelectedJobId(jobsData[0].id);
-      }
-    } catch (err) {
-      console.error("Failed to load ATS dashboard data", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedJobId, user?.organizationId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const activeJobId = selectedJobId ?? (jobs.length > 0 ? jobs[0].id : null);
+  const loading = jobsLoading || appsLoading;
 
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
     try {
-      const testJob = await jobsApi.create({
+      const testJob = await createJobMutation.mutateAsync({
         title: "Senior Full-Stack Engineer (Test Role)",
         department: "Engineering",
         location: "Remote / Hanoi",
@@ -77,7 +63,6 @@ function DashboardContent() {
         status: "PUBLISHED",
         organizationId: user?.organizationId ?? null,
       });
-      await fetchData();
       setSelectedJobId(testJob.id);
       setActiveTab("dashboard");
     } catch (err) {
@@ -86,8 +71,7 @@ function DashboardContent() {
   };
 
   const handleJobDeleted = (id: number) => {
-    setJobs((prev) => prev.filter((j) => j.id !== id));
-    setApplications((prev) => prev.filter((a) => a.jobId !== id));
+    deleteJobMutation.mutate(id);
     if (selectedJobId === id) {
       const remaining = jobs.filter((j) => j.id !== id);
       setSelectedJobId(remaining.length > 0 ? remaining[0].id : null);
@@ -112,7 +96,7 @@ function DashboardContent() {
         {activeTab === "dashboard" && (
           <div>
             {jobs.length === 0 && !loading ? (
-              /* If no jobs yet, show the exact "Start Recruiting" view from screenshot */
+              /* If no jobs yet, show Start Recruiting view */
               <StartRecruiting
                 onOpenCreateJob={() => setCreateJobModalOpen(true)}
                 onCreateTestJob={handleCreateTestJob}
@@ -145,7 +129,7 @@ function DashboardContent() {
                       View All Jobs ({jobs.length})
                     </button>
                     <button
-                      onClick={() => setActiveTab("candidates")}
+                      onClick={() => router.push("/dashboard/candidates")}
                       className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
                     >
                       Open Pipeline ({applications.length})
@@ -208,7 +192,7 @@ function DashboardContent() {
 
                   <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between text-slate-500">
-                      <span className="text-xs font-semibold">Hired Talents</span>
+                      <span className="text-xs font-semibold">Hired Candidates</span>
                       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
                         <Sparkles className="h-4 w-4" />
                       </span>
@@ -224,26 +208,26 @@ function DashboardContent() {
                   </div>
                 </div>
 
-                {/* Quick Start Recruiting Box */}
+                {/* Quick Navigation Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div
                     onClick={() => setCreateJobModalOpen(true)}
-                    className="flex items-center justify-between p-5 rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 hover:border-blue-500 hover:shadow-xs transition-all cursor-pointer group"
+                    className="p-5 rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer shadow-xs group flex items-center justify-between"
                   >
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
                         Post a New Job Opening
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Publish a role to start accepting candidate CVs
+                        Define role requirements, department, and salary package
                       </p>
                     </div>
                     <ArrowUpRight className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
                   </div>
 
                   <div
-                    onClick={() => setActiveTab("candidates")}
-                    className="flex items-center justify-between p-5 rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 hover:border-indigo-500 hover:shadow-xs transition-all cursor-pointer group"
+                    onClick={() => router.push("/dashboard/candidates")}
+                    className="p-5 rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer shadow-xs group flex items-center justify-between"
                   >
                     <div>
                       <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
@@ -277,7 +261,7 @@ function DashboardContent() {
                   loading={loading}
                   onViewCandidates={(jobId: number) => {
                     setSelectedJobId(jobId);
-                    setActiveTab("candidates");
+                    router.push(`/dashboard/candidates?jobId=${jobId}`);
                   }}
                   onApply={(job: Job) => {
                     setSelectedJobId(job.id);
@@ -296,14 +280,14 @@ function DashboardContent() {
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <KanbanBoard
               jobs={jobs}
-              selectedJobId={selectedJobId}
-              onSelectJob={(jobId: number) => setSelectedJobId(jobId)}
+              selectedJobId={activeJobId}
+              onSelectJob={setSelectedJobId}
               onOpenApplyModal={() => setApplyModalOpen(true)}
             />
           </div>
         )}
 
-        {/* TAB 4: INBOX (Placeholder) */}
+        {/* TAB 4: INBOX */}
         {activeTab === "inbox" && (
           <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-400 mb-3">
@@ -318,7 +302,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* TAB 5: INTERVIEWS (Placeholder) */}
+        {/* TAB 5: INTERVIEWS */}
         {activeTab === "interviews" && (
           <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-400 mb-3">
@@ -333,7 +317,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* TAB 6: ASSISTANT (Placeholder) */}
+        {/* TAB 6: ASSISTANT */}
         {activeTab === "assistant" && (
           <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 mb-3">
@@ -348,7 +332,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* TAB 7: SETTINGS (Placeholder) */}
+        {/* TAB 7: SETTINGS */}
         {activeTab === "settings" && (
           <div className="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-400 mb-3">
@@ -368,7 +352,6 @@ function DashboardContent() {
       <CreateJobModal
         isOpen={createJobModalOpen}
         onClose={() => setCreateJobModalOpen(false)}
-        onJobCreated={fetchData}
       />
 
       {/* Apply Modal */}
@@ -376,8 +359,7 @@ function DashboardContent() {
         isOpen={applyModalOpen}
         onClose={() => setApplyModalOpen(false)}
         jobs={jobs}
-        selectedJobId={selectedJobId}
-        onApplicationSubmitted={fetchData}
+        selectedJobId={activeJobId}
       />
     </div>
   );

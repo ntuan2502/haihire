@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
-import { jobsApi, applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { Job, Application } from "@/types";
+import { useJobs, useAllApplications } from "@/hooks/use-queries";
 import {
   Search,
   Users,
@@ -25,45 +24,23 @@ import {
 
 function CandidatesPageContent() {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+    user?.organizationId,
+  );
+  const { data: applications = [], isLoading: appsLoading } =
+    useAllApplications();
+
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [jobsData, appsData] = await Promise.all([
-        jobsApi.getAll(
-          user?.organizationId
-            ? { organizationId: user.organizationId }
-            : undefined,
-        ),
-        applicationsApi.getAll(),
-      ]);
-      setJobs(jobsData);
-      setApplications(appsData);
-      if (jobsData.length > 0 && selectedJobId === null) {
-        setSelectedJobId(jobsData[0].id);
-      }
-    } catch (err) {
-      console.error("Failed to load candidates data", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedJobId, user?.organizationId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const activeJobId = selectedJobId ?? (jobs.length > 0 ? jobs[0].id : null);
+  const loading = jobsLoading || appsLoading;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Navbar with activeTab="candidates" */}
+      {/* Navbar */}
       <Navbar
         activeTab="candidates"
         onOpenCreateJob={() => setCreateJobModalOpen(true)}
@@ -74,7 +51,7 @@ function CandidatesPageContent() {
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-[1600px] w-full mx-auto space-y-6">
-        {/* Candidates Toolbar matching screenshot */}
+        {/* Candidates Toolbar matching Screenshot 1 */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
@@ -165,7 +142,7 @@ function CandidatesPageContent() {
         ) : (
           <KanbanBoard
             jobs={jobs}
-            selectedJobId={selectedJobId}
+            selectedJobId={activeJobId}
             onSelectJob={setSelectedJobId}
             onOpenApplyModal={() => setApplyModalOpen(true)}
           />
@@ -177,15 +154,13 @@ function CandidatesPageContent() {
         isOpen={applyModalOpen}
         onClose={() => setApplyModalOpen(false)}
         jobs={jobs}
-        selectedJobId={selectedJobId}
-        onApplicationSubmitted={fetchData}
+        selectedJobId={activeJobId}
       />
 
       {/* Create Job Modal */}
       <CreateJobModal
         isOpen={createJobModalOpen}
         onClose={() => setCreateJobModalOpen(false)}
-        onJobCreated={fetchData}
       />
     </div>
   );

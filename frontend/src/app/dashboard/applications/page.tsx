@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
-import { jobsApi, applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
-import type { Job, Application } from "@/types";
+import { useJobs, useAllApplications } from "@/hooks/use-queries";
 import {
   Search,
   FileText,
@@ -23,45 +22,23 @@ import {
 
 function ApplicationsPageContent() {
   const { user } = useAuth();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+    user?.organizationId,
+  );
+  const { data: applications = [], isLoading: appsLoading } =
+    useAllApplications();
+
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [jobsData, appsData] = await Promise.all([
-        jobsApi.getAll(
-          user?.organizationId
-            ? { organizationId: user.organizationId }
-            : undefined,
-        ),
-        applicationsApi.getAll(),
-      ]);
-      setJobs(jobsData);
-      setApplications(appsData);
-      if (jobsData.length > 0 && selectedJobId === null) {
-        setSelectedJobId(jobsData[0].id);
-      }
-    } catch (err) {
-      console.error("Failed to load applications data", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedJobId, user?.organizationId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const activeJobId = selectedJobId ?? (jobs.length > 0 ? jobs[0].id : null);
+  const loading = jobsLoading || appsLoading;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Navbar with activeTab="applications" */}
+      {/* Navbar */}
       <Navbar
         activeTab="applications"
         onOpenCreateJob={() => setCreateJobModalOpen(true)}
@@ -146,7 +123,7 @@ function ApplicationsPageContent() {
         ) : (
           <KanbanBoard
             jobs={jobs}
-            selectedJobId={selectedJobId}
+            selectedJobId={activeJobId}
             onSelectJob={setSelectedJobId}
             onOpenApplyModal={() => setApplyModalOpen(true)}
           />
@@ -158,15 +135,13 @@ function ApplicationsPageContent() {
         isOpen={applyModalOpen}
         onClose={() => setApplyModalOpen(false)}
         jobs={jobs}
-        selectedJobId={selectedJobId}
-        onApplicationSubmitted={fetchData}
+        selectedJobId={activeJobId}
       />
 
       {/* Create Job Modal */}
       <CreateJobModal
         isOpen={createJobModalOpen}
         onClose={() => setCreateJobModalOpen(false)}
-        onJobCreated={fetchData}
       />
     </div>
   );

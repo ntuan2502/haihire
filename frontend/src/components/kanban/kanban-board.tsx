@@ -4,22 +4,17 @@ import React, { useState, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
   useSensors,
+  useSensor,
+  PointerSensor,
+  KeyboardSensor,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { KanbanColumn } from "./kanban-column";
 import { CandidateCard } from "./candidate-card";
-import { applicationsApi } from "@/lib/api";
-import type { Application, ApplicationStage, Job } from "@/types";
-import { Briefcase, UserPlus } from "lucide-react";
-import { Button } from "../ui/button";
 import {
   Select,
   SelectContent,
@@ -27,6 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Button } from "../ui/button";
+import {
+  useJobApplications,
+  useUpdateStageMutation,
+  useDeleteApplicationMutation,
+} from "@/hooks/use-queries";
+import type { Job, Application, ApplicationStage } from "@/types";
+import { Briefcase, UserPlus } from "lucide-react";
 
 interface KanbanBoardProps {
   jobs: Job[];
@@ -50,11 +53,20 @@ export function KanbanBoard({
   onSelectJob,
   onOpenApplyModal,
 }: KanbanBoardProps) {
+  const { data: serverApplications = [], isLoading: loading } =
+    useJobApplications(selectedJobId);
+  const updateStageMutation = useUpdateStageMutation();
+  const deleteAppMutation = useDeleteApplicationMutation();
+
   const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(false);
   const [activeApplication, setActiveApplication] = useState<Application | null>(
     null,
   );
+
+  // Sync server applications into local state for drag animations
+  useEffect(() => {
+    setApplications(serverApplications);
+  }, [serverApplications]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -66,28 +78,6 @@ export function KanbanBoard({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-
-  // Fetch applications whenever selected job changes
-  useEffect(() => {
-    if (!selectedJobId) {
-      setApplications([]);
-      return;
-    }
-
-    const fetchApps = async () => {
-      try {
-        setLoading(true);
-        const data = await applicationsApi.getByJob(selectedJobId);
-        setApplications(data);
-      } catch (err) {
-        console.error("Failed to load applications for job:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApps();
-  }, [selectedJobId]);
 
   const currentJob = jobs.find((j) => j.id === selectedJobId);
 
@@ -201,21 +191,16 @@ export function KanbanBoard({
       targetIndex = columnApps.findIndex((a) => a.id === overApp.id);
     }
 
-    // Sync to backend via PATCH /applications/:id/stage
-    try {
-      await applicationsApi.updateStage(activeId, targetStage, targetIndex);
-    } catch (err) {
-      console.error("Failed to sync stage update with server:", err);
-    }
+    // Optimistic / Server Sync via Mutation
+    updateStageMutation.mutate({
+      id: activeId,
+      stage: targetStage,
+      orderIndex: targetIndex,
+    });
   };
 
-  const handleDeleteApplication = async (id: number) => {
-    try {
-      await applicationsApi.delete(id);
-      setApplications((prev) => prev.filter((a) => a.id !== id));
-    } catch (err) {
-      console.error("Failed to delete application:", err);
-    }
+  const handleDeleteApplication = (id: number) => {
+    deleteAppMutation.mutate(id);
   };
 
   return (
@@ -242,77 +227,66 @@ export function KanbanBoard({
               </SelectTrigger>
               <SelectContent>
                 {jobs.map((job) => (
-                  <SelectItem key={job.id} value={job.id.toString()}>
-                    {job.title} ({job.applicationsCount || 0} candidates)
+                  <SelectItem
+                    key={job.id}
+                    value={job.id.toString()}
+                    className="text-xs"
+                  >
+                    {job.title} ({job.department})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          {currentJob && (
+            <span className="text-xs text-slate-500">
+              {applications.length} candidate{applications.length !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
 
         {/* Action button */}
-        <div className="flex items-center gap-2">
-          {currentJob && (
-            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 mr-2">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {applications.length}
-              </span>{" "}
-              Total Candidates in Pipeline
-            </div>
-          )}
-          <Button
-            size="sm"
-            onClick={onOpenApplyModal}
-            className="text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 shadow-xs"
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            Add Candidate
-          </Button>
-        </div>
+        <Button
+          onClick={onOpenApplyModal}
+          size="sm"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5 text-xs font-semibold shadow-xs"
+          disabled={!selectedJobId}
+        >
+          <UserPlus className="h-4 w-4" />
+          Add Candidate
+        </Button>
       </div>
 
-      {/* Kanban Board Container */}
-      {!selectedJobId ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white/50 p-16 text-center dark:border-slate-800 dark:bg-slate-900/30">
-          <Briefcase className="h-10 w-10 text-indigo-400 mb-3 opacity-60" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Select a Job to view candidate pipeline
-          </h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm">
-            Choose a job position from the dropdown above to manage candidate hiring stages on the interactive Kanban board.
-          </p>
+      {/* Kanban Board Columns Area */}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 overflow-x-auto pb-4">
+          {STAGES.map((col) => (
+            <KanbanColumn
+              key={col.stage}
+              stage={col.stage}
+              title={col.title}
+              color={col.color}
+              applications={columnsMap[col.stage]}
+              onDeleteApplication={handleDeleteApplication}
+            />
+          ))}
         </div>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-1">
-            {STAGES.map(({ stage, title, color }) => (
-              <KanbanColumn
-                key={stage}
-                stage={stage}
-                title={title}
-                color={color}
-                applications={columnsMap[stage]}
-                onDeleteApplication={handleDeleteApplication}
-              />
-            ))}
-          </div>
 
-          <DragOverlay>
-            {activeApplication ? (
-              <div className="rotate-2 scale-105 shadow-xl">
-                <CandidateCard application={activeApplication} />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      )}
+        {/* Drag Overlay with Smooth Animation */}
+        <DragOverlay>
+          {activeApplication ? (
+            <div className="rotate-2 scale-105 opacity-95 transition-transform">
+              <CandidateCard application={activeApplication} />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }

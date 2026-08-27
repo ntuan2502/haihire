@@ -1,60 +1,42 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { JobList } from "@/components/jobs/job-list";
 import { CreateJobModal } from "@/components/jobs/create-job-modal";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
-import { jobsApi, applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
-import type { Job, Application } from "@/types";
+import {
+  useJobs,
+  useAllApplications,
+  useCreateJobMutation,
+  useDeleteJobMutation,
+} from "@/hooks/use-queries";
+import type { Job } from "@/types";
 
 function JobsPageContent() {
   const router = useRouter();
   const { user } = useAuth();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  // TanStack Query Hooks
+  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+    user?.organizationId,
+  );
+  const { data: applications = [] } = useAllApplications();
+  const createJobMutation = useCreateJobMutation();
+  const deleteJobMutation = useDeleteJobMutation();
+
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
-
-  // Fetch jobs and applications for this organization
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [jobsData, appsData] = await Promise.all([
-        jobsApi.getAll(
-          user?.organizationId
-            ? { organizationId: user.organizationId }
-            : undefined,
-        ),
-        applicationsApi.getAll(),
-      ]);
-      setJobs(jobsData);
-      setApplications(appsData);
-      if (jobsData.length > 0 && selectedJobId === null) {
-        setSelectedJobId(jobsData[0].id);
-      }
-    } catch (err) {
-      console.error("Failed to load jobs data", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedJobId, user?.organizationId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
     try {
-      const testJob = await jobsApi.create({
+      const testJob = await createJobMutation.mutateAsync({
         title: "Senior Full-Stack Engineer (Test Role)",
         department: "Engineering",
         location: "Remote / Hanoi",
@@ -65,7 +47,6 @@ function JobsPageContent() {
         status: "PUBLISHED",
         organizationId: user?.organizationId ?? null,
       });
-      await fetchData();
       setSelectedJobId(testJob.id);
     } catch (err) {
       console.error("Create test job error", err);
@@ -73,8 +54,7 @@ function JobsPageContent() {
   };
 
   const handleJobDeleted = (id: number) => {
-    setJobs((prev) => prev.filter((j) => j.id !== id));
-    setApplications((prev) => prev.filter((a) => a.jobId !== id));
+    deleteJobMutation.mutate(id);
     if (selectedJobId === id) {
       const remaining = jobs.filter((j) => j.id !== id);
       setSelectedJobId(remaining.length > 0 ? remaining[0].id : null);
@@ -83,14 +63,9 @@ function JobsPageContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
-      {/* Navbar with activeTab="jobs" */}
+      {/* Navbar */}
       <Navbar
         activeTab="jobs"
-        onTabChange={(tab) => {
-          if (tab === "dashboard") router.push("/dashboard");
-          else if (tab === "jobs") router.push("/dashboard/jobs");
-          else router.push(`/dashboard?tab=${tab}`);
-        }}
         onOpenCreateJob={() => setCreateJobModalOpen(true)}
         onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
@@ -99,7 +74,7 @@ function JobsPageContent() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {jobs.length === 0 && !loading ? (
+        {jobs.length === 0 && !jobsLoading ? (
           <StartRecruiting
             onOpenCreateJob={() => setCreateJobModalOpen(true)}
             onCreateTestJob={handleCreateTestJob}
@@ -109,10 +84,10 @@ function JobsPageContent() {
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <JobList
               jobs={jobs}
-              loading={loading}
+              loading={jobsLoading}
               onViewCandidates={(jobId: number) => {
                 setSelectedJobId(jobId);
-                router.push(`/dashboard?tab=candidates&jobId=${jobId}`);
+                router.push(`/dashboard/candidates?jobId=${jobId}`);
               }}
               onApply={(job: Job) => {
                 setSelectedJobId(job.id);
@@ -129,7 +104,6 @@ function JobsPageContent() {
       <CreateJobModal
         isOpen={createJobModalOpen}
         onClose={() => setCreateJobModalOpen(false)}
-        onJobCreated={fetchData}
       />
 
       {/* Apply Modal */}
@@ -138,7 +112,6 @@ function JobsPageContent() {
         onClose={() => setApplyModalOpen(false)}
         jobs={jobs}
         selectedJobId={selectedJobId}
-        onApplicationSubmitted={fetchData}
       />
     </div>
   );

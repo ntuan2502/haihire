@@ -17,7 +17,14 @@ import type { Organization } from "@/types";
 
 function OnboardingContent() {
   const router = useRouter();
-  const { updateUserOrg } = useAuth();
+  const { user, updateUserOrg, loading } = useAuth();
+
+  // Redirect to dashboard if user already has an organization
+  useEffect(() => {
+    if (!loading && user?.organizationId) {
+      router.replace("/dashboard");
+    }
+  }, [user, loading, router]);
 
   // Mode: "create" | "join"
   const [mode, setMode] = useState<"create" | "join">("create");
@@ -167,6 +174,17 @@ function OnboardingContent() {
       setSubmitting(false);
     }
   };
+
+  if (user?.organizationId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+          <p className="text-xs text-slate-500 font-medium">Redirecting to workspace...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 transition-colors duration-200">

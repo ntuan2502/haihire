@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Job, Application } from "@/types";
+import type { Job, Application, ApplicationStage } from "@/types";
+import { PIPELINE_STAGES } from "@/lib/stages";
 
 type ViewMode = "grid" | "list" | "table";
 
@@ -132,13 +133,27 @@ export function JobList({
   // Stage count helper for a job
   const getJobStageCounts = (jobId: string) => {
     const jobApps = applications.filter((a) => a.jobId === jobId);
+    const byStage: Record<ApplicationStage, number> = {
+      APPLIED: 0,
+      SCREENING: 0,
+      INTERVIEW: 0,
+      OFFER: 0,
+      HIRED: 0,
+      REJECTED: 0,
+    };
+    for (const a of jobApps) {
+      if (byStage[a.stage] !== undefined) {
+        byStage[a.stage]++;
+      }
+    }
     return {
-      new: jobApps.filter((a) => a.stage === "APPLIED").length,
-      screening: jobApps.filter((a) => a.stage === "SCREENING").length,
-      interview: jobApps.filter((a) => a.stage === "INTERVIEW").length,
-      offer: jobApps.filter((a) => a.stage === "OFFER").length,
-      hired: jobApps.filter((a) => a.stage === "HIRED").length,
-      rejected: jobApps.filter((a) => a.stage === "REJECTED").length,
+      new: byStage.APPLIED,
+      screening: byStage.SCREENING,
+      interview: byStage.INTERVIEW,
+      offer: byStage.OFFER,
+      hired: byStage.HIRED,
+      rejected: byStage.REJECTED,
+      byStage,
       total: jobApps.length,
     };
   };
@@ -268,7 +283,7 @@ export function JobList({
                 <div className="space-y-1">
                   <div className="flex items-start justify-between gap-2">
                     <h3
-                      onClick={() => router.push(`/dashboard/candidates?jobId=${job.id}`)}
+                      onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
                       className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer leading-snug"
                     >
                       {job.title}
@@ -299,77 +314,27 @@ export function JobList({
 
                 {/* 6 Stage Metric Cards in 3x2 or 6x1 Grid */}
                 <div className="grid grid-cols-6 gap-1 pt-1">
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 cursor-pointer hover:bg-blue-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                      {counts.new}
-                    </span>
-                    <span className="text-[9px] font-semibold text-blue-600/80 dark:text-blue-400/80">
-                      New
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 cursor-pointer hover:bg-purple-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                      {counts.screening}
-                    </span>
-                    <span className="text-[9px] font-semibold text-purple-600/80 dark:text-purple-400/80">
-                      Screening
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 cursor-pointer hover:bg-amber-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                      {counts.interview}
-                    </span>
-                    <span className="text-[9px] font-semibold text-amber-600/80 dark:text-amber-400/80">
-                      Interview
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-teal-50/70 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/40 cursor-pointer hover:bg-teal-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-teal-600 dark:text-teal-400">
-                      {counts.offer}
-                    </span>
-                    <span className="text-[9px] font-semibold text-teal-600/80 dark:text-teal-400/80">
-                      Offer
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 cursor-pointer hover:bg-emerald-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      {counts.hired}
-                    </span>
-                    <span className="text-[9px] font-semibold text-emerald-600/80 dark:text-emerald-400/80">
-                      Hired
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer hover:bg-slate-200/60 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                      {counts.rejected}
-                    </span>
-                    <span className="text-[9px] text-slate-500 dark:text-slate-400">
-                      Rejected
-                    </span>
-                  </div>
+                  {PIPELINE_STAGES.map((stage) => {
+                    const count = counts.byStage[stage.id] || 0;
+                    return (
+                      <div
+                        key={stage.id}
+                        onClick={() => onViewCandidates(job.id)}
+                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
+                      >
+                        <span
+                          className={`text-xs font-bold ${stage.textColor}`}
+                        >
+                          {count}
+                        </span>
+                        <span
+                          className={`text-[9px] font-semibold ${stage.textColor} opacity-80`}
+                        >
+                          {stage.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Bottom Row: Applicant count & Promote button */}
@@ -417,7 +382,7 @@ export function JobList({
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h3
-                        onClick={() => router.push(`/dashboard/candidates?jobId=${job.id}`)}
+                        onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
                         className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer"
                       >
                         {job.title}
@@ -448,77 +413,27 @@ export function JobList({
 
                 {/* Spanning 6 Stages Across Width */}
                 <div className="grid grid-cols-6 gap-2 pt-1">
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 cursor-pointer hover:bg-blue-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                      {counts.new}
-                    </span>
-                    <span className="text-[10px] font-semibold text-blue-600/80 dark:text-blue-400/80 mt-0.5">
-                      New
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 cursor-pointer hover:bg-purple-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                      {counts.screening}
-                    </span>
-                    <span className="text-[10px] font-semibold text-purple-600/80 dark:text-purple-400/80 mt-0.5">
-                      Screening
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 cursor-pointer hover:bg-amber-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                      {counts.interview}
-                    </span>
-                    <span className="text-[10px] font-semibold text-amber-600/80 dark:text-amber-400/80 mt-0.5">
-                      Interview
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/40 cursor-pointer hover:bg-teal-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-teal-600 dark:text-teal-400">
-                      {counts.offer}
-                    </span>
-                    <span className="text-[10px] font-semibold text-teal-600/80 dark:text-teal-400/80 mt-0.5">
-                      Offer
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 cursor-pointer hover:bg-emerald-100/70 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      {counts.hired}
-                    </span>
-                    <span className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
-                      Hired
-                    </span>
-                  </div>
-
-                  <div
-                    onClick={() => onViewCandidates(job.id)}
-                    className="flex flex-col items-center justify-center p-3 rounded-xl bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer hover:bg-slate-200/60 transition-colors text-center"
-                  >
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                      {counts.rejected}
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      Rejected
-                    </span>
-                  </div>
+                  {PIPELINE_STAGES.map((stage) => {
+                    const count = counts.byStage[stage.id] || 0;
+                    return (
+                      <div
+                        key={stage.id}
+                        onClick={() => onViewCandidates(job.id)}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
+                      >
+                        <span
+                          className={`text-xs font-bold ${stage.textColor}`}
+                        >
+                          {count}
+                        </span>
+                        <span
+                          className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5`}
+                        >
+                          {stage.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -579,7 +494,7 @@ export function JobList({
                   return (
                     <tr
                       key={job.id}
-                      onClick={() => router.push(`/dashboard/candidates?jobId=${job.id}`)}
+                      onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                     >
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">

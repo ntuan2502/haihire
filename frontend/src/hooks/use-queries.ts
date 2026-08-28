@@ -28,6 +28,35 @@ export function useJobs(organizationId?: string | null) {
   });
 }
 
+export function useJob(id: string | null) {
+  return useQuery<Job>({
+    queryKey: ["jobs", id],
+    queryFn: () => {
+      if (!id) throw new Error("Job ID is required");
+      return jobsApi.getById(id);
+    },
+    enabled: Boolean(id),
+  });
+}
+
+export function useUpdateJobMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof jobsApi.update>[1];
+    }) => jobsApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["jobs", variables.id] });
+    },
+  });
+}
+
 export function useCreateJobMutation() {
   const queryClient = useQueryClient();
 

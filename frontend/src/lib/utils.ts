@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { Application, ApplicationStage, CandidateDocument } from "@/types";
+import type { Application, CandidateDocument } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -307,67 +307,13 @@ export function isValidUuid(id?: string | null): boolean {
   );
 }
 
-/**
- * Get unified stage metadata (label, dot color, badge styles)
- */
-export function getStageInfo(stage?: ApplicationStage | string | null): {
-  label: string;
-  dotColor: string;
-  badgeBg: string;
-  textColor: string;
-} {
-  switch (stage) {
-    case "APPLIED":
-      return {
-        label: "New",
-        dotColor: "bg-blue-600",
-        badgeBg: "bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900",
-        textColor: "text-blue-600 dark:text-blue-400",
-      };
-    case "SCREENING":
-      return {
-        label: "Screening",
-        dotColor: "bg-purple-600",
-        badgeBg: "bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-900",
-        textColor: "text-purple-600 dark:text-purple-400",
-      };
-    case "INTERVIEW":
-      return {
-        label: "Interview",
-        dotColor: "bg-amber-600",
-        badgeBg: "bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-900",
-        textColor: "text-amber-600 dark:text-amber-400",
-      };
-    case "OFFER":
-      return {
-        label: "Offer",
-        dotColor: "bg-emerald-600",
-        badgeBg: "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-900",
-        textColor: "text-emerald-600 dark:text-emerald-400",
-      };
-    case "HIRED":
-      return {
-        label: "Hired",
-        dotColor: "bg-emerald-700",
-        badgeBg: "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800",
-        textColor: "text-emerald-700 dark:text-emerald-300",
-      };
-    case "REJECTED":
-      return {
-        label: "Rejected",
-        dotColor: "bg-rose-600",
-        badgeBg: "bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-900",
-        textColor: "text-rose-600 dark:text-rose-400",
-      };
-    default:
-      return {
-        label: stage || "New",
-        dotColor: "bg-slate-400",
-        badgeBg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700",
-        textColor: "text-slate-600 dark:text-slate-300",
-      };
-  }
-}
+export {
+  type StageConfig,
+  STAGES_ORDER,
+  STAGE_CONFIG_MAP,
+  PIPELINE_STAGES,
+  getStageInfo,
+} from "./stages";
 
 export interface CandidateItem {
   id: string;

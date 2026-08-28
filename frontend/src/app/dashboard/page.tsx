@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
@@ -25,6 +25,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { getInitials, formatRelativeTime, getStageInfo } from "@/lib/utils";
+import { PIPELINE_STAGES } from "@/lib/stages";
+import type { ApplicationStage } from "@/types";
 
 function DashboardContent() {
   const router = useRouter();
@@ -62,33 +64,30 @@ function DashboardContent() {
   ).length;
 
   // Filter applications for the active job
-  const activeJobApps = activeJob
-    ? applications.filter((a) => a.jobId === activeJob.id)
-    : [];
+  const activeJobApps = useMemo(() => {
+    return activeJob
+      ? applications.filter((a) => a.jobId === activeJob.id)
+      : [];
+  }, [activeJob, applications]);
 
-  const countNew = activeJobApps.filter((a) => a.stage === "APPLIED").length;
-  const countScreening = activeJobApps.filter(
-    (a) => a.stage === "SCREENING",
-  ).length;
-  const countInterview = activeJobApps.filter(
-    (a) => a.stage === "INTERVIEW",
-  ).length;
-  const countOffer = activeJobApps.filter((a) => a.stage === "OFFER").length;
-  const countHired = activeJobApps.filter((a) => a.stage === "HIRED").length;
-  const countRejected = activeJobApps.filter(
-    (a) => a.stage === "REJECTED",
-  ).length;
+  const stageCounts: Record<ApplicationStage, number> = useMemo(() => {
+    const counts: Record<ApplicationStage, number> = {
+      APPLIED: 0,
+      SCREENING: 0,
+      INTERVIEW: 0,
+      OFFER: 0,
+      HIRED: 0,
+      REJECTED: 0,
+    };
+    for (const a of activeJobApps) {
+      if (counts[a.stage] !== undefined) {
+        counts[a.stage]++;
+      }
+    }
+    return counts;
+  }, [activeJobApps]);
 
   const totalPipeline = activeJobApps.length;
-  const pctNew = totalPipeline > 0 ? (countNew / totalPipeline) * 100 : 0;
-  const pctScreening =
-    totalPipeline > 0 ? (countScreening / totalPipeline) * 100 : 0;
-  const pctInterview =
-    totalPipeline > 0 ? (countInterview / totalPipeline) * 100 : 0;
-  const pctOffer = totalPipeline > 0 ? (countOffer / totalPipeline) * 100 : 0;
-  const pctHired = totalPipeline > 0 ? (countHired / totalPipeline) * 100 : 0;
-  const pctRejected =
-    totalPipeline > 0 ? (countRejected / totalPipeline) * 100 : 0;
 
   // Recent applications (only active job applications) sorted by createdAt descending
   const recentApplications = applications
@@ -285,165 +284,53 @@ function DashboardContent() {
 
                             {/* Multi-segment Progress Bar */}
                             <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 flex overflow-hidden">
-                              {pctNew > 0 && (
-                                <div
-                                  style={{ width: `${pctNew}%` }}
-                                  className="bg-blue-500 h-full"
-                                  title={`New: ${countNew}`}
-                                />
-                              )}
-                              {pctScreening > 0 && (
-                                <div
-                                  style={{ width: `${pctScreening}%` }}
-                                  className="bg-purple-500 h-full"
-                                  title={`Screening: ${countScreening}`}
-                                />
-                              )}
-                              {pctInterview > 0 && (
-                                <div
-                                  style={{ width: `${pctInterview}%` }}
-                                  className="bg-indigo-500 h-full"
-                                  title={`Interview: ${countInterview}`}
-                                />
-                              )}
-                              {pctOffer > 0 && (
-                                <div
-                                  style={{ width: `${pctOffer}%` }}
-                                  className="bg-amber-500 h-full"
-                                  title={`Offer: ${countOffer}`}
-                                />
-                              )}
-                              {pctHired > 0 && (
-                                <div
-                                  style={{ width: `${pctHired}%` }}
-                                  className="bg-emerald-500 h-full"
-                                  title={`Hired: ${countHired}`}
-                                />
-                              )}
-                              {pctRejected > 0 && (
-                                <div
-                                  style={{ width: `${pctRejected}%` }}
-                                  className="bg-slate-300 dark:bg-slate-600 h-full"
-                                  title={`Rejected: ${countRejected}`}
-                                />
-                              )}
+                              {PIPELINE_STAGES.map((stage) => {
+                                const count = stageCounts[stage.id] || 0;
+                                const pct =
+                                  totalPipeline > 0
+                                    ? (count / totalPipeline) * 100
+                                    : 0;
+                                if (pct <= 0) return null;
+                                return (
+                                  <div
+                                    key={stage.id}
+                                    style={{ width: `${pct}%` }}
+                                    className={`${stage.barColor} h-full`}
+                                    title={`${stage.label}: ${count}`}
+                                  />
+                                );
+                              })}
                             </div>
 
                             {/* 6 Stage Metric Cards */}
                             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1">
-                              {/* Stage 1: New */}
-                              <div
-                                onClick={() =>
-                                  router.push(
-                                    activeJobId
-                                      ? `/dashboard/candidates?jobId=${activeJobId}`
-                                      : "/dashboard/candidates",
-                                  )
-                                }
-                                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 cursor-pointer hover:bg-blue-100/70 transition-colors"
-                              >
-                                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                                  {countNew}
-                                </span>
-                                <span className="text-[10px] font-semibold text-blue-600/80 dark:text-blue-400/80 mt-0.5">
-                                  New
-                                </span>
-                              </div>
-
-                              {/* Stage 2: Screening */}
-                              <div
-                                onClick={() =>
-                                  router.push(
-                                    activeJobId
-                                      ? `/dashboard/candidates?jobId=${activeJobId}`
-                                      : "/dashboard/candidates",
-                                  )
-                                }
-                                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 cursor-pointer hover:bg-purple-100/70 transition-colors"
-                              >
-                                <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                                  {countScreening}
-                                </span>
-                                <span className="text-[10px] font-semibold text-purple-600/80 dark:text-purple-400/80 mt-0.5">
-                                  Screening
-                                </span>
-                              </div>
-
-                              {/* Stage 3: Interview */}
-                              <div
-                                onClick={() =>
-                                  router.push(
-                                    activeJobId
-                                      ? `/dashboard/candidates?jobId=${activeJobId}`
-                                      : "/dashboard/candidates",
-                                  )
-                                }
-                                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 cursor-pointer hover:bg-amber-100/70 transition-colors"
-                              >
-                                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                                  {countInterview}
-                                </span>
-                                <span className="text-[10px] font-semibold text-amber-600/80 dark:text-amber-400/80 mt-0.5">
-                                  Interview
-                                </span>
-                              </div>
-
-                              {/* Stage 4: Offer */}
-                              <div
-                                onClick={() =>
-                                  router.push(
-                                    activeJobId
-                                      ? `/dashboard/candidates?jobId=${activeJobId}`
-                                      : "/dashboard/candidates",
-                                  )
-                                }
-                                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/40 cursor-pointer hover:bg-teal-100/70 transition-colors"
-                              >
-                                <span className="text-xs font-bold text-teal-600 dark:text-teal-400">
-                                  {countOffer}
-                                </span>
-                                <span className="text-[10px] font-semibold text-teal-600/80 dark:text-teal-400/80 mt-0.5">
-                                  Offer
-                                </span>
-                              </div>
-
-                              {/* Stage 5: Hired */}
-                              <div
-                                onClick={() =>
-                                  router.push(
-                                    activeJobId
-                                      ? `/dashboard/candidates?jobId=${activeJobId}`
-                                      : "/dashboard/candidates",
-                                  )
-                                }
-                                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 cursor-pointer hover:bg-emerald-100/70 transition-colors"
-                              >
-                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                                  {countHired}
-                                </span>
-                                <span className="text-[10px] font-semibold text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
-                                  Hired
-                                </span>
-                              </div>
-
-                              {/* Stage 6: Rejected */}
-                              <div
-                                onClick={() =>
-                                  router.push(
-                                    activeJobId
-                                      ? `/dashboard/candidates?jobId=${activeJobId}`
-                                      : "/dashboard/candidates",
-                                  )
-                                }
-                                className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer hover:bg-slate-200/60 transition-colors"
-                              >
-                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                                  {countRejected}
-                                </span>
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                  Rejected
-                                </span>
-                              </div>
+                              {PIPELINE_STAGES.map((stage) => {
+                                const count = stageCounts[stage.id] || 0;
+                                return (
+                                  <div
+                                    key={stage.id}
+                                    onClick={() =>
+                                      router.push(
+                                        activeJobId
+                                          ? `/dashboard/candidates?jobId=${activeJobId}&stage=${stage.id}`
+                                          : `/dashboard/candidates?stage=${stage.id}`,
+                                      )
+                                    }
+                                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors`}
+                                  >
+                                    <span
+                                      className={`text-xs font-bold ${stage.textColor}`}
+                                    >
+                                      {count}
+                                    </span>
+                                    <span
+                                      className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5`}
+                                    >
+                                      {stage.label}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         </div>

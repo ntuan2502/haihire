@@ -58,6 +58,7 @@ import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
+import { PIPELINE_STAGES } from "@/lib/stages";
 
 import {
   getInitials,
@@ -817,46 +818,24 @@ function ApplicationsPageContent() {
 
                 {/* Stage Action Pipeline Bar */}
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  {/* Left: Stage pipeline buttons */}
+                  {/* Left: Stage pipeline buttons (All stages except current) */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => handleStageChange("SCREENING")}
-                      className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap ${
-                        selectedApp.stage === "SCREENING"
-                          ? "bg-purple-700 text-white ring-2 ring-purple-400"
-                          : "bg-purple-600 hover:bg-purple-700 text-white"
-                      }`}
-                    >
-                      <span>Screening</span>
-                      <span className="opacity-80 text-[10px]">1</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleStageChange("INTERVIEW")}
-                      className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap ${
-                        selectedApp.stage === "INTERVIEW"
-                          ? "bg-amber-700 text-white ring-2 ring-amber-400"
-                          : "bg-amber-600 hover:bg-amber-700 text-white"
-                      }`}
-                    >
-                      <span>Interview</span>
-                      <span className="opacity-80 text-[10px]">2</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleStageChange("REJECTED")}
-                      className={`h-8 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap ${
-                        selectedApp.stage === "REJECTED"
-                          ? "bg-rose-700 text-white ring-2 ring-rose-400"
-                          : "bg-rose-600 hover:bg-rose-700 text-white"
-                      }`}
-                    >
-                      <span>Reject</span>
-                      <span className="opacity-80 text-[10px]">3</span>
-                    </button>
+                    {PIPELINE_STAGES.filter(
+                      (stage) => stage.id !== selectedApp.stage,
+                    ).map((stage) => (
+                      <button
+                        key={stage.id}
+                        type="button"
+                        onClick={() => handleStageChange(stage.id)}
+                        disabled={updateStageMutation.isPending}
+                        className={`h-8 px-3 rounded-lg ${stage.btnBg} ${stage.btnHover} text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap disabled:opacity-50`}
+                      >
+                        <span>{stage.actionLabel}</span>
+                        <span className="h-4 w-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center">
+                          {stage.stepNumber}
+                        </span>
+                      </button>
+                    ))}
                   </div>
 
                   {/* Right: Quick actions */}

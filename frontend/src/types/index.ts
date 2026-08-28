@@ -79,6 +79,7 @@ export interface Application {
   resumeMimeType?: string | null;
   notes?: string | null;
   orderIndex: number;
+  matchScore?: number | null;
   createdAt: string;
   updatedAt: string;
   job?: Partial<Job>;

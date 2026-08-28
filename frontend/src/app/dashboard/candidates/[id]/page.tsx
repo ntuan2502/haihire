@@ -49,6 +49,7 @@ import {
   isValidUuid,
 } from "@/lib/utils";
 import type { CandidateDocument } from "@/types";
+import { StageBadge } from "@/components/ui/stage-badge";
 
 function CandidateDetailPageContent() {
   const params = useParams();
@@ -595,9 +596,7 @@ function CandidateDetailPageContent() {
                             <span>Applied {formatDate(app.createdAt)}</span>
                           </p>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900">
-                          {app.stage}
-                        </span>
+                        <StageBadge stage={app.stage} />
                       </div>
                     );
                   })}

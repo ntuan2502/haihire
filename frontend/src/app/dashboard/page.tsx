@@ -24,8 +24,9 @@ import {
   MessageSquare,
   ArrowRight,
 } from "lucide-react";
-import { getInitials, formatRelativeTime, getStageInfo } from "@/lib/utils";
+import { getInitials, formatRelativeTime } from "@/lib/utils";
 import { PIPELINE_STAGES } from "@/lib/stages";
+import { StageBadge } from "@/components/ui/stage-badge";
 import type { ApplicationStage } from "@/types";
 
 function DashboardContent() {
@@ -41,12 +42,7 @@ function DashboardContent() {
   const createJobMutation = useCreateJobMutation();
 
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-
   const loading = jobsLoading || appsLoading;
-  const activeJob =
-    jobs.find((j) => j.id === selectedJobId) || (jobs.length > 0 ? jobs[0] : null);
-  const activeJobId = activeJob?.id ?? null;
 
   // Real database metrics computation
   const openJobsCount = jobs.filter((j) => j.status === "PUBLISHED").length;
@@ -63,31 +59,19 @@ function DashboardContent() {
       a.stage === "APPLIED",
   ).length;
 
-  // Filter applications for the active job
-  const activeJobApps = useMemo(() => {
-    return activeJob
-      ? applications.filter((a) => a.jobId === activeJob.id)
-      : [];
-  }, [activeJob, applications]);
-
-  const stageCounts: Record<ApplicationStage, number> = useMemo(() => {
-    const counts: Record<ApplicationStage, number> = {
-      APPLIED: 0,
-      SCREENING: 0,
-      INTERVIEW: 0,
-      OFFER: 0,
-      HIRED: 0,
-      REJECTED: 0,
-    };
-    for (const a of activeJobApps) {
-      if (counts[a.stage] !== undefined) {
-        counts[a.stage]++;
-      }
-    }
-    return counts;
-  }, [activeJobApps]);
-
-  const totalPipeline = activeJobApps.length;
+  // Jobs to show in Hiring Pipeline (all non-archived jobs, published first)
+  const pipelineJobs = useMemo(() => {
+    return [...jobs]
+      .filter((j) => j.status !== "ARCHIVED")
+      .sort((a, b) => {
+        if (a.status === "PUBLISHED" && b.status !== "PUBLISHED") return -1;
+        if (b.status === "PUBLISHED" && a.status !== "PUBLISHED") return 1;
+        return (
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime()
+        );
+      });
+  }, [jobs]);
 
   // Recent applications (only active job applications) sorted by createdAt descending
   const recentApplications = applications
@@ -102,7 +86,7 @@ function DashboardContent() {
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
     try {
-      const testJob = await createJobMutation.mutateAsync({
+      await createJobMutation.mutateAsync({
         title: "Customer Support Specialist",
         department: "Operations",
         location: "Vietnam / Remote",
@@ -113,7 +97,6 @@ function DashboardContent() {
         status: "PUBLISHED",
         organizationId: user?.organizationId ?? null,
       });
-      setSelectedJobId(testJob.id);
       setActiveTab("dashboard");
     } catch (err) {
       console.error("Create test job error", err);
@@ -271,68 +254,114 @@ function DashboardContent() {
                             </Link>
                           </div>
 
-                          {/* Job Pipeline Breakdown */}
-                          <div className="space-y-3 pt-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-slate-900 dark:text-white">
-                                {activeJob?.title || "Active Job Opening"}
-                              </span>
-                              <span className="text-xs font-semibold text-slate-400">
-                                {totalPipeline} total
-                              </span>
+                          {/* Job Pipeline Breakdown for all active jobs */}
+                          {pipelineJobs.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
+                              <Briefcase className="h-8 w-8 text-slate-300 dark:text-slate-700" />
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                No open jobs found
+                              </p>
+                              <Link
+                                href="/dashboard/jobs"
+                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                Create or manage jobs
+                              </Link>
                             </div>
-
-                            {/* Multi-segment Progress Bar */}
-                            <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 flex overflow-hidden">
-                              {PIPELINE_STAGES.map((stage) => {
-                                const count = stageCounts[stage.id] || 0;
-                                const pct =
-                                  totalPipeline > 0
-                                    ? (count / totalPipeline) * 100
-                                    : 0;
-                                if (pct <= 0) return null;
-                                return (
-                                  <div
-                                    key={stage.id}
-                                    style={{ width: `${pct}%` }}
-                                    className={`${stage.barColor} h-full`}
-                                    title={`${stage.label}: ${count}`}
-                                  />
+                          ) : (
+                            <div className="space-y-6 pt-1">
+                              {pipelineJobs.map((job) => {
+                                const jobApps = applications.filter(
+                                  (a) => a.jobId === job.id,
                                 );
-                              })}
-                            </div>
+                                const totalPipeline = jobApps.length;
+                                const stageCounts: Record<
+                                  ApplicationStage,
+                                  number
+                                > = {
+                                  APPLIED: 0,
+                                  SCREENING: 0,
+                                  INTERVIEW: 0,
+                                  OFFER: 0,
+                                  HIRED: 0,
+                                  REJECTED: 0,
+                                };
+                                for (const a of jobApps) {
+                                  if (stageCounts[a.stage] !== undefined) {
+                                    stageCounts[a.stage]++;
+                                  }
+                                }
 
-                            {/* 6 Stage Metric Cards */}
-                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1">
-                              {PIPELINE_STAGES.map((stage) => {
-                                const count = stageCounts[stage.id] || 0;
                                 return (
-                                  <div
-                                    key={stage.id}
-                                    onClick={() =>
-                                      router.push(
-                                        activeJobId
-                                          ? `/dashboard/candidates?jobId=${activeJobId}&stage=${stage.id}`
-                                          : `/dashboard/candidates?stage=${stage.id}`,
-                                      )
-                                    }
-                                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors`}
-                                  >
-                                    <span
-                                      className={`text-xs font-bold ${stage.textColor}`}
-                                    >
-                                      {count}
-                                    </span>
-                                    <span
-                                      className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5`}
-                                    >
-                                      {stage.label}
-                                    </span>
+                                  <div key={job.id} className="space-y-2.5">
+                                    {/* Job Title & Total Candidates */}
+                                    <div className="flex items-center justify-between">
+                                      <Link
+                                        href={`/dashboard/jobs/${job.id}`}
+                                        className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                      >
+                                        {job.title}
+                                      </Link>
+                                      <span className="text-xs text-slate-400 font-normal">
+                                        {totalPipeline} total
+                                      </span>
+                                    </div>
+
+                                    {/* Multi-segment Progress Bar */}
+                                    <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 flex overflow-hidden">
+                                      {PIPELINE_STAGES.map((stage) => {
+                                        const count =
+                                          stageCounts[stage.id] || 0;
+                                        const pct =
+                                          totalPipeline > 0
+                                            ? (count / totalPipeline) * 100
+                                            : 0;
+                                        if (pct <= 0) return null;
+                                        return (
+                                          <div
+                                            key={stage.id}
+                                            style={{ width: `${pct}%` }}
+                                            className={`${stage.barColor} h-full`}
+                                            title={`${stage.label}: ${count}`}
+                                          />
+                                        );
+                                      })}
+                                    </div>
+
+                                    {/* 6 Stage Metric Cards */}
+                                    <div className="grid grid-cols-6 gap-2 pt-1">
+                                      {PIPELINE_STAGES.map((stage) => {
+                                        const count =
+                                          stageCounts[stage.id] || 0;
+                                        return (
+                                          <div
+                                            key={stage.id}
+                                            onClick={() =>
+                                              router.push(
+                                                `/dashboard/jobs/${job.id}?stage=${stage.id}`,
+                                              )
+                                            }
+                                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors`}
+                                          >
+                                            <span
+                                              className={`text-xs font-bold ${stage.textColor}`}
+                                            >
+                                              {count}
+                                            </span>
+                                            <span
+                                              className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5`}
+                                            >
+                                              {stage.label}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
                                 );
                               })}
                             </div>
-                          </div>
+                          )}
                         </div>
 
                         {/* Card B: Recent Applications */}
@@ -346,7 +375,7 @@ function DashboardContent() {
                               </h3>
                             </div>
                             <Link
-                              href="/dashboard/candidates"
+                              href="/dashboard/applications"
                               className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
                             >
                               <span>View all</span>
@@ -367,7 +396,6 @@ function DashboardContent() {
                           ) : (
                             <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
                               {recentApplications.map((app) => {
-                                const stageInfo = getStageInfo(app.stage);
                                 const candidateJob = jobs.find(
                                   (j) => j.id === app.jobId,
                                 );
@@ -377,7 +405,7 @@ function DashboardContent() {
                                     key={app.id}
                                     onClick={() =>
                                       router.push(
-                                        `/dashboard/candidates?jobId=${app.jobId}`,
+                                        `/dashboard/applications/${app.id}`,
                                       )
                                     }
                                     className="flex items-center justify-between py-3 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
@@ -394,11 +422,7 @@ function DashboardContent() {
                                           <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
                                             {app.candidateName}
                                           </span>
-                                          <span
-                                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${stageInfo.badgeBg} ${stageInfo.textColor}`}
-                                          >
-                                            {stageInfo.label}
-                                          </span>
+                                          <StageBadge stage={app.stage} />
                                         </div>
                                         <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
                                           {candidateJob?.title || "Open Role"}

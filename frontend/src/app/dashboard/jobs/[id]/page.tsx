@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { useAuth } from "@/context/auth-context";
@@ -61,11 +61,11 @@ import {
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { PIPELINE_STAGES } from "@/lib/stages";
+import { StageBadge } from "@/components/ui/stage-badge";
 import {
   getInitials,
   formatRelativeTime,
   formatDate,
-  getStageInfo,
   getCandidateDisplayName,
   parseCandidateDocuments,
   parseCandidateNotes,
@@ -91,9 +91,27 @@ function JobDetailPageContent() {
   // Top header job navigation tab (Pipeline, Promote, Table, etc.)
   const [jobNavTab, setJobNavTab] = useState<string>("pipeline");
 
-  // Selected stage filter for candidate pipeline
-  const [selectedStage, setSelectedStage] =
-    useState<ApplicationStage>("APPLIED");
+  const searchParams = useSearchParams();
+  const initialStageParam = searchParams.get("stage") as ApplicationStage | null;
+
+  // Selected stage filter for candidate pipeline (supports URL ?stage=...)
+  const [selectedStage, setSelectedStage] = useState<ApplicationStage>(() => {
+    if (
+      initialStageParam &&
+      PIPELINE_STAGES.some((s) => s.id === initialStageParam)
+    ) {
+      return initialStageParam;
+    }
+    return "APPLIED";
+  });
+
+  // Sync selectedStage if URL stage param changes
+  useEffect(() => {
+    const stageParam = searchParams.get("stage") as ApplicationStage | null;
+    if (stageParam && PIPELINE_STAGES.some((s) => s.id === stageParam)) {
+      setSelectedStage(stageParam);
+    }
+  }, [searchParams]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">(
     "score",
@@ -812,9 +830,7 @@ function JobDetailPageContent() {
                         <h2 className="text-base font-bold text-slate-900 dark:text-white">
                           {getCandidateDisplayName(selectedCandidate)}
                         </h2>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-900/60 uppercase">
-                          {getStageInfo(selectedCandidate.stage).label}
-                        </span>
+                        <StageBadge stage={selectedCandidate.stage} />
                       </div>
 
                       {/* Contact metadata row */}
@@ -1358,7 +1374,13 @@ function JobDetailPageContent() {
 export default function JobDetailPage() {
   return (
     <AuthGuard>
-      <JobDetailPageContent />
+      <Suspense
+        fallback={
+          <LoadingSpinner fullScreen />
+        }
+      >
+        <JobDetailPageContent />
+      </Suspense>
     </AuthGuard>
   );
 }

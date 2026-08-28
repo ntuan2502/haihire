@@ -40,6 +40,7 @@ import {
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { PIPELINE_STAGES } from "@/lib/stages";
+import { StageBadge } from "@/components/ui/stage-badge";
 import {
   getInitials,
   formatDate,
@@ -328,9 +329,7 @@ function ApplicationDetailPageContent() {
                 <h1 className="text-xl font-black text-slate-900 dark:text-white">
                   {candidateName}
                 </h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-900">
-                  {app?.stage === "APPLIED" ? "NEW" : app?.stage}
-                </span>
+                <StageBadge stage={app?.stage} />
               </div>
 
               <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">

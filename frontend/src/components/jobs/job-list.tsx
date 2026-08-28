@@ -15,6 +15,8 @@ import {
   Plus,
   ChevronDown,
   ArrowUpDown,
+  Eye,
+  Sparkles,
 } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -43,7 +45,7 @@ interface JobListProps {
 export function JobList({
   jobs,
   applications = [],
-  onViewCandidates,
+  onViewCandidates: _onViewCandidates,
   _onOpenCreateJob,
 }: JobListProps & { _onOpenCreateJob?: () => void }) {
   const router = useRouter();
@@ -319,7 +321,10 @@ export function JobList({
                     return (
                       <div
                         key={stage.id}
-                        onClick={() => onViewCandidates(job.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/jobs/${job.id}?stage=${stage.id}`);
+                        }}
                         className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
                       >
                         <span
@@ -337,28 +342,51 @@ export function JobList({
                   })}
                 </div>
 
-                {/* Bottom Row: Applicant count & Promote button */}
+                {/* Bottom Row: Applicant count & Promote / Review button */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                  <span className="text-slate-400 text-[11px]">
-                    {counts.total === 0
-                      ? "No applicants yet"
-                      : `${counts.total} applicant${counts.total > 1 ? "s" : ""}`}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (typeof window !== "undefined" && navigator.clipboard) {
-                        navigator.clipboard.writeText(
-                          `${window.location.origin}/dashboard/jobs`,
-                        );
-                      }
-                    }}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-                  >
-                    <Megaphone className="h-3 w-3" />
-                    <span>Promote</span>
-                  </button>
+                  {counts.total === 0 ? (
+                    <>
+                      <span className="text-slate-400 text-[11px]">
+                        No applicants yet
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (typeof window !== "undefined" && navigator.clipboard) {
+                            navigator.clipboard.writeText(
+                              `${window.location.origin}/dashboard/jobs/${job.id}`,
+                            );
+                          }
+                        }}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
+                      >
+                        <Megaphone className="h-3 w-3" />
+                        <span>Promote</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-amber-600 dark:text-amber-400 font-medium text-[11px]">
+                        {counts.new > 0
+                          ? `${counts.new} applicant${counts.new > 1 ? "s" : ""} you haven't viewed`
+                          : `${counts.total} applicant${counts.total > 1 ? "s" : ""} in pipeline`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(
+                            `/dashboard/jobs/${job.id}${counts.new > 0 ? "?stage=APPLIED" : ""}`,
+                          );
+                        }}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>Review</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -375,7 +403,11 @@ export function JobList({
             return (
               <div
                 key={job.id}
-                className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+                className={`rounded-2xl border ${
+                  counts.new > 0
+                    ? "border-amber-200/90 dark:border-amber-900/60"
+                    : "border-slate-200/90 dark:border-slate-800"
+                } bg-white p-6 shadow-xs dark:bg-slate-900 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all`}
               >
                 {/* Top Row: Title & Open Badge */}
                 <div className="flex items-center justify-between">
@@ -418,7 +450,10 @@ export function JobList({
                     return (
                       <div
                         key={stage.id}
-                        onClick={() => onViewCandidates(job.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/jobs/${job.id}?stage=${stage.id}`);
+                        }}
                         className={`flex flex-col items-center justify-center p-3 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
                       >
                         <span
@@ -434,6 +469,53 @@ export function JobList({
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Bottom Row in List View: Applicant count & Review in Pipeline / Promote */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                  {counts.total === 0 ? (
+                    <>
+                      <span className="text-slate-400 text-xs">
+                        No applicants yet
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (typeof window !== "undefined" && navigator.clipboard) {
+                            navigator.clipboard.writeText(
+                              `${window.location.origin}/dashboard/jobs/${job.id}`,
+                            );
+                          }
+                        }}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <Megaphone className="h-3 w-3" />
+                        <span>Promote</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
+                        {counts.new > 0
+                          ? `${counts.new} applicant${counts.new > 1 ? "s" : ""} you haven't viewed yet`
+                          : `${counts.total} applicant${counts.total > 1 ? "s" : ""} in pipeline`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(
+                            `/dashboard/jobs/${job.id}${counts.new > 0 ? "?stage=APPLIED" : ""}`,
+                          );
+                        }}
+                        className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        <span>Review in Pipeline</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );

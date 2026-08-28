@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
@@ -85,6 +85,43 @@ function CandidatesPageContent() {
   const [drawerStageFilter, setDrawerStageFilter] = useState("ALL");
   const [isUploadingDrawerDoc, setIsUploadingDrawerDoc] = useState(false);
   const drawerDocInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Column Visibility Toggle State & Ref
+  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
+  const columnsRef = useRef<HTMLDivElement>(null);
+  const [visibleColumns, setVisibleColumns] = useState({
+    name: true,
+    email: true,
+    phone: true,
+    applications: true,
+    added: true,
+    quickNotes: true,
+  });
+
+  const toggleColumn = (key: keyof typeof visibleColumns) => {
+    if (key === "name") return; // locked
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        columnsRef.current &&
+        !columnsRef.current.contains(event.target as Node)
+      ) {
+        setIsColumnsOpen(false);
+      }
+    }
+    if (isColumnsOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isColumnsOpen]);
 
   // Sorting State
   const [sortField, setSortField] = useState<SortField>("added");
@@ -234,14 +271,64 @@ function CandidatesPageContent() {
               </button>
             </div>
 
-            {/* Columns */}
-            <button
-              type="button"
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
-            >
-              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
-              <span>Columns</span>
-            </button>
+            {/* Columns Dropdown matching Screenshot */}
+            <div className="relative" ref={columnsRef}>
+              <button
+                type="button"
+                onClick={() => setIsColumnsOpen((prev) => !prev)}
+                className={`h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
+                  isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
+                }`}
+              >
+                <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+                <span>Columns</span>
+              </button>
+
+              {isColumnsOpen && (
+                <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
+                  <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                    TOGGLE COLUMNS
+                  </div>
+                  <div className="space-y-0.5 mt-1">
+                    {[
+                      { id: "name", label: "Name", locked: true },
+                      { id: "email", label: "Email" },
+                      { id: "phone", label: "Phone" },
+                      { id: "applications", label: "Applications" },
+                      { id: "added", label: "Added" },
+                      { id: "quickNotes", label: "Quick notes" },
+                    ].map((col) => {
+                      const isChecked =
+                        visibleColumns[col.id as keyof typeof visibleColumns];
+                      const isLocked = col.locked;
+                      return (
+                        <label
+                          key={col.id}
+                          className={`flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-xs font-semibold select-none transition-colors ${
+                            isLocked
+                              ? "opacity-60 cursor-not-allowed text-slate-500 dark:text-slate-400"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isLocked}
+                            onChange={() =>
+                              toggleColumn(
+                                col.id as keyof typeof visibleColumns,
+                              )
+                            }
+                            className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span>{col.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Filters */}
             <button
@@ -314,94 +401,106 @@ function CandidatesPageContent() {
                 {/* Table Header */}
                 <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500">
                   <tr>
-                    <th
-                      onClick={() => handleSort("name")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Name
-                        {sortField === "name" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
-                    <th
-                      onClick={() => handleSort("email")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Email
-                        {sortField === "email" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
-                    <th
-                      onClick={() => handleSort("phone")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Phone
-                        {sortField === "phone" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
-                    <th
-                      onClick={() => handleSort("applications")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Applications
-                        {sortField === "applications" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
-                    <th
-                      onClick={() => handleSort("added")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
-                        Added
-                        {sortField === "added" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
-                    <th className="py-3 px-5 font-semibold text-slate-500">
-                      Quick notes
-                    </th>
+                    {visibleColumns.name && (
+                      <th
+                        onClick={() => handleSort("name")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Name
+                          {sortField === "name" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
+                    {visibleColumns.email && (
+                      <th
+                        onClick={() => handleSort("email")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Email
+                          {sortField === "email" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
+                    {visibleColumns.phone && (
+                      <th
+                        onClick={() => handleSort("phone")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Phone
+                          {sortField === "phone" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
+                    {visibleColumns.applications && (
+                      <th
+                        onClick={() => handleSort("applications")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Applications
+                          {sortField === "applications" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
+                    {visibleColumns.added && (
+                      <th
+                        onClick={() => handleSort("added")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
+                          Added
+                          {sortField === "added" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
+                    {visibleColumns.quickNotes && (
+                      <th className="py-3 px-5 font-semibold text-slate-500">
+                        Quick notes
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -414,44 +513,56 @@ function CandidatesPageContent() {
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                     >
                       {/* Name */}
-                      <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
-                        <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                          {candidate.name}
-                        </span>
-                      </td>
+                      {visibleColumns.name && (
+                        <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+                          <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            {candidate.name}
+                          </span>
+                        </td>
+                      )}
 
                       {/* Email */}
-                      <td className="py-4 px-5">
-                        <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                          <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <span>{candidate.email}</span>
-                        </span>
-                      </td>
+                      {visibleColumns.email && (
+                        <td className="py-4 px-5">
+                          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                            <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            <span>{candidate.email}</span>
+                          </span>
+                        </td>
+                      )}
 
                       {/* Phone */}
-                      <td className="py-4 px-5">
-                        {candidate.phone ? (
-                          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                            <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span>{candidate.phone}</span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 dark:text-slate-600">—</span>
-                        )}
-                      </td>
+                      {visibleColumns.phone && (
+                        <td className="py-4 px-5">
+                          {candidate.phone ? (
+                            <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                              <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>{candidate.phone}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
+                      )}
 
                       {/* Applications Count */}
-                      <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
-                        {candidate.applicationsCount}
-                      </td>
+                      {visibleColumns.applications && (
+                        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+                          {candidate.applicationsCount}
+                        </td>
+                      )}
 
                       {/* Added Date */}
-                      <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
-                        {formatDate(candidate.createdAt)}
-                      </td>
+                      {visibleColumns.added && (
+                        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+                          {formatDate(candidate.createdAt)}
+                        </td>
+                      )}
 
                       {/* Quick notes - Empty as requested */}
-                      <td className="py-4 px-5"></td>
+                      {visibleColumns.quickNotes && (
+                        <td className="py-4 px-5"></td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

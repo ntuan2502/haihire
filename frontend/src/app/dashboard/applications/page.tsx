@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
@@ -86,6 +86,43 @@ function ApplicationsPageContent() {
   const [drawerNoteInput, setDrawerNoteInput] = useState("");
   const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Column Visibility Toggle State & Ref
+  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
+  const columnsRef = useRef<HTMLDivElement>(null);
+  const [visibleColumns, setVisibleColumns] = useState({
+    candidate: true,
+    email: true,
+    job: true,
+    status: true,
+    score: true,
+    applied: true,
+  });
+
+  const toggleColumn = (key: keyof typeof visibleColumns) => {
+    if (key === "candidate") return;
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        columnsRef.current &&
+        !columnsRef.current.contains(event.target as Node)
+      ) {
+        setIsColumnsOpen(false);
+      }
+    }
+    if (isColumnsOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isColumnsOpen]);
 
   const handleConfirmDelete = async () => {
     if (!deleteModalApp) return;
@@ -253,14 +290,64 @@ function ApplicationsPageContent() {
               </button>
             </div>
 
-            {/* Columns */}
-            <button
-              type="button"
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
-            >
-              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
-              <span>Columns</span>
-            </button>
+            {/* Columns Dropdown matching Screenshot */}
+            <div className="relative" ref={columnsRef}>
+              <button
+                type="button"
+                onClick={() => setIsColumnsOpen((prev) => !prev)}
+                className={`h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
+                  isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
+                }`}
+              >
+                <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+                <span>Columns</span>
+              </button>
+
+              {isColumnsOpen && (
+                <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
+                  <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                    TOGGLE COLUMNS
+                  </div>
+                  <div className="space-y-0.5 mt-1">
+                    {[
+                      { id: "candidate", label: "Candidate", locked: true },
+                      { id: "email", label: "Email" },
+                      { id: "job", label: "Job" },
+                      { id: "status", label: "Status" },
+                      { id: "score", label: "Score" },
+                      { id: "applied", label: "Applied" },
+                    ].map((col) => {
+                      const isChecked =
+                        visibleColumns[col.id as keyof typeof visibleColumns];
+                      const isLocked = col.locked;
+                      return (
+                        <label
+                          key={col.id}
+                          className={`flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-xs font-semibold select-none transition-colors ${
+                            isLocked
+                              ? "opacity-60 cursor-not-allowed text-slate-500 dark:text-slate-400"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isLocked}
+                            onChange={() =>
+                              toggleColumn(
+                                col.id as keyof typeof visibleColumns,
+                              )
+                            }
+                            className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <span>{col.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Filters */}
             <button
@@ -322,118 +409,130 @@ function ApplicationsPageContent() {
                 <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-semibold text-slate-500">
                   <tr>
                     {/* Candidate */}
-                    <th
-                      onClick={() => handleSort("candidate")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Candidate
-                        {sortField === "candidate" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
+                    {visibleColumns.candidate && (
+                      <th
+                        onClick={() => handleSort("candidate")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Candidate
+                          {sortField === "candidate" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
 
                     {/* Email */}
-                    <th
-                      onClick={() => handleSort("email")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Email
-                        {sortField === "email" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
+                    {visibleColumns.email && (
+                      <th
+                        onClick={() => handleSort("email")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Email
+                          {sortField === "email" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
 
                     {/* Job */}
-                    <th
-                      onClick={() => handleSort("job")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Job
-                        {sortField === "job" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
+                    {visibleColumns.job && (
+                      <th
+                        onClick={() => handleSort("job")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Job
+                          {sortField === "job" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
 
                     {/* Status */}
-                    <th
-                      onClick={() => handleSort("status")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Status
-                        {sortField === "status" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
+                    {visibleColumns.status && (
+                      <th
+                        onClick={() => handleSort("status")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Status
+                          {sortField === "status" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
 
                     {/* Score */}
-                    <th
-                      onClick={() => handleSort("score")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1">
-                        Score
-                        {sortField === "score" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
+                    {visibleColumns.score && (
+                      <th
+                        onClick={() => handleSort("score")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1">
+                          Score
+                          {sortField === "score" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
 
                     {/* Applied */}
-                    <th
-                      onClick={() => handleSort("applied")}
-                      className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
-                    >
-                      <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
-                        Applied
-                        {sortField === "applied" ? (
-                          <ArrowDown
-                            className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
-                              sortDirection === "asc" ? "rotate-180" : ""
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpDown className="h-3 w-3 text-slate-400" />
-                        )}
-                      </span>
-                    </th>
+                    {visibleColumns.applied && (
+                      <th
+                        onClick={() => handleSort("applied")}
+                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                      >
+                        <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
+                          Applied
+                          {sortField === "applied" ? (
+                            <ArrowDown
+                              className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
+                                sortDirection === "asc" ? "rotate-180" : ""
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                          )}
+                        </span>
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -452,50 +551,62 @@ function ApplicationsPageContent() {
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                       >
                         {/* Candidate Name */}
-                        <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
-                          <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                            {application.candidateName}
-                          </span>
-                        </td>
+                        {visibleColumns.candidate && (
+                          <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
+                            <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                              {application.candidateName}
+                            </span>
+                          </td>
+                        )}
 
                         {/* Email */}
-                        <td className="py-4 px-5">
-                          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                            <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span>{application.candidateEmail}</span>
-                          </span>
-                        </td>
+                        {visibleColumns.email && (
+                          <td className="py-4 px-5">
+                            <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                              <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>{application.candidateEmail}</span>
+                            </span>
+                          </td>
+                        )}
 
                         {/* Job */}
-                        <td className="py-4 px-5">
-                          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
-                            <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span>
-                              {job?.title || "Role"}{" "}
-                              <span className="text-slate-400">
-                                ({job?.type === "FULL_TIME" ? "Full-Time" : job?.type === "PART_TIME" ? "Part-Time" : job?.type || "Full-Time"})
+                        {visibleColumns.job && (
+                          <td className="py-4 px-5">
+                            <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                              <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>
+                                {job?.title || "Role"}{" "}
+                                <span className="text-slate-400">
+                                  ({job?.type === "FULL_TIME" ? "Full-Time" : job?.type === "PART_TIME" ? "Part-Time" : job?.type || "Full-Time"})
+                                </span>
                               </span>
                             </span>
-                          </span>
-                        </td>
+                          </td>
+                        )}
 
                         {/* Status */}
-                        <td className="py-4 px-5">
-                          <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${stageInfo.dotColor}`}
-                            />
-                            <span>{stageInfo.label}</span>
-                          </span>
-                        </td>
+                        {visibleColumns.status && (
+                          <td className="py-4 px-5">
+                            <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${stageInfo.dotColor}`}
+                              />
+                              <span>{stageInfo.label}</span>
+                            </span>
+                          </td>
+                        )}
 
                         {/* Score */}
-                        <td className="py-4 px-5 text-slate-400">—</td>
+                        {visibleColumns.score && (
+                          <td className="py-4 px-5 text-slate-400">—</td>
+                        )}
 
                         {/* Applied */}
-                        <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
-                          {formatRelativeTime(application.createdAt)}
-                        </td>
+                        {visibleColumns.applied && (
+                          <td className="py-4 px-5 text-slate-500 dark:text-slate-400">
+                            {formatRelativeTime(application.createdAt)}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

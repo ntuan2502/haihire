@@ -54,6 +54,7 @@ import { ApplyModal } from "@/components/applications/apply-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
+import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
@@ -88,11 +89,12 @@ function JobDetailPageContent() {
   const updateJobMutation = useUpdateJobMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
 
-  // Top header job navigation tab (Pipeline, Promote, Table, etc.)
-  const [jobNavTab, setJobNavTab] = useState<string>("pipeline");
-
   const searchParams = useSearchParams();
   const initialStageParam = searchParams.get("stage") as ApplicationStage | null;
+  const initialTabParam = searchParams.get("tab") || "pipeline";
+
+  // Top header job navigation tab (Pipeline, Promote, Table, etc.)
+  const [jobNavTab, setJobNavTab] = useState<string>(initialTabParam);
 
   // Selected stage filter for candidate pipeline (supports URL ?stage=...)
   const [selectedStage, setSelectedStage] = useState<ApplicationStage>(() => {
@@ -105,13 +107,42 @@ function JobDetailPageContent() {
     return "APPLIED";
   });
 
-  // Sync selectedStage if URL stage param changes
+  // Sync selectedStage and jobNavTab if URL searchParams changes
   useEffect(() => {
     const stageParam = searchParams.get("stage") as ApplicationStage | null;
     if (stageParam && PIPELINE_STAGES.some((s) => s.id === stageParam)) {
       setSelectedStage(stageParam);
     }
+    const tabParam = searchParams.get("tab");
+    if (tabParam) {
+      setJobNavTab(tabParam);
+    } else {
+      setJobNavTab("pipeline");
+    }
   }, [searchParams]);
+
+  const handleSelectNavTab = (tabId: string) => {
+    setJobNavTab(tabId);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tabId === "pipeline") {
+      params.delete("tab");
+    } else {
+      params.set("tab", tabId);
+    }
+    router.replace(`/dashboard/jobs/${jobId}?${params.toString()}`, {
+      scroll: false,
+    });
+  };
+
+  const handleSelectStage = (stageId: ApplicationStage) => {
+    setSelectedStage(stageId);
+    setCandidateTab("overview");
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("stage", stageId);
+    router.replace(`/dashboard/jobs/${jobId}?${params.toString()}`, {
+      scroll: false,
+    });
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">(
     "score",
@@ -303,6 +334,12 @@ function JobDetailPageContent() {
       await updateStageMutation.mutateAsync({
         id: selectedCandidate.id,
         stage: newStage,
+      });
+      setSelectedStage(newStage);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("stage", newStage);
+      router.replace(`/dashboard/jobs/${jobId}?${params.toString()}`, {
+        scroll: false,
       });
     } catch (err) {
       console.error("Failed to move candidate stage", err);
@@ -536,7 +573,7 @@ function JobDetailPageContent() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setJobNavTab(tab.id)}
+                  onClick={() => handleSelectNavTab(tab.id)}
                   className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
                     isActive
                       ? "bg-slate-100 text-slate-900 font-bold dark:bg-slate-800 dark:text-white"
@@ -587,8 +624,34 @@ function JobDetailPageContent() {
         </div>
       </header>
 
-      {/* 2. Pipeline Stages Sub-header (Matching Screenshot Row 2) */}
-      <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xs px-4 py-2 sm:px-6 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none z-10">
+      {/* 2. Main Body: Switch between Table view and Pipeline view */}
+      {jobNavTab === "table" ? (
+        <main className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 bg-slate-50 dark:bg-slate-950">
+          <div className="max-w-7xl mx-auto">
+            <ApplicationsDataTable
+              applications={jobApplications}
+              jobs={jobs}
+              loading={jobLoading || appsLoading}
+              fixedJobId={job.id}
+              onViewInPipeline={(appId, stage) => {
+                setSelectedStage(stage);
+                setSelectedAppId(appId);
+                setJobNavTab("pipeline");
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("stage", stage);
+                params.delete("tab");
+                router.replace(
+                  `/dashboard/jobs/${jobId}?${params.toString()}`,
+                  { scroll: false },
+                );
+              }}
+            />
+          </div>
+        </main>
+      ) : (
+        <>
+          {/* 2. Pipeline Stages Sub-header (Matching Screenshot Row 2) */}
+          <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xs px-4 py-2 sm:px-6 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none z-10">
         {/* Stage Pills */}
         <div className="flex items-center gap-2">
           {PIPELINE_STAGES.map((stage) => {
@@ -598,10 +661,7 @@ function JobDetailPageContent() {
               <button
                 key={stage.id}
                 type="button"
-                onClick={() => {
-                  setSelectedStage(stage.id);
-                  setCandidateTab("overview");
-                }}
+                onClick={() => handleSelectStage(stage.id)}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer whitespace-nowrap ${
                   isSelected
                     ? stage.activePill
@@ -1337,7 +1397,9 @@ function JobDetailPageContent() {
             </div>
           )}
         </section>
-      </main>
+          </main>
+        </>
+      )}
 
       {/* Apply Modal */}
       <ApplyModal

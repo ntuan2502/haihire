@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'b4bd014afa81cd438ac3d34c0edd45e1f705e4dc5b142dc61e8a2ed71a70eaff'>;
+  StorageHashBase<'741af22428fde9618740aba4a0035d8ad88367927f920c3b0982d8482059632c'>;
 export type ExecutionHash =
   ExecutionHashBase<'9ae43b7690df1a4dc1a613ddfcc264dfa7262fc7f3c329029409dbebe8480330'>;
 export type ProfileHash =
@@ -215,6 +215,9 @@ export type FieldOutputTypes = {
       readonly title: CodecTypes['pg/text@1']['output'];
       readonly department: CodecTypes['pg/text@1']['output'];
       readonly location: CodecTypes['pg/text@1']['output'];
+      readonly postalCode: CodecTypes['pg/text@1']['output'] | null;
+      readonly experienceLevel: CodecTypes['pg/text@1']['output'] | null;
+      readonly workplace: CodecTypes['pg/text@1']['output'] | null;
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
       readonly description: CodecTypes['pg/text@1']['output'];
       readonly requirements: CodecTypes['pg/text@1']['output'] | null;
@@ -269,6 +272,9 @@ export type FieldInputTypes = {
       readonly title: CodecTypes['pg/text@1']['input'];
       readonly department: CodecTypes['pg/text@1']['input'];
       readonly location: CodecTypes['pg/text@1']['input'];
+      readonly postalCode: CodecTypes['pg/text@1']['input'] | null;
+      readonly experienceLevel: CodecTypes['pg/text@1']['input'] | null;
+      readonly workplace: CodecTypes['pg/text@1']['input'] | null;
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
       readonly description: CodecTypes['pg/text@1']['input'];
       readonly requirements: CodecTypes['pg/text@1']['input'] | null;
@@ -323,15 +329,18 @@ export type StorageColumnTypes = {
       readonly createdById: CodecTypes['pg/text@1']['output'] | null;
       readonly department: CodecTypes['pg/text@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'];
+      readonly experienceLevel: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly location: CodecTypes['pg/text@1']['output'];
       readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
+      readonly postalCode: CodecTypes['pg/text@1']['output'] | null;
       readonly requirements: CodecTypes['pg/text@1']['output'] | null;
       readonly salaryRange: CodecTypes['pg/text@1']['output'] | null;
       readonly status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
       readonly title: CodecTypes['pg/text@1']['output'];
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly workplace: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -377,15 +386,18 @@ export type StorageColumnInputTypes = {
       readonly createdById: CodecTypes['pg/text@1']['input'] | null;
       readonly department: CodecTypes['pg/text@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'];
+      readonly experienceLevel: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly location: CodecTypes['pg/text@1']['input'];
       readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
+      readonly postalCode: CodecTypes['pg/text@1']['input'] | null;
       readonly requirements: CodecTypes['pg/text@1']['input'] | null;
       readonly salaryRange: CodecTypes['pg/text@1']['input'] | null;
       readonly status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
       readonly title: CodecTypes['pg/text@1']['input'];
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly workplace: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -558,6 +570,21 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                };
+                readonly postalCode: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly experienceLevel: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly workplace: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly type: {
                   readonly nativeType: 'text';
@@ -942,6 +969,18 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly postalCode: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly experienceLevel: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly workplace: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly type: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1019,6 +1058,9 @@ type ContractBase = Omit<
                 readonly title: { readonly column: 'title' };
                 readonly department: { readonly column: 'department' };
                 readonly location: { readonly column: 'location' };
+                readonly postalCode: { readonly column: 'postalCode' };
+                readonly experienceLevel: { readonly column: 'experienceLevel' };
+                readonly workplace: { readonly column: 'workplace' };
                 readonly type: { readonly column: 'type' };
                 readonly description: { readonly column: 'description' };
                 readonly requirements: { readonly column: 'requirements' };

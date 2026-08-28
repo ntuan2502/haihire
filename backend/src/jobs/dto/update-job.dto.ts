@@ -14,6 +14,18 @@ export class UpdateJobDto {
   @IsOptional()
   location?: string;
 
+  @IsString()
+  @IsOptional()
+  postalCode?: string;
+
+  @IsString()
+  @IsOptional()
+  experienceLevel?: string;
+
+  @IsString()
+  @IsOptional()
+  workplace?: string;
+
   @IsEnum(JobType)
   @IsOptional()
   type?: JobType;

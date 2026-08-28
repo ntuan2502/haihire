@@ -41,6 +41,9 @@ export interface Job {
   title: string;
   department: string;
   location: string;
+  postalCode?: string | null;
+  experienceLevel?: string | null;
+  workplace?: string | null;
   type: JobType;
   description: string;
   requirements?: string | null;
@@ -89,10 +92,13 @@ export interface CreateJobInput {
   title: string;
   department: string;
   location: string;
+  postalCode?: string | null;
+  experienceLevel?: string | null;
+  workplace?: string | null;
   type?: JobType;
   description: string;
-  requirements?: string;
-  salaryRange?: string;
+  requirements?: string | null;
+  salaryRange?: string | null;
   status?: JobStatus;
   organizationId?: string | null;
   createdById?: string | null;

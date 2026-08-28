@@ -74,6 +74,8 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
       router.push(`/dashboard/jobs/${jobId}/pipeline`);
     } else if (tabId === "table") {
       router.push(`/dashboard/jobs/${jobId}/table`);
+    } else if (tabId === "settings") {
+      router.push(`/dashboard/jobs/${jobId}/settings`);
     } else {
       router.push(`/dashboard/jobs/${jobId}/pipeline`);
     }
@@ -189,7 +191,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               { id: "automation", label: "Automation", icon: Zap, implemented: false },
               { id: "tracking", label: "Source Tracking", icon: BarChart2, implemented: false },
               { id: "ai", label: "AI Analysis", icon: Sparkles, implemented: false },
-              { id: "settings", label: "Settings", icon: Settings, implemented: false },
+              { id: "settings", label: "Settings", icon: Settings, implemented: true },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeNavTab === tab.id;

@@ -57,22 +57,25 @@ model User {
 }
 
 model Job {
-  id             String        @id @default(uuid())
-  title          String
-  department     String
-  location       String
-  type           JobType       @default(FULL_TIME)
-  description    String
-  requirements   String?
-  salaryRange    String?
-  status         JobStatus     @default(PUBLISHED)
-  createdById    String?
-  createdBy      User?         @relation(fields: [createdById], references: [id])
-  organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  applications   Application[]
-  createdAt      DateTime      @default(now())
-  updatedAt      temporal.updatedAt()
+  id              String        @id @default(uuid())
+  title           String
+  department      String
+  location        String
+  postalCode      String?
+  experienceLevel String?
+  workplace       String?
+  type            JobType       @default(FULL_TIME)
+  description     String
+  requirements    String?
+  salaryRange     String?
+  status          JobStatus     @default(PUBLISHED)
+  createdById     String?
+  createdBy       User?         @relation(fields: [createdById], references: [id])
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  applications    Application[]
+  createdAt       DateTime      @default(now())
+  updatedAt       temporal.updatedAt()
 }
 
 model Application {

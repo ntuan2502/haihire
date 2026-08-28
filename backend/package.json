@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
+    "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",
     "@types/node": "^25.9.5",
     "@types/passport-jwt": "^4.0.1",

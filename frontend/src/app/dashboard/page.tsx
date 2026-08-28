@@ -297,7 +297,7 @@ function DashboardContent() {
                                     {/* Job Title & Total Candidates */}
                                     <div className="flex items-center justify-between">
                                       <Link
-                                        href={`/dashboard/jobs/${job.id}`}
+                                        href={`/dashboard/jobs/${job.id}/pipeline`}
                                         className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                       >
                                         {job.title}
@@ -338,7 +338,7 @@ function DashboardContent() {
                                             key={stage.id}
                                             onClick={() =>
                                               router.push(
-                                                `/dashboard/jobs/${job.id}?stage=${stage.id}`,
+                                                `/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`,
                                               )
                                             }
                                             className={`flex flex-col items-center justify-center p-2.5 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors`}

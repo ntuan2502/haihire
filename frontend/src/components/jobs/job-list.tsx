@@ -285,7 +285,7 @@ export function JobList({
                 <div className="space-y-1">
                   <div className="flex items-start justify-between gap-2">
                     <h3
-                      onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
+                      onClick={() => router.push(`/dashboard/jobs/${job.id}/pipeline`)}
                       className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer leading-snug"
                     >
                       {job.title}
@@ -323,7 +323,7 @@ export function JobList({
                         key={stage.id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/dashboard/jobs/${job.id}?stage=${stage.id}`);
+                          router.push(`/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`);
                         }}
                         className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
                       >
@@ -355,7 +355,7 @@ export function JobList({
                           e.stopPropagation();
                           if (typeof window !== "undefined" && navigator.clipboard) {
                             navigator.clipboard.writeText(
-                              `${window.location.origin}/dashboard/jobs/${job.id}`,
+                              `${window.location.origin}/dashboard/jobs/${job.id}/pipeline`,
                             );
                           }
                         }}
@@ -377,7 +377,7 @@ export function JobList({
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(
-                            `/dashboard/jobs/${job.id}${counts.new > 0 ? "?stage=APPLIED" : ""}`,
+                            `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
                           );
                         }}
                         className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
@@ -414,7 +414,7 @@ export function JobList({
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h3
-                        onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
+                        onClick={() => router.push(`/dashboard/jobs/${job.id}/pipeline`)}
                         className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer"
                       >
                         {job.title}
@@ -452,7 +452,7 @@ export function JobList({
                         key={stage.id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/dashboard/jobs/${job.id}?stage=${stage.id}`);
+                          router.push(`/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`);
                         }}
                         className={`flex flex-col items-center justify-center p-3 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
                       >
@@ -484,7 +484,7 @@ export function JobList({
                           e.stopPropagation();
                           if (typeof window !== "undefined" && navigator.clipboard) {
                             navigator.clipboard.writeText(
-                              `${window.location.origin}/dashboard/jobs/${job.id}`,
+                              `${window.location.origin}/dashboard/jobs/${job.id}/pipeline`,
                             );
                           }
                         }}
@@ -506,7 +506,7 @@ export function JobList({
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(
-                            `/dashboard/jobs/${job.id}${counts.new > 0 ? "?stage=APPLIED" : ""}`,
+                            `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
                           );
                         }}
                         className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
@@ -576,7 +576,7 @@ export function JobList({
                   return (
                     <tr
                       key={job.id}
-                      onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
+                      onClick={() => router.push(`/dashboard/jobs/${job.id}/pipeline`)}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                     >
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">

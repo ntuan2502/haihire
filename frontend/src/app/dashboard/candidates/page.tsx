@@ -380,7 +380,9 @@ function CandidatesPageContent() {
             <div className="relative">
               <button
                 type="button"
-                className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+                disabled
+                className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
+                title="Views (Coming soon)"
               >
                 <span>Views</span>
                 <ChevronDown className="h-3 w-3 text-slate-400 opacity-70" />
@@ -449,17 +451,20 @@ function CandidatesPageContent() {
             {/* Filters */}
             <button
               type="button"
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+              disabled
+              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
+              title="Filters (Coming soon)"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
               <span>Filters</span>
             </button>
 
             {/* Fullscreen icon */}
             <button
               type="button"
-              className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer inline-flex items-center justify-center transition-colors"
-              title="Fullscreen"
+              disabled
+              className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
+              title="Fullscreen (Coming soon)"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
@@ -467,10 +472,11 @@ function CandidatesPageContent() {
             {/* Import CSV */}
             <button
               type="button"
-              onClick={() => router.push("/dashboard/candidates/new")}
-              className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+              disabled
+              className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
+              title="Import CSV (Coming soon)"
             >
-              <UploadCloud className="h-3.5 w-3.5 text-slate-500" />
+              <UploadCloud className="h-3.5 w-3.5 text-slate-400" />
               <span>Import CSV</span>
             </button>
 

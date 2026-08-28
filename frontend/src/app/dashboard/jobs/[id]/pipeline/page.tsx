@@ -481,8 +481,9 @@ function JobPipelinePageContent() {
 
               <button
                 type="button"
-                className="h-6 w-6 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
-                title="Filter options"
+                disabled
+                className="h-6 w-6 rounded-md flex items-center justify-center text-slate-400 opacity-40 cursor-not-allowed transition-colors"
+                title="Filter options (Coming soon)"
               >
                 <Menu className="h-3 w-3" />
               </button>
@@ -799,7 +800,9 @@ function JobPipelinePageContent() {
                         </div>
                         <button
                           type="button"
-                          className="h-8 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                          disabled
+                          className="h-8 px-3.5 rounded-xl bg-blue-600/60 text-white/80 text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-not-allowed opacity-60 transition-colors"
+                          title="AI Analysis (Coming soon)"
                         >
                           <Sparkles className="h-3 w-3" />
                           <span>Run Analysis</span>
@@ -817,7 +820,9 @@ function JobPipelinePageContent() {
                           </h3>
                           <button
                             type="button"
-                            className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
+                            disabled
+                            className="text-xs font-semibold text-slate-400 dark:text-slate-600 flex items-center gap-1 opacity-50 cursor-not-allowed transition-colors"
+                            title="Schedule Interview (Coming soon)"
                           >
                             <span>+ Schedule Interview</span>
                           </button>
@@ -867,13 +872,17 @@ function JobPipelinePageContent() {
                         <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
                           <button
                             type="button"
-                            className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            disabled
+                            className="opacity-50 cursor-not-allowed transition-colors"
+                            title="Properties (Coming soon)"
                           >
                             + Add org-wide property
                           </button>
                           <button
                             type="button"
-                            className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            disabled
+                            className="opacity-50 cursor-not-allowed transition-colors"
+                            title="Properties (Coming soon)"
                           >
                             Manage job-specific properties
                           </button>
@@ -966,7 +975,9 @@ function JobPipelinePageContent() {
                     </p>
                     <Button
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer"
+                      disabled
+                      className="bg-blue-600/60 text-white/80 rounded-xl text-xs cursor-not-allowed opacity-60"
+                      title="AI Evaluation (Coming soon)"
                     >
                       Start AI Evaluation
                     </Button>
@@ -987,7 +998,9 @@ function JobPipelinePageContent() {
                     </p>
                     <Button
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer"
+                      disabled
+                      className="bg-blue-600/60 text-white/80 rounded-xl text-xs cursor-not-allowed opacity-60"
+                      title="Schedule Interview (Coming soon)"
                     >
                       + Schedule New Interview
                     </Button>

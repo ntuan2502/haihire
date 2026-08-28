@@ -99,15 +99,20 @@ export function Navbar({
   else if (pathname.startsWith("/dashboard/interviews")) currentTab = "interviews";
   else if (pathname === "/dashboard") currentTab = "dashboard";
 
-  const navItems: { id: NavTab; label: string; icon: React.ElementType }[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "jobs", label: "Jobs", icon: Briefcase },
-    { id: "candidates", label: "Candidates", icon: Users },
-    { id: "applications", label: "Applications", icon: FileText },
-    { id: "inbox", label: "Inbox", icon: Inbox },
-    { id: "interviews", label: "Interviews", icon: Calendar },
-    { id: "assistant", label: "Assistant", icon: MessageSquare },
-    { id: "settings", label: "Settings", icon: Settings },
+  const navItems: {
+    id: NavTab;
+    label: string;
+    icon: React.ElementType;
+    implemented?: boolean;
+  }[] = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, implemented: true },
+    { id: "jobs", label: "Jobs", icon: Briefcase, implemented: true },
+    { id: "candidates", label: "Candidates", icon: Users, implemented: true },
+    { id: "applications", label: "Applications", icon: FileText, implemented: true },
+    { id: "inbox", label: "Inbox", icon: Inbox, implemented: false },
+    { id: "interviews", label: "Interviews", icon: Calendar, implemented: true },
+    { id: "assistant", label: "Assistant", icon: MessageSquare, implemented: false },
+    { id: "settings", label: "Settings", icon: Settings, implemented: false },
   ];
 
   // Locked features from the screenshot
@@ -163,22 +168,29 @@ export function Navbar({
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentTab === item.id;
+                const isImplemented = item.implemented !== false;
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => handleNavClick(item.id)}
-                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-bold"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
+                    disabled={!isImplemented}
+                    onClick={() => isImplemented && handleNavClick(item.id)}
+                    title={!isImplemented ? `${item.label} (Coming soon)` : undefined}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                      !isImplemented
+                        ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
+                        : isActive
+                          ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-bold cursor-pointer"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer"
                     }`}
                   >
                     <Icon
                       className={`h-3.5 w-3.5 ${
-                        isActive
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-slate-400"
+                        !isImplemented
+                          ? "text-slate-400 opacity-60"
+                          : isActive
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-slate-400"
                       }`}
                     />
                     <span>{item.label}</span>
@@ -194,10 +206,10 @@ export function Navbar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="min-w-[140px]">
                   <DropdownMenuItem
-                    onClick={() => router.push("/dashboard")}
-                    className="text-xs cursor-pointer"
+                    disabled
+                    className="text-xs opacity-50 cursor-not-allowed"
                   >
-                    Analytics & Reports
+                    Analytics & Reports (Soon)
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleNavClick("candidates")}
@@ -221,9 +233,9 @@ export function Navbar({
             {/* Upgrade Button (Indigo pill with Sparkles) */}
             <button
               type="button"
-              onClick={() => handleNavClick("settings")}
-              className="flex items-center justify-center h-8 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all cursor-pointer gap-1.5"
-              title="Upgrade"
+              disabled
+              className="flex items-center justify-center h-8 px-3.5 rounded-xl bg-indigo-600/60 text-white/80 shadow-xs cursor-not-allowed gap-1.5 opacity-60"
+              title="Upgrade plan (Coming soon)"
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span className="text-xs font-bold">

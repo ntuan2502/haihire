@@ -181,10 +181,12 @@ export function JobList({
           <div className="relative">
             <button
               type="button"
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs"
+              disabled
+              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1.5 opacity-50 cursor-not-allowed shadow-xs"
+              title="Views (Coming soon)"
             >
               <span>Views</span>
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+              <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-70" />
             </button>
           </div>
 

@@ -39,18 +39,16 @@ function JobTablePageContent() {
   if (!job) return null;
 
   return (
-    <main className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 bg-slate-50 dark:bg-slate-950">
-      <div className="max-w-7xl mx-auto">
-        <ApplicationsDataTable
-          applications={jobApplications}
-          jobs={jobs}
-          loading={jobLoading || appsLoading}
-          fixedJobId={job.id}
-          onViewInPipeline={(_appId, stage) => {
-            router.push(`/dashboard/jobs/${jobId}/pipeline?stage=${stage}`);
-          }}
-        />
-      </div>
+    <main className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-4">
+      <ApplicationsDataTable
+        applications={jobApplications}
+        jobs={jobs}
+        loading={jobLoading || appsLoading}
+        fixedJobId={job.id}
+        onViewInPipeline={(_appId, stage) => {
+          router.push(`/dashboard/jobs/${jobId}/pipeline?stage=${stage}`);
+        }}
+      />
     </main>
   );
 }

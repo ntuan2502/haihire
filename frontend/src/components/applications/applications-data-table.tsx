@@ -7,7 +7,6 @@ import {
   SlidersHorizontal,
   ArrowLeftRight,
   Maximize2,
-  Minimize2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -83,14 +82,12 @@ export function ApplicationsDataTable({
   const deleteAppMutation = useDeleteApplicationMutation();
 
   const [search, setSearch] = useState("");
-  const [stageFilter, setStageFilter] = useState<string>("ALL");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [deleteModalApp, setDeleteModalApp] = useState<Application | null>(null);
   const [drawerTab, setDrawerTab] = useState<string>("overview");
   const [drawerNoteInput, setDrawerNoteInput] = useState("");
   const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Drawer Overview sections visibility state
   const [drawerOverviewSections, setDrawerOverviewSections] =
@@ -165,11 +162,6 @@ export function ApplicationsDataTable({
   const filteredApps = useMemo(() => {
     return baseApplications
       .filter((app) => {
-        // Stage filter
-        if (stageFilter !== "ALL" && app.stage !== stageFilter) {
-          return false;
-        }
-
         // Search query
         if (!search.trim()) return true;
         const q = search.toLowerCase().trim();
@@ -210,7 +202,7 @@ export function ApplicationsDataTable({
         }
         return sortDirection === "asc" ? diff : -diff;
       });
-  }, [baseApplications, search, stageFilter, jobMap, sortField, sortDirection]);
+  }, [baseApplications, search, jobMap, sortField, sortDirection]);
 
   // Pagination Slice
   const totalCount = filteredApps.length;
@@ -338,15 +330,14 @@ export function ApplicationsDataTable({
       : "Unassigned Role";
 
   return (
-    <div className={`space-y-4 ${isFullscreen ? "fixed inset-0 z-50 bg-white dark:bg-slate-950 p-6 overflow-y-auto" : ""}`}>
-      {/* Top Filter & Toolbar matching /dashboard/applications */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Left: Search Box */}
-        <div className="relative flex-1 min-w-0">
+    <div className="space-y-4">
+      {/* Applications Toolbar matching Screenshot */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Search Box */}
+        <div className="relative flex-1 min-w-0 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
-            type="text"
-            placeholder="Search applications by candidate, role, or email"
+            placeholder="Search by candidate name, email, or job title..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -356,54 +347,42 @@ export function ApplicationsDataTable({
           />
         </div>
 
-        {/* Right: Stage Filter, Columns Toggle, Filters, Fullscreen */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Stage Filter */}
-          <Select
-            value={stageFilter}
-            onValueChange={(val) => {
-              if (val) {
-                setStageFilter(val);
-                setCurrentPage(1);
-              }
-            }}
-          >
-            <SelectTrigger className="h-9 px-3 text-xs font-semibold bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs min-w-[130px]">
-              <SelectValue placeholder="All Stages" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Stages</SelectItem>
-              {PIPELINE_STAGES.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Views Button */}
+          <div className="relative">
+            <button
+              type="button"
+              disabled
+              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
+              title="Views (Coming soon)"
+            >
+              <span>Views</span>
+              <ChevronDown className="h-3 w-3 text-slate-400 opacity-70" />
+            </button>
+          </div>
 
-          {/* Views / Column Toggle Dropdown */}
+          {/* Columns Dropdown matching Screenshot */}
           <div className="relative" ref={columnsRef}>
             <button
               type="button"
               onClick={() => setIsColumnsOpen((prev) => !prev)}
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+              className={`h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
+                isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
+              }`}
             >
-              <span>Views</span>
-              <ChevronDown
-                className={`h-3 w-3 text-slate-400 transition-transform ${
-                  isColumnsOpen ? "rotate-180" : ""
-                }`}
-              />
+              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+              <span>Columns</span>
             </button>
 
             {isColumnsOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200/90 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900 z-30">
-                <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Toggle Columns
-                </p>
-                <div className="space-y-1 mt-1">
+              <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
+                <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                  TOGGLE COLUMNS
+                </div>
+                <div className="space-y-0.5 mt-1">
                   {[
-                    { id: "candidate", label: "Candidate" },
+                    { id: "candidate", label: "Candidate", locked: true },
                     { id: "email", label: "Email" },
                     { id: "job", label: "Job" },
                     { id: "status", label: "Status" },
@@ -412,14 +391,13 @@ export function ApplicationsDataTable({
                   ].map((col) => {
                     const isChecked =
                       visibleColumns[col.id as keyof typeof visibleColumns];
-                    const isLocked = col.id === "candidate";
-
+                    const isLocked = col.locked;
                     return (
                       <label
                         key={col.id}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
+                        className={`flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-xs font-semibold select-none transition-colors ${
                           isLocked
-                            ? "text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                            ? "opacity-60 cursor-not-allowed text-slate-500 dark:text-slate-400"
                             : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer"
                         }`}
                       >
@@ -428,7 +406,9 @@ export function ApplicationsDataTable({
                           checked={isChecked}
                           disabled={isLocked}
                           onChange={() =>
-                            toggleColumn(col.id as keyof typeof visibleColumns)
+                            toggleColumn(
+                              col.id as keyof typeof visibleColumns,
+                            )
                           }
                           className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
                         />
@@ -441,20 +421,23 @@ export function ApplicationsDataTable({
             )}
           </div>
 
-          {/* Filters Button */}
+          {/* Filters */}
           <button
             type="button"
-            className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+            disabled
+            className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
+            title="Filters (Coming soon)"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
             <span>Filters</span>
           </button>
 
           {/* Compare / Swap Icon */}
           <button
             type="button"
-            className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer inline-flex items-center justify-center transition-colors"
-            title="Compare"
+            disabled
+            className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
+            title="Compare (Coming soon)"
           >
             <ArrowLeftRight className="h-3.5 w-3.5" />
           </button>
@@ -462,15 +445,11 @@ export function ApplicationsDataTable({
           {/* Fullscreen Icon */}
           <button
             type="button"
-            onClick={() => setIsFullscreen((prev) => !prev)}
-            className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer inline-flex items-center justify-center transition-colors"
-            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            disabled
+            className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
+            title="Fullscreen (Coming soon)"
           >
-            {isFullscreen ? (
-              <Minimize2 className="h-3.5 w-3.5" />
-            ) : (
-              <Maximize2 className="h-3.5 w-3.5" />
-            )}
+            <Maximize2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

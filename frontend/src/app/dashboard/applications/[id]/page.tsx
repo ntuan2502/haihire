@@ -297,7 +297,9 @@ function ApplicationDetailPageContent() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="h-8 px-3 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              disabled
+              className="h-8 px-3 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs flex items-center gap-1.5 opacity-50 cursor-not-allowed transition-colors"
+              title="Schedule Interview (Coming soon)"
             >
               <Calendar className="h-3.5 w-3.5 text-slate-400" />
               <span>Schedule Interview</span>
@@ -472,7 +474,9 @@ function ApplicationDetailPageContent() {
                   </div>
                   <button
                     type="button"
-                    className="h-8 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                    disabled
+                    className="h-8 px-3.5 rounded-xl bg-blue-600/60 text-white/80 text-xs font-bold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
+                    title="AI Analysis (Coming soon)"
                   >
                     <Sparkles className="h-3 w-3" />
                     <span>Run Analysis</span>
@@ -490,7 +494,9 @@ function ApplicationDetailPageContent() {
                     </h3>
                     <button
                       type="button"
-                      className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
+                      disabled
+                      className="text-xs font-semibold text-slate-400 dark:text-slate-600 flex items-center gap-1 opacity-50 cursor-not-allowed transition-colors"
+                      title="Schedule Interview (Coming soon)"
                     >
                       <span>+ Schedule Interview</span>
                     </button>
@@ -596,13 +602,17 @@ function ApplicationDetailPageContent() {
                   <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
                     <button
                       type="button"
-                      className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      disabled
+                      className="opacity-50 cursor-not-allowed transition-colors"
+                      title="Properties (Coming soon)"
                     >
                       + Add org-wide property
                     </button>
                     <button
                       type="button"
-                      className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      disabled
+                      className="opacity-50 cursor-not-allowed transition-colors"
+                      title="Properties (Coming soon)"
                     >
                       Manage job-specific properties
                     </button>
@@ -648,7 +658,9 @@ function ApplicationDetailPageContent() {
                 </h3>
                 <button
                   type="button"
-                  className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
+                  disabled
+                  className="text-xs font-semibold text-slate-400 dark:text-slate-600 flex items-center gap-1 opacity-50 cursor-not-allowed transition-colors"
+                  title="Schedule Interview (Coming soon)"
                 >
                   <span>+ Schedule Interview</span>
                 </button>

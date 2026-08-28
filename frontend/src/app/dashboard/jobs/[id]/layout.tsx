@@ -180,28 +180,33 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
           {/* Middle: Job Feature Tabs */}
           <div className="hidden lg:flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
             {[
-              { id: "pipeline", label: "Pipeline", icon: Columns3 },
-              { id: "promote", label: "Promote", icon: Megaphone },
-              { id: "table", label: "Table", icon: Table },
-              { id: "import", label: "Import", icon: Download },
-              { id: "inbox", label: "Inbox", icon: Mail },
-              { id: "form", label: "Application Form", icon: FileText },
-              { id: "automation", label: "Automation", icon: Zap },
-              { id: "tracking", label: "Source Tracking", icon: BarChart2 },
-              { id: "ai", label: "AI Analysis", icon: Sparkles },
-              { id: "settings", label: "Settings", icon: Settings },
+              { id: "pipeline", label: "Pipeline", icon: Columns3, implemented: true },
+              { id: "promote", label: "Promote", icon: Megaphone, implemented: false },
+              { id: "table", label: "Table", icon: Table, implemented: true },
+              { id: "import", label: "Import", icon: Download, implemented: false },
+              { id: "inbox", label: "Inbox", icon: Mail, implemented: false },
+              { id: "form", label: "Application Form", icon: FileText, implemented: false },
+              { id: "automation", label: "Automation", icon: Zap, implemented: false },
+              { id: "tracking", label: "Source Tracking", icon: BarChart2, implemented: false },
+              { id: "ai", label: "AI Analysis", icon: Sparkles, implemented: false },
+              { id: "settings", label: "Settings", icon: Settings, implemented: false },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeNavTab === tab.id;
+              const isImplemented = tab.implemented;
               return (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => handleNavTabClick(tab.id)}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-                    isActive
-                      ? "bg-slate-100 text-slate-900 font-bold dark:bg-slate-800 dark:text-white"
-                      : "hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800/60 dark:hover:text-slate-200"
+                  disabled={!isImplemented}
+                  onClick={() => isImplemented && handleNavTabClick(tab.id)}
+                  title={!isImplemented ? `${tab.label} (Coming soon)` : undefined}
+                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+                    !isImplemented
+                      ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
+                      : isActive
+                        ? "bg-slate-100 text-slate-900 font-bold dark:bg-slate-800 dark:text-white cursor-pointer"
+                        : "hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800/60 dark:hover:text-slate-200 cursor-pointer"
                   }`}
                 >
                   <Icon className="h-3 w-3" />

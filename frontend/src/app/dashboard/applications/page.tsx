@@ -50,7 +50,14 @@ import {
   Building2,
   Trash2,
 } from "lucide-react";
-import type { Application, ApplicationStage } from "@/types";
+import type { Application, ApplicationStage, CandidateDocument } from "@/types";
+import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
+import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
+import {
+  OverviewSectionsPopover,
+  type OverviewSectionsState,
+  DEFAULT_OVERVIEW_SECTIONS,
+} from "@/components/applications/overview-sections-popover";
 
 import {
   getInitials,
@@ -58,6 +65,8 @@ import {
   formatDate,
   getStageInfo,
   getCandidateDisplayName,
+  parseCandidateDocuments,
+  fixUtf8String,
 } from "@/lib/utils";
 
 type SortField = "candidate" | "email" | "job" | "status" | "score" | "applied";
@@ -86,6 +95,86 @@ function ApplicationsPageContent() {
   const [drawerNoteInput, setDrawerNoteInput] = useState("");
   const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Drawer Overview sections visibility state
+  const [drawerOverviewSections, setDrawerOverviewSections] =
+    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
+  const [isDrawerOverviewPopoverOpen, setIsDrawerOverviewPopoverOpen] =
+    useState(false);
+  const drawerOverviewBtnRef = useRef<HTMLButtonElement>(null);
+  const [drawerPreviewDoc, setDrawerPreviewDoc] =
+    useState<CandidateDocument | null>(null);
+
+  const drawerCandidateDocuments = useMemo(() => {
+    if (!selectedApp) return [];
+    const seenUrls = new Set<string>();
+    const allDocs: CandidateDocument[] = [];
+    const relatedApps = rawApplications.filter(
+      (a) => a.candidateEmail && a.candidateEmail === selectedApp.candidateEmail,
+    );
+    const appsToScan = relatedApps.length > 0 ? relatedApps : [selectedApp];
+
+    for (const a of appsToScan) {
+      const docs = parseCandidateDocuments(a.notes, {
+        id: a.id,
+        resumeUrl: a.resumeUrl,
+        resumeFileName: a.resumeFileName,
+        resumeFileSize: a.resumeFileSize,
+        resumeMimeType: a.resumeMimeType,
+        createdAt: a.createdAt,
+      });
+      for (const d of docs) {
+        if (d.url && !seenUrls.has(d.url)) {
+          seenUrls.add(d.url);
+          allDocs.push(d);
+        }
+      }
+    }
+    return allDocs;
+  }, [selectedApp, rawApplications]);
+
+  const handleDownloadDoc = async (
+    url: string,
+    filename?: string,
+    targetAppId?: string,
+  ) => {
+    const rawFileName = filename || "document.pdf";
+    const downloadFileName = fixUtf8String(rawFileName);
+    const queryParams = new URLSearchParams();
+    if (url) queryParams.set("url", url);
+    if (downloadFileName) queryParams.set("name", downloadFileName);
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+    const activeAppId = targetAppId || selectedApp?.id;
+    try {
+      const targetUrl = activeAppId
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${activeAppId}/documents/download${queryString}`
+        : url;
+
+      const response = await fetch(targetUrl);
+      if (!response.ok) throw new Error("Download request failed");
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = downloadFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch {
+      const fallbackUrl = activeAppId
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${activeAppId}/documents/download${queryString}`
+        : url;
+      const a = document.createElement("a");
+      a.href = fallbackUrl;
+      a.download = downloadFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
 
   // Column Visibility Toggle State & Ref
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
@@ -834,21 +923,83 @@ function ApplicationsPageContent() {
 
                 {/* Sub-Navigation Tabs */}
                 <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto text-xs font-semibold scrollbar-none">
+                  {/* Overview Tab with conditional arrow & sections dropdown */}
+                  <div
+                    className={`relative flex items-center border-b-2 -mb-[1px] transition-colors ${
+                      drawerTab === "overview"
+                        ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
+                        : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-semibold"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDrawerTab("overview");
+                        setIsDrawerOverviewPopoverOpen(false);
+                      }}
+                      className={`py-2 cursor-pointer whitespace-nowrap ${
+                        drawerTab === "overview" ? "pl-3 pr-1" : "px-3"
+                      }`}
+                    >
+                      Overview
+                    </button>
+
+                    {drawerTab === "overview" && (
+                      <button
+                        ref={drawerOverviewBtnRef}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDrawerOverviewPopoverOpen((prev) => !prev);
+                        }}
+                        className="py-2 pr-2 pl-0.5 cursor-pointer flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                        aria-label="Toggle overview sections"
+                        title="Toggle overview sections"
+                      >
+                        <ChevronDown
+                          className={`h-3 w-3 transition-transform duration-200 ${
+                            isDrawerOverviewPopoverOpen
+                              ? "rotate-180"
+                              : "rotate-0"
+                          }`}
+                        />
+                      </button>
+                    )}
+
+                    <OverviewSectionsPopover
+                      isOpen={isDrawerOverviewPopoverOpen}
+                      onClose={() => setIsDrawerOverviewPopoverOpen(false)}
+                      sections={drawerOverviewSections}
+                      onToggleSection={(key) =>
+                        setDrawerOverviewSections((prev) => ({
+                          ...prev,
+                          [key]: !prev[key],
+                        }))
+                      }
+                      triggerRef={drawerOverviewBtnRef}
+                    />
+                  </div>
+
                   {[
-                    { id: "overview", label: "Overview", icon: ChevronDown },
-                    { id: "inbox", label: "Inbox", icon: Mail },
-                    { id: "ai", label: "AI Analysis", icon: Sparkles },
-                    { id: "interviews", label: "Interviews", icon: Calendar },
-                    { id: "documents", label: "Documents", icon: FileText },
-                    { id: "responses", label: "Responses", icon: FileCheck },
-                    { id: "notes", label: "Notes", icon: MessageSquare },
-                    { id: "timeline", label: "Timeline", icon: History },
-                    { id: "properties", label: "Properties", icon: SlidersHorizontal },
+                    { id: "inbox", label: "Inbox" },
+                    { id: "ai", label: "AI Analysis" },
+                    { id: "interviews", label: "Interviews" },
+                    {
+                      id: "documents",
+                      label: `Documents (${drawerCandidateDocuments.length})`,
+                    },
+                    { id: "responses", label: "Responses" },
+                    { id: "notes", label: "Notes" },
+                    { id: "timeline", label: "Timeline" },
+                    { id: "properties", label: "Properties" },
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setDrawerTab(tab.id)}
+                      onClick={() => {
+                        setDrawerTab(tab.id);
+                        setIsDrawerOverviewPopoverOpen(false);
+                      }}
                       className={`px-3 py-2 flex items-center gap-1 whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
                         drawerTab === tab.id
                           ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 font-bold"
@@ -856,165 +1007,266 @@ function ApplicationsPageContent() {
                       }`}
                     >
                       <span>{tab.label}</span>
-                      {tab.id === "overview" && (
-                        <ChevronDown className="h-3 w-3 opacity-60" />
-                      )}
                     </button>
                   ))}
                 </div>
 
-                {/* Overview Tab Content Sections */}
+                {/* Tab Content Sections */}
                 <div className="space-y-4">
-                  {/* 1. AI Analysis Banner */}
-                  <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-3.5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-xs text-blue-800 dark:text-blue-300 font-medium">
-                      <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                      <span>No AI analysis yet</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      <span>Run Analysis</span>
-                    </button>
-                  </div>
-
-                  {/* 2. Interviews Card */}
-                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                        <span>Interviews</span>
-                      </h3>
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>+ Schedule Interview</span>
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col items-center justify-center py-6 text-center space-y-1">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-                        <Calendar className="h-4 w-4" />
-                      </div>
-                      <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        No interviews scheduled
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        Schedule an interview to start the process.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 3. Documents Card */}
-                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <FileText className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Documents</span>
-                    </h3>
-
-                    {selectedApp.resumeUrl ? (
-                      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {selectedApp.resumeFileName || "Resume.pdf"}
-                          </span>
-                        </div>
-                        <a
-                          href={selectedApp.resumeUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          <span>View</span>
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 py-1">
-                        No documents uploaded.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* 4. Responses Card */}
-                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-1.5">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <FileCheck className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Responses</span>
-                    </h3>
-                    <p className="text-xs text-slate-400 py-1">
-                      No application form responses.
-                    </p>
-                  </div>
-
-                  {/* 5. Properties Card */}
-                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Properties</span>
-                    </h3>
-                    <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
-                      <button
-                        type="button"
-                        className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                      >
-                        + Add org-wide property
-                      </button>
-                      <button
-                        type="button"
-                        className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                      >
-                        Manage job-specific properties
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 6. Notes Card */}
-                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Notes</span>
-                    </h3>
-
-                    {drawerNotesList.length > 0 && (
-                      <div className="space-y-1.5 mb-2">
-                        {drawerNotesList.map((note, idx) => (
-                          <div
-                            key={idx}
-                            className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300"
-                          >
-                            {note}
+                  {/* Overview Tab Content */}
+                  {drawerTab === "overview" && (
+                    <>
+                      {/* 1. AI Analysis Banner */}
+                      {drawerOverviewSections.ai && (
+                        <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-3.5 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-xs text-blue-800 dark:text-blue-300 font-medium">
+                            <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                            <span>No AI analysis yet</span>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            <span>Run Analysis</span>
+                          </button>
+                        </div>
+                      )}
 
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="Add a note about this candidate..."
-                        value={drawerNoteInput}
-                        onChange={(e) => setDrawerNoteInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && drawerNoteInput.trim()) {
-                            setDrawerNotesList((prev) => [
-                              ...prev,
-                              drawerNoteInput.trim(),
-                            ]);
-                            setDrawerNoteInput("");
-                          }
-                        }}
-                        className="flex-1 h-8 px-2.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-                      />
-                      {drawerNoteInput.trim() && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            if (drawerNoteInput.trim()) {
+                      {/* 2. Interviews Card */}
+                      {drawerOverviewSections.interviews && (
+                        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                              <span>Interviews</span>
+                            </h3>
+                            <button
+                              type="button"
+                              className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>+ Schedule Interview</span>
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col items-center justify-center py-6 text-center space-y-1">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                              <Calendar className="h-4 w-4" />
+                            </div>
+                            <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                              No interviews scheduled
+                            </h4>
+                            <p className="text-[11px] text-slate-400">
+                              Schedule an interview to start the process.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 3. Documents Card (Reused Component) */}
+                      {drawerOverviewSections.documents && (
+                        <ApplicationDocumentsSection
+                          documents={drawerCandidateDocuments}
+                          appId={selectedApp.id}
+                          onPreview={(doc) => setDrawerPreviewDoc(doc)}
+                          onDownload={handleDownloadDoc}
+                        />
+                      )}
+
+                      {/* 4. Responses Card */}
+                      {drawerOverviewSections.responses && (
+                        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-1.5">
+                          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                            <FileCheck className="h-3.5 w-3.5 text-slate-400" />
+                            <span>Responses</span>
+                          </h3>
+                          <p className="text-xs text-slate-400 py-1">
+                            No application form responses.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* 5. Notes Card */}
+                      {drawerOverviewSections.notes && (
+                        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
+                          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                            <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+                            <span>Notes</span>
+                          </h3>
+
+                          {drawerNotesList.length > 0 && (
+                            <div className="space-y-1.5 mb-2">
+                              {drawerNotesList.map((note, idx) => (
+                                <div
+                                  key={idx}
+                                  className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300"
+                                >
+                                  {note}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              placeholder="Add a note about this candidate..."
+                              value={drawerNoteInput}
+                              onChange={(e) => setDrawerNoteInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && drawerNoteInput.trim()) {
+                                  setDrawerNotesList((prev) => [
+                                    ...prev,
+                                    drawerNoteInput.trim(),
+                                  ]);
+                                  setDrawerNoteInput("");
+                                }
+                              }}
+                              className="flex-1 h-8 px-2.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                            />
+                            {drawerNoteInput.trim() && (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  if (drawerNoteInput.trim()) {
+                                    setDrawerNotesList((prev) => [
+                                      ...prev,
+                                      drawerNoteInput.trim(),
+                                    ]);
+                                    setDrawerNoteInput("");
+                                  }
+                                }}
+                                className="h-8 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
+                              >
+                                Save
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 6. Properties Card */}
+                      {drawerOverviewSections.properties && (
+                        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
+                          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+                            <span>Properties</span>
+                          </h3>
+                          <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
+                            <button
+                              type="button"
+                              className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            >
+                              + Add org-wide property
+                            </button>
+                            <button
+                              type="button"
+                              className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            >
+                              Manage job-specific properties
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Documents Tab: Reused component */}
+                  {drawerTab === "documents" && (
+                    <ApplicationDocumentsSection
+                      documents={drawerCandidateDocuments}
+                      appId={selectedApp.id}
+                      onPreview={(doc) => setDrawerPreviewDoc(doc)}
+                      onDownload={handleDownloadDoc}
+                    />
+                  )}
+
+                  {/* Individual Tab Contents in Drawer */}
+                  {drawerTab === "ai" && (
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-3.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs text-blue-800 dark:text-blue-300 font-medium">
+                        <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>No AI analysis yet</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        <span>Run Analysis</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {drawerTab === "interviews" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                          <span>Interviews</span>
+                        </h3>
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>+ Schedule Interview</span>
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-center py-6 text-center space-y-1">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                          <Calendar className="h-4 w-4" />
+                        </div>
+                        <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          No interviews scheduled
+                        </h4>
+                        <p className="text-[11px] text-slate-400">
+                          Schedule an interview to start the process.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {drawerTab === "responses" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-1.5">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <FileCheck className="h-3.5 w-3.5 text-slate-400" />
+                        <span>Responses</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 py-1">
+                        No application form responses.
+                      </p>
+                    </div>
+                  )}
+
+                  {drawerTab === "notes" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2.5">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+                        <span>Notes</span>
+                      </h3>
+
+                      {drawerNotesList.length > 0 && (
+                        <div className="space-y-1.5 mb-2">
+                          {drawerNotesList.map((note, idx) => (
+                            <div
+                              key={idx}
+                              className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300"
+                            >
+                              {note}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add a note about this candidate..."
+                          value={drawerNoteInput}
+                          onChange={(e) => setDrawerNoteInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && drawerNoteInput.trim()) {
                               setDrawerNotesList((prev) => [
                                 ...prev,
                                 drawerNoteInput.trim(),
@@ -1022,19 +1274,90 @@ function ApplicationsPageContent() {
                               setDrawerNoteInput("");
                             }
                           }}
-                          className="h-8 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
-                        >
-                          Save
-                        </Button>
-                      )}
+                          className="flex-1 h-8 px-2.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                        />
+                        {drawerNoteInput.trim() && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (drawerNoteInput.trim()) {
+                                setDrawerNotesList((prev) => [
+                                  ...prev,
+                                  drawerNoteInput.trim(),
+                                ]);
+                                setDrawerNoteInput("");
+                              }
+                            }}
+                            className="h-8 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
+                          >
+                            Save
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {drawerTab === "properties" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+                        <span>Properties</span>
+                      </h3>
+                      <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
+                        <button
+                          type="button"
+                          className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                        >
+                          + Add org-wide property
+                        </button>
+                        <button
+                          type="button"
+                          className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                        >
+                          Manage job-specific properties
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {drawerTab === "inbox" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-1.5">
+                      <Mail className="h-6 w-6 text-slate-400 mx-auto" />
+                      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        No messages yet
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Email communications will appear here.
+                      </p>
+                    </div>
+                  )}
+
+                  {drawerTab === "timeline" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-1.5">
+                      <History className="h-6 w-6 text-slate-400 mx-auto" />
+                      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Application Timeline
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Applied on {formatDate(selectedApp.createdAt)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        isOpen={!!drawerPreviewDoc}
+        onClose={() => setDrawerPreviewDoc(null)}
+        document={drawerPreviewDoc}
+        appId={selectedApp?.id}
+        onDownload={handleDownloadDoc}
+      />
 
       {/* Delete Application Confirmation Modal */}
       {deleteModalApp && (

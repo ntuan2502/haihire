@@ -82,6 +82,7 @@ function CandidatesPageContent() {
     "applications",
   );
   const [drawerDocFilter, setDrawerDocFilter] = useState("Resume");
+  const [drawerStageFilter, setDrawerStageFilter] = useState("ALL");
   const [isUploadingDrawerDoc, setIsUploadingDrawerDoc] = useState(false);
   const drawerDocInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -170,6 +171,11 @@ function CandidatesPageContent() {
         selectedCandidate.email.toLowerCase(),
     );
   }, [selectedCandidate, applications]);
+
+  const filteredDrawerApps = useMemo(() => {
+    if (drawerStageFilter === "ALL") return selectedCandidateApps;
+    return selectedCandidateApps.filter((a) => a.stage === drawerStageFilter);
+  }, [selectedCandidateApps, drawerStageFilter]);
 
   const selectedCandidateDetails = useMemo(() => {
     if (!selectedCandidate) {
@@ -535,10 +541,10 @@ function CandidatesPageContent() {
 
           {/* Slide-over Panel */}
           <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-md bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
-              <div className="p-6 space-y-6 flex-1">
+            <div className="w-screen max-w-2xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
+              <div className="p-6 space-y-5 flex-1">
                 {/* Drawer Top Bar */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                     Candidate Detail
                   </span>
@@ -736,35 +742,74 @@ function CandidatesPageContent() {
                         Documents ({selectedCandidate.rawApp.resumeUrl ? 1 : 0})
                       </button>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setApplyToJobModalCandidate(selectedCandidate)}
-                      className="mb-2.5 h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <Plus className="h-3 w-3" />
-                      <span>Apply to Job</span>
-                    </button>
                   </div>
 
                   {/* Tab Body */}
                   {drawerTab === "applications" && (
-                    <div>
-                      {selectedCandidateApps.length === 0 ? (
+                    <div className="space-y-3">
+                      {/* Applications Action Row */}
+                      <div className="flex items-center justify-between gap-2">
+                        <Select
+                          value={drawerStageFilter}
+                          onValueChange={(v) => v && setDrawerStageFilter(v)}
+                        >
+                          <SelectTrigger className="h-7 w-28 text-[11px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg">
+                            <SelectValue placeholder="All stages" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ALL" className="text-[11px]">
+                              All stages
+                            </SelectItem>
+                            <SelectItem value="APPLIED" className="text-[11px]">
+                              Applied
+                            </SelectItem>
+                            <SelectItem value="SCREENING" className="text-[11px]">
+                              Screening
+                            </SelectItem>
+                            <SelectItem value="INTERVIEW" className="text-[11px]">
+                              Interview
+                            </SelectItem>
+                            <SelectItem value="OFFER" className="text-[11px]">
+                              Offer
+                            </SelectItem>
+                            <SelectItem value="HIRED" className="text-[11px]">
+                              Hired
+                            </SelectItem>
+                            <SelectItem value="REJECTED" className="text-[11px]">
+                              Rejected
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <button
+                          type="button"
+                          onClick={() => setApplyToJobModalCandidate(selectedCandidate)}
+                          className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
+                          <span>Apply to Job</span>
+                        </button>
+                      </div>
+
+                      {filteredDrawerApps.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-8 text-center space-y-1.5">
                           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
                             <Briefcase className="h-4 w-4" />
                           </div>
                           <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            No applications yet.
+                            {selectedCandidateApps.length === 0
+                              ? "No applications yet."
+                              : "No applications matching this stage."}
                           </h4>
                           <p className="text-[11px] text-slate-400">
-                            Apply this candidate to a job to start the hiring pipeline.
+                            {selectedCandidateApps.length === 0
+                              ? "Apply this candidate to a job to start the hiring pipeline."
+                              : "Try selecting a different stage filter."}
                           </p>
                         </div>
                       ) : (
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {selectedCandidateApps.map((app) => {
+                          {filteredDrawerApps.map((app) => {
                             const job = jobs.find((j) => j.id === app.jobId);
                             return (
                               <div

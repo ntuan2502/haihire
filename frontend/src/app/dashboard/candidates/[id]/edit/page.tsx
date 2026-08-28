@@ -165,7 +165,7 @@ function EditCandidatePageContent() {
           jobsCount={jobs.length}
           candidatesCount={applications.length}
         />
-        <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-16 text-center space-y-4">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
             <span className="text-lg font-black">404</span>
           </div>
@@ -203,7 +203,7 @@ function EditCandidatePageContent() {
       />
 
       {/* Main Content Form */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 space-y-6">
         {/* Back Link */}
         <div>
           <Link

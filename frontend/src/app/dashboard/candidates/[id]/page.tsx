@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
+import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-modal";
 import {
   ArrowLeft,
   Mail,
@@ -66,6 +67,7 @@ function CandidateDetailPageContent() {
   const [documentFilter, setDocumentFilter] = useState("Resume");
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const docInputRef = React.useRef<HTMLInputElement>(null);
 
   const loading = jobsLoading || appsLoading;
@@ -122,7 +124,7 @@ function CandidateDetailPageContent() {
           jobsCount={jobs.length}
           candidatesCount={applications.length}
         />
-        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-16 text-center space-y-4">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
             <span className="text-lg font-black">404</span>
           </div>
@@ -165,13 +167,12 @@ function CandidateDetailPageContent() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleConfirmDelete = async () => {
     if (!primaryApp) return;
-    if (!confirm(`Are you sure you want to delete candidate ${candidateName}?`))
-      return;
     try {
       setIsDeleting(true);
       await deleteAppMutation.mutateAsync(primaryApp.id);
+      setIsDeleteModalOpen(false);
       router.push("/dashboard/candidates");
     } catch (err) {
       console.error("Failed to delete candidate:", err);
@@ -192,7 +193,7 @@ function CandidateDetailPageContent() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-4xl w-full mx-auto space-y-5">
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-5">
         {/* Back Link */}
         <div>
           <Link
@@ -247,14 +248,10 @@ function CandidateDetailPageContent() {
             <button
               type="button"
               disabled={isDeleting}
-              onClick={handleDelete}
+              onClick={() => setIsDeleteModalOpen(true)}
               className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
-              {isDeleting ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Trash2 className="h-3 w-3" />
-              )}
+              <Trash2 className="h-3 w-3" />
               <span>Delete</span>
             </button>
           </div>
@@ -574,6 +571,17 @@ function CandidateDetailPageContent() {
         jobs={jobs}
         existingApplications={applications}
       />
+
+      {/* Delete Candidate Confirmation Modal matching screenshot */}
+      {primaryApp && (
+        <DeleteCandidateModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          candidateName={candidateName}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 }

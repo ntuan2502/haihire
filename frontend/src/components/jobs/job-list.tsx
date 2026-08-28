@@ -148,13 +148,13 @@ export function JobList({
       {/* Top Control Bar matching screenshot */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Left: Search input */}
-        <div className="relative flex-1 max-w-xl">
-          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="relative flex-1 min-w-0 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
             placeholder="Search jobs by title, location, or description"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+            className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full"
           />
         </div>
 
@@ -228,9 +228,34 @@ export function JobList({
         </div>
       </div>
 
-      {/* VIEW 1: GRID CARDS VIEW (Screenshot 1) */}
-      {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* If No Matching Jobs from Search / Filters */}
+      {filteredJobs.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-16 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs w-full my-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-4">
+            <Search className="h-8 w-8 stroke-[1.5]" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            No matching jobs found
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
+            Try adjusting your search query or filters to find what you&apos;re looking for.
+          </p>
+          <Button
+            onClick={() => {
+              setSearch("");
+              handleResetFilters();
+            }}
+            variant="outline"
+            className="h-9 text-xs font-semibold px-4 rounded-xl cursor-pointer"
+          >
+            Clear Search &amp; Filters
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* VIEW 1: GRID CARDS VIEW (Screenshot 1) */}
+          {viewMode === "grid" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredJobs.map((job) => {
             const counts = getJobStageCounts(job.id);
 
@@ -595,6 +620,8 @@ export function JobList({
           </div>
         </div>
       )}
+    </>
+  )}
 
       {/* Total Job Count Footer */}
       <div className="pt-2 text-xs text-slate-400">

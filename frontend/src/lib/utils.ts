@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { Application, ApplicationStage } from "@/types";
+import type { Application, ApplicationStage, CandidateDocument } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -117,6 +117,7 @@ export function parseCandidateNotes(
     .replace(/FirstName:\s*[^|]+\|?/gi, "")
     .replace(/LastName:\s*[^|]+\|?/gi, "")
     .replace(/DisplayName:\s*[^|]+\|?/gi, "")
+    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
     .trim();
   rawCustom = rawCustom.replace(/^\|\s*|\s*\|$/g, "").trim();
 
@@ -154,6 +155,78 @@ export function parseCandidateNotes(
     effectiveName,
     customNotes: rawCustom,
   };
+}
+
+/**
+ * Fix Mojibake/garbled UTF-8 strings (e.g. latin1 interpretation of Vietnamese UTF-8 bytes)
+ */
+export function fixUtf8String(str?: string | null): string {
+  if (!str) return "";
+  try {
+    const bytes = new Uint8Array(
+      str.split("").map((c) => c.charCodeAt(0) & 0xff),
+    );
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    if (decoded && !decoded.includes("\ufffd") && decoded !== str) {
+      return decoded.normalize("NFC");
+    }
+  } catch {
+    // ignore
+  }
+  return str.normalize("NFC");
+}
+
+/**
+ * Parse candidate documents list from candidate notes and fallback application
+ */
+export function parseCandidateDocuments(
+  notes?: string | null,
+  fallbackApp?: {
+    id: string;
+    resumeUrl: string;
+    resumeFileName: string;
+    resumeFileSize?: number | null;
+    resumeMimeType?: string | null;
+    createdAt: string;
+  },
+): CandidateDocument[] {
+  let docs: CandidateDocument[] = [];
+  if (notes) {
+    const match = notes.match(/Docs:\s*(\[[^\]]*\])/);
+    if (match) {
+      try {
+        const rawDocs = JSON.parse(match[1]);
+        if (Array.isArray(rawDocs)) {
+          docs = rawDocs.map((d) => ({
+            ...d,
+            name: fixUtf8String(d.name || "document.pdf"),
+          }));
+        }
+      } catch (e) {
+        console.error("Failed to parse candidate documents from notes:", e);
+      }
+    }
+  }
+
+  // Fallback to legacy single resumeUrl if no docs array found yet
+  if (
+    docs.length === 0 &&
+    fallbackApp &&
+    fallbackApp.resumeUrl &&
+    fallbackApp.resumeUrl.trim() !== ""
+  ) {
+    docs.push({
+      id: fallbackApp.id,
+      name: fixUtf8String(fallbackApp.resumeFileName || "Resume.pdf"),
+      url: fallbackApp.resumeUrl,
+      size: fallbackApp.resumeFileSize,
+      mimeType: fallbackApp.resumeMimeType || "application/pdf",
+      createdAt: fallbackApp.createdAt,
+      type: "Resume",
+    });
+  }
+
+  return docs;
 }
 
 /**

@@ -21,8 +21,10 @@ import {
   useJobs,
   useAllApplications,
   useUploadDocumentMutation,
+  useDeleteDocumentMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
 import {
   Search,
   Users,
@@ -46,15 +48,21 @@ import {
   FileText,
   Edit2,
   Loader2,
+  Eye,
+  Download,
+  Trash2,
+  ArrowLeft,
 } from "lucide-react";
 
 import {
   formatDate,
-  formatFileSize,
   parseCandidateNotes,
+  parseCandidateDocuments,
+  fixUtf8String,
   aggregateCandidates,
   type CandidateItem,
 } from "@/lib/utils";
+import type { CandidateDocument } from "@/types";
 
 type SortField = "name" | "email" | "phone" | "applications" | "added";
 type SortDirection = "asc" | "desc";
@@ -84,7 +92,114 @@ function CandidatesPageContent() {
   const [drawerDocFilter, setDrawerDocFilter] = useState("Resume");
   const [drawerStageFilter, setDrawerStageFilter] = useState("ALL");
   const [isUploadingDrawerDoc, setIsUploadingDrawerDoc] = useState(false);
+  const [drawerPreviewDoc, setDrawerPreviewDoc] =
+    useState<CandidateDocument | null>(null);
+  const [drawerDocToDelete, setDrawerDocToDelete] =
+    useState<CandidateDocument | null>(null);
+  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const drawerDocInputRef = React.useRef<HTMLInputElement>(null);
+  const deleteDocMutation = useDeleteDocumentMutation();
+
+  const drawerCandidateDocuments = useMemo(() => {
+    if (!selectedCandidate) return [];
+    return parseCandidateDocuments(selectedCandidate.rawApp.notes, {
+      id: selectedCandidate.rawApp.id,
+      resumeUrl: selectedCandidate.rawApp.resumeUrl,
+      resumeFileName: selectedCandidate.rawApp.resumeFileName,
+      resumeFileSize: selectedCandidate.rawApp.resumeFileSize,
+      resumeMimeType: selectedCandidate.rawApp.resumeMimeType,
+      createdAt: selectedCandidate.rawApp.createdAt,
+    });
+  }, [selectedCandidate]);
+
+  const filteredDrawerDocuments = useMemo(() => {
+    if (!drawerDocFilter || drawerDocFilter === "All")
+      return drawerCandidateDocuments;
+    return drawerCandidateDocuments.filter(
+      (d) =>
+        (d.type || "Resume").toLowerCase() === drawerDocFilter.toLowerCase(),
+    );
+  }, [drawerCandidateDocuments, drawerDocFilter]);
+
+  const getDocumentUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    return `${apiUrl.replace(/\/+$/, "")}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
+  const handleDownloadDoc = async (
+    url: string,
+    filename?: string,
+    appId?: string,
+  ) => {
+    const rawFileName = filename || "document.pdf";
+    const downloadFileName = fixUtf8String(rawFileName);
+    const queryParams = new URLSearchParams();
+    if (url) queryParams.set("url", url);
+    if (downloadFileName) queryParams.set("name", downloadFileName);
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+    try {
+      const targetUrl = appId
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${appId}/documents/download${queryString}`
+        : getDocumentUrl(url);
+
+      const response = await fetch(targetUrl);
+      if (!response.ok) throw new Error("Download request failed");
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = downloadFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch {
+      const fallbackUrl = appId
+        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${appId}/documents/download${queryString}`
+        : getDocumentUrl(url);
+      const a = document.createElement("a");
+      a.href = fallbackUrl;
+      a.download = downloadFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  const handleConfirmDeleteDrawerDoc = async () => {
+    if (!selectedCandidate || !drawerDocToDelete) return;
+    try {
+      setIsDeletingDoc(true);
+      const updated = await deleteDocMutation.mutateAsync({
+        id: selectedCandidate.rawApp.id,
+        documentId: drawerDocToDelete.id,
+        url: drawerDocToDelete.url,
+      });
+      setSelectedCandidate((prev) =>
+        prev
+          ? {
+              ...prev,
+              rawApp: updated,
+            }
+          : null,
+      );
+      if (
+        drawerPreviewDoc?.id === drawerDocToDelete.id ||
+        drawerPreviewDoc?.url === drawerDocToDelete.url
+      ) {
+        setDrawerPreviewDoc(null);
+      }
+      setDrawerDocToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete document in drawer:", err);
+    } finally {
+      setIsDeletingDoc(false);
+    }
+  };
 
   // Column Visibility Toggle State & Ref
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
@@ -850,7 +965,7 @@ function CandidatesPageContent() {
                             : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
                         }`}
                       >
-                        Documents ({selectedCandidate.rawApp.resumeUrl ? 1 : 0})
+                        Documents ({drawerCandidateDocuments.length})
                       </button>
                     </div>
                   </div>
@@ -947,129 +1062,232 @@ function CandidatesPageContent() {
                     </div>
                   )}
 
-                  {/* Documents Tab matching Screenshot 2 */}
+                  {/* Documents Tab matching Screenshot 1, 2, 3 */}
                   {drawerTab === "documents" && (
                     <div className="space-y-3">
-                      {/* Document Toolbar */}
-                      <div className="flex items-center justify-between gap-2">
-                        <Select
-                          value={drawerDocFilter}
-                          onValueChange={(v) => v && setDrawerDocFilter(v)}
-                        >
-                          <SelectTrigger className="h-7 w-28 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg">
-                            <SelectValue placeholder="Resume" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Resume" className="text-xs">
-                              Resume
-                            </SelectItem>
-                            <SelectItem value="Cover Letter" className="text-xs">
-                              Cover Letter
-                            </SelectItem>
-                            <SelectItem value="Other" className="text-xs">
-                              Other
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <div>
-                          <button
-                            type="button"
-                            disabled={isUploadingDrawerDoc}
-                            onClick={() => drawerDocInputRef.current?.click()}
-                            className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                          >
-                            {isUploadingDrawerDoc ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <UploadCloud className="h-3 w-3 text-slate-500" />
-                            )}
-                            <span>Upload Document</span>
-                          </button>
-                          <input
-                            ref={drawerDocInputRef}
-                            type="file"
-                            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                            className="hidden"
-                            onChange={async (e) => {
-                              if (e.target.files && e.target.files[0] && selectedCandidate) {
-                                const file = e.target.files[0];
-                                try {
-                                  setIsUploadingDrawerDoc(true);
-                                  const updated = await uploadDocumentMutation.mutateAsync({
-                                    id: selectedCandidate.rawApp.id,
-                                    file,
-                                  });
-                                  setSelectedCandidate((prev) =>
-                                    prev
-                                      ? {
-                                          ...prev,
-                                          rawApp: updated,
-                                        }
-                                      : null,
-                                  );
-                                } catch (err) {
-                                  console.error("Failed to upload document in drawer:", err);
-                                } finally {
-                                  setIsUploadingDrawerDoc(false);
-                                  if (drawerDocInputRef.current) drawerDocInputRef.current.value = "";
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Document Content */}
-                      {selectedCandidate.rawApp.resumeUrl ? (
-                        <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <FileText className="h-4 w-4 text-blue-600 shrink-0" />
-                            <div className="min-w-0">
-                              <span className="font-semibold text-slate-800 dark:text-slate-200 block truncate">
-                                {selectedCandidate.rawApp.resumeFileName ||
-                                  "Resume.pdf"}
-                              </span>
-                              <span className="text-[10px] text-slate-400 block">
-                                {selectedCandidate.rawApp.resumeFileSize
-                                  ? formatFileSize(selectedCandidate.rawApp.resumeFileSize)
-                                  : "Document"}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <a
-                              href={selectedCandidate.rawApp.resumeUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1"
-                            >
-                              <span>View</span>
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
+                      {drawerPreviewDoc ? (
+                        /* Preview Mode matching Screenshot 2 */
+                        <div className="space-y-3">
+                          {/* Back button & Download */}
+                          <div className="flex items-center justify-between gap-2">
                             <button
                               type="button"
-                              onClick={() => drawerDocInputRef.current?.click()}
-                              className="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                              onClick={() => setDrawerPreviewDoc(null)}
+                              className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
                             >
-                              Replace
+                              <ArrowLeft className="h-3.5 w-3.5" />
+                              <span>Back to documents</span>
                             </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDownloadDoc(
+                                  drawerPreviewDoc.url,
+                                  drawerPreviewDoc.name,
+                                  selectedCandidate.rawApp.id,
+                                )
+                              }
+                              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                              title="Download"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+
+                          {/* Document Title */}
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            <span className="truncate">
+                              {drawerPreviewDoc.name}
+                            </span>
+                          </div>
+
+                          {/* Embedded Document Viewer matching Screenshot 2 */}
+                          <div className="w-full h-[500px] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-inner">
+                            <iframe
+                              src={getDocumentUrl(drawerPreviewDoc.url)}
+                              className="w-full h-full border-0"
+                              title={drawerPreviewDoc.name}
+                            />
                           </div>
                         </div>
                       ) : (
-                        <div
-                          onClick={() => drawerDocInputRef.current?.click()}
-                          className="rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center space-y-1.5 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-                        >
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 mb-0.5">
-                            <FileText className="h-4 w-4" />
+                        /* Normal Documents View */
+                        <div className="space-y-3">
+                          {/* Document Toolbar */}
+                          <div className="flex items-center justify-between gap-2">
+                            <Select
+                              value={drawerDocFilter}
+                              onValueChange={(v) => v && setDrawerDocFilter(v)}
+                            >
+                              <SelectTrigger className="h-7 w-28 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg">
+                                <SelectValue placeholder="Resume" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="All" className="text-xs">
+                                  All
+                                </SelectItem>
+                                <SelectItem value="Resume" className="text-xs">
+                                  Resume
+                                </SelectItem>
+                                <SelectItem value="Cover Letter" className="text-xs">
+                                  Cover Letter
+                                </SelectItem>
+                                <SelectItem value="Other" className="text-xs">
+                                  Other
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+
+                            <div>
+                              <button
+                                type="button"
+                                disabled={isUploadingDrawerDoc}
+                                onClick={() => drawerDocInputRef.current?.click()}
+                                className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                              >
+                                {isUploadingDrawerDoc ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <UploadCloud className="h-3 w-3 text-slate-500" />
+                                )}
+                                <span>Upload Document</span>
+                              </button>
+                              <input
+                                ref={drawerDocInputRef}
+                                type="file"
+                                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  if (
+                                    e.target.files &&
+                                    e.target.files[0] &&
+                                    selectedCandidate
+                                  ) {
+                                    const file = e.target.files[0];
+                                    try {
+                                      setIsUploadingDrawerDoc(true);
+                                      const updated =
+                                        await uploadDocumentMutation.mutateAsync({
+                                          id: selectedCandidate.rawApp.id,
+                                          file,
+                                          type: drawerDocFilter,
+                                        });
+                                      setSelectedCandidate((prev) =>
+                                        prev
+                                          ? {
+                                              ...prev,
+                                              rawApp: updated,
+                                            }
+                                          : null,
+                                      );
+                                    } catch (err) {
+                                      console.error(
+                                        "Failed to upload document in drawer:",
+                                        err,
+                                      );
+                                    } finally {
+                                      setIsUploadingDrawerDoc(false);
+                                      if (drawerDocInputRef.current)
+                                        drawerDocInputRef.current.value = "";
+                                    }
+                                  }
+                                }}
+                              />
+                            </div>
                           </div>
-                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                            No documents yet.
-                          </h4>
-                          <p className="text-[10px] text-slate-400 max-w-xs">
-                            Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).
-                          </p>
+
+                          {/* Document Cards List */}
+                          {filteredDrawerDocuments.length > 0 ? (
+                            <div className="space-y-2.5">
+                              {filteredDrawerDocuments.map((doc) => (
+                                <div
+                                  key={doc.id || doc.url}
+                                  className="p-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-xs flex items-center justify-between gap-3"
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    {/* Red Document Icon matching Screenshot 1 */}
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 border border-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50">
+                                      <FileText className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0 space-y-0.5">
+                                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                        {doc.name}
+                                      </h4>
+                                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 flex-wrap">
+                                        <span>{doc.type || "Resume"}</span>
+                                        <span>•</span>
+                                        <span>
+                                          {formatDate(doc.createdAt, "short")}
+                                        </span>
+                                        <span>•</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setDrawerPreviewDoc(doc)}
+                                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline cursor-pointer"
+                                        >
+                                          Click to preview
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* 3 action buttons: View, Download, Delete */}
+                                  <div className="flex items-center gap-0.5 shrink-0 text-slate-400">
+                                    <button
+                                      type="button"
+                                      onClick={() => setDrawerPreviewDoc(doc)}
+                                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                      title="View preview"
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDownloadDoc(
+                                          doc.url,
+                                          doc.name,
+                                          selectedCandidate.rawApp.id,
+                                        )
+                                      }
+                                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                      title="Download document"
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setDrawerDocToDelete(doc)}
+                                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                                      title="Delete document"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            /* Empty state matching Screenshot 2 */
+                            <div
+                              onClick={() => drawerDocInputRef.current?.click()}
+                              className="rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center space-y-1.5 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                            >
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 mb-0.5">
+                                <FileText className="h-4 w-4" />
+                              </div>
+                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                No documents yet.
+                              </h4>
+                              <p className="text-[10px] text-slate-400 max-w-xs">
+                                Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1102,6 +1320,14 @@ function CandidatesPageContent() {
       <CreateJobModal
         isOpen={createJobModalOpen}
         onClose={() => setCreateJobModalOpen(false)}
+      />
+
+      {/* Delete Document Confirmation Modal matching Screenshot 3 */}
+      <DeleteDocumentModal
+        isOpen={!!drawerDocToDelete}
+        onClose={() => setDrawerDocToDelete(null)}
+        onConfirm={handleConfirmDeleteDrawerDoc}
+        isLoading={isDeletingDoc}
       />
     </div>
   );

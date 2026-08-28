@@ -10,6 +10,94 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { ApplicationStage, UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 
+export interface ApplicationDocument {
+  id: string;
+  name: string;
+  url: string;
+  size?: number | null;
+  mimeType?: string | null;
+  type?: string;
+  createdAt: string;
+}
+
+export function fixUtf8String(str?: string | null): string {
+  if (!str) return "";
+  try {
+    const fixed = Buffer.from(str, "latin1").toString("utf8");
+    if (fixed && !fixed.includes("\ufffd") && fixed !== str) {
+      return fixed.normalize("NFC");
+    }
+  } catch {
+    // ignore
+  }
+  return str.normalize("NFC");
+}
+
+function extractDocsFromNotes(
+  notes: string | null,
+  fallback?: {
+    id: string;
+    url: string;
+    name: string;
+    size?: number | null;
+    mimeType?: string | null;
+    createdAt?: string | Date;
+  },
+): ApplicationDocument[] {
+  let docs: ApplicationDocument[] = [];
+  if (notes) {
+    const match = notes.match(/Docs:\s*(\[[^\]]*\])/);
+    if (match) {
+      try {
+        const rawDocs = JSON.parse(match[1]);
+        if (Array.isArray(rawDocs)) {
+          docs = rawDocs.map((d: any) => ({
+            ...d,
+            name: fixUtf8String(d.name || "document.pdf"),
+          }));
+        }
+      } catch {
+        docs = [];
+      }
+    }
+  }
+
+  if (
+    docs.length === 0 &&
+    fallback &&
+    fallback.url &&
+    fallback.url.trim() !== ""
+  ) {
+    docs.push({
+      id: `doc-${fallback.id}`,
+      name: fixUtf8String(fallback.name || "Resume.pdf"),
+      url: fallback.url,
+      size: fallback.size,
+      mimeType: fallback.mimeType || "application/pdf",
+      type: "Resume",
+      createdAt: fallback.createdAt
+        ? new Date(fallback.createdAt).toISOString()
+        : new Date().toISOString(),
+    });
+  }
+
+  return docs;
+}
+
+function packDocsIntoNotes(
+  existingNotes: string | null,
+  docs: ApplicationDocument[],
+): string {
+  const cleanNotes = (existingNotes || "")
+    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
+    .trim();
+  const docsSegment = `Docs:${JSON.stringify(docs)}`;
+  if (!cleanNotes) {
+    return docsSegment;
+  }
+  return `${cleanNotes} | ${docsSegment}`;
+}
+
 @Injectable()
 export class ApplicationsService {
   constructor(
@@ -222,37 +310,128 @@ export class ApplicationsService {
     return this.findOne(id);
   }
 
-  async uploadDocument(id: string, file: Express.Multer.File) {
-    await this.findOne(id);
+  async uploadDocument(
+    id: string,
+    file: Express.Multer.File,
+    documentType = "Resume",
+  ) {
+    const existing = await this.findOne(id);
 
     if (!file) {
       throw new BadRequestException("No document file provided");
     }
 
-    let uploadResult: { url: string; originalName: string; size: number; mimeType: string } = {
-      url: `/uploads/${Date.now()}-${file.originalname}`,
-      originalName: file.originalname || "document.pdf",
+    const cleanOriginalName = fixUtf8String(
+      file.originalname || "document.pdf",
+    );
+
+    let uploadResult: {
+      url: string;
+      originalName: string;
+      size: number;
+      mimeType: string;
+    } = {
+      url: `/uploads/${Date.now()}-${cleanOriginalName}`,
+      originalName: cleanOriginalName,
       size: file.size || 0,
       mimeType: file.mimetype || "application/pdf",
     };
 
     try {
       uploadResult = await this.minioService.uploadFile(file, "resumes");
+      uploadResult.originalName = cleanOriginalName;
     } catch {
       uploadResult = {
-        url: `/uploads/${Date.now()}-${file.originalname}`,
-        originalName: file.originalname,
+        url: `/uploads/${Date.now()}-${cleanOriginalName}`,
+        originalName: cleanOriginalName,
         size: file.size,
         mimeType: file.mimetype,
       };
     }
 
-    await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).update({
-      resumeUrl: uploadResult.url,
-      resumeFileName: uploadResult.originalName,
-      resumeFileSize: uploadResult.size,
-      resumeMimeType: uploadResult.mimeType,
+    const currentDocs = extractDocsFromNotes(existing.notes, {
+      id: existing.id,
+      url: existing.resumeUrl,
+      name: existing.resumeFileName,
+      size: existing.resumeFileSize,
+      mimeType: existing.resumeMimeType,
+      createdAt: existing.createdAt,
     });
+
+    const newDoc: ApplicationDocument = {
+      id: `doc-${Date.now()}`,
+      name: uploadResult.originalName,
+      url: uploadResult.url,
+      size: uploadResult.size,
+      mimeType: uploadResult.mimeType,
+      type: documentType || "Resume",
+      createdAt: new Date().toISOString(),
+    };
+
+    currentDocs.push(newDoc);
+
+    const updatedNotes = packDocsIntoNotes(existing.notes, currentDocs);
+
+    await this.prisma.db.orm.public.Application.where(
+      (a) => a.candidateEmail.eq(existing.candidateEmail),
+    ).update({
+      resumeUrl: currentDocs[0].url,
+      resumeFileName: currentDocs[0].name,
+      resumeFileSize: currentDocs[0].size ?? null,
+      resumeMimeType: currentDocs[0].mimeType ?? null,
+      notes: updatedNotes,
+    });
+
+    return this.findOne(id);
+  }
+
+  async deleteDocument(
+    id: string,
+    opts?: { documentId?: string; url?: string },
+  ) {
+    const existing = await this.findOne(id);
+
+    const currentDocs = extractDocsFromNotes(existing.notes, {
+      id: existing.id,
+      url: existing.resumeUrl,
+      name: existing.resumeFileName,
+      size: existing.resumeFileSize,
+      mimeType: existing.resumeMimeType,
+      createdAt: existing.createdAt,
+    });
+
+    let updatedDocs: ApplicationDocument[] = [];
+    if (opts?.documentId) {
+      updatedDocs = currentDocs.filter((d) => d.id !== opts.documentId);
+    } else if (opts?.url) {
+      updatedDocs = currentDocs.filter((d) => d.url !== opts.url);
+    } else {
+      updatedDocs = [];
+    }
+
+    const updatedNotes = packDocsIntoNotes(existing.notes, updatedDocs);
+
+    if (updatedDocs.length > 0) {
+      await this.prisma.db.orm.public.Application.where(
+        (a) => a.candidateEmail.eq(existing.candidateEmail),
+      ).update({
+        resumeUrl: updatedDocs[0].url,
+        resumeFileName: updatedDocs[0].name,
+        resumeFileSize: updatedDocs[0].size ?? null,
+        resumeMimeType: updatedDocs[0].mimeType ?? null,
+        notes: updatedNotes,
+      });
+    } else {
+      await this.prisma.db.orm.public.Application.where(
+        (a) => a.candidateEmail.eq(existing.candidateEmail),
+      ).update({
+        resumeUrl: "",
+        resumeFileName: "",
+        resumeFileSize: null,
+        resumeMimeType: null,
+        notes: updatedNotes,
+      });
+    }
 
     return this.findOne(id);
   }

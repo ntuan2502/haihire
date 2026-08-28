@@ -56,6 +56,16 @@ export interface Job {
   applications?: Application[];
 }
 
+export interface CandidateDocument {
+  id: string;
+  name: string;
+  url: string;
+  size?: number | null;
+  mimeType?: string | null;
+  type?: string;
+  createdAt: string;
+}
+
 export interface Application {
   id: string;
   jobId?: string | null;

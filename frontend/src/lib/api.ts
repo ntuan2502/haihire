@@ -99,17 +99,33 @@ export const applicationsApi = {
     return response.data;
   },
 
-  uploadDocument: async (id: string, file: File): Promise<Application> => {
+  uploadDocument: async (
+    id: string,
+    file: File,
+    type?: string,
+  ): Promise<Application> => {
     const formData = new FormData();
     formData.append("file", file);
     const response = await api.post<Application>(
       `/applications/${id}/documents`,
       formData,
       {
+        params: type ? { type } : undefined,
         headers: {
           "Content-Type": "multipart/form-data",
         },
       },
+    );
+    return response.data;
+  },
+
+  deleteDocument: async (
+    id: string,
+    params?: { documentId?: string; url?: string },
+  ): Promise<Application> => {
+    const response = await api.delete<Application>(
+      `/applications/${id}/documents`,
+      { params },
     );
     return response.data;
   },

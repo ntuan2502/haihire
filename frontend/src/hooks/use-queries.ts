@@ -125,10 +125,11 @@ export function useUploadDocumentMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      applicationsApi.uploadDocument(id, file),
+    mutationFn: ({ id, file, type }: { id: string; file: File; type?: string }) =>
+      applicationsApi.uploadDocument(id, file, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
 }
@@ -140,6 +141,29 @@ export function useDeleteApplicationMutation() {
     mutationFn: (id: string) => applicationsApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+export function useDeleteDocumentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      args: { id: string; documentId?: string; url?: string } | string,
+    ) => {
+      if (typeof args === "string") {
+        return applicationsApi.deleteDocument(args);
+      }
+      return applicationsApi.deleteDocument(args.id, {
+        documentId: args.documentId,
+        url: args.url,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
 }

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, applicationsApi, organizationsApi } from "@/lib/api";
-import type { Job, Application, ApplicationStage, Organization } from "@/types";
+import type { Job, Application, ApplicationStage, Organization, User, InviteLink } from "@/types";
 
 // ==========================================
 // QUERY KEYS
@@ -12,6 +12,8 @@ export const queryKeys = {
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
   allApplications: () => ["applications", "all"] as const,
   myOrg: () => ["organization", "my"] as const,
+  orgMembers: () => ["organization", "members"] as const,
+  inviteLinks: () => ["organization", "invite-links"] as const,
 };
 
 // ==========================================
@@ -230,4 +232,43 @@ export function useDeleteMyOrgMutation() {
     },
   });
 }
+
+export function useOrgMembers() {
+  return useQuery<User[]>({
+    queryKey: queryKeys.orgMembers(),
+    queryFn: () => organizationsApi.getMembers(),
+  });
+}
+
+export function useInviteLinks() {
+  return useQuery<InviteLink[]>({
+    queryKey: queryKeys.inviteLinks(),
+    queryFn: () => organizationsApi.getInviteLinks(),
+  });
+}
+
+export function useCreateInviteLinkMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { role?: string; expiresIn?: string; maxUses?: string }) =>
+      organizationsApi.createInviteLink(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+    },
+  });
+}
+
+export function useRevokeInviteLinkMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => organizationsApi.revokeInviteLink(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+    },
+  });
+}
+
+
 

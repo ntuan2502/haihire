@@ -25,6 +25,23 @@ export interface Organization {
   createdAt: string;
 }
 
+export interface InviteLink {
+  id: string;
+  token: string;
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  role: string;
+  expiresInDays: number | null;
+  expiresAt: string | null;
+  maxUses: number | null;
+  usesCount: number;
+  createdById: string;
+  createdByName: string;
+  status: "active" | "inactive" | "revoked";
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   email: string;

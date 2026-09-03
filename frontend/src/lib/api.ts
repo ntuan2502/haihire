@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Application, CreateJobInput, Job, Organization } from "../types";
+import type { Application, CreateJobInput, Job, Organization, User, InviteLink } from "../types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -142,6 +142,11 @@ export const organizationsApi = {
     return response.data;
   },
 
+  getMembers: async (): Promise<User[]> => {
+    const response = await api.get<User[]>("/organizations/my/members");
+    return response.data;
+  },
+
   updateMyOrg: async (data: {
     name?: string;
     slug?: string;
@@ -154,6 +159,54 @@ export const organizationsApi = {
     const response = await api.delete<{ success: boolean; message: string }>(
       "/organizations/my",
     );
+    return response.data;
+  },
+
+  createInviteLink: async (data: {
+    role?: string;
+    expiresIn?: string;
+    maxUses?: string;
+  }): Promise<InviteLink> => {
+    const response = await api.post<InviteLink>("/organizations/my/invite-links", data);
+    return response.data;
+  },
+
+  getInviteLinks: async (): Promise<InviteLink[]> => {
+    const response = await api.get<InviteLink[]>("/organizations/my/invite-links");
+    return response.data;
+  },
+
+  revokeInviteLink: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/organizations/my/invite-links/${id}`,
+    );
+    return response.data;
+  },
+
+  getPublicInvite: async (
+    token: string,
+  ): Promise<{
+    valid: boolean;
+    token?: string;
+    role?: string;
+    organization?: { id: string; name: string; slug: string };
+    createdByName?: string;
+    expiresAt?: string | null;
+    message?: string;
+  }> => {
+    const response = await api.get(`/organizations/invite-links/public/${token}`);
+    return response.data;
+  },
+
+  joinByToken: async (
+    token: string,
+  ): Promise<{
+    success: boolean;
+    organization: Organization;
+    role: string;
+    message: string;
+  }> => {
+    const response = await api.post(`/organizations/invite-links/join/${token}`);
     return response.data;
   },
 };

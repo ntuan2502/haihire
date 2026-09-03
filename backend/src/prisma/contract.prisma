@@ -32,14 +32,15 @@ enum ApplicationStage {
 }
 
 model Organization {
-  id         String   @id @default(uuid())
-  name       String
-  slug       String   @unique
-  inviteCode String   @unique
-  users      User[]
-  jobs       Job[]
-  createdAt  DateTime @default(now())
-  updatedAt  temporal.updatedAt()
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  inviteCode  String       @unique
+  users       User[]
+  jobs        Job[]
+  inviteLinks InviteLink[]
+  createdAt   DateTime     @default(now())
+  updatedAt   temporal.updatedAt()
 }
 
 model User {
@@ -52,7 +53,24 @@ model User {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
   jobs           Job[]
+  inviteLinks    InviteLink[]
   createdAt      DateTime      @default(now())
+  updatedAt      temporal.updatedAt()
+}
+
+model InviteLink {
+  id             String       @id @default(uuid())
+  token          String       @unique
+  role           String       @default("Member")
+  expiresAt      DateTime?
+  maxUses        Int?
+  usesCount      Int          @default(0)
+  status         String       @default("active")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdById    String?
+  createdBy      User?        @relation(fields: [createdById], references: [id])
+  createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
 }
 

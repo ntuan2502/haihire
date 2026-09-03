@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AuthService } from "./auth.service";
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 
 describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
@@ -88,6 +88,15 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
                   }),
                 })),
               })),
+              upsert: vi.fn().mockImplementation(async ({ create }) => {
+                const newUser = {
+                  ...create,
+                  organizationId: null,
+                  createdAt: new Date(),
+                };
+                mockUsers.push(newUser);
+                return newUser;
+              }),
             },
             Organization: {
               select: vi.fn().mockReturnValue({
@@ -193,6 +202,33 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
       organizationId: null,
       organization: null,
       createdAt: expect.any(Date),
+    });
+  });
+
+  describe("Registration Flow", () => {
+    it("8. Should register a new user successfully", async () => {
+      const result = await authService.register({
+        name: "New Recruiter",
+        email: "newrecruiter@company.com",
+        password: "securepassword",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.accessToken).toBe("mocked-jwt-access-token-tun-io-vn");
+      expect(result.user.name).toBe("New Recruiter");
+      expect(result.user.email).toBe("newrecruiter@company.com");
+      expect(result.user.role).toBe("HR");
+      expect(result.user.organizationId).toBeNull();
+    });
+
+    it("9. Should throw ConflictException if email is already registered", async () => {
+      await expect(
+        authService.register({
+          name: "Duplicate User",
+          email: "hr@tun.io.vn", // Already in mockUsers!
+          password: "password123",
+        }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

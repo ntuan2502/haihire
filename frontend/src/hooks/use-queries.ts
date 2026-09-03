@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, applicationsApi, organizationsApi } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
 import type { Job, Application, ApplicationStage, Organization, User, InviteLink } from "@/types";
 
 // ==========================================
@@ -10,7 +11,7 @@ import type { Job, Application, ApplicationStage, Organization, User, InviteLink
 export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
-  allApplications: () => ["applications", "all"] as const,
+  allApplications: (orgId?: string | null) => ["applications", "all", { orgId }] as const,
   myOrg: () => ["organization", "my"] as const,
   orgMembers: () => ["organization", "members"] as const,
   inviteLinks: () => ["organization", "invite-links"] as const,
@@ -20,15 +21,17 @@ export const queryKeys = {
 // JOBS HOOKS
 // ==========================================
 export function useJobs(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Job[]>({
-    queryKey: queryKeys.jobs(organizationId),
+    queryKey: queryKeys.jobs(effectiveOrgId),
     queryFn: () => {
-      if (organizationId === null) return [];
-      return jobsApi.getAll(
-        organizationId !== undefined ? { organizationId } : undefined,
-      );
+      if (!effectiveOrgId) return [];
+      return jobsApi.getAll({ organizationId: effectiveOrgId });
     },
-    enabled: organizationId !== null,
+    enabled: Boolean(effectiveOrgId),
   });
 }
 
@@ -90,15 +93,17 @@ export function useDeleteJobMutation() {
 // APPLICATIONS HOOKS
 // ==========================================
 export function useAllApplications(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
   return useQuery<Application[]>({
-    queryKey: ["applications", "all", organizationId],
+    queryKey: queryKeys.allApplications(effectiveOrgId),
     queryFn: () => {
-      if (organizationId === null) return [];
-      return applicationsApi.getAll(
-        organizationId ? { organizationId } : undefined,
-      );
+      if (!effectiveOrgId) return [];
+      return applicationsApi.getAll({ organizationId: effectiveOrgId });
     },
-    enabled: organizationId !== null,
+    enabled: Boolean(effectiveOrgId),
   });
 }
 

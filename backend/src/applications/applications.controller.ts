@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -28,8 +29,12 @@ export class ApplicationsController {
   ) {}
 
   @Get()
-  findAll(@Query("organizationId") organizationId?: string) {
-    return this.applicationsService.findAll(organizationId);
+  findAll(
+    @Request() req: { user?: { id?: string; organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+  ) {
+    const orgId = organizationId || req?.user?.organizationId || undefined;
+    return this.applicationsService.findAll(orgId);
   }
 
   @Get("job/:jobId")

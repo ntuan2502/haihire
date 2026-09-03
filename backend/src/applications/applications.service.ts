@@ -139,33 +139,20 @@ export class ApplicationsService {
   }
 
   async findAll(organizationId?: string) {
-    if (organizationId) {
-      const jobs = await this.prisma.db.orm.public.Job.select("id")
-        .where((j) => j.organizationId.eq(organizationId))
-        .all();
-      const jobIds = new Set(jobs.map((j) => j.id));
-
-      const allApps = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "jobId",
-        "candidateName",
-        "candidateEmail",
-        "candidatePhone",
-        "stage",
-        "resumeUrl",
-        "resumeFileName",
-        "resumeFileSize",
-        "resumeMimeType",
-        "notes",
-        "orderIndex",
-        "createdAt",
-        "updatedAt",
-      ).all();
-
-      return allApps.filter((a) => a.jobId && jobIds.has(a.jobId));
+    if (!organizationId) {
+      return [];
     }
 
-    return this.prisma.db.orm.public.Application.select(
+    const jobs = await this.prisma.db.orm.public.Job.select("id")
+      .where((j) => j.organizationId.eq(organizationId))
+      .all();
+    const jobIds = new Set(jobs.map((j) => j.id));
+
+    if (jobIds.size === 0) {
+      return [];
+    }
+
+    const allApps = await this.prisma.db.orm.public.Application.select(
       "id",
       "jobId",
       "candidateName",
@@ -181,6 +168,8 @@ export class ApplicationsService {
       "createdAt",
       "updatedAt",
     ).all();
+
+    return allApps.filter((a) => a.jobId && jobIds.has(a.jobId));
   }
 
   async findOne(id: string) {

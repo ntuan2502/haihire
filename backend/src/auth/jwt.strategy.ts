@@ -35,6 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       "name",
       "role",
       "avatarUrl",
+      "organizationId",
       "createdAt",
     )
       .where((u) => u.id.eq(payload.sub))

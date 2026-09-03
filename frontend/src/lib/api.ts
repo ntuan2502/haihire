@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Application, CreateJobInput, Job } from "../types";
+import type { Application, CreateJobInput, Job, Organization } from "../types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -135,3 +135,26 @@ export const applicationsApi = {
     return response.data;
   },
 };
+
+export const organizationsApi = {
+  getMyOrg: async (): Promise<Organization | null> => {
+    const response = await api.get<Organization | null>("/organizations/my");
+    return response.data;
+  },
+
+  updateMyOrg: async (data: {
+    name?: string;
+    slug?: string;
+  }): Promise<Organization> => {
+    const response = await api.patch<Organization>("/organizations/my", data);
+    return response.data;
+  },
+
+  deleteMyOrg: async (): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      "/organizations/my",
+    );
+    return response.data;
+  },
+};
+

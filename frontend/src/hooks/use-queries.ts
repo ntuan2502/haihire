@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi, applicationsApi } from "@/lib/api";
-import type { Job, Application, ApplicationStage } from "@/types";
+import { jobsApi, applicationsApi, organizationsApi } from "@/lib/api";
+import type { Job, Application, ApplicationStage, Organization } from "@/types";
 
 // ==========================================
 // QUERY KEYS
@@ -11,6 +11,7 @@ export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
   allApplications: () => ["applications", "all"] as const,
+  myOrg: () => ["organization", "my"] as const,
 };
 
 // ==========================================
@@ -196,3 +197,37 @@ export function useDeleteDocumentMutation() {
     },
   });
 }
+
+// ==========================================
+// ORGANIZATION HOOKS
+// ==========================================
+export function useMyOrg() {
+  return useQuery<Organization | null>({
+    queryKey: queryKeys.myOrg(),
+    queryFn: () => organizationsApi.getMyOrg(),
+  });
+}
+
+export function useUpdateMyOrgMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { name?: string; slug?: string }) =>
+      organizationsApi.updateMyOrg(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+    },
+  });
+}
+
+export function useDeleteMyOrgMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => organizationsApi.deleteMyOrg(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+    },
+  });
+}
+

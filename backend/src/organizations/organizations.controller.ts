@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Inject,
+  Patch,
   Post,
   Query,
   Request,
@@ -13,6 +15,7 @@ import {
 import { OrganizationsService } from "./organizations.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
+import { UpdateOrgDto } from "./dto/update-org.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @Controller("organizations")
@@ -49,5 +52,18 @@ export class OrganizationsController {
   @Get("my")
   async getMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMyOrg(req.user.id);
+  }
+
+  @Patch("my")
+  async updateMyOrg(
+    @Request() req: { user: { id: string } },
+    @Body() dto: UpdateOrgDto,
+  ) {
+    return this.orgsService.updateMyOrg(req.user.id, dto);
+  }
+
+  @Delete("my")
+  async deleteMyOrg(@Request() req: { user: { id: string } }) {
+    return this.orgsService.deleteMyOrg(req.user.id);
   }
 }

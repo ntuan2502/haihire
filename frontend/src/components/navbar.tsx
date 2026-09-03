@@ -97,6 +97,7 @@ export function Navbar({
   else if (pathname.startsWith("/dashboard/candidates")) currentTab = "candidates";
   else if (pathname.startsWith("/dashboard/applications")) currentTab = "applications";
   else if (pathname.startsWith("/dashboard/interviews")) currentTab = "interviews";
+  else if (pathname.startsWith("/dashboard/settings")) currentTab = "settings";
   else if (pathname === "/dashboard") currentTab = "dashboard";
 
   const navItems: {
@@ -112,7 +113,7 @@ export function Navbar({
     { id: "inbox", label: "Inbox", icon: Inbox, implemented: false },
     { id: "interviews", label: "Interviews", icon: Calendar, implemented: true },
     { id: "assistant", label: "Assistant", icon: MessageSquare, implemented: false },
-    { id: "settings", label: "Settings", icon: Settings, implemented: false },
+    { id: "settings", label: "Settings", icon: Settings, implemented: true },
   ];
 
   // Locked features from the screenshot
@@ -131,6 +132,8 @@ export function Navbar({
       router.push("/dashboard/applications");
     } else if (tab === "interviews") {
       router.push("/dashboard/interviews");
+    } else if (tab === "settings") {
+      router.push("/dashboard/settings");
     } else if (tab === "dashboard") {
       router.push("/dashboard");
     } else {

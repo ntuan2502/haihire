@@ -288,7 +288,7 @@ export function Navbar({
                     className="w-full my-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
                   >
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
-                      {user.organization?.name || "amt"}
+                      {user.organization?.name || "No Organization"}
                     </span>
                     <ChevronDown className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
                   </div>
@@ -499,7 +499,7 @@ export function Navbar({
               >
                 <div className="flex items-center gap-2 truncate">
                   <span className="truncate">
-                    {user?.organization?.name || "AMT"}
+                    {user?.organization?.name || "No Organization"}
                   </span>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />

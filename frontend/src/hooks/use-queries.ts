@@ -22,12 +22,13 @@ export const queryKeys = {
 export function useJobs(organizationId?: string | null) {
   return useQuery<Job[]>({
     queryKey: queryKeys.jobs(organizationId),
-    queryFn: () =>
-      jobsApi.getAll(
-        organizationId !== undefined && organizationId !== null
-          ? { organizationId }
-          : undefined,
-      ),
+    queryFn: () => {
+      if (organizationId === null) return [];
+      return jobsApi.getAll(
+        organizationId !== undefined ? { organizationId } : undefined,
+      );
+    },
+    enabled: organizationId !== null,
   });
 }
 
@@ -88,10 +89,16 @@ export function useDeleteJobMutation() {
 // ==========================================
 // APPLICATIONS HOOKS
 // ==========================================
-export function useAllApplications() {
+export function useAllApplications(organizationId?: string | null) {
   return useQuery<Application[]>({
-    queryKey: queryKeys.allApplications(),
-    queryFn: () => applicationsApi.getAll(),
+    queryKey: ["applications", "all", organizationId],
+    queryFn: () => {
+      if (organizationId === null) return [];
+      return applicationsApi.getAll(
+        organizationId ? { organizationId } : undefined,
+      );
+    },
+    enabled: organizationId !== null,
   });
 }
 

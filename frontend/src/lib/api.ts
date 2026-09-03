@@ -44,8 +44,11 @@ export const jobsApi = {
 };
 
 export const applicationsApi = {
-  getAll: async (): Promise<Application[]> => {
-    const response = await api.get<Application[]>("/applications");
+  getAll: async (filter?: { organizationId?: string }): Promise<Application[]> => {
+    const params = new URLSearchParams();
+    if (filter?.organizationId) params.append("organizationId", filter.organizationId);
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+    const response = await api.get<Application[]>(`/applications${queryString}`);
     return response.data;
   },
 

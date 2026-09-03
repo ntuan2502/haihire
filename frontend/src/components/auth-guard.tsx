@@ -6,17 +6,22 @@ import { useAuth } from "@/context/auth-context";
 
 interface AuthGuardProps {
   children: React.ReactNode;
+  requireOrg?: boolean;
 }
 
-export function AuthGuard({ children }: AuthGuardProps) {
+export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   const router = useRouter();
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/login");
+    if (!loading) {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (requireOrg && user && !user.organizationId) {
+        router.replace("/onboarding/create-org");
+      }
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, user, loading, requireOrg, router]);
 
   if (loading) {
     return (
@@ -30,6 +35,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   if (!isAuthenticated) {
+    return null;
+  }
+
+  if (requireOrg && user && !user.organizationId) {
     return null;
   }
 

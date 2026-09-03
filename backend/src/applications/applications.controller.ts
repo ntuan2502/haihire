@@ -28,8 +28,8 @@ export class ApplicationsController {
   ) {}
 
   @Get()
-  findAll() {
-    return this.applicationsService.findAll();
+  findAll(@Query("organizationId") organizationId?: string) {
+    return this.applicationsService.findAll(organizationId);
   }
 
   @Get("job/:jobId")

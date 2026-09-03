@@ -414,7 +414,7 @@ function OnboardingContent() {
 
 export default function OnboardingCreateOrgPage() {
   return (
-    <AuthGuard>
+    <AuthGuard requireOrg={false}>
       <OnboardingContent />
     </AuthGuard>
   );

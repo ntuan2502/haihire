@@ -29,7 +29,7 @@ export default function SubSettingsPage() {
   }, []);
 
   const displayHost = appHost || "localhost:3000";
-  const orgSlug = org?.slug || user?.organization?.slug || "amt";
+  const orgSlug = org?.slug || user?.organization?.slug || "workspace";
 
   if (tab === "localization") {
     return (

@@ -9,6 +9,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string) => Promise<User>;
   logout: () => void;
   updateUserOrg: (org: Organization) => void;
   isAuthenticated: boolean;
@@ -18,6 +19,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = "ats_recruiter_token";
 const USER_KEY = "ats_recruiter_user";
+
+function setAuthCookies(token: string, hasOrg: boolean) {
+  if (typeof document === "undefined") return;
+  const maxAge = 60 * 60 * 24 * 7; // 7 days
+  document.cookie = `ats_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  document.cookie = `ats_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
+
+function clearAuthCookies() {
+  if (typeof document === "undefined") return;
+  document.cookie = "ats_token=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "ats_has_org=; path=/; max-age=0; SameSite=Lax";
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -31,9 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const savedUser = localStorage.getItem(USER_KEY);
 
       if (savedToken && savedUser) {
+        const parsedUser: User = JSON.parse(savedUser);
         setToken(savedToken);
-        setUser(JSON.parse(savedUser));
+        setUser(parsedUser);
         api.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
+        setAuthCookies(savedToken, Boolean(parsedUser.organizationId));
       }
     } catch (err) {
       console.error("Failed to load saved session", err);
@@ -57,6 +73,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
     localStorage.setItem(TOKEN_KEY, accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    setAuthCookies(accessToken, Boolean(userData.organizationId));
+
+    api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+    return userData;
+  };
+
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<User> => {
+    const response = await api.post<{
+      accessToken: string;
+      user: User;
+    }>("/auth/register", {
+      name,
+      email,
+      password,
+    });
+
+    const { accessToken, user: userData } = response.data;
+
+    setToken(accessToken);
+    setUser(userData);
+    localStorage.setItem(TOKEN_KEY, accessToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    setAuthCookies(accessToken, Boolean(userData.organizationId));
 
     api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
     return userData;
@@ -71,6 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setUser(updated);
     localStorage.setItem(USER_KEY, JSON.stringify(updated));
+    if (token) {
+      setAuthCookies(token, true);
+    }
   };
 
   const logout = () => {
@@ -78,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    clearAuthCookies();
     delete api.defaults.headers.common.Authorization;
   };
 
@@ -88,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         loading,
         login,
+        register,
         logout,
         updateUserOrg,
         isAuthenticated: !!user,

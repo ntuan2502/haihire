@@ -44,17 +44,17 @@ export default function HomePage() {
           </a>
           {isAuthenticated ? (
             <Link
-              href="/dashboard"
+              href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
               className="text-cyan-300 hover:text-white font-semibold flex items-center gap-1 transition-colors"
             >
-              Workspace ({user?.organization?.name || "ATS"}) &rarr;
+              {user?.organization?.name ? `Workspace (${user.organization.name})` : "Create Workspace"} &rarr;
             </Link>
           ) : (
             <Link
               href="/login"
-              className="hover:text-white transition-colors font-medium"
+              className="text-slate-300 hover:text-white transition-colors font-medium"
             >
-              Sign In
+              Sign in
             </Link>
           )}
         </nav>
@@ -100,19 +100,37 @@ export default function HomePage() {
 
         {/* CTA Buttons Row */}
         <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-3.5">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-white/10 hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all"
-          >
-            Start free <ArrowRight className="h-4 w-4" />
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
+              className="inline-flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-500 px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all"
+            >
+              <span>
+                {user?.organization?.name
+                  ? `Go to Workspace (${user.organization.name})`
+                  : user?.organizationId
+                    ? "Go to Dashboard"
+                    : "Create Workspace"}
+              </span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-white/10 hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all"
+              >
+                Start free <ArrowRight className="h-4 w-4" />
+              </Link>
 
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center rounded-full bg-blue-700/90 hover:bg-blue-600 border border-blue-400/30 px-7 py-3 text-sm font-bold text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
-          >
-            Try the demo
-          </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-full bg-blue-700/90 hover:bg-blue-600 border border-blue-400/30 px-7 py-3 text-sm font-bold text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
+              >
+                Sign in to ATS
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Feature Badges */}

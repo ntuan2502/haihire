@@ -181,7 +181,7 @@ export default function GeneralSettingsPage() {
               </span>
               <input
                 type="text"
-                placeholder="amt"
+                placeholder="company-slug"
                 value={orgSlug}
                 onChange={(e) =>
                   setOrgSlug(

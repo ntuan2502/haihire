@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -6,8 +7,10 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 import { PrismaService } from "../prisma.service";
 import { LoginDto } from "./dto/login.dto";
+import { RegisterDto } from "./dto/register.dto";
 
 @Injectable()
 export class AuthService {
@@ -107,6 +110,60 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const user = await this.validateRecruiter(dto);
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user,
+    };
+  }
+
+  async register(dto: RegisterDto) {
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
+    const existing = await this.prisma.db.orm.public.User.select("id")
+      .where((u) => u.email.eq(normalizedEmail))
+      .first();
+
+    if (existing) {
+      throw new ConflictException(
+        "An account with this email address already exists.",
+      );
+    }
+
+    const hashedPassword = bcrypt.hashSync(dto.password, 10);
+    const id = crypto.randomUUID();
+
+    await this.prisma.db.orm.public.User.upsert({
+      create: {
+        id,
+        email: normalizedEmail,
+        name: dto.name.trim(),
+        password: hashedPassword,
+        role: "HR",
+        organizationId: null,
+      },
+      update: {},
+      conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
+    });
+
+    const user = {
+      id,
+      email: normalizedEmail,
+      name: dto.name.trim(),
+      role: "HR" as const,
+      avatarUrl: null,
+      organizationId: null,
+      organization: null,
+      createdAt: new Date(),
+    };
 
     const payload = {
       sub: user.id,

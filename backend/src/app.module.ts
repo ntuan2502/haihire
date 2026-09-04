@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AppController } from "./app.controller";
 import { ApplicationsModule } from "./applications/applications.module";
 import { AuthModule } from "./auth/auth.module";
+import { EventsModule } from "./events/events.module";
 import { JobsModule } from "./jobs/jobs.module";
 import { MinioModule } from "./minio/minio.module";
 import { OrganizationsModule } from "./organizations/organizations.module";
@@ -15,6 +16,7 @@ import { UsersService } from "./users.service";
     ConfigModule.forRoot({ isGlobal: true }),
     MinioModule,
     AuthModule,
+    EventsModule,
     OrganizationsModule,
     JobsModule,
     ApplicationsModule,

@@ -48,6 +48,23 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
     mockLinks = [];
 
+    let mockMembers: any[] = [
+      {
+        id: "mem-2",
+        organizationId: "org-1",
+        userId: "usr-2",
+        role: "ADMIN",
+        createdAt: new Date(),
+      },
+      {
+        id: "mem-3",
+        organizationId: "org-1",
+        userId: "usr-3",
+        role: "MEMBER",
+        createdAt: new Date(),
+      },
+    ];
+
     mockPrismaService = {
       db: {
         orm: {
@@ -128,6 +145,9 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                       .map((u) => ({ ...u }));
                   }),
                 })),
+                all: vi.fn().mockImplementation(async () => {
+                  return mockUsers.map((u) => ({ ...u }));
+                }),
               })),
               where: vi.fn().mockImplementation((predicateFn) => ({
                 update: vi.fn().mockImplementation(async (updates) => {
@@ -141,6 +161,77 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                     Object.assign(targetUser, updates);
                   }
                   return targetUser;
+                }),
+              })),
+            },
+            OrganizationMember: {
+              upsert: vi.fn().mockImplementation(async ({ create, update, conflictOn }) => {
+                const existingIndex = mockMembers.findIndex((m) => m.id === conflictOn?.id);
+                if (existingIndex >= 0) {
+                  Object.assign(mockMembers[existingIndex], update);
+                  return mockMembers[existingIndex];
+                }
+                const newMem = {
+                  ...create,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
+                mockMembers.push(newMem);
+                return newMem;
+              }),
+              select: vi.fn().mockImplementation((...fields: string[]) => ({
+                where: vi.fn().mockImplementation((predicateFn) => ({
+                  first: vi.fn().mockImplementation(async () => {
+                    const match = mockMembers.find((m) => {
+                      const mockRecord = {
+                        id: { eq: (target: string) => m.id === target },
+                        userId: { eq: (target: string) => m.userId === target },
+                        organizationId: { eq: (target: string) => m.organizationId === target },
+                      };
+                      return predicateFn(mockRecord);
+                    });
+                    return match ? { ...match } : null;
+                  }),
+                  all: vi.fn().mockImplementation(async () => {
+                    return mockMembers
+                      .filter((m) => {
+                        const mockRecord = {
+                          userId: { eq: (target: string) => m.userId === target },
+                          organizationId: { eq: (target: string) => m.organizationId === target },
+                        };
+                        return predicateFn(mockRecord);
+                      })
+                      .map((m) => ({ ...m }));
+                  }),
+                })),
+                all: vi.fn().mockImplementation(async () => {
+                  return mockMembers.map((m) => ({ ...m }));
+                }),
+              })),
+              where: vi.fn().mockImplementation((predicateFn) => ({
+                update: vi.fn().mockImplementation(async (updates) => {
+                  const target = mockMembers.find((m) => {
+                    const mockRecord = {
+                      id: { eq: (target: string) => m.id === target },
+                    };
+                    return predicateFn(mockRecord);
+                  });
+                  if (target) {
+                    Object.assign(target, updates);
+                    return { ...target };
+                  }
+                  return null;
+                }),
+                delete: vi.fn().mockImplementation(async () => {
+                  const toDelete = mockMembers.filter((m) => {
+                    const mockRecord = {
+                      id: { eq: (target: string) => m.id === target },
+                      organizationId: { eq: (target: string) => m.organizationId === target },
+                    };
+                    return predicateFn(mockRecord);
+                  });
+                  mockMembers = mockMembers.filter((m) => !toDelete.includes(m));
+                  return toDelete;
                 }),
               })),
             },
@@ -263,9 +354,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(noOrg).toBeNull();
     });
 
-    it("7. Should get members of organization", async () => {
+    it("7. Should get members of organization including owner", async () => {
       const members = await service.getMembers("usr-2");
-      expect(members.length).toBe(2);
+      expect(members.length).toBe(3);
+      expect(members.some((m) => m.name === "HR Lead" && m.isOwner)).toBe(true);
       expect(members.some((m) => m.name === "Admin")).toBe(true);
       expect(members.some((m) => m.name === "Member User")).toBe(true);
     });
@@ -389,6 +481,59 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       await expect(service.removeMember("usr-2", "usr-1")).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it("17. Should allow switching between multiple organizations without losing membership", async () => {
+      // 1. usr-1 owns org-1
+      // 2. Add org-2 owned by usr-2
+      mockOrgs.push({
+        id: "org-2",
+        name: "Org B",
+        slug: "org-b",
+        inviteCode: "ORG-B2222",
+        ownerId: "usr-2",
+        createdAt: new Date(),
+      });
+
+      // 3. Create invite link for org-2
+      mockLinks.push({
+        id: "link-org-2",
+        token: "token-for-org-2",
+        organizationId: "org-2",
+        role: "MEMBER",
+        status: "active",
+        expiresAt: null,
+        maxUses: null,
+        usesCount: 0,
+        createdById: "usr-2",
+      });
+
+      // 4. usr-1 is in org-1. usr-1 accepts invite to org-2
+      const joinRes = await service.joinByToken("usr-1", "token-for-org-2");
+      expect(joinRes.success).toBe(true);
+
+      const usr1 = mockUsers.find((u) => u.id === "usr-1");
+      expect(usr1.organizationId).toBe("org-2");
+
+      // 5. getMyOrgs for usr-1 must include BOTH org-1 and org-2
+      let orgs = await service.getMyOrgs("usr-1");
+      expect(orgs.map((o) => o.id)).toContain("org-1");
+      expect(orgs.map((o) => o.id)).toContain("org-2");
+
+      // 6. usr-1 switches back to org-1
+      const switchRes = await service.switchOrg("usr-1", "org-1");
+      expect(switchRes.success).toBe(true);
+      expect(usr1.organizationId).toBe("org-1");
+
+      // 7. Critical: org-2 must NOT disappear from getMyOrgs!
+      orgs = await service.getMyOrgs("usr-1");
+      expect(orgs.map((o) => o.id)).toContain("org-1");
+      expect(orgs.map((o) => o.id)).toContain("org-2");
+
+      // 8. usr-1 can switch back to org-2 seamlessly
+      const switchBack = await service.switchOrg("usr-1", "org-2");
+      expect(switchBack.success).toBe(true);
+      expect(usr1.organizationId).toBe("org-2");
     });
   });
 });

@@ -337,7 +337,12 @@ export function Navbar({
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   if (!isActive) {
-                                    await switchOrgMutation.mutateAsync(org.id);
+                                    try {
+                                      await switchOrgMutation.mutateAsync(org.id);
+                                      router.push("/dashboard");
+                                    } catch (err) {
+                                      console.error("Failed to switch workspace:", err);
+                                    }
                                   }
                                   setIsOrgDropdownOpen(false);
                                 }}
@@ -599,7 +604,12 @@ export function Navbar({
                           key={org.id}
                           onClick={async () => {
                             if (!isActive) {
-                              await switchOrgMutation.mutateAsync(org.id);
+                              try {
+                                await switchOrgMutation.mutateAsync(org.id);
+                                router.push("/dashboard");
+                              } catch (err) {
+                                console.error("Failed to switch workspace:", err);
+                              }
                             }
                             setIsMobileOrgDropdownOpen(false);
                             setMobileMenuOpen(false);

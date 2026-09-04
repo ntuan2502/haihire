@@ -5,9 +5,11 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  type OnModuleInit,
 } from "@nestjs/common";
 import crypto from "node:crypto";
 import { PrismaService } from "../prisma.service";
+import { EventsService } from "../events/events.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
@@ -29,11 +31,71 @@ export interface InviteLinkRecord {
 }
 
 @Injectable()
-export class OrganizationsService {
+export class OrganizationsService implements OnModuleInit {
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await this.backfillMemberships();
+    } catch (e) {
+      console.warn("Failed to backfill memberships on startup:", e);
+    }
+  }
+
+  private async backfillMemberships() {
+    // 1. Ensure all organization owners have an OrganizationMember record with ADMIN role
+    const allOrgs = await this.prisma.db.orm.public.Organization.select("id", "ownerId").all();
+    for (const org of allOrgs) {
+      if (org.ownerId) {
+        const orgMembers = await this.prisma.db.orm.public.OrganizationMember.select("id", "userId")
+          .where((m) => m.organizationId.eq(org.id))
+          .all();
+        const hasOwner = orgMembers.some((m) => m.userId === org.ownerId);
+        if (!hasOwner) {
+          const id = crypto.randomUUID();
+          await this.prisma.db.orm.public.OrganizationMember.upsert({
+            create: {
+              id,
+              organizationId: org.id,
+              userId: org.ownerId,
+              role: "ADMIN",
+            },
+            update: {},
+            conflictOn: { id },
+          });
+        }
+      }
+    }
+
+    // 2. Ensure all users with an active organizationId have an OrganizationMember record
+    const allUsers = await this.prisma.db.orm.public.User.select("id", "organizationId", "role").all();
+    for (const user of allUsers) {
+      if (user.organizationId) {
+        const userOrgs = await this.prisma.db.orm.public.OrganizationMember.select("id", "organizationId")
+          .where((m) => m.userId.eq(user.id))
+          .all();
+        const hasActiveOrg = userOrgs.some((m) => m.organizationId === user.organizationId);
+        if (!hasActiveOrg) {
+          const id = crypto.randomUUID();
+          await this.prisma.db.orm.public.OrganizationMember.upsert({
+            create: {
+              id,
+              organizationId: user.organizationId,
+              userId: user.id,
+              role: user.role === "ADMIN" ? "ADMIN" : "MEMBER",
+            },
+            update: {},
+            conflictOn: { id },
+          });
+        }
+      }
+    }
+  }
 
   private generateInviteCode(): string {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -89,6 +151,19 @@ export class OrganizationsService {
     if (!org) {
       throw new NotFoundException("Failed to retrieve created organization");
     }
+
+    // Record membership in OrganizationMember
+    const memberId = crypto.randomUUID();
+    await this.prisma.db.orm.public.OrganizationMember.upsert({
+      create: {
+        id: memberId,
+        organizationId: org.id,
+        userId,
+        role: "ADMIN",
+      },
+      update: {},
+      conflictOn: { id: memberId },
+    });
 
     // Link current user to this organization and promote to ADMIN (Owner)
     await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
@@ -170,10 +245,31 @@ export class OrganizationsService {
       .where((u) => u.id.eq(userId))
       .first();
 
-    if (user && user.organizationId === org.id) {
-      throw new BadRequestException(
-        "You are already a member of this organization.",
-      );
+    const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
+
+    // Check if user already has an active membership in this organization
+    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
+      "id",
+      "organizationId",
+      "role",
+    )
+      .where((m) => m.userId.eq(userId))
+      .all();
+
+    const existingMembership = userMemberships.find((m) => m.organizationId === org.id);
+
+    if (existingMembership) {
+      // User is already a member - switch active organization to this org
+      await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
+        organizationId: org.id,
+        role: existingMembership.role,
+      });
+
+      return {
+        organization: org,
+        role: existingMembership.role,
+        message: `Switched to ${org.name}`,
+      };
     }
 
     await this.prisma.db.orm.public.InviteLink.where((l) =>
@@ -182,7 +278,19 @@ export class OrganizationsService {
       usesCount: inviteLink.usesCount + 1,
     });
 
-    const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
+    // Record new persistent membership
+    const newMemberId = crypto.randomUUID();
+    await this.prisma.db.orm.public.OrganizationMember.upsert({
+      create: {
+        id: newMemberId,
+        organizationId: org.id,
+        userId,
+        role: assignedRole,
+      },
+      update: {},
+      conflictOn: { id: newMemberId },
+    });
+
     await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
       organizationId: org.id,
       role: assignedRole,
@@ -240,11 +348,24 @@ export class OrganizationsService {
       "createdAt",
     ).all();
 
-    // Security: Only return organizations the user actually belongs to or owns
+    // Query all persistent memberships for this user
+    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
+      "id",
+      "organizationId",
+      "role",
+    )
+      .where((m) => m.userId.eq(userId))
+      .all();
+
+    const memberOrgIds = new Set(userMemberships.map((m) => m.organizationId));
+
+    // Security & Multi-org: Only return organizations the user owns, is an active member of,
+    // or is currently switched to.
     return allOrgs.filter(
       (o) =>
-        (user.organizationId && o.id === user.organizationId) ||
-        (o.ownerId && o.ownerId === userId),
+        (o.ownerId && o.ownerId === userId) ||
+        memberOrgIds.has(o.id) ||
+        (user.organizationId && o.id === user.organizationId),
     );
   }
 
@@ -252,6 +373,7 @@ export class OrganizationsService {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
       "organizationId",
+      "role",
     )
       .where((u) => u.id.eq(userId))
       .first();
@@ -275,18 +397,49 @@ export class OrganizationsService {
       throw new NotFoundException("Organization not found");
     }
 
-    // Security: User must be owner or already a member of the target org
+    // Security: User must be owner, have an OrganizationMember record, or currently belong to the target org
     const isOwner = Boolean(org.ownerId && org.ownerId === userId);
+    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
+      "id",
+      "organizationId",
+      "role",
+    )
+      .where((m) => m.userId.eq(userId))
+      .all();
+
+    const membership = userMemberships.find((m) => m.organizationId === targetOrgId);
     const isCurrentMember = user.organizationId === targetOrgId;
 
-    if (!isOwner && !isCurrentMember) {
+    if (!isOwner && !membership && !isCurrentMember) {
       throw new ForbiddenException(
         "You do not have access to this organization. Please join via an invite link.",
       );
     }
 
+    const targetRole = isOwner
+      ? "ADMIN"
+      : membership
+        ? membership.role
+        : (user.role || "MEMBER");
+
+    // Self-healing: ensure membership record exists in OrganizationMember
+    if (!membership) {
+      const memberId = crypto.randomUUID();
+      await this.prisma.db.orm.public.OrganizationMember.upsert({
+        create: {
+          id: memberId,
+          organizationId: targetOrgId,
+          userId,
+          role: targetRole,
+        },
+        update: {},
+        conflictOn: { id: memberId },
+      });
+    }
+
     await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
       organizationId: org.id,
+      role: targetRole,
     });
 
     const updatedUser = await this.prisma.db.orm.public.User.select(
@@ -302,7 +455,7 @@ export class OrganizationsService {
     return {
       success: true,
       organization: org,
-      user: { ...updatedUser, organization: org },
+      user: { ...updatedUser, organization: org, isOwner },
     };
   }
 
@@ -422,6 +575,11 @@ export class OrganizationsService {
       organizationId: null,
     });
 
+    // Clean up all memberships in this org
+    await this.prisma.db.orm.public.OrganizationMember.where((m) =>
+      m.organizationId.eq(orgId),
+    ).delete();
+
     // Delete organization
     await this.prisma.db.orm.public.Organization.where((o) =>
       o.id.eq(orgId),
@@ -442,28 +600,73 @@ export class OrganizationsService {
       return [];
     }
 
+    const currentOrgId = user.organizationId as string;
     const org = await this.prisma.db.orm.public.Organization.select(
       "id",
       "ownerId",
     )
-      .where((o) => o.id.eq(user.organizationId as string))
+      .where((o) => o.id.eq(currentOrgId))
       .first();
 
-    const members = await this.prisma.db.orm.public.User.select(
+    // 1. Fetch all memberships recorded in OrganizationMember for this organization
+    const memberships = await this.prisma.db.orm.public.OrganizationMember.select(
+      "id",
+      "userId",
+      "role",
+      "createdAt",
+    )
+      .where((m) => m.organizationId.eq(currentOrgId))
+      .all();
+
+    const memberUserIds = new Set(memberships.map((m) => m.userId));
+    if (org?.ownerId) {
+      memberUserIds.add(org.ownerId);
+    }
+
+    const allUsers = await this.prisma.db.orm.public.User.select(
       "id",
       "name",
       "email",
       "role",
       "avatarUrl",
+      "organizationId",
       "createdAt",
-    )
-      .where((u) => u.organizationId.eq(user.organizationId as string))
-      .all();
+    ).all();
 
-    return members.map((m) => ({
-      ...m,
-      isOwner: Boolean(org && org.ownerId === m.id),
-    }));
+    const roleMap = new Map<string, string>();
+    for (const m of memberships) {
+      roleMap.set(m.userId, m.role);
+    }
+    if (org?.ownerId) {
+      roleMap.set(org.ownerId, "ADMIN");
+    }
+
+    const members = allUsers
+      .filter((u) => memberUserIds.has(u.id) || u.organizationId === currentOrgId)
+      .map((u) => {
+        const isOwner = Boolean(org && org.ownerId === u.id);
+        const role = isOwner ? "ADMIN" : (roleMap.get(u.id) || u.role || "MEMBER");
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role,
+          avatarUrl: u.avatarUrl,
+          createdAt: u.createdAt,
+          isOwner,
+        };
+      });
+
+    // Ensure owner is first in the list
+    if (org?.ownerId) {
+      const ownerIdx = members.findIndex((m) => m.id === org.ownerId);
+      if (ownerIdx > 0) {
+        const [owner] = members.splice(ownerIdx, 1);
+        members.unshift(owner);
+      }
+    }
+
+    return members;
   }
 
   async updateMemberRole(
@@ -483,11 +686,12 @@ export class OrganizationsService {
       throw new NotFoundException("User is not associated with an organization");
     }
 
+    const targetOrgId = caller.organizationId as string;
     const org = await this.prisma.db.orm.public.Organization.select(
       "id",
       "ownerId",
     )
-      .where((o) => o.id.eq(caller.organizationId as string))
+      .where((o) => o.id.eq(targetOrgId))
       .first();
 
     const isCallerOwner = Boolean(org && org.ownerId === caller.id);
@@ -504,7 +708,16 @@ export class OrganizationsService {
       throw new BadRequestException("Cannot change the role of the organization owner");
     }
 
-    // Target user must belong to caller's org
+    const orgMembers = await this.prisma.db.orm.public.OrganizationMember.select(
+      "id",
+      "userId",
+      "role",
+    )
+      .where((m) => m.organizationId.eq(targetOrgId))
+      .all();
+
+    const membership = orgMembers.find((m) => m.userId === targetMemberId);
+
     const targetUser = await this.prisma.db.orm.public.User.select(
       "id",
       "organizationId",
@@ -513,13 +726,44 @@ export class OrganizationsService {
       .where((u) => u.id.eq(targetMemberId))
       .first();
 
-    if (!targetUser || targetUser.organizationId !== caller.organizationId) {
+    if (!membership && (!targetUser || targetUser.organizationId !== targetOrgId)) {
       throw new NotFoundException("Member not found in this organization");
     }
 
-    await this.prisma.db.orm.public.User.where((u) =>
-      u.id.eq(targetMemberId),
-    ).update({
+    if (membership) {
+      await this.prisma.db.orm.public.OrganizationMember.where((m) =>
+        m.id.eq(membership.id),
+      ).update({
+        role: newRole,
+      });
+    } else {
+      const newMemberId = crypto.randomUUID();
+      await this.prisma.db.orm.public.OrganizationMember.upsert({
+        create: {
+          id: newMemberId,
+          organizationId: targetOrgId,
+          userId: targetMemberId,
+          role: newRole,
+        },
+        update: {},
+        conflictOn: { id: newMemberId },
+      });
+    }
+
+    // If target user is currently active in this organization, update user.role
+    if (targetUser && targetUser.organizationId === targetOrgId) {
+      await this.prisma.db.orm.public.User.where((u) =>
+        u.id.eq(targetMemberId),
+      ).update({
+        role: newRole,
+      });
+    }
+
+    // Broadcast SSE event
+    this.eventsService?.emit({
+      type: "MEMBER_ROLE_UPDATED",
+      targetUserId: targetMemberId,
+      organizationId: targetOrgId,
       role: newRole,
     });
 
@@ -543,11 +787,12 @@ export class OrganizationsService {
       throw new NotFoundException("User is not associated with an organization");
     }
 
+    const targetOrgId = caller.organizationId as string;
     const org = await this.prisma.db.orm.public.Organization.select(
       "id",
       "ownerId",
     )
-      .where((o) => o.id.eq(caller.organizationId as string))
+      .where((o) => o.id.eq(targetOrgId))
       .first();
 
     const isCallerOwner = Boolean(org && org.ownerId === caller.id);
@@ -568,6 +813,22 @@ export class OrganizationsService {
       throw new BadRequestException("Cannot remove the organization owner");
     }
 
+    // Remove from OrganizationMember
+    const memberRecords = await this.prisma.db.orm.public.OrganizationMember.select(
+      "id",
+      "userId",
+    )
+      .where((m) => m.organizationId.eq(targetOrgId))
+      .all();
+
+    for (const record of memberRecords) {
+      if (record.userId === targetMemberId) {
+        await this.prisma.db.orm.public.OrganizationMember.where((m) =>
+          m.id.eq(record.id),
+        ).delete();
+      }
+    }
+
     const targetUser = await this.prisma.db.orm.public.User.select(
       "id",
       "organizationId",
@@ -575,15 +836,31 @@ export class OrganizationsService {
       .where((u) => u.id.eq(targetMemberId))
       .first();
 
-    if (!targetUser || targetUser.organizationId !== caller.organizationId) {
-      throw new NotFoundException("Member not found in this organization");
+    // If target user is currently viewing this organization, fallback to another org or null
+    if (targetUser && targetUser.organizationId === targetOrgId) {
+      const remainingMembership = await this.prisma.db.orm.public.OrganizationMember.select(
+        "organizationId",
+        "role",
+      )
+        .where((m) => m.userId.eq(targetMemberId))
+        .first();
+
+      const fallbackOrgId = remainingMembership ? remainingMembership.organizationId : null;
+      const fallbackRole = remainingMembership ? remainingMembership.role : "MEMBER";
+
+      await this.prisma.db.orm.public.User.where((u) =>
+        u.id.eq(targetMemberId),
+      ).update({
+        organizationId: fallbackOrgId,
+        role: fallbackRole,
+      });
     }
 
-    await this.prisma.db.orm.public.User.where((u) =>
-      u.id.eq(targetMemberId),
-    ).update({
-      organizationId: null,
-      role: "MEMBER",
+    // Broadcast SSE event
+    this.eventsService?.emit({
+      type: "MEMBER_REMOVED",
+      targetUserId: targetMemberId,
+      organizationId: targetOrgId,
     });
 
     return {
@@ -939,7 +1216,19 @@ export class OrganizationsService {
       .where((u) => u.id.eq(userId))
       .first();
 
-    if (user && user.organizationId === link.organizationId) {
+    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
+      "id",
+      "organizationId",
+      "role",
+    )
+      .where((m) => m.userId.eq(userId))
+      .all();
+
+    const isAlreadyMember =
+      userMemberships.some((m) => m.organizationId === link.organizationId) ||
+      (user && user.organizationId === link.organizationId);
+
+    if (isAlreadyMember) {
       throw new BadRequestException(
         "You are already a member of this organization.",
       );
@@ -947,6 +1236,20 @@ export class OrganizationsService {
 
     // Link user to organization with the role assigned on the invite link (ADMIN or MEMBER)
     const assignedRole = (link.role === "ADMIN" ? "ADMIN" : "MEMBER") as "ADMIN" | "MEMBER";
+
+    // Record persistent membership in OrganizationMember
+    const newMemberId = crypto.randomUUID();
+    await this.prisma.db.orm.public.OrganizationMember.upsert({
+      create: {
+        id: newMemberId,
+        organizationId: link.organizationId,
+        userId,
+        role: assignedRole,
+      },
+      update: {},
+      conflictOn: { id: newMemberId },
+    });
+
     await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
       organizationId: link.organizationId,
       role: assignedRole,

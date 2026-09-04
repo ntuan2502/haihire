@@ -30,30 +30,43 @@ enum ApplicationStage {
 }
 
 model Organization {
-  id          String       @id @default(uuid())
+  id          String               @id @default(uuid())
   name        String
-  slug        String       @unique
-  inviteCode  String       @unique
+  slug        String               @unique
+  inviteCode  String               @unique
   ownerId     String?
   users       User[]
   jobs        Job[]
   inviteLinks InviteLink[]
-  createdAt   DateTime     @default(now())
+  members     OrganizationMember[]
+  createdAt   DateTime             @default(now())
   updatedAt   temporal.updatedAt()
 }
 
 model User {
-  id             String        @id @default(uuid())
-  email          String        @unique
+  id             String               @id @default(uuid())
+  email          String               @unique
   name           String
   password       String?
   avatarUrl      String?
-  role           Role          @default(MEMBER)
+  role           Role                 @default(MEMBER)
   organizationId String?
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organization   Organization?        @relation(fields: [organizationId], references: [id])
   jobs           Job[]
   inviteLinks    InviteLink[]
-  createdAt      DateTime      @default(now())
+  memberships    OrganizationMember[]
+  createdAt      DateTime             @default(now())
+  updatedAt      temporal.updatedAt()
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  role           Role         @default(MEMBER)
+  createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
 }
 

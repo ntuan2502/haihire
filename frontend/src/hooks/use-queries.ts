@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, applicationsApi, organizationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
@@ -238,7 +239,7 @@ export function useSwitchOrgMutation() {
     mutationFn: (organizationId: string) =>
       organizationsApi.switchOrg(organizationId),
     onSuccess: (data) => {
-      updateUserOrg(data.organization);
+      updateUserOrg(data.organization, data.user?.role);
       queryClient.invalidateQueries();
     },
   });
@@ -268,6 +269,25 @@ export function useDeleteMyOrgMutation() {
 }
 
 export function useOrgMembers() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleSseEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (
+        customEvent.detail?.type === "MEMBER_REMOVED" ||
+        customEvent.detail?.type === "MEMBER_ROLE_UPDATED"
+      ) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("ats:sse_event", handleSseEvent);
+      return () => window.removeEventListener("ats:sse_event", handleSseEvent);
+    }
+  }, [queryClient]);
+
   return useQuery<User[]>({
     queryKey: queryKeys.orgMembers(),
     queryFn: () => organizationsApi.getMembers(),

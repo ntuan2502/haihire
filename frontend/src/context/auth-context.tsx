@@ -12,7 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string) => Promise<User>;
   logout: () => void;
-  updateUserOrg: (org: Organization) => void;
+  updateUserOrg: (org: Organization, updatedRole?: string) => void;
   refreshUser: () => Promise<User | null>;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -112,10 +112,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  // Real-time synchronization: tab focus and periodic heartbeat
+  // Real-time synchronization via Server-Sent Events (SSE)
   useEffect(() => {
-    if (!token) return;
+    if (!token || !user?.id) return;
 
+    const sseBaseUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    const eventSource = new EventSource(
+      `${sseBaseUrl}/events/sse?token=${encodeURIComponent(token)}`,
+    );
+
+    eventSource.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        if (!payload || !payload.type) return;
+
+        // Broadcast to application components
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("ats:sse_event", { detail: payload }),
+          );
+        }
+
+        if (payload.type === "MEMBER_REMOVED") {
+          // If this user was removed from the organization, kick out immediately!
+          if (payload.targetUserId === user.id) {
+            const updatedUser: User = {
+              ...user,
+              organizationId: null,
+              organization: null,
+            };
+            setUser(updatedUser);
+            localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+            setAuthCookies(token, false);
+
+            if (
+              typeof window !== "undefined" &&
+              window.location.pathname.startsWith("/dashboard")
+            ) {
+              router.replace("/onboarding/create-org");
+            }
+          }
+        } else if (payload.type === "MEMBER_ROLE_UPDATED") {
+          // If this user's role was updated
+          if (payload.targetUserId === user.id && payload.role) {
+            const updatedUser: User = {
+              ...user,
+              role: payload.role,
+            };
+            setUser(updatedUser);
+            localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse SSE event", err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.warn("SSE stream disconnected, auto-reconnecting...", err);
+    };
+
+    // Tab focus listener for background safety net (no spam polling)
     const handleFocus = () => {
       refreshUser();
     };
@@ -129,17 +187,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // Heartbeat every 3s to immediately detect member removal / role change
-    const interval = setInterval(() => {
-      refreshUser();
-    }, 3000);
-
     return () => {
+      eventSource.close();
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      clearInterval(interval);
     };
-  }, [token, refreshUser]);
+  }, [token, user?.id, refreshUser, router]);
 
   const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{
@@ -188,12 +241,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return userData;
   };
 
-  const updateUserOrg = (org: Organization) => {
+  const updateUserOrg = (org: Organization, updatedRole?: string) => {
     if (!user) return;
+    const isOwner = Boolean(
+      (org as { ownerId?: string })?.ownerId &&
+        (org as { ownerId?: string }).ownerId === user.id,
+    );
     const updated: User = {
       ...user,
       organizationId: org.id,
       organization: org,
+      isOwner,
+      role: isOwner ? "ADMIN" : ((updatedRole as "ADMIN" | "MEMBER") || user.role),
     };
     setUser(updated);
     localStorage.setItem(USER_KEY, JSON.stringify(updated));

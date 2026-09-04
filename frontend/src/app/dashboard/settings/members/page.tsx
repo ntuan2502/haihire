@@ -7,6 +7,8 @@ import {
   useInviteLinks,
   useCreateInviteLinkMutation,
   useRevokeInviteLinkMutation,
+  useUpdateMemberRoleMutation,
+  useRemoveMemberMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,19 +24,36 @@ import {
   CheckCircle2,
   AlertCircle,
   MoreHorizontal,
-  RotateCcw,
   Shield,
   Trash2,
   Loader2,
+  Plus,
+  User,
 } from "lucide-react";
 import type { InviteLink } from "@/types";
 
 export default function MembersSettingsPage() {
-  const { user } = useAuth();
-  const { data: members = [], refetch: refetchMembers } = useOrgMembers();
+  const { user, canEdit } = useAuth();
+  const { data: members = [] } = useOrgMembers();
   const { data: serverInviteLinks = [], refetch: refetchLinks } = useInviteLinks();
   const createInviteMutation = useCreateInviteLinkMutation();
   const revokeInviteMutation = useRevokeInviteLinkMutation();
+  const updateMemberRoleMutation = useUpdateMemberRoleMutation();
+  const removeMemberMutation = useRemoveMemberMutation();
+
+  const [openMenuMemberId, setOpenMenuMemberId] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // Close dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuMemberId(null);
+    if (openMenuMemberId) {
+      document.addEventListener("click", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [openMenuMemberId]);
 
   const [appHost, setAppHost] = useState("");
   useEffect(() => {
@@ -48,33 +67,17 @@ export default function MembersSettingsPage() {
   // State for "Invite a team member" card
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("Member");
+  const [inviteRole, setInviteRole] = useState("MEMBER");
   const [inviteSuccessMsg, setInviteSuccessMsg] = useState<string | null>(null);
   const [inviteErrorMsg, setInviteErrorMsg] = useState<string | null>(null);
   const [isInviting, setIsInviting] = useState(false);
 
   // State for "New invite link" card
   const [isCreateLinkOpen, setIsCreateLinkOpen] = useState(false);
-  const [linkRole, setLinkRole] = useState("Member");
+  const [linkRole, setLinkRole] = useState("MEMBER");
   const [linkExpiresIn, setLinkExpiresIn] = useState("7 days");
   const [linkMaxUses, setLinkMaxUses] = useState("1");
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
-
-  // Simulated members for demo testing (persisted in localStorage for convenience)
-  const [localMembers, setLocalMembers] = useState<
-    { id: string; name: string; email: string; role: string; avatarColor?: string }[]
-  >([]);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("ats_demo_accepted_members");
-      if (saved) {
-        setLocalMembers(JSON.parse(saved));
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
 
   // Handle sending email invite
   const handleSendInvite = (e: React.FormEvent) => {
@@ -117,7 +120,11 @@ export default function MembersSettingsPage() {
 
   // Handle copying link
   const handleCopyLink = (link: InviteLink) => {
-    const fullUrl = `http://${displayHost}/join/${link.token}`;
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : `http://${displayHost}`;
+    const fullUrl = `${origin}/join/${link.token}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedLinkId(link.id);
     setTimeout(() => setCopiedLinkId(null), 2000);
@@ -138,6 +145,42 @@ export default function MembersSettingsPage() {
     }
   };
 
+  // Handle toggling member role (Admin <-> Member)
+  const handleToggleRole = async (memberId: string, currentRole: string) => {
+    const newRole = currentRole.toUpperCase() === "ADMIN" ? "MEMBER" : "ADMIN";
+    try {
+      setActionLoadingId(memberId);
+      await updateMemberRoleMutation.mutateAsync({ memberId, role: newRole });
+      setOpenMenuMemberId(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update role. Please try again.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // Handle removing member from organization
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to remove "${memberName}" from the organization?`,
+      )
+    ) {
+      return;
+    }
+    try {
+      setActionLoadingId(memberId);
+      await removeMemberMutation.mutateAsync(memberId);
+      setOpenMenuMemberId(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to remove member. Please try again.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const [mountedTime, setMountedTime] = useState<number>(0);
   useEffect(() => {
     setMountedTime(Date.now());
@@ -153,76 +196,42 @@ export default function MembersSettingsPage() {
     return days > 0 ? `${days}d` : "expired";
   };
 
-  // Combine server members + local demo members
+  // Derive members from server query, with fallback to current user
   const combinedMembers = React.useMemo(() => {
-    const base: {
-      id: string;
-      name: string;
-      email: string;
-      role: string;
-      avatarUrl?: string | null;
-      avatarColor?: string;
-      isCurrent?: boolean;
-    }[] = [];
-
     if (members && members.length > 0) {
-      members.forEach((m) => {
-        base.push({
-          id: m.id,
-          name: m.name,
-          email: m.email,
-          role: m.role || "ADMIN",
-          avatarUrl: m.avatarUrl,
-          isCurrent: m.id === user?.id || m.email === user?.email,
-        });
-      });
-    } else if (user) {
-      base.push({
-        id: user.id,
-        name: user.name || "Nguyễn Anh Tuấn",
-        email: user.email || "ntuan.2502@gmail.com",
-        role: "ADMIN",
-        avatarUrl: user.avatarUrl,
-        isCurrent: true,
-      });
+      return members.map((m) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        role: m.role || "MEMBER",
+        avatarUrl: m.avatarUrl,
+        isOwner: Boolean(
+          (m as { isOwner?: boolean }).isOwner ||
+            (user?.organization?.ownerId && user.organization.ownerId === m.id),
+        ),
+        isCurrent: m.id === user?.id || m.email === user?.email,
+      }));
     }
 
-    // Append any extra local accepted members
-    localMembers.forEach((lm) => {
-      if (!base.some((b) => b.email === lm.email)) {
-        base.push({
-          id: lm.id,
-          name: lm.name,
-          email: lm.email,
-          role: lm.role,
-          avatarColor: lm.avatarColor || "bg-rose-500",
-          isCurrent: false,
-        });
-      }
-    });
+    if (user) {
+      return [
+        {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatarUrl: user.avatarUrl,
+          isOwner: Boolean(
+            user.isOwner ||
+              (user.organization?.ownerId && user.organization.ownerId === user.id),
+          ),
+          isCurrent: true,
+        },
+      ];
+    }
 
-    return base;
-  }, [members, user, localMembers]);
-
-  // Quick simulate accepted invite (adds "Tuan Nguyen" as shown in Image 5)
-  const handleAddDemoAcceptedMember = () => {
-    const newMember = {
-      id: `demo_${Date.now()}`,
-      name: "Tuan Nguyen",
-      email: "anhtuan.amata@gmail.com",
-      role: "Member",
-      avatarColor: "bg-rose-500",
-    };
-    const updated = [...localMembers, newMember];
-    setLocalMembers(updated);
-    localStorage.setItem("ats_demo_accepted_members", JSON.stringify(updated));
-  };
-
-  const handleResetDemoMembers = () => {
-    setLocalMembers([]);
-    localStorage.removeItem("ats_demo_accepted_members");
-    refetchMembers();
-  };
+    return [];
+  }, [members, user]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -235,32 +244,6 @@ export default function MembersSettingsPage() {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Manage your team members and invitations.
           </p>
-        </div>
-
-        {/* Demo preview helper for simulating accepted member */}
-        <div className="flex items-center gap-2">
-          {localMembers.length === 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddDemoAcceptedMember}
-              className="text-[11px] h-7 text-slate-500 border-dashed"
-            >
-              + Preview with accepted member (Image 5)
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleResetDemoMembers}
-              className="text-[11px] h-7 text-slate-400 hover:text-slate-600 gap-1"
-            >
-              <RotateCcw className="h-3 w-3" />
-              <span>Reset members</span>
-            </Button>
-          )}
         </div>
       </div>
 
@@ -278,8 +261,8 @@ export default function MembersSettingsPage() {
         </div>
       )}
 
-      {/* Top Action: + Invite team member button */}
-      {!isInviteOpen && (
+      {/* Top Action: + Invite team member button (Admins only) */}
+      {canEdit && !isInviteOpen && (
         <div>
           <Button
             type="button"
@@ -293,7 +276,7 @@ export default function MembersSettingsPage() {
       )}
 
       {/* CARD: Invite a team member (Opens when clicked) */}
-      {isInviteOpen && (
+      {canEdit && isInviteOpen && (
         <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -332,9 +315,8 @@ export default function MembersSettingsPage() {
                 onChange={(e) => setInviteRole(e.target.value)}
                 className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
               >
-                <option value="Member">Member</option>
-                <option value="Admin">Admin</option>
-                <option value="Interviewer">Interviewer</option>
+                <option value="MEMBER">Member</option>
+                <option value="ADMIN">Admin</option>
               </select>
             </div>
 
@@ -350,215 +332,227 @@ export default function MembersSettingsPage() {
         </div>
       )}
 
-      {/* CARD 1: Invite links */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
-              <Link2 className="h-4 w-4" />
+      {/* CARD 1: Invite links (Admins & Owners only) */}
+      {canEdit && (
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0">
+                <Link2 className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                  Invite links
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Shareable links to join your organization
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                Invite links
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Shareable links to join your organization
+
+            {!isCreateLinkOpen && (
+              <Button
+                type="button"
+                onClick={() => setIsCreateLinkOpen(true)}
+                className="h-8 px-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Create link</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Section: New invite link (When Create link is clicked) */}
+          {isCreateLinkOpen && (
+            <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  New invite link
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateLinkOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={linkRole}
+                    onChange={(e) => setLinkRole(e.target.value)}
+                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  >
+                    <option value="MEMBER">Member</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Expires in
+                  </label>
+                  <select
+                    value={linkExpiresIn}
+                    onChange={(e) => setLinkExpiresIn(e.target.value)}
+                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  >
+                    <option value="1 day">1 day</option>
+                    <option value="7 days">7 days</option>
+                    <option value="30 days">30 days</option>
+                    <option value="Never">Never</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Max uses (optional)
+                  </label>
+                  <select
+                    value={linkMaxUses}
+                    onChange={(e) => setLinkMaxUses(e.target.value)}
+                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  >
+                    <option value="1">1 use</option>
+                    <option value="5">5 uses</option>
+                    <option value="10">10 uses</option>
+                    <option value="Unlimited">Unlimited</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Button
+                    type="button"
+                    disabled={createInviteMutation.isPending}
+                    onClick={handleCreateLink}
+                    className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors cursor-pointer"
+                  >
+                    {createInviteMutation.isPending ? "Creating..." : "Create link"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Invite links list / empty state */}
+          {!isCreateLinkOpen && serverInviteLinks.length === 0 && (
+            <div className="py-8 text-center space-y-2">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                <Link2 className="h-5 w-5" />
+              </div>
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                No active invite links
+              </p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 max-w-sm mx-auto">
+                Generate expiring or single-use invite links with specific roles to invite your team.
               </p>
             </div>
-          </div>
-
-          {!isCreateLinkOpen && (
-            <Button
-              type="button"
-              onClick={() => setIsCreateLinkOpen(true)}
-              className="h-8 px-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1"
-            >
-              <span>Create link</span>
-            </Button>
           )}
-        </div>
 
-        {/* Section: New invite link (When Create link is clicked) */}
-        {isCreateLinkOpen && (
-          <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                New invite link
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsCreateLinkOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
+          {serverInviteLinks.length > 0 && (
+            /* Matches Image 1 & Image 5 Invite links list */
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 pt-1">
+              {serverInviteLinks.map((link) => {
+                const isCopied = copiedLinkId === link.id;
+                const isFull =
+                  link.maxUses !== null && link.usesCount >= link.maxUses;
+                const isInactive = link.status !== "active" || isFull;
 
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Role
-                </label>
-                <select
-                  value={linkRole}
-                  onChange={(e) => setLinkRole(e.target.value)}
-                  className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-                >
-                  <option value="Member">Member</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Interviewer">Interviewer</option>
-                </select>
-              </div>
+                const daysRemaining = calculateDaysRemaining(link.expiresAt);
 
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Expires in
-                </label>
-                <select
-                  value={linkExpiresIn}
-                  onChange={(e) => setLinkExpiresIn(e.target.value)}
-                  className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-                >
-                  <option value="1 day">1 day</option>
-                  <option value="7 days">7 days</option>
-                  <option value="30 days">30 days</option>
-                  <option value="Never">Never</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Max uses (optional)
-                </label>
-                <select
-                  value={linkMaxUses}
-                  onChange={(e) => setLinkMaxUses(e.target.value)}
-                  className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-                >
-                  <option value="1">1 use</option>
-                  <option value="5">5 uses</option>
-                  <option value="10">10 uses</option>
-                  <option value="Unlimited">Unlimited</option>
-                </select>
-              </div>
-
-              <div>
-                <Button
-                  type="button"
-                  disabled={createInviteMutation.isPending}
-                  onClick={handleCreateLink}
-                  className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors cursor-pointer"
-                >
-                  {createInviteMutation.isPending ? "Creating..." : "Create"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Invite links list / empty state */}
-        {serverInviteLinks.length === 0 ? (
-          <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">
-            No active invite links. Create one to share with your team.
-          </div>
-        ) : (
-          /* Matches Image 1 & Image 5 Invite links list */
-          <div className="divide-y divide-slate-100 dark:divide-slate-800 pt-1">
-            {serverInviteLinks.map((link) => {
-              const isCopied = copiedLinkId === link.id;
-              const isFull =
-                link.maxUses !== null && link.usesCount >= link.maxUses;
-              const isInactive = link.status !== "active" || isFull;
-
-              const daysRemaining = calculateDaysRemaining(link.expiresAt);
-
-              return (
-                <div
-                  key={link.id}
-                  className={`py-3 flex items-center justify-between gap-4 transition-opacity ${
-                    isFull ? "opacity-50" : ""
-                  }`}
-                >
-                  {/* Left info */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                        isFull
-                          ? "bg-slate-100 dark:bg-slate-800 text-slate-400"
-                          : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"
-                      } shrink-0`}
-                    >
-                      <Link2 className="h-3.5 w-3.5" />
-                    </div>
-
-                    <div className="min-w-0 space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                          <Shield className="h-3 w-3 text-slate-400" />
-                          <span>{link.role}</span>
-                        </span>
-
-                        {isInactive && (
-                          <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                            Inactive
-                          </span>
-                        )}
+                return (
+                  <div
+                    key={link.id}
+                    className={`py-3 flex items-center justify-between gap-4 transition-opacity ${
+                      isFull ? "opacity-50" : ""
+                    }`}
+                  >
+                    {/* Left info */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`flex h-7 w-7 items-center justify-center rounded-full ${
+                          isFull
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                            : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"
+                        } shrink-0`}
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
                       </div>
 
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                        {link.usesCount}/{link.maxUses !== null ? link.maxUses : "∞"} uses
-                        {" • "}Expires in {daysRemaining}
-                        {" • "}by {link.createdByName || "Admin"}
-                      </p>
-                    </div>
-                  </div>
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                            <Shield className="h-3 w-3 text-slate-400" />
+                            <span>{link.role}</span>
+                          </span>
 
-                  {/* Right actions: Copy (hidden if full) and Revoke */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {!isFull && (
+                          {isInactive && (
+                            <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                          {link.usesCount}/{link.maxUses !== null ? link.maxUses : "∞"} uses
+                          {" • "}Expires in {daysRemaining}
+                          {" • "}by {link.createdByName || "Admin"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right actions: Copy (hidden if full) and Revoke */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!isFull && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopyLink(link)}
+                          className="h-8 text-xs font-semibold gap-1 rounded-lg cursor-pointer"
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </Button>
+                      )}
+
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => handleCopyLink(link)}
-                        className="h-8 text-xs font-semibold gap-1 rounded-lg cursor-pointer"
+                        disabled={revokingId === link.id}
+                        onClick={() => handleRevokeLink(link.id)}
+                        className="h-8 text-xs font-semibold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer flex items-center gap-1"
                       >
-                        {isCopied ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
-                            <span>Copied</span>
-                          </>
+                        {revokingId === link.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5" />
-                            <span>Copy</span>
-                          </>
+                          <Trash2 className="h-3.5 w-3.5" />
                         )}
+                        <span>Revoke</span>
                       </Button>
-                    )}
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={revokingId === link.id}
-                      onClick={() => handleRevokeLink(link.id)}
-                      className="h-8 text-xs font-semibold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer flex items-center gap-1"
-                    >
-                      {revokingId === link.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
-                      <span>Revoke</span>
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* CARD 2: Team members (Matches Image 1 & Image 5) */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
@@ -580,7 +574,11 @@ export default function MembersSettingsPage() {
         {/* Member list */}
         <div className="divide-y divide-slate-100 dark:divide-slate-800 pt-1">
           {combinedMembers.map((m, index) => {
-            const isOwner = index === 0;
+            const isMemberOwner = Boolean(
+              (user?.organization?.ownerId &&
+                user.organization.ownerId === m.id) ||
+                (m as { isOwner?: boolean }).isOwner,
+            );
 
             return (
               <div
@@ -590,9 +588,7 @@ export default function MembersSettingsPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Avatar */}
                   <div
-                    className={`h-9 w-9 rounded-full ${
-                      m.avatarColor || "bg-slate-800 dark:bg-slate-700"
-                    } text-white font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-slate-100 dark:ring-slate-800`}
+                    className="h-9 w-9 rounded-full bg-slate-800 dark:bg-slate-700 text-white font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-slate-100 dark:ring-slate-800"
                   >
                     {m.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -633,24 +629,83 @@ export default function MembersSettingsPage() {
 
                 {/* Right side role badge & actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {isOwner ? (
+                  {isMemberOwner ? (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 shadow-2xs">
                       <Crown className="h-3 w-3 text-amber-500 fill-amber-500" />
                       <span>Owner</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {m.role || "Member"}
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {m.role?.toUpperCase() === "ADMIN" ? (
+                        <>
+                          <Shield className="h-3 w-3 text-blue-500" />
+                          <span>Admin</span>
+                        </>
+                      ) : (
+                        <>
+                          <User className="h-3 w-3 text-slate-400" />
+                          <span>Member</span>
+                        </>
+                      )}
                     </span>
                   )}
 
-                  {!isOwner && (
-                    <button
-                      type="button"
-                      className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md transition-colors"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
+                  {canEdit && !isMemberOwner && !m.isCurrent && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuMemberId(
+                            openMenuMemberId === m.id ? null : m.id,
+                          );
+                        }}
+                        disabled={actionLoadingId === m.id}
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                        title="Member actions"
+                      >
+                        {actionLoadingId === m.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                        ) : (
+                          <MoreHorizontal className="h-4 w-4" />
+                        )}
+                      </button>
+
+                      {openMenuMemberId === m.id && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-full mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
+                        >
+                          <div className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            Change role
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleRole(m.id, m.role)}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer font-medium"
+                          >
+                            <Shield className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                            <span>
+                              {m.role?.toUpperCase() === "ADMIN"
+                                ? "Make member"
+                                : "Make admin"}
+                            </span>
+                          </button>
+
+                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMember(m.id, m.name)}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer font-medium"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                            <span>Remove member</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

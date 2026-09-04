@@ -1,10 +1,8 @@
 // use prisma-next
 
 enum Role {
-  HR
   ADMIN
-  INTERVIEWER
-  CANDIDATE
+  MEMBER
 }
 
 enum JobType {
@@ -36,6 +34,7 @@ model Organization {
   name        String
   slug        String       @unique
   inviteCode  String       @unique
+  ownerId     String?
   users       User[]
   jobs        Job[]
   inviteLinks InviteLink[]
@@ -49,7 +48,7 @@ model User {
   name           String
   password       String?
   avatarUrl      String?
-  role           Role          @default(HR)
+  role           Role          @default(MEMBER)
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
   jobs           Job[]
@@ -61,7 +60,7 @@ model User {
 model InviteLink {
   id             String       @id @default(uuid())
   token          String       @unique
-  role           String       @default("Member")
+  role           String       @default("MEMBER")
   expiresAt      DateTime?
   maxUses        Int?
   usesCount      Int          @default(0)

@@ -13,6 +13,7 @@ export const queryKeys = {
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
   allApplications: (orgId?: string | null) => ["applications", "all", { orgId }] as const,
   myOrg: () => ["organization", "my"] as const,
+  myOrgs: () => ["organization", "my-all"] as const,
   orgMembers: () => ["organization", "members"] as const,
   inviteLinks: () => ["organization", "invite-links"] as const,
 };
@@ -222,6 +223,27 @@ export function useMyOrg() {
   });
 }
 
+export function useMyOrgs() {
+  return useQuery<Organization[]>({
+    queryKey: queryKeys.myOrgs(),
+    queryFn: () => organizationsApi.getMyOrgs(),
+  });
+}
+
+export function useSwitchOrgMutation() {
+  const queryClient = useQueryClient();
+  const { updateUserOrg } = useAuth();
+
+  return useMutation({
+    mutationFn: (organizationId: string) =>
+      organizationsApi.switchOrg(organizationId),
+    onSuccess: (data) => {
+      updateUserOrg(data.organization);
+      queryClient.invalidateQueries();
+    },
+  });
+}
+
 export function useUpdateMyOrgMutation() {
   const queryClient = useQueryClient();
 
@@ -278,6 +300,34 @@ export function useRevokeInviteLinkMutation() {
     mutationFn: (id: string) => organizationsApi.revokeInviteLink(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+    },
+  });
+}
+
+export function useUpdateMemberRoleMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      memberId,
+      role,
+    }: {
+      memberId: string;
+      role: "ADMIN" | "MEMBER";
+    }) => organizationsApi.updateMemberRole(memberId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+    },
+  });
+}
+
+export function useRemoveMemberMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (memberId: string) => organizationsApi.removeMember(memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
     },
   });
 }

@@ -8,7 +8,11 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
+import { RolesGuard } from "../auth/roles.guard";
+import { Roles } from "../auth/roles.decorator";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
@@ -41,16 +45,22 @@ export class JobsController {
   }
 
   @Post()
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   create(@Body() dto: CreateJobDto) {
     return this.jobsService.create(dto);
   }
 
   @Patch(":id")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   update(@Param("id") id: string, @Body() dto: UpdateJobDto) {
     return this.jobsService.update(id, dto);
   }
 
   @Delete(":id")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   remove(@Param("id") id: string) {
     return this.jobsService.remove(id);
   }

@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'070ea7928a1b6d304b058d16f8db69c678221f140bca4e46b1b35d19c4f98570'>;
+  StorageHashBase<'fff600eedbb9007f22a801ecbd1393528b368c09d07b717065a08d1783c505c4'>;
 export type ExecutionHash =
   ExecutionHashBase<'ff68fc3f8c60e5cce464fb128df150aff1434c8aacaa63ce5dd78f7cd2d93e72'>;
 export type ProfileHash =
@@ -246,6 +246,7 @@ export type FieldOutputTypes = {
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly slug: CodecTypes['pg/text@1']['output'];
       readonly inviteCode: CodecTypes['pg/text@1']['output'];
+      readonly ownerId: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
@@ -255,7 +256,7 @@ export type FieldOutputTypes = {
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly password: CodecTypes['pg/text@1']['output'] | null;
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
-      readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -316,6 +317,7 @@ export type FieldInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly slug: CodecTypes['pg/text@1']['input'];
       readonly inviteCode: CodecTypes['pg/text@1']['input'];
+      readonly ownerId: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
@@ -325,7 +327,7 @@ export type FieldInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly password: CodecTypes['pg/text@1']['input'] | null;
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
-      readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -386,6 +388,7 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly inviteCode: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly ownerId: CodecTypes['pg/text@1']['output'] | null;
       readonly slug: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
@@ -397,7 +400,7 @@ export type StorageColumnTypes = {
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
       readonly password: CodecTypes['pg/text@1']['output'] | null;
-      readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
   };
@@ -456,6 +459,7 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly inviteCode: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly ownerId: CodecTypes['pg/text@1']['input'] | null;
       readonly slug: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
@@ -467,7 +471,7 @@ export type StorageColumnInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
       readonly password: CodecTypes['pg/text@1']['input'] | null;
-      readonly role: 'HR' | 'ADMIN' | 'INTERVIEWER' | 'CANDIDATE';
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
   };
@@ -619,7 +623,7 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly default: {
                     readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'Member'>;
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'MEMBER'>;
                   };
                 };
                 readonly expiresAt: {
@@ -872,6 +876,11 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
+                readonly ownerId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly createdAt: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz@1';
@@ -925,7 +934,7 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly default: {
                     readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'HR'>;
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'MEMBER'>;
                   };
                 };
                 readonly organizationId: {
@@ -999,7 +1008,7 @@ type ContractBase = Omit<
             };
             readonly Role: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['HR', 'ADMIN', 'INTERVIEWER', 'CANDIDATE'];
+              readonly values: readonly ['ADMIN', 'MEMBER'];
             };
           };
         };
@@ -1347,6 +1356,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly ownerId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
@@ -1393,6 +1406,7 @@ type ContractBase = Omit<
                 readonly name: { readonly column: 'name' };
                 readonly slug: { readonly column: 'slug' };
                 readonly inviteCode: { readonly column: 'inviteCode' };
+                readonly ownerId: { readonly column: 'ownerId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
@@ -1490,10 +1504,8 @@ type ContractBase = Omit<
           readonly Role: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
-              { readonly name: 'HR'; readonly value: 'HR' },
               { readonly name: 'ADMIN'; readonly value: 'ADMIN' },
-              { readonly name: 'INTERVIEWER'; readonly value: 'INTERVIEWER' },
-              { readonly name: 'CANDIDATE'; readonly value: 'CANDIDATE' },
+              { readonly name: 'MEMBER'; readonly value: 'MEMBER' },
             ];
           };
           readonly JobType: {

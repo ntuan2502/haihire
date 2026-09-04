@@ -1,4 +1,4 @@
-export type Role = "HR" | "ADMIN" | "INTERVIEWER" | "CANDIDATE";
+export type Role = "ADMIN" | "MEMBER";
 
 export type JobType =
   | "FULL_TIME"
@@ -22,6 +22,7 @@ export interface Organization {
   name: string;
   slug: string;
   inviteCode: string;
+  ownerId?: string | null;
   createdAt: string;
 }
 
@@ -47,6 +48,7 @@ export interface User {
   email: string;
   name: string;
   role: Role;
+  isOwner?: boolean;
   avatarUrl?: string | null;
   organizationId?: string | null;
   organization?: Organization | null;

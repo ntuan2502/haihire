@@ -24,12 +24,14 @@ import {
   Clock,
   Radio,
   Bot,
+  Check,
   Moon,
   Globe,
   MessageSquareWarning,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/context/auth-context";
+import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +69,11 @@ export function Navbar({
 }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, canEdit, isOwner, isAdmin } = useAuth();
+  const { data: myOrgs = [] } = useMyOrgs();
+  const switchOrgMutation = useSwitchOrgMutation();
+  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
+  const [isMobileOrgDropdownOpen, setIsMobileOrgDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -246,15 +252,17 @@ export function Navbar({
               </span>
             </button>
 
-            {/* + New Job Button (Desktop Only) */}
-            <Button
-              size="sm"
-              onClick={handleCreateJobClick}
-              className="hidden sm:inline-flex h-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 shadow-xs gap-1.5 cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-              New Job
-            </Button>
+            {/* + New Job Button (Desktop Only, Admins only) */}
+            {canEdit && (
+              <Button
+                size="sm"
+                onClick={handleCreateJobClick}
+                className="hidden sm:inline-flex h-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 shadow-xs gap-1.5 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                New Job
+              </Button>
+            )}
 
             {/* User Profile Avatar with Dropdown matching Screenshot */}
             {isAuthenticated && user ? (
@@ -272,25 +280,102 @@ export function Navbar({
                   align="end"
                   className="w-64 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl space-y-1 z-50 text-slate-800 dark:text-slate-200"
                 >
-                  {/* 1. User Full Name & Email */}
-                  <div className="px-2 pt-1 pb-0.5">
-                    <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
-                      {user.name}
-                    </span>
+                  {/* 1. User Full Name & Email & Role Badge */}
+                  <div className="px-2 pt-1 pb-1">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
+                        {user.name}
+                      </span>
+                      {isOwner ? (
+                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 rounded-md border border-amber-200/60 dark:border-amber-800/60 shrink-0">
+                          Owner
+                        </span>
+                      ) : isAdmin ? (
+                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 rounded-md border border-blue-200/60 dark:border-blue-800/60 shrink-0">
+                          Admin
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700 shrink-0">
+                          Member
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5">
                       {user.email}
                     </span>
                   </div>
 
-                  {/* 2. Organization Selector Box */}
-                  <div
-                    onClick={() => router.push("/onboarding/create-org")}
-                    className="w-full my-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
-                  >
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
-                      {user.organization?.name || "No Organization"}
-                    </span>
-                    <ChevronDown className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
+                  {/* 2. Organization Selector Box with Dropdown */}
+                  <div className="w-full my-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 overflow-hidden transition-all">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsOrgDropdownOpen(!isOrgDropdownOpen);
+                      }}
+                      className="w-full p-2 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
+                    >
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
+                        {user.organization?.name || "No Organization"}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "h-3 w-3 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-transform duration-200 shrink-0",
+                          isOrgDropdownOpen && "rotate-180",
+                        )}
+                      />
+                    </div>
+
+                    {/* Expanded Organization List */}
+                    {isOrgDropdownOpen && (
+                      <div className="border-t border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-48 overflow-y-auto">
+                        {myOrgs.length > 0 ? (
+                          myOrgs.map((org) => {
+                            const isActive = org.id === user.organizationId;
+                            return (
+                              <div
+                                key={org.id}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (!isActive) {
+                                    await switchOrgMutation.mutateAsync(org.id);
+                                  }
+                                  setIsOrgDropdownOpen(false);
+                                }}
+                                className={cn(
+                                  "w-full px-2.5 py-1.5 flex items-center justify-between text-xs cursor-pointer transition-colors",
+                                  isActive
+                                    ? "bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold"
+                                    : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60",
+                                )}
+                              >
+                                <span className="truncate">{org.name}</span>
+                                {isActive && (
+                                  <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : user.organization ? (
+                          <div className="w-full px-2.5 py-1.5 flex items-center justify-between text-xs bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold cursor-default">
+                            <span className="truncate">{user.organization.name}</span>
+                            <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                          </div>
+                        ) : null}
+
+                        {/* + Create organization item */}
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsOrgDropdownOpen(false);
+                            router.push("/onboarding/create-org?mode=create");
+                          }}
+                          className="w-full px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
+                          <span>Create organization</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 3. Dark Mode Row */}
@@ -476,34 +561,75 @@ export function Navbar({
 
             {/* Bottom Actions: + New Job, Org Selector, Locale */}
             <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-2.5 bg-slate-50/50 dark:bg-slate-900/30">
-              {/* + New Job Button */}
-              <Button
-                onClick={() => {
-                  handleCreateJobClick();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs gap-1.5 cursor-pointer"
-              >
-                <Plus className="h-4 w-4 stroke-[2.5]" />
-                New Job
-              </Button>
+              {/* + New Job Button (Admins only) */}
+              {canEdit && (
+                <Button
+                  onClick={() => {
+                    handleCreateJobClick();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4 stroke-[2.5]" />
+                  New Job
+                </Button>
+              )}
 
               {/* Organization Selector */}
-              <button
-                type="button"
-                onClick={() => {
-                  router.push("/onboarding/create-org");
-                  setMobileMenuOpen(false);
-                }}
-                className="flex w-full items-center justify-between rounded-lg border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs"
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <span className="truncate">
-                    {user?.organization?.name || "No Organization"}
-                  </span>
+              <div className="w-full rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+                <div
+                  onClick={() => setIsMobileOrgDropdownOpen(!isMobileOrgDropdownOpen)}
+                  className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <span className="truncate">{user?.organization?.name || "No Organization"}</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-200",
+                      isMobileOrgDropdownOpen && "rotate-180",
+                    )}
+                  />
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              </button>
+
+                {isMobileOrgDropdownOpen && (
+                  <div className="border-t border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-44 overflow-y-auto">
+                    {myOrgs.map((org) => {
+                      const isActive = org.id === user?.organizationId;
+                      return (
+                        <div
+                          key={org.id}
+                          onClick={async () => {
+                            if (!isActive) {
+                              await switchOrgMutation.mutateAsync(org.id);
+                            }
+                            setIsMobileOrgDropdownOpen(false);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={cn(
+                            "w-full px-3 py-2 flex items-center justify-between text-xs cursor-pointer",
+                            isActive
+                              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60",
+                          )}
+                        >
+                          <span className="truncate">{org.name}</span>
+                          {isActive && <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
+                      );
+                    })}
+                    <div
+                      onClick={() => {
+                        setIsMobileOrgDropdownOpen(false);
+                        setMobileMenuOpen(false);
+                        router.push("/onboarding/create-org?mode=create");
+                      }}
+                      className="w-full px-3 py-2 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Create organization</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Locale Selector */}
               <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1 pt-0.5">

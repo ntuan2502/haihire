@@ -53,11 +53,13 @@ import {
   parseCandidateNotes,
   fixUtf8String,
 } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
 
 function JobPipelinePageContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const { canEdit } = useAuth();
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
@@ -588,25 +590,27 @@ function JobPipelinePageContent() {
           {selectedCandidate ? (
             /* State with candidate selected matching Screenshot 2 */
             <div className="max-w-4xl mx-auto space-y-5 pb-12">
-              {/* Quick Stage Transition Buttons (All stages except current) */}
-              <div className="flex items-center justify-end gap-2 flex-wrap">
-                {PIPELINE_STAGES.filter(
-                  (stage) => stage.id !== selectedCandidate.stage,
-                ).map((stage) => (
-                  <button
-                    key={stage.id}
-                    type="button"
-                    onClick={() => handleMoveCandidateStage(stage.id)}
-                    disabled={updateStageMutation.isPending}
-                    className={`h-8 px-3.5 rounded-xl ${stage.btnBg} ${stage.btnHover} text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50`}
-                  >
-                    <span>{stage.actionLabel}</span>
-                    <span className="h-4 w-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center">
-                      {stage.stepNumber}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {/* Quick Stage Transition Buttons (Admins only) */}
+              {canEdit && (
+                <div className="flex items-center justify-end gap-2 flex-wrap">
+                  {PIPELINE_STAGES.filter(
+                    (stage) => stage.id !== selectedCandidate.stage,
+                  ).map((stage) => (
+                    <button
+                      key={stage.id}
+                      type="button"
+                      onClick={() => handleMoveCandidateStage(stage.id)}
+                      disabled={updateStageMutation.isPending}
+                      className={`h-8 px-3.5 rounded-xl ${stage.btnBg} ${stage.btnHover} text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50`}
+                    >
+                      <span>{stage.actionLabel}</span>
+                      <span className="h-4 w-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center">
+                        {stage.stepNumber}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Candidate Info Header Card */}
               <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -1024,31 +1028,33 @@ function JobPipelinePageContent() {
                 {/* Notes Tab */}
                 {candidateTab === "notes" && (
                   <div className="space-y-4">
-                    {/* Input box */}
-                    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                        <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-                        <span>Add New Note</span>
-                      </h4>
-                      <textarea
-                        placeholder="Write a private note for your team..."
-                        value={candidateNoteInput}
-                        onChange={(e) =>
-                          setCandidateNoteInput(e.target.value)
-                        }
-                        rows={3}
-                        className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 p-3 bg-transparent text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                      <div className="flex justify-end">
-                        <Button
-                          size="sm"
-                          onClick={handleAddNote}
-                          className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer"
-                        >
-                          Save Note
-                        </Button>
+                    {/* Input box (Admins only) */}
+                    {canEdit && (
+                      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                          <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+                          <span>Add New Note</span>
+                        </h4>
+                        <textarea
+                          placeholder="Write a private note for your team..."
+                          value={candidateNoteInput}
+                          onChange={(e) =>
+                            setCandidateNoteInput(e.target.value)
+                          }
+                          rows={3}
+                          className="w-full resize-none rounded-xl border border-slate-200 dark:border-slate-800 p-3 bg-transparent text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={handleAddNote}
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer"
+                          >
+                            Save Note
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Notes List */}
                     {candidateNotesList.length > 0 && (

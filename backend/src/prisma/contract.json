@@ -108,20 +108,12 @@
             "codecId": "pg/text@1",
             "members": [
               {
-                "name": "HR",
-                "value": "HR"
-              },
-              {
                 "name": "ADMIN",
                 "value": "ADMIN"
               },
               {
-                "name": "INTERVIEWER",
-                "value": "INTERVIEWER"
-              },
-              {
-                "name": "CANDIDATE",
-                "value": "CANDIDATE"
+                "name": "MEMBER",
+                "value": "MEMBER"
               }
             ]
           }
@@ -711,6 +703,13 @@
                   "kind": "scalar"
                 }
               },
+              "ownerId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "slug": {
                 "nullable": false,
                 "type": {
@@ -786,6 +785,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "ownerId": {
+                  "column": "ownerId"
                 },
                 "slug": {
                   "column": "slug"
@@ -1137,7 +1139,7 @@
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "Member"
+                    "value": "MEMBER"
                   },
                   "nativeType": "text",
                   "nullable": false
@@ -1440,6 +1442,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "ownerId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "slug": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1474,8 +1481,8 @@
             "user": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('HR', 'ADMIN', 'INTERVIEWER', 'CANDIDATE')",
-                  "name": "user_role_check_b754151d",
+                  "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
+                  "name": "user_role_check_ddb31015",
                   "prefix": "user_role_check"
                 }
               ],
@@ -1523,7 +1530,7 @@
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "HR"
+                    "value": "MEMBER"
                   },
                   "nativeType": "text",
                   "nullable": false,
@@ -1616,10 +1623,8 @@
             "Role": {
               "kind": "valueSet",
               "values": [
-                "HR",
                 "ADMIN",
-                "INTERVIEWER",
-                "CANDIDATE"
+                "MEMBER"
               ]
             }
           }
@@ -1628,7 +1633,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "070ea7928a1b6d304b058d16f8db69c678221f140bca4e46b1b35d19c4f98570"
+    "storageHash": "fff600eedbb9007f22a801ecbd1393528b368c09d07b717065a08d1783c505c4"
   },
   "execution": {
     "executionHash": "ff68fc3f8c60e5cce464fb128df150aff1434c8aacaa63ce5dd78f7cd2d93e72",

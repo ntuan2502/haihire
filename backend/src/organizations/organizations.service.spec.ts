@@ -17,6 +17,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         name: "Acme Corp",
         slug: "acme-corp",
         inviteCode: "ORG-ACME99",
+        ownerId: "usr-1",
         createdAt: new Date(),
       },
     ];
@@ -220,9 +221,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it("3. Should successfully join an organization with valid invite code", async () => {
+    it("3. Should successfully join an organization with valid invite link token or url", async () => {
+      const link = await service.createInviteLink("usr-2", { role: "MEMBER" });
       const result = await service.join("usr-1", {
-        inviteCodeOrSlug: "ORG-ACME99",
+        inviteCodeOrSlug: `http://localhost:3000/join/${link.token}`,
       });
 
       expect(result.organization.name).toBe("Acme Corp");
@@ -230,18 +232,26 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(user.organizationId).toBe("org-1");
     });
 
-    it("4. Should throw NotFoundException when invite code or slug is invalid", async () => {
+    it("4. Should throw NotFoundException when invite link is invalid", async () => {
       await expect(
         service.join("usr-1", {
-          inviteCodeOrSlug: "INVALID-CODE",
+          inviteCodeOrSlug: "INVALID-TOKEN",
         }),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it("5. Should search organizations matching query", async () => {
-      const results = await service.search("acme");
-      expect(results).toHaveLength(1);
-      expect(results[0].name).toBe("Acme Corp");
+    it("5. Should reject joining by slug or raw org code (only invite link allowed)", async () => {
+      await expect(
+        service.join("usr-1", {
+          inviteCodeOrSlug: "acme-corp",
+        }),
+      ).rejects.toThrow(NotFoundException);
+
+      await expect(
+        service.join("usr-1", {
+          inviteCodeOrSlug: "ORG-ACME99",
+        }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("6. Should get current organization of user (getMyOrg)", async () => {
@@ -258,6 +268,21 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(members.length).toBe(2);
       expect(members.some((m) => m.name === "Admin")).toBe(true);
       expect(members.some((m) => m.name === "Member User")).toBe(true);
+    });
+
+    it("7b. Should get all organizations for switching (getMyOrgs)", async () => {
+      const orgs = await service.getMyOrgs("usr-2");
+      expect(orgs.length).toBeGreaterThanOrEqual(1);
+      expect(orgs.some((o) => o.name === "Acme Corp")).toBe(true);
+    });
+
+    it("7c. Should switch organization for user", async () => {
+      const result = await service.switchOrg("usr-1", "org-1");
+      expect(result.success).toBe(true);
+      expect(result.organization.name).toBe("Acme Corp");
+
+      const user = mockUsers.find((u) => u.id === "usr-1");
+      expect(user.organizationId).toBe("org-1");
     });
   });
 
@@ -325,4 +350,46 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       );
     });
   });
+
+  describe("Member Role & Removal Management", () => {
+    it("13. Should allow admin/owner to update member role", async () => {
+      // usr-2 is ADMIN in org-1, updating usr-3 from MEMBER to ADMIN
+      const result = await service.updateMemberRole("usr-2", "usr-3", "ADMIN");
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("ADMIN");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3.role).toBe("ADMIN");
+    });
+
+    it("14. Should REJECT updating organization owner's role", async () => {
+      // usr-1 is owner of org-1
+      await expect(
+        service.updateMemberRole("usr-2", "usr-1", "MEMBER"),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("15. Should allow admin/owner to remove member from organization", async () => {
+      // usr-2 is ADMIN in org-1, removing usr-3
+      const result = await service.removeMember("usr-2", "usr-3");
+      expect(result.success).toBe(true);
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3.organizationId).toBeNull();
+      expect(usr3.role).toBe("MEMBER");
+    });
+
+    it("16. Should REJECT removing organization owner or self", async () => {
+      // Cannot remove self
+      await expect(service.removeMember("usr-2", "usr-2")).rejects.toThrow(
+        BadRequestException,
+      );
+
+      // Cannot remove org owner
+      await expect(service.removeMember("usr-2", "usr-1")).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
 });
+

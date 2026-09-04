@@ -31,7 +31,14 @@ import {
 function EditCandidatePageContent() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, canEdit, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !canEdit) {
+      router.replace("/dashboard/candidates");
+    }
+  }, [authLoading, canEdit, router]);
+
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: jobs = [] } = useJobs(user?.organizationId);

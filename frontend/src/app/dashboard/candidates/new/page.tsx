@@ -31,7 +31,14 @@ import { buildCandidateNotes } from "@/lib/utils";
 
 function AddCandidatePageContent() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, canEdit, loading: authLoading } = useAuth();
+
+  React.useEffect(() => {
+    if (!authLoading && !canEdit) {
+      router.replace("/dashboard/candidates");
+    }
+  }, [authLoading, canEdit, router]);
+
   const { data: jobs = [] } = useJobs(user?.organizationId);
   const { data: applications = [] } = useAllApplications();
   const createApplicationMutation = useCreateApplicationMutation();

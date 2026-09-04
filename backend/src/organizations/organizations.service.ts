@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -66,8 +67,11 @@ export class OrganizationsService {
         name: dto.name.trim(),
         slug: normalizedSlug,
         inviteCode,
+        ownerId: userId,
       },
-      update: {},
+      update: {
+        ownerId: userId,
+      },
       conflictOn: { slug: normalizedSlug },
     });
 
@@ -76,6 +80,7 @@ export class OrganizationsService {
       "name",
       "slug",
       "inviteCode",
+      "ownerId",
       "createdAt",
     )
       .where((o) => o.slug.eq(normalizedSlug))
@@ -85,9 +90,10 @@ export class OrganizationsService {
       throw new NotFoundException("Failed to retrieve created organization");
     }
 
-    // Link current user to this organization
+    // Link current user to this organization and promote to ADMIN (Owner)
     await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
       organizationId: org.id,
+      role: "ADMIN",
     });
 
     return {
@@ -97,60 +103,96 @@ export class OrganizationsService {
   }
 
   async join(userId: string, dto: JoinOrgDto) {
-    const rawInput = dto.inviteCodeOrSlug.trim();
-    const normalized = rawInput.toLowerCase();
+    let rawInput = dto.inviteCodeOrSlug.trim();
+    if (!rawInput) {
+      throw new BadRequestException("Please provide a valid invite code or link.");
+    }
 
-    // Find by invite code or slug
+    // Extract token if user passed a full URL (e.g. /join/:token)
+    if (rawInput.includes("/join/")) {
+      const parts = rawInput.split("/join/");
+      rawInput = parts[parts.length - 1].split("?")[0].trim();
+    }
+
+    const inviteLink = await this.prisma.db.orm.public.InviteLink.select(
+      "id",
+      "organizationId",
+      "role",
+      "status",
+      "expiresAt",
+      "maxUses",
+      "usesCount",
+    )
+      .where((l) => l.token.eq(rawInput))
+      .first();
+
+    if (!inviteLink || inviteLink.status !== "active") {
+      throw new NotFoundException(
+        "Invalid or inactive invite link. Please ask an administrator for a new invite link.",
+      );
+    }
+
+    if (
+      inviteLink.expiresAt &&
+      new Date(inviteLink.expiresAt) < new Date()
+    ) {
+      throw new BadRequestException("This invite link has expired.");
+    }
+
+    if (
+      inviteLink.maxUses !== null &&
+      inviteLink.usesCount >= inviteLink.maxUses
+    ) {
+      throw new BadRequestException(
+        "This invite link has reached its maximum allowed uses.",
+      );
+    }
+
     const org = await this.prisma.db.orm.public.Organization.select(
       "id",
       "name",
       "slug",
       "inviteCode",
+      "ownerId",
       "createdAt",
     )
-      .where((o) =>
-        o.inviteCode.eq(rawInput.toUpperCase()) || o.slug.eq(normalized)
-      )
+      .where((o) => o.id.eq(inviteLink.organizationId))
       .first();
 
     if (!org) {
-      throw new NotFoundException(
-        `No organization found matching invite code or slug: "${rawInput}"`,
+      throw new NotFoundException("Organization not found.");
+    }
+
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(userId))
+      .first();
+
+    if (user && user.organizationId === org.id) {
+      throw new BadRequestException(
+        "You are already a member of this organization.",
       );
     }
 
-    // Link user to organization
+    await this.prisma.db.orm.public.InviteLink.where((l) =>
+      l.id.eq(inviteLink.id),
+    ).update({
+      usesCount: inviteLink.usesCount + 1,
+    });
+
+    const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
     await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
       organizationId: org.id,
+      role: assignedRole,
     });
 
     return {
       organization: org,
+      role: assignedRole,
       message: `Successfully joined ${org.name}`,
     };
-  }
-
-  async search(query: string) {
-    const trimmed = (query || "").trim().toLowerCase();
-    const orgs = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "inviteCode",
-      "createdAt",
-    ).all();
-
-    if (!trimmed) {
-      return orgs.slice(0, 10);
-    }
-
-    return orgs
-      .filter(
-        (o) =>
-          o.name.toLowerCase().includes(trimmed) ||
-          o.slug.toLowerCase().includes(trimmed),
-      )
-      .slice(0, 10);
   }
 
   async getMyOrg(userId: string) {
@@ -170,13 +212,14 @@ export class OrganizationsService {
       "name",
       "slug",
       "inviteCode",
+      "ownerId",
       "createdAt",
     )
       .where((o) => o.id.eq(user.organizationId as string))
       .first();
   }
 
-  async updateMyOrg(userId: string, dto: UpdateOrgDto) {
+  async getMyOrgs(userId: string) {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
       "organizationId",
@@ -184,8 +227,102 @@ export class OrganizationsService {
       .where((u) => u.id.eq(userId))
       .first();
 
+    if (!user) {
+      return [];
+    }
+
+    const allOrgs = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "name",
+      "slug",
+      "inviteCode",
+      "ownerId",
+      "createdAt",
+    ).all();
+
+    // Security: Only return organizations the user actually belongs to or owns
+    return allOrgs.filter(
+      (o) =>
+        (user.organizationId && o.id === user.organizationId) ||
+        (o.ownerId && o.ownerId === userId),
+    );
+  }
+
+  async switchOrg(userId: string, targetOrgId: string) {
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(userId))
+      .first();
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const org = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "name",
+      "slug",
+      "inviteCode",
+      "ownerId",
+      "createdAt",
+    )
+      .where((o) => o.id.eq(targetOrgId))
+      .first();
+
+    if (!org) {
+      throw new NotFoundException("Organization not found");
+    }
+
+    // Security: User must be owner or already a member of the target org
+    const isOwner = Boolean(org.ownerId && org.ownerId === userId);
+    const isCurrentMember = user.organizationId === targetOrgId;
+
+    if (!isOwner && !isCurrentMember) {
+      throw new ForbiddenException(
+        "You do not have access to this organization. Please join via an invite link.",
+      );
+    }
+
+    await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
+      organizationId: org.id,
+    });
+
+    const updatedUser = await this.prisma.db.orm.public.User.select(
+      "id",
+      "email",
+      "name",
+      "role",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(userId))
+      .first();
+
+    return {
+      success: true,
+      organization: org,
+      user: { ...updatedUser, organization: org },
+    };
+  }
+
+  async updateMyOrg(userId: string, dto: UpdateOrgDto) {
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "role",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(userId))
+      .first();
+
     if (!user || !user.organizationId) {
       throw new NotFoundException("User is not associated with an organization");
+    }
+
+    if (user.role === "MEMBER") {
+      throw new ForbiddenException(
+        "Members have read-only access. Only Admins can perform this action.",
+      );
     }
 
     const orgId = user.organizationId as string;
@@ -233,6 +370,7 @@ export class OrganizationsService {
       "name",
       "slug",
       "inviteCode",
+      "ownerId",
       "createdAt",
     )
       .where((o) => o.id.eq(orgId))
@@ -242,6 +380,7 @@ export class OrganizationsService {
   async deleteMyOrg(userId: string) {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
+      "role",
       "organizationId",
     )
       .where((u) => u.id.eq(userId))
@@ -251,7 +390,30 @@ export class OrganizationsService {
       throw new NotFoundException("User is not associated with an organization");
     }
 
+    if (user.role === "MEMBER") {
+      throw new ForbiddenException(
+        "Members have read-only access. Only the Organization Owner can perform this action.",
+      );
+    }
+
     const orgId = user.organizationId as string;
+
+    const currentOrg = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "ownerId",
+    )
+      .where((o) => o.id.eq(orgId))
+      .first();
+
+    if (!currentOrg) {
+      throw new NotFoundException("Organization not found");
+    }
+
+    if (currentOrg.ownerId !== userId) {
+      throw new ForbiddenException(
+        "Only the organization owner can delete this organization.",
+      );
+    }
 
     // Unlink users from this org
     await this.prisma.db.orm.public.User.where((u) =>
@@ -280,6 +442,13 @@ export class OrganizationsService {
       return [];
     }
 
+    const org = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "ownerId",
+    )
+      .where((o) => o.id.eq(user.organizationId as string))
+      .first();
+
     const members = await this.prisma.db.orm.public.User.select(
       "id",
       "name",
@@ -291,7 +460,136 @@ export class OrganizationsService {
       .where((u) => u.organizationId.eq(user.organizationId as string))
       .all();
 
-    return members;
+    return members.map((m) => ({
+      ...m,
+      isOwner: Boolean(org && org.ownerId === m.id),
+    }));
+  }
+
+  async updateMemberRole(
+    callerId: string,
+    targetMemberId: string,
+    newRole: "ADMIN" | "MEMBER",
+  ) {
+    const caller = await this.prisma.db.orm.public.User.select(
+      "id",
+      "role",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(callerId))
+      .first();
+
+    if (!caller || !caller.organizationId) {
+      throw new NotFoundException("User is not associated with an organization");
+    }
+
+    const org = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "ownerId",
+    )
+      .where((o) => o.id.eq(caller.organizationId as string))
+      .first();
+
+    const isCallerOwner = Boolean(org && org.ownerId === caller.id);
+    const isCallerAdmin = caller.role === "ADMIN";
+
+    if (!isCallerAdmin && !isCallerOwner) {
+      throw new ForbiddenException(
+        "Only organization owners and administrators can change member roles.",
+      );
+    }
+
+    // Cannot change role of Owner
+    if (org && org.ownerId === targetMemberId) {
+      throw new BadRequestException("Cannot change the role of the organization owner");
+    }
+
+    // Target user must belong to caller's org
+    const targetUser = await this.prisma.db.orm.public.User.select(
+      "id",
+      "organizationId",
+      "role",
+    )
+      .where((u) => u.id.eq(targetMemberId))
+      .first();
+
+    if (!targetUser || targetUser.organizationId !== caller.organizationId) {
+      throw new NotFoundException("Member not found in this organization");
+    }
+
+    await this.prisma.db.orm.public.User.where((u) =>
+      u.id.eq(targetMemberId),
+    ).update({
+      role: newRole,
+    });
+
+    return {
+      success: true,
+      role: newRole,
+      message: `Member role updated to ${newRole}`,
+    };
+  }
+
+  async removeMember(callerId: string, targetMemberId: string) {
+    const caller = await this.prisma.db.orm.public.User.select(
+      "id",
+      "role",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(callerId))
+      .first();
+
+    if (!caller || !caller.organizationId) {
+      throw new NotFoundException("User is not associated with an organization");
+    }
+
+    const org = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "ownerId",
+    )
+      .where((o) => o.id.eq(caller.organizationId as string))
+      .first();
+
+    const isCallerOwner = Boolean(org && org.ownerId === caller.id);
+    const isCallerAdmin = caller.role === "ADMIN";
+
+    if (!isCallerAdmin && !isCallerOwner) {
+      throw new ForbiddenException(
+        "Only organization owners and administrators can remove members.",
+      );
+    }
+
+    if (callerId === targetMemberId) {
+      throw new BadRequestException("You cannot remove yourself from the organization");
+    }
+
+    // Cannot remove Owner
+    if (org && org.ownerId === targetMemberId) {
+      throw new BadRequestException("Cannot remove the organization owner");
+    }
+
+    const targetUser = await this.prisma.db.orm.public.User.select(
+      "id",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(targetMemberId))
+      .first();
+
+    if (!targetUser || targetUser.organizationId !== caller.organizationId) {
+      throw new NotFoundException("Member not found in this organization");
+    }
+
+    await this.prisma.db.orm.public.User.where((u) =>
+      u.id.eq(targetMemberId),
+    ).update({
+      organizationId: null,
+      role: "MEMBER",
+    });
+
+    return {
+      success: true,
+      message: "Member successfully removed from organization",
+    };
   }
 
   // ==========================================
@@ -304,6 +602,7 @@ export class OrganizationsService {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
       "name",
+      "role",
       "organizationId",
     )
       .where((u) => u.id.eq(userId))
@@ -317,12 +616,22 @@ export class OrganizationsService {
       "id",
       "name",
       "slug",
+      "ownerId",
     )
       .where((o) => o.id.eq(user.organizationId as string))
       .first();
 
     if (!org) {
       throw new NotFoundException("Organization not found");
+    }
+
+    const isOwner = Boolean(org.ownerId && org.ownerId === user.id);
+    const isAdmin = user.role === "ADMIN";
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        "Only organization owners and administrators can create invite links.",
+      );
     }
 
     // 64-character cryptographic hex token
@@ -357,13 +666,14 @@ export class OrganizationsService {
     }
 
     const id = crypto.randomUUID();
+    const linkRole = dto.role === "ADMIN" ? "ADMIN" : "MEMBER";
 
     await this.prisma.db.orm.public.InviteLink.upsert({
       create: {
         id,
         token,
         organizationId: org.id,
-        role: dto.role || "Member",
+        role: linkRole,
         expiresAt,
         maxUses,
         usesCount: 0,
@@ -380,7 +690,7 @@ export class OrganizationsService {
       organizationId: org.id,
       organizationName: org.name,
       organizationSlug: org.slug,
-      role: dto.role || "Member",
+      role: linkRole,
       expiresAt: expiresAt ? expiresAt.toISOString() : null,
       maxUses,
       usesCount: 0,
@@ -394,6 +704,7 @@ export class OrganizationsService {
   async getInviteLinks(userId: string): Promise<InviteLinkRecord[]> {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
+      "role",
       "organizationId",
     )
       .where((u) => u.id.eq(userId))
@@ -408,9 +719,18 @@ export class OrganizationsService {
       "id",
       "name",
       "slug",
+      "ownerId",
     )
       .where((o) => o.id.eq(orgId))
       .first();
+
+    const isOwner = Boolean(org && org.ownerId === user.id);
+    const isAdmin = user.role === "ADMIN";
+
+    // Security: Only Admin and Owner can view invite links
+    if (!isAdmin && !isOwner) {
+      return [];
+    }
 
     const allLinks = await this.prisma.db.orm.public.InviteLink.select(
       "id",
@@ -466,6 +786,7 @@ export class OrganizationsService {
   async revokeInviteLink(userId: string, linkId: string) {
     const user = await this.prisma.db.orm.public.User.select(
       "id",
+      "role",
       "organizationId",
     )
       .where((u) => u.id.eq(userId))
@@ -473,6 +794,22 @@ export class OrganizationsService {
 
     if (!user || !user.organizationId) {
       throw new NotFoundException("User is not associated with an organization");
+    }
+
+    const org = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "ownerId",
+    )
+      .where((o) => o.id.eq(user.organizationId as string))
+      .first();
+
+    const isOwner = Boolean(org && org.ownerId === user.id);
+    const isAdmin = user.role === "ADMIN";
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        "Only organization owners and administrators can revoke invite links.",
+      );
     }
 
     await this.prisma.db.orm.public.InviteLink.where((l) =>
@@ -608,9 +945,11 @@ export class OrganizationsService {
       );
     }
 
-    // Link user to organization
+    // Link user to organization with the role assigned on the invite link (ADMIN or MEMBER)
+    const assignedRole = (link.role === "ADMIN" ? "ADMIN" : "MEMBER") as "ADMIN" | "MEMBER";
     await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
       organizationId: link.organizationId,
+      role: assignedRole,
     });
 
     // Increment uses count

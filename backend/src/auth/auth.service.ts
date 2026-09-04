@@ -11,6 +11,7 @@ import crypto from "node:crypto";
 import { PrismaService } from "../prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants";
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
 
   async validateRecruiter(dto: LoginDto) {
     const normalizedEmail = dto.email.toLowerCase().trim();
+
     let user = await this.prisma.db.orm.public.User.select(
       "id",
       "email",
@@ -38,37 +40,76 @@ export class AuthService {
 
     // Auto-provision demo accounts if database is fresh
     if (!user) {
-      const demoAccounts: Record<
-        string,
-        { name: string; role: "HR" | "ADMIN" | "INTERVIEWER" }
-      > = {
-        "demo@tun.io.vn": { name: "Demo Recruiter", role: "HR" },
-        "hr@tun.io.vn": { name: "HR Lead / Recruiter", role: "HR" },
-        "admin@tun.io.vn": { name: "Talent Acquisition Admin", role: "ADMIN" },
-        "interviewer@tun.io.vn": {
-          name: "Technical Interviewer",
-          role: "INTERVIEWER",
-        },
-      };
+      const demoAccountList = [DEMO_ACCOUNTS.ADMIN, DEMO_ACCOUNTS.MEMBER];
+      const matchedDemo = demoAccountList.find(
+        (a) => a.email.toLowerCase() === normalizedEmail,
+      );
 
-      if (demoAccounts[normalizedEmail] && dto.password === "password123") {
-        const demoConfig = demoAccounts[normalizedEmail];
-        const hashedPassword = bcrypt.hashSync("password123", 10);
-        user = await this.prisma.db.orm.public.User.upsert({
-          create: {
-            email: normalizedEmail,
-            name: demoConfig.name,
-            role: demoConfig.role,
-            password: hashedPassword,
-            organizationId: null,
-          },
-          update: {
-            password: hashedPassword,
-            name: demoConfig.name,
-            role: demoConfig.role,
-          },
-          conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
-        });
+      if (matchedDemo && dto.password === DEMO_PASSWORD) {
+        const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
+        let orgId: string | null = null;
+
+        if (matchedDemo.role === "ADMIN") {
+          const adminUserId = crypto.randomUUID();
+          const existingOrg = await this.prisma.db.orm.public.Organization.select(
+            "id",
+          )
+            .where((o) => o.slug.eq("admin"))
+            .first();
+
+          if (!existingOrg) {
+            const newOrgId = crypto.randomUUID();
+            await this.prisma.db.orm.public.Organization.upsert({
+              create: {
+                id: newOrgId,
+                name: "Admin",
+                slug: "admin",
+                inviteCode: "ORG-ADMIN-8888",
+                ownerId: adminUserId,
+              },
+              update: { ownerId: adminUserId },
+              conflictOn: { slug: "admin" },
+            });
+            orgId = newOrgId;
+          } else {
+            orgId = existingOrg.id;
+          }
+
+          user = await this.prisma.db.orm.public.User.upsert({
+            create: {
+              id: adminUserId,
+              email: normalizedEmail,
+              name: matchedDemo.name,
+              role: matchedDemo.role,
+              password: hashedPassword,
+              organizationId: orgId,
+            },
+            update: {
+              password: hashedPassword,
+              name: matchedDemo.name,
+              role: matchedDemo.role,
+              organizationId: orgId,
+            },
+            conflictOn: { email: normalizedEmail },
+          });
+        } else {
+          user = await this.prisma.db.orm.public.User.upsert({
+            create: {
+              email: normalizedEmail,
+              name: matchedDemo.name,
+              role: matchedDemo.role,
+              password: hashedPassword,
+              organizationId: null,
+            },
+            update: {
+              password: hashedPassword,
+              name: matchedDemo.name,
+              role: matchedDemo.role,
+              organizationId: null,
+            },
+            conflictOn: { email: normalizedEmail },
+          });
+        }
       }
     }
 
@@ -81,13 +122,6 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password");
     }
 
-    // Role check: Only Recruiters, HR, Admin, Interviewers are allowed to access Recruiter Portal
-    if (user.role === "CANDIDATE") {
-      throw new ForbiddenException(
-        "Access denied. The Recruiter Portal is strictly reserved for Hiring Managers, HR, and Admins. Candidates should apply via the public job board.",
-      );
-    }
-
     const { password: _, ...sanitizedUser } = user;
 
     let organization = null;
@@ -97,13 +131,19 @@ export class AuthService {
         "name",
         "slug",
         "inviteCode",
+        "ownerId",
       )
         .where((o) => o.id.eq(sanitizedUser.organizationId as string))
         .first();
     }
 
+    const isOwner = Boolean(
+      organization && organization.ownerId === sanitizedUser.id,
+    );
+
     return {
       ...sanitizedUser,
+      isOwner,
       organization,
     };
   }
@@ -147,7 +187,7 @@ export class AuthService {
         email: normalizedEmail,
         name: dto.name.trim(),
         password: hashedPassword,
-        role: "HR",
+        role: "MEMBER",
         organizationId: null,
       },
       update: {},
@@ -158,10 +198,11 @@ export class AuthService {
       id,
       email: normalizedEmail,
       name: dto.name.trim(),
-      role: "HR" as const,
+      role: "MEMBER" as const,
       avatarUrl: null,
       organizationId: null,
       organization: null,
+      isOwner: false,
       createdAt: new Date(),
     };
 
@@ -197,19 +238,26 @@ export class AuthService {
     }
 
     let organization = null;
+    let isOwner = false;
     if (user.organizationId) {
       organization = await this.prisma.db.orm.public.Organization.select(
         "id",
         "name",
         "slug",
         "inviteCode",
+        "ownerId",
       )
         .where((o) => o.id.eq(user.organizationId as string))
         .first();
+
+      if (organization && (organization as any).ownerId === user.id) {
+        isOwner = true;
+      }
     }
 
     return {
       ...user,
+      isOwner,
       organization,
     };
   }

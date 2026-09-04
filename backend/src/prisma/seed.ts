@@ -1,20 +1,14 @@
 import "dotenv/config";
+import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { db } from "./db.ts";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants.ts";
 
-const defaultPasswordHash = bcrypt.hashSync("password123", 10);
-
-const singleDemoUser = {
-  email: "demo@tun.io.vn",
-  name: "Demo Recruiter",
-  role: "HR" as const,
-  password: defaultPasswordHash,
-  organizationId: null,
-};
+const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
 let pendingSeed: Promise<void> | undefined;
 
-async function runSeed(): Promise<void> {
+export async function runSeed(): Promise<void> {
   const dbUrl =
     process.env.DATABASE_URL ||
     "postgresql://ats_user:ats_password@localhost:5432/ats_db?schema=public";
@@ -31,6 +25,10 @@ async function runSeed(): Promise<void> {
     Promise.all(apps.map((a) => db.orm.public.Application.where((x) => x.id.eq(a.id)).delete())),
   );
 
+  await db.orm.public.InviteLink.all().then((links) =>
+    Promise.all(links.map((l) => db.orm.public.InviteLink.where((x) => x.id.eq(l.id)).delete())),
+  );
+
   await db.orm.public.Job.all().then((jobs) =>
     Promise.all(jobs.map((j) => db.orm.public.Job.where((x) => x.id.eq(j.id)).delete())),
   );
@@ -43,20 +41,70 @@ async function runSeed(): Promise<void> {
     Promise.all(orgs.map((o) => db.orm.public.Organization.where((x) => x.id.eq(o.id)).delete())),
   );
 
-  // 2. Seed ONLY the single demo user: demo@tun.io.vn
-  console.log("Seeding single demo user: demo@tun.io.vn ...");
-  await db.orm.public.User.upsert({
-    create: singleDemoUser,
-    update: {
-      password: singleDemoUser.password,
-      name: singleDemoUser.name,
-      role: singleDemoUser.role,
-      organizationId: null,
+  // 2. Seed Org Admin and Demo Users
+  console.log("Seeding default data...");
+  const adminUserId = crypto.randomUUID();
+  const adminOrgId = crypto.randomUUID();
+  const memberUserId = crypto.randomUUID();
+
+  // Create Org "Admin"
+  await db.orm.public.Organization.upsert({
+    create: {
+      id: adminOrgId,
+      name: "Admin",
+      slug: "admin",
+      inviteCode: "ORG-ADMIN-8888",
+      ownerId: adminUserId,
     },
-    conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
+    update: {
+      name: "Admin",
+      ownerId: adminUserId,
+    },
+    conflictOn: { slug: "admin" },
   });
 
-  console.log("Database reset & single user seed completed!");
+  // Create Admin User (assigned to Org Admin)
+  await db.orm.public.User.upsert({
+    create: {
+      id: adminUserId,
+      email: DEMO_ACCOUNTS.ADMIN.email,
+      name: DEMO_ACCOUNTS.ADMIN.name,
+      role: DEMO_ACCOUNTS.ADMIN.role,
+      password: defaultPasswordHash,
+      organizationId: adminOrgId,
+    },
+    update: {
+      password: defaultPasswordHash,
+      name: DEMO_ACCOUNTS.ADMIN.name,
+      role: DEMO_ACCOUNTS.ADMIN.role,
+      organizationId: adminOrgId,
+    },
+    conflictOn: { email: DEMO_ACCOUNTS.ADMIN.email },
+  });
+
+  // Create Member User (no org assigned)
+  await db.orm.public.User.upsert({
+    create: {
+      id: memberUserId,
+      email: DEMO_ACCOUNTS.MEMBER.email,
+      name: DEMO_ACCOUNTS.MEMBER.name,
+      role: DEMO_ACCOUNTS.MEMBER.role,
+      password: defaultPasswordHash,
+      organizationId: null,
+    },
+    update: {
+      password: defaultPasswordHash,
+      name: DEMO_ACCOUNTS.MEMBER.name,
+      role: DEMO_ACCOUNTS.MEMBER.role,
+      organizationId: null,
+    },
+    conflictOn: { email: DEMO_ACCOUNTS.MEMBER.email },
+  });
+
+  console.log("Database reset & seed completed successfully!");
+  console.log(`- Org: Admin (id: ${adminOrgId}, slug: admin, owner: ${DEMO_ACCOUNTS.ADMIN.email})`);
+  console.log(`- User: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN, Org: Admin)`);
+  console.log(`- User: ${DEMO_ACCOUNTS.MEMBER.email} (MEMBER, Org: None)`);
 }
 
 export function seed(): Promise<void> {

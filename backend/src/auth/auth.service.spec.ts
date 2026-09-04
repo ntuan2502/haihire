@@ -1,55 +1,36 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AuthService } from "./auth.service";
-import { ConflictException, ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants";
 
-describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
+describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   let authService: AuthService;
   let mockPrismaService: any;
   let mockJwtService: any;
 
-  const validPassword = "password123";
+  const validPassword = DEMO_PASSWORD;
   const hashedPassword = bcrypt.hashSync(validPassword, 10);
 
   const mockUsers = [
     {
-      id: "usr-1",
-      email: "hr@tun.io.vn",
-      name: "HR Lead / Recruiter",
+      id: "usr-admin",
+      email: DEMO_ACCOUNTS.ADMIN.email,
+      name: DEMO_ACCOUNTS.ADMIN.name,
       password: hashedPassword,
-      role: "HR",
+      role: DEMO_ACCOUNTS.ADMIN.role,
       avatarUrl: null,
-      organizationId: null,
+      organizationId: "org-1",
       createdAt: new Date(),
     },
     {
-      id: "usr-2",
-      email: "admin@tun.io.vn",
-      name: "Talent Acquisition Admin",
+      id: "usr-member",
+      email: DEMO_ACCOUNTS.MEMBER.email,
+      name: DEMO_ACCOUNTS.MEMBER.name,
       password: hashedPassword,
-      role: "ADMIN",
+      role: DEMO_ACCOUNTS.MEMBER.role,
       avatarUrl: null,
-      organizationId: null,
-      createdAt: new Date(),
-    },
-    {
-      id: "usr-3",
-      email: "interviewer@tun.io.vn",
-      name: "Technical Interviewer",
-      password: hashedPassword,
-      role: "INTERVIEWER",
-      avatarUrl: null,
-      organizationId: null,
-      createdAt: new Date(),
-    },
-    {
-      id: "usr-4",
-      email: "candidate@gmail.com",
-      name: "John Doe Candidate",
-      password: hashedPassword,
-      role: "CANDIDATE",
-      avatarUrl: null,
-      organizationId: null,
+      organizationId: "org-1",
       createdAt: new Date(),
     },
   ];
@@ -101,7 +82,12 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
             Organization: {
               select: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
-                  first: vi.fn().mockResolvedValue(null),
+                  first: vi.fn().mockImplementation(async () => ({
+                    id: "org-1",
+                    name: "Acme Corp",
+                    slug: "acme",
+                    ownerId: "usr-admin",
+                  })),
                 }),
               }),
             },
@@ -117,116 +103,82 @@ describe("AuthService - Recruiter & Hiring Portal Authentication", () => {
     authService = new AuthService(mockPrismaService, mockJwtService);
   });
 
-  it("1. Should successfully login HR Lead (hr@tun.io.vn) and return JWT accessToken + HR role", async () => {
+  it("1. Should successfully login Admin and return ADMIN role with isOwner=true", async () => {
     const result = await authService.login({
-      email: "hr@tun.io.vn",
-      password: "password123",
+      email: DEMO_ACCOUNTS.ADMIN.email,
+      password: DEMO_PASSWORD,
     });
 
     expect(result).toHaveProperty(
       "accessToken",
       "mocked-jwt-access-token-tun-io-vn",
     );
-    expect(result.user).toEqual({
-      id: "usr-1",
-      email: "hr@tun.io.vn",
-      name: "HR Lead / Recruiter",
-      role: "HR",
-      avatarUrl: null,
-      organizationId: null,
-      organization: null,
-      createdAt: expect.any(Date),
-    });
+    expect(result.user.role).toBe(DEMO_ACCOUNTS.ADMIN.role);
+    expect(result.user.isOwner).toBe(true);
     expect(mockJwtService.sign).toHaveBeenCalledWith({
-      sub: "usr-1",
-      email: "hr@tun.io.vn",
-      role: "HR",
+      sub: "usr-admin",
+      email: DEMO_ACCOUNTS.ADMIN.email,
+      role: DEMO_ACCOUNTS.ADMIN.role,
     });
   });
 
-  it("2. Should successfully login Talent Admin (admin@tun.io.vn) and return ADMIN role", async () => {
+  it("2. Should successfully login Member and return MEMBER role with isOwner=false", async () => {
     const result = await authService.login({
-      email: "admin@tun.io.vn",
-      password: "password123",
+      email: DEMO_ACCOUNTS.MEMBER.email,
+      password: DEMO_PASSWORD,
     });
 
     expect(result.accessToken).toBeDefined();
-    expect(result.user.role).toBe("ADMIN");
+    expect(result.user.role).toBe(DEMO_ACCOUNTS.MEMBER.role);
+    expect(result.user.isOwner).toBe(false);
   });
 
-  it("3. Should successfully login Technical Interviewer (interviewer@tun.io.vn) and return INTERVIEWER role", async () => {
-    const result = await authService.login({
-      email: "interviewer@tun.io.vn",
-      password: "password123",
-    });
-
-    expect(result.accessToken).toBeDefined();
-    expect(result.user.role).toBe("INTERVIEWER");
-  });
-
-  it("4. Should STRICTLY REJECT Candidate accounts (CANDIDATE role) from logging into Recruiter Portal", async () => {
+  it("3. Should throw UnauthorizedException when password is wrong", async () => {
     await expect(
       authService.login({
-        email: "candidate@gmail.com",
-        password: "password123",
-      }),
-    ).rejects.toThrow(ForbiddenException);
-  });
-
-  it("5. Should throw UnauthorizedException when password is wrong", async () => {
-    await expect(
-      authService.login({
-        email: "hr@tun.io.vn",
+        email: "admin@tun.io.vn",
         password: "wrong-password",
       }),
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it("6. Should throw UnauthorizedException when email does not exist", async () => {
+  it("4. Should throw UnauthorizedException when email does not exist", async () => {
     await expect(
       authService.login({
         email: "unknown@tun.io.vn",
-        password: "password123",
+        password: DEMO_PASSWORD,
       }),
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it("7. Should retrieve sanitized profile with getProfile(userId)", async () => {
-    const profile = await authService.getProfile("usr-1");
-    expect(profile).toEqual({
-      id: "usr-1",
-      email: "hr@tun.io.vn",
-      name: "HR Lead / Recruiter",
-      role: "HR",
-      avatarUrl: null,
-      organizationId: null,
-      organization: null,
-      createdAt: expect.any(Date),
-    });
+  it("5. Should retrieve profile with isOwner and sanitized fields", async () => {
+    const profile = await authService.getProfile("usr-admin");
+    expect(profile.role).toBe("ADMIN");
+    expect(profile.isOwner).toBe(true);
   });
 
   describe("Registration Flow", () => {
-    it("8. Should register a new user successfully", async () => {
+    it("6. Should register a new user successfully with default MEMBER role", async () => {
       const result = await authService.register({
-        name: "New Recruiter",
-        email: "newrecruiter@company.com",
+        name: "New Member",
+        email: "newmember@company.com",
         password: "securepassword",
       });
 
       expect(result).toBeDefined();
       expect(result.accessToken).toBe("mocked-jwt-access-token-tun-io-vn");
-      expect(result.user.name).toBe("New Recruiter");
-      expect(result.user.email).toBe("newrecruiter@company.com");
-      expect(result.user.role).toBe("HR");
+      expect(result.user.name).toBe("New Member");
+      expect(result.user.email).toBe("newmember@company.com");
+      expect(result.user.role).toBe("MEMBER");
       expect(result.user.organizationId).toBeNull();
     });
 
-    it("9. Should throw ConflictException if email is already registered", async () => {
+    it("7. Should throw ConflictException if email is already registered", async () => {
       await expect(
         authService.register({
-          name: "Duplicate User",
-          email: "hr@tun.io.vn", // Already in mockUsers!
-          password: "password123",
+          name: "Duplicate Admin",
+          email: DEMO_ACCOUNTS.ADMIN.email,
+          password: DEMO_PASSWORD,
         }),
       ).rejects.toThrow(ConflictException);
     });

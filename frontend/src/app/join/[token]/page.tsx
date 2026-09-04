@@ -131,13 +131,13 @@ export default function JoinOrganizationPage() {
           </span>
         </div>
 
-        {/* Right: Reqcore Logo */}
+        {/* Right: Brand Logo */}
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
             <Building2 className="h-4 w-4" />
           </div>
           <span className="text-sm font-bold text-slate-900 dark:text-white">
-            Reqcore
+            ATS
           </span>
         </div>
       </header>
@@ -151,7 +151,7 @@ export default function JoinOrganizationPage() {
               Join organization
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              You&apos;ve been invited to join a team on Reqcore.
+              You&apos;ve been invited to join a hiring workspace.
             </p>
           </div>
 
@@ -307,7 +307,7 @@ export default function JoinOrganizationPage() {
 
       {/* Footer */}
       <footer className="text-center py-4 text-[11px] text-slate-400">
-        © {new Date().getFullYear()} Reqcore ATS. All rights reserved.
+        © {new Date().getFullYear()} ATS. All rights reserved.
       </footer>
     </div>
   );

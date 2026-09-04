@@ -15,11 +15,12 @@ import {
   AlertTriangle,
   Trash2,
   CheckCircle2,
+  Shield,
 } from "lucide-react";
 
 export default function GeneralSettingsPage() {
   const router = useRouter();
-  const { user, updateUserOrg, logout } = useAuth();
+  const { user, updateUserOrg, logout, canEdit, isOwner } = useAuth();
   const { data: org, isLoading: isOrgLoading } = useMyOrg();
   const updateOrgMutation = useUpdateMyOrgMutation();
   const deleteOrgMutation = useDeleteMyOrgMutation();
@@ -166,7 +167,7 @@ export default function GeneralSettingsPage() {
               onChange={(e) => setOrgName(e.target.value)}
               className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
               required
-              disabled={isOrgLoading || updateOrgMutation.isPending}
+              disabled={!canEdit || isOrgLoading || updateOrgMutation.isPending}
             />
           </div>
 
@@ -192,7 +193,7 @@ export default function GeneralSettingsPage() {
                 }
                 className="flex-1 h-10 px-3 text-xs bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
                 required
-                disabled={isOrgLoading || updateOrgMutation.isPending}
+                disabled={!canEdit || isOrgLoading || updateOrgMutation.isPending}
               />
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
@@ -201,60 +202,69 @@ export default function GeneralSettingsPage() {
             </p>
           </div>
 
-          {/* Save Button */}
+          {/* Save Button (Admins only) */}
           <div className="pt-2">
-            <Button
-              type="submit"
-              disabled={isOrgLoading || updateOrgMutation.isPending}
-              className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
-            >
-              {updateOrgMutation.isPending
-                ? "Saving..."
-                : "Save changes"}
-            </Button>
+            {canEdit ? (
+              <Button
+                type="submit"
+                disabled={isOrgLoading || updateOrgMutation.isPending}
+                className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                {updateOrgMutation.isPending
+                  ? "Saving..."
+                  : "Save changes"}
+              </Button>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <Shield className="h-4 w-4 shrink-0" />
+                <span>Read-only access: only Admins can update organization profile.</span>
+              </div>
+            )}
           </div>
         </form>
       </div>
 
-      {/* CARD 2: Danger zone */}
-      <div className="rounded-2xl border border-rose-200/80 bg-white dark:bg-slate-900 dark:border-rose-950/60 p-6 shadow-xs space-y-4">
-        {/* Danger Header */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 border border-rose-100 dark:bg-rose-950/60 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 shrink-0">
-            <AlertTriangle className="h-4 w-4" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400">
-              Danger zone
-            </h3>
-            <p className="text-xs text-rose-500/80 dark:text-rose-400/80">
-              Irreversible and destructive actions.
-            </p>
-          </div>
-        </div>
-
-        <div className="border-t border-rose-100 dark:border-rose-950/60 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-              Delete organization
-            </h4>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Permanently delete this organization and all its data.
-              This action cannot be undone.
-            </p>
+      {/* CARD 2: Danger zone (Owner only) */}
+      {isOwner && (
+        <div className="rounded-2xl border border-rose-200/80 bg-white dark:bg-slate-900 dark:border-rose-950/60 p-6 shadow-xs space-y-4">
+          {/* Danger Header */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 border border-rose-100 dark:bg-rose-950/60 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 shrink-0">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                Danger zone
+              </h3>
+              <p className="text-xs text-rose-500/80 dark:text-rose-400/80">
+                Irreversible and destructive actions.
+              </p>
+            </div>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setDeleteModalOpen(true)}
-            className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 text-xs font-semibold px-3.5 py-1.5 rounded-xl shrink-0 cursor-pointer flex items-center gap-1.5"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span>Delete</span>
-          </Button>
+          <div className="border-t border-rose-100 dark:border-rose-950/60 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                Delete organization
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Permanently delete this organization and all its data.
+                This action cannot be undone.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteModalOpen(true)}
+              className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 text-xs font-semibold px-3.5 py-1.5 rounded-xl shrink-0 cursor-pointer flex items-center gap-1.5"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete</span>
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ================= DELETE ORGANIZATION CONFIRMATION MODAL ================= */}
       {deleteModalOpen && (

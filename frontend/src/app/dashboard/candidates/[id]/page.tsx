@@ -54,7 +54,7 @@ import { StageBadge } from "@/components/ui/stage-badge";
 function CandidateDetailPageContent() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, canEdit } = useAuth();
   const candidateIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
@@ -357,30 +357,32 @@ function CandidateDetailPageContent() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  `/dashboard/candidates/${primaryApp?.id || candidateIdStr}/edit`,
-                )
-              }
-              className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-            >
-              <Edit2 className="h-3 w-3 text-slate-400" />
-              <span>Edit</span>
-            </button>
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-            >
-              <Trash2 className="h-3 w-3" />
-              <span>Delete</span>
-            </button>
-          </div>
+          {/* Action Buttons (Admins only) */}
+          {canEdit && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/candidates/${primaryApp?.id || candidateIdStr}/edit`,
+                  )
+                }
+                className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Edit2 className="h-3 w-3 text-slate-400" />
+                <span>Edit</span>
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Trash2 className="h-3 w-3" />
+                <span>Delete</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Card 1: Details */}
@@ -551,14 +553,16 @@ function CandidateDetailPageContent() {
                   </SelectContent>
                 </Select>
 
-                <button
-                  type="button"
-                  onClick={() => setApplyModalOpen(true)}
-                  className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Apply to Job</span>
-                </button>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setApplyModalOpen(true)}
+                    className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Apply to Job</span>
+                  </button>
+                )}
               </div>
 
               {filteredCandidateApps.length === 0 ? (
@@ -681,28 +685,30 @@ function CandidateDetailPageContent() {
                       </SelectContent>
                     </Select>
 
-                    <div>
-                      <button
-                        type="button"
-                        disabled={isUploadingDoc}
-                        onClick={() => docInputRef.current?.click()}
-                        className="h-8 px-3.5 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                      >
-                        {isUploadingDoc ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <UploadCloud className="h-3.5 w-3.5 text-slate-500" />
-                        )}
-                        <span>Upload Document</span>
-                      </button>
-                      <input
-                        ref={docInputRef}
-                        type="file"
-                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                        className="hidden"
-                        onChange={handleDocumentUpload}
-                      />
-                    </div>
+                    {canEdit && (
+                      <div>
+                        <button
+                          type="button"
+                          disabled={isUploadingDoc}
+                          onClick={() => docInputRef.current?.click()}
+                          className="h-8 px-3.5 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                        >
+                          {isUploadingDoc ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <UploadCloud className="h-3.5 w-3.5 text-slate-500" />
+                          )}
+                          <span>Upload Document</span>
+                        </button>
+                        <input
+                          ref={docInputRef}
+                          type="file"
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                          className="hidden"
+                          onChange={handleDocumentUpload}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Document Cards List */}
@@ -764,14 +770,16 @@ function CandidateDetailPageContent() {
                               <Download className="h-4 w-4" />
                             </button>
 
-                            <button
-                              type="button"
-                              onClick={() => setDocToDelete(doc)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                              title="Delete document"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => setDocToDelete(doc)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                                title="Delete document"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}

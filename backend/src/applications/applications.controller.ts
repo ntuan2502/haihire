@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Inject,
   NotFoundException,
@@ -12,8 +13,12 @@ import {
   Request,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
+import { RolesGuard } from "../auth/roles.guard";
+import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApplicationsService, fixUtf8String } from "./applications.service";
@@ -56,11 +61,19 @@ export class ApplicationsController {
   create(
     @Body() dto: CreateApplicationDto,
     @UploadedFile() file: Express.Multer.File,
+    @Request() req?: any,
   ) {
+    if (req?.user?.role === "MEMBER") {
+      throw new ForbiddenException(
+        "Members have read-only access. Only Admins can perform this action.",
+      );
+    }
     return this.applicationsService.create(dto, file);
   }
 
   @Patch(":id/stage")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   updateStage(
     @Param("id") id: string,
     @Body() dto: UpdateStageDto,
@@ -69,6 +82,8 @@ export class ApplicationsController {
   }
 
   @Patch(":id")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   updateCandidate(
     @Param("id") id: string,
     @Body() dto: UpdateCandidateDto,
@@ -77,6 +92,8 @@ export class ApplicationsController {
   }
 
   @Post(":id/documents")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -136,6 +153,8 @@ export class ApplicationsController {
   }
 
   @Delete(":id/documents")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   deleteDocument(
     @Param("id") id: string,
     @Query("documentId") documentId?: string,
@@ -145,6 +164,8 @@ export class ApplicationsController {
   }
 
   @Delete(":id")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @Roles("ADMIN")
   remove(@Param("id") id: string) {
     return this.applicationsService.remove(id);
   }

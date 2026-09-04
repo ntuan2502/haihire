@@ -18,6 +18,8 @@ import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RolesGuard } from "../auth/roles.guard";
+import { Roles } from "../auth/roles.decorator";
 
 @Controller("organizations")
 export class OrganizationsController {
@@ -46,15 +48,26 @@ export class OrganizationsController {
     return this.orgsService.join(req.user.id, dto);
   }
 
-  @Get("search")
-  async search(@Query("q") query: string) {
-    return this.orgsService.search(query || "");
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get("my")
   async getMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMyOrg(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("my/all")
+  async getMyOrgs(@Request() req: { user: { id: string } }) {
+    return this.orgsService.getMyOrgs(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("switch")
+  @HttpCode(HttpStatus.OK)
+  async switchOrg(
+    @Request() req: { user: { id: string } },
+    @Body() body: { organizationId: string },
+  ) {
+    return this.orgsService.switchOrg(req.user.id, body.organizationId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -64,6 +77,26 @@ export class OrganizationsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch("my/members/:memberId/role")
+  async updateMemberRole(
+    @Request() req: { user: { id: string } },
+    @Param("memberId") memberId: string,
+    @Body() body: { role: "ADMIN" | "MEMBER" },
+  ) {
+    return this.orgsService.updateMemberRole(req.user.id, memberId, body.role);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete("my/members/:memberId")
+  async removeMember(
+    @Request() req: { user: { id: string } },
+    @Param("memberId") memberId: string,
+  ) {
+    return this.orgsService.removeMember(req.user.id, memberId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
   @Patch("my")
   async updateMyOrg(
     @Request() req: { user: { id: string } },
@@ -72,7 +105,8 @@ export class OrganizationsController {
     return this.orgsService.updateMyOrg(req.user.id, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
   @Delete("my")
   async deleteMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.deleteMyOrg(req.user.id);
@@ -81,7 +115,8 @@ export class OrganizationsController {
   // ==========================================
   // INVITE LINKS ENDPOINTS
   // ==========================================
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
   @Post("my/invite-links")
   async createInviteLink(
     @Request() req: { user: { id: string } },
@@ -96,7 +131,8 @@ export class OrganizationsController {
     return this.orgsService.getInviteLinks(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
   @Delete("my/invite-links/:id")
   async revokeInviteLink(
     @Request() req: { user: { id: string } },

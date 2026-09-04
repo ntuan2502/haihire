@@ -145,6 +145,16 @@ export const organizationsApi = {
     return response.data;
   },
 
+  getMyOrgs: async (): Promise<Organization[]> => {
+    const response = await api.get<Organization[]>("/organizations/my/all");
+    return response.data;
+  },
+
+  switchOrg: async (organizationId: string): Promise<{ success: boolean; organization: Organization; user: User }> => {
+    const response = await api.post<{ success: boolean; organization: Organization; user: User }>("/organizations/switch", { organizationId });
+    return response.data;
+  },
+
   getMembers: async (): Promise<User[]> => {
     const response = await api.get<User[]>("/organizations/my/members");
     return response.data;
@@ -212,5 +222,33 @@ export const organizationsApi = {
     const response = await api.post(`/organizations/invite-links/join/${token}`);
     return response.data;
   },
+
+  updateMemberRole: async (
+    memberId: string,
+    role: "ADMIN" | "MEMBER",
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.patch<{ success: boolean; message: string }>(
+      `/organizations/my/members/${memberId}/role`,
+      { role },
+    );
+    return response.data;
+  },
+
+  removeMember: async (
+    memberId: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/organizations/my/members/${memberId}`,
+    );
+    return response.data;
+  },
 };
+
+export const authApi = {
+  getMe: async (): Promise<User> => {
+    const response = await api.get<User>("/auth/me");
+    return response.data;
+  },
+};
+
 

@@ -4,6 +4,7 @@ import {
   Query,
   Req,
   UnauthorizedException,
+  Inject,
   type MessageEvent,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
@@ -14,7 +15,9 @@ import type { Request } from "express";
 @Controller("events")
 export class EventsController {
   constructor(
+    @Inject(EventsService)
     private readonly eventsService: EventsService,
+    @Inject(JwtService)
     private readonly jwtService: JwtService,
   ) {}
 

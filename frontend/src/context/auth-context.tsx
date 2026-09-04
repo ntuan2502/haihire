@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiBaseUrl } from "@/lib/api";
 import type { User, Organization } from "@/types";
@@ -112,9 +112,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  // Real-time synchronization via Server-Sent Events (SSE)
+  const userRef = useRef(user);
   useEffect(() => {
-    if (!token || !user?.id) return;
+    userRef.current = user;
+  }, [user]);
+
+  // Real-time synchronization via Server-Sent Events (SSE)
+  const currentUserId = user?.id;
+  useEffect(() => {
+    if (!token || !currentUserId) return;
 
     const sseBaseUrl = getApiBaseUrl();
     const eventSource = new EventSource(
@@ -133,11 +139,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
         }
 
+        const currentUser = userRef.current;
         if (payload.type === "MEMBER_REMOVED") {
           // If this user was removed from the organization, kick out immediately!
-          if (payload.targetUserId === user.id) {
+          if (currentUser && payload.targetUserId === currentUser.id) {
             const updatedUser: User = {
-              ...user,
+              ...currentUser,
               organizationId: null,
               organization: null,
             };
@@ -153,14 +160,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } else if (payload.type === "MEMBER_ROLE_UPDATED") {
-          // If this user's role was updated
-          if (payload.targetUserId === user.id && payload.role) {
-            const updatedUser: User = {
-              ...user,
-              role: payload.role,
-            };
-            setUser(updatedUser);
-            localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+          // If this user's role was updated, update state and re-sync
+          if (payload.targetUserId === currentUser?.id && payload.role) {
+            setUser((prev) => {
+              if (!prev) return prev;
+              const updated = {
+                ...prev,
+                role: payload.role as "ADMIN" | "MEMBER",
+              };
+              localStorage.setItem(USER_KEY, JSON.stringify(updated));
+              return updated;
+            });
+            // Re-sync with server to ensure complete consistency
+            refreshUser();
           }
         }
       } catch (err) {
@@ -191,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [token, user?.id, refreshUser, router]);
+  }, [token, currentUserId, refreshUser, router]);
 
   const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{

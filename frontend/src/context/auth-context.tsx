@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import { api, getApiBaseUrl } from "@/lib/api";
 import type { User, Organization } from "@/types";
@@ -39,13 +47,13 @@ function clearAuthCookies() {
   document.cookie = "ats_has_org=; path=/; max-age=0; SameSite=Lax";
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = React.useCallback(() => {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);
@@ -56,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   // Synchronize user profile with backend in real-time
-  const refreshUser = React.useCallback(async (): Promise<User | null> => {
+  const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
       const savedToken = localStorage.getItem(TOKEN_KEY);
       if (!savedToken) return null;

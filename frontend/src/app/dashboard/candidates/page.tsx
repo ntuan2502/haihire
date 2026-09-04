@@ -23,6 +23,7 @@ import {
   useUploadDocumentMutation,
   useDeleteDocumentMutation,
 } from "@/hooks/use-queries";
+import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
 import {
@@ -122,13 +123,6 @@ function CandidatesPageContent() {
     );
   }, [drawerCandidateDocuments, drawerDocFilter]);
 
-  const getDocumentUrl = (url: string) => {
-    if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    return `${apiUrl.replace(/\/+$/, "")}${url.startsWith("/") ? "" : "/"}${url}`;
-  };
-
   const handleDownloadDoc = async (
     url: string,
     filename?: string,
@@ -140,10 +134,11 @@ function CandidatesPageContent() {
     if (url) queryParams.set("url", url);
     if (downloadFileName) queryParams.set("name", downloadFileName);
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const apiUrl = getApiBaseUrl();
 
     try {
       const targetUrl = appId
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${appId}/documents/download${queryString}`
+        ? `${apiUrl}/applications/${appId}/documents/download${queryString}`
         : getDocumentUrl(url);
 
       const response = await fetch(targetUrl);
@@ -160,7 +155,7 @@ function CandidatesPageContent() {
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch {
       const fallbackUrl = appId
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${appId}/documents/download${queryString}`
+        ? `${apiUrl}/applications/${appId}/documents/download${queryString}`
         : getDocumentUrl(url);
       const a = document.createElement("a");
       a.href = fallbackUrl;

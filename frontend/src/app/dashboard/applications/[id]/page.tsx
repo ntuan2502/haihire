@@ -41,6 +41,7 @@ import {
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { PIPELINE_STAGES } from "@/lib/stages";
 import { StageBadge } from "@/components/ui/stage-badge";
+import { getApiBaseUrl } from "@/lib/api";
 import {
   getInitials,
   formatDate,
@@ -127,9 +128,10 @@ function ApplicationDetailPageContent() {
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
     const activeAppId = targetAppId || app?.id;
+    const apiUrl = getApiBaseUrl();
     try {
       const targetUrl = activeAppId
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${activeAppId}/documents/download${queryString}`
+        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
         : url;
 
       const response = await fetch(targetUrl);
@@ -146,7 +148,7 @@ function ApplicationDetailPageContent() {
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch {
       const fallbackUrl = activeAppId
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${activeAppId}/documents/download${queryString}`
+        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
         : url;
       const a = document.createElement("a");
       a.href = fallbackUrl;

@@ -7,9 +7,9 @@ import { AppModule } from "./app.module";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for Next.js frontend
+  // Enable CORS for Next.js frontend (allow localhost and local network devices)
   app.enableCors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
   });
@@ -28,8 +28,8 @@ async function bootstrap() {
   const port =
     Number.isFinite(parsedPort) && parsedPort >= 0 && parsedPort <= 65535 ? parsedPort : 3001;
 
-  await app.listen(port);
-  console.log(`ATS Backend running at http://localhost:${port}`);
+  await app.listen(port, "0.0.0.0");
+  console.log(`ATS Backend running at http://0.0.0.0:${port}`);
 }
 
 bootstrap().catch((error) => {

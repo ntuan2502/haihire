@@ -45,6 +45,7 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import { PIPELINE_STAGES } from "@/lib/stages";
+import { getApiBaseUrl } from "@/lib/api";
 import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
@@ -264,9 +265,10 @@ export function ApplicationsDataTable({
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
     const activeAppId = targetAppId || selectedApp?.id;
+    const apiUrl = getApiBaseUrl();
     try {
       const targetUrl = activeAppId
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${activeAppId}/documents/download${queryString}`
+        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
         : url;
 
       const response = await fetch(targetUrl);
@@ -283,7 +285,7 @@ export function ApplicationsDataTable({
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch {
       const fallbackUrl = activeAppId
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/applications/${activeAppId}/documents/download${queryString}`
+        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
         : url;
       const a = document.createElement("a");
       a.href = fallbackUrl;

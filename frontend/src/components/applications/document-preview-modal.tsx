@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { FileText, Download, X } from "lucide-react";
 import type { CandidateDocument } from "@/types";
+import { getDocumentUrl } from "@/lib/api";
 
 interface DocumentPreviewModalProps {
   isOpen: boolean;
@@ -30,13 +31,6 @@ export function DocumentPreviewModal({
   }, [isOpen, onClose]);
 
   if (!isOpen || !document) return null;
-
-  const getDocumentUrl = (url: string) => {
-    if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    return `${apiUrl.replace(/\/+$/, "")}${url.startsWith("/") ? "" : "/"}${url}`;
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">

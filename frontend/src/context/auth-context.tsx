@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, getApiBaseUrl } from "@/lib/api";
 import type { User, Organization } from "@/types";
 
 interface AuthContextType {
@@ -116,8 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!token || !user?.id) return;
 
-    const sseBaseUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    const sseBaseUrl = getApiBaseUrl();
     const eventSource = new EventSource(
       `${sseBaseUrl}/events/sse?token=${encodeURIComponent(token)}`,
     );

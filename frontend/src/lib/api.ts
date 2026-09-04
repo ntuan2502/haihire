@@ -1,11 +1,40 @@
 import axios from "axios";
 import type { Application, CreateJobInput, Job, Organization, User, InviteLink } from "../types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+export const getApiBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    // In browser, if an external non-localhost URL is explicitly provided, use it.
+    // Otherwise, always use relative "/api" so requests proxy through Next.js rewrites.
+    // This allows devices on LAN (phone, tablet, laptop) or localhost to work without CORS or Private Network Access blocks.
+    const customUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (customUrl && !customUrl.includes("localhost") && !customUrl.includes("127.0.0.1")) {
+      return customUrl;
+    }
+    return "/api";
+  }
+  // Server-side (SSR / Server Actions) can communicate directly with backend
+  return (
+    process.env.INTERNAL_API_URL ||
+    (process.env.NEXT_PUBLIC_API_URL &&
+      !process.env.NEXT_PUBLIC_API_URL.startsWith("/") &&
+      process.env.NEXT_PUBLIC_API_URL) ||
+    "http://127.0.0.1:3001"
+  );
+};
+
+export const getDocumentUrl = (url: string) => {
+  if (!url) return "";
+  if (url.includes("/ats-resumes/")) {
+    const idx = url.indexOf("/ats-resumes/");
+    return url.slice(idx);
+  }
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const apiUrl = getApiBaseUrl();
+  return `${apiUrl.replace(/\/+$/, "")}${url.startsWith("/") ? "" : "/"}${url}`;
+};
 
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },

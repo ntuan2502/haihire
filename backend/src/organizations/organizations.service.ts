@@ -97,14 +97,6 @@ export class OrganizationsService implements OnModuleInit {
     }
   }
 
-  private generateInviteCode(): string {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code = "ORG-";
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  }
 
   async create(userId: string, dto: CreateOrgDto) {
     const normalizedSlug = dto.slug.toLowerCase().trim();
@@ -122,13 +114,10 @@ export class OrganizationsService implements OnModuleInit {
       );
     }
 
-    const inviteCode = this.generateInviteCode();
-
     await this.prisma.db.orm.public.Organization.upsert({
       create: {
         name: dto.name.trim(),
         slug: normalizedSlug,
-        inviteCode,
         ownerId: userId,
       },
       update: {
@@ -141,7 +130,6 @@ export class OrganizationsService implements OnModuleInit {
       "id",
       "name",
       "slug",
-      "inviteCode",
       "ownerId",
       "createdAt",
     )
@@ -227,7 +215,6 @@ export class OrganizationsService implements OnModuleInit {
       "id",
       "name",
       "slug",
-      "inviteCode",
       "ownerId",
       "createdAt",
     )
@@ -319,7 +306,6 @@ export class OrganizationsService implements OnModuleInit {
       "id",
       "name",
       "slug",
-      "inviteCode",
       "ownerId",
       "createdAt",
     )
@@ -343,7 +329,6 @@ export class OrganizationsService implements OnModuleInit {
       "id",
       "name",
       "slug",
-      "inviteCode",
       "ownerId",
       "createdAt",
     ).all();
@@ -386,7 +371,6 @@ export class OrganizationsService implements OnModuleInit {
       "id",
       "name",
       "slug",
-      "inviteCode",
       "ownerId",
       "createdAt",
     )
@@ -522,7 +506,6 @@ export class OrganizationsService implements OnModuleInit {
       "id",
       "name",
       "slug",
-      "inviteCode",
       "ownerId",
       "createdAt",
     )
@@ -1271,7 +1254,6 @@ export class OrganizationsService implements OnModuleInit {
       "id",
       "name",
       "slug",
-      "inviteCode",
     )
       .where((o) => o.id.eq(link.organizationId))
       .first();

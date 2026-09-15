@@ -64,7 +64,6 @@ export class AuthService {
                 id: newOrgId,
                 name: "Admin",
                 slug: "admin",
-                inviteCode: "ORG-ADMIN-8888",
                 ownerId: adminUserId,
               },
               update: { ownerId: adminUserId },
@@ -130,7 +129,6 @@ export class AuthService {
         "id",
         "name",
         "slug",
-        "inviteCode",
         "ownerId",
       )
         .where((o) => o.id.eq(sanitizedUser.organizationId as string))
@@ -244,7 +242,6 @@ export class AuthService {
         "id",
         "name",
         "slug",
-        "inviteCode",
         "ownerId",
       )
         .where((o) => o.id.eq(user.organizationId as string))

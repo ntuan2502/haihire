@@ -16,7 +16,6 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         id: "org-1",
         name: "Acme Corp",
         slug: "acme-corp",
-        inviteCode: "ORG-ACME99",
         ownerId: "usr-1",
         createdAt: new Date(),
       },
@@ -80,9 +79,6 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                           eq: (target: string) =>
                             o.slug.toLowerCase() === target.toLowerCase(),
                         },
-                        inviteCode: {
-                          eq: (target: string) => o.inviteCode === target,
-                        },
                       };
                       return predicateFn(mockRecord);
                     });
@@ -105,7 +101,6 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                   id: `org-${mockOrgs.length + 1}`,
                   name: create.name,
                   slug: create.slug,
-                  inviteCode: create.inviteCode,
                   createdAt: new Date(),
                 };
                 mockOrgs.push(newOrg);
@@ -297,7 +292,6 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
       expect(result.organization.name).toBe("Stark Industries");
       expect(result.organization.slug).toBe("stark-industries");
-      expect(result.organization.inviteCode).toMatch(/^ORG-[A-Z0-9]{6}$/);
 
       const user = mockUsers.find((u) => u.id === "usr-1");
       expect(user.organizationId).toBe(result.organization.id);
@@ -331,7 +325,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it("5. Should reject joining by slug or raw org code (only invite link allowed)", async () => {
+    it("5. Should reject joining by slug or invalid link (only active invite link allowed)", async () => {
       await expect(
         service.join("usr-1", {
           inviteCodeOrSlug: "acme-corp",
@@ -340,7 +334,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
       await expect(
         service.join("usr-1", {
-          inviteCodeOrSlug: "ORG-ACME99",
+          inviteCodeOrSlug: "invalid-code-or-token",
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -490,7 +484,6 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         id: "org-2",
         name: "Org B",
         slug: "org-b",
-        inviteCode: "ORG-B2222",
         ownerId: "usr-2",
         createdAt: new Date(),
       });

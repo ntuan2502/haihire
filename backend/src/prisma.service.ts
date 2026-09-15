@@ -25,7 +25,6 @@ export class PrismaService implements OnModuleInit {
             id: adminOrgId,
             name: "Admin",
             slug: "admin",
-            inviteCode: "ORG-ADMIN-8888",
             ownerId: adminUserId,
           },
           update: {

@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'24aa65791e0b08b3d510ac6fb00e09370efa50af5178ecc4b7e7eabd54f25487'>;
+  StorageHashBase<'c8888a317bd7d9f036795f3974f5b7b1e9e23f81fb4b74cf22f9e07f2eb624cf'>;
 export type ExecutionHash =
   ExecutionHashBase<'30417b3721b37bc06c1112c84c970c8b6545b5ee31ff44c7e6b000567548f1bf'>;
 export type ProfileHash =
@@ -245,7 +245,6 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly slug: CodecTypes['pg/text@1']['output'];
-      readonly inviteCode: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -324,7 +323,6 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly slug: CodecTypes['pg/text@1']['input'];
-      readonly inviteCode: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -402,7 +400,6 @@ export type StorageColumnTypes = {
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
-      readonly inviteCode: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/text@1']['output'] | null;
       readonly slug: CodecTypes['pg/text@1']['output'];
@@ -481,7 +478,6 @@ export type StorageColumnInputTypes = {
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
-      readonly inviteCode: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/text@1']['input'] | null;
       readonly slug: CodecTypes['pg/text@1']['input'];
@@ -903,11 +899,6 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
-                readonly inviteCode: {
-                  readonly nativeType: 'text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                };
                 readonly ownerId: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -926,10 +917,7 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [
-                { readonly columns: readonly ['slug'] },
-                { readonly columns: readonly ['inviteCode'] },
-              ];
+              uniques: readonly [{ readonly columns: readonly ['slug'] }];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -1469,10 +1457,6 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly inviteCode: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
               readonly ownerId: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1533,7 +1517,6 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
                 readonly slug: { readonly column: 'slug' };
-                readonly inviteCode: { readonly column: 'inviteCode' };
                 readonly ownerId: { readonly column: 'ownerId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };

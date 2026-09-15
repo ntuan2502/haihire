@@ -279,7 +279,6 @@ export async function runSeed(): Promise<void> {
       id: adminOrgId,
       name: "Admin",
       slug: "admin",
-      inviteCode: "ORG-ADMIN-8888",
       ownerId: adminUserId,
     },
     update: {

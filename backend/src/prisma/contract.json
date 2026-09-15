@@ -693,13 +693,6 @@
                   "kind": "scalar"
                 }
               },
-              "inviteCode": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -798,9 +791,6 @@
                 },
                 "id": {
                   "column": "id"
-                },
-                "inviteCode": {
-                  "column": "inviteCode"
                 },
                 "name": {
                   "column": "name"
@@ -1574,11 +1564,6 @@
                   "nativeType": "text",
                   "nullable": false
                 },
-                "inviteCode": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1611,11 +1596,6 @@
                 {
                   "columns": [
                     "slug"
-                  ]
-                },
-                {
-                  "columns": [
-                    "inviteCode"
                   ]
                 }
               ]
@@ -1888,7 +1868,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "24aa65791e0b08b3d510ac6fb00e09370efa50af5178ecc4b7e7eabd54f25487"
+    "storageHash": "c8888a317bd7d9f036795f3974f5b7b1e9e23f81fb4b74cf22f9e07f2eb624cf"
   },
   "execution": {
     "executionHash": "30417b3721b37bc06c1112c84c970c8b6545b5ee31ff44c7e6b000567548f1bf",

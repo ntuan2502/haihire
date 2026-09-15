@@ -33,7 +33,6 @@ model Organization {
   id          String               @id @default(uuid())
   name        String
   slug        String               @unique
-  inviteCode  String               @unique
   ownerId     String?
   users       User[]
   jobs        Job[]

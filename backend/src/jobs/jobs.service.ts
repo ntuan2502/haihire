@@ -139,7 +139,7 @@ export class JobsService {
         "name",
         "slug",
       )
-        .where((o) => o.id.eq(job.organizationId))
+        .where((o) => o.id.eq(job.organizationId as string))
         .first();
     }
 

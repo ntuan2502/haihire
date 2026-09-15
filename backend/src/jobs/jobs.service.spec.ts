@@ -148,6 +148,17 @@ describe("JobsService - Multi-Tenant Job Management", () => {
                 delete: vi.fn().mockResolvedValue({ count: 1 }),
               })),
             },
+            Organization: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation(() => ({
+                  first: vi.fn().mockResolvedValue({
+                    id: "org-1",
+                    name: "Acme Corp",
+                    slug: "acme-corp",
+                  }),
+                })),
+              })),
+            },
           },
         },
       },

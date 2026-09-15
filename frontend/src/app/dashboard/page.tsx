@@ -454,13 +454,9 @@ function DashboardContent() {
                                 Upcoming Interviews
                               </h3>
                             </div>
-                            <Link
-                              href="/dashboard/interviews"
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
-                            >
-                              <span>All</span>
-                              <ArrowRight className="h-3 w-3" />
-                            </Link>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
+                              Coming soon
+                            </span>
                           </div>
 
                           {/* Empty State */}

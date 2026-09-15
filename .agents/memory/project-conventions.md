@@ -9,7 +9,7 @@ updated: 2026-07-12
 ## Git Workflow
 - Always create a new dedicated branch for major code changes.
 - Branch name format should follow: `feature/[task-slug]` or `fix/[bug-slug]`.
-- When committing, always use `git add .` for speed.
+- When committing, always use `git add .` for speed. Run `git add .` as a separate command first, then `git commit -m "..."` as a separate command. Never chain them together.
 - Local commit only, do not `git push` unless explicitly requested.
 
 ## Supported AI platforms (AG Kit)

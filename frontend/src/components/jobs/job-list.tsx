@@ -17,6 +17,8 @@ import {
   ArrowUpDown,
   Eye,
   Sparkles,
+  Share2,
+  Check,
 } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -57,6 +59,7 @@ export function JobList({
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
 
   // Filter criteria state
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
@@ -350,54 +353,66 @@ export function JobList({
                 {/* Bottom Row: Applicant count & Promote / Review button */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
                   {counts.total === 0 ? (
-                    <>
-                      <span className="text-slate-400 text-[11px]">
-                        {t("jobs.noApplicantsYet")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof window !== "undefined" && navigator.clipboard) {
-                            navigator.clipboard.writeText(
-                              `${window.location.origin}/dashboard/jobs/${job.id}/pipeline`,
-                            );
-                          }
-                        }}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-                      >
-                        <Megaphone className="h-3 w-3" />
-                        <span>{t("jobs.promote")}</span>
-                      </button>
-                    </>
+                    <span className="text-slate-400 text-[11px]">
+                      {t("jobs.noApplicantsYet")}
+                    </span>
                   ) : (
-                    <>
-                      <span className="text-amber-600 dark:text-amber-400 font-medium text-[11px]">
-                        {counts.new > 0
-                          ? t("jobs.applicantsUnviewed", {
-                              count: counts.new,
-                              plural: counts.new > 1 ? "s" : "",
-                            })
-                          : t("jobs.applicantsInPipeline", {
-                              count: counts.total,
-                              plural: counts.total > 1 ? "s" : "",
-                            })}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(
-                            `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
-                          );
-                        }}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        <span>{t("jobs.review")}</span>
-                      </button>
-                    </>
+                    <span className="text-amber-600 dark:text-amber-400 font-medium text-[11px]">
+                      {counts.new > 0
+                        ? t("jobs.applicantsUnviewed", {
+                            count: counts.new,
+                            plural: counts.new > 1 ? "s" : "",
+                          })
+                        : t("jobs.applicantsInPipeline", {
+                            count: counts.total,
+                            plural: counts.total > 1 ? "s" : "",
+                          })}
+                    </span>
                   )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (typeof window !== "undefined" && navigator.clipboard) {
+                          navigator.clipboard.writeText(
+                            `${window.location.origin}/careers/${job.id}`,
+                          );
+                          setCopiedJobId(job.id);
+                          setTimeout(() => setCopiedJobId(null), 2000);
+                        }
+                      }}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Sao chép link nộp CV công khai"
+                    >
+                      {copiedJobId === job.id ? (
+                        <>
+                          <Check className="h-3 w-3 text-emerald-600" />
+                          <span className="text-emerald-600">Đã copy link!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Share2 className="h-3 w-3" />
+                          <span>Link CV</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(
+                          `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
+                        );
+                      }}
+                      className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>{t("jobs.review")}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -485,54 +500,66 @@ export function JobList({
                 {/* Bottom Row in List View: Applicant count & Review in Pipeline / Promote */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
                   {counts.total === 0 ? (
-                    <>
-                      <span className="text-slate-400 text-xs">
-                        {t("jobs.noApplicantsYet")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (typeof window !== "undefined" && navigator.clipboard) {
-                            navigator.clipboard.writeText(
-                              `${window.location.origin}/dashboard/jobs/${job.id}/pipeline`,
-                            );
-                          }
-                        }}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
-                      >
-                        <Megaphone className="h-3 w-3" />
-                        <span>{t("jobs.promote")}</span>
-                      </button>
-                    </>
+                    <span className="text-slate-400 text-xs">
+                      {t("jobs.noApplicantsYet")}
+                    </span>
                   ) : (
-                    <>
-                      <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
-                        {counts.new > 0
-                          ? t("jobs.applicantsUnviewed", {
-                              count: counts.new,
-                              plural: counts.new > 1 ? "s" : "",
-                            })
-                          : t("jobs.applicantsInPipeline", {
-                              count: counts.total,
-                              plural: counts.total > 1 ? "s" : "",
-                            })}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(
-                            `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
-                          );
-                        }}
-                        className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                      >
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span>{t("jobs.reviewInPipeline")}</span>
-                      </button>
-                    </>
+                    <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
+                      {counts.new > 0
+                        ? t("jobs.applicantsUnviewed", {
+                            count: counts.new,
+                            plural: counts.new > 1 ? "s" : "",
+                          })
+                        : t("jobs.applicantsInPipeline", {
+                            count: counts.total,
+                            plural: counts.total > 1 ? "s" : "",
+                          })}
+                    </span>
                   )}
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (typeof window !== "undefined" && navigator.clipboard) {
+                          navigator.clipboard.writeText(
+                            `${window.location.origin}/careers/${job.id}`,
+                          );
+                          setCopiedJobId(job.id);
+                          setTimeout(() => setCopiedJobId(null), 2000);
+                        }
+                      }}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                      title="Sao chép link nộp CV công khai"
+                    >
+                      {copiedJobId === job.id ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          <span className="text-emerald-600 font-bold">Đã copy link!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Share2 className="h-3.5 w-3.5" />
+                          <span>Link nộp CV</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(
+                          `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
+                        );
+                      }}
+                      className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>{t("jobs.reviewInPipeline")}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );

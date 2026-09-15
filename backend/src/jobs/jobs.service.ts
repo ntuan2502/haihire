@@ -132,8 +132,20 @@ export class JobsService {
       .where((a) => a.jobId.eq(id))
       .all();
 
+    let organization = null;
+    if (job.organizationId) {
+      organization = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+      )
+        .where((o) => o.id.eq(job.organizationId))
+        .first();
+    }
+
     return {
       ...job,
+      organization,
       applications,
       applicationsCount: applications.length,
     };

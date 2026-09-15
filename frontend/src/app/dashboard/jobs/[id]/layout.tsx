@@ -28,6 +28,7 @@ import {
   Settings,
   Plus,
   MoreHorizontal,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplyModal } from "@/components/applications/apply-modal";
@@ -222,6 +223,17 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2">
+            <a
+              href={`/careers/${job.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+              title="Mở trang tuyển dụng công khai cho ứng viên"
+            >
+              <ExternalLink className="h-3 w-3" />
+              <span className="hidden sm:inline">Trang tuyển dụng</span>
+            </a>
+
             <Button
               size="sm"
               onClick={() => setApplyModalOpen(true)}

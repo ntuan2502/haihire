@@ -401,23 +401,25 @@ export async function runSeed(): Promise<void> {
     REJECTED: 0,
   };
 
-  // Distribution per job (20 candidates per job x 10 jobs = 200 total)
-  // APPLIED: 6, SCREENING: 4, INTERVIEW: 4, OFFER: 2, HIRED: 2, REJECTED: 2 = 20
-  const stagePattern: (typeof STAGES)[number][] = [
-    "APPLIED", "APPLIED", "APPLIED", "APPLIED", "APPLIED", "APPLIED",
-    "SCREENING", "SCREENING", "SCREENING", "SCREENING",
-    "INTERVIEW", "INTERVIEW", "INTERVIEW", "INTERVIEW",
-    "OFFER", "OFFER",
-    "HIRED", "HIRED",
-    "REJECTED", "REJECTED",
-  ];
+  // Randomized realistic hiring funnel distribution per candidate
+  const getRandomStage = (): (typeof STAGES)[number] => {
+    const roll = Math.random();
+    if (roll < 0.32) return "APPLIED";      // ~32%
+    if (roll < 0.55) return "SCREENING";    // ~23%
+    if (roll < 0.75) return "INTERVIEW";    // ~20%
+    if (roll < 0.85) return "OFFER";        // ~10%
+    if (roll < 0.93) return "HIRED";        // ~8%
+    return "REJECTED";                      // ~7%
+  };
+
+  const CANDIDATES_PER_JOB = 20;
 
   for (let j = 0; j < createdJobIds.length; j++) {
     const jobId = createdJobIds[j];
 
-    for (let s = 0; s < stagePattern.length; s++) {
+    for (let s = 0; s < CANDIDATES_PER_JOB; s++) {
       candidateIndex++;
-      const stage = stagePattern[s];
+      const stage = getRandomStage();
       stageStats[stage]++;
 
       const { name, email, phone } = generateCandidateName(candidateIndex);

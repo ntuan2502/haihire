@@ -24,3 +24,6 @@ updated: 2026-07-12
 - If only frontend UI is modified, only run frontend lint and build (`pnpm --filter frontend run build ; pnpm --filter frontend run lint`) without running backend tests or full test suites.
 - Always use `;` (not `&&`) for chaining commands in PowerShell.
 - Always use `pnpm` or `pnpx` (NEVER use `npx`).
+
+## Database & Seed Conventions
+- **NEVER run database seed (`pnpm run seed` or scripts that wipe data) automatically.** Always ask for explicit user confirmation before running seed, as it deletes all existing data in the database.

@@ -25,13 +25,16 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { getInitials, formatRelativeTime } from "@/lib/utils";
-import { PIPELINE_STAGES } from "@/lib/stages";
+import { usePipelineStages } from "@/lib/stages";
 import { StageBadge } from "@/components/ui/stage-badge";
+import { useI18n } from "@/i18n";
 import type { ApplicationStage } from "@/types";
 
 function DashboardContent() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
+  const pipelineStages = usePipelineStages();
 
   // TanStack Query - Real data from Database
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
@@ -143,10 +146,10 @@ function DashboardContent() {
                             {openJobsCount}.
                           </div>
                           <div className="mt-1 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                            OPEN JOBS
+                            {t("dashboard.openJobsUpper")}
                           </div>
                           <div className="mt-0.5 text-xs text-slate-400">
-                            {draftJobsCount} drafts
+                            {t("dashboard.draftsCount", { count: draftJobsCount })}
                           </div>
                         </div>
                         <Briefcase className="absolute -bottom-2 -right-2 h-20 w-20 text-slate-100 dark:text-slate-800/40 pointer-events-none opacity-70" />
@@ -159,10 +162,10 @@ function DashboardContent() {
                             {totalCandidatesCount}.
                           </div>
                           <div className="mt-1 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                            CANDIDATES
+                            {t("dashboard.candidatesUpper")}
                           </div>
                           <div className="mt-0.5 text-xs text-slate-400">
-                            Talent pool
+                            {t("dashboard.talentPoolSubtitle")}
                           </div>
                         </div>
                         <Users className="absolute -bottom-2 -right-2 h-20 w-20 text-slate-100 dark:text-slate-800/40 pointer-events-none opacity-70" />
@@ -175,10 +178,10 @@ function DashboardContent() {
                             {totalApplicationsCount}.
                           </div>
                           <div className="mt-1 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                            APPLICATIONS
+                            {t("dashboard.applicationsUpper")}
                           </div>
                           <div className="mt-0.5 text-xs text-slate-400">
-                            Total received
+                            {t("dashboard.totalReceived")}
                           </div>
                         </div>
                         <FileText className="absolute -bottom-2 -right-2 h-20 w-20 text-slate-100 dark:text-slate-800/40 pointer-events-none opacity-70" />
@@ -209,7 +212,7 @@ function DashboardContent() {
                                 : "text-slate-500"
                             }`}
                           >
-                            TO REVIEW
+                            {t("dashboard.toReviewUpper")}
                           </div>
                           <div
                             className={`mt-0.5 text-xs ${
@@ -218,7 +221,7 @@ function DashboardContent() {
                                 : "text-slate-400"
                             }`}
                           >
-                            {toReviewCount > 0 ? "You haven't viewed" : "All viewed"}
+                            {toReviewCount > 0 ? t("dashboard.youHaventViewed") : t("dashboard.allViewed")}
                           </div>
                         </div>
                         <AlertCircle
@@ -242,14 +245,14 @@ function DashboardContent() {
                             <div className="flex items-center gap-2">
                               <Activity className="h-4 w-4 text-slate-400" />
                               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                Hiring Pipeline
+                                {t("dashboard.hiringPipeline")}
                               </h3>
                             </div>
                             <Link
                               href="/dashboard/jobs"
                               className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
                             >
-                              <span>All Jobs</span>
+                              <span>{t("dashboard.allJobs")}</span>
                               <ArrowRight className="h-3 w-3" />
                             </Link>
                           </div>
@@ -259,13 +262,13 @@ function DashboardContent() {
                             <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
                               <Briefcase className="h-8 w-8 text-slate-300 dark:text-slate-700" />
                               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                No open jobs found
+                                {t("dashboard.noActiveJobs")}
                               </p>
                               <Link
                                 href="/dashboard/jobs"
                                 className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                               >
-                                Create or manage jobs
+                                {t("jobs.createJob")}
                               </Link>
                             </div>
                           ) : (
@@ -303,13 +306,13 @@ function DashboardContent() {
                                         {job.title}
                                       </Link>
                                       <span className="text-xs text-slate-400 font-normal">
-                                        {totalPipeline} total
+                                        {totalPipeline} {t("pipeline.stageCounts")}
                                       </span>
                                     </div>
 
                                     {/* Multi-segment Progress Bar */}
                                     <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 flex overflow-hidden">
-                                      {PIPELINE_STAGES.map((stage) => {
+                                      {pipelineStages.map((stage) => {
                                         const count =
                                           stageCounts[stage.id] || 0;
                                         const pct =
@@ -330,7 +333,7 @@ function DashboardContent() {
 
                                     {/* 6 Stage Metric Cards */}
                                     <div className="grid grid-cols-6 gap-2 pt-1">
-                                      {PIPELINE_STAGES.map((stage) => {
+                                      {pipelineStages.map((stage) => {
                                         const count =
                                           stageCounts[stage.id] || 0;
                                         return (
@@ -371,14 +374,14 @@ function DashboardContent() {
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-slate-400" />
                               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                Recent Applications
+                                {t("dashboard.recentApplications")}
                               </h3>
                             </div>
                             <Link
                               href="/dashboard/applications"
                               className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
                             >
-                              <span>View all</span>
+                              <span>{t("common.viewAll")}</span>
                               <ArrowRight className="h-3 w-3" />
                             </Link>
                           </div>
@@ -390,7 +393,7 @@ function DashboardContent() {
                                 <FileText className="h-5 w-5" />
                               </div>
                               <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                No applications yet
+                                {t("dashboard.noApplicationsYet")}
                               </h4>
                             </div>
                           ) : (
@@ -451,11 +454,11 @@ function DashboardContent() {
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-slate-400" />
                               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                Upcoming Interviews
+                                {t("dashboard.upcomingInterviews")}
                               </h3>
                             </div>
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-                              Coming soon
+                              {t("common.comingSoon")}
                             </span>
                           </div>
 
@@ -465,10 +468,10 @@ function DashboardContent() {
                               <Calendar className="h-5 w-5" />
                             </div>
                             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              No upcoming interviews
+                              {t("dashboard.noUpcomingInterviews")}
                             </h4>
                             <p className="text-[11px] text-slate-400">
-                              Next 7 days
+                              {t("dashboard.next7Days")}
                             </p>
                           </div>
                         </div>
@@ -479,7 +482,7 @@ function DashboardContent() {
                           <div className="flex items-center gap-2">
                             <MessageSquare className="h-4 w-4 text-slate-400" />
                             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                              Unanswered Replies
+                              {t("dashboard.unansweredReplies")}
                             </h3>
                           </div>
 
@@ -489,10 +492,10 @@ function DashboardContent() {
                               <MessageSquare className="h-5 w-5" />
                             </div>
                             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              Nothing waiting on you
+                              {t("dashboard.noUnansweredReplies")}
                             </h4>
                             <p className="text-[11px] text-slate-400 max-w-xs">
-                              Candidates who write back appear here
+                              {t("dashboard.candidatesAppearHere")}
                             </p>
                           </div>
                         </div>

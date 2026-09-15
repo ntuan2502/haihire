@@ -51,11 +51,13 @@ import {
 import type { CandidateDocument } from "@/types";
 import { StageBadge } from "@/components/ui/stage-badge";
 import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 function CandidateDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const { user, canEdit } = useAuth();
+  const { t } = useI18n();
   const candidateIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
@@ -322,7 +324,7 @@ function CandidateDetailPageContent() {
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Candidates</span>
+            <span>{t("common.back")}: {t("candidates.title")}</span>
           </Link>
         </div>
 
@@ -365,7 +367,7 @@ function CandidateDetailPageContent() {
                 className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Edit2 className="h-3 w-3 text-slate-400" />
-                <span>Edit</span>
+                <span>{t("common.edit")}</span>
               </button>
               <button
                 type="button"
@@ -374,7 +376,7 @@ function CandidateDetailPageContent() {
                 className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Trash2 className="h-3 w-3" />
-                <span>Delete</span>
+                <span>{t("common.delete")}</span>
               </button>
             </div>
           )}
@@ -383,13 +385,13 @@ function CandidateDetailPageContent() {
         {/* Card 1: Details */}
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
           <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-            Details
+            {t("candidates.overviewTab")}
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-xs">
             {/* First Name */}
             <div>
-              <span className="text-slate-400 text-[11px] block">First Name</span>
+              <span className="text-slate-400 text-[11px] block">{t("candidates.firstName")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {parsedNotes.firstName || "—"}
               </span>
@@ -397,7 +399,7 @@ function CandidateDetailPageContent() {
 
             {/* Last Name */}
             <div>
-              <span className="text-slate-400 text-[11px] block">Last Name</span>
+              <span className="text-slate-400 text-[11px] block">{t("candidates.lastName")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {parsedNotes.lastName || "—"}
               </span>
@@ -405,7 +407,7 @@ function CandidateDetailPageContent() {
 
             {/* Display Name */}
             <div>
-              <span className="text-slate-400 text-[11px] block">Display Name</span>
+              <span className="text-slate-400 text-[11px] block">{t("candidates.displayName")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {parsedNotes.displayName || candidateName || "—"}
               </span>
@@ -413,7 +415,7 @@ function CandidateDetailPageContent() {
 
             {/* Email */}
             <div>
-              <span className="text-slate-400 text-[11px] block">Email</span>
+              <span className="text-slate-400 text-[11px] block">{t("candidates.email")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {candidateEmail}
               </span>
@@ -421,7 +423,7 @@ function CandidateDetailPageContent() {
 
             {/* Phone */}
             <div>
-              <span className="text-slate-400 text-[11px] block">Phone</span>
+              <span className="text-slate-400 text-[11px] block">{t("candidates.phone")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {candidatePhone || "—"}
               </span>
@@ -429,7 +431,7 @@ function CandidateDetailPageContent() {
 
             {/* Gender */}
             <div>
-              <span className="text-slate-400 text-[11px] block">Gender</span>
+              <span className="text-slate-400 text-[11px] block">{t("candidates.gender")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {gender}
               </span>
@@ -437,7 +439,7 @@ function CandidateDetailPageContent() {
 
             {/* Date of Birth */}
             <div>
-              <span className="text-slate-400 text-[11px] block">Date of Birth</span>
+              <span className="text-slate-400 text-[11px] block">{t("candidates.dateOfBirth")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {dob}
               </span>
@@ -447,7 +449,7 @@ function CandidateDetailPageContent() {
             <div>
               <span className="text-slate-400 text-[11px] flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                Created
+                {t("candidates.columns.added")}
               </span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {candidateCreated}
@@ -458,7 +460,7 @@ function CandidateDetailPageContent() {
             <div>
               <span className="text-slate-400 text-[11px] flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                Updated
+                {t("candidates.columns.added")}
               </span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {candidateUpdated}
@@ -467,21 +469,7 @@ function CandidateDetailPageContent() {
           </div>
         </div>
 
-        {/* Card 2: Properties */}
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-            Properties
-          </h3>
-          <button
-            type="button"
-            className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add org-wide property</span>
-          </button>
-        </div>
-
-        {/* Card 3: Tabs (Applications / Documents) */}
+        {/* Card 2: Tabs (Applications / Documents) */}
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
           {/* Header Row: Tabs */}
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
@@ -495,7 +483,7 @@ function CandidateDetailPageContent() {
                     : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
                 }`}
               >
-                Applications ({candidateApps.length})
+                {t("candidates.applicationsTab")} ({candidateApps.length})
               </button>
               <button
                 type="button"
@@ -506,7 +494,7 @@ function CandidateDetailPageContent() {
                     : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
                 }`}
               >
-                Documents ({candidateDocuments.length})
+                {t("candidates.documentsTab")} ({candidateDocuments.length})
               </button>
             </div>
           </div>
@@ -525,25 +513,25 @@ function CandidateDetailPageContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL" className="text-xs">
-                      All stages
+                      {t("common.all")}
                     </SelectItem>
                     <SelectItem value="APPLIED" className="text-xs">
-                      Applied
+                      {t("pipeline.stages.applied")}
                     </SelectItem>
                     <SelectItem value="SCREENING" className="text-xs">
-                      Screening
+                      {t("pipeline.stages.screening")}
                     </SelectItem>
                     <SelectItem value="INTERVIEW" className="text-xs">
-                      Interview
+                      {t("pipeline.stages.interview")}
                     </SelectItem>
                     <SelectItem value="OFFER" className="text-xs">
-                      Offer
+                      {t("pipeline.stages.offer")}
                     </SelectItem>
                     <SelectItem value="HIRED" className="text-xs">
-                      Hired
+                      {t("pipeline.stages.hired")}
                     </SelectItem>
                     <SelectItem value="REJECTED" className="text-xs">
-                      Rejected
+                      {t("pipeline.stages.rejected")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -555,7 +543,7 @@ function CandidateDetailPageContent() {
                     className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    <span>Apply to Job</span>
+                    <span>{t("candidates.applyToJob")}</span>
                   </button>
                 )}
               </div>
@@ -566,15 +554,8 @@ function CandidateDetailPageContent() {
                     <Briefcase className="h-5 w-5" />
                   </div>
                   <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {candidateApps.length === 0
-                      ? "No applications yet"
-                      : "No applications matching this stage"}
+                    {t("candidates.noApplications")}
                   </h4>
-                  <p className="text-xs text-slate-400 max-w-xs">
-                    {candidateApps.length === 0
-                      ? "This candidate has not been applied to any jobs yet."
-                      : "Try switching to another stage filter."}
-                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -590,9 +571,9 @@ function CandidateDetailPageContent() {
                             {job?.title || "Position"}
                           </h4>
                           <p className="text-[11px] text-slate-400 flex items-center gap-2">
-                            <span>Stage: {app.stage}</span>
+                            <span>{t("candidates.stage")}: {app.stage}</span>
                             <span>•</span>
-                            <span>Applied {formatDate(app.createdAt)}</span>
+                            <span>{t("candidates.appliedDate")} {formatDate(app.createdAt)}</span>
                           </p>
                         </div>
                         <StageBadge stage={app.stage} />
@@ -618,7 +599,7 @@ function CandidateDetailPageContent() {
                       className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" />
-                      <span>Back to documents</span>
+                      <span>{t("common.back")}</span>
                     </button>
 
                     <button
@@ -631,7 +612,7 @@ function CandidateDetailPageContent() {
                         )
                       }
                       className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Download"
+                      title={t("candidates.viewResume")}
                     >
                       <Download className="h-4 w-4" />
                     </button>
@@ -662,20 +643,20 @@ function CandidateDetailPageContent() {
                       onValueChange={(v) => v && setDocumentFilter(v)}
                     >
                       <SelectTrigger className="h-8 w-32 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
-                        <SelectValue placeholder="Resume" />
+                        <SelectValue placeholder={t("candidates.resume")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="All" className="text-xs">
-                          All
+                          {t("common.all")}
                         </SelectItem>
                         <SelectItem value="Resume" className="text-xs">
-                          Resume
+                          {t("candidates.resume")}
                         </SelectItem>
                         <SelectItem value="Cover Letter" className="text-xs">
                           Cover Letter
                         </SelectItem>
                         <SelectItem value="Other" className="text-xs">
-                          Other
+                          {t("candidates.otherGender")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -693,7 +674,7 @@ function CandidateDetailPageContent() {
                           ) : (
                             <UploadCloud className="h-3.5 w-3.5 text-slate-500" />
                           )}
-                          <span>Upload Document</span>
+                          <span>{t("candidates.uploadDoc")}</span>
                         </button>
                         <input
                           ref={docInputRef}

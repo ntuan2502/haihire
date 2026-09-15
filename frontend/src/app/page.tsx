@@ -2,11 +2,13 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Sparkles, Globe } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { useI18n } from "@/i18n";
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
+  const { t, locale, setLocale } = useI18n();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#030b1e] font-sans text-white select-none">
@@ -31,30 +33,44 @@ export default function HomePage() {
         {/* Center/Right Nav Links */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
           <a href="#product" className="hover:text-white transition-colors">
-            Product
+            {t("landing.product")}
           </a>
           <a href="#pricing" className="hover:text-white transition-colors">
-            Pricing
+            {t("landing.pricing")}
           </a>
           <a href="#docs" className="hover:text-white transition-colors">
-            Docs
+            {t("landing.docs")}
           </a>
           <a href="#blog" className="hover:text-white transition-colors">
-            Blog
+            {t("landing.blog")}
           </a>
+
+          {/* Language Switcher */}
+          <button
+            type="button"
+            onClick={() => setLocale(locale === "vi" ? "en" : "vi")}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-cyan-300 transition-colors cursor-pointer"
+            title="Switch language"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            <span className="uppercase">{locale}</span>
+          </button>
+
           {isAuthenticated ? (
             <Link
               href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
               className="text-cyan-300 hover:text-white font-semibold flex items-center gap-1 transition-colors"
             >
-              {user?.organization?.name ? `Workspace (${user.organization.name})` : "Create Workspace"} &rarr;
+              {user?.organization?.name
+                ? `${t("landing.workspace")} (${user.organization.name})`
+                : t("landing.createWorkspace")} &rarr;
             </Link>
           ) : (
             <Link
               href="/login"
               className="text-slate-300 hover:text-white transition-colors font-medium"
             >
-              Sign in
+              {t("landing.signIn")}
             </Link>
           )}
         </nav>
@@ -66,14 +82,14 @@ export default function HomePage() {
               href="/dashboard"
               className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-950 shadow-lg hover:bg-slate-100 hover:scale-105 transition-all"
             >
-              Enter Dashboard &rarr;
+              {t("landing.enterDashboard")} &rarr;
             </Link>
           ) : (
             <Link
               href="/login"
               className="inline-flex items-center justify-center rounded-full bg-white px-5 py-2 text-xs sm:text-sm font-bold text-slate-950 shadow-md hover:bg-slate-100 hover:scale-105 transition-all"
             >
-              Start free
+              {t("landing.startFree")}
             </Link>
           )}
         </div>
@@ -84,18 +100,17 @@ export default function HomePage() {
         {/* Eyebrow Pill */}
         <div className="mb-6 inline-flex items-center gap-2 tracking-[0.2em] text-[11px] font-extrabold uppercase text-blue-300/90 drop-shadow-sm">
           <Sparkles className="h-3 w-3 text-cyan-300" />
-          APPLICANT INTELLIGENCE
+          {t("landing.applicantIntelligence")}
         </div>
 
         {/* Main Headline */}
         <h1 className="max-w-4xl text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-[1.12] drop-shadow-md">
-          Best ATS for{" "}
+          {t("landing.heroTitlePart1")}
           <span className="inline-block rounded-2xl bg-white px-3.5 py-0.5 sm:px-5 sm:py-1 text-slate-950 shadow-2xl mx-1 align-baseline transform hover:scale-105 transition-transform">
-            hiring
+            {t("landing.heroHiring")}
           </span>
-          ,
           <br />
-          not just tracking
+          {t("landing.heroTitlePart2")}
         </h1>
 
         {/* CTA Buttons Row */}
@@ -107,10 +122,10 @@ export default function HomePage() {
             >
               <span>
                 {user?.organization?.name
-                  ? `Go to Workspace (${user.organization.name})`
+                  ? t("landing.goToWorkspace", { name: user.organization.name })
                   : user?.organizationId
-                    ? "Go to Dashboard"
-                    : "Create Workspace"}
+                    ? t("landing.goToDashboard")
+                    : t("landing.createWorkspace")}
               </span>
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -120,14 +135,14 @@ export default function HomePage() {
                 href="/register"
                 className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-white/10 hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all"
               >
-                Start free <ArrowRight className="h-4 w-4" />
+                {t("landing.startFree")} <ArrowRight className="h-4 w-4" />
               </Link>
 
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center rounded-full bg-blue-700/90 hover:bg-blue-600 border border-blue-400/30 px-7 py-3 text-sm font-bold text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
-                Sign in to ATS
+                {t("landing.signInToAts")}
               </Link>
             </>
           )}
@@ -137,15 +152,15 @@ export default function HomePage() {
         <div className="mt-7 flex flex-wrap items-center justify-center gap-4 sm:gap-7 text-xs font-medium text-blue-200/80">
           <span className="flex items-center gap-1.5">
             <Check className="h-3.5 w-3.5 text-cyan-300 stroke-[3]" />
-            One free active role
+            {t("landing.oneFreeRole")}
           </span>
           <span className="flex items-center gap-1.5">
             <Check className="h-3.5 w-3.5 text-cyan-300 stroke-[3]" />
-            No credit card
+            {t("landing.noCreditCard")}
           </span>
           <span className="flex items-center gap-1.5">
             <Check className="h-3.5 w-3.5 text-cyan-300 stroke-[3]" />
-            Unlimited applicants
+            {t("landing.unlimitedApplicants")}
           </span>
         </div>
 

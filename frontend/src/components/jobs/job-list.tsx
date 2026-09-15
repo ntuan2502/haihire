@@ -28,7 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Job, Application, ApplicationStage } from "@/types";
-import { PIPELINE_STAGES } from "@/lib/stages";
+import { usePipelineStages } from "@/lib/stages";
+import { useI18n } from "@/i18n";
 
 type ViewMode = "grid" | "list" | "table";
 
@@ -49,6 +50,8 @@ export function JobList({
   _onOpenCreateJob,
 }: JobListProps & { _onOpenCreateJob?: () => void }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const pipelineStages = usePipelineStages();
 
   // Toolbar & View state
   const [search, setSearch] = useState("");
@@ -168,7 +171,7 @@ export function JobList({
         <div className="relative flex-1 min-w-0 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
-            placeholder="Search jobs by title, location, or description"
+            placeholder={t("jobs.searchJobs")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full"
@@ -242,7 +245,7 @@ export function JobList({
             className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs"
           >
             <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
-            <span>Filters</span>
+            <span>{t("common.filter")}</span>
           </button>
         </div>
       </div>
@@ -254,7 +257,7 @@ export function JobList({
             <Search className="h-8 w-8 stroke-[1.5]" />
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            No matching jobs found
+            {t("jobs.noJobsFound")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
             Try adjusting your search query or filters to find what you&apos;re looking for.
@@ -267,7 +270,7 @@ export function JobList({
             variant="outline"
             className="h-9 text-xs font-semibold px-4 rounded-xl cursor-pointer"
           >
-            Clear Search &amp; Filters
+            {t("common.cancel")}
           </Button>
         </div>
       ) : (
@@ -293,7 +296,7 @@ export function JobList({
                       {job.title}
                     </h3>
                     <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
-                      {job.status === "PUBLISHED" ? "Open" : "Draft"}
+                      {job.status === "PUBLISHED" ? t("jobs.active") : t("jobs.draft")}
                     </span>
                   </div>
 
@@ -301,12 +304,12 @@ export function JobList({
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                     <span>
                       {job.type === "FULL_TIME"
-                        ? "Full-time"
+                        ? t("jobs.fullTime")
                         : job.type === "PART_TIME"
-                          ? "Part-time"
+                          ? t("jobs.partTime")
                           : job.type === "CONTRACT"
-                            ? "Contract"
-                            : "Internship"}
+                            ? t("jobs.contract")
+                            : t("jobs.internship")}
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-0.5 truncate">
@@ -318,7 +321,7 @@ export function JobList({
 
                 {/* 6 Stage Metric Cards in 3x2 or 6x1 Grid */}
                 <div className="grid grid-cols-6 gap-1 pt-1">
-                  {PIPELINE_STAGES.map((stage) => {
+                  {pipelineStages.map((stage) => {
                     const count = counts.byStage[stage.id] || 0;
                     return (
                       <div
@@ -349,7 +352,7 @@ export function JobList({
                   {counts.total === 0 ? (
                     <>
                       <span className="text-slate-400 text-[11px]">
-                        No applicants yet
+                        {t("jobs.noApplicantsYet")}
                       </span>
                       <button
                         type="button"
@@ -364,15 +367,21 @@ export function JobList({
                         className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
                       >
                         <Megaphone className="h-3 w-3" />
-                        <span>Promote</span>
+                        <span>{t("jobs.promote")}</span>
                       </button>
                     </>
                   ) : (
                     <>
                       <span className="text-amber-600 dark:text-amber-400 font-medium text-[11px]">
                         {counts.new > 0
-                          ? `${counts.new} applicant${counts.new > 1 ? "s" : ""} you haven't viewed`
-                          : `${counts.total} applicant${counts.total > 1 ? "s" : ""} in pipeline`}
+                          ? t("jobs.applicantsUnviewed", {
+                              count: counts.new,
+                              plural: counts.new > 1 ? "s" : "",
+                            })
+                          : t("jobs.applicantsInPipeline", {
+                              count: counts.total,
+                              plural: counts.total > 1 ? "s" : "",
+                            })}
                       </span>
                       <button
                         type="button"
@@ -385,7 +394,7 @@ export function JobList({
                         className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <Eye className="h-3.5 w-3.5" />
-                        <span>Review</span>
+                        <span>{t("jobs.review")}</span>
                       </button>
                     </>
                   )}
@@ -422,19 +431,19 @@ export function JobList({
                         {job.title}
                       </h3>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
-                        {job.status === "PUBLISHED" ? "Open" : "Draft"}
+                        {job.status === "PUBLISHED" ? t("jobs.openStatus") : t("jobs.draftStatus")}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                       <span>
                         {job.type === "FULL_TIME"
-                          ? "Full-time"
+                          ? t("jobs.fullTime")
                           : job.type === "PART_TIME"
-                            ? "Part-time"
+                            ? t("jobs.partTime")
                             : job.type === "CONTRACT"
-                              ? "Contract"
-                              : "Internship"}
+                              ? t("jobs.contract")
+                              : t("jobs.internship")}
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-0.5">
@@ -447,7 +456,7 @@ export function JobList({
 
                 {/* Spanning 6 Stages Across Width */}
                 <div className="grid grid-cols-6 gap-2 pt-1">
-                  {PIPELINE_STAGES.map((stage) => {
+                  {pipelineStages.map((stage) => {
                     const count = counts.byStage[stage.id] || 0;
                     return (
                       <div
@@ -478,7 +487,7 @@ export function JobList({
                   {counts.total === 0 ? (
                     <>
                       <span className="text-slate-400 text-xs">
-                        No applicants yet
+                        {t("jobs.noApplicantsYet")}
                       </span>
                       <button
                         type="button"
@@ -493,15 +502,21 @@ export function JobList({
                         className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
                       >
                         <Megaphone className="h-3 w-3" />
-                        <span>Promote</span>
+                        <span>{t("jobs.promote")}</span>
                       </button>
                     </>
                   ) : (
                     <>
                       <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
                         {counts.new > 0
-                          ? `${counts.new} applicant${counts.new > 1 ? "s" : ""} you haven't viewed yet`
-                          : `${counts.total} applicant${counts.total > 1 ? "s" : ""} in pipeline`}
+                          ? t("jobs.applicantsUnviewed", {
+                              count: counts.new,
+                              plural: counts.new > 1 ? "s" : "",
+                            })
+                          : t("jobs.applicantsInPipeline", {
+                              count: counts.total,
+                              plural: counts.total > 1 ? "s" : "",
+                            })}
                       </span>
                       <button
                         type="button"
@@ -514,7 +529,7 @@ export function JobList({
                         className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                       >
                         <Sparkles className="h-3.5 w-3.5" />
-                        <span>Review in Pipeline</span>
+                        <span>{t("jobs.reviewInPipeline")}</span>
                       </button>
                     </>
                   )}
@@ -534,37 +549,37 @@ export function JobList({
                 <tr>
                   <th className="py-3 px-4">
                     <span className="flex items-center gap-1">
-                      Title <ArrowUpDown className="h-3 w-3" />
+                      {t("jobs.jobTitle")} <ArrowUpDown className="h-3 w-3" />
                     </span>
                   </th>
                   <th className="py-3 px-4">
                     <span className="flex items-center gap-1">
-                      Status <ArrowUpDown className="h-3 w-3" />
+                      {t("jobs.status")} <ArrowUpDown className="h-3 w-3" />
                     </span>
                   </th>
                   <th className="py-3 px-4">
                     <span className="flex items-center gap-1">
-                      Type <ArrowUpDown className="h-3 w-3" />
+                      {t("jobs.type")} <ArrowUpDown className="h-3 w-3" />
                     </span>
                   </th>
                   <th className="py-3 px-4">
                     <span className="flex items-center gap-1">
-                      Location <ArrowUpDown className="h-3 w-3" />
+                      {t("jobs.location")} <ArrowUpDown className="h-3 w-3" />
                     </span>
                   </th>
                   <th className="py-3 px-4">
                     <span className="flex items-center gap-1">
-                      New <ArrowUpDown className="h-3 w-3" />
+                      {t("jobs.newApplicants")} <ArrowUpDown className="h-3 w-3" />
                     </span>
                   </th>
                   <th className="py-3 px-4">
                     <span className="flex items-center gap-1">
-                      Active <ArrowUpDown className="h-3 w-3" />
+                      {t("jobs.activePipeline")} <ArrowUpDown className="h-3 w-3" />
                     </span>
                   </th>
                   <th className="py-3 px-4">
                     <span className="flex items-center gap-1">
-                      Created <ArrowUpDown className="h-3 w-3" />
+                      {t("candidates.columns.added")} <ArrowUpDown className="h-3 w-3" />
                     </span>
                   </th>
                 </tr>
@@ -573,7 +588,7 @@ export function JobList({
                 {filteredJobs.map((job) => {
                   const counts = getJobStageCounts(job.id);
                   const activeCounts = counts.new + counts.screening + counts.interview + counts.offer;
-                  const dateStr = new Date(job.createdAt).toLocaleDateString("en-US");
+                  const dateStr = new Date(job.createdAt).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US");
 
                   return (
                     <tr
@@ -586,17 +601,17 @@ export function JobList({
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
-                          {job.status === "PUBLISHED" ? "Open" : "Draft"}
+                          {job.status === "PUBLISHED" ? t("jobs.active") : t("jobs.draft")}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
                         {job.type === "FULL_TIME"
-                          ? "Full-time"
+                          ? t("jobs.fullTime")
                           : job.type === "PART_TIME"
-                            ? "Part-time"
+                            ? t("jobs.partTime")
                             : job.type === "CONTRACT"
-                              ? "Contract"
-                              : "Internship"}
+                              ? t("jobs.contract")
+                              : t("jobs.internship")}
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1">
                         <MapPin className="h-3 w-3 text-slate-400" />
@@ -624,7 +639,10 @@ export function JobList({
 
       {/* Total Job Count Footer */}
       <div className="pt-2 text-xs text-slate-400">
-        {filteredJobs.length} job{filteredJobs.length > 1 ? "s" : ""} total
+        {t("jobs.totalJobsCount", {
+          count: filteredJobs.length,
+          plural: filteredJobs.length > 1 ? "s" : "",
+        })}
       </div>
 
       {/* Filter Sidebar Drawer (Screenshot 2) */}
@@ -643,10 +661,10 @@ export function JobList({
               <div className="p-6 border-b border-slate-200/80 dark:border-slate-800 flex items-start justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Filter jobs
+                    {t("jobs.filterJobs")}
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Customize your view, then save it for quick access.
+                    {t("jobs.filterJobsDesc")}
                   </p>
                 </div>
                 <button
@@ -663,21 +681,26 @@ export function JobList({
                 {/* 1. STATUS */}
                 <div className="space-y-2.5">
                   <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
-                    STATUS
+                    {t("jobs.statusUpper")}
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {["Open", "Draft", "Closed", "Archived"].map((st) => (
+                    {[
+                      { id: "Open", label: t("jobs.openStatus") },
+                      { id: "Draft", label: t("jobs.draftStatus") },
+                      { id: "Closed", label: t("jobs.closedStatus") },
+                      { id: "Archived", label: t("jobs.closed") },
+                    ].map((st) => (
                       <button
-                        key={st}
+                        key={st.id}
                         type="button"
-                        onClick={() => toggleFilter(statusFilters, setStatusFilters, st)}
+                        onClick={() => toggleFilter(statusFilters, setStatusFilters, st.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                          statusFilters.includes(st)
+                          statusFilters.includes(st.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
                             : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
                         }`}
                       >
-                        {st}
+                        {st.label}
                       </button>
                     ))}
                   </div>
@@ -686,21 +709,26 @@ export function JobList({
                 {/* 2. EMPLOYMENT TYPE */}
                 <div className="space-y-2.5">
                   <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
-                    EMPLOYMENT TYPE
+                    {t("jobs.employmentTypeUpper")}
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {["Full-time", "Part-time", "Contract", "Internship"].map((t) => (
+                    {[
+                      { id: "Full-time", label: t("jobs.fullTime") },
+                      { id: "Part-time", label: t("jobs.partTime") },
+                      { id: "Contract", label: t("jobs.contract") },
+                      { id: "Internship", label: t("jobs.internship") },
+                    ].map((item) => (
                       <button
-                        key={t}
+                        key={item.id}
                         type="button"
-                        onClick={() => toggleFilter(typeFilters, setTypeFilters, t)}
+                        onClick={() => toggleFilter(typeFilters, setTypeFilters, item.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                          typeFilters.includes(t)
+                          typeFilters.includes(item.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
                             : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
                         }`}
                       >
-                        {t}
+                        {item.label}
                       </button>
                     ))}
                   </div>
@@ -709,21 +737,26 @@ export function JobList({
                 {/* 3. EXPERIENCE LEVEL */}
                 <div className="space-y-2.5">
                   <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
-                    EXPERIENCE LEVEL
+                    {t("jobs.experienceLevelUpper")}
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {["Junior", "Mid", "Senior", "Lead"].map((exp) => (
+                    {[
+                      { id: "Junior", label: t("jobs.experience.junior") },
+                      { id: "Mid", label: t("jobs.experience.mid") },
+                      { id: "Senior", label: t("jobs.experience.senior") },
+                      { id: "Lead", label: t("jobs.experience.lead") },
+                    ].map((exp) => (
                       <button
-                        key={exp}
+                        key={exp.id}
                         type="button"
-                        onClick={() => toggleFilter(expFilters, setExpFilters, exp)}
+                        onClick={() => toggleFilter(expFilters, setExpFilters, exp.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                          expFilters.includes(exp)
+                          expFilters.includes(exp.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
                             : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
                         }`}
                       >
-                        {exp}
+                        {exp.label}
                       </button>
                     ))}
                   </div>
@@ -732,21 +765,25 @@ export function JobList({
                 {/* 4. WORK ARRANGEMENT */}
                 <div className="space-y-2.5">
                   <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
-                    WORK ARRANGEMENT
+                    {t("jobs.workArrangementUpper")}
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {["Remote", "Hybrid", "On-site"].map((w) => (
+                    {[
+                      { id: "Remote", label: t("jobs.workplace.remote") },
+                      { id: "Hybrid", label: t("jobs.workplace.hybrid") },
+                      { id: "On-site", label: t("jobs.workplace.onsite") },
+                    ].map((w) => (
                       <button
-                        key={w}
+                        key={w.id}
                         type="button"
-                        onClick={() => toggleFilter(workplaceFilters, setWorkplaceFilters, w)}
+                        onClick={() => toggleFilter(workplaceFilters, setWorkplaceFilters, w.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                          workplaceFilters.includes(w)
+                          workplaceFilters.includes(w.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
                             : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
                         }`}
                       >
-                        {w}
+                        {w.label}
                       </button>
                     ))}
                   </div>
@@ -755,7 +792,7 @@ export function JobList({
                 {/* 5. SORT BY */}
                 <div className="space-y-2.5">
                   <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
-                    SORT BY
+                    {t("jobs.sortByUpper")}
                   </span>
                   <div className="grid grid-cols-2 gap-2">
                     <Select
@@ -763,17 +800,17 @@ export function JobList({
                       onValueChange={(val) => val && setSortBy(val as "created" | "title" | "applicants")}
                     >
                       <SelectTrigger className="h-9 text-xs bg-white dark:bg-slate-950">
-                        <SelectValue placeholder="Date created" />
+                        <SelectValue placeholder={t("jobs.dateCreated")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="created" className="text-xs">
-                          Date created
+                          {t("jobs.dateCreated")}
                         </SelectItem>
                         <SelectItem value="title" className="text-xs">
-                          Title
+                          {t("jobs.jobTitle")}
                         </SelectItem>
                         <SelectItem value="applicants" className="text-xs">
-                          Applicants
+                          {t("jobs.applicants")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -783,14 +820,14 @@ export function JobList({
                       onValueChange={(val) => val && setSortOrder(val as "desc" | "asc")}
                     >
                       <SelectTrigger className="h-9 text-xs bg-white dark:bg-slate-950">
-                        <SelectValue placeholder="Descending" />
+                        <SelectValue placeholder={t("jobs.descending")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="desc" className="text-xs">
-                          Descending
+                          {t("jobs.descending")}
                         </SelectItem>
                         <SelectItem value="asc" className="text-xs">
-                          Ascending
+                          {t("jobs.ascending")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -806,7 +843,7 @@ export function JobList({
                   className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Reset all</span>
+                  <span>{t("jobs.resetAll")}</span>
                 </button>
 
                 <div className="flex items-center gap-2">
@@ -818,7 +855,7 @@ export function JobList({
                     className="h-8 text-xs font-semibold gap-1"
                   >
                     <Plus className="h-3 w-3" />
-                    Save as view
+                    {t("jobs.saveAsView")}
                   </Button>
                   <Button
                     type="button"
@@ -826,7 +863,7 @@ export function JobList({
                     onClick={() => setIsFilterOpen(false)}
                     className="h-8 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900"
                   >
-                    Done
+                    {t("jobs.done")}
                   </Button>
                 </div>
               </div>

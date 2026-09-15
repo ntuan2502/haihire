@@ -23,6 +23,7 @@ import { useAuth } from "@/context/auth-context";
 import type { CreateJobInput, JobStatus, JobType } from "@/types";
 import { useCreateJobMutation } from "@/hooks/use-queries";
 import { Briefcase, Building2, MapPin, DollarSign } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 interface CreateJobModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ export function CreateJobModal({
   onJobCreated,
 }: CreateJobModalProps) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const createJobMutation = useCreateJobMutation();
   const [formData, setFormData] = useState<CreateJobInput>({
     title: "",
@@ -52,7 +54,7 @@ export function CreateJobModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.department || !formData.description) {
-      setError("Please fill in all required fields (Title, Department, Description).");
+      setError(t("jobs.fillRequiredFields"));
       return;
     }
 
@@ -91,9 +93,9 @@ export function CreateJobModal({
               <Briefcase className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Post New Job Opening</DialogTitle>
+              <DialogTitle>{t("jobs.postJobTitle")}</DialogTitle>
               <DialogDescription>
-                Publish a new role to begin collecting and tracking candidate applications.
+                {t("jobs.postJobDesc")}
               </DialogDescription>
             </div>
           </div>
@@ -108,7 +110,7 @@ export function CreateJobModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Job Title *
+              {t("jobs.jobTitle")} *
             </label>
             <Input
               placeholder="e.g. Senior Frontend Engineer"
@@ -124,7 +126,7 @@ export function CreateJobModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Building2 className="h-3.5 w-3.5" /> Department *
+                <Building2 className="h-3.5 w-3.5" /> {t("jobs.department")} *
               </label>
               <Input
                 placeholder="e.g. Engineering, Design, Sales"
@@ -139,7 +141,7 @@ export function CreateJobModal({
 
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" /> Location *
+                <MapPin className="h-3.5 w-3.5" /> {t("jobs.location")} *
               </label>
               <Input
                 placeholder="e.g. Remote, Hanoi, Ho Chi Minh"
@@ -156,7 +158,7 @@ export function CreateJobModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Employment Type
+                {t("jobs.type")}
               </label>
               <Select
                 value={formData.type}
@@ -168,18 +170,18 @@ export function CreateJobModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FULL_TIME">Full-time</SelectItem>
-                  <SelectItem value="PART_TIME">Part-time</SelectItem>
-                  <SelectItem value="CONTRACT">Contract</SelectItem>
+                  <SelectItem value="FULL_TIME">{t("jobs.fullTime")}</SelectItem>
+                  <SelectItem value="PART_TIME">{t("jobs.partTime")}</SelectItem>
+                  <SelectItem value="CONTRACT">{t("jobs.contract")}</SelectItem>
                   <SelectItem value="REMOTE">Remote</SelectItem>
-                  <SelectItem value="INTERNSHIP">Internship</SelectItem>
+                  <SelectItem value="INTERNSHIP">{t("jobs.internship")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Status
+                {t("jobs.status")}
               </label>
               <Select
                 value={formData.status}
@@ -191,17 +193,17 @@ export function CreateJobModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PUBLISHED">Published</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="CLOSED">Closed</SelectItem>
-                  <SelectItem value="ARCHIVED">Archived</SelectItem>
+                  <SelectItem value="PUBLISHED">{t("jobs.active")}</SelectItem>
+                  <SelectItem value="DRAFT">{t("jobs.draft")}</SelectItem>
+                  <SelectItem value="CLOSED">{t("jobs.closed")}</SelectItem>
+                  <SelectItem value="ARCHIVED">{t("jobs.closed")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <DollarSign className="h-3.5 w-3.5" /> Salary Range
+                <DollarSign className="h-3.5 w-3.5" /> {t("jobs.salaryRange")}
               </label>
               <Input
                 placeholder="e.g. $2,000 - $3,500"
@@ -216,7 +218,7 @@ export function CreateJobModal({
 
           <div>
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Role Description *
+              {t("jobs.description")} *
             </label>
             <Textarea
               placeholder="Provide a detailed overview of the position, key responsibilities, and team mission..."
@@ -232,7 +234,7 @@ export function CreateJobModal({
 
           <div>
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Requirements & Qualifications
+              {t("jobs.requirements")}
             </label>
             <Textarea
               placeholder="e.g. 3+ years experience with React/Next.js, TypeScript, NestJS..."
@@ -252,14 +254,14 @@ export function CreateJobModal({
               onClick={onClose}
               disabled={createJobMutation.isPending}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={createJobMutation.isPending}
               className="bg-indigo-600 hover:bg-indigo-700"
             >
-              {createJobMutation.isPending ? "Publishing Job..." : "Publish Job Opening"}
+              {createJobMutation.isPending ? t("jobs.publishingJob") : t("jobs.publishJobOpening")}
             </Button>
           </DialogFooter>
         </form>

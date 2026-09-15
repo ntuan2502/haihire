@@ -50,11 +50,13 @@ import {
   parseCandidateDocuments,
   fixUtf8String,
 } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 function ApplicationDetailPageContent() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
@@ -217,12 +219,12 @@ function ApplicationDetailPageContent() {
             <span className="text-lg font-black">404</span>
           </div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Application Not Found
+            {t("applications.applicationNotFound")}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {!isAppIdValid
-              ? "The application ID provided is invalid. A valid UUID is required."
-              : "The application you are looking for does not exist or has been removed."}
+              ? t("applications.invalidAppId")
+              : t("applications.appNotFoundDesc")}
           </p>
           <div className="pt-2">
             <Button
@@ -230,7 +232,7 @@ function ApplicationDetailPageContent() {
               variant="outline"
               className="text-xs font-semibold rounded-xl"
             >
-              Back to Applications
+              {t("applications.backToApplications")}
             </Button>
           </div>
         </main>
@@ -242,10 +244,10 @@ function ApplicationDetailPageContent() {
   const candidateEmail = app?.candidateEmail || "—";
   const candidatePhone = app?.candidatePhone || "";
   const jobTitle = job
-    ? `${job.title} (${job.type === "FULL_TIME" ? "Full-Time" : job.type === "PART_TIME" ? "Part-Time" : job.type})`
+    ? `${job.title} (${job.type === "FULL_TIME" ? t("jobs.fullTime") : job.type === "PART_TIME" ? t("jobs.partTime") : job.type})`
     : app?.jobId
-      ? `Job #${app.jobId}`
-      : "Unassigned Role";
+      ? `${t("jobs.jobTitle")} #${app.jobId}`
+      : t("candidates.role");
   const appliedDate = formatDate(app?.createdAt);
   const initials = getInitials(candidateName);
 
@@ -269,7 +271,7 @@ function ApplicationDetailPageContent() {
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Applications</span>
+            <span>{t("applications.backToApplications")}</span>
           </Link>
         </div>
 
@@ -301,10 +303,10 @@ function ApplicationDetailPageContent() {
               type="button"
               disabled
               className="h-8 px-3 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs flex items-center gap-1.5 opacity-50 cursor-not-allowed transition-colors"
-              title="Schedule Interview (Coming soon)"
+              title={`${t("applications.scheduleInterview")} (Coming soon)`}
             >
               <Calendar className="h-3.5 w-3.5 text-slate-400" />
-              <span>Schedule Interview</span>
+              <span>{t("applications.scheduleInterview")}</span>
             </button>
 
             <button
@@ -314,7 +316,7 @@ function ApplicationDetailPageContent() {
               className="h-8 px-3 rounded-xl border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              <span>Delete application</span>
+              <span>{t("applications.deleteApplication")}</span>
             </button>
           </div>
         </div>
@@ -361,7 +363,7 @@ function ApplicationDetailPageContent() {
 
               <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-0.5">
                 <Clock className="h-3 w-3" />
-                <span>Applied {appliedDate}</span>
+                <span>{t("applications.applied")} {appliedDate}</span>
               </p>
             </div>
           </div>
@@ -370,7 +372,7 @@ function ApplicationDetailPageContent() {
             <button
               type="button"
               className="h-8 w-8 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center shadow-xs cursor-pointer"
-              title="Compare"
+              title={t("applications.compare")}
             >
               <ArrowLeftRight className="h-3.5 w-3.5" />
             </button>
@@ -397,7 +399,7 @@ function ApplicationDetailPageContent() {
                 activeTab === "overview" ? "pl-3.5 pr-1" : "px-3.5"
               }`}
             >
-              Overview
+              {t("applications.tabs.overview")}
             </button>
 
             {activeTab === "overview" && (
@@ -432,17 +434,17 @@ function ApplicationDetailPageContent() {
           </div>
 
           {[
-            { id: "inbox", label: "Inbox" },
-            { id: "ai", label: "AI Analysis" },
-            { id: "interviews", label: "Interviews" },
+            { id: "inbox", label: t("applications.tabs.inbox") },
+            { id: "ai", label: t("applications.tabs.ai") },
+            { id: "interviews", label: t("applications.tabs.interviews") },
             {
               id: "documents",
-              label: `Documents (${candidateDocuments.length})`,
+              label: `${t("applications.tabs.documents")} (${candidateDocuments.length})`,
             },
-            { id: "responses", label: "Responses" },
-            { id: "notes", label: "Notes" },
-            { id: "timeline", label: "Timeline" },
-            { id: "properties", label: "Properties" },
+            { id: "responses", label: t("applications.tabs.responses") },
+            { id: "notes", label: t("applications.tabs.notes") },
+            { id: "timeline", label: t("applications.tabs.timeline") },
+            { id: "properties", label: t("applications.tabs.properties") },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -472,16 +474,16 @@ function ApplicationDetailPageContent() {
                 <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 font-medium">
                     <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                    <span>No AI analysis yet</span>
+                    <span>{t("applications.noAiAnalysis")}</span>
                   </div>
                   <button
                     type="button"
                     disabled
                     className="h-8 px-3.5 rounded-xl bg-blue-600/60 text-white/80 text-xs font-bold shadow-xs flex items-center gap-1.5 opacity-60 cursor-not-allowed transition-colors"
-                    title="AI Analysis (Coming soon)"
+                    title={`${t("applications.runAnalysis")} (Coming soon)`}
                   >
                     <Sparkles className="h-3 w-3" />
-                    <span>Run Analysis</span>
+                    <span>{t("applications.runAnalysis")}</span>
                   </button>
                 </div>
               )}
@@ -492,15 +494,15 @@ function ApplicationDetailPageContent() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Interviews</span>
+                      <span>{t("applications.sections.interviews")}</span>
                     </h3>
                     <button
                       type="button"
                       disabled
                       className="text-xs font-semibold text-slate-400 dark:text-slate-600 flex items-center gap-1 opacity-50 cursor-not-allowed transition-colors"
-                      title="Schedule Interview (Coming soon)"
+                      title={`${t("applications.scheduleInterview")} (Coming soon)`}
                     >
-                      <span>+ Schedule Interview</span>
+                      <span>+ {t("applications.scheduleInterview")}</span>
                     </button>
                   </div>
 
@@ -509,10 +511,10 @@ function ApplicationDetailPageContent() {
                       <Calendar className="h-4 w-4" />
                     </div>
                     <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      No interviews scheduled
+                      {t("applications.noInterviews")}
                     </h4>
                     <p className="text-[11px] text-slate-400">
-                      Schedule an interview to start the process.
+                      {t("applications.noInterviewsDesc")}
                     </p>
                   </div>
                 </div>
@@ -533,10 +535,10 @@ function ApplicationDetailPageContent() {
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
                   <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                     <FileCheck className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Responses</span>
+                    <span>{t("applications.sections.responses")}</span>
                   </h3>
                   <p className="text-xs text-slate-400 py-1">
-                    No application form responses.
+                    {t("applications.noResponses")}
                   </p>
                 </div>
               )}
@@ -546,7 +548,7 @@ function ApplicationDetailPageContent() {
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                   <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Notes</span>
+                    <span>{t("applications.sections.notes")}</span>
                   </h3>
 
                   {notesList.length > 0 && (
@@ -565,7 +567,7 @@ function ApplicationDetailPageContent() {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      placeholder="Add a note about this candidate..."
+                      placeholder={t("applications.notePlaceholder")}
                       value={noteInput}
                       onChange={(e) => setNoteInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -587,7 +589,7 @@ function ApplicationDetailPageContent() {
                         }}
                         className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                       >
-                        Save
+                        {t("common.save")}
                       </Button>
                     )}
                   </div>
@@ -599,7 +601,7 @@ function ApplicationDetailPageContent() {
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                   <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                     <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Properties</span>
+                    <span>{t("applications.sections.properties")}</span>
                   </h3>
                   <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
                     <button
@@ -608,7 +610,7 @@ function ApplicationDetailPageContent() {
                       className="opacity-50 cursor-not-allowed transition-colors"
                       title="Properties (Coming soon)"
                     >
-                      + Add org-wide property
+                      {t("applications.addOrgProperty")}
                     </button>
                     <button
                       type="button"
@@ -616,7 +618,7 @@ function ApplicationDetailPageContent() {
                       className="opacity-50 cursor-not-allowed transition-colors"
                       title="Properties (Coming soon)"
                     >
-                      Manage job-specific properties
+                      {t("applications.manageJobProperties")}
                     </button>
                   </div>
                 </div>
@@ -639,14 +641,14 @@ function ApplicationDetailPageContent() {
             <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 font-medium">
                 <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span>No AI analysis yet</span>
+                <span>{t("applications.noAiAnalysis")}</span>
               </div>
               <button
                 type="button"
                 className="h-8 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Sparkles className="h-3 w-3" />
-                <span>Run Analysis</span>
+                <span>{t("applications.runAnalysis")}</span>
               </button>
             </div>
           )}
@@ -656,15 +658,15 @@ function ApplicationDetailPageContent() {
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Interviews</span>
+                  <span>{t("applications.sections.interviews")}</span>
                 </h3>
                 <button
                   type="button"
                   disabled
                   className="text-xs font-semibold text-slate-400 dark:text-slate-600 flex items-center gap-1 opacity-50 cursor-not-allowed transition-colors"
-                  title="Schedule Interview (Coming soon)"
+                  title={`${t("applications.scheduleInterview")} (Coming soon)`}
                 >
-                  <span>+ Schedule Interview</span>
+                  <span>+ {t("applications.scheduleInterview")}</span>
                 </button>
               </div>
 
@@ -673,10 +675,10 @@ function ApplicationDetailPageContent() {
                   <Calendar className="h-4 w-4" />
                 </div>
                 <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  No interviews scheduled
+                  {t("applications.noInterviews")}
                 </h4>
                 <p className="text-[11px] text-slate-400">
-                  Schedule an interview to start the process.
+                  {t("applications.noInterviewsDesc")}
                 </p>
               </div>
             </div>
@@ -686,10 +688,10 @@ function ApplicationDetailPageContent() {
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                 <FileCheck className="h-3.5 w-3.5 text-slate-400" />
-                <span>Responses</span>
+                <span>{t("applications.sections.responses")}</span>
               </h3>
               <p className="text-xs text-slate-400 py-1">
-                No application form responses.
+                {t("applications.noResponses")}
               </p>
             </div>
           )}
@@ -698,7 +700,7 @@ function ApplicationDetailPageContent() {
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                 <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-                <span>Notes</span>
+                <span>{t("applications.sections.notes")}</span>
               </h3>
 
               {notesList.length > 0 && (
@@ -717,7 +719,7 @@ function ApplicationDetailPageContent() {
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Add a note about this candidate..."
+                  placeholder={t("applications.notePlaceholder")}
                   value={noteInput}
                   onChange={(e) => setNoteInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -739,7 +741,7 @@ function ApplicationDetailPageContent() {
                     }}
                     className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                   >
-                    Save
+                    {t("common.save")}
                   </Button>
                 )}
               </div>
@@ -750,20 +752,20 @@ function ApplicationDetailPageContent() {
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-                <span>Properties</span>
+                <span>{t("applications.sections.properties")}</span>
               </h3>
               <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
                 <button
                   type="button"
                   className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 >
-                  + Add org-wide property
+                  {t("applications.addOrgProperty")}
                 </button>
                 <button
                   type="button"
                   className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 >
-                  Manage job-specific properties
+                  {t("applications.manageJobProperties")}
                 </button>
               </div>
             </div>
@@ -773,10 +775,10 @@ function ApplicationDetailPageContent() {
             <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-2">
               <Mail className="h-8 w-8 text-slate-400 mx-auto" />
               <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                No messages yet
+                {t("applications.noMessagesYet")}
               </h4>
               <p className="text-[11px] text-slate-400">
-                Email communications will appear here.
+                {t("applications.noMessagesYetDesc")}
               </p>
             </div>
           )}
@@ -785,10 +787,10 @@ function ApplicationDetailPageContent() {
             <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-2">
               <History className="h-8 w-8 text-slate-400 mx-auto" />
               <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Application Timeline
+                {t("applications.timelineTitle")}
               </h4>
               <p className="text-[11px] text-slate-400">
-                Applied on {appliedDate}
+                {t("applications.appliedOn")} {appliedDate}
               </p>
             </div>
           )}

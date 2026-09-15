@@ -22,6 +22,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 interface NavItem {
   id: string;
@@ -124,6 +125,21 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { t } = useI18n();
+
+  const tabTranslations: Record<string, { label: string; sub: string }> = {
+    general: { label: t("settings.tabs.general"), sub: t("settings.tabs.generalSub") },
+    localization: { label: t("settings.tabs.localization"), sub: t("settings.tabs.localizationSub") },
+    notifications: { label: t("settings.tabs.notifications"), sub: t("settings.tabs.notificationsSub") },
+    "career-page": { label: t("settings.tabs.careerPage"), sub: t("settings.tabs.careerPageSub") },
+    members: { label: t("settings.tabs.members"), sub: t("settings.tabs.membersSub") },
+    billing: { label: t("settings.tabs.billing"), sub: t("settings.tabs.billingSub") },
+    integrations: { label: t("settings.tabs.integrations"), sub: t("settings.tabs.integrationsSub") },
+    "ai-configuration": { label: t("settings.tabs.aiConfiguration"), sub: t("settings.tabs.aiConfigurationSub") },
+    "privacy-retention": { label: t("settings.tabs.privacyRetention"), sub: t("settings.tabs.privacyRetentionSub") },
+    sso: { label: t("settings.tabs.sso"), sub: t("settings.tabs.ssoSub") },
+    account: { label: t("settings.tabs.account"), sub: t("settings.tabs.accountSub") },
+  };
 
   return (
     <AuthGuard>
@@ -140,14 +156,14 @@ export default function SettingsLayout({
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:white transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Back to jobs</span>
+                <span>{t("settings.backToJobs")}</span>
               </Link>
 
               {/* Sidebar Title */}
               <div className="flex items-center gap-2 pt-1 pb-1">
                 <SettingsIcon className="h-4 w-4 text-slate-700 dark:text-slate-300" />
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Settings
+                  {t("nav.settings")}
                 </h2>
               </div>
 
@@ -159,6 +175,11 @@ export default function SettingsLayout({
                     item.href === "/dashboard/settings"
                       ? pathname === "/dashboard/settings"
                       : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+                  const localized = tabTranslations[item.id] || {
+                    label: item.label,
+                    sub: item.sublabel,
+                  };
 
                   return (
                     <Link
@@ -185,7 +206,7 @@ export default function SettingsLayout({
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-semibold truncate">
-                              {item.label}
+                              {localized.label}
                             </span>
                             {item.beta && (
                               <span className="rounded bg-amber-100 px-1 py-0.2 text-[9px] font-bold uppercase text-amber-700 dark:bg-amber-950/80 dark:text-amber-300">
@@ -194,7 +215,7 @@ export default function SettingsLayout({
                             )}
                           </div>
                           <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                            {item.sublabel}
+                            {localized.sub}
                           </p>
                         </div>
                       </div>

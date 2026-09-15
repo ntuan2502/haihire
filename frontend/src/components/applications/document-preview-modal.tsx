@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { FileText, Download, X } from "lucide-react";
 import type { CandidateDocument } from "@/types";
 import { getDocumentUrl } from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 interface DocumentPreviewModalProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ export function DocumentPreviewModal({
   appId,
   onDownload,
 }: DocumentPreviewModalProps) {
+  const { t } = useI18n();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -54,14 +57,14 @@ export function DocumentPreviewModal({
               className="h-8 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Download className="h-3.5 w-3.5 text-slate-500" />
-              <span>Download</span>
+              <span>{t("common.download")}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Close preview"
+              title={t("common.close")}
             >
               <X className="h-4 w-4" />
             </button>

@@ -12,12 +12,13 @@ import {
   UserPlus,
   AlertCircle,
   CheckCircle2,
-  ChevronDown,
+  Globe,
   Moon,
   Sun,
   Loader2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useI18n } from "@/i18n";
 
 interface PublicInviteData {
   valid: boolean;
@@ -38,6 +39,7 @@ export default function JoinOrganizationPage() {
   const router = useRouter();
   const { user, isAuthenticated, updateUserOrg } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t, locale, setLocale } = useI18n();
 
   const rawToken = params?.token;
   const token = Array.isArray(rawToken) ? rawToken[0] : (rawToken as string);
@@ -69,7 +71,7 @@ export default function JoinOrganizationPage() {
         const res = await organizationsApi.getPublicInvite(token);
         setInviteData(res);
         if (!res.valid) {
-          setError(res.message || "This invitation link is invalid or has expired.");
+          setError(res.message || t("auth.invalidInvitation"));
         }
       } catch (err: unknown) {
         console.error(err);
@@ -79,13 +81,13 @@ export default function JoinOrganizationPage() {
       }
     }
     loadInvite();
-  }, [token]);
+  }, [token, t]);
 
   // Handle joining organization when logged in
   const handleJoin = async () => {
     if (!token) return;
     if (isAlreadyMember) {
-      setError("You are already a member of this organization.");
+      setError(t("join.alreadyMember", { org: inviteData?.organization?.name || "" }));
       return;
     }
     try {
@@ -95,7 +97,7 @@ export default function JoinOrganizationPage() {
       if (res.organization) {
         updateUserOrg(res.organization);
       }
-      setSuccessMsg(`Welcome to ${res.organization?.name || "the organization"}!`);
+      setSuccessMsg(t("join.welcome", { org: res.organization?.name || "" }));
       setTimeout(() => {
         router.push("/dashboard");
       }, 1200);
@@ -126,9 +128,15 @@ export default function JoinOrganizationPage() {
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1 select-none">
-            us en <ChevronDown className="h-2.5 w-2.5 opacity-60" />
-          </span>
+          <button
+            type="button"
+            onClick={() => setLocale(locale === "vi" ? "en" : "vi")}
+            className="px-2 py-1 rounded-md text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1 cursor-pointer transition-colors"
+            title="Switch language"
+          >
+            <Globe className="h-3 w-3" />
+            <span className="uppercase">{locale}</span>
+          </button>
         </div>
 
         {/* Right: Brand Logo */}
@@ -148,10 +156,10 @@ export default function JoinOrganizationPage() {
           {/* Header Title */}
           <div className="text-center space-y-1">
             <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-              Join organization
+              {t("join.title")}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              You&apos;ve been invited to join a hiring workspace.
+              {t("join.subtitle")}
             </p>
           </div>
 
@@ -159,7 +167,7 @@ export default function JoinOrganizationPage() {
           {loading && (
             <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col items-center justify-center space-y-3">
               <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-              <p className="text-xs text-slate-400">Verifying invitation...</p>
+              <p className="text-xs text-slate-400">{t("join.verifying")}</p>
             </div>
           )}
 
@@ -170,7 +178,7 @@ export default function JoinOrganizationPage() {
                 <AlertCircle className="h-5 w-5" />
               </div>
               <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                Unable to Join
+                {t("join.unableToJoin")}
               </h3>
               <p className="text-xs text-rose-500 leading-relaxed">{error}</p>
               <div className="pt-2">
@@ -180,7 +188,7 @@ export default function JoinOrganizationPage() {
                   onClick={() => router.push(isAuthenticated ? "/dashboard" : "/login")}
                   className="text-xs font-semibold"
                 >
-                  {isAuthenticated ? "Go to dashboard" : "Go to login"}
+                  {isAuthenticated ? t("join.goToDashboard") : t("common.back")}
                 </Button>
               </div>
             </div>
@@ -195,7 +203,7 @@ export default function JoinOrganizationPage() {
               <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
                 {successMsg}
               </h3>
-              <p className="text-xs text-slate-400">Redirecting to dashboard...</p>
+              <p className="text-xs text-slate-400">{t("auth.alreadySignedIn")}</p>
             </div>
           )}
 
@@ -222,11 +230,11 @@ export default function JoinOrganizationPage() {
                 <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Join as <strong>{inviteData.role || "Member"}</strong></span>
+                    <span>{t("join.joinAs")} <strong>{inviteData.role || "Member"}</strong></span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <UserIcon className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Invited by <strong>{inviteData.createdByName || "Team"}</strong></span>
+                    <span>{t("join.invitedBy")} <strong>{inviteData.createdByName || "Team"}</strong></span>
                   </div>
                 </div>
               </div>
@@ -235,7 +243,7 @@ export default function JoinOrganizationPage() {
               {!isAuthenticated ? (
                 <div className="space-y-3 text-center">
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sign in or create an account to accept this invitation.
+                    {t("join.signInPrompt")}
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <Button
@@ -245,7 +253,7 @@ export default function JoinOrganizationPage() {
                       }
                       className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                     >
-                      Sign in
+                      {t("join.signInButton")}
                     </Button>
                     <Button
                       type="button"
@@ -255,7 +263,7 @@ export default function JoinOrganizationPage() {
                       }
                       className="h-10 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                     >
-                      Create account
+                      {t("join.createAccountButton")}
                     </Button>
                   </div>
                 </div>
@@ -265,8 +273,7 @@ export default function JoinOrganizationPage() {
                   <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-medium flex items-center justify-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
                     <span>
-                      You are already a member of{" "}
-                      <strong>{inviteData.organization?.name || "this organization"}</strong>.
+                      {t("join.alreadyMember", { org: inviteData.organization?.name || "" })}
                     </span>
                   </div>
                   <Button
@@ -274,7 +281,7 @@ export default function JoinOrganizationPage() {
                     onClick={() => router.push("/dashboard")}
                     className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
-                    Go to dashboard
+                    {t("join.goToDashboard")}
                   </Button>
                 </div>
               ) : (
@@ -289,12 +296,12 @@ export default function JoinOrganizationPage() {
                     {joining ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Joining organization...</span>
+                        <span>{t("join.joiningButton")}</span>
                       </>
                     ) : (
                       <>
                         <UserPlus className="h-4 w-4" />
-                        <span>Join {inviteData.organization?.name || "organization"}</span>
+                        <span>{t("join.joinOrgButton", { org: inviteData.organization?.name || "" })}</span>
                       </>
                     )}
                   </Button>

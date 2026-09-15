@@ -12,6 +12,8 @@ import {
   Sparkles,
   ExternalLink,
 } from "lucide-react";
+import { useI18n } from "@/i18n";
+import type { SupportedLocale } from "@/i18n/config";
 
 export default function SubSettingsPage() {
   const params = useParams();
@@ -20,6 +22,7 @@ export default function SubSettingsPage() {
 
   const { user, logout } = useAuth();
   const { data: org } = useMyOrg();
+  const { t, locale, setLocale } = useI18n();
 
   const [appHost, setAppHost] = useState("");
   useEffect(() => {
@@ -36,19 +39,23 @@ export default function SubSettingsPage() {
       <div className="space-y-6 animate-in fade-in duration-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Localization
+            {t("settings.tabs.localization")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Configure language, time zones, and date format preferences.
+            {t("settings.tabs.localizationSub")}
           </p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              Default Language
+              {t("nav.language")}
             </label>
-            <select className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200 outline-none">
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as SupportedLocale)}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+            >
               <option value="en">English (US)</option>
               <option value="vi">Tiếng Việt (Vietnamese)</option>
             </select>
@@ -56,7 +63,7 @@ export default function SubSettingsPage() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              Time Zone
+              {t("settings.timeZone")}
             </label>
             <select className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200 outline-none">
               <option value="Asia/Ho_Chi_Minh">
@@ -74,7 +81,7 @@ export default function SubSettingsPage() {
               type="button"
               className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
             >
-              Save preferences
+              {t("settings.saveChanges")}
             </Button>
           </div>
         </div>
@@ -87,10 +94,10 @@ export default function SubSettingsPage() {
       <div className="space-y-6 animate-in fade-in duration-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Notifications
+            {t("settings.tabs.notifications")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Manage how your team receives candidate activity and alerts.
+            {t("settings.tabs.notificationsSub")}
           </p>
         </div>
 
@@ -98,10 +105,10 @@ export default function SubSettingsPage() {
           <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
             <div>
               <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                New Application Alert
+                {t("settings.newApplicationAlert")}
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Receive instant email notifications when a candidate applies.
+                {t("settings.newApplicationAlertDesc")}
               </p>
             </div>
             <input
@@ -114,11 +121,10 @@ export default function SubSettingsPage() {
           <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
             <div>
               <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Daily Digest
+                {t("settings.dailyDigest")}
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                A summary of pipeline movements and scheduled interviews every
-                morning.
+                {t("settings.dailyDigestDesc")}
               </p>
             </div>
             <input
@@ -133,7 +139,7 @@ export default function SubSettingsPage() {
               type="button"
               className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
             >
-              Save notification preferences
+              {t("settings.saveChanges")}
             </Button>
           </div>
         </div>
@@ -146,10 +152,10 @@ export default function SubSettingsPage() {
       <div className="space-y-6 animate-in fade-in duration-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Career Page
+            {t("settings.tabs.careerPage")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Your public-facing company job portal.
+            {t("settings.tabs.careerPageSub")}
           </p>
         </div>
 
@@ -157,7 +163,7 @@ export default function SubSettingsPage() {
           <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 flex items-center justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                Public Job Board Link
+                {t("settings.publicJobBoardLink")}
               </span>
               <p className="text-xs font-semibold text-slate-900 dark:text-white mt-0.5">
                 {displayHost}/{orgSlug}
@@ -168,14 +174,13 @@ export default function SubSettingsPage() {
               href="/dashboard/jobs"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
             >
-              <span>Preview</span>
+              <span>{t("settings.preview")}</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Jobs published with status &quot;Published&quot; will automatically
-            appear on your public career board.
+            {t("settings.publicJobBoardDesc")}
           </p>
         </div>
       </div>
@@ -187,10 +192,10 @@ export default function SubSettingsPage() {
       <div className="space-y-6 animate-in fade-in duration-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Billing & Plan
+            {t("settings.tabs.billing")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Manage your subscription, invoices, and job posting limits.
+            {t("settings.tabs.billingSub")}
           </p>
         </div>
 
@@ -198,14 +203,13 @@ export default function SubSettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 dark:bg-amber-950/60 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-                Free Starter Plan
+                {t("settings.freeStarterPlan")}
               </span>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-1.5">
-                1 Active Job Slot
+                {t("settings.oneActiveJobSlot")}
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Upgrade to Pro to post unlimited jobs and access AI candidate
-                ranking.
+                {t("settings.upgradeToProDesc")}
               </p>
             </div>
 
@@ -213,7 +217,7 @@ export default function SubSettingsPage() {
               type="button"
               className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl"
             >
-              Upgrade Plan
+              {t("nav.upgrade")}
             </Button>
           </div>
         </div>
@@ -226,10 +230,10 @@ export default function SubSettingsPage() {
       <div className="space-y-6 animate-in fade-in duration-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Account Profile
+            {t("settings.tabs.account")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Your personal user profile and credentials.
+            {t("settings.tabs.accountSub")}
           </p>
         </div>
 
@@ -237,7 +241,7 @@ export default function SubSettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                Your Name
+                {t("settings.yourName")}
               </label>
               <Input
                 type="text"
@@ -248,7 +252,7 @@ export default function SubSettingsPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                Email Address
+                {t("settings.emailAddress")}
               </label>
               <Input
                 type="email"
@@ -266,7 +270,7 @@ export default function SubSettingsPage() {
               onClick={logout}
               className="h-9 px-4 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400"
             >
-              Sign out
+              {t("nav.signOut")}
             </Button>
           </div>
         </div>
@@ -277,26 +281,26 @@ export default function SubSettingsPage() {
   // Default: Enterprise locked tabs (integrations, ai-configuration, privacy-retention, sso)
   const tabTitles: Record<string, { label: string; sublabel: string }> = {
     integrations: {
-      label: "Integrations",
-      sublabel: "Calendar & services",
+      label: t("settings.tabs.integrations"),
+      sublabel: t("settings.tabs.integrationsSub"),
     },
     "ai-configuration": {
-      label: "AI Configuration",
-      sublabel: "Models & API keys",
+      label: t("settings.tabs.aiConfiguration"),
+      sublabel: t("settings.tabs.aiConfigurationSub"),
     },
     "privacy-retention": {
-      label: "Privacy & Retention",
-      sublabel: "Retention policy",
+      label: t("settings.tabs.privacyRetention"),
+      sublabel: t("settings.tabs.privacyRetentionSub"),
     },
     sso: {
-      label: "Single Sign-On (SSO)",
-      sublabel: "Enterprise SSO and SAML authentication",
+      label: t("settings.tabs.sso"),
+      sublabel: t("settings.tabs.ssoSub"),
     },
   };
 
   const titleInfo = tabTitles[tab] || {
-    label: "Settings",
-    sublabel: "Organization configuration",
+    label: t("settings.title"),
+    sublabel: t("settings.workspace"),
   };
 
   return (
@@ -316,17 +320,16 @@ export default function SubSettingsPage() {
           <Sparkles className="h-6 w-6" />
         </div>
         <h3 className="text-base font-bold text-slate-900 dark:text-white">
-          Pro & Enterprise Feature
+          {t("settings.proEnterpriseFeature")}
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          This module provides enterprise-level integrations, retention safeguards,
-          and dedicated custom AI models.
+          {t("settings.proEnterpriseDesc")}
         </p>
         <Link
           href="/dashboard/settings/billing"
           className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl px-5 h-9"
         >
-          View Upgrade Plans
+          {t("settings.viewUpgradePlans")}
         </Link>
       </div>
     </div>

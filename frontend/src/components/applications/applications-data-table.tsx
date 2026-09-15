@@ -59,6 +59,7 @@ import {
   fixUtf8String,
 } from "@/lib/utils";
 import type { Job, Application, ApplicationStage, CandidateDocument } from "@/types";
+import { useI18n } from "@/i18n";
 
 type SortField = "candidate" | "email" | "job" | "status" | "score" | "applied";
 type SortDirection = "asc" | "desc";
@@ -79,6 +80,7 @@ export function ApplicationsDataTable({
   onViewInPipeline,
 }: ApplicationsDataTableProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
 
@@ -326,10 +328,10 @@ export function ApplicationsDataTable({
 
   const selectedJob = selectedApp?.jobId ? jobMap.get(selectedApp.jobId) : null;
   const selectedJobTitle = selectedJob
-    ? `${selectedJob.title} (${selectedJob.type === "FULL_TIME" ? "Full-Time" : selectedJob.type === "PART_TIME" ? "Part-Time" : selectedJob.type})`
+    ? `${selectedJob.title} (${selectedJob.type === "FULL_TIME" ? t("jobs.fullTime") : selectedJob.type === "PART_TIME" ? t("jobs.partTime") : selectedJob.type})`
     : selectedApp?.jobId
-      ? `Job #${selectedApp.jobId}`
-      : "Unassigned Role";
+      ? `${t("jobs.jobTitle")} #${selectedApp.jobId}`
+      : t("candidates.role");
 
   return (
     <div className="space-y-4">
@@ -339,7 +341,7 @@ export function ApplicationsDataTable({
         <div className="relative flex-1 min-w-0 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
-            placeholder="Search by candidate name, email, or job title..."
+            placeholder={t("applications.searchApplications")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -357,9 +359,9 @@ export function ApplicationsDataTable({
               type="button"
               disabled
               className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
-              title="Views (Coming soon)"
+              title={`${t("applications.views")} (Coming soon)`}
             >
-              <span>Views</span>
+              <span>{t("applications.views")}</span>
               <ChevronDown className="h-3 w-3 text-slate-400 opacity-70" />
             </button>
           </div>
@@ -374,22 +376,22 @@ export function ApplicationsDataTable({
               }`}
             >
               <Columns3 className="h-3.5 w-3.5 text-slate-500" />
-              <span>Columns</span>
+              <span>{t("common.columns")}</span>
             </button>
 
             {isColumnsOpen && (
               <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
                 <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
-                  TOGGLE COLUMNS
+                  {t("applications.columnsToggle")}
                 </div>
                 <div className="space-y-0.5 mt-1">
                   {[
-                    { id: "candidate", label: "Candidate", locked: true },
-                    { id: "email", label: "Email" },
-                    { id: "job", label: "Job" },
-                    { id: "status", label: "Status" },
-                    { id: "score", label: "Score" },
-                    { id: "applied", label: "Applied" },
+                    { id: "candidate", label: t("applications.columns.candidate"), locked: true },
+                    { id: "email", label: t("applications.columns.email") },
+                    { id: "job", label: t("applications.columns.job") },
+                    { id: "status", label: t("applications.columns.status") },
+                    { id: "score", label: t("applications.columns.score") },
+                    { id: "applied", label: t("applications.columns.applied") },
                   ].map((col) => {
                     const isChecked =
                       visibleColumns[col.id as keyof typeof visibleColumns];
@@ -428,10 +430,10 @@ export function ApplicationsDataTable({
             type="button"
             disabled
             className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
-            title="Filters (Coming soon)"
+            title={`${t("applications.filters")} (Coming soon)`}
           >
             <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-            <span>Filters</span>
+            <span>{t("applications.filters")}</span>
           </button>
 
           {/* Compare / Swap Icon */}
@@ -439,7 +441,7 @@ export function ApplicationsDataTable({
             type="button"
             disabled
             className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
-            title="Compare (Coming soon)"
+            title={`${t("applications.compare")} (Coming soon)`}
           >
             <ArrowLeftRight className="h-3.5 w-3.5" />
           </button>
@@ -449,7 +451,7 @@ export function ApplicationsDataTable({
             type="button"
             disabled
             className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
-            title="Fullscreen (Coming soon)"
+            title={`${t("applications.fullscreen")} (Coming soon)`}
           >
             <Maximize2 className="h-3.5 w-3.5" />
           </button>
@@ -466,16 +468,16 @@ export function ApplicationsDataTable({
             <FileText className="h-8 w-8 stroke-[1.5]" />
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            No applications yet
+            {t("applications.noApplicationsYet")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
-            Applications will appear here when candidates apply to this job.
+            {t("applications.noApplicationsYetDesc")}
           </p>
           <Button
             onClick={() => router.push("/dashboard/jobs")}
             className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 rounded-xl shadow-xs gap-1.5 cursor-pointer"
           >
-            View Active Jobs
+            {t("applications.viewActiveJobs")}
           </Button>
         </div>
       ) : (
@@ -493,7 +495,7 @@ export function ApplicationsDataTable({
                       className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
                     >
                       <span className="flex items-center gap-1">
-                        Candidate
+                        {t("applications.columns.candidate")}
                         {sortField === "candidate" ? (
                           <ArrowDown
                             className={`h-3 w-3 transition-transform ${
@@ -514,7 +516,7 @@ export function ApplicationsDataTable({
                       className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
                     >
                       <span className="flex items-center gap-1">
-                        Email
+                        {t("applications.columns.email")}
                         {sortField === "email" ? (
                           <ArrowDown
                             className={`h-3 w-3 transition-transform ${
@@ -535,7 +537,7 @@ export function ApplicationsDataTable({
                       className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
                     >
                       <span className="flex items-center gap-1">
-                        Job
+                        {t("applications.columns.job")}
                         {sortField === "job" ? (
                           <ArrowDown
                             className={`h-3 w-3 transition-transform ${
@@ -556,7 +558,7 @@ export function ApplicationsDataTable({
                       className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
                     >
                       <span className="flex items-center gap-1">
-                        Status
+                        {t("applications.columns.status")}
                         {sortField === "status" ? (
                           <ArrowDown
                             className={`h-3 w-3 transition-transform ${
@@ -577,7 +579,7 @@ export function ApplicationsDataTable({
                       className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
                     >
                       <span className="flex items-center gap-1">
-                        Score
+                        {t("applications.columns.score")}
                         {sortField === "score" ? (
                           <ArrowDown
                             className={`h-3 w-3 transition-transform ${
@@ -598,7 +600,7 @@ export function ApplicationsDataTable({
                       className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
                     >
                       <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
-                        Applied
+                        {t("applications.columns.applied")}
                         {sortField === "applied" ? (
                           <ArrowDown
                             className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
@@ -696,13 +698,13 @@ export function ApplicationsDataTable({
           <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 bg-slate-50/30 dark:bg-slate-950/30">
             <div className="flex items-center gap-3">
               <span>
-                Showing {totalCount > 0 ? startIndex + 1 : 0}-
-                {Math.min(startIndex + rowsPerPage, totalCount)} of {totalCount}{" "}
-                application{totalCount > 1 ? "s" : ""}
+                {t("common.showing")} {totalCount > 0 ? startIndex + 1 : 0}-
+                {Math.min(startIndex + rowsPerPage, totalCount)} {t("common.of")} {totalCount}{" "}
+                {t("nav.applications").toLowerCase()}
               </span>
 
               <div className="flex items-center gap-1.5">
-                <span>Rows</span>
+                <span>{t("common.rows")}</span>
                 <Select
                   value={String(rowsPerPage)}
                   onValueChange={(val) => {
@@ -727,7 +729,7 @@ export function ApplicationsDataTable({
 
             <div className="flex items-center gap-2">
               <span className="mr-1">
-                Page {currentPage} of {totalPages}
+                {t("common.page")} {currentPage} {t("common.of")} {totalPages}
               </span>
               <button
                 type="button"
@@ -770,7 +772,7 @@ export function ApplicationsDataTable({
                   className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-                  <span>Back to table</span>
+                  <span>{t("applications.backToTable")}</span>
                 </button>
 
                 <div className="flex items-center gap-2">
@@ -785,7 +787,7 @@ export function ApplicationsDataTable({
                       title="Focus candidate in Pipeline"
                     >
                       <Columns3 className="h-3.5 w-3.5" />
-                      <span>View in Pipeline</span>
+                      <span>{t("applications.viewInPipeline")}</span>
                     </button>
                   )}
 
@@ -795,10 +797,10 @@ export function ApplicationsDataTable({
                       router.push(`/dashboard/applications/${selectedApp.id}`)
                     }
                     className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                    title="Open full page"
+                    title={t("applications.openFullPage")}
                   >
                     <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Open full page</span>
+                    <span>{t("applications.openFullPage")}</span>
                   </button>
 
                   <button
@@ -840,7 +842,7 @@ export function ApplicationsDataTable({
                       className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                     >
                       <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Schedule Interview</span>
+                      <span>{t("applications.scheduleInterview")}</span>
                     </button>
 
                     <button
@@ -850,7 +852,7 @@ export function ApplicationsDataTable({
                       className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      <span>Delete application</span>
+                      <span>{t("applications.deleteApplication")}</span>
                     </button>
                   </div>
                 </div>
@@ -888,7 +890,7 @@ export function ApplicationsDataTable({
 
                     <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-0.5">
                       <Clock className="h-3 w-3" />
-                      <span>Applied {formatDate(selectedApp.createdAt)}</span>
+                      <span>{t("applications.applied")} {formatDate(selectedApp.createdAt)}</span>
                     </p>
                   </div>
                 </div>
@@ -912,7 +914,7 @@ export function ApplicationsDataTable({
                         drawerTab === "overview" ? "pl-3 pr-1" : "px-3"
                       }`}
                     >
-                      Overview
+                      {t("applications.tabs.overview")}
                     </button>
 
                     {drawerTab === "overview" && (
@@ -952,17 +954,17 @@ export function ApplicationsDataTable({
                   </div>
 
                   {[
-                    { id: "inbox", label: "Inbox" },
-                    { id: "ai", label: "AI Analysis" },
-                    { id: "interviews", label: "Interviews" },
+                    { id: "inbox", label: t("applications.tabs.inbox") },
+                    { id: "ai", label: t("applications.tabs.ai") },
+                    { id: "interviews", label: t("applications.tabs.interviews") },
                     {
                       id: "documents",
-                      label: `Documents (${drawerCandidateDocuments.length})`,
+                      label: `${t("applications.tabs.documents")} (${drawerCandidateDocuments.length})`,
                     },
-                    { id: "responses", label: "Responses" },
-                    { id: "notes", label: "Notes" },
-                    { id: "timeline", label: "Timeline" },
-                    { id: "properties", label: "Properties" },
+                    { id: "responses", label: t("applications.tabs.responses") },
+                    { id: "notes", label: t("applications.tabs.notes") },
+                    { id: "timeline", label: t("applications.tabs.timeline") },
+                    { id: "properties", label: t("applications.tabs.properties") },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -992,14 +994,14 @@ export function ApplicationsDataTable({
                         <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-3.5 flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2 text-xs text-blue-800 dark:text-blue-300 font-medium">
                             <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                            <span>No AI analysis yet</span>
+                            <span>{t("applications.noAiAnalysis")}</span>
                           </div>
                           <button
                             type="button"
                             className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
                           >
                             <Sparkles className="h-3 w-3" />
-                            <span>Run Analysis</span>
+                            <span>{t("applications.runAnalysis")}</span>
                           </button>
                         </div>
                       )}
@@ -1010,13 +1012,13 @@ export function ApplicationsDataTable({
                           <div className="flex items-center justify-between">
                             <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                               <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                              <span>Interviews</span>
+                              <span>{t("applications.sections.interviews")}</span>
                             </h3>
                             <button
                               type="button"
                               className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
                             >
-                              <span>+ Schedule Interview</span>
+                              <span>+ {t("applications.scheduleInterview")}</span>
                             </button>
                           </div>
 
@@ -1025,10 +1027,10 @@ export function ApplicationsDataTable({
                               <Calendar className="h-4 w-4" />
                             </div>
                             <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                              No interviews scheduled
+                              {t("applications.noInterviews")}
                             </h4>
                             <p className="text-[11px] text-slate-400">
-                              Schedule an interview to start the process.
+                              {t("applications.noInterviewsDesc")}
                             </p>
                           </div>
                         </div>
@@ -1048,12 +1050,12 @@ export function ApplicationsDataTable({
                       {drawerOverviewSections.responses && (
                         <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                           <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                            Application Responses
+                            {t("applications.sections.responses")}
                           </h3>
                           <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs space-y-2 text-slate-600 dark:text-slate-300">
                             <div>
                               <p className="text-[11px] text-slate-400">
-                                Full Name
+                                {t("candidates.displayName")}
                               </p>
                               <p className="font-semibold text-slate-900 dark:text-white">
                                 {selectedApp.candidateName}
@@ -1061,7 +1063,7 @@ export function ApplicationsDataTable({
                             </div>
                             <div>
                               <p className="text-[11px] text-slate-400">
-                                Email Address
+                                {t("candidates.email")}
                               </p>
                               <p className="font-semibold text-slate-900 dark:text-white">
                                 {selectedApp.candidateEmail}
@@ -1070,7 +1072,7 @@ export function ApplicationsDataTable({
                             {selectedApp.candidatePhone && (
                               <div>
                                 <p className="text-[11px] text-slate-400">
-                                  Phone Number
+                                  {t("candidates.phone")}
                                 </p>
                                 <p className="font-semibold text-slate-900 dark:text-white">
                                   {selectedApp.candidatePhone}
@@ -1085,13 +1087,13 @@ export function ApplicationsDataTable({
                       {drawerOverviewSections.notes && (
                         <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                           <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                            Notes & Comments
+                            {t("applications.sections.notes")}
                           </h3>
                           <div className="space-y-2">
                             {drawerNotesList.length > 0 && (
                               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                                 {drawerNotesList.map((n, idx) => (
-                                  <div
+                                 <div
                                     key={idx}
                                     className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300"
                                   >
@@ -1105,7 +1107,7 @@ export function ApplicationsDataTable({
                               onChange={(e) =>
                                 setDrawerNoteInput(e.target.value)
                               }
-                              placeholder="Write a note about this candidate..."
+                              placeholder={t("applications.notePlaceholder")}
                               className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none h-20"
                             />
                             <div className="flex justify-end">
@@ -1122,7 +1124,7 @@ export function ApplicationsDataTable({
                                 }}
                                 className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                               >
-                                Add Note
+                                {t("candidates.addNote")}
                               </button>
                             </div>
                           </div>
@@ -1176,12 +1178,12 @@ export function ApplicationsDataTable({
             deleteModalApp.jobId && jobMap.get(deleteModalApp.jobId)
               ? `${jobMap.get(deleteModalApp.jobId)!.title} (${
                   jobMap.get(deleteModalApp.jobId)!.type === "FULL_TIME"
-                    ? "Full-Time"
+                    ? t("jobs.fullTime")
                     : jobMap.get(deleteModalApp.jobId)!.type === "PART_TIME"
-                      ? "Part-Time"
+                      ? t("jobs.partTime")
                       : jobMap.get(deleteModalApp.jobId)!.type
                 })`
-              : "this position"
+              : t("applications.applyingForPosition")
           }
           isDeleting={isDeleting}
         />

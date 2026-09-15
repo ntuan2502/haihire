@@ -22,12 +22,14 @@ import {
   UserPlus,
 } from "lucide-react";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/constants/auth.constants";
+import { useI18n } from "@/i18n";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const { login, isAuthenticated, user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
 
   // Inputs are completely empty by default (no sample values)
   const [email, setEmail] = useState("");
@@ -55,7 +57,7 @@ function LoginForm() {
       <div className="flex flex-col items-center justify-center p-8 space-y-3">
         <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
         <p className="text-xs text-slate-500 font-medium">
-          Already signed in. Redirecting to workspace...
+          {t("auth.alreadySignedIn")}
         </p>
       </div>
     );
@@ -74,7 +76,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError("Please provide both email and password.");
+      setError(t("auth.errorEmailPasswordRequired"));
       return;
     }
 
@@ -89,10 +91,10 @@ function LoginForm() {
         const res = err as { response?: { data?: { message?: string } } };
         setError(
           res.response?.data?.message ||
-            "Authentication failed. Please check your credentials.",
+            t("auth.errorAuthFailed"),
         );
       } else {
-        setError("Unable to connect to the authentication service.");
+        setError(t("auth.errorNetwork"));
       }
     } finally {
       setLoading(false);
@@ -112,7 +114,7 @@ function LoginForm() {
       handleSuccessfulAuth(user.organizationId);
     } catch (err: unknown) {
       console.error(err);
-      setError(`Failed to sign in with ${account.name} account.`);
+      setError(t("auth.errorAuthFailed"));
       setDemoLoadingEmail(null);
     }
   };
@@ -129,7 +131,7 @@ function LoginForm() {
           href="/"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-600"
         >
-          <ArrowLeft className="h-4 w-4" /> Public Job Board
+          <ArrowLeft className="h-4 w-4" /> {t("common.back")}
         </Link>
         <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
           ATS
@@ -138,20 +140,20 @@ function LoginForm() {
 
       <div>
         <div className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
-          <Building2 className="h-3.5 w-3.5" /> Recruiter Sign In
+          <Building2 className="h-3.5 w-3.5" /> {t("auth.recruiterSignIn")}
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Sign in to Hiring Portal
+          {t("auth.loginTitle")}
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Enter your staff credentials to access the talent acquisition dashboard.
+          {t("auth.loginSubtitle")}
         </p>
       </div>
 
       {/* 1-Click Demo Accounts: Admin & Member */}
       <div className="space-y-2.5 pt-1">
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-          1-Click Demo Accounts:
+          {t("auth.quickLoginDev")}
         </p>
 
         <div className="grid grid-cols-1 gap-2.5">
@@ -225,7 +227,7 @@ function LoginForm() {
       <div className="relative flex items-center py-1">
         <div className="grow border-t border-slate-200 dark:border-slate-800" />
         <span className="shrink mx-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-          Or sign in with email
+          {t("auth.orEmail")}
         </span>
         <div className="grow border-t border-slate-200 dark:border-slate-800" />
       </div>
@@ -242,11 +244,11 @@ function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-            <Mail className="h-3.5 w-3.5 text-slate-400" /> Recruiter Email
+            <Mail className="h-3.5 w-3.5 text-slate-400" /> {t("auth.emailLabel")}
           </label>
           <Input
             type="email"
-            placeholder="colleague@company.com"
+            placeholder={t("auth.emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
@@ -257,13 +259,13 @@ function LoginForm() {
         <div>
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5 text-slate-400" /> Password
+              <Lock className="h-3.5 w-3.5 text-slate-400" /> {t("auth.passwordLabel")}
             </label>
           </div>
           <div className="relative mt-1">
             <Input
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pr-10 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
@@ -292,23 +294,23 @@ function LoginForm() {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Authenticating...</span>
+              <span>{t("auth.signingIn")}</span>
             </>
           ) : (
-            <span>Sign In to Workspace</span>
+            <span>{t("auth.signInButton")}</span>
           )}
         </Button>
       </form>
 
       {/* Register Link */}
       <div className="pt-2 text-center text-xs text-slate-500 dark:text-slate-400">
-        Don&apos;t have an account?{" "}
+        {t("auth.noAccount")}{" "}
         <Link
           href={registerHref}
           className="font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
         >
           <UserPlus className="h-3 w-3" />
-          <span>Create an account</span>
+          <span>{t("auth.signUpLink")}</span>
         </Link>
       </div>
 
@@ -318,7 +320,7 @@ function LoginForm() {
           href="/"
           className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
         >
-          &larr; Return to Public Careers & Job Openings
+          &larr; {t("auth.returnToJobs")}
         </Link>
       </div>
     </div>
@@ -326,6 +328,8 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-slate-50 dark:bg-slate-950 font-sans">
       {/* Left Column: Recruiter Branding & Value Proposition */}
@@ -340,7 +344,7 @@ export default function LoginPage() {
             href="/"
             className="inline-flex items-center gap-2 text-xs font-semibold text-indigo-300 hover:text-white transition-colors mb-8"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to Public Job Board
+            <ArrowLeft className="h-4 w-4" /> {t("auth.returnToJobs")}
           </Link>
 
           <div className="flex items-center gap-3">
@@ -351,11 +355,11 @@ export default function LoginPage() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xl tracking-tight">ATS</span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-blue-500/30">
-                  <Sparkles className="h-2.5 w-2.5" /> Recruiter Portal
+                  <Sparkles className="h-2.5 w-2.5" /> {t("auth.recruiterPortal")}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Talent Acquisition & Hiring Operations
+                {t("auth.tagline")}
               </p>
             </div>
           </div>
@@ -365,15 +369,15 @@ export default function LoginPage() {
         <div className="relative z-10 space-y-6 my-auto max-w-md">
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-800/80 px-3 py-1 text-xs font-medium text-indigo-300 border border-slate-700/80">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            Recruiter & Hiring Team Portal
+            {t("auth.teamPortal")}
           </div>
 
           <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-            Streamline your hiring pipeline from application to offer.
+            {t("auth.loginHeroTitle")}
           </h1>
 
           <p className="text-sm text-slate-400 leading-relaxed">
-            Manage open positions, review candidate resumes stored securely on MinIO, and advance applicants through interactive drag-and-drop Kanban stages.
+            {t("auth.loginHeroDesc")}
           </p>
 
           <div className="space-y-3 pt-2">
@@ -381,28 +385,28 @@ export default function LoginPage() {
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <span>Multi-tenant organization workspaces</span>
+              <span>{t("auth.featureMultiTenant")}</span>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-slate-300">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <span>Interactive Kanban pipeline & candidate screening</span>
+              <span>{t("auth.featureKanban")}</span>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-slate-300">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <span>MinIO S3 object storage for candidate resumes</span>
+              <span>{t("auth.featureStorage")}</span>
             </div>
           </div>
         </div>
 
         {/* Footer Note */}
         <div className="relative z-10 text-[11px] text-slate-500 border-t border-slate-800/80 pt-4">
-          ATS &bull; Internal Hiring Team Workspace &bull; Domain @tun.io.vn
+          {t("auth.footerNote")}
         </div>
       </div>
 

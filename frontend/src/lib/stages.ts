@@ -1,4 +1,5 @@
 import type { ApplicationStage } from "@/types";
+import { useI18n } from "@/i18n";
 
 export interface StageConfig {
   id: ApplicationStage;
@@ -187,3 +188,58 @@ export function getStageInfo(
     btnHover: "hover:bg-slate-700",
   };
 }
+
+/**
+ * Hook to get unified stage metadata with localized label
+ */
+export function useStageInfo(stage?: ApplicationStage | string | null): StageConfig {
+  const { t } = useI18n();
+  const rawInfo = getStageInfo(stage);
+
+  const stageKeyMap: Record<ApplicationStage, "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"> = {
+    APPLIED: "applied",
+    SCREENING: "screening",
+    INTERVIEW: "interview",
+    OFFER: "offer",
+    HIRED: "hired",
+    REJECTED: "rejected",
+  };
+
+  const stageId = rawInfo.id as ApplicationStage;
+  const translationKey = stageKeyMap[stageId];
+  const localizedLabel = translationKey ? t(`pipeline.stages.${translationKey}` as const) : rawInfo.label;
+
+  return {
+    ...rawInfo,
+    label: localizedLabel,
+    actionLabel: localizedLabel,
+  };
+}
+
+/**
+ * Hook to get all pipeline stages with localized labels in order
+ */
+export function usePipelineStages(): StageConfig[] {
+  const { t } = useI18n();
+
+  const stageKeyMap: Record<ApplicationStage, "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"> = {
+    APPLIED: "applied",
+    SCREENING: "screening",
+    INTERVIEW: "interview",
+    OFFER: "offer",
+    HIRED: "hired",
+    REJECTED: "rejected",
+  };
+
+  return STAGES_ORDER.map((stage) => {
+    const raw = STAGE_CONFIG_MAP[stage];
+    const key = stageKeyMap[stage];
+    const localizedLabel = key ? t(`pipeline.stages.${key}` as const) : raw.label;
+    return {
+      ...raw,
+      label: localizedLabel,
+      actionLabel: localizedLabel,
+    };
+  });
+}
+

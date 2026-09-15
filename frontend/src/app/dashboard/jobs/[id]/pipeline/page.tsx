@@ -42,9 +42,10 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
-import { PIPELINE_STAGES } from "@/lib/stages";
+import { PIPELINE_STAGES, usePipelineStages } from "@/lib/stages";
 import { StageBadge } from "@/components/ui/stage-badge";
 import { getApiBaseUrl } from "@/lib/api";
+import { useI18n } from "@/i18n";
 import {
   getInitials,
   formatRelativeTime,
@@ -61,6 +62,8 @@ function JobPipelinePageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const { canEdit } = useAuth();
+  const { t } = useI18n();
+  const pipelineStages = usePipelineStages();
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
@@ -375,10 +378,8 @@ function JobPipelinePageContent() {
 
   const candidateCountText =
     filteredCandidates.length === 0
-      ? "Showing 0-0 of 0 candidates"
-      : `Showing 1-${filteredCandidates.length} of ${filteredCandidates.length} candidate${
-          filteredCandidates.length > 1 ? "s" : ""
-        }`;
+      ? `${t("common.showing")} 0-0 ${t("common.of")} 0 ${t("nav.candidates").toLowerCase()}`
+      : `${t("common.showing")} 1-${filteredCandidates.length} ${t("common.of")} ${filteredCandidates.length} ${t("nav.candidates").toLowerCase()}`;
 
   return (
     <div
@@ -390,7 +391,7 @@ function JobPipelinePageContent() {
       <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xs px-4 py-2 sm:px-6 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none z-10">
         {/* Stage Pills */}
         <div className="flex items-center gap-2">
-          {PIPELINE_STAGES.map((stage) => {
+          {pipelineStages.map((stage) => {
             const count = stageCounts[stage.id] || 0;
             const isSelected = selectedStage === stage.id;
             return (
@@ -424,9 +425,9 @@ function JobPipelinePageContent() {
 
         {/* Right Info stats */}
         <div className="hidden sm:flex items-center gap-4 text-xs font-medium text-slate-400 shrink-0">
-          <span>{jobApplications.length} candidates</span>
+          <span>{jobApplications.length} {t("pipeline.stageCounts")}</span>
           <span>•</span>
-          <span>6 stages</span>
+          <span>6 {t("pipeline.stages.applied").toLowerCase()}...</span>
           <button
             type="button"
             onClick={() => setIsFullscreen((prev) => !prev)}
@@ -452,7 +453,7 @@ function JobPipelinePageContent() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <Input
                 type="text"
-                placeholder="Search candidates..."
+                placeholder={t("candidates.searchCandidates")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-8 pl-8 pr-3 text-xs bg-slate-50/70 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
@@ -476,10 +477,10 @@ function JobPipelinePageContent() {
                   }
                   className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 border-none outline-none cursor-pointer"
                 >
-                  <option value="score">Highest score</option>
-                  <option value="newest">Newest applied</option>
-                  <option value="oldest">Oldest applied</option>
-                  <option value="name">Candidate name</option>
+                  <option value="score">{t("applications.columns.score")}</option>
+                  <option value="newest">{t("candidates.columns.added")}</option>
+                  <option value="oldest">{t("common.created")}</option>
+                  <option value="name">{t("candidates.candidateName")}</option>
                 </select>
               </div>
 
@@ -508,10 +509,10 @@ function JobPipelinePageContent() {
                 </div>
                 <div className="space-y-0.5">
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    No candidates yet
+                    {t("candidates.noCandidatesYet")}
                   </h4>
                   <p className="text-[11px] text-slate-400">
-                    No one in {currentStageConfig.label} stage.
+                    {t("candidates.noApplicationsMatchingStage")}
                   </p>
                 </div>
               </div>
@@ -574,7 +575,7 @@ function JobPipelinePageContent() {
                             <span>•</span>
                             <span className="flex items-center gap-0.5">
                               <MessageSquare className="h-2.5 w-2.5" />
-                              <span>Note</span>
+                              <span>{t("candidates.columns.quickNotes")}</span>
                             </span>
                           </>
                         )}
@@ -656,7 +657,8 @@ function JobPipelinePageContent() {
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                           <span>
-                            Applied {formatDate(selectedCandidate.createdAt)}
+                            {t("applications.applied")}{" "}
+                            {formatDate(selectedCandidate.createdAt)}
                           </span>
                         </span>
                       </div>
@@ -670,7 +672,7 @@ function JobPipelinePageContent() {
                       onClick={handlePrevCandidate}
                       disabled={currentIndex <= 0}
                       className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Previous candidate"
+                      title={t("common.back")}
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
@@ -684,7 +686,7 @@ function JobPipelinePageContent() {
                       onClick={handleNextCandidate}
                       disabled={currentIndex >= filteredCandidates.length - 1}
                       className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Next candidate"
+                      title={t("common.next")}
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
@@ -692,7 +694,7 @@ function JobPipelinePageContent() {
                     <Link
                       href={`/dashboard/applications/${selectedCandidate.id}`}
                       className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ml-1 cursor-pointer"
-                      title="Open full application page"
+                      title={t("applications.openFullPage")}
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
@@ -720,7 +722,7 @@ function JobPipelinePageContent() {
                       candidateTab === "overview" ? "pl-3.5 pr-1" : "px-3.5"
                     }`}
                   >
-                    Overview
+                    {t("applications.tabs.overview")}
                   </button>
 
                   {candidateTab === "overview" && (
@@ -758,21 +760,21 @@ function JobPipelinePageContent() {
                 </div>
 
                 {[
-                  { id: "inbox", label: "Inbox" },
-                  { id: "ai", label: "AI Analysis" },
-                  { id: "interviews", label: "Interviews" },
+                  { id: "inbox", label: t("applications.tabs.inbox") },
+                  { id: "ai", label: t("applications.tabs.ai") },
+                  { id: "interviews", label: t("applications.tabs.interviews") },
                   {
                     id: "documents",
-                    label: `Documents ${
+                    label: `${t("applications.tabs.documents")} ${
                       candidateDocuments.length > 0
-                        ? `${candidateDocuments.length}`
+                        ? `(${candidateDocuments.length})`
                         : ""
                     }`,
                   },
-                  { id: "responses", label: "Responses" },
-                  { id: "notes", label: "Notes" },
-                  { id: "timeline", label: "Timeline" },
-                  { id: "properties", label: "Properties" },
+                  { id: "responses", label: t("applications.tabs.responses") },
+                  { id: "notes", label: t("applications.tabs.notes") },
+                  { id: "timeline", label: t("applications.tabs.timeline") },
+                  { id: "properties", label: t("applications.tabs.properties") },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -802,16 +804,16 @@ function JobPipelinePageContent() {
                       <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 font-medium">
                           <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                          <span>No AI analysis yet</span>
+                          <span>{t("applications.noAiAnalysis")}</span>
                         </div>
                         <button
                           type="button"
                           disabled
                           className="h-8 px-3.5 rounded-xl bg-blue-600/60 text-white/80 text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-not-allowed opacity-60 transition-colors"
-                          title="AI Analysis (Coming soon)"
+                          title={`${t("applications.runAnalysis")} (${t("common.comingSoon")})`}
                         >
                           <Sparkles className="h-3 w-3" />
-                          <span>Run Analysis</span>
+                          <span>{t("applications.runAnalysis")}</span>
                         </button>
                       </div>
                     )}
@@ -822,15 +824,15 @@ function JobPipelinePageContent() {
                         <div className="flex items-center justify-between">
                           <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                             <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                            <span>Interviews</span>
+                            <span>{t("applications.sections.interviews")}</span>
                           </h3>
                           <button
                             type="button"
                             disabled
                             className="text-xs font-semibold text-slate-400 dark:text-slate-600 flex items-center gap-1 opacity-50 cursor-not-allowed transition-colors"
-                            title="Schedule Interview (Coming soon)"
+                            title={`${t("applications.scheduleInterview")} (${t("common.comingSoon")})`}
                           >
-                            <span>+ Schedule Interview</span>
+                            <span>+ {t("applications.scheduleInterview")}</span>
                           </button>
                         </div>
 
@@ -839,8 +841,11 @@ function JobPipelinePageContent() {
                             <Calendar className="h-4 w-4" />
                           </div>
                           <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            No interviews scheduled yet.
+                            {t("pipeline.noInterviewsTitle")}
                           </h4>
+                          <p className="text-[11px] text-slate-400">
+                            {t("pipeline.noInterviewsSubtitle")}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -860,10 +865,10 @@ function JobPipelinePageContent() {
                       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                         <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                           <FileCheck className="h-3.5 w-3.5 text-slate-400" />
-                          <span>Responses</span>
+                          <span>{t("applications.sections.responses")}</span>
                         </h3>
                         <p className="text-xs text-slate-400 py-1">
-                          No application form responses.
+                          {t("applications.noResponses")}
                         </p>
                       </div>
                     )}
@@ -873,24 +878,24 @@ function JobPipelinePageContent() {
                       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                         <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                           <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-                          <span>Properties</span>
+                          <span>{t("applications.sections.properties")}</span>
                         </h3>
                         <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
                           <button
                             type="button"
                             disabled
                             className="opacity-50 cursor-not-allowed transition-colors"
-                            title="Properties (Coming soon)"
+                            title={`Properties (${t("common.comingSoon")})`}
                           >
-                            + Add org-wide property
+                            + {t("applications.addOrgProperty")}
                           </button>
                           <button
                             type="button"
                             disabled
                             className="opacity-50 cursor-not-allowed transition-colors"
-                            title="Properties (Coming soon)"
+                            title={`Properties (${t("common.comingSoon")})`}
                           >
-                            Manage job-specific properties
+                            {t("applications.manageJobProperties")}
                           </button>
                         </div>
                       </div>
@@ -901,13 +906,13 @@ function JobPipelinePageContent() {
                       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                         <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                           <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-                          <span>Notes</span>
+                          <span>{t("applications.sections.notes")}</span>
                         </h3>
 
                         {/* Note Input area */}
                         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-3 focus-within:ring-1 focus-within:ring-blue-500">
                           <textarea
-                            placeholder="Add a note about this candidate..."
+                            placeholder={t("applications.notePlaceholder")}
                             value={candidateNoteInput}
                             onChange={(e) =>
                               setCandidateNoteInput(e.target.value)
@@ -923,14 +928,14 @@ function JobPipelinePageContent() {
                           />
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
                             <span className="text-[11px] text-slate-400">
-                              Only your team can see notes. ↵+Enter to save.
+                              {t("pipeline.onlyTeamCanSeeNotes")}
                             </span>
                             <Button
                               size="sm"
                               onClick={handleAddNote}
                               className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
                             >
-                              + Add note
+                              + {t("applications.addNote")}
                             </Button>
                           </div>
                         </div>
@@ -939,7 +944,7 @@ function JobPipelinePageContent() {
                         {candidateNotesList.length === 0 ? (
                           <div className="flex items-center gap-2 text-xs text-slate-400 py-1">
                             <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-                            <span>No notes yet.</span>
+                            <span>{t("pipeline.noNotesYet")}</span>
                           </div>
                         ) : (
                           <div className="space-y-2 pt-1">
@@ -973,19 +978,18 @@ function JobPipelinePageContent() {
                   <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-6 text-center space-y-3">
                     <Sparkles className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto" />
                     <h4 className="text-xs font-bold text-blue-900 dark:text-blue-200">
-                      Candidate AI Resume Analysis
+                      {t("pipeline.aiResumeAnalysis")}
                     </h4>
                     <p className="text-xs text-blue-700/80 dark:text-blue-300/80 max-w-md mx-auto">
-                      AI analyzes the candidate&apos;s resume, work history, and
-                      skill fit against this job&apos;s requirements.
+                      {t("pipeline.aiResumeAnalysisDesc")}
                     </p>
                     <Button
                       size="sm"
                       disabled
                       className="bg-blue-600/60 text-white/80 rounded-xl text-xs cursor-not-allowed opacity-60"
-                      title="AI Evaluation (Coming soon)"
+                      title={`${t("pipeline.startAiEvaluation")} (${t("common.comingSoon")})`}
                     >
-                      Start AI Evaluation
+                      {t("pipeline.startAiEvaluation")}
                     </Button>
                   </div>
                 )}
@@ -995,20 +999,18 @@ function JobPipelinePageContent() {
                   <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
                     <Calendar className="h-8 w-8 text-slate-400 mx-auto" />
                     <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      No interviews scheduled yet
+                      {t("pipeline.noInterviewsTitle")}
                     </h4>
                     <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Schedule technical interviews, screening calls, or culture
-                      fit evaluations for{" "}
-                      {getCandidateDisplayName(selectedCandidate)}.
+                      {t("pipeline.noInterviewsSubtitle")}
                     </p>
                     <Button
                       size="sm"
                       disabled
                       className="bg-blue-600/60 text-white/80 rounded-xl text-xs cursor-not-allowed opacity-60"
-                      title="Schedule Interview (Coming soon)"
+                      title={`${t("pipeline.scheduleNewInterview")} (${t("common.comingSoon")})`}
                     >
-                      + Schedule New Interview
+                      + {t("pipeline.scheduleNewInterview")}
                     </Button>
                   </div>
                 )}
@@ -1018,11 +1020,10 @@ function JobPipelinePageContent() {
                   <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
                     <FileCheck className="h-8 w-8 text-slate-400 mx-auto" />
                     <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      No Responses
+                      {t("pipeline.noResponsesTitle")}
                     </h4>
                     <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Candidate has not submitted any application form responses
-                      yet.
+                      {t("pipeline.noResponsesSubtitle")}
                     </p>
                   </div>
                 )}
@@ -1035,10 +1036,10 @@ function JobPipelinePageContent() {
                       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                         <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                           <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-                          <span>Add New Note</span>
+                          <span>{t("pipeline.addNewNote")}</span>
                         </h4>
                         <textarea
-                          placeholder="Write a private note for your team..."
+                          placeholder={t("pipeline.writePrivateNotePlaceholder")}
                           value={candidateNoteInput}
                           onChange={(e) =>
                             setCandidateNoteInput(e.target.value)
@@ -1052,7 +1053,7 @@ function JobPipelinePageContent() {
                             onClick={handleAddNote}
                             className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer"
                           >
-                            Save Note
+                            {t("pipeline.saveNote")}
                           </Button>
                         </div>
                       </div>
@@ -1079,11 +1080,13 @@ function JobPipelinePageContent() {
                   <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
                     <History className="h-8 w-8 text-slate-400 mx-auto" />
                     <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Application Timeline
+                      {t("applications.timelineTitle")}
                     </h4>
                     <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Applied to {job.title} on{" "}
-                      {formatDate(selectedCandidate.createdAt)}.
+                      {t("pipeline.timelineApplied", {
+                        job: job.title,
+                        date: formatDate(selectedCandidate.createdAt),
+                      })}
                     </p>
                   </div>
                 )}
@@ -1093,10 +1096,10 @@ function JobPipelinePageContent() {
                   <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                       <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Properties</span>
+                      <span>{t("applications.sections.properties")}</span>
                     </h4>
                     <p className="text-xs text-slate-400">
-                      No custom properties defined for this candidate yet.
+                      {t("pipeline.noCustomProperties")}
                     </p>
                   </div>
                 )}
@@ -1109,10 +1112,12 @@ function JobPipelinePageContent() {
                 <User className="h-6 w-6" />
               </div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                No candidates in {currentStageConfig.label}
+                {t("pipeline.noCandidatesInStage", {
+                  stage: currentStageConfig.label,
+                })}
               </h3>
               <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                Switch to another pipeline stage to review candidates.
+                {t("pipeline.switchStageHint")}
               </p>
             </div>
           )}

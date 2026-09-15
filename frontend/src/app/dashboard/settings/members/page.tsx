@@ -31,9 +31,11 @@ import {
   User,
 } from "lucide-react";
 import type { InviteLink } from "@/types";
+import { useI18n } from "@/i18n";
 
 export default function MembersSettingsPage() {
   const { user, canEdit } = useAuth();
+  const { t } = useI18n();
   const { data: members = [] } = useOrgMembers();
   const { data: serverInviteLinks = [], refetch: refetchLinks } = useInviteLinks();
   const createInviteMutation = useCreateInviteLinkMutation();
@@ -239,10 +241,10 @@ export default function MembersSettingsPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Members
+            {t("members.title")}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Manage your team members and invitations.
+            {t("members.subtitle")}
           </p>
         </div>
       </div>
@@ -270,7 +272,7 @@ export default function MembersSettingsPage() {
             className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <UserPlus className="h-4 w-4" />
-            <span>Invite team member</span>
+            <span>{t("members.inviteMemberTitle")}</span>
           </Button>
         </div>
       )}
@@ -282,7 +284,7 @@ export default function MembersSettingsPage() {
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                Invite a team member
+                {t("members.inviteMemberTitle")}
               </h3>
             </div>
             <button
@@ -301,7 +303,7 @@ export default function MembersSettingsPage() {
             <div className="flex-1">
               <Input
                 type="email"
-                placeholder="colleague@company.com"
+                placeholder={t("members.inviteEmailPlaceholder")}
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950 rounded-xl"
@@ -315,8 +317,8 @@ export default function MembersSettingsPage() {
                 onChange={(e) => setInviteRole(e.target.value)}
                 className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
               >
-                <option value="MEMBER">Member</option>
-                <option value="ADMIN">Admin</option>
+                <option value="MEMBER">{t("members.roleMember")}</option>
+                <option value="ADMIN">{t("members.roleAdmin")}</option>
               </select>
             </div>
 
@@ -326,7 +328,7 @@ export default function MembersSettingsPage() {
               className="h-10 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             >
               <Send className="h-3.5 w-3.5" />
-              <span>{isInviting ? "Sending..." : "Send invite"}</span>
+              <span>{isInviting ? t("members.sendingInvite") : t("members.sendInvite")}</span>
             </Button>
           </form>
         </div>
@@ -342,10 +344,10 @@ export default function MembersSettingsPage() {
               </div>
               <div>
                 <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                  Invite links
+                  {t("members.createLinkTitle")}
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Shareable links to join your organization
+                  {t("members.pendingInvites")}
                 </p>
               </div>
             </div>
@@ -357,7 +359,7 @@ export default function MembersSettingsPage() {
                 className="h-8 px-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Create link</span>
+                <span>{t("members.createLinkButton")}</span>
               </Button>
             )}
           </div>
@@ -367,7 +369,7 @@ export default function MembersSettingsPage() {
             <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  New invite link
+                  {t("members.createLinkTitle")}
                 </span>
                 <button
                   type="button"
@@ -381,21 +383,21 @@ export default function MembersSettingsPage() {
               <div className="flex flex-wrap items-end gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Role
+                    {t("members.roleLabel")}
                   </label>
                   <select
                     value={linkRole}
                     onChange={(e) => setLinkRole(e.target.value)}
                     className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
                   >
-                    <option value="MEMBER">Member</option>
-                    <option value="ADMIN">Admin</option>
+                    <option value="MEMBER">{t("members.roleMember")}</option>
+                    <option value="ADMIN">{t("members.roleAdmin")}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Expires in
+                    {t("members.expiresInLabel")}
                   </label>
                   <select
                     value={linkExpiresIn}
@@ -403,25 +405,25 @@ export default function MembersSettingsPage() {
                     className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
                   >
                     <option value="1 day">1 day</option>
-                    <option value="7 days">7 days</option>
-                    <option value="30 days">30 days</option>
-                    <option value="Never">Never</option>
+                    <option value="7 days">{t("members.expires7Days")}</option>
+                    <option value="30 days">{t("members.expires30Days")}</option>
+                    <option value="Never">{t("members.expiresNever")}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                    Max uses (optional)
+                    {t("members.maxUsesLabel")} ({t("common.optional")})
                   </label>
                   <select
                     value={linkMaxUses}
                     onChange={(e) => setLinkMaxUses(e.target.value)}
                     className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
                   >
-                    <option value="1">1 use</option>
+                    <option value="1">{t("members.uses1")}</option>
                     <option value="5">5 uses</option>
                     <option value="10">10 uses</option>
-                    <option value="Unlimited">Unlimited</option>
+                    <option value="Unlimited">{t("members.usesUnlimited")}</option>
                   </select>
                 </div>
 
@@ -432,7 +434,7 @@ export default function MembersSettingsPage() {
                     onClick={handleCreateLink}
                     className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors cursor-pointer"
                   >
-                    {createInviteMutation.isPending ? "Creating..." : "Create link"}
+                    {createInviteMutation.isPending ? t("common.saving") : t("members.createLinkButton")}
                   </Button>
                 </div>
               </div>
@@ -499,8 +501,8 @@ export default function MembersSettingsPage() {
                         </div>
 
                         <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {link.usesCount}/{link.maxUses !== null ? link.maxUses : "∞"} uses
-                          {" • "}Expires in {daysRemaining}
+                          {link.usesCount}/{link.maxUses !== null ? link.maxUses : "∞"} {t("candidates.columns.applications").toLowerCase()}
+                          {" • "}{t("members.expiresInLabel")} {daysRemaining}
                           {" • "}by {link.createdByName || "Admin"}
                         </p>
                       </div>
@@ -519,12 +521,12 @@ export default function MembersSettingsPage() {
                           {isCopied ? (
                             <>
                               <Check className="h-3.5 w-3.5 text-emerald-600" />
-                              <span>Copied</span>
+                              <span>{t("members.copied")}</span>
                             </>
                           ) : (
                             <>
                               <Copy className="h-3.5 w-3.5" />
-                              <span>Copy</span>
+                              <span>{t("members.copyLink")}</span>
                             </>
                           )}
                         </Button>
@@ -543,7 +545,7 @@ export default function MembersSettingsPage() {
                         ) : (
                           <Trash2 className="h-3.5 w-3.5" />
                         )}
-                        <span>Revoke</span>
+                        <span>{t("members.revokeLink")}</span>
                       </Button>
                     </div>
                   </div>
@@ -562,7 +564,7 @@ export default function MembersSettingsPage() {
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-              Team members
+              {t("members.activeMembers")}
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               {combinedMembers.length}{" "}
@@ -617,7 +619,7 @@ export default function MembersSettingsPage() {
                       </span>
                       {m.isCurrent && (
                         <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                          (you)
+                          ({t("common.you")})
                         </span>
                       )}
                     </div>
@@ -632,19 +634,19 @@ export default function MembersSettingsPage() {
                   {isMemberOwner ? (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 shadow-2xs">
                       <Crown className="h-3 w-3 text-amber-500 fill-amber-500" />
-                      <span>Owner</span>
+                      <span>{t("members.roleOwner")}</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
                       {m.role?.toUpperCase() === "ADMIN" ? (
                         <>
                           <Shield className="h-3 w-3 text-blue-500" />
-                          <span>Admin</span>
+                          <span>{t("members.roleAdmin")}</span>
                         </>
                       ) : (
                         <>
                           <User className="h-3 w-3 text-slate-400" />
-                          <span>Member</span>
+                          <span>{t("members.roleMember")}</span>
                         </>
                       )}
                     </span>
@@ -677,7 +679,7 @@ export default function MembersSettingsPage() {
                           className="absolute right-0 top-full mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
                         >
                           <div className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                            Change role
+                            {t("members.roleLabel")}
                           </div>
 
                           <button
@@ -688,8 +690,8 @@ export default function MembersSettingsPage() {
                             <Shield className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                             <span>
                               {m.role?.toUpperCase() === "ADMIN"
-                                ? "Make member"
-                                : "Make admin"}
+                                ? `${t("common.edit")}: ${t("members.roleMember")}`
+                                : `${t("common.edit")}: ${t("members.roleAdmin")}`}
                             </span>
                           </button>
 
@@ -701,7 +703,7 @@ export default function MembersSettingsPage() {
                             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer font-medium"
                           >
                             <Trash2 className="h-3.5 w-3.5 shrink-0" />
-                            <span>Remove member</span>
+                            <span>{t("members.removeMember")}</span>
                           </button>
                         </div>
                       )}

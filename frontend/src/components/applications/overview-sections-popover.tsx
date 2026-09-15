@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 export interface OverviewSectionsState {
   ai: boolean;
@@ -22,15 +23,6 @@ export const DEFAULT_OVERVIEW_SECTIONS: OverviewSectionsState = {
   properties: true,
 };
 
-const SECTION_ITEMS: { key: keyof OverviewSectionsState; label: string }[] = [
-  { key: "ai", label: "AI Analysis" },
-  { key: "interviews", label: "Interviews" },
-  { key: "documents", label: "Documents" },
-  { key: "responses", label: "Responses" },
-  { key: "notes", label: "Notes" },
-  { key: "properties", label: "Properties" },
-];
-
 interface OverviewSectionsPopoverProps {
   isOpen: boolean;
   onClose: () => void;
@@ -46,7 +38,17 @@ export function OverviewSectionsPopover({
   onToggleSection,
   triggerRef,
 }: OverviewSectionsPopoverProps) {
+  const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
+
+  const sectionItems: { key: keyof OverviewSectionsState; label: string }[] = [
+    { key: "ai", label: t("applications.sections.ai") },
+    { key: "interviews", label: t("applications.sections.interviews") },
+    { key: "documents", label: t("applications.sections.documents") },
+    { key: "responses", label: t("applications.sections.responses") },
+    { key: "notes", label: t("applications.sections.notes") },
+    { key: "properties", label: t("applications.sections.properties") },
+  ];
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(
     null,
   );
@@ -125,11 +127,11 @@ export function OverviewSectionsPopover({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-        Sections
+        {t("applications.sections.sectionsTitle")}
       </div>
 
       <div className="space-y-0.5">
-        {SECTION_ITEMS.map(({ key, label }) => {
+        {sectionItems.map(({ key, label }) => {
           const isChecked = sections[key];
           return (
             <button

@@ -4,6 +4,7 @@ import React from "react";
 import { FileText, Eye, Download } from "lucide-react";
 import type { CandidateDocument } from "@/types";
 import { formatDate } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 interface ApplicationDocumentsSectionProps {
   documents: CandidateDocument[];
@@ -20,12 +21,14 @@ export function ApplicationDocumentsSection({
   onDownload,
   showHeader = true,
 }: ApplicationDocumentsSectionProps) {
+  const { t } = useI18n();
+
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
       {showHeader && (
         <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 text-slate-400" />
-          <span>Documents</span>
+          <span>{t("applications.documents")}</span>
         </h3>
       )}
 
@@ -45,7 +48,7 @@ export function ApplicationDocumentsSection({
                     {doc.name}
                   </h4>
                   <p className="text-[11px] text-slate-400">
-                    {doc.type || "Resume"} • {formatDate(doc.createdAt, "short")}
+                    {doc.type || t("candidates.resume")} • {formatDate(doc.createdAt, "short")}
                   </p>
                 </div>
               </div>
@@ -57,7 +60,7 @@ export function ApplicationDocumentsSection({
                   className="h-7 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Eye className="h-3.5 w-3.5 text-slate-500" />
-                  <span>Preview</span>
+                  <span>{t("common.preview")}</span>
                 </button>
 
                 <button
@@ -66,14 +69,14 @@ export function ApplicationDocumentsSection({
                   className="h-7 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <Download className="h-3.5 w-3.5 text-slate-500" />
-                  <span>Download</span>
+                  <span>{t("common.download")}</span>
                 </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-xs text-slate-400 py-1">No documents uploaded.</p>
+        <p className="text-xs text-slate-400 py-1">{t("applications.noDocumentsUploaded")}</p>
       )}
     </div>
   );

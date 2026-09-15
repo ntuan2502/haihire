@@ -23,11 +23,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/types";
+import { useI18n } from "@/i18n";
 
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, updateUserOrg, loading: authLoading } = useAuth();
+  const { t, locale, setLocale } = useI18n();
   const { data: myOrgs = [], isLoading: orgsLoading } = useMyOrgs();
   const switchOrgMutation = useSwitchOrgMutation();
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -225,10 +227,15 @@ function OnboardingContent() {
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+          <button
+            type="button"
+            onClick={() => setLocale(locale === "vi" ? "en" : "vi")}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Switch language"
+          >
             <Globe className="h-3.5 w-3.5" />
-            <span>us en</span>
-          </div>
+            <span className="uppercase">{locale}</span>
+          </button>
         </div>
 
         {/* Right: Brand */}
@@ -267,10 +274,10 @@ function OnboardingContent() {
             <div>
               <div className="text-center mb-6">
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Select an organization
+                  {t("onboarding.selectOrgTitle")}
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Choose which workspace to open.
+                  {t("onboarding.selectOrgSubtitle")}
                 </p>
               </div>
 
@@ -279,11 +286,11 @@ function OnboardingContent() {
                 {orgsLoading ? (
                   <div className="p-8 flex flex-col items-center justify-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                    <p className="text-xs text-slate-400">Loading workspaces...</p>
+                    <p className="text-xs text-slate-400">{t("onboarding.loadingWorkspaces")}</p>
                   </div>
                 ) : displayOrgs.length === 0 ? (
                   <div className="p-6 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                    <p className="text-sm text-slate-500">You don&apos;t have any organizations yet.</p>
+                    <p className="text-sm text-slate-500">{t("onboarding.noWorkspaces")}</p>
                   </div>
                 ) : (
                   displayOrgs.map((org) => {
@@ -315,11 +322,11 @@ function OnboardingContent() {
 
                         {isActive ? (
                           <span className="text-[11px] font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full">
-                            Active
+                            {t("onboarding.activeBadge")}
                           </span>
                         ) : (
                           <span className="text-xs text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                            Open <ArrowRight className="h-3.5 w-3.5" />
+                            {t("onboarding.openWorkspace")} <ArrowRight className="h-3.5 w-3.5" />
                           </span>
                         )}
                       </div>
@@ -339,7 +346,7 @@ function OnboardingContent() {
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
                 >
-                  Create a new organization
+                  {t("onboarding.createOrgLink")}
                 </button>
                 <button
                   type="button"
@@ -350,7 +357,7 @@ function OnboardingContent() {
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
                 >
-                  Join an existing organization
+                  {t("onboarding.joinOrgLink")}
                 </button>
               </div>
             </div>
@@ -370,17 +377,17 @@ function OnboardingContent() {
                   className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  Back to select organization
+                  {t("onboarding.backToSelect")}
                 </button>
               )}
 
               {/* Header */}
               <div className="mb-6">
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Create a new organization
+                  {t("onboarding.createOrgTitle")}
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Set up a new workspace to start managing candidates and jobs.
+                  {t("onboarding.createOrgSubtitle")}
                 </p>
               </div>
 
@@ -388,12 +395,12 @@ function OnboardingContent() {
               <form onSubmit={handleCreateOrg} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Organization Name
+                    {t("onboarding.orgNameLabel")}
                   </label>
                   <Input
                     type="text"
                     required
-                    placeholder="e.g. Acme Corp"
+                    placeholder={t("onboarding.orgNamePlaceholder")}
                     value={orgName}
                     onChange={handleNameChange}
                     className="h-10 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-950"
@@ -402,7 +409,7 @@ function OnboardingContent() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Workspace URL Slug
+                    {t("onboarding.slugLabel")}
                   </label>
                   <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
                     <span className="px-3 text-xs text-slate-400 font-mono select-none">
@@ -411,14 +418,14 @@ function OnboardingContent() {
                     <input
                       type="text"
                       required
-                      placeholder="acme-corp"
+                      placeholder={t("onboarding.slugPlaceholder")}
                       value={slug}
                       onChange={handleSlugChange}
                       className="h-10 flex-1 bg-white dark:bg-slate-950 px-3 text-sm font-mono border-l border-slate-200 dark:border-slate-800 outline-hidden"
                     />
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Unique identifier for your organization workspace.
+                    {t("onboarding.slugHint")}
                   </p>
                 </div>
 
@@ -427,7 +434,7 @@ function OnboardingContent() {
                   disabled={submitting}
                   className="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-all cursor-pointer"
                 >
-                  {submitting ? "Creating organization..." : "Create organization"}
+                  {submitting ? t("onboarding.creatingOrg") : t("onboarding.createOrgButton")}
                 </Button>
               </form>
 
@@ -442,7 +449,7 @@ function OnboardingContent() {
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
                 >
-                  Join an existing organization instead
+                  {t("onboarding.joinOrgInstead")}
                 </button>
               </div>
             </div>
@@ -462,17 +469,17 @@ function OnboardingContent() {
                   className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  Back to select organization
+                  {t("onboarding.backToSelect")}
                 </button>
               )}
 
               {/* Header */}
               <div className="mb-6">
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Join an organization
+                  {t("onboarding.joinOrgTitle")}
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Paste your invite link or token to join your team workspace.
+                  {t("onboarding.joinOrgSubtitle")}
                 </p>
               </div>
 
@@ -482,7 +489,7 @@ function OnboardingContent() {
                   <div className="flex items-center gap-2 mb-3.5">
                     <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                      Invite link
+                      {t("onboarding.inviteLinkBoxTitle")}
                     </span>
                   </div>
 
@@ -495,7 +502,7 @@ function OnboardingContent() {
                   >
                     <Input
                       type="text"
-                      placeholder="Paste invite link (e.g. http://.../join/...) or token"
+                      placeholder={t("onboarding.inviteLinkPlaceholder")}
                       value={inviteCodeOrSlug}
                       onChange={(e) => {
                         setInviteCodeOrSlug(e.target.value);
@@ -508,11 +515,11 @@ function OnboardingContent() {
                       disabled={submitting || !inviteCodeOrSlug.trim()}
                       className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm cursor-pointer shrink-0"
                     >
-                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Join"}
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("onboarding.joinButton")}
                     </Button>
                   </form>
                   <p className="text-[11px] text-slate-400 mt-2">
-                    Ask an organization owner or administrator to create and send you an invite link.
+                    {t("onboarding.inviteLinkHint")}
                   </p>
                 </div>
               </div>
@@ -528,7 +535,7 @@ function OnboardingContent() {
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
                 >
-                  Create a new organization instead
+                  {t("onboarding.createOrgInstead")}
                 </button>
               </div>
             </div>

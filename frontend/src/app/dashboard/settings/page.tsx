@@ -17,10 +17,12 @@ import {
   CheckCircle2,
   Shield,
 } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 export default function GeneralSettingsPage() {
   const router = useRouter();
   const { user, updateUserOrg, logout, canEdit, isOwner } = useAuth();
+  const { t } = useI18n();
   const { data: org, isLoading: isOrgLoading } = useMyOrg();
   const updateOrgMutation = useUpdateMyOrgMutation();
   const deleteOrgMutation = useDeleteMyOrgMutation();
@@ -115,10 +117,10 @@ export default function GeneralSettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-          General
+          {t("settings.tabs.general")}
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Manage your organization&apos;s profile and configuration.
+          {t("settings.tabs.generalSub")}
         </p>
       </div>
 
@@ -145,10 +147,10 @@ export default function GeneralSettingsPage() {
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Organization profile
+              {t("settings.tabs.generalSub")}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Basic information about your organization.
+              {t("settings.workspace")}
             </p>
           </div>
         </div>
@@ -158,7 +160,7 @@ export default function GeneralSettingsPage() {
           {/* Organization name */}
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              Organization name
+              {t("settings.workspaceName")}
             </label>
             <Input
               type="text"
@@ -174,7 +176,7 @@ export default function GeneralSettingsPage() {
           {/* URL slug */}
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              URL slug
+              {t("settings.urlSlug")}
             </label>
             <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
               <span className="px-3 py-2 bg-slate-100/80 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs font-medium select-none border-r border-slate-200 dark:border-slate-800 shrink-0">
@@ -197,8 +199,7 @@ export default function GeneralSettingsPage() {
               />
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
-              Used in your public job board URL. Only lowercase
-              letters, numbers, and hyphens.
+              {t("settings.slugHint")}
             </p>
           </div>
 
@@ -211,13 +212,13 @@ export default function GeneralSettingsPage() {
                 className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 {updateOrgMutation.isPending
-                  ? "Saving..."
-                  : "Save changes"}
+                  ? t("common.loading")
+                  : t("settings.saveChanges")}
               </Button>
             ) : (
               <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400">
                 <Shield className="h-4 w-4 shrink-0" />
-                <span>Read-only access: only Admins can update organization profile.</span>
+                <span>{t("settings.readOnlyAdmin")}</span>
               </div>
             )}
           </div>
@@ -234,10 +235,10 @@ export default function GeneralSettingsPage() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400">
-                Danger zone
+                {t("settings.dangerZone")}
               </h3>
               <p className="text-xs text-rose-500/80 dark:text-rose-400/80">
-                Irreversible and destructive actions.
+                {t("settings.dangerZoneDesc")}
               </p>
             </div>
           </div>
@@ -245,11 +246,10 @@ export default function GeneralSettingsPage() {
           <div className="border-t border-rose-100 dark:border-rose-950/60 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Delete organization
+                {t("settings.deleteOrg")}
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Permanently delete this organization and all its data.
-                This action cannot be undone.
+                {t("settings.deleteOrgDesc")}
               </p>
             </div>
 
@@ -260,7 +260,7 @@ export default function GeneralSettingsPage() {
               className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 text-xs font-semibold px-3.5 py-1.5 rounded-xl shrink-0 cursor-pointer flex items-center gap-1.5"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              <span>Delete</span>
+              <span>{t("common.delete")}</span>
             </Button>
           </div>
         </div>
@@ -276,26 +276,21 @@ export default function GeneralSettingsPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Delete Organization
+                  {t("settings.deleteOrg")}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  This action is permanent and cannot be undone.
+                  {t("settings.dangerZoneDesc")}
                 </p>
               </div>
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Are you sure you want to delete{" "}
-              <strong className="text-slate-900 dark:text-white">
-                {orgName || org?.name}
-              </strong>
-              ? All jobs, candidates, and applications associated with this
-              organization will be removed.
+              {t("settings.deleteOrgConfirmPrompt", { slug: orgSlug })}
             </p>
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Type <span className="font-mono text-rose-600 font-bold">{orgSlug}</span> to confirm:
+                {t("settings.deleteOrgTypeToConfirm", { slug: orgSlug })}:
               </label>
               <Input
                 type="text"
@@ -316,7 +311,7 @@ export default function GeneralSettingsPage() {
                 }}
                 className="text-xs font-semibold text-slate-600 hover:text-slate-900"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 type="button"
@@ -327,7 +322,9 @@ export default function GeneralSettingsPage() {
                 onClick={handleDeleteOrg}
                 className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl px-4"
               >
-                {deleteOrgMutation.isPending ? "Deleting..." : "Delete Organization"}
+                {deleteOrgMutation.isPending
+                  ? t("settings.deletingOrg")
+                  : t("settings.deleteOrgButton")}
               </Button>
             </div>
           </div>

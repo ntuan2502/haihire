@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplyModal } from "@/components/applications/apply-modal";
+import { useI18n } from "@/i18n";
 
 function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -40,6 +41,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
   const { user } = useAuth();
+  const { t } = useI18n();
   const { data: jobs = [] } = useJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
   const { data: allApplications = [] } = useAllApplications();
@@ -122,12 +124,12 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
 
   const jobTypeLabel =
     job.type === "FULL_TIME"
-      ? "Full-Time"
+      ? t("jobs.fullTime")
       : job.type === "PART_TIME"
-        ? "Part-Time"
+        ? t("jobs.partTime")
         : job.type === "CONTRACT"
-          ? "Contract"
-          : "Internship";
+          ? t("jobs.contract")
+          : t("jobs.internship");
 
   return (
     <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans overflow-hidden transition-colors duration-200">
@@ -152,7 +154,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>All Jobs</span>
+              <span>{t("jobs.allJobs")}</span>
             </Link>
 
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
@@ -174,7 +176,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                     : "bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-900/60"
                 }`}
               >
-                {job.status === "PUBLISHED" ? "Open" : "Draft"}
+                {job.status === "PUBLISHED" ? t("jobs.openStatus") : t("jobs.draftStatus")}
               </span>
             </div>
           </div>
@@ -182,16 +184,16 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
           {/* Middle: Job Feature Tabs */}
           <div className="hidden lg:flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
             {[
-              { id: "pipeline", label: "Pipeline", icon: Columns3, implemented: true },
-              { id: "promote", label: "Promote", icon: Megaphone, implemented: false },
-              { id: "table", label: "Table", icon: Table, implemented: true },
-              { id: "import", label: "Import", icon: Download, implemented: false },
-              { id: "inbox", label: "Inbox", icon: Mail, implemented: false },
-              { id: "form", label: "Application Form", icon: FileText, implemented: false },
-              { id: "automation", label: "Automation", icon: Zap, implemented: false },
-              { id: "tracking", label: "Source Tracking", icon: BarChart2, implemented: false },
-              { id: "ai", label: "AI Analysis", icon: Sparkles, implemented: false },
-              { id: "settings", label: "Settings", icon: Settings, implemented: true },
+              { id: "pipeline", label: t("jobs.tabs.pipeline"), icon: Columns3, implemented: true },
+              { id: "promote", label: t("jobs.tabs.promote"), icon: Megaphone, implemented: false },
+              { id: "table", label: t("jobs.tabs.table"), icon: Table, implemented: true },
+              { id: "import", label: t("jobs.tabs.import"), icon: Download, implemented: false },
+              { id: "inbox", label: t("jobs.tabs.inbox"), icon: Mail, implemented: false },
+              { id: "form", label: t("jobs.tabs.applicationForm"), icon: FileText, implemented: false },
+              { id: "automation", label: t("jobs.tabs.automation"), icon: Zap, implemented: false },
+              { id: "tracking", label: t("jobs.tabs.sourceTracking"), icon: BarChart2, implemented: false },
+              { id: "ai", label: t("jobs.tabs.aiAnalysis"), icon: Sparkles, implemented: false },
+              { id: "settings", label: t("jobs.tabs.settings"), icon: Settings, implemented: true },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeNavTab === tab.id;
@@ -202,7 +204,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                   type="button"
                   disabled={!isImplemented}
                   onClick={() => isImplemented && handleNavTabClick(tab.id)}
-                  title={!isImplemented ? `${tab.label} (Coming soon)` : undefined}
+                  title={!isImplemented ? `${tab.label} (${t("common.comingSoon")})` : undefined}
                   className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                     !isImplemented
                       ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
@@ -226,7 +228,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               className="h-7 px-2.5 text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 shadow-2xs rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Plus className="h-3 w-3" />
-              <span>Add Candidate</span>
+              <span>{t("candidates.addCandidate")}</span>
             </Button>
 
             <button
@@ -238,7 +240,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                   : "bg-emerald-600 hover:bg-emerald-700 text-white"
               }`}
             >
-              {job.status === "PUBLISHED" ? "Close" : "Open"}
+              {job.status === "PUBLISHED" ? t("jobs.closed") : t("jobs.openStatus")}
             </button>
 
             <button
@@ -247,7 +249,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                 router.push(`/dashboard/candidates?jobId=${job.id}`)
               }
               className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="More options"
+              title={t("jobs.moreOptions")}
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>

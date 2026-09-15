@@ -27,11 +27,13 @@ import {
   normalizeDateForInput,
   isValidUuid,
 } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 function EditCandidatePageContent() {
   const params = useParams();
   const router = useRouter();
   const { user, canEdit, loading: authLoading } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!authLoading && !canEdit) {
@@ -177,7 +179,7 @@ function EditCandidatePageContent() {
             <span className="text-lg font-black">404</span>
           </div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Candidate Not Found
+            {t("candidates.noCandidatesFound")}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {!isCandidateIdValid
@@ -190,7 +192,7 @@ function EditCandidatePageContent() {
               variant="outline"
               className="text-xs font-semibold rounded-xl"
             >
-              Back to Candidates
+              {t("common.back")}: {t("candidates.title")}
             </Button>
           </div>
         </main>
@@ -222,15 +224,18 @@ function EditCandidatePageContent() {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Candidate</span>
+            <span>{t("common.back")}</span>
           </Link>
         </div>
 
         {/* Heading */}
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-            Edit Candidate
+            {t("candidates.editCandidateTitle")}
           </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {t("candidates.editCandidateSubtitle")}
+          </p>
         </div>
 
         {/* Form Container */}
@@ -244,7 +249,7 @@ function EditCandidatePageContent() {
           {/* First Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              First Name <span className="text-rose-500">*</span>
+              {t("candidates.firstName")} <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -258,7 +263,7 @@ function EditCandidatePageContent() {
           {/* Last Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Last Name <span className="text-rose-500">*</span>
+              {t("candidates.lastName")} <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -272,7 +277,7 @@ function EditCandidatePageContent() {
           {/* Email */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Email <span className="text-rose-500">*</span>
+              {t("candidates.email")} <span className="text-rose-500">*</span>
             </label>
             <Input
               type="email"
@@ -287,7 +292,7 @@ function EditCandidatePageContent() {
           {/* Phone */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Phone
+              {t("candidates.phone")}
             </label>
             <Input
               type="tel"
@@ -301,9 +306,9 @@ function EditCandidatePageContent() {
           {/* Display Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Display Name{" "}
+              {t("candidates.displayName")}{" "}
               <span className="text-[11px] font-normal text-slate-400">
-                (optional — overrides default name format)
+                {t("candidates.displayNameHint")}
               </span>
             </label>
             <Input
@@ -319,24 +324,24 @@ function EditCandidatePageContent() {
             {/* Gender */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Gender
+                {t("candidates.gender")}
               </label>
               <Select value={gender} onValueChange={(val) => val && setGender(val)}>
                 <SelectTrigger className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl">
-                  <SelectValue placeholder="Not specified" />
+                  <SelectValue placeholder={t("candidates.notSpecified")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Not specified" className="text-xs">
-                    Not specified
+                    {t("candidates.notSpecified")}
                   </SelectItem>
                   <SelectItem value="Male" className="text-xs">
-                    Male
+                    {t("candidates.male")}
                   </SelectItem>
                   <SelectItem value="Female" className="text-xs">
-                    Female
+                    {t("candidates.female")}
                   </SelectItem>
                   <SelectItem value="Other" className="text-xs">
-                    Other
+                    {t("candidates.otherGender")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -345,7 +350,7 @@ function EditCandidatePageContent() {
             {/* Date of Birth (Calendar date picker) */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Date of Birth
+                {t("candidates.dateOfBirth")}
               </label>
               <Input
                 type="date"
@@ -364,7 +369,7 @@ function EditCandidatePageContent() {
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-5 rounded-xl shadow-xs text-xs cursor-pointer gap-2"
             >
               {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              <span>Save Changes</span>
+              <span>{isSubmitting ? t("common.saving") : t("common.save")}</span>
             </Button>
             <Button
               type="button"
@@ -379,7 +384,7 @@ function EditCandidatePageContent() {
               }
               className="h-10 px-5 rounded-xl text-xs font-semibold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </form>

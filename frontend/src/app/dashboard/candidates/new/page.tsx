@@ -28,10 +28,12 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { buildCandidateNotes } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 function AddCandidatePageContent() {
   const router = useRouter();
   const { user, canEdit, loading: authLoading } = useAuth();
+  const { t } = useI18n();
 
   React.useEffect(() => {
     if (!authLoading && !canEdit) {
@@ -177,15 +179,18 @@ function AddCandidatePageContent() {
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Back to Candidates</span>
+            <span>{t("common.back")}: {t("candidates.title")}</span>
           </Link>
         </div>
 
         {/* Page Title */}
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-            Add Candidate
+            {t("candidates.addCandidateTitle")}
           </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {t("candidates.addCandidateSubtitle")}
+          </p>
         </div>
 
         {/* Form */}
@@ -224,14 +229,14 @@ function AddCandidatePageContent() {
                     type="button"
                     onClick={() => setSelectedFile(null)}
                     className="text-slate-400 hover:text-rose-500 cursor-pointer p-0.5"
-                    title="Remove file"
+                    title={t("candidates.removeFile")}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
                   <CheckCircle2 className="h-3 w-3" />
-                  CV attached ({(selectedFile.size / 1024).toFixed(0)} KB)
+                  {t("candidates.cvAttached", { size: (selectedFile.size / 1024).toFixed(0) })}
                 </p>
               </div>
             ) : (
@@ -240,17 +245,17 @@ function AddCandidatePageContent() {
                   <UploadCloud className="h-5 w-5" />
                 </div>
                 <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  Drop a CV to fill this in
+                  {t("candidates.dropCv")}
                 </h4>
                 <p className="text-[11px] text-slate-400 max-w-sm">
-                  PDF, DOC, or DOCX — Including a LinkedIn profile saved as PDF.
+                  {t("candidates.dropCvHint")}
                 </p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="mt-2.5 inline-flex items-center justify-center rounded-lg border border-slate-200/90 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                 >
-                  Choose a file
+                  {t("candidates.chooseFile")}
                 </button>
               </div>
             )}
@@ -259,7 +264,7 @@ function AddCandidatePageContent() {
           {/* First Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              First Name <span className="text-rose-500">*</span>
+              {t("candidates.firstName")} <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -273,7 +278,7 @@ function AddCandidatePageContent() {
           {/* Last Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Last Name <span className="text-rose-500">*</span>
+              {t("candidates.lastName")} <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -287,9 +292,9 @@ function AddCandidatePageContent() {
           {/* Display Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Display Name{" "}
+              {t("candidates.displayName")}{" "}
               <span className="text-[11px] font-normal text-slate-400">
-                (optional — overrides default name format)
+                {t("candidates.displayNameHint")}
               </span>
             </label>
             <Input
@@ -303,7 +308,7 @@ function AddCandidatePageContent() {
           {/* Email */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Email <span className="text-rose-500">*</span>
+              {t("candidates.email")} <span className="text-rose-500">*</span>
             </label>
             <Input
               type="email"
@@ -318,7 +323,7 @@ function AddCandidatePageContent() {
           {/* Phone */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Phone
+              {t("candidates.phone")}
             </label>
             <Input
               type="tel"
@@ -334,24 +339,24 @@ function AddCandidatePageContent() {
             {/* Gender */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Gender
+                {t("candidates.gender")}
               </label>
               <Select value={gender} onValueChange={(val) => val && setGender(val)}>
                 <SelectTrigger className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl">
-                  <SelectValue placeholder="Not specified" />
+                  <SelectValue placeholder={t("candidates.notSpecified")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Not specified" className="text-xs">
-                    Not specified
+                    {t("candidates.notSpecified")}
                   </SelectItem>
                   <SelectItem value="Male" className="text-xs">
-                    Male
+                    {t("candidates.male")}
                   </SelectItem>
                   <SelectItem value="Female" className="text-xs">
-                    Female
+                    {t("candidates.female")}
                   </SelectItem>
                   <SelectItem value="Other" className="text-xs">
-                    Other
+                    {t("candidates.otherGender")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -360,7 +365,7 @@ function AddCandidatePageContent() {
             {/* Date of Birth */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Date of Birth
+                {t("candidates.dateOfBirth")}
               </label>
               <Input
                 type="date"
@@ -386,7 +391,7 @@ function AddCandidatePageContent() {
               disabled={isSubmitting}
               className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
             >
-              {isSubmitting ? "Adding..." : "Add Candidate"}
+              {isSubmitting ? t("common.saving") : t("candidates.addCandidate")}
             </Button>
             <Button
               type="button"
@@ -394,7 +399,7 @@ function AddCandidatePageContent() {
               onClick={() => router.push("/dashboard/candidates")}
               className="h-9 px-4 text-xs font-semibold rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white cursor-pointer"
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </form>

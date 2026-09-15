@@ -10,10 +10,12 @@ import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { useJobs, useAllApplications } from "@/hooks/use-queries";
 import { Calendar, Sparkles } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 function InterviewsPageContent() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
   const { data: jobs = [] } = useJobs(user?.organizationId);
   const { data: rawApplications = [] } = useAllApplications();
 
@@ -39,13 +41,13 @@ function InterviewsPageContent() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
               <Sparkles className="h-3 w-3" />
-              <span>Coming Soon</span>
+              <span>{t("interviews.badge")}</span>
             </div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Interviews Workspace
+              {t("interviews.title")}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Tính năng phỏng vấn hiện đang được hoàn thiện. Bạn sẽ sớm có thể lên lịch phỏng vấn tự động, tích hợp lịch và gửi bảng đánh giá ứng viên tại đây.
+              {t("interviews.description")}
             </p>
           </div>
           <div className="pt-2">
@@ -53,7 +55,7 @@ function InterviewsPageContent() {
               onClick={() => router.push("/dashboard")}
               className="w-full h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
             >
-              Quay lại Dashboard
+              {t("interviews.backToDashboard")}
             </Button>
           </div>
         </div>

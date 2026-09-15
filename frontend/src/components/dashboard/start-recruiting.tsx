@@ -8,6 +8,7 @@ import {
   UploadCloud,
   FlaskConical,
 } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 interface StartRecruitingProps {
   onOpenCreateJob: () => void;
@@ -20,6 +21,8 @@ export function StartRecruiting({
   onCreateTestJob,
   onImportFromFile,
 }: StartRecruitingProps) {
+  const { t } = useI18n();
+
   return (
     <div className="flex min-h-[calc(100vh-10rem)] flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-xl text-center">
@@ -30,11 +33,10 @@ export function StartRecruiting({
 
         {/* Title & Subtitle */}
         <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Start recruiting
+          {t("dashboard.startRecruitingTitle")}
         </h1>
         <p className="mx-auto mt-2 max-w-md text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-          Create a job to manage applicants in a pipeline, or import existing
-          candidates into your talent pool.
+          {t("dashboard.startRecruitingSubtitle")}
         </p>
 
         {/* Primary Action Button: Create a new job */}
@@ -50,10 +52,10 @@ export function StartRecruiting({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white">
-                  Create a new job
+                  {t("dashboard.createNewJob")}
                 </h3>
                 <p className="text-xs text-blue-100">
-                  Set up a role and applicant pipeline
+                  {t("dashboard.createNewJobDesc")}
                 </p>
               </div>
             </div>
@@ -65,7 +67,7 @@ export function StartRecruiting({
         <div className="relative my-6 flex items-center justify-center">
           <div className="w-full border-t border-slate-200 dark:border-slate-800" />
           <span className="absolute bg-slate-50 dark:bg-slate-950 px-3 text-xs text-slate-400 font-medium">
-            or
+            {t("common.or")}
           </span>
         </div>
 
@@ -82,10 +84,10 @@ export function StartRecruiting({
             </div>
             <div>
               <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Import from file
+                {t("dashboard.importFromFile")}
               </h4>
               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                Upload a CSV directly to the candidate pool.
+                {t("dashboard.importFromFileDesc")}
               </p>
             </div>
           </button>
@@ -101,10 +103,10 @@ export function StartRecruiting({
             </div>
             <div>
               <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                Create a test job
+                {t("dashboard.createTestJob")}
               </h4>
               <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                Try the full flow privately. Stays off job boards.
+                {t("dashboard.createTestJobDesc")}
               </p>
             </div>
           </button>

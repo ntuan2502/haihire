@@ -21,12 +21,14 @@ import {
   Loader2,
   LogIn,
 } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const { register, isAuthenticated, user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,7 +55,7 @@ function RegisterForm() {
       <div className="flex flex-col items-center justify-center p-8 space-y-3">
         <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
         <p className="text-xs text-slate-500 font-medium">
-          Already signed in. Redirecting to workspace...
+          {t("auth.alreadySignedIn")}
         </p>
       </div>
     );
@@ -62,12 +64,12 @@ function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) {
-      setError("Please fill in all required fields.");
+      setError(t("auth.errorRegisterRequired"));
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+      setError(t("auth.errorPasswordMinLength"));
       return;
     }
 
@@ -90,10 +92,10 @@ function RegisterForm() {
         const res = err as { response?: { data?: { message?: string } } };
         setError(
           res.response?.data?.message ||
-            "Registration failed. Please check your information.",
+            t("auth.errorAuthFailed"),
         );
       } else {
-        setError("Unable to connect to the authentication service.");
+        setError(t("auth.errorNetwork"));
       }
     } finally {
       setLoading(false);
@@ -112,7 +114,7 @@ function RegisterForm() {
           href="/"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-600"
         >
-          <ArrowLeft className="h-4 w-4" /> Public Job Board
+          <ArrowLeft className="h-4 w-4" /> {t("common.back")}
         </Link>
         <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
           ATS
@@ -121,13 +123,13 @@ function RegisterForm() {
 
       <div>
         <div className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
-          <Building2 className="h-3.5 w-3.5" /> Recruiter Sign Up
+          <Building2 className="h-3.5 w-3.5" /> {t("auth.recruiterSignUp")}
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Create Staff Account
+          {t("auth.registerTitle")}
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Sign up to collaborate with your team and manage candidate hiring pipelines.
+          {t("auth.registerSubtitle")}
         </p>
       </div>
 
@@ -143,11 +145,11 @@ function RegisterForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-            <UserIcon className="h-3.5 w-3.5 text-slate-400" /> Full Name
+            <UserIcon className="h-3.5 w-3.5 text-slate-400" /> {t("auth.fullNameLabel")}
           </label>
           <Input
             type="text"
-            placeholder="John Doe"
+            placeholder={t("auth.fullNamePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="mt-1 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
@@ -157,11 +159,11 @@ function RegisterForm() {
 
         <div>
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-            <Mail className="h-3.5 w-3.5 text-slate-400" /> Work Email
+            <Mail className="h-3.5 w-3.5 text-slate-400" /> {t("auth.emailLabel")}
           </label>
           <Input
             type="email"
-            placeholder="colleague@company.com"
+            placeholder={t("auth.emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
@@ -172,14 +174,14 @@ function RegisterForm() {
         <div>
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5 text-slate-400" /> Password
+              <Lock className="h-3.5 w-3.5 text-slate-400" /> {t("auth.passwordLabel")}
             </label>
-            <span className="text-[11px] text-slate-400">Min 6 characters</span>
+            <span className="text-[11px] text-slate-400">{t("auth.minPasswordLength")}</span>
           </div>
           <div className="relative mt-1">
             <Input
               type={showPassword ? "text" : "password"}
-              placeholder="Create a strong password"
+              placeholder={t("auth.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pr-10 h-10 text-xs rounded-xl bg-white dark:bg-slate-900"
@@ -209,23 +211,23 @@ function RegisterForm() {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Creating account...</span>
+              <span>{t("auth.signingUp")}</span>
             </>
           ) : (
-            <span>Create Account</span>
+            <span>{t("auth.signUpButton")}</span>
           )}
         </Button>
       </form>
 
       {/* Login Link */}
       <div className="pt-2 text-center text-xs text-slate-500 dark:text-slate-400">
-        Already have an account?{" "}
+        {t("auth.hasAccount")}{" "}
         <Link
           href={loginHref}
           className="font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
         >
           <LogIn className="h-3 w-3" />
-          <span>Sign in</span>
+          <span>{t("auth.loginLink")}</span>
         </Link>
       </div>
 
@@ -235,7 +237,7 @@ function RegisterForm() {
           href="/"
           className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
         >
-          &larr; Return to Public Careers & Job Openings
+          &larr; {t("auth.returnToJobs")}
         </Link>
       </div>
     </div>
@@ -243,6 +245,8 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-slate-50 dark:bg-slate-950 font-sans">
       {/* Left Column: Recruiter Branding */}
@@ -257,7 +261,7 @@ export default function RegisterPage() {
             href="/"
             className="inline-flex items-center gap-2 text-xs font-semibold text-indigo-300 hover:text-white transition-colors mb-8"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to Public Job Board
+            <ArrowLeft className="h-4 w-4" /> {t("auth.returnToJobs")}
           </Link>
 
           <div className="flex items-center gap-3">
@@ -268,11 +272,11 @@ export default function RegisterPage() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xl tracking-tight">ATS</span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-blue-500/30">
-                  <Sparkles className="h-2.5 w-2.5" /> Recruiter Portal
+                  <Sparkles className="h-2.5 w-2.5" /> {t("auth.recruiterPortal")}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Talent Acquisition & Hiring Operations
+                {t("auth.tagline")}
               </p>
             </div>
           </div>
@@ -282,15 +286,15 @@ export default function RegisterPage() {
         <div className="relative z-10 space-y-6 my-auto max-w-md">
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-800/80 px-3 py-1 text-xs font-medium text-indigo-300 border border-slate-700/80">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            Recruiter & Hiring Team Portal
+            {t("auth.teamPortal")}
           </div>
 
           <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-            Start hiring faster with modern applicant tracking.
+            {t("auth.registerHeroTitle")}
           </h1>
 
           <p className="text-sm text-slate-400 leading-relaxed">
-            Create an account to manage your hiring pipelines, coordinate candidate interviews, and collaborate seamlessly with your hiring managers.
+            {t("auth.registerHeroDesc")}
           </p>
 
           <div className="space-y-3 pt-2">
@@ -298,28 +302,28 @@ export default function RegisterPage() {
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <span>Fast onboarding & team workspace setup</span>
+              <span>{t("auth.featureOnboarding")}</span>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-slate-300">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <span>End-to-end recruitment lifecycle management</span>
+              <span>{t("auth.featureLifecycle")}</span>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-slate-300">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
               </div>
-              <span>Instant team invitations & role assignment</span>
+              <span>{t("auth.featureInvites")}</span>
             </div>
           </div>
         </div>
 
         {/* Footer Note */}
         <div className="relative z-10 text-[11px] text-slate-500 border-t border-slate-800/80 pt-4">
-          ATS &bull; Internal Hiring Team Workspace &bull; Domain @tun.io.vn
+          {t("auth.footerNote")}
         </div>
       </div>
 

@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { cn, getInitials } from "@/lib/utils";
+import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 
 export type NavTab =
   | "dashboard"
@@ -70,10 +71,13 @@ export function Navbar({
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout, canEdit, isOwner, isAdmin } = useAuth();
+  const { locale, setLocale, t } = useI18n();
   const { data: myOrgs = [] } = useMyOrgs();
   const switchOrgMutation = useSwitchOrgMutation();
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
   const [isMobileOrgDropdownOpen, setIsMobileOrgDropdownOpen] = useState(false);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const [isMobileLangDropdownOpen, setIsMobileLangDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -112,23 +116,23 @@ export function Navbar({
     icon: React.ElementType;
     implemented?: boolean;
   }[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, implemented: true },
-    { id: "jobs", label: "Jobs", icon: Briefcase, implemented: true },
-    { id: "candidates", label: "Candidates", icon: Users, implemented: true },
-    { id: "applications", label: "Applications", icon: FileText, implemented: true },
-    { id: "inbox", label: "Inbox", icon: Inbox, implemented: false },
-    { id: "interviews", label: "Interviews", icon: Calendar, implemented: false },
-    { id: "assistant", label: "Assistant", icon: MessageSquare, implemented: false },
-    { id: "settings", label: "Settings", icon: Settings, implemented: true },
+    { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard, implemented: true },
+    { id: "jobs", label: t("nav.jobs"), icon: Briefcase, implemented: true },
+    { id: "candidates", label: t("nav.candidates"), icon: Users, implemented: true },
+    { id: "applications", label: t("nav.applications"), icon: FileText, implemented: true },
+    { id: "inbox", label: t("nav.inbox"), icon: Inbox, implemented: false },
+    { id: "interviews", label: t("nav.interviews"), icon: Calendar, implemented: false },
+    { id: "assistant", label: t("nav.assistant"), icon: MessageSquare, implemented: false },
+    { id: "settings", label: t("nav.settings"), icon: Settings, implemented: true },
   ];
 
   // Features inside "More" (all Coming Soon)
   const moreItems = [
-    { label: "Analytics & Reports", icon: BarChart3 },
-    { label: "Talent Pools", icon: Users },
-    { label: "Source Tracking", icon: Radio },
-    { label: "AI Analysis", icon: Bot },
-    { label: "Timeline", icon: Clock },
+    { label: t("nav.features.analyticsReports"), icon: BarChart3 },
+    { label: t("nav.features.talentPools"), icon: Users },
+    { label: t("nav.features.sourceTracking"), icon: Radio },
+    { label: t("nav.features.aiAnalysis"), icon: Bot },
+    { label: t("nav.features.timeline"), icon: Clock },
   ];
 
   const handleNavClick = (tab: NavTab) => {
@@ -210,12 +214,12 @@ export function Navbar({
               {/* More dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer">
-                  <span>More</span>
+                  <span>{t("nav.more")}</span>
                   <ChevronDown className="h-3 w-3 opacity-60" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56 p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-0.5">
                   <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Coming Soon
+                    {t("common.comingSoon")}
                   </div>
                   {moreItems.map((item, idx) => {
                     const Icon = item.icon;
@@ -230,7 +234,7 @@ export function Navbar({
                           <span>{item.label}</span>
                         </div>
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-                          Soon
+                          {t("common.soon")}
                         </span>
                       </DropdownMenuItem>
                     );
@@ -247,11 +251,11 @@ export function Navbar({
               type="button"
               disabled
               className="flex items-center justify-center h-8 px-3.5 rounded-xl bg-indigo-600/60 text-white/80 shadow-xs cursor-not-allowed gap-1.5 opacity-60"
-              title="Upgrade plan (Coming soon)"
+              title={`${t("nav.upgrade")} (${t("common.comingSoon")})`}
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span className="text-xs font-bold">
-                Upgrade
+                {t("nav.upgrade")}
               </span>
             </button>
 
@@ -263,7 +267,7 @@ export function Navbar({
                 className="hidden sm:inline-flex h-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 shadow-xs gap-1.5 cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                New Job
+                {t("nav.newJob")}
               </Button>
             )}
 
@@ -380,7 +384,7 @@ export function Navbar({
                           className="w-full px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors"
                         >
                           <Plus className="h-3 w-3" />
-                          <span>Create organization</span>
+                          <span>{t("nav.createOrganization")}</span>
                         </div>
                       </div>
                     )}
@@ -393,7 +397,7 @@ export function Navbar({
                   >
                     <div className="flex items-center gap-2.5">
                       <Moon className="h-4 w-4 text-slate-400" />
-                      <span>Dark mode</span>
+                      <span>{t("nav.darkMode")}</span>
                     </div>
                     <div
                       className={cn(
@@ -407,15 +411,65 @@ export function Navbar({
                     </div>
                   </div>
 
-                  {/* 4. Language Row */}
-                  <div className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <Globe className="h-4 w-4 text-slate-400" />
-                      <span>Language</span>
+                  {/* 4. Language Row with Dropdown */}
+                  <div className="w-full my-1 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 overflow-hidden transition-all">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsLangDropdownOpen(!isLangDropdownOpen);
+                      }}
+                      className="w-full p-2 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Globe className="h-4 w-4 text-slate-400" />
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                          {t("nav.language")}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-2xs">
+                        <span>{SUPPORTED_LOCALES[locale].flag}</span>
+                        <span>{SUPPORTED_LOCALES[locale].shortLabel}</span>
+                        <ChevronDown
+                          className={cn(
+                            "h-2.5 w-2.5 text-slate-400 transition-transform duration-200",
+                            isLangDropdownOpen && "rotate-180"
+                          )}
+                        />
+                      </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
-                      us en <ChevronDown className="h-2.5 w-2.5 opacity-60" />
-                    </span>
+
+                    {isLangDropdownOpen && (
+                      <div className="border-t border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/60">
+                        {(Object.keys(SUPPORTED_LOCALES) as SupportedLocale[]).map((locKey) => {
+                          const isLocActive = locKey === locale;
+                          const loc = SUPPORTED_LOCALES[locKey];
+                          return (
+                            <div
+                              key={locKey}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLocale(locKey);
+                                setIsLangDropdownOpen(false);
+                              }}
+                              className={cn(
+                                "w-full px-2.5 py-1.5 flex items-center justify-between text-xs cursor-pointer transition-colors",
+                                isLocActive
+                                  ? "bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold"
+                                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">{loc.flag}</span>
+                                <span>{loc.label}</span>
+                              </div>
+                              {isLocActive && (
+                                <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Divider */}
@@ -427,7 +481,7 @@ export function Navbar({
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
                   >
                     <Settings className="h-4 w-4 text-slate-400" />
-                    <span>Settings</span>
+                    <span>{t("nav.settings")}</span>
                   </div>
 
                   {/* 6. Updates & changelog */}
@@ -436,7 +490,7 @@ export function Navbar({
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
                   >
                     <Sparkles className="h-4 w-4 text-slate-400" />
-                    <span>Updates & changelog</span>
+                    <span>{t("nav.updatesChangelog")}</span>
                   </div>
 
                   {/* 7. Report issue */}
@@ -445,7 +499,7 @@ export function Navbar({
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
                   >
                     <MessageSquareWarning className="h-4 w-4 text-slate-400" />
-                    <span>Report issue</span>
+                    <span>{t("nav.reportIssue")}</span>
                   </div>
 
                   {/* Divider */}
@@ -457,7 +511,7 @@ export function Navbar({
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span>Sign out</span>
+                    <span>{t("nav.signOut")}</span>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -468,7 +522,7 @@ export function Navbar({
                   className="h-8 text-xs font-semibold gap-1 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white cursor-pointer shadow-xs"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  Sign In
+                  {t("nav.signIn")}
                 </Button>
               </Link>
             )}
@@ -535,7 +589,7 @@ export function Navbar({
                       </div>
                       {!isImplemented && (
                         <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-                          Soon
+                          {t("common.soon")}
                         </span>
                       )}
                     </button>
@@ -544,7 +598,7 @@ export function Navbar({
 
               {/* More (Coming Soon) */}
               <div className="pt-2.5 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                More (Coming Soon)
+                {t("nav.moreComingSoon")}
               </div>
               {moreItems.map((item, idx) => {
                 const Icon = item.icon;
@@ -558,7 +612,7 @@ export function Navbar({
                       <span>{item.label}</span>
                     </div>
                     <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-                      Soon
+                      {t("common.soon")}
                     </span>
                   </div>
                 );
@@ -582,7 +636,7 @@ export function Navbar({
                       : "text-slate-500"
                     }`}
                 />
-                <span>Settings</span>
+                <span>{t("nav.settings")}</span>
               </button>
             </div>
 
@@ -598,7 +652,7 @@ export function Navbar({
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs gap-1.5 cursor-pointer"
                 >
                   <Plus className="h-4 w-4 stroke-[2.5]" />
-                  New Job
+                  {t("nav.newJob")}
                 </Button>
               )}
 
@@ -657,18 +711,64 @@ export function Navbar({
                       className="w-full px-3 py-2 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      <span>Create organization</span>
+                      <span>{t("nav.createOrganization")}</span>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Locale Selector */}
-              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1 pt-0.5">
-                <span className="flex items-center gap-1.5">
-                  us en
-                </span>
-                <ChevronDown className="h-3 w-3 opacity-60" />
+              <div className="w-full rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+                <div
+                  onClick={() => setIsMobileLangDropdownOpen(!isMobileLangDropdownOpen)}
+                  className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-slate-400" />
+                    <span>{t("nav.language")}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                    <span className="text-sm">{SUPPORTED_LOCALES[locale].flag}</span>
+                    <span>{SUPPORTED_LOCALES[locale].label}</span>
+                    <ChevronDown
+                      className={cn(
+                        "h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-200",
+                        isMobileLangDropdownOpen && "rotate-180"
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {isMobileLangDropdownOpen && (
+                  <div className="border-t border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {(Object.keys(SUPPORTED_LOCALES) as SupportedLocale[]).map((locKey) => {
+                      const isLocActive = locKey === locale;
+                      const loc = SUPPORTED_LOCALES[locKey];
+                      return (
+                        <div
+                          key={locKey}
+                          onClick={() => {
+                            setLocale(locKey);
+                            setIsMobileLangDropdownOpen(false);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={cn(
+                            "w-full px-3 py-2 flex items-center justify-between text-xs cursor-pointer",
+                            isLocActive
+                              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{loc.flag}</span>
+                            <span>{loc.label}</span>
+                          </div>
+                          {isLocActive && <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -31,6 +31,7 @@ import {
   Phone,
 } from "lucide-react";
 import { formatFileSize } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 interface ApplyModalProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ export function ApplyModal({
   selectedJobId,
   onApplicationSubmitted,
 }: ApplyModalProps) {
+  const { t } = useI18n();
   const [jobId, setJobId] = useState<string>(
     selectedJobId ? selectedJobId.toString() : "",
   );
@@ -74,7 +76,7 @@ export function ApplyModal({
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
       if (selected.type !== "application/pdf" && !selected.name.endsWith(".pdf")) {
-        setError("Only PDF resume files are accepted.");
+        setError(t("applications.onlyPdfAccepted"));
         return;
       }
       setFile(selected);
@@ -88,7 +90,7 @@ export function ApplyModal({
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const dropped = e.dataTransfer.files[0];
       if (dropped.type !== "application/pdf" && !dropped.name.endsWith(".pdf")) {
-        setError("Only PDF resume files are accepted.");
+        setError(t("applications.onlyPdfAccepted"));
         return;
       }
       setFile(dropped);
@@ -99,11 +101,11 @@ export function ApplyModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!jobId || !candidateName || !candidateEmail) {
-      setError("Please fill in candidate name, email, and select a job.");
+      setError(t("applications.fillRequiredFields"));
       return;
     }
     if (!file) {
-      setError("Please attach a PDF resume to submit your application.");
+      setError(t("applications.attachResumeRequired"));
       return;
     }
 
@@ -149,9 +151,9 @@ export function ApplyModal({
               <UserPlus className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Submit Candidate Application</DialogTitle>
+              <DialogTitle>{t("applications.submitApplicationTitle")}</DialogTitle>
               <DialogDescription>
-                Upload candidate resume (PDF) and store directly into MinIO object storage.
+                {t("applications.submitApplicationDesc")}
               </DialogDescription>
             </div>
           </div>
@@ -163,10 +165,10 @@ export function ApplyModal({
               <CheckCircle2 className="h-8 w-8" />
             </div>
             <h4 className="text-base font-bold text-slate-900 dark:text-white">
-              Application Submitted Successfully!
+              {t("applications.applicationSubmittedSuccess")}
             </h4>
             <p className="text-xs text-slate-500 mt-1">
-              Resume uploaded to MinIO and added to the hiring pipeline.
+              {t("applications.applicationSubmittedDesc")}
             </p>
           </div>
         ) : (
@@ -180,14 +182,14 @@ export function ApplyModal({
             {/* Role Target */}
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Applying For Position <span className="text-rose-500">*</span>
+                {t("applications.applyingForPosition")} <span className="text-rose-500">*</span>
               </label>
               <Select
                 value={jobId}
                 onValueChange={(val) => val && setJobId(val)}
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select target role" />
+                  <SelectValue placeholder={t("applications.selectTargetRole")} />
                 </SelectTrigger>
                 <SelectContent>
                   {(jobs || []).map((job) => (
@@ -203,7 +205,7 @@ export function ApplyModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5 text-slate-400" /> Full Name <span className="text-rose-500">*</span>
+                  <User className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.displayName")} <span className="text-rose-500">*</span>
                 </label>
                 <Input
                   placeholder="e.g. Nguyen Van A"
@@ -216,7 +218,7 @@ export function ApplyModal({
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Mail className="h-3.5 w-3.5 text-slate-400" /> Email Address <span className="text-rose-500">*</span>
+                  <Mail className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.email")} <span className="text-rose-500">*</span>
                 </label>
                 <Input
                   type="email"
@@ -232,7 +234,7 @@ export function ApplyModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5 text-slate-400" /> Phone Number
+                  <Phone className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.phone")}
                 </label>
                 <Input
                   placeholder="e.g. +84 901 234 567"
@@ -244,7 +246,7 @@ export function ApplyModal({
 
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Notes / Cover Message
+                  {t("candidates.columns.quickNotes")}
                 </label>
                 <Input
                   placeholder="e.g. 5+ years React, available immediately"
@@ -258,7 +260,7 @@ export function ApplyModal({
             {/* Resume Upload Dropzone */}
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Resume / CV (PDF) <span className="text-rose-500">*</span>
+                {t("candidates.resume")} (PDF) <span className="text-rose-500">*</span>
               </label>
 
               <input
@@ -289,12 +291,12 @@ export function ApplyModal({
                   </div>
                   <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
                     <span className="text-indigo-600 dark:text-indigo-400 underline">
-                      Click to upload
+                      {t("candidates.chooseFile")}
                     </span>{" "}
-                    or drag and drop resume here
+                    {t("applications.dragDropResume")}
                   </p>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    PDF documents up to 10MB
+                    {t("applications.pdfUpTo10Mb")}
                   </p>
                 </div>
               ) : (
@@ -333,14 +335,14 @@ export function ApplyModal({
                 onClick={onClose}
                 disabled={loading}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={loading}
                 className="bg-indigo-600 hover:bg-indigo-700"
               >
-                {loading ? "Uploading to MinIO..." : "Submit Application"}
+                {loading ? t("applications.uploadingToStorage") : t("applications.submitApplication")}
               </Button>
             </DialogFooter>
           </form>

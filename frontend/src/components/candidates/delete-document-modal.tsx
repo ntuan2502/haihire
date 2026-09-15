@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Loader2 } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 interface DeleteDocumentModalProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ export function DeleteDocumentModal({
   onConfirm,
   isLoading = false,
 }: DeleteDocumentModalProps) {
+  const { t } = useI18n();
+
   if (!isOpen) return null;
 
   return (
@@ -30,11 +33,10 @@ export function DeleteDocumentModal({
       <div className="relative w-full max-w-[420px] rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-900 space-y-4 animate-in fade-in zoom-in-95 duration-150">
         <div className="space-y-2">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Delete Document
+            {t("applications.deleteDocumentHeading")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Are you sure you want to delete this document? This action cannot be
-            undone.
+            {t("applications.deleteDocumentWarning")}
           </p>
         </div>
 
@@ -46,7 +48,7 @@ export function DeleteDocumentModal({
             onClick={onClose}
             className="h-8 px-4 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -55,7 +57,7 @@ export function DeleteDocumentModal({
             className="h-8 px-4 rounded-xl bg-[#e11d48] hover:bg-[#be123c] text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
           >
             {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-            <span>Delete</span>
+            <span>{isLoading ? t("common.loading") : t("common.delete")}</span>
           </button>
         </div>
       </div>

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { ApplyModal } from "@/components/applications/apply-modal";
-import { CreateJobModal } from "@/components/jobs/create-job-modal";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
@@ -83,7 +82,6 @@ function CandidatesPageContent() {
 
   const [search, setSearch] = useState("");
   const [applyModalOpen, setApplyModalOpen] = useState(false);
-  const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
   // Selected Candidate for Right Slide-over Sidebar Drawer
   const [selectedCandidate, setSelectedCandidate] =
@@ -347,7 +345,7 @@ function CandidatesPageContent() {
       {/* Navbar */}
       <Navbar
         activeTab="candidates"
-        onOpenCreateJob={() => setCreateJobModalOpen(true)}
+        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
@@ -1328,11 +1326,6 @@ function CandidatesPageContent() {
         selectedJobId={activeJobId}
       />
 
-      {/* Create Job Modal */}
-      <CreateJobModal
-        isOpen={createJobModalOpen}
-        onClose={() => setCreateJobModalOpen(false)}
-      />
 
       {/* Delete Document Confirmation Modal matching Screenshot 3 */}
       <DeleteDocumentModal

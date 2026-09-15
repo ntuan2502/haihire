@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { ApplyModal } from "@/components/applications/apply-modal";
-import { CreateJobModal } from "@/components/jobs/create-job-modal";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { useJobs, useAllApplications } from "@/hooks/use-queries";
@@ -20,13 +19,12 @@ function InterviewsPageContent() {
   const { data: rawApplications = [] } = useAllApplications();
 
   const [applyModalOpen, setApplyModalOpen] = useState(false);
-  const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       {/* Navbar */}
       <Navbar
-        onOpenCreateJob={() => setCreateJobModalOpen(true)}
+        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={rawApplications.length}
@@ -66,10 +64,6 @@ function InterviewsPageContent() {
         isOpen={applyModalOpen}
         onClose={() => setApplyModalOpen(false)}
         jobs={jobs}
-      />
-      <CreateJobModal
-        isOpen={createJobModalOpen}
-        onClose={() => setCreateJobModalOpen(false)}
       />
     </div>
   );

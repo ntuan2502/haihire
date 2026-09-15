@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Navbar } from "@/components/navbar";
 import { JobList } from "@/components/jobs/job-list";
-import { CreateJobModal } from "@/components/jobs/create-job-modal";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
@@ -31,7 +30,6 @@ function JobsPageContent() {
   const deleteJobMutation = useDeleteJobMutation();
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
 
   // Quick action: Create a test job
@@ -104,11 +102,6 @@ function JobsPageContent() {
         )}
       </main>
 
-      {/* Create Job Modal */}
-      <CreateJobModal
-        isOpen={createJobModalOpen}
-        onClose={() => setCreateJobModalOpen(false)}
-      />
 
       {/* Apply Modal */}
       <ApplyModal

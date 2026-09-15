@@ -13,6 +13,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Search,
   ArrowUpDown,
+  ArrowLeft,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -98,6 +99,7 @@ function JobPipelinePageContent() {
   const handleSelectStage = (stageId: ApplicationStage) => {
     setSelectedStage(stageId);
     setCandidateTab("overview");
+    setMobileDetailOpen(false);
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set("stage", stageId);
     router.replace(`/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`, {
@@ -112,6 +114,7 @@ function JobPipelinePageContent() {
 
   // Selected candidate in master-detail view
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   // Candidate detail sub-navigation tab
   const [candidateTab, setCandidateTab] = useState<string>("overview");
@@ -313,6 +316,7 @@ function JobPipelinePageContent() {
       await deleteAppMutation.mutateAsync(selectedCandidate.id);
       setDeleteAppModalOpen(false);
       setSelectedAppId(null);
+      setMobileDetailOpen(false);
     } catch (err) {
       console.error("Failed to delete candidate application:", err);
     } finally {
@@ -446,7 +450,11 @@ function JobPipelinePageContent() {
       {/* 3. Main Master-Detail Workspace: LOCKED HEIGHT, ONLY CONTENT SCROLLS */}
       <main className="flex-1 min-h-0 flex overflow-hidden">
         {/* LEFT COLUMN: Candidates List */}
-        <aside className="w-80 sm:w-84 shrink-0 flex flex-col h-full border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+        <aside
+          className={`w-full md:w-80 lg:w-84 shrink-0 flex flex-col h-full border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden ${
+            mobileDetailOpen ? "hidden md:flex" : "flex"
+          }`}
+        >
           {/* Search box & Toolbar */}
           <div className="shrink-0 p-3 border-b border-slate-200/80 dark:border-slate-800 space-y-2">
             <div className="relative">
@@ -526,7 +534,10 @@ function JobPipelinePageContent() {
                 return (
                   <div
                     key={candidate.id}
-                    onClick={() => setSelectedAppId(candidate.id)}
+                    onClick={() => {
+                      setSelectedAppId(candidate.id);
+                      setMobileDetailOpen(true);
+                    }}
                     className={`p-3.5 flex items-start gap-3 cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-blue-50/80 dark:bg-blue-950/40 border-l-4 border-blue-600 dark:border-blue-400"
@@ -589,10 +600,26 @@ function JobPipelinePageContent() {
         </aside>
 
         {/* RIGHT COLUMN: Candidate Detail Content */}
-        <section className="flex-1 min-h-0 h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8">
+        <section
+          className={`flex-1 min-h-0 h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 lg:p-8 ${
+            mobileDetailOpen ? "block" : "hidden md:block"
+          }`}
+        >
           {selectedCandidate ? (
             /* State with candidate selected matching Screenshot 2 */
             <div className="max-w-4xl mx-auto space-y-5 pb-12">
+              {/* Mobile Back Button to return to list */}
+              <div className="md:hidden pb-1">
+                <button
+                  type="button"
+                  onClick={() => setMobileDetailOpen(false)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span>Quay lại danh sách ứng viên</span>
+                </button>
+              </div>
+
               {/* Quick Stage Transition Buttons (Admins only) */}
               {canEdit && (
                 <div className="flex items-center justify-end gap-2 flex-wrap">

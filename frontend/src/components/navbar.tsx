@@ -121,7 +121,7 @@ export function Navbar({
     { id: "candidates", label: t("nav.candidates"), icon: Users, implemented: true },
     { id: "applications", label: t("nav.applications"), icon: FileText, implemented: true },
     { id: "inbox", label: t("nav.inbox"), icon: Inbox, implemented: false },
-    { id: "interviews", label: t("nav.interviews"), icon: Calendar, implemented: false },
+    { id: "interviews", label: t("nav.interviews"), icon: Calendar, implemented: true },
     { id: "assistant", label: t("nav.assistant"), icon: MessageSquare, implemented: false },
     { id: "settings", label: t("nav.settings"), icon: Settings, implemented: true },
   ];

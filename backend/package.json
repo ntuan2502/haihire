@@ -13,6 +13,7 @@
     "db:verify": "prisma db verify",
     "deploy": "pnpm run build && pnpm run composer:deploy",
     "dev": "tsx watch src/main.ts",
+    "seed": "tsx src/prisma/seed.ts",
     "dev:composer": "pnpm run build && pnpm run composer:dev",
     "lint": "tsc --noEmit",
     "migrate": "prisma db migrate",

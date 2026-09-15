@@ -344,7 +344,7 @@ function DashboardContent() {
                                                 `/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`,
                                               )
                                             }
-                                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors`}
+                                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
                                           >
                                             <span
                                               className={`text-xs font-bold ${stage.textColor}`}
@@ -352,7 +352,7 @@ function DashboardContent() {
                                               {count}
                                             </span>
                                             <span
-                                              className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5`}
+                                              className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5 text-center leading-tight`}
                                             >
                                               {stage.label}
                                             </span>

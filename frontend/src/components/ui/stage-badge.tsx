@@ -1,4 +1,3 @@
-import React from "react";
 import type { ApplicationStage } from "@/types";
 import { useStageInfo } from "@/lib/stages";
 

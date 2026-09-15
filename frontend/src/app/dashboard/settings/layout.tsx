@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { ElementType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
@@ -29,7 +29,7 @@ interface NavItem {
   href: string;
   label: string;
   sublabel: string;
-  icon: React.ElementType;
+  icon: ElementType;
   locked?: boolean;
   beta?: boolean;
 }

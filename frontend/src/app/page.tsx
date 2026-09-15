@@ -1,14 +1,14 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Sparkles, Globe } from "lucide-react";
+import { Sparkles, ArrowRight, Check } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
+import { LanguageDropdown } from "@/components/language-dropdown";
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#030b1e] font-sans text-white select-none">
@@ -30,7 +30,7 @@ export default function HomePage() {
           </span>
         </Link>
 
-        {/* Center/Right Nav Links */}
+        {/* Center Nav Links */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
           <a href="#product" className="hover:text-white transition-colors">
             {t("landing.product")}
@@ -44,17 +44,6 @@ export default function HomePage() {
           <a href="#blog" className="hover:text-white transition-colors">
             {t("landing.blog")}
           </a>
-
-          {/* Language Switcher */}
-          <button
-            type="button"
-            onClick={() => setLocale(locale === "vi" ? "en" : "vi")}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-cyan-300 transition-colors cursor-pointer"
-            title="Switch language"
-          >
-            <Globe className="h-3.5 w-3.5" />
-            <span className="uppercase">{locale}</span>
-          </button>
 
           {isAuthenticated ? (
             <Link
@@ -75,8 +64,10 @@ export default function HomePage() {
           )}
         </nav>
 
-        {/* CTA Button */}
-        <div>
+        {/* Right CTA Button & Language Dropdown */}
+        <div className="flex items-center gap-3">
+          <LanguageDropdown variant="landing" />
+
           {isAuthenticated ? (
             <Link
               href="/dashboard"

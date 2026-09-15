@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { FileText, Eye, Download } from "lucide-react";
 import type { CandidateDocument } from "@/types";
 import { formatDate } from "@/lib/utils";

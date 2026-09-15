@@ -38,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { LanguageDropdown } from "./language-dropdown";
 import { cn, getInitials } from "@/lib/utils";
 import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 
@@ -76,7 +77,6 @@ export function Navbar({
   const switchOrgMutation = useSwitchOrgMutation();
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
   const [isMobileOrgDropdownOpen, setIsMobileOrgDropdownOpen] = useState(false);
-  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
   const [isMobileLangDropdownOpen, setIsMobileLangDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -285,7 +285,7 @@ export function Navbar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-64 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl space-y-1 z-50 text-slate-800 dark:text-slate-200"
+                  className="w-64 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl space-y-1 z-50 text-slate-800 dark:text-slate-200 overflow-visible"
                 >
                   {/* 1. User Full Name & Email & Role Badge */}
                   <div className="px-2 pt-1 pb-1">
@@ -411,65 +411,13 @@ export function Navbar({
                     </div>
                   </div>
 
-                  {/* 4. Language Row with Dropdown */}
-                  <div className="w-full my-1 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 overflow-hidden transition-all">
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsLangDropdownOpen(!isLangDropdownOpen);
-                      }}
-                      className="w-full p-2 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Globe className="h-4 w-4 text-slate-400" />
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                          {t("nav.language")}
-                        </span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 shadow-2xs">
-                        <span>{SUPPORTED_LOCALES[locale].flag}</span>
-                        <span>{SUPPORTED_LOCALES[locale].shortLabel}</span>
-                        <ChevronDown
-                          className={cn(
-                            "h-2.5 w-2.5 text-slate-400 transition-transform duration-200",
-                            isLangDropdownOpen && "rotate-180"
-                          )}
-                        />
-                      </span>
+                  {/* 4. Language Row with shared LanguageDropdown */}
+                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <Globe className="h-4 w-4 text-slate-400" />
+                      <span>{t("nav.language")}</span>
                     </div>
-
-                    {isLangDropdownOpen && (
-                      <div className="border-t border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/60">
-                        {(Object.keys(SUPPORTED_LOCALES) as SupportedLocale[]).map((locKey) => {
-                          const isLocActive = locKey === locale;
-                          const loc = SUPPORTED_LOCALES[locKey];
-                          return (
-                            <div
-                              key={locKey}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setLocale(locKey);
-                                setIsLangDropdownOpen(false);
-                              }}
-                              className={cn(
-                                "w-full px-2.5 py-1.5 flex items-center justify-between text-xs cursor-pointer transition-colors",
-                                isLocActive
-                                  ? "bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold"
-                                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm">{loc.flag}</span>
-                                <span>{loc.label}</span>
-                              </div>
-                              {isLocActive && (
-                                <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                    <LanguageDropdown />
                   </div>
 
                   {/* Divider */}

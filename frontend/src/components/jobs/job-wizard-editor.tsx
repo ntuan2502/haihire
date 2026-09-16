@@ -291,7 +291,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
   const isTitleValid = jobTitle.trim().length > 0;
   const isLocationValid = location.trim().length > 0;
-  const isDescriptionValid = description.trim().length >= 200;
+  const isDescriptionValid = description.trim().length > 0;
   const isStep1Valid = isTitleValid && isLocationValid && isDescriptionValid;
 
   const showTitleError = touched.title && !isTitleValid;
@@ -979,7 +979,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="flex items-center justify-between text-[11px] mt-1">
                         {showDescriptionError ? (
                           <span className="text-rose-500 font-medium">
-                            Job boards reject thin listings. Write at least 200 characters of description.
+                            Please provide a job description.
                           </span>
                         ) : (
                           <span className="text-slate-500 dark:text-slate-400">
@@ -990,12 +990,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           className={
                             showDescriptionError
                               ? "text-rose-500 font-semibold shrink-0 ml-2"
-                              : description.length >= 200
+                              : isDescriptionValid
                                 ? "text-emerald-600 font-semibold shrink-0 ml-2"
                                 : "text-slate-400 font-medium shrink-0 ml-2"
                           }
                         >
-                          {description.length} / 200
+                          {description.trim().length > 0 ? `${description.trim().length} chars` : "Required"}
                         </span>
                       </div>
                     </div>

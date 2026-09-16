@@ -166,17 +166,19 @@ export default function SubSettingsPage() {
                 {t("settings.publicJobBoardLink")}
               </span>
               <p className="text-xs font-semibold text-slate-900 dark:text-white mt-0.5">
-                {displayHost}/{orgSlug}
+                {displayHost}/careers/{orgSlug}
               </p>
             </div>
 
-            <Link
-              href="/dashboard/jobs"
+            <a
+              href={`/careers/${orgSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
             >
               <span>{t("settings.preview")}</span>
               <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
+            </a>
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400">

@@ -1265,4 +1265,21 @@ export class OrganizationsService implements OnModuleInit {
       message: `Successfully joined ${org?.name || "organization"}`,
     };
   }
+
+  async getPublicOrg(slug: string) {
+    const org = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "name",
+      "slug",
+      "createdAt",
+    )
+      .where((o) => o.slug.eq(slug))
+      .first();
+
+    if (!org) {
+      throw new NotFoundException(`Organization '${slug}' not found`);
+    }
+
+    return org;
+  }
 }

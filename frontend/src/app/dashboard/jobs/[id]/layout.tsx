@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import type { JobStatus } from "@/types";
+import { getJobPublicUrl } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
@@ -238,7 +239,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
             </Button>
 
             <a
-              href={`/careers/${job.id}`}
+              href={getJobPublicUrl(job)}
               target="_blank"
               rel="noopener noreferrer"
               className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
@@ -412,7 +413,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
             {/* Footer */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/50">
               <a
-                href={`/careers/${job.id}`}
+                href={getJobPublicUrl(job)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"

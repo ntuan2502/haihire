@@ -46,6 +46,7 @@ export const jobsApi = {
     department?: string;
     search?: string;
     organizationId?: string | null;
+    organizationSlug?: string | null;
   }): Promise<Job[]> => {
     const response = await api.get<Job[]>("/jobs", { params });
     return response.data;
@@ -53,6 +54,11 @@ export const jobsApi = {
 
   getById: async (id: string): Promise<Job> => {
     const response = await api.get<Job>(`/jobs/${id}`);
+    return response.data;
+  },
+
+  getBySlug: async (orgSlug: string, jobSlug: string): Promise<Job> => {
+    const response = await api.get<Job>(`/jobs/careers/${orgSlug}/${jobSlug}`);
     return response.data;
   },
 
@@ -169,6 +175,11 @@ export const applicationsApi = {
 };
 
 export const organizationsApi = {
+  getPublicOrg: async (slug: string): Promise<Organization> => {
+    const response = await api.get<Organization>(`/organizations/public/${slug}`);
+    return response.data;
+  },
+
   getMyOrg: async (): Promise<Organization | null> => {
     const response = await api.get<Organization | null>("/organizations/my");
     return response.data;

@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useId } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useJob, useCreateApplicationMutation } from "@/hooks/use-queries";
+import Link from "next/link";
+import { usePublicJob, useCreateApplicationMutation } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,16 +28,21 @@ import {
   Sparkles,
   ShieldCheck,
   Loader2,
+  ChevronLeft,
 } from "lucide-react";
 
-export default function CareerJobPage() {
+export default function CareerJobSlugPage() {
   const params = useParams();
   const router = useRouter();
   const { t } = useI18n();
-  const rawJobId = params?.jobId;
-  const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
-  const { data: job, isLoading, isError } = useJob(jobId);
+  const rawOrgSlug = params?.orgSlug;
+  const orgSlug = Array.isArray(rawOrgSlug) ? rawOrgSlug[0] : (rawOrgSlug as string);
+
+  const rawJobSlug = params?.jobSlug;
+  const jobSlug = Array.isArray(rawJobSlug) ? rawJobSlug[0] : (rawJobSlug as string);
+
+  const { data: job, isLoading, isError } = usePublicJob(orgSlug, jobSlug);
   const applyMutation = useCreateApplicationMutation();
 
   // Form states
@@ -77,7 +83,7 @@ export default function CareerJobPage() {
 
     // Check size limit: 10MB
     if (file.size > 10 * 1024 * 1024) {
-      setFileError(t("applications.fileTooLarge") || "File size exceeds 10MB limit.");
+      setFileError(t("applications.fileTooLarge") || "Kích thước tệp vượt quá giới hạn 10MB.");
       return;
     }
 
@@ -100,6 +106,8 @@ export default function CareerJobPage() {
     e.preventDefault();
     setSubmitError(null);
 
+    if (!job?.id) return;
+
     if (!lastName.trim()) {
       setSubmitError("Vui lòng nhập họ và tên đệm.");
       return;
@@ -113,16 +121,17 @@ export default function CareerJobPage() {
       return;
     }
     if (!resumeFile) {
-      setSubmitError("Vui lòng đính kèm file CV của bạn (PDF/DOCX).");
+      setSubmitError("Vui lòng đính kèm tệp CV của bạn (PDF/DOCX).");
       return;
     }
 
     try {
       const fullName = `${lastName.trim()} ${firstName.trim()}`.trim();
       const formData = new FormData();
-      formData.append("jobId", jobId);
+      formData.append("jobId", job.id);
       formData.append("candidateName", fullName);
       formData.append("candidateEmail", candidateEmail.trim());
+
       const formattedNotes = buildCandidateNotes({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -166,19 +175,28 @@ export default function CareerJobPage() {
         <p className="mt-2 text-sm text-slate-500 max-w-md">
           Vị trí này có thể không tồn tại hoặc đường dẫn không còn chính xác.
         </p>
-        <Button
-          onClick={() => router.push("/")}
-          className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
-          variant="outline"
-        >
-          <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-          Về trang chủ
-        </Button>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <Button
+            onClick={() => router.push(`/careers/${orgSlug}`)}
+            className="h-9 rounded-xl text-xs font-semibold cursor-pointer"
+            variant="default"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+            Xem các vị trí khác
+          </Button>
+          <Button
+            onClick={() => router.push("/")}
+            className="h-9 rounded-xl text-xs font-semibold cursor-pointer"
+            variant="outline"
+          >
+            Về trang chủ
+          </Button>
+        </div>
       </div>
     );
   }
 
-  // Nếu trạng thái của job không phải là đang mở (PUBLISHED) thì không được hiển thị nội dung tuyển dụng
+  // Nếu trạng thái của job không phải là đang mở (PUBLISHED)
   if (job.status !== "PUBLISHED") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center">
@@ -187,36 +205,39 @@ export default function CareerJobPage() {
         </div>
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Vị trí tuyển dụng chưa mở hoặc đã đóng</h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md leading-relaxed">
-          Vị trí này hiện đang ở trạng thái bản nháp hoặc đã ngừng nhận hồ sơ ứng tuyển. Vui lòng quay lại sau hoặc liên hệ với bộ phận tuyển dụng của công ty.
+          Vị trí này hiện đang ở trạng thái bản nháp hoặc đã ngừng nhận hồ sơ ứng tuyển. Vui lòng quay lại sau hoặc tham khảo các vị trí khác của công ty.
         </p>
         <Button
-          onClick={() => router.push("/")}
+          onClick={() => router.push(`/careers/${orgSlug}`)}
           className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
           variant="outline"
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-          Về trang chủ
+          Về danh sách việc làm
         </Button>
       </div>
     );
   }
 
-  const orgName = job.organization?.name || "Công ty tuyển dụng";
+  const orgName = job.organization?.name || "Doanh nghiệp";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/70 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link
+            href={`/careers/${orgSlug}`}
+            className="flex items-center gap-3 hover:opacity-85 transition-opacity"
+          >
             <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-base shadow-xs">
               {orgName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Careers at</div>
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Careers at</div>
               <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight">{orgName}</div>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -251,7 +272,17 @@ export default function CareerJobPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
+        {/* Back Link Breadcrumb */}
+        <div>
+          <Link
+            href={`/careers/${orgSlug}`}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            <span>Tất cả vị trí tại {orgName}</span>
+          </Link>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Job Overview & Description (7 cols) */}
@@ -327,7 +358,7 @@ export default function CareerJobPage() {
               <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
                 <p className="font-bold text-slate-800 dark:text-white">Quy trình tuyển dụng minh bạch</p>
                 <p className="leading-relaxed">
-                  Hồ sơ của bạn được lưu trữ an toàn và bảo mật. Sau khi tiếp nhận, đội ngũ nhân sự sẽ phản hồi trạng thái hồ sơ trực tiếp qua email của bạn.
+                  Hồ sơ của bạn được lưu trữ an toàn và bảo mật. Sau khi tiếp nhận, đội ngũ nhân sự của {orgName} sẽ xem xét và phản hồi trực tiếp qua email của bạn.
                 </p>
               </div>
             </div>
@@ -366,21 +397,29 @@ export default function CareerJobPage() {
                   )}
                 </div>
 
-                <Button
-                  onClick={() => {
-                    setIsSuccess(false);
-                    setResumeFile(null);
-                    setLastName("");
-                    setFirstName("");
-                    setCandidateEmail("");
-                    setCandidatePhone("");
-                    setNotes("");
-                  }}
-                  variant="outline"
-                  className="w-full h-9 rounded-xl text-xs font-semibold cursor-pointer"
-                >
-                  Nộp một hồ sơ khác
-                </Button>
+                <div className="space-y-2 pt-2">
+                  <Button
+                    onClick={() => {
+                      setIsSuccess(false);
+                      setResumeFile(null);
+                      setLastName("");
+                      setFirstName("");
+                      setCandidateEmail("");
+                      setCandidatePhone("");
+                      setNotes("");
+                    }}
+                    variant="outline"
+                    className="w-full h-9 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Nộp một hồ sơ khác
+                  </Button>
+                  <Button
+                    onClick={() => router.push(`/careers/${orgSlug}`)}
+                    className="w-full h-9 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                  >
+                    Xem các vị trí khác tại {orgName}
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="p-6 sm:p-8 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md space-y-6">
@@ -513,7 +552,7 @@ export default function CareerJobPage() {
                           Nhấp để tải lên hoặc kéo thả CV vào đây
                         </div>
                         <div className="text-[11px] text-slate-400 mt-0.5">
-                          Hỗ trợ file PDF, DOC, DOCX (Tối đa 10MB)
+                          Hỗ trợ tệp PDF, DOC, DOCX (Tối đa 10MB)
                         </div>
                       </label>
                     )}
@@ -522,20 +561,6 @@ export default function CareerJobPage() {
                       <p className="text-[11px] text-rose-500 font-medium">{fileError}</p>
                     )}
                   </div>
-
-                  {/* Notes / Message - Tạm thời ẩn */}
-                  {/* <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Lời nhắn gửi nhà tuyển dụng <span className="text-slate-400 font-normal">(Tùy chọn)</span>
-                    </label>
-                    <Textarea
-                      rows={3}
-                      placeholder="Giới thiệu ngắn gọn về bản thân hoặc kinh nghiệm nổi bật của bạn..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      className="rounded-xl text-xs resize-none"
-                    />
-                  </div> */}
 
                   {/* Submit Button */}
                   <Button

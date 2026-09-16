@@ -156,4 +156,10 @@ export class OrganizationsController {
   ) {
     return this.orgsService.joinByToken(req.user.id, token);
   }
+
+  // Public endpoint to view organization profile by slug (no auth needed)
+  @Get("public/:slug")
+  async getPublicOrg(@Param("slug") slug: string) {
+    return this.orgsService.getPublicOrg(slug);
+  }
 }

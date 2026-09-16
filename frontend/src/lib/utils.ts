@@ -371,3 +371,32 @@ export function aggregateCandidates(applications: Application[]): CandidateItem[
 
   return Array.from(map.values());
 }
+
+/**
+ * Generate URL-friendly slug from title (e.g. "Senior Full-Stack Engineer" -> "senior-full-stack-engineer")
+ */
+export function slugify(str?: string | null): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Generate public careers URL for a job: /careers/[orgSlug]/[jobSlug]
+ */
+export function getJobPublicUrl(job: {
+  id: string;
+  title: string;
+  organization?: { slug?: string | null } | null;
+}): string {
+  const orgSlug = job.organization?.slug || "admin";
+  const jobSlug = slugify(job.title) || job.id;
+  return `/careers/${orgSlug}/${jobSlug}`;
+}
+

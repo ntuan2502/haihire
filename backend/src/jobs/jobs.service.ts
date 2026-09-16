@@ -15,6 +15,7 @@ export class JobsService {
     department?: string;
     search?: string;
     organizationId?: string;
+    organizationSlug?: string;
   }) {
     const jobs = await this.prisma.db.orm.public.Job.select(
       "id",
@@ -56,14 +57,31 @@ export class JobsService {
       item.byStage[app.stage] = (item.byStage[app.stage] || 0) + 1;
     }
 
+    const allOrgs = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "name",
+      "slug",
+    ).all();
+    const orgMap = new Map(allOrgs.map((o) => [o.id, o]));
+
     let result = jobs.map((job) => ({
       ...job,
+      organization: job.organizationId ? orgMap.get(job.organizationId) ?? null : null,
       applicationsCount: appCountMap.get(job.id)?.total ?? 0,
       applicationsByStage: appCountMap.get(job.id)?.byStage ?? {},
     }));
 
-    // Filter by Organization if specified
-    if (filter?.organizationId !== undefined) {
+    // Filter by Organization ID or Organization Slug if specified
+    if (filter?.organizationSlug) {
+      const org = await this.prisma.db.orm.public.Organization.select("id")
+        .where((o) => o.slug.eq(filter.organizationSlug as string))
+        .first();
+      if (org) {
+        result = result.filter((j) => j.organizationId === org.id);
+      } else {
+        return [];
+      }
+    } else if (filter?.organizationId !== undefined) {
       result = result.filter((j) => j.organizationId === filter.organizationId);
     }
     if (filter?.status) {
@@ -149,6 +167,69 @@ export class JobsService {
       applications,
       applicationsCount: applications.length,
     };
+  }
+
+  async findBySlug(orgSlug: string, jobSlug: string) {
+    const org = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "name",
+      "slug",
+    )
+      .where((o) => o.slug.eq(orgSlug))
+      .first();
+
+    if (!org) {
+      throw new NotFoundException(`Organization '${orgSlug}' not found`);
+    }
+
+    const jobs = await this.prisma.db.orm.public.Job.select(
+      "id",
+      "title",
+      "department",
+      "location",
+      "postalCode",
+      "experienceLevel",
+      "workplace",
+      "type",
+      "description",
+      "requirements",
+      "salaryRange",
+      "status",
+      "organizationId",
+      "createdById",
+      "createdAt",
+      "updatedAt",
+    )
+      .where((j) => j.organizationId.eq(org.id))
+      .all();
+
+    const slugify = (str: string) =>
+      str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+    const matchedJob = jobs.find((j) => {
+      if (j.id === jobSlug) return true;
+      if (j.id.startsWith(jobSlug)) return true;
+      const titleSlug = slugify(j.title);
+      if (titleSlug === jobSlug) return true;
+      if (`${titleSlug}-${j.id.slice(0, 8)}` === jobSlug) return true;
+      if (jobSlug.endsWith(j.id)) return true;
+      return false;
+    });
+
+    if (!matchedJob) {
+      throw new NotFoundException(
+        `Job '${jobSlug}' not found in organization '${orgSlug}'`,
+      );
+    }
+
+    return this.findOne(matchedJob.id);
   }
 
   async create(dto: CreateJobDto) {

@@ -32,6 +32,7 @@ import type { Job, Application, ApplicationStage } from "@/types";
 import { JobStatusBadge } from "@/components/ui/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
+import { getJobPublicUrl } from "@/lib/utils";
 
 type ViewMode = "grid" | "list" | "table";
 
@@ -374,7 +375,7 @@ export function JobList({
                         e.stopPropagation();
                         if (typeof window !== "undefined" && navigator.clipboard) {
                           navigator.clipboard.writeText(
-                            `${window.location.origin}/careers/${job.id}`,
+                            `${window.location.origin}${getJobPublicUrl(job)}`,
                           );
                           setCopiedJobId(job.id);
                           setTimeout(() => setCopiedJobId(null), 2000);
@@ -519,7 +520,7 @@ export function JobList({
                         e.stopPropagation();
                         if (typeof window !== "undefined" && navigator.clipboard) {
                           navigator.clipboard.writeText(
-                            `${window.location.origin}/careers/${job.id}`,
+                            `${window.location.origin}${getJobPublicUrl(job)}`,
                           );
                           setCopiedJobId(job.id);
                           setTimeout(() => setCopiedJobId(null), 2000);

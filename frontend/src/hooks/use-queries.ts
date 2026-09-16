@@ -48,6 +48,39 @@ export function useJob(id: string | null) {
   });
 }
 
+export function usePublicOrg(slug: string | null) {
+  return useQuery<Organization>({
+    queryKey: ["organization", "public", slug],
+    queryFn: () => {
+      if (!slug) throw new Error("Organization slug is required");
+      return organizationsApi.getPublicOrg(slug);
+    },
+    enabled: Boolean(slug),
+  });
+}
+
+export function usePublicJobs(orgSlug: string | null) {
+  return useQuery<Job[]>({
+    queryKey: ["jobs", "public-list", orgSlug],
+    queryFn: () => {
+      if (!orgSlug) return [];
+      return jobsApi.getAll({ organizationSlug: orgSlug, status: "PUBLISHED" });
+    },
+    enabled: Boolean(orgSlug),
+  });
+}
+
+export function usePublicJob(orgSlug: string | null, jobSlug: string | null) {
+  return useQuery<Job>({
+    queryKey: ["jobs", "public-detail", orgSlug, jobSlug],
+    queryFn: () => {
+      if (!orgSlug || !jobSlug) throw new Error("Org slug and Job slug are required");
+      return jobsApi.getBySlug(orgSlug, jobSlug);
+    },
+    enabled: Boolean(orgSlug && jobSlug),
+  });
+}
+
 export function useUpdateJobMutation() {
   const queryClient = useQueryClient();
 

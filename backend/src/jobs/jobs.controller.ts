@@ -30,13 +30,23 @@ export class JobsController {
     @Query("department") department?: string,
     @Query("search") search?: string,
     @Query("organizationId") organizationId?: string,
+    @Query("organizationSlug") organizationSlug?: string,
   ) {
     return this.jobsService.findAll({
       status,
       department,
       search,
       organizationId: organizationId || undefined,
+      organizationSlug: organizationSlug || undefined,
     });
+  }
+
+  @Get("careers/:orgSlug/:jobSlug")
+  findBySlug(
+    @Param("orgSlug") orgSlug: string,
+    @Param("jobSlug") jobSlug: string,
+  ) {
+    return this.jobsService.findBySlug(orgSlug, jobSlug);
   }
 
   @Get(":id")

@@ -62,7 +62,9 @@ import {
   aggregateCandidates,
   type CandidateItem,
 } from "@/lib/utils";
-import type { CandidateDocument } from "@/types";
+import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
+import { parseInterviewFromNotes } from "@/lib/interviews";
+import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/ui/stage-badge";
 import { useI18n } from "@/i18n";
 
@@ -88,6 +90,8 @@ function CandidatesPageContent() {
     useState<CandidateItem | null>(null);
   const [applyToJobModalCandidate, setApplyToJobModalCandidate] =
     useState<CandidateItem | null>(null);
+  const [scheduleInterviewApp, setScheduleInterviewApp] =
+    useState<Application | null>(null);
   const [drawerTab, setDrawerTab] = useState<"applications" | "documents">(
     "applications",
   );
@@ -1045,21 +1049,48 @@ function CandidatesPageContent() {
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
                           {filteredDrawerApps.map((app) => {
                             const job = jobs.find((j) => j.id === app.jobId);
+                            const scheduled = parseInterviewFromNotes(app.notes);
                             return (
                               <div
                                 key={app.id}
-                                className="py-2.5 flex items-center justify-between gap-3 text-xs"
+                                className="py-3 space-y-2 text-xs"
                               >
-                                <div className="space-y-0.5">
-                                  <h4 className="font-bold text-slate-900 dark:text-white">
-                                    {job?.title || "Position"}
-                                  </h4>
-                                  <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                                    Stage: {app.stage} • Applied{" "}
-                                    {formatDate(app.createdAt, "short")}
-                                  </p>
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="space-y-0.5 min-w-0">
+                                    <h4 className="font-bold text-slate-900 dark:text-white truncate">
+                                      {job?.title || "Position"}
+                                    </h4>
+                                    <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                                      Stage: {app.stage} • Applied{" "}
+                                      {formatDate(app.createdAt, "short")}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <StageBadge stage={app.stage} />
+                                    {canEdit && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setScheduleInterviewApp(app)}
+                                        className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                                        title={scheduled ? "Cập nhật lịch phỏng vấn" : "Lên lịch phỏng vấn"}
+                                      >
+                                        <Calendar className="h-3 w-3 inline mr-1" />
+                                        {scheduled ? "Lịch: " + scheduled.date : "Lên lịch"}
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <StageBadge stage={app.stage} />
+
+                                {scheduled && (
+                                  <div className="p-2.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-[11px] flex items-center justify-between">
+                                    <span className="font-semibold text-blue-900 dark:text-blue-300">
+                                      {scheduled.type} ({scheduled.date} lúc {scheduled.time})
+                                    </span>
+                                    <span className="text-blue-700 dark:text-blue-400 font-medium">
+                                      {scheduled.format} • {scheduled.interviewer}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -1325,6 +1356,18 @@ function CandidatesPageContent() {
         jobs={jobs}
         selectedJobId={activeJobId}
       />
+
+      {/* Schedule Interview Modal */}
+      {scheduleInterviewApp && (
+        <ScheduleInterviewModal
+          isOpen={!!scheduleInterviewApp}
+          onClose={() => setScheduleInterviewApp(null)}
+          jobs={jobs}
+          applications={applications}
+          selectedJobId={scheduleInterviewApp.jobId || undefined}
+          selectedApplicationId={scheduleInterviewApp.id}
+        />
+      )}
 
 
       {/* Delete Document Confirmation Modal matching Screenshot 3 */}

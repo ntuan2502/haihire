@@ -118,6 +118,7 @@ export function parseCandidateNotes(
     .replace(/LastName:\s*[^|]+\|?/gi, "")
     .replace(/DisplayName:\s*[^|]+\|?/gi, "")
     .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
+    .replace(/Interview:\s*\{.*?\}\s*\|?/gi, "")
     .trim();
   rawCustom = rawCustom.replace(/^\|\s*|\s*\|$/g, "").trim();
 

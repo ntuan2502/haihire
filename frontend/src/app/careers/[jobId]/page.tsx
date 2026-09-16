@@ -165,11 +165,11 @@ export default function CareerJobPage() {
         </div>
         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Không tìm thấy vị trí tuyển dụng</h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md">
-          Vị trí này có thể đã bị đóng hoặc đường dẫn không còn chính xác.
+          Vị trí này có thể không tồn tại hoặc đường dẫn không còn chính xác.
         </p>
         <Button
           onClick={() => router.push("/")}
-          className="mt-6 h-9 rounded-xl text-xs font-semibold"
+          className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
           variant="outline"
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
@@ -179,7 +179,29 @@ export default function CareerJobPage() {
     );
   }
 
-  const isClosed = job.status === "CLOSED" || job.status === "ARCHIVED";
+  // Nếu trạng thái của job không phải là đang mở (PUBLISHED) thì không được hiển thị nội dung tuyển dụng
+  if (job.status !== "PUBLISHED") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center">
+        <div className="h-14 w-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
+          <AlertCircle className="h-7 w-7" />
+        </div>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Vị trí tuyển dụng chưa mở hoặc đã đóng</h1>
+        <p className="mt-2 text-sm text-slate-500 max-w-md leading-relaxed">
+          Vị trí này hiện đang ở trạng thái bản nháp hoặc đã ngừng nhận hồ sơ ứng tuyển. Vui lòng quay lại sau hoặc liên hệ với bộ phận tuyển dụng của công ty.
+        </p>
+        <Button
+          onClick={() => router.push("/")}
+          className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
+          variant="outline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+          Về trang chủ
+        </Button>
+      </div>
+    );
+  }
+
   const orgName = job.organization?.name || "Công ty tuyển dụng";
 
   return (
@@ -219,29 +241,18 @@ export default function CareerJobPage() {
 
             <LanguageDropdown />
 
-            {!isClosed && (
-              <Button
-                onClick={scrollToForm}
-                className="hidden sm:inline-flex h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
-              >
-                Ứng tuyển ngay
-              </Button>
-            )}
+            <Button
+              onClick={scrollToForm}
+              className="hidden sm:inline-flex h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+            >
+              Ứng tuyển ngay
+            </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        {/* Banner if closed */}
-        {isClosed && (
-          <div className="mb-8 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center gap-3 text-amber-800 dark:text-amber-300">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <div className="text-xs sm:text-sm font-semibold">
-              Vị trí tuyển dụng này hiện đã tạm dừng nhận hồ sơ ứng tuyển mới.
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Job Overview & Description (7 cols) */}
@@ -371,14 +382,6 @@ export default function CareerJobPage() {
                 >
                   Nộp một hồ sơ khác
                 </Button>
-              </div>
-            ) : isClosed ? (
-              <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs text-center space-y-3">
-                <AlertCircle className="h-10 w-10 text-slate-400 mx-auto" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Đã đóng nhận hồ sơ</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Rất tiếc, vị trí này hiện không còn mở cho ứng viên mới. Hãy theo dõi các cơ hội nghề nghiệp tiếp theo của {orgName}.
-                </p>
               </div>
             ) : (
               <div className="p-6 sm:p-8 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md space-y-6">

@@ -216,12 +216,16 @@ export class ApplicationsService {
 
   async create(dto: CreateApplicationDto, file?: Express.Multer.File) {
     if (dto.jobId) {
-      const job = await this.prisma.db.orm.public.Job.select("id", "title")
+      const job = await this.prisma.db.orm.public.Job.select("id", "title", "status")
         .where((j) => j.id.eq(dto.jobId as string))
         .first();
 
       if (!job) {
         throw new NotFoundException(`Job with ID ${dto.jobId} not found`);
+      }
+
+      if (job.status !== "PUBLISHED") {
+        throw new BadRequestException("This job is not currently accepting applications.");
       }
     }
 

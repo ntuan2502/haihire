@@ -21,6 +21,7 @@ import {
   useAllApplications,
   useUploadDocumentMutation,
   useDeleteDocumentMutation,
+  useUpdateCandidateMutation,
 } from "@/hooks/use-queries";
 import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -63,7 +64,8 @@ import {
   type CandidateItem,
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
-import { parseAllInterviewsFromNotes } from "@/lib/interviews";
+import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
+import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/ui/stage-badge";
 import { useI18n } from "@/i18n";
@@ -105,6 +107,31 @@ function CandidatesPageContent() {
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const drawerDocInputRef = React.useRef<HTMLInputElement>(null);
   const deleteDocMutation = useDeleteDocumentMutation();
+  const updateCandidateMutation = useUpdateCandidateMutation();
+
+  const handleCancelInterview = async (targetApp: Application) => {
+    try {
+      const updatedNotes = removeInterviewFromNotes(targetApp.notes);
+      await updateCandidateMutation.mutateAsync({
+        id: targetApp.id,
+        data: {
+          notes: updatedNotes,
+        },
+      });
+      setSelectedCandidate((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          rawApp:
+            prev.rawApp.id === targetApp.id
+              ? { ...prev.rawApp, notes: updatedNotes }
+              : prev.rawApp,
+        };
+      });
+    } catch (err) {
+      console.error("Failed to cancel interview in drawer:", err);
+    }
+  };
 
   const drawerCandidateDocuments = useMemo(() => {
     if (!selectedCandidate) return [];
@@ -1053,7 +1080,7 @@ function CandidatesPageContent() {
                             return (
                               <div
                                 key={app.id}
-                                className="py-3 space-y-2 text-xs"
+                                className="py-4 space-y-3 text-xs"
                               >
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="space-y-0.5 min-w-0">
@@ -1067,48 +1094,28 @@ function CandidatesPageContent() {
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">
                                     <StageBadge stage={app.stage} />
-                                    {canEdit && (
+                                    {canEdit && allInterviews.length === 0 && (
                                       <button
                                         type="button"
                                         onClick={() => setScheduleInterviewApp(app)}
                                         className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                                        title={allInterviews.length > 0 ? "Cập nhật lịch phỏng vấn" : "Lên lịch phỏng vấn"}
+                                        title="Lên lịch phỏng vấn"
                                       >
                                         <Calendar className="h-3 w-3 inline mr-1" />
-                                        {allInterviews.length > 1
-                                          ? `${allInterviews.length} lịch hẹn`
-                                          : allInterviews.length === 1
-                                            ? "Lịch: " + allInterviews[0].date
-                                            : "Lên lịch"}
+                                        <span>Lên lịch</span>
                                       </button>
                                     )}
                                   </div>
                                 </div>
 
-                                {allInterviews.length > 0 && (
-                                  <div className="space-y-1.5">
-                                    {allInterviews.map((scheduled, idx) => (
-                                      <div
-                                        key={`${scheduled.date}-${scheduled.time}-${idx}`}
-                                        className="p-2.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-[11px] flex items-center justify-between"
-                                      >
-                                        <div className="flex items-center gap-1.5">
-                                          {allInterviews.length > 1 && (
-                                            <span className="px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-[9px] font-bold">
-                                              {scheduled.round ? `Vòng ${scheduled.round}` : `Lịch #${allInterviews.length - idx}`}
-                                            </span>
-                                          )}
-                                          <span className="font-semibold text-blue-900 dark:text-blue-300">
-                                            {scheduled.type} ({scheduled.date} lúc {scheduled.time})
-                                          </span>
-                                        </div>
-                                        <span className="text-blue-700 dark:text-blue-400 font-medium">
-                                          {scheduled.format} • {scheduled.interviewer}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
+                                <CandidateInterviewsList
+                                  notes={app.notes}
+                                  onSchedule={() => setScheduleInterviewApp(app)}
+                                  onCancelInterview={() => handleCancelInterview(app)}
+                                  canEdit={canEdit}
+                                  showSectionHeader={false}
+                                  hideIfEmpty={allInterviews.length === 0}
+                                />
                               </div>
                             );
                           })}

@@ -12,6 +12,7 @@ import {
   useUploadDocumentMutation,
   useDeleteApplicationMutation,
   useDeleteDocumentMutation,
+  useUpdateCandidateMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
@@ -48,7 +49,10 @@ import {
   fixUtf8String,
   isValidUuid,
 } from "@/lib/utils";
-import type { CandidateDocument } from "@/types";
+import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
+import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
+import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
+import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/ui/stage-badge";
 import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
 import { useI18n } from "@/i18n";
@@ -69,11 +73,28 @@ function CandidateDetailPageContent() {
   const uploadDocumentMutation = useUploadDocumentMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
   const deleteDocMutation = useDeleteDocumentMutation();
+  const updateCandidateMutation = useUpdateCandidateMutation();
 
   const [activeTab, setActiveTab] = useState<"applications" | "documents">(
     "applications",
   );
   const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [scheduleInterviewApp, setScheduleInterviewApp] =
+    useState<Application | null>(null);
+
+  const handleCancelInterview = async (targetApp: Application) => {
+    try {
+      const updatedNotes = removeInterviewFromNotes(targetApp.notes);
+      await updateCandidateMutation.mutateAsync({
+        id: targetApp.id,
+        data: {
+          notes: updatedNotes,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to cancel interview:", err);
+    }
+  };
   const [documentFilter, setDocumentFilter] = useState("Resume");
   const [stageFilter, setStageFilter] = useState("ALL");
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
@@ -561,22 +582,47 @@ function CandidateDetailPageContent() {
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredCandidateApps.map((app) => {
                     const job = jobs.find((j) => j.id === app.jobId);
+                    const allInterviews = parseAllInterviewsFromNotes(app.notes);
                     return (
                       <div
                         key={app.id}
-                        className="py-3 flex items-center justify-between gap-4 text-xs"
+                        className="py-4 space-y-3 text-xs"
                       >
-                        <div className="space-y-0.5">
-                          <h4 className="font-bold text-slate-900 dark:text-white">
-                            {job?.title || "Position"}
-                          </h4>
-                          <p className="text-[11px] text-slate-400 flex items-center gap-2">
-                            <span>{t("candidates.stage")}: {app.stage}</span>
-                            <span>•</span>
-                            <span>{t("candidates.appliedDate")} {formatDate(app.createdAt)}</span>
-                          </p>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="space-y-0.5">
+                            <h4 className="font-bold text-slate-900 dark:text-white">
+                              {job?.title || "Position"}
+                            </h4>
+                            <p className="text-[11px] text-slate-400 flex items-center gap-2">
+                              <span>{t("candidates.stage")}: {app.stage}</span>
+                              <span>•</span>
+                              <span>{t("candidates.appliedDate")} {formatDate(app.createdAt)}</span>
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <StageBadge stage={app.stage} />
+                            {canEdit && allInterviews.length === 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setScheduleInterviewApp(app)}
+                                className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                                title="Lên lịch phỏng vấn"
+                              >
+                                <Calendar className="h-3 w-3 inline mr-1" />
+                                <span>Lên lịch</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <StageBadge stage={app.stage} />
+
+                        <CandidateInterviewsList
+                          notes={app.notes}
+                          onSchedule={() => setScheduleInterviewApp(app)}
+                          onCancelInterview={() => handleCancelInterview(app)}
+                          canEdit={canEdit}
+                          showSectionHeader={false}
+                          hideIfEmpty={allInterviews.length === 0}
+                        />
                       </div>
                     );
                   })}
@@ -822,6 +868,18 @@ function CandidateDetailPageContent() {
         onConfirm={handleConfirmDeleteDoc}
         isLoading={isDeletingDoc}
       />
+
+      {/* Schedule Interview Modal */}
+      {scheduleInterviewApp && (
+        <ScheduleInterviewModal
+          isOpen={!!scheduleInterviewApp}
+          onClose={() => setScheduleInterviewApp(null)}
+          jobs={jobs}
+          applications={applications}
+          selectedJobId={scheduleInterviewApp.jobId || undefined}
+          selectedApplicationId={scheduleInterviewApp.id}
+        />
+      )}
     </div>
   );
 }

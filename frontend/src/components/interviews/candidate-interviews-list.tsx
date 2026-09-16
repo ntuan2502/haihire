@@ -23,6 +23,7 @@ export interface CandidateInterviewsListProps {
   title?: string;
   showSectionHeader?: boolean;
   className?: string;
+  hideIfEmpty?: boolean;
 }
 
 export function CandidateInterviewsList({
@@ -33,11 +34,15 @@ export function CandidateInterviewsList({
   title,
   showSectionHeader = true,
   className = "",
+  hideIfEmpty = false,
 }: CandidateInterviewsListProps) {
   const { t } = useI18n();
   const allInterviews = parseAllInterviewsFromNotes(notes);
 
   if (allInterviews.length === 0) {
+    if (hideIfEmpty) {
+      return null;
+    }
     return (
       <div className={`space-y-4 ${className}`}>
         {showSectionHeader && (

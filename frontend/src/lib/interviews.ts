@@ -24,19 +24,95 @@ export interface ScheduledInterviewInfo {
 }
 
 /**
+ * Safely extract all balanced JSON blocks after "Interview:" from candidate notes.
+ * Handles nested JSON structures (such as scorecards) and escaped characters cleanly.
+ */
+export function extractInterviewJsonBlocks(notes?: string | null): {
+  raw: string; // The full "Interview: {...}" substring
+  json: string; // The "{...}" substring
+  parsed: ScheduledInterviewInfo | null;
+}[] {
+  if (!notes) return [];
+  const results: { raw: string; json: string; parsed: ScheduledInterviewInfo | null }[] = [];
+  const keyword = "Interview:";
+  let searchIdx = 0;
+
+  while (searchIdx < notes.length) {
+    const foundIdx = notes.indexOf(keyword, searchIdx);
+    if (foundIdx === -1) break;
+
+    // Find the opening brace '{'
+    let braceStart = foundIdx + keyword.length;
+    while (braceStart < notes.length && /\s/.test(notes[braceStart])) {
+      braceStart++;
+    }
+
+    if (braceStart >= notes.length || notes[braceStart] !== "{") {
+      searchIdx = foundIdx + keyword.length;
+      continue;
+    }
+
+    // Parse balanced braces
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    let braceEnd = -1;
+
+    for (let i = braceStart; i < notes.length; i++) {
+      const char = notes[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (char === "\\") {
+        escape = true;
+        continue;
+      }
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (!inString) {
+        if (char === "{") depth++;
+        else if (char === "}") {
+          depth--;
+          if (depth === 0) {
+            braceEnd = i;
+            break;
+          }
+        }
+      }
+    }
+
+    if (braceEnd !== -1) {
+      const jsonStr = notes.slice(braceStart, braceEnd + 1);
+      const rawStr = notes.slice(foundIdx, braceEnd + 1);
+      let parsed: ScheduledInterviewInfo | null = null;
+      try {
+        parsed = JSON.parse(jsonStr) as ScheduledInterviewInfo;
+      } catch {
+        parsed = null;
+      }
+      results.push({ raw: rawStr, json: jsonStr, parsed });
+      searchIdx = braceEnd + 1;
+    } else {
+      searchIdx = foundIdx + keyword.length;
+    }
+  }
+
+  return results;
+}
+
+/**
  * Extract all scheduled or past interviews from candidate notes
  */
 export function parseAllInterviewsFromNotes(notes?: string | null): ScheduledInterviewInfo[] {
   if (!notes) return [];
-  const matches = [...notes.matchAll(/Interview:\s*(\{.*?\})/g)];
-  if (!matches.length) return [];
+  const blocks = extractInterviewJsonBlocks(notes);
   const list: ScheduledInterviewInfo[] = [];
-  for (const match of matches) {
-    try {
-      const parsed = JSON.parse(match[1]) as ScheduledInterviewInfo;
-      list.push(parsed);
-    } catch {
-      // ignore malformed entries
+  for (const block of blocks) {
+    if (block.parsed) {
+      list.push(block.parsed);
     }
   }
 
@@ -67,6 +143,30 @@ export function parseInterviewFromNotes(notes?: string | null): ScheduledIntervi
 }
 
 /**
+ * Remove interview metadata from notes when cancelling an interview or rebuilding notes
+ */
+export function removeInterviewFromNotes(currentNotes?: string | null): string {
+  if (!currentNotes) return "";
+  const blocks = extractInterviewJsonBlocks(currentNotes);
+  let cleaned = currentNotes;
+  for (const block of blocks) {
+    cleaned = cleaned.replace(block.raw, "");
+  }
+  // Clean up any remaining legacy fragments or stray separators
+  cleaned = cleaned
+    .replace(/Interview:\s*\{.*?\}\s*\|?/g, "")
+    .replace(/\|\s*\}\s*\|/g, "|")
+    .replace(/\|\s*\|/g, "|")
+    .replace(/^[|{}\s]+|[|{}\s]+$/g, "")
+    .trim();
+
+  if (/^[{}|\s]+$/.test(cleaned)) {
+    return "";
+  }
+  return cleaned;
+}
+
+/**
  * Append or replace interview metadata JSON inside candidate notes.
  * Preserves other past interview rounds if they exist.
  */
@@ -75,10 +175,7 @@ export function stringifyInterviewToNotes(
   info: ScheduledInterviewInfo,
 ): string {
   const all = parseAllInterviewsFromNotes(currentNotes);
-  const baseText = (currentNotes || "")
-    .replace(/Interview:\s*\{.*?\}\s*\|?/g, "")
-    .replace(/^\|\s*|\s*\|$/g, "")
-    .trim();
+  const baseText = removeInterviewFromNotes(currentNotes);
 
   // If previous interviews exist, update matching round/date or prepend as new round
   if (all.length > 0) {
@@ -123,10 +220,7 @@ export function saveInterviewScorecardToNotes(
   scorecard: InterviewScorecard,
 ): string {
   const all = parseAllInterviewsFromNotes(currentNotes);
-  const baseText = (currentNotes || "")
-    .replace(/Interview:\s*\{.*?\}\s*\|?/g, "")
-    .replace(/^\|\s*|\s*\|$/g, "")
-    .trim();
+  const baseText = removeInterviewFromNotes(currentNotes);
 
   let matched = false;
   const updatedList = all.map((intv) => {
@@ -161,13 +255,4 @@ export function saveInterviewScorecardToNotes(
     .join(" | ");
 
   return baseText ? `${baseText} | ${interviewPart}` : interviewPart;
-}
-
-/**
- * Remove interview metadata from notes when cancelling an interview
- */
-export function removeInterviewFromNotes(currentNotes?: string | null): string {
-  if (!currentNotes) return "";
-  const cleaned = currentNotes.replace(/Interview:\s*\{.*?\}\s*\|?/g, "").trim();
-  return cleaned.replace(/^\|\s*|\s*\|$/g, "").trim();
 }

@@ -228,20 +228,71 @@ export function CandidateInterviewsList({
 
             {/* Scorecard Overview */}
             {scheduled.scorecard && (
-              <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/80 space-y-2 text-xs">
+              <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/80 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                     <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
                     <span>Đánh giá kết quả: {scheduled.scorecard.overallRating} / 5 sao</span>
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 shadow-2xs">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
                     Đề xuất: {scheduled.scorecard.recommendation}
                   </span>
                 </div>
+
+                {/* Criteria breakdown */}
+                {(scheduled.scorecard.technicalScore ||
+                  scheduled.scorecard.communicationScore ||
+                  scheduled.scorecard.cultureScore ||
+                  scheduled.scorecard.problemSolvingScore) && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
+                    {scheduled.scorecard.technicalScore && (
+                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Kỹ thuật</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          {scheduled.scorecard.technicalScore}/5
+                        </span>
+                      </div>
+                    )}
+                    {scheduled.scorecard.communicationScore && (
+                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Giao tiếp</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          {scheduled.scorecard.communicationScore}/5
+                        </span>
+                      </div>
+                    )}
+                    {scheduled.scorecard.cultureScore && (
+                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Văn hóa</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          {scheduled.scorecard.cultureScore}/5
+                        </span>
+                      </div>
+                    )}
+                    {scheduled.scorecard.problemSolvingScore && (
+                      <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Giải quyết vấn đề</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          {scheduled.scorecard.problemSolvingScore}/5
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {scheduled.scorecard.feedback && (
-                  <p className="text-slate-600 dark:text-slate-300 italic pt-1 border-t border-amber-200/60 dark:border-amber-800/60">
-                    &ldquo;{scheduled.scorecard.feedback}&rdquo;
-                  </p>
+                  <div className="pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 block mb-0.5">
+                      Nhận xét chi tiết:
+                    </span>
+                    <p className="text-slate-700 dark:text-slate-300 italic bg-white/60 dark:bg-slate-900/40 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
+                      &ldquo;{scheduled.scorecard.feedback}&rdquo;
+                    </p>
+                  </div>
                 )}
               </div>
             )}

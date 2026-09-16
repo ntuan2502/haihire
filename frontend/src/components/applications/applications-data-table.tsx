@@ -24,6 +24,9 @@ import {
   Sparkles,
   Columns3,
   FileText,
+  User,
+  MessageSquare,
+  FileCheck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -39,6 +42,13 @@ import { StageBadge } from "@/components/ui/stage-badge";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
+import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
+import {
+  parseInterviewFromNotes,
+  removeInterviewFromNotes,
+  stringifyInterviewToNotes,
+  type ScheduledInterviewInfo,
+} from "@/lib/interviews";
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
@@ -49,6 +59,7 @@ import { getApiBaseUrl } from "@/lib/api";
 import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
+  useUpdateCandidateMutation,
 } from "@/hooks/use-queries";
 import {
   getInitials,
@@ -83,6 +94,7 @@ export function ApplicationsDataTable({
   const { t } = useI18n();
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
+  const updateCandidateMutation = useUpdateCandidateMutation();
 
   const [search, setSearch] = useState("");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -91,6 +103,7 @@ export function ApplicationsDataTable({
   const [drawerNoteInput, setDrawerNoteInput] = useState("");
   const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   // Drawer Overview sections visibility state
   const [drawerOverviewSections, setDrawerOverviewSections] =
@@ -225,11 +238,38 @@ export function ApplicationsDataTable({
     }
   };
 
+  const currentApp = useMemo(() => {
+    if (!selectedApp) return null;
+    return (
+      initialApplications.find((a) => a.id === selectedApp.id) || selectedApp
+    );
+  }, [selectedApp, initialApplications]);
+
+  const scheduledInterview = useMemo(() => {
+    return parseInterviewFromNotes(currentApp?.notes);
+  }, [currentApp?.notes]);
+
+  const handleCancelInterview = async () => {
+    if (!currentApp) return;
+    try {
+      const updatedNotes = removeInterviewFromNotes(currentApp.notes);
+      await updateCandidateMutation.mutateAsync({
+        id: currentApp.id,
+        data: {
+          notes: updatedNotes,
+        },
+      });
+      setSelectedApp((prev) => (prev ? { ...prev, notes: updatedNotes } : null));
+    } catch (err) {
+      console.error("Failed to cancel interview:", err);
+    }
+  };
+
   const handleStageChange = async (newStage: ApplicationStage) => {
-    if (!selectedApp) return;
+    if (!currentApp) return;
     try {
       await updateStageMutation.mutateAsync({
-        id: selectedApp.id,
+        id: currentApp.id,
         stage: newStage,
       });
       setSelectedApp((prev) => (prev ? { ...prev, stage: newStage } : null));
@@ -299,13 +339,13 @@ export function ApplicationsDataTable({
   };
 
   const drawerCandidateDocuments = useMemo(() => {
-    if (!selectedApp) return [];
+    if (!currentApp) return [];
     const seenUrls = new Set<string>();
     const allDocs: CandidateDocument[] = [];
     const relatedApps = initialApplications.filter(
-      (a) => a.candidateEmail && a.candidateEmail === selectedApp.candidateEmail,
+      (a) => a.candidateEmail && a.candidateEmail === currentApp.candidateEmail,
     );
-    const appsToScan = relatedApps.length > 0 ? relatedApps : [selectedApp];
+    const appsToScan = relatedApps.length > 0 ? relatedApps : [currentApp];
 
     for (const a of appsToScan) {
       const docs = parseCandidateDocuments(a.notes, {
@@ -324,13 +364,13 @@ export function ApplicationsDataTable({
       }
     }
     return allDocs;
-  }, [selectedApp, initialApplications]);
+  }, [currentApp, initialApplications]);
 
-  const selectedJob = selectedApp?.jobId ? jobMap.get(selectedApp.jobId) : null;
+  const selectedJob = currentApp?.jobId ? jobMap.get(currentApp.jobId) : null;
   const selectedJobTitle = selectedJob
     ? `${selectedJob.title} (${selectedJob.type === "FULL_TIME" ? t("jobs.fullTime") : selectedJob.type === "PART_TIME" ? t("jobs.partTime") : selectedJob.type})`
-    : selectedApp?.jobId
-      ? `${t("jobs.jobTitle")} #${selectedApp.jobId}`
+    : currentApp?.jobId
+      ? `${t("jobs.jobTitle")} #${currentApp.jobId}`
       : t("candidates.role");
 
   return (
@@ -755,7 +795,7 @@ export function ApplicationsDataTable({
       )}
 
       {/* Quick Drawer Slide-over */}
-      {selectedApp && (
+      {selectedApp && currentApp && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           <div
             className="absolute inset-0 bg-slate-900/30 backdrop-blur-xs transition-opacity"
@@ -780,7 +820,7 @@ export function ApplicationsDataTable({
                     <button
                       type="button"
                       onClick={() => {
-                        onViewInPipeline(selectedApp.id, selectedApp.stage);
+                        onViewInPipeline(currentApp.id, currentApp.stage);
                         setSelectedApp(null);
                       }}
                       className="h-8 px-2.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900/60 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
@@ -794,7 +834,7 @@ export function ApplicationsDataTable({
                   <button
                     type="button"
                     onClick={() =>
-                      router.push(`/dashboard/applications/${selectedApp.id}`)
+                      router.push(`/dashboard/applications/${currentApp.id}`)
                     }
                     className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                     title={t("applications.openFullPage")}
@@ -819,7 +859,7 @@ export function ApplicationsDataTable({
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
                     {PIPELINE_STAGES.filter(
-                      (stage) => stage.id !== selectedApp.stage,
+                      (stage) => stage.id !== currentApp.stage,
                     ).map((stage) => (
                       <button
                         key={stage.id}
@@ -839,6 +879,7 @@ export function ApplicationsDataTable({
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
+                      onClick={() => setIsScheduleModalOpen(true)}
                       className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                     >
                       <Calendar className="h-3.5 w-3.5 text-slate-400" />
@@ -848,7 +889,7 @@ export function ApplicationsDataTable({
                     <button
                       type="button"
                       disabled={isDeleting}
-                      onClick={() => setDeleteModalApp(selectedApp)}
+                      onClick={() => setDeleteModalApp(currentApp)}
                       className="h-8 px-3 rounded-lg border border-rose-200 bg-white dark:border-rose-900/60 dark:bg-slate-900 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -860,26 +901,26 @@ export function ApplicationsDataTable({
                 {/* Candidate Header Card */}
                 <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-start gap-4">
                   <div className="h-11 w-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-                    {getInitials(selectedApp.candidateName)}
+                    {getInitials(currentApp.candidateName)}
                   </div>
 
                   <div className="space-y-1 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
-                        {selectedApp.candidateName}
+                        {currentApp.candidateName}
                       </h2>
-                      <StageBadge stage={selectedApp.stage} />
+                      <StageBadge stage={currentApp.stage} />
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
                       <span className="flex items-center gap-1 truncate">
                         <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        {selectedApp.candidateEmail}
+                        {currentApp.candidateEmail}
                       </span>
-                      {selectedApp.candidatePhone && (
+                      {currentApp.candidatePhone && (
                         <span className="flex items-center gap-1">
                           <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          {selectedApp.candidatePhone}
+                          {currentApp.candidatePhone}
                         </span>
                       )}
                       <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-semibold truncate">
@@ -890,7 +931,7 @@ export function ApplicationsDataTable({
 
                     <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-0.5">
                       <Clock className="h-3 w-3" />
-                      <span>{t("applications.applied")} {formatDate(selectedApp.createdAt)}</span>
+                      <span>{t("applications.applied")} {formatDate(currentApp.createdAt)}</span>
                     </p>
                   </div>
                 </div>
@@ -1005,7 +1046,6 @@ export function ApplicationsDataTable({
                           </button>
                         </div>
                       )}
-
                       {/* Interviews Card */}
                       {drawerOverviewSections.interviews && (
                         <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
@@ -1016,23 +1056,99 @@ export function ApplicationsDataTable({
                             </h3>
                             <button
                               type="button"
+                              onClick={() => setIsScheduleModalOpen(true)}
                               className="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 flex items-center gap-1 cursor-pointer"
                             >
                               <span>+ {t("applications.scheduleInterview")}</span>
                             </button>
                           </div>
 
-                          <div className="flex flex-col items-center justify-center py-6 text-center space-y-1">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-                              <Calendar className="h-4 w-4" />
+                          {scheduledInterview ? (
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                  {scheduledInterview.type}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-900/60">
+                                  Đã lên lịch
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                    {scheduledInterview.date} lúc {scheduledInterview.time}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                  <span className="text-slate-600 dark:text-slate-300 truncate">
+                                    {scheduledInterview.interviewer}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {scheduledInterview.linkOrLocation && (
+                                <div className="text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                                  {scheduledInterview.linkOrLocation.startsWith("http") ? (
+                                    <a
+                                      href={scheduledInterview.linkOrLocation}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                      <span>Vào phòng họp trực tuyến</span>
+                                    </a>
+                                  ) : (
+                                    <span className="text-slate-600 dark:text-slate-400">
+                                      Địa điểm: <strong>{scheduledInterview.linkOrLocation}</strong>
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={handleCancelInterview}
+                                  className="h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
+                                >
+                                  Hủy lịch hẹn
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setIsScheduleModalOpen(true)}
+                                  className="h-7 px-2.5 text-xs font-semibold cursor-pointer"
+                                >
+                                  Chỉnh sửa
+                                </Button>
+                              </div>
                             </div>
-                            <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                              {t("applications.noInterviews")}
-                            </h4>
-                            <p className="text-[11px] text-slate-400">
-                              {t("applications.noInterviewsDesc")}
-                            </p>
-                          </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-6 text-center space-y-1">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                                <Calendar className="h-4 w-4" />
+                              </div>
+                              <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                {t("applications.noInterviews")}
+                              </h4>
+                              <p className="text-[11px] text-slate-400">
+                                {t("applications.noInterviewsDesc")}
+                              </p>
+                              <Button
+                                size="sm"
+                                onClick={() => setIsScheduleModalOpen(true)}
+                                className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5 mt-2"
+                              >
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>{t("applications.scheduleInterview")}</span>
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1040,7 +1156,7 @@ export function ApplicationsDataTable({
                       {drawerOverviewSections.documents && (
                         <ApplicationDocumentsSection
                           documents={drawerCandidateDocuments}
-                          appId={selectedApp.id}
+                          appId={currentApp.id}
                           onPreview={(doc) => setDrawerPreviewDoc(doc)}
                           onDownload={handleDownloadDoc}
                         />
@@ -1058,7 +1174,7 @@ export function ApplicationsDataTable({
                                 {t("candidates.displayName")}
                               </p>
                               <p className="font-semibold text-slate-900 dark:text-white">
-                                {selectedApp.candidateName}
+                                {currentApp.candidateName}
                               </p>
                             </div>
                             <div>
@@ -1066,16 +1182,16 @@ export function ApplicationsDataTable({
                                 {t("candidates.email")}
                               </p>
                               <p className="font-semibold text-slate-900 dark:text-white">
-                                {selectedApp.candidateEmail}
+                                {currentApp.candidateEmail}
                               </p>
                             </div>
-                            {selectedApp.candidatePhone && (
+                            {currentApp.candidatePhone && (
                               <div>
                                 <p className="text-[11px] text-slate-400">
                                   {t("candidates.phone")}
                                 </p>
                                 <p className="font-semibold text-slate-900 dark:text-white">
-                                  {selectedApp.candidatePhone}
+                                  {currentApp.candidatePhone}
                                 </p>
                               </div>
                             )}
@@ -1093,7 +1209,7 @@ export function ApplicationsDataTable({
                             {drawerNotesList.length > 0 && (
                               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                                 {drawerNotesList.map((n, idx) => (
-                                 <div
+                                  <div
                                     key={idx}
                                     className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300"
                                   >
@@ -1137,18 +1253,296 @@ export function ApplicationsDataTable({
                   {drawerTab === "documents" && (
                     <ApplicationDocumentsSection
                       documents={drawerCandidateDocuments}
-                      appId={selectedApp.id}
+                      appId={currentApp.id}
                       onPreview={(doc) => setDrawerPreviewDoc(doc)}
                       onDownload={handleDownloadDoc}
                     />
                   )}
 
-                  {/* Other Tabs Placeholder */}
-                  {drawerTab !== "overview" && drawerTab !== "documents" && (
-                    <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs">
-                      <p className="text-xs text-slate-500">
-                        {drawerTab.toUpperCase()} content will appear here.
+                  {/* Interviews Tab Content */}
+                  {drawerTab === "interviews" && (
+                    <div className="space-y-4">
+                      {scheduledInterview ? (
+                        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50">
+                                <Calendar className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                  {scheduledInterview.type}
+                                </h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Lịch phỏng vấn đã được xác nhận
+                                </p>
+                              </div>
+                            </div>
+
+                            <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-900/60">
+                              Đã lên lịch
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 text-xs">
+                            <div className="space-y-1">
+                              <span className="text-slate-400 block">Thời gian:</span>
+                              <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                {scheduledInterview.date} lúc {scheduledInterview.time}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-slate-400 block">Hình thức:</span>
+                              {scheduledInterview.format === "OFFICE" ? (
+                                <span className="font-semibold text-rose-600 dark:text-rose-400">Tại văn phòng công ty</span>
+                              ) : (
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Trực tuyến ({scheduledInterview.format})</span>
+                              )}
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-slate-400 block">Người phỏng vấn:</span>
+                              <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <User className="h-3.5 w-3.5 text-slate-400" />
+                                {scheduledInterview.interviewer}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-slate-400 block">
+                                {scheduledInterview.format === "OFFICE" ? "Địa điểm:" : "Đường dẫn phòng họp:"}
+                              </span>
+                              {scheduledInterview.linkOrLocation.startsWith("http") ? (
+                                <a
+                                  href={scheduledInterview.linkOrLocation}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  <span>Vào phòng họp</span>
+                                </a>
+                              ) : (
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {scheduledInterview.linkOrLocation || "—"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {scheduledInterview.notes && (
+                            <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-xs space-y-1">
+                              <span className="font-bold text-blue-950 dark:text-blue-200">Ghi chú kèm theo:</span>
+                              <p className="text-blue-800 dark:text-blue-300">{scheduledInterview.notes}</p>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleCancelInterview}
+                              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
+                            >
+                              Hủy lịch hẹn
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setIsScheduleModalOpen(true)}
+                              className="text-xs font-semibold cursor-pointer"
+                            >
+                              Chỉnh sửa lịch phỏng vấn
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
+                          <Calendar className="h-8 w-8 text-slate-400 mx-auto" />
+                          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            {t("applications.noInterviews")}
+                          </h4>
+                          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                            {t("applications.noInterviewsDesc")}
+                          </p>
+                          <Button
+                            size="sm"
+                            onClick={() => setIsScheduleModalOpen(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>{t("applications.scheduleInterview")}</span>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* AI Tab Content */}
+                  {drawerTab === "ai" && (
+                    <div className="rounded-2xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2.5 text-xs text-blue-800 dark:text-blue-300 font-medium">
+                        <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>{t("applications.noAiAnalysis")}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="h-8 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        <span>{t("applications.runAnalysis")}</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Responses Tab Content */}
+                  {drawerTab === "responses" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <FileCheck className="h-3.5 w-3.5 text-slate-400" />
+                        <span>{t("applications.sections.responses")}</span>
+                      </h3>
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs space-y-2 text-slate-600 dark:text-slate-300">
+                        <div>
+                          <p className="text-[11px] text-slate-400">
+                            {t("candidates.displayName")}
+                          </p>
+                          <p className="font-semibold text-slate-900 dark:text-white">
+                            {currentApp.candidateName}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-slate-400">
+                            {t("candidates.email")}
+                          </p>
+                          <p className="font-semibold text-slate-900 dark:text-white">
+                            {currentApp.candidateEmail}
+                          </p>
+                        </div>
+                        {currentApp.candidatePhone && (
+                          <div>
+                            <p className="text-[11px] text-slate-400">
+                              {t("candidates.phone")}
+                            </p>
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                              {currentApp.candidatePhone}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes Tab Content */}
+                  {drawerTab === "notes" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+                        <span>{t("applications.sections.notes")}</span>
+                      </h3>
+                      {drawerNotesList.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          {drawerNotesList.map((note, idx) => (
+                            <div
+                              key={idx}
+                              className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-300"
+                            >
+                              {note}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder={t("applications.notePlaceholder")}
+                          value={drawerNoteInput}
+                          onChange={(e) => setDrawerNoteInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && drawerNoteInput.trim()) {
+                              setDrawerNotesList((prev) => [...prev, drawerNoteInput.trim()]);
+                              setDrawerNoteInput("");
+                            }
+                          }}
+                          className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                        />
+                        {drawerNoteInput.trim() && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (drawerNoteInput.trim()) {
+                                setDrawerNotesList((prev) => [...prev, drawerNoteInput.trim()]);
+                                setDrawerNoteInput("");
+                              }
+                            }}
+                            className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
+                          >
+                            {t("candidates.addNote")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Inbox Tab Content */}
+                  {drawerTab === "inbox" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900 shadow-xs space-y-2">
+                      <Mail className="h-8 w-8 text-slate-400 mx-auto" />
+                      <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {t("applications.tabs.inbox")}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                        Chưa có cuộc hội thoại hoặc email nào gửi tới ứng viên này.
                       </p>
+                    </div>
+                  )}
+
+                  {/* Timeline Tab Content */}
+                  {drawerTab === "timeline" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-slate-400" />
+                        <span>{t("applications.tabs.timeline")}</span>
+                      </h3>
+                      <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+                        <div className="relative text-xs">
+                          <div className="absolute -left-6 top-1 h-2.5 w-2.5 rounded-full bg-blue-600 ring-4 ring-white dark:ring-slate-900" />
+                          <p className="font-semibold text-slate-900 dark:text-white">
+                            {t("applications.applied")}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            {formatDate(currentApp.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Properties Tab Content */}
+                  {drawerTab === "properties" && (
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
+                        <span>{t("applications.sections.properties")}</span>
+                      </h3>
+                      <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
+                        <button
+                          type="button"
+                          disabled
+                          className="opacity-50 cursor-not-allowed transition-colors"
+                        >
+                          {t("applications.addOrgProperty")}
+                        </button>
+                        <button
+                          type="button"
+                          disabled
+                          className="opacity-50 cursor-not-allowed transition-colors"
+                        >
+                          {t("applications.manageJobProperties")}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1163,7 +1557,7 @@ export function ApplicationsDataTable({
         isOpen={!!drawerPreviewDoc}
         onClose={() => setDrawerPreviewDoc(null)}
         document={drawerPreviewDoc}
-        appId={selectedApp?.id}
+        appId={currentApp?.id}
         onDownload={handleDownloadDoc}
       />
 
@@ -1186,6 +1580,28 @@ export function ApplicationsDataTable({
               : t("applications.applyingForPosition")
           }
           isDeleting={isDeleting}
+        />
+      )}
+
+      {/* Schedule Interview Modal */}
+      {currentApp && (
+        <ScheduleInterviewModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          jobs={jobs}
+          applications={baseApplications}
+          selectedJobId={currentApp.jobId || undefined}
+          selectedApplicationId={currentApp.id}
+          onInterviewScheduled={(interviewInfo) => {
+            setSelectedApp((prev) => {
+              if (!prev) return null;
+              const updatedNotes = stringifyInterviewToNotes(
+                prev.notes,
+                interviewInfo,
+              );
+              return { ...prev, notes: updatedNotes, stage: "INTERVIEW" };
+            });
+          }}
         />
       )}
     </div>

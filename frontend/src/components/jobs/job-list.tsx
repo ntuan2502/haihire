@@ -9,7 +9,6 @@ import {
   Table,
   SlidersHorizontal,
   MapPin,
-  Megaphone,
   X,
   RotateCcw,
   Plus,

@@ -6,7 +6,6 @@ import { useJob, useCreateApplicationMutation } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { LanguageDropdown } from "@/components/language-dropdown";
 import { useI18n } from "@/i18n";
 import { buildCandidateNotes } from "@/lib/utils";

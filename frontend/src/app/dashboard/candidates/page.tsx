@@ -63,7 +63,7 @@ import {
   type CandidateItem,
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
-import { parseInterviewFromNotes } from "@/lib/interviews";
+import { parseAllInterviewsFromNotes } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/ui/stage-badge";
 import { useI18n } from "@/i18n";
@@ -1049,7 +1049,7 @@ function CandidatesPageContent() {
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
                           {filteredDrawerApps.map((app) => {
                             const job = jobs.find((j) => j.id === app.jobId);
-                            const scheduled = parseInterviewFromNotes(app.notes);
+                            const allInterviews = parseAllInterviewsFromNotes(app.notes);
                             return (
                               <div
                                 key={app.id}
@@ -1072,23 +1072,41 @@ function CandidatesPageContent() {
                                         type="button"
                                         onClick={() => setScheduleInterviewApp(app)}
                                         className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                                        title={scheduled ? "Cập nhật lịch phỏng vấn" : "Lên lịch phỏng vấn"}
+                                        title={allInterviews.length > 0 ? "Cập nhật lịch phỏng vấn" : "Lên lịch phỏng vấn"}
                                       >
                                         <Calendar className="h-3 w-3 inline mr-1" />
-                                        {scheduled ? "Lịch: " + scheduled.date : "Lên lịch"}
+                                        {allInterviews.length > 1
+                                          ? `${allInterviews.length} lịch hẹn`
+                                          : allInterviews.length === 1
+                                            ? "Lịch: " + allInterviews[0].date
+                                            : "Lên lịch"}
                                       </button>
                                     )}
                                   </div>
                                 </div>
 
-                                {scheduled && (
-                                  <div className="p-2.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-[11px] flex items-center justify-between">
-                                    <span className="font-semibold text-blue-900 dark:text-blue-300">
-                                      {scheduled.type} ({scheduled.date} lúc {scheduled.time})
-                                    </span>
-                                    <span className="text-blue-700 dark:text-blue-400 font-medium">
-                                      {scheduled.format} • {scheduled.interviewer}
-                                    </span>
+                                {allInterviews.length > 0 && (
+                                  <div className="space-y-1.5">
+                                    {allInterviews.map((scheduled, idx) => (
+                                      <div
+                                        key={`${scheduled.date}-${scheduled.time}-${idx}`}
+                                        className="p-2.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-[11px] flex items-center justify-between"
+                                      >
+                                        <div className="flex items-center gap-1.5">
+                                          {allInterviews.length > 1 && (
+                                            <span className="px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 text-[9px] font-bold">
+                                              {scheduled.round ? `Vòng ${scheduled.round}` : `Lịch #${allInterviews.length - idx}`}
+                                            </span>
+                                          )}
+                                          <span className="font-semibold text-blue-900 dark:text-blue-300">
+                                            {scheduled.type} ({scheduled.date} lúc {scheduled.time})
+                                          </span>
+                                        </div>
+                                        <span className="text-blue-700 dark:text-blue-400 font-medium">
+                                          {scheduled.format} • {scheduled.interviewer}
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>

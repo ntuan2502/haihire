@@ -18,11 +18,9 @@ import {
   ArrowLeft,
   Mail,
   Phone,
-  User,
   Trash2,
   Calendar,
   Clock,
-  ExternalLink,
   Sparkles,
   MessageSquare,
   ArrowRight,
@@ -37,8 +35,8 @@ import { DeleteApplicationModal } from "@/components/applications/delete-applica
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
+import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import {
-  parseInterviewFromNotes,
   removeInterviewFromNotes,
 } from "@/lib/interviews";
 import {
@@ -63,7 +61,7 @@ import { useI18n } from "@/i18n";
 function ApplicationDetailPageContent() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, canEdit } = useAuth();
   const { t } = useI18n();
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
@@ -515,114 +513,16 @@ function ApplicationDetailPageContent() {
               )}
 
               {/* 2. Interviews */}
-              {overviewSections.interviews && (() => {
-                const scheduled = parseInterviewFromNotes(app?.notes);
-                return (
-                  <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                        <span>{t("applications.sections.interviews")}</span>
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => setScheduleModalOpen(true)}
-                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 cursor-pointer transition-colors"
-                      >
-                        <span>{scheduled ? "Cập nhật lịch" : `+ ${t("applications.scheduleInterview")}`}</span>
-                      </button>
-                    </div>
-
-                    {scheduled ? (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
-                            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            <span>{scheduled.date} ({scheduled.time})</span>
-                          </div>
-                          <span className="px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-900/60">
-                            {scheduled.type}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300 pt-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-400">Người phỏng vấn:</span>
-                            <strong className="text-slate-800 dark:text-slate-200">{scheduled.interviewer}</strong>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-400">Hình thức:</span>
-                            {scheduled.format === "OFFICE" ? (
-                              <span className="font-semibold text-rose-600 dark:text-rose-400">Tại văn phòng</span>
-                            ) : (
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">{scheduled.format}</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {scheduled.linkOrLocation && (
-                          <div className="text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
-                            {scheduled.linkOrLocation.startsWith("http") ? (
-                              <a
-                                href={scheduled.linkOrLocation}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                                <span>Vào phòng họp trực tuyến</span>
-                              </a>
-                            ) : (
-                              <span className="text-slate-600 dark:text-slate-400">
-                                Địa điểm: <strong>{scheduled.linkOrLocation}</strong>
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleCancelInterview}
-                            className="h-7 px-2.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
-                          >
-                            Hủy lịch hẹn
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setScheduleModalOpen(true)}
-                            className="h-7 px-3 text-xs font-semibold cursor-pointer"
-                          >
-                            Chỉnh sửa
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-                          <Calendar className="h-4 w-4" />
-                        </div>
-                        <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {t("applications.noInterviews")}
-                        </h4>
-                        <p className="text-[11px] text-slate-400 max-w-sm">
-                          {t("applications.noInterviewsDesc")}
-                        </p>
-                        <Button
-                          size="sm"
-                          onClick={() => setScheduleModalOpen(true)}
-                          className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5 mt-1"
-                        >
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>{t("applications.scheduleInterview")}</span>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              {overviewSections.interviews && (
+                <CandidateInterviewsList
+                  notes={app?.notes}
+                  onSchedule={() => setScheduleModalOpen(true)}
+                  onCancelInterview={handleCancelInterview}
+                  canEdit={canEdit}
+                  title={t("applications.sections.interviews")}
+                  showSectionHeader={true}
+                />
+              )}
 
               {/* 3. Documents (Reused component matching Screenshot 1 & 3) */}
               {overviewSections.documents && (
@@ -757,128 +657,15 @@ function ApplicationDetailPageContent() {
             </div>
           )}
 
-          {activeTab === "interviews" && (() => {
-            const scheduled = parseInterviewFromNotes(app?.notes);
-            if (!scheduled) {
-              return (
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-3">
-                  <Calendar className="h-8 w-8 text-slate-400 mx-auto" />
-                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    {t("applications.noInterviews")}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                    {t("applications.noInterviewsDesc")}
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={() => setScheduleModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer shadow-xs inline-flex items-center gap-1.5"
-                  >
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>{t("applications.scheduleInterview")}</span>
-                  </Button>
-                </div>
-              );
-            }
-
-            return (
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50">
-                      <Calendar className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                        {scheduled.type}
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Lịch phỏng vấn đã được xác nhận
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-900/60">
-                    Đã lên lịch
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 text-xs">
-                  <div className="space-y-1">
-                    <span className="text-slate-400 block">Thời gian:</span>
-                    <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                      {scheduled.date} lúc {scheduled.time}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-slate-400 block">Hình thức:</span>
-                    {scheduled.format === "OFFICE" ? (
-                      <span className="font-semibold text-rose-600 dark:text-rose-400">Tại văn phòng công ty</span>
-                    ) : (
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">Trực tuyến ({scheduled.format})</span>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-slate-400 block">Người phỏng vấn:</span>
-                    <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <User className="h-3.5 w-3.5 text-slate-400" />
-                      {scheduled.interviewer}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-slate-400 block">
-                      {scheduled.format === "OFFICE" ? "Địa điểm:" : "Đường dẫn phòng họp:"}
-                    </span>
-                    {scheduled.linkOrLocation.startsWith("http") ? (
-                      <a
-                        href={scheduled.linkOrLocation}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        <span>Vào phòng họp</span>
-                      </a>
-                    ) : (
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {scheduled.linkOrLocation || "—"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {scheduled.notes && (
-                  <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-xs space-y-1">
-                    <span className="font-bold text-blue-950 dark:text-blue-200">Ghi chú kèm theo:</span>
-                    <p className="text-blue-800 dark:text-blue-300">{scheduled.notes}</p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleCancelInterview}
-                    className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
-                  >
-                    Hủy lịch hẹn
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setScheduleModalOpen(true)}
-                    className="text-xs font-semibold cursor-pointer"
-                  >
-                    Chỉnh sửa lịch phỏng vấn
-                  </Button>
-                </div>
-              </div>
-            );
-          })()}
+          {activeTab === "interviews" && (
+            <CandidateInterviewsList
+              notes={app?.notes}
+              onSchedule={() => setScheduleModalOpen(true)}
+              onCancelInterview={handleCancelInterview}
+              canEdit={canEdit}
+              showSectionHeader={true}
+            />
+          )}
 
           {activeTab === "responses" && (
             <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">

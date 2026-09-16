@@ -6,20 +6,50 @@ export interface ScheduledInterviewInfo {
   linkOrLocation: string;
   interviewer: string;
   notes?: string;
+  round?: number;
 }
 
 /**
- * Extract scheduled interview metadata from candidate notes
+ * Extract all scheduled or past interviews from candidate notes
+ */
+export function parseAllInterviewsFromNotes(notes?: string | null): ScheduledInterviewInfo[] {
+  if (!notes) return [];
+  const matches = [...notes.matchAll(/Interview:\s*(\{.*?\})/g)];
+  if (!matches.length) return [];
+  const list: ScheduledInterviewInfo[] = [];
+  for (const match of matches) {
+    try {
+      const parsed = JSON.parse(match[1]) as ScheduledInterviewInfo;
+      list.push(parsed);
+    } catch {
+      // ignore malformed entries
+    }
+  }
+
+  // Sắp xếp thời gian giảm dần: ngày lớn hơn nằm trên, nhỏ hơn nằm dưới
+  list.sort((a, b) => {
+    const dtA = `${a.date} ${a.time || "00:00"}`;
+    const dtB = `${b.date} ${b.time || "00:00"}`;
+    return dtB.localeCompare(dtA);
+  });
+
+  return list;
+}
+
+/**
+ * Extract scheduled interview metadata from candidate notes (prioritizes upcoming or latest)
  */
 export function parseInterviewFromNotes(notes?: string | null): ScheduledInterviewInfo | null {
-  if (!notes) return null;
-  const match = notes.match(/Interview:\s*(\{.*?\})/);
-  if (!match) return null;
-  try {
-    return JSON.parse(match[1]) as ScheduledInterviewInfo;
-  } catch {
-    return null;
+  const all = parseAllInterviewsFromNotes(notes);
+  if (!all.length) return null;
+  const today = new Date().toISOString().split("T")[0];
+  // Lịch sắp tới (>= hôm nay): lấy lịch gần hôm nay nhất
+  const upcomingList = all.filter((item) => item.date >= today);
+  if (upcomingList.length > 0) {
+    return upcomingList[upcomingList.length - 1];
   }
+  // Nếu không có lịch tương lai, lấy lịch mới nhất trong quá khứ (đầu danh sách giảm dần)
+  return all[0];
 }
 
 /**

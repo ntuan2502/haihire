@@ -27,7 +27,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { getInitials, getCandidateDisplayName } from "@/lib/utils";
-import { parseInterviewFromNotes } from "@/lib/interviews";
+import { parseInterviewFromNotes, parseAllInterviewsFromNotes } from "@/lib/interviews";
 import type { Application } from "@/types";
 
 function InterviewsPageContent() {
@@ -263,7 +263,7 @@ function InterviewsPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredList.map((app) => {
               const job = jobs.find((j) => String(j.id) === String(app.jobId));
-              const scheduled = parseInterviewFromNotes(app.notes);
+              const allInterviews = parseAllInterviewsFromNotes(app.notes);
               const displayName = getCandidateDisplayName(app);
               const initials = getInitials(displayName);
 
@@ -286,9 +286,9 @@ function InterviewsPageContent() {
                       </div>
                     </div>
 
-                    {scheduled ? (
+                    {allInterviews.length > 0 ? (
                       <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-900/60 shrink-0">
-                        Đã có lịch
+                        {allInterviews.length > 1 ? `${allInterviews.length} lịch hẹn` : "Đã có lịch"}
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200 dark:border-amber-900/60 shrink-0">
@@ -306,55 +306,66 @@ function InterviewsPageContent() {
                     <span className="text-[10px] text-slate-400 shrink-0">{job?.department || "HR"}</span>
                   </div>
 
-                  {/* Scheduled Details Card */}
-                  {scheduled ? (
-                    <div className="space-y-2 text-xs border-t border-slate-100 dark:border-slate-800/80 pt-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
-                          <Calendar className="h-3.5 w-3.5 text-blue-600" />
-                          <span>{scheduled.date} ({scheduled.time})</span>
-                        </div>
-                        <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
-                          {scheduled.type}
-                        </span>
-                      </div>
+                  {/* Scheduled Details Card - Displays all interviews sorted descending */}
+                  {allInterviews.length > 0 ? (
+                    <div className="space-y-3 divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {allInterviews.map((scheduled, idx) => (
+                        <div key={`${scheduled.date}-${scheduled.time}-${idx}`} className={`space-y-2 text-xs ${idx > 0 ? "pt-3" : ""}`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                              <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                              <span>{scheduled.date} ({scheduled.time})</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {allInterviews.length > 1 && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-bold">
+                                  {scheduled.round ? `Vòng ${scheduled.round}` : `Lịch #${allInterviews.length - idx}`}
+                                </span>
+                              )}
+                              <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
+                                {scheduled.type}
+                              </span>
+                            </div>
+                          </div>
 
-                      <div className="flex items-center justify-between text-slate-500 text-[11px]">
-                        <span>Người phỏng vấn: <strong className="text-slate-700 dark:text-slate-300">{scheduled.interviewer}</strong></span>
-                        <span className="flex items-center gap-1">
-                          {scheduled.format === "OFFICE" ? (
-                            <>
-                              <MapPin className="h-3 w-3 text-rose-500" />
-                              <span>Tại văn phòng</span>
-                            </>
-                          ) : (
-                            <>
-                              <Video className="h-3 w-3 text-emerald-500" />
-                              <span>{scheduled.format}</span>
-                            </>
-                          )}
-                        </span>
-                      </div>
-
-                      {scheduled.linkOrLocation && (
-                        <div className="pt-1">
-                          {scheduled.linkOrLocation.startsWith("http") ? (
-                            <a
-                              href={scheduled.linkOrLocation}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              <span>Vào phòng họp trực tuyến</span>
-                            </a>
-                          ) : (
-                            <span className="text-[11px] text-slate-500">
-                              Địa điểm: {scheduled.linkOrLocation}
+                          <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                            <span>Người phỏng vấn: <strong className="text-slate-700 dark:text-slate-300">{scheduled.interviewer}</strong></span>
+                            <span className="flex items-center gap-1">
+                              {scheduled.format === "OFFICE" ? (
+                                <>
+                                  <MapPin className="h-3 w-3 text-rose-500" />
+                                  <span>Tại văn phòng</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Video className="h-3 w-3 text-emerald-500" />
+                                  <span>{scheduled.format}</span>
+                                </>
+                              )}
                             </span>
+                          </div>
+
+                          {scheduled.linkOrLocation && (
+                            <div className="pt-0.5">
+                              {scheduled.linkOrLocation.startsWith("http") ? (
+                                <a
+                                  href={scheduled.linkOrLocation}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  <span>Vào phòng họp trực tuyến</span>
+                                </a>
+                              ) : (
+                                <span className="text-[11px] text-slate-500">
+                                  Địa điểm: {scheduled.linkOrLocation}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
+                      ))}
                     </div>
                   ) : (
                     <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300 space-y-1">
@@ -390,7 +401,7 @@ function InterviewsPageContent() {
                         variant="outline"
                         className="h-7 px-2.5 rounded-lg text-xs font-semibold cursor-pointer"
                       >
-                        {scheduled ? "Cập nhật lịch" : "Lên lịch ngay"}
+                        {allInterviews.length > 0 ? "Cập nhật lịch" : "Lên lịch ngay"}
                       </Button>
                     )}
                   </div>

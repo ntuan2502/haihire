@@ -86,6 +86,17 @@ export function Navbar({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
   const isDark = mounted ? (resolvedTheme === "dark" || theme === "dark") : false;
 
   const toggleDarkMode = (e: React.MouseEvent) => {

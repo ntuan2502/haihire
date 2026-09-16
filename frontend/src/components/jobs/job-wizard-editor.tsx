@@ -292,6 +292,140 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     }
   }, [initialJob]);
 
+  // LocalStorage Draft Management (mode === "create")
+  const DRAFT_STORAGE_KEY = "ats_job_wizard_draft";
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
+
+  // Restore draft on mount if in create mode and not editing existing job
+  useEffect(() => {
+    if (mode === "create" && !initialJob && typeof window !== "undefined") {
+      try {
+        const savedRaw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (savedRaw) {
+          const draft = JSON.parse(savedRaw);
+          if (draft && (draft.jobTitle || draft.description || draft.location)) {
+            if (draft.jobTitle !== undefined) setJobTitle(draft.jobTitle);
+            if (draft.department !== undefined) setDepartment(draft.department);
+            if (draft.location !== undefined) setLocation(draft.location);
+            if (draft.postalCode !== undefined) setPostalCode(draft.postalCode);
+            if (draft.employmentType !== undefined) setEmploymentType(draft.employmentType);
+            if (draft.experienceLevel !== undefined) setExperienceLevel(draft.experienceLevel);
+            if (draft.workplace !== undefined) setWorkplace(draft.workplace);
+            if (draft.description !== undefined) setDescription(draft.description);
+            if (draft.requirements !== undefined) setRequirements(draft.requirements);
+            if (draft.compensationOpen !== undefined) setCompensationOpen(draft.compensationOpen);
+            if (draft.payNegotiable !== undefined) setPayNegotiable(draft.payNegotiable);
+            if (draft.minSalary !== undefined) setMinSalary(draft.minSalary);
+            if (draft.maxSalary !== undefined) setMaxSalary(draft.maxSalary);
+            if (draft.currency !== undefined) setCurrency(draft.currency);
+            if (draft.salaryPer !== undefined) setSalaryPer(draft.salaryPer);
+            if (draft.publishMode !== undefined) setPublishMode(draft.publishMode);
+            if (draft.currentStep !== undefined && (draft.currentStep === 1 || draft.currentStep === 4)) {
+              setCurrentStep(draft.currentStep);
+            }
+            setHasRestoredDraft(true);
+            if (draft.savedAt) {
+              setDraftSavedAt(
+                new Date(draft.savedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to restore draft from localStorage:", err);
+      }
+    }
+  }, [mode, initialJob]);
+
+  // Debounced auto-save effect
+  useEffect(() => {
+    if (mode !== "create" || initialJob || typeof window === "undefined") return;
+
+    // Only save if there is some meaningful content
+    if (!jobTitle.trim() && !description.trim() && !location.trim()) return;
+
+    const timer = setTimeout(() => {
+      try {
+        const draftData = {
+          jobTitle,
+          department,
+          location,
+          postalCode,
+          employmentType,
+          experienceLevel,
+          workplace,
+          compensationOpen,
+          payNegotiable,
+          minSalary,
+          maxSalary,
+          currency,
+          salaryPer,
+          description,
+          requirements,
+          publishMode,
+          currentStep,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+        setDraftSavedAt(
+          new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        );
+      } catch (e) {
+        console.error("Failed to auto-save draft:", e);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [
+    mode,
+    initialJob,
+    jobTitle,
+    department,
+    location,
+    postalCode,
+    employmentType,
+    experienceLevel,
+    workplace,
+    compensationOpen,
+    payNegotiable,
+    minSalary,
+    maxSalary,
+    currency,
+    salaryPer,
+    description,
+    requirements,
+    publishMode,
+    currentStep,
+  ]);
+
+  const handleDiscardDraft = () => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    setJobTitle("");
+    setDepartment("General");
+    setLocation("");
+    setPostalCode("");
+    setEmploymentType("Full-time");
+    setExperienceLevel("Mid-level");
+    setWorkplace("Not specified");
+    setDescription("");
+    setRequirements("");
+    setCompensationOpen(false);
+    setPayNegotiable(false);
+    setMinSalary("");
+    setMaxSalary("");
+    setCurrentStep(1);
+    setHasRestoredDraft(false);
+    setDraftSavedAt(null);
+  };
+
   // Step 1 Validation & Touched state
   const [touched, setTouched] = useState({
     title: false,
@@ -443,11 +577,18 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           organizationId: user?.organizationId ?? null,
         });
 
-        if (typeof window !== "undefined" && navigator.clipboard) {
-          navigator.clipboard.writeText(
-            `${window.location.origin}/dashboard/jobs`,
-          );
-          setCopiedLink(true);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+          } catch {
+            // ignore
+          }
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(
+              `${window.location.origin}/dashboard/jobs`,
+            );
+            setCopiedLink(true);
+          }
         }
 
         router.push("/dashboard/jobs");
@@ -533,8 +674,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               </button>
             )}
 
-            {/* Stepper Wizard Bar */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Stepper Wizard Bar (Desktop) */}
+            <div className="hidden sm:flex items-center gap-2 sm:gap-3 flex-wrap">
               {steps.map((step) => {
                 const isActive = step.id === currentStep;
                 const isPassed = step.id < currentStep;
@@ -586,10 +727,42 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 );
               })}
             </div>
+
+            {/* Stepper Wizard (Mobile Compact) */}
+            <div className="flex sm:hidden items-center gap-2">
+              <div className="flex items-center gap-1">
+                {steps.map((s) => {
+                  const isCurrent = s.id === currentStep;
+                  const isPassed = s.id < currentStep;
+                  return (
+                    <span
+                      key={s.id}
+                      className={cn(
+                        "h-1.5 rounded-full transition-all duration-300",
+                        isCurrent
+                          ? "w-4 bg-blue-600 dark:bg-blue-400"
+                          : isPassed
+                            ? "w-1.5 bg-emerald-500"
+                            : "w-1.5 bg-slate-200 dark:bg-slate-700",
+                      )}
+                    />
+                  );
+                })}
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                {currentStep}/4: {steps.find((s) => s.id === currentStep)?.label}
+              </span>
+            </div>
           </div>
 
           {/* Right: Preview & Save Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {mode === "create" && draftSavedAt && (
+              <span className="text-[11px] text-slate-400 hidden lg:flex items-center gap-1">
+                <Check className="h-3 w-3 text-emerald-500" />
+                <span>Auto-saved</span>
+              </span>
+            )}
             <button
               type="button"
               onClick={() => setIsPreviewModalOpen(true)}
@@ -623,7 +796,34 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-20">
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6 pb-28 sm:pb-20">
+        {/* Restored Draft Banner */}
+        {mode === "create" && hasRestoredDraft && !draftBannerDismissed && (
+          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>
+                Đã tự động khôi phục bản nháp chưa lưu{draftSavedAt ? ` (lưu lúc ${draftSavedAt})` : ""}.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+              >
+                Xóa bản nháp
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraftBannerDismissed(true)}
+                className="px-2.5 py-1 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors cursor-pointer"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+            </div>
+          </div>
+        )}
         {formError && (
           <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2 animate-in fade-in">
             <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -2442,6 +2642,68 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           </div>
         )}
       </main>
+
+      {/* Mobile Sticky Bottom Action Bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 px-4 py-2.5 shadow-lg flex items-center justify-between gap-3">
+        {currentStep === 1 ? (
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                mode === "create"
+                  ? router.push("/dashboard/jobs")
+                  : router.push(`/dashboard/jobs/${initialJob?.id}/pipeline`)
+              }
+              className="text-xs font-semibold text-slate-600 dark:text-slate-400"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleStep1Continue}
+              disabled={!isStep1Valid}
+              className={cn(
+                "text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all",
+                isStep1Valid
+                  ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                  : "bg-blue-600/50 cursor-not-allowed opacity-60",
+              )}
+            >
+              Save & continue
+            </Button>
+          </>
+        ) : currentStep === 4 ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentStep(1)}
+              className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+            >
+              Back
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSaveJob}
+              disabled={isSaving}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs gap-1.5"
+            >
+              {isSaving
+                ? "Saving..."
+                : mode === "create"
+                  ? publishMode === "publish"
+                    ? "Publish"
+                    : "Save draft"
+                  : "Save changes"}
+            </Button>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

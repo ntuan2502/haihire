@@ -23,12 +23,23 @@ import {
   Plus,
   ExternalLink,
   ChevronRight,
+  ChevronLeft,
+  ChevronDown,
   Users,
   Briefcase,
+  User,
+  LayoutGrid,
+  List,
+  History,
+  ArrowUpDown,
+  X,
 } from "lucide-react";
 import { getInitials, getCandidateDisplayName } from "@/lib/utils";
 import { parseInterviewFromNotes, parseAllInterviewsFromNotes } from "@/lib/interviews";
 import type { Application } from "@/types";
+
+type ViewMode = "grid" | "table";
+type SortOption = "upcoming" | "newest" | "name";
 
 function InterviewsPageContent() {
   const router = useRouter();
@@ -41,10 +52,16 @@ function InterviewsPageContent() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<Application | undefined>(undefined);
 
-  // Filters
+  // Filters & State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedJobFilter, setSelectedJobFilter] = useState<string>("ALL");
   const [activeTab, setActiveTab] = useState<"ALL" | "UPCOMING" | "AWAITING">("ALL");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortBy, setSortBy] = useState<SortOption>("upcoming");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  const pageSize = viewMode === "grid" ? 12 : 15;
 
   // Candidates currently in INTERVIEW stage or having a scheduled interview
   const interviewApplications = useMemo(() => {
@@ -60,9 +77,17 @@ function InterviewsPageContent() {
     setScheduleModalOpen(true);
   };
 
-  // Filtered interview list
-  const filteredList = useMemo(() => {
-    return interviewApplications.filter((app) => {
+  // Toggle card history expansion
+  const toggleCardHistory = (appId: string) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [appId]: !prev[appId],
+    }));
+  };
+
+  // Filtered & Sorted list
+  const filteredAndSortedList = useMemo(() => {
+    const list = interviewApplications.filter((app) => {
       // Job filter
       if (selectedJobFilter !== "ALL" && String(app.jobId) !== String(selectedJobFilter)) {
         return false;
@@ -87,7 +112,41 @@ function InterviewsPageContent() {
 
       return true;
     });
-  }, [interviewApplications, selectedJobFilter, searchQuery, activeTab]);
+
+    // Sorting
+    list.sort((a, b) => {
+      if (sortBy === "name") {
+        return a.candidateName.localeCompare(b.candidateName);
+      }
+      if (sortBy === "newest") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+
+      // Default: "upcoming"
+      const scheduledA = parseInterviewFromNotes(a.notes);
+      const scheduledB = parseInterviewFromNotes(b.notes);
+
+      if (scheduledA && !scheduledB) return -1;
+      if (!scheduledA && scheduledB) return 1;
+      if (scheduledA && scheduledB) {
+        const dtA = `${scheduledA.date} ${scheduledA.time}`;
+        const dtB = `${scheduledB.date} ${scheduledB.time}`;
+        return dtA.localeCompare(dtB);
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return list;
+  }, [interviewApplications, selectedJobFilter, searchQuery, activeTab, sortBy]);
+
+  // Pagination calculation
+  const totalItems = filteredAndSortedList.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPageClamped = Math.min(currentPage, totalPages);
+  const paginatedList = useMemo(() => {
+    const start = (currentPageClamped - 1) * pageSize;
+    return filteredAndSortedList.slice(start, start + pageSize);
+  }, [filteredAndSortedList, currentPageClamped, pageSize]);
 
   // KPIs
   const scheduledCount = interviewApplications.filter((a) => parseInterviewFromNotes(a.notes) !== null).length;
@@ -118,7 +177,7 @@ function InterviewsPageContent() {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Quản lý lịch hẹn phỏng vấn, liên kết phòng họp trực tuyến và đánh giá ứng viên.
+              Quản lý lịch hẹn phỏng vấn, liên kết phòng họp trực tuyến và điều phối quy trình tuyển dụng.
             </p>
           </div>
 
@@ -135,110 +194,202 @@ function InterviewsPageContent() {
 
         {/* 3 KPI Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
             <div>
-              <p className="text-xs font-semibold text-slate-400">Đã lên lịch hẹn</p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{scheduledCount}</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Đã lên lịch hẹn</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{scheduledCount}</span>
+                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Sẵn sàng phỏng vấn</span>
+              </div>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-900/50">
               <Calendar className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
             <div>
-              <p className="text-xs font-semibold text-slate-400">Chờ xếp lịch phỏng vấn</p>
-              <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{awaitingCount}</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Chờ xếp lịch phỏng vấn</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">{awaitingCount}</span>
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Cần hành động</span>
+              </div>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-900/50">
               <Clock className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
             <div>
-              <p className="text-xs font-semibold text-slate-400">Tổng ứng viên vòng phỏng vấn</p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{interviewApplications.length}</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tổng ứng viên vòng này</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{interviewApplications.length}</span>
+                <span className="text-[11px] font-semibold text-slate-400">Ứng viên</span>
+              </div>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200/80 dark:border-slate-700">
               <Users className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        {/* Filters & Tabs Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-          {/* Tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 w-fit">
-            <button
-              type="button"
-              onClick={() => setActiveTab("ALL")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "ALL"
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              Tất cả ({interviewApplications.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("UPCOMING")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "UPCOMING"
-                  ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              Đã có lịch ({scheduledCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("AWAITING")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "AWAITING"
-                  ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              Cần lên lịch ({awaitingCount})
-            </button>
-          </div>
-
-          {/* Search & Job Filter */}
-          <div className="flex items-center gap-2.5">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <Input
-                type="text"
-                placeholder="Tìm ứng viên, email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800"
-              />
+        {/* Filters, Tabs & View Controls */}
+        <div className="space-y-3 pt-1">
+          {/* Row 1: Status Tabs & View Mode Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Status Tabs */}
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 w-fit border border-slate-200/60 dark:border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("ALL");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "ALL"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
+                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                Tất cả ({interviewApplications.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("UPCOMING");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "UPCOMING"
+                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                Đã có lịch ({scheduledCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("AWAITING");
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === "AWAITING"
+                    ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                Cần lên lịch ({awaitingCount})
+              </button>
             </div>
 
-            <select
-              value={selectedJobFilter}
-              onChange={(e) => setSelectedJobFilter(e.target.value)}
-              className="h-9 px-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
-            >
-              <option value="ALL">Tất cả vị trí</option>
-              {jobs.map((job) => (
-                <option key={job.id} value={job.id}>
-                  {job.title}
-                </option>
-              ))}
-            </select>
+            {/* Right Controls: Item Count + View Mode Switcher */}
+            <div className="flex items-center gap-2.5 self-end sm:self-auto">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">
+                {filteredAndSortedList.length} ứng viên
+              </span>
+              <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                    viewMode === "grid"
+                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                  title="Dạng thẻ lưới"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Lưới</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                    viewMode === "table"
+                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                  title="Dạng bảng danh sách"
+                >
+                  <List className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Bảng</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Search, Filter & Sort Strip */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Tìm kiếm ứng viên theo tên, email..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-9 pr-8 h-9.5 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Job Filter Dropdown */}
+            <div className="sm:w-64">
+              <select
+                value={selectedJobFilter}
+                onChange={(e) => {
+                  setSelectedJobFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full h-9.5 px-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer focus:border-blue-500"
+              >
+                <option value="ALL">Tất cả vị trí tuyển dụng</option>
+                {jobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title} ({job.department})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="sm:w-56 flex items-center gap-1.5 h-9.5 px-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300">
+              <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="w-full bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="upcoming">Lịch gần nhất trước</option>
+                <option value="newest">Ứng tuyển mới nhất</option>
+                <option value="name">Tên ứng viên (A - Z)</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* List of Interview Candidates */}
+        {/* Content Section */}
         {jobsLoading || appsLoading ? (
           <div className="py-20 flex justify-center">
             <LoadingSpinner />
           </div>
-        ) : filteredList.length === 0 ? (
+        ) : filteredAndSortedList.length === 0 ? (
           <div className="py-16 text-center space-y-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-8 shadow-2xs">
             <div className="h-12 w-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
               <Calendar className="h-6 w-6" />
@@ -247,7 +398,7 @@ function InterviewsPageContent() {
               Chưa có ứng viên nào trong danh sách
             </h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Khi bạn chuyển ứng viên sang giai đoạn &ldquo;Phỏng vấn&rdquo; hoặc lên lịch phỏng vấn, thông tin sẽ hiển thị tại đây.
+              Không tìm thấy ứng viên phù hợp với tiêu chí lọc hiện tại.
             </p>
             {canEdit && (
               <Button
@@ -255,159 +406,497 @@ function InterviewsPageContent() {
                 className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Lên lịch phỏng vấn đầu tiên</span>
+                <span>Lên lịch phỏng vấn mới</span>
               </Button>
             )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredList.map((app) => {
-              const job = jobs.find((j) => String(j.id) === String(app.jobId));
-              const allInterviews = parseAllInterviewsFromNotes(app.notes);
-              const displayName = getCandidateDisplayName(app);
-              const initials = getInitials(displayName);
+        ) : viewMode === "grid" ? (
+          /* ========================================================= */
+          /*                       GRID VIEW                           */
+          /* ========================================================= */
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
+              {paginatedList.map((app) => {
+                const job = jobs.find((j) => String(j.id) === String(app.jobId));
+                const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                const currentInterview = allInterviews[0];
+                const previousInterviews = allInterviews.slice(1);
+                const displayName = getCandidateDisplayName(app);
+                const initials = getInitials(displayName);
+                const isExpanded = expandedCards[app.id] ?? false;
 
-              return (
-                <div
-                  key={app.id}
-                  className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
-                >
-                  {/* Candidate Header */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
-                        {initials}
+                return (
+                  <div
+                    key={app.id}
+                    className="group rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs hover:shadow-md hover:border-blue-300/80 dark:hover:border-blue-900/80 transition-all flex flex-col justify-between space-y-4"
+                  >
+                    {/* Top: Header, Job, Schedule */}
+                    <div className="space-y-3.5">
+                      {/* Candidate Header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
+                            {initials}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              {displayName}
+                            </h3>
+                            <p className="text-xs text-slate-400 truncate">{app.candidateEmail}</p>
+                          </div>
+                        </div>
+
+                        {allInterviews.length > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200/80 dark:border-emerald-900/60 shrink-0 whitespace-nowrap">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            <span>{allInterviews.length > 1 ? `${allInterviews.length} vòng PV` : "Đã có lịch"}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[11px] font-bold border border-amber-200/80 dark:border-amber-900/60 shrink-0 whitespace-nowrap">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                            <span>Chờ lên lịch</span>
+                          </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                          {displayName}
-                        </h3>
-                        <p className="text-xs text-slate-400 truncate">{app.candidateEmail}</p>
+
+                      {/* Job Position Line */}
+                      <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                        <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          {job?.title || "Vị trí tuyển dụng"}
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-600">•</span>
+                        <span className="text-[11px] text-slate-400 shrink-0">
+                          {job?.department || "HR"}
+                        </span>
                       </div>
-                    </div>
 
-                    {allInterviews.length > 0 ? (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-900/60 shrink-0">
-                        {allInterviews.length > 1 ? `${allInterviews.length} lịch hẹn` : "Đã có lịch"}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200 dark:border-amber-900/60 shrink-0">
-                        Chờ lên lịch
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Job Badge */}
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 truncate">
-                      <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                      <span className="font-semibold truncate">{job?.title || "Vị trí tuyển dụng"}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 shrink-0">{job?.department || "HR"}</span>
-                  </div>
-
-                  {/* Scheduled Details Card - Displays all interviews sorted descending */}
-                  {allInterviews.length > 0 ? (
-                    <div className="space-y-3 divide-y divide-slate-100 dark:divide-slate-800/80">
-                      {allInterviews.map((scheduled, idx) => (
-                        <div key={`${scheduled.date}-${scheduled.time}-${idx}`} className={`space-y-2 text-xs ${idx > 0 ? "pt-3" : ""}`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
-                              <Calendar className="h-3.5 w-3.5 text-blue-600" />
-                              <span>{scheduled.date} ({scheduled.time})</span>
+                      {/* Primary Interview Box */}
+                      {currentInterview ? (
+                        <div className="rounded-xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800 p-3.5 space-y-2.5">
+                          {/* Time & Round Badge */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
+                              <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                              <span className="whitespace-nowrap">{currentInterview.date}</span>
+                              <span className="text-slate-300 dark:text-slate-600">•</span>
+                              <span className="text-blue-600 dark:text-blue-400 whitespace-nowrap">{currentInterview.time}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              {allInterviews.length > 1 && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-bold">
-                                  {scheduled.round ? `Vòng ${scheduled.round}` : `Lịch #${allInterviews.length - idx}`}
-                                </span>
-                              )}
-                              <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
-                                {scheduled.type}
+                            {currentInterview.round ? (
+                              <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
+                                Vòng {currentInterview.round}
                               </span>
-                            </div>
+                            ) : allInterviews.length > 1 ? (
+                              <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
+                                Mới nhất
+                              </span>
+                            ) : null}
                           </div>
 
-                          <div className="flex items-center justify-between text-slate-500 text-[11px]">
-                            <span>Người phỏng vấn: <strong className="text-slate-700 dark:text-slate-300">{scheduled.interviewer}</strong></span>
-                            <span className="flex items-center gap-1">
-                              {scheduled.format === "OFFICE" ? (
-                                <>
-                                  <MapPin className="h-3 w-3 text-rose-500" />
-                                  <span>Tại văn phòng</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Video className="h-3 w-3 text-emerald-500" />
-                                  <span>{scheduled.format}</span>
-                                </>
-                              )}
+                          {/* Interview Type Badge: Own row so it never squishes date/time */}
+                          <div>
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-slate-200/80 dark:border-slate-700 shadow-2xs max-w-full truncate">
+                              {currentInterview.type}
                             </span>
                           </div>
 
-                          {scheduled.linkOrLocation && (
-                            <div className="pt-0.5">
-                              {scheduled.linkOrLocation.startsWith("http") ? (
+                          {/* Meta: Interviewer & Format */}
+                          <div className="space-y-1.5 text-xs">
+                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span className="text-[11px] text-slate-400">Người PV:</span>
+                              <strong className="text-slate-800 dark:text-slate-200 text-xs truncate">
+                                {currentInterview.interviewer}
+                              </strong>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                              {currentInterview.format === "OFFICE" ? (
+                                <>
+                                  <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                                  <span className="text-rose-600 dark:text-rose-400 font-semibold text-[11px]">
+                                    Tại văn phòng
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <Video className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                                    Trực tuyến ({currentInterview.format})
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Meeting Link or Location */}
+                          {currentInterview.linkOrLocation && (
+                            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                              {currentInterview.linkOrLocation.startsWith("http") ? (
                                 <a
-                                  href={scheduled.linkOrLocation}
+                                  href={currentInterview.linkOrLocation}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline"
                                 >
-                                  <ExternalLink className="h-3 w-3" />
+                                  <Video className="h-3.5 w-3.5" />
                                   <span>Vào phòng họp trực tuyến</span>
+                                  <ExternalLink className="h-3 w-3 ml-0.5" />
                                 </a>
                               ) : (
-                                <span className="text-[11px] text-slate-500">
-                                  Địa điểm: {scheduled.linkOrLocation}
-                                </span>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                  Địa điểm: <strong className="text-slate-700 dark:text-slate-300">{currentInterview.linkOrLocation}</strong>
+                                </p>
                               )}
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300 space-y-1">
-                      <p className="font-bold flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        Chưa có lịch hẹn cụ thể
-                      </p>
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                        Ứng viên đã vượt qua vòng sơ loại và sẵn sàng cho buổi phỏng vấn.
-                      </p>
-                    </div>
-                  )}
+                      ) : (
+                        <div className="rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 p-3.5 space-y-1">
+                          <p className="font-bold text-xs text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-amber-600" />
+                            Sẵn sàng phỏng vấn
+                          </p>
+                          <p className="text-[11px] text-amber-700/80 dark:text-amber-400">
+                            Ứng viên đã vượt qua sơ loại, hiện chưa được lên lịch hẹn cụ thể.
+                          </p>
+                        </div>
+                      )}
 
-                  {/* Actions Row */}
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (job) {
-                          router.push(`/dashboard/jobs/${job.id}/pipeline?stage=INTERVIEW`);
-                        }
-                      }}
-                      className="text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <span>Xem bảng đánh giá</span>
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
+                      {/* Previous Rounds Collapsible */}
+                      {previousInterviews.length > 0 && (
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleCardHistory(app.id)}
+                            className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-800"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <History className="h-3.5 w-3.5 text-slate-400" />
+                              <span>Đã qua {previousInterviews.length} vòng trước đó</span>
+                            </div>
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
 
-                    {canEdit && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleOpenScheduleModal(app)}
-                        variant="outline"
-                        className="h-7 px-2.5 rounded-lg text-xs font-semibold cursor-pointer"
+                          {isExpanded && (
+                            <div className="space-y-2 p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 divide-y divide-slate-100 dark:divide-slate-800">
+                              {previousInterviews.map((prev, pIdx) => (
+                                <div
+                                  key={`${prev.date}-${prev.time}-${pIdx}`}
+                                  className={`text-[11px] space-y-1 ${pIdx > 0 ? "pt-2" : ""}`}
+                                >
+                                  <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-medium gap-2">
+                                    <span className="whitespace-nowrap">{prev.date} ({prev.time})</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
+                                      {prev.round ? `Vòng ${prev.round}` : prev.type}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                                    <span>PV: {prev.interviewer}</span>
+                                    <span>{prev.format === "OFFICE" ? "Tại văn phòng" : "Trực tuyến"}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions Row - Anchored to bottom with mt-auto */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (job) {
+                            router.push(`/dashboard/jobs/${job.id}/pipeline?stage=INTERVIEW`);
+                          }
+                        }}
+                        className="text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        {allInterviews.length > 0 ? "Cập nhật lịch" : "Lên lịch ngay"}
-                      </Button>
-                    )}
+                        <span>Bảng đánh giá</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenScheduleModal(app)}
+                          variant="outline"
+                          className="h-7.5 px-3 rounded-xl text-xs font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-800 transition-colors"
+                        >
+                          {allInterviews.length > 0 ? "Cập nhật lịch" : "Lên lịch ngay"}
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          /* ========================================================= */
+          /*                       TABLE VIEW                          */
+          /* ========================================================= */
+          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] font-bold">
+                    <th className="py-3 px-3.5">Ứng viên</th>
+                    <th className="py-3 px-3.5">Vị trí tuyển dụng</th>
+                    <th className="py-3 px-3.5">Lịch phỏng vấn</th>
+                    <th className="py-3 px-3.5">Người phỏng vấn</th>
+                    <th className="py-3 px-3 text-center">Số vòng</th>
+                    <th className="py-3 px-3 text-center">Trạng thái</th>
+                    <th className="py-3 px-3.5 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {paginatedList.map((app) => {
+                    const job = jobs.find((j) => String(j.id) === String(app.jobId));
+                    const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                    const currentInterview = allInterviews[0];
+                    const displayName = getCandidateDisplayName(app);
+                    const initials = getInitials(displayName);
+
+                    return (
+                      <tr
+                        key={app.id}
+                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        {/* Candidate */}
+                        <td className="py-3 px-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-2xs">
+                              {initials}
+                            </div>
+                            <div className="min-w-0 max-w-[140px] xl:max-w-[180px]">
+                              <p className="font-bold text-slate-900 dark:text-white truncate">
+                                {displayName}
+                              </p>
+                              <p className="text-[11px] text-slate-400 truncate">
+                                {app.candidateEmail}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Job */}
+                        <td className="py-3 px-3.5">
+                          <div className="max-w-[140px] xl:max-w-[180px]">
+                            <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                              {job?.title || "Vị trí tuyển dụng"}
+                            </p>
+                            <p className="text-[11px] text-slate-400 truncate">
+                              {job?.department || "HR"}
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Next Interview: Stacked in 3 clean lines */}
+                        <td className="py-3 px-3.5">
+                          {currentInterview ? (
+                            <div className="space-y-1 whitespace-nowrap">
+                              {/* Dòng 1: Ngày giờ */}
+                              <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs">
+                                <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <span>{currentInterview.date} lúc {currentInterview.time}</span>
+                              </div>
+                              {/* Dòng 2: Loại vòng phỏng vấn */}
+                              <div>
+                                <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
+                                  {currentInterview.type}
+                                </span>
+                              </div>
+                              {/* Dòng 3: Cắt trực tuyến / văn phòng xuống dòng */}
+                              <div>
+                                {currentInterview.format === "OFFICE" ? (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50">
+                                    <MapPin className="h-2.5 w-2.5" />
+                                    <span>Tại văn phòng</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50">
+                                    <Video className="h-2.5 w-2.5" />
+                                    <span>Trực tuyến</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px] whitespace-nowrap">Chưa xếp lịch</span>
+                          )}
+                        </td>
+
+                        {/* Interviewer */}
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          {currentInterview ? (
+                            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium max-w-[140px] xl:max-w-[170px] truncate">
+                              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span className="truncate">{currentInterview.interviewer}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+
+                        {/* Rounds */}
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {allInterviews.length > 0 ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
+                              {allInterviews.length} vòng
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {allInterviews.length > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-900/60">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              <span>Đã có lịch</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-900/60">
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                              <span>Chờ lên lịch</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions: Họp & Sửa lịch xếp 2 dòng, Chevron bên cạnh */}
+                        <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            <div className="flex flex-col items-end gap-1">
+                              {currentInterview?.linkOrLocation?.startsWith("http") && (
+                                <a
+                                  href={currentInterview.linkOrLocation}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="h-6 px-2 rounded-md border border-blue-200 dark:border-blue-800 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 inline-flex items-center gap-1 transition-colors"
+                                  title="Vào phòng họp trực tuyến"
+                                >
+                                  <Video className="h-2.5 w-2.5" />
+                                  <span>Họp</span>
+                                </a>
+                              )}
+
+                              {canEdit && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenScheduleModal(app)}
+                                  className="h-6 px-2 rounded-md text-[10px] font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 transition-colors"
+                                >
+                                  {allInterviews.length > 0 ? "Sửa lịch" : "Lên lịch"}
+                                </Button>
+                              )}
+                            </div>
+
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                if (job) {
+                                  router.push(`/dashboard/jobs/${job.id}/pipeline?stage=INTERVIEW`);
+                                }
+                              }}
+                              className="h-7 w-6 p-0 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                              title="Xem đánh giá pipeline"
+                            >
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination Bar */}
+        {filteredAndSortedList.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-500 dark:text-slate-400">
+            <div>
+              Hiển thị{" "}
+              <strong className="text-slate-800 dark:text-slate-200">
+                {(currentPageClamped - 1) * pageSize + 1}
+              </strong>{" "}
+              -{" "}
+              <strong className="text-slate-800 dark:text-slate-200">
+                {Math.min(currentPageClamped * pageSize, totalItems)}
+              </strong>{" "}
+              trong tổng số{" "}
+              <strong className="text-slate-800 dark:text-slate-200">{totalItems}</strong> ứng viên
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPageClamped <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="h-8 px-2.5 text-xs rounded-xl cursor-pointer disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                  <span>Trước</span>
+                </Button>
+
+                {/* Page Number Pills (Show window around current page) */}
+                <div className="flex items-center gap-1 mx-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (p) =>
+                        p === 1 ||
+                        p === totalPages ||
+                        (p >= currentPageClamped - 1 && p <= currentPageClamped + 1),
+                    )
+                    .map((p, idx, arr) => {
+                      const prev = arr[idx - 1];
+                      return (
+                        <React.Fragment key={p}>
+                          {prev && p - prev > 1 && (
+                            <span className="px-1 text-slate-400">...</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setCurrentPage(p)}
+                            className={`h-8 min-w-[32px] px-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                              currentPageClamped === p
+                                ? "bg-blue-600 text-white shadow-xs"
+                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
                 </div>
-              );
-            })}
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={currentPageClamped >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="h-8 px-2.5 text-xs rounded-xl cursor-pointer disabled:opacity-40"
+                >
+                  <span>Sau</span>
+                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>

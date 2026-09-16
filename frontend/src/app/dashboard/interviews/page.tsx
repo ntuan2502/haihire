@@ -16,6 +16,8 @@ import {
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Calendar,
+  CalendarDays,
+  Star,
   Clock,
   Video,
   MapPin,
@@ -35,10 +37,16 @@ import {
   X,
 } from "lucide-react";
 import { getInitials, getCandidateDisplayName } from "@/lib/utils";
-import { parseInterviewFromNotes, parseAllInterviewsFromNotes } from "@/lib/interviews";
+import {
+  parseInterviewFromNotes,
+  parseAllInterviewsFromNotes,
+  type ScheduledInterviewInfo,
+} from "@/lib/interviews";
+import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
+import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
 import type { Application } from "@/types";
 
-type ViewMode = "grid" | "table";
+type ViewMode = "grid" | "table" | "calendar";
 type SortOption = "upcoming" | "newest" | "name";
 
 function InterviewsPageContent() {
@@ -51,6 +59,12 @@ function InterviewsPageContent() {
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<Application | undefined>(undefined);
+  const [scheduleDate, setScheduleDate] = useState<string | undefined>(undefined);
+
+  // Scorecard modal state
+  const [scorecardModalOpen, setScorecardModalOpen] = useState(false);
+  const [selectedAppForScorecard, setSelectedAppForScorecard] = useState<Application | undefined>(undefined);
+  const [selectedInterviewForScorecard, setSelectedInterviewForScorecard] = useState<ScheduledInterviewInfo | undefined>(undefined);
 
   // Filters & State
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,9 +86,17 @@ function InterviewsPageContent() {
   }, [applications]);
 
   // Open Schedule Modal prefilled
-  const handleOpenScheduleModal = (prefilledApp?: Application) => {
+  const handleOpenScheduleModal = (prefilledApp?: Application, dateStr?: string) => {
     setSelectedAppForSchedule(prefilledApp);
+    setScheduleDate(dateStr);
     setScheduleModalOpen(true);
+  };
+
+  // Open Scorecard Modal
+  const handleOpenScorecard = (app: Application, intv: ScheduledInterviewInfo) => {
+    setSelectedAppForScorecard(app);
+    setSelectedInterviewForScorecard(intv);
+    setScorecardModalOpen(true);
   };
 
   // Toggle card history expansion
@@ -316,6 +338,19 @@ function InterviewsPageContent() {
                   <List className="h-3.5 w-3.5" />
                   <span className="hidden md:inline">Bảng</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("calendar")}
+                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                    viewMode === "calendar"
+                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                  title="Dạng lịch trực quan theo tháng/tuần"
+                >
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Lịch</span>
+                </button>
               </div>
             </div>
           </div>
@@ -410,6 +445,15 @@ function InterviewsPageContent() {
               </Button>
             )}
           </div>
+        ) : viewMode === "calendar" ? (
+          <InterviewsCalendarView
+            applications={filteredAndSortedList}
+            jobs={jobs}
+            onScheduleDate={(dateStr) => handleOpenScheduleModal(undefined, dateStr)}
+            onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date)}
+            onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
+            canEdit={canEdit}
+          />
         ) : viewMode === "grid" ? (
           /* ========================================================= */
           /*                       GRID VIEW                           */
@@ -550,6 +594,37 @@ function InterviewsPageContent() {
                               )}
                             </div>
                           )}
+
+                          {/* Scorecard Display or Rating Button */}
+                          {currentInterview.scorecard ? (
+                            <div
+                              onClick={() => handleOpenScorecard(app, currentInterview)}
+                              className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs cursor-pointer hover:opacity-85 transition-opacity"
+                              title="Xem hoặc cập nhật phiếu đánh giá"
+                            >
+                              <div className="flex items-center gap-1 font-bold text-amber-700 dark:text-amber-400">
+                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                <span>{currentInterview.scorecard.overallRating} / 5</span>
+                                <span className="text-[10px] font-normal text-slate-400 ml-0.5 hidden sm:inline">
+                                  (Đã đánh giá)
+                                </span>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
+                                {currentInterview.scorecard.recommendation}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenScorecard(app, currentInterview)}
+                                className="w-full py-1.5 px-3 rounded-xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold border border-amber-200/70 dark:border-amber-800/60 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                <span>Chấm điểm phỏng vấn (Scorecard)</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 p-3.5 space-y-1">
@@ -653,6 +728,7 @@ function InterviewsPageContent() {
                     <th className="py-3 px-3.5">Người phỏng vấn</th>
                     <th className="py-3 px-3 text-center">Số vòng</th>
                     <th className="py-3 px-3 text-center">Trạng thái</th>
+                    <th className="py-3 px-3 text-center">Đánh giá</th>
                     <th className="py-3 px-3.5 text-right">Thao tác</th>
                   </tr>
                 </thead>
@@ -771,6 +847,31 @@ function InterviewsPageContent() {
                           )}
                         </td>
 
+                        {/* Scorecard Evaluation */}
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {currentInterview?.scorecard ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenScorecard(app, currentInterview)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
+                              title="Bấm để xem hoặc sửa đánh giá"
+                            >
+                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                              <span>{currentInterview.scorecard.overallRating} ⭐</span>
+                            </button>
+                          ) : currentInterview ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenScorecard(app, currentInterview)}
+                              className="text-[10px] text-amber-700 dark:text-amber-400 font-bold hover:underline cursor-pointer"
+                            >
+                              + Chấm điểm
+                            </button>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+
                         {/* Actions: Họp & Sửa lịch xếp 2 dòng, Chevron bên cạnh */}
                         <td className="py-3 px-3.5 text-right whitespace-nowrap">
                           <div className="inline-flex items-center justify-end gap-1.5">
@@ -824,8 +925,8 @@ function InterviewsPageContent() {
           </div>
         )}
 
-        {/* Pagination Bar */}
-        {filteredAndSortedList.length > 0 && (
+        {/* Pagination Bar (Only for Grid and Table modes) */}
+        {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-500 dark:text-slate-400">
             <div>
               Hiển thị{" "}
@@ -907,11 +1008,26 @@ function InterviewsPageContent() {
         onClose={() => {
           setScheduleModalOpen(false);
           setSelectedAppForSchedule(undefined);
+          setScheduleDate(undefined);
         }}
         jobs={jobs}
         applications={applications}
         selectedJobId={selectedAppForSchedule?.jobId || undefined}
         selectedApplicationId={selectedAppForSchedule?.id || undefined}
+        initialDate={scheduleDate}
+      />
+
+      {/* Post-Interview Scorecard Modal */}
+      <InterviewScorecardModal
+        isOpen={scorecardModalOpen}
+        onClose={() => {
+          setScorecardModalOpen(false);
+          setSelectedAppForScorecard(undefined);
+          setSelectedInterviewForScorecard(undefined);
+        }}
+        application={selectedAppForScorecard}
+        interview={selectedInterviewForScorecard}
+        job={jobs.find((j) => String(j.id) === String(selectedAppForScorecard?.jobId))}
       />
 
       {/* Global Apply Modal */}

@@ -23,7 +23,11 @@ import {
   Layers,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useUpdateCandidateMutation, useUpdateStageMutation } from "@/hooks/use-queries";
+import {
+  useUpdateCandidateMutation,
+  useUpdateStageMutation,
+  useOrgMembers,
+} from "@/hooks/use-queries";
 import { getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
@@ -39,6 +43,7 @@ export interface ScheduleInterviewModalProps {
   applications?: Application[];
   selectedJobId?: string;
   selectedApplicationId?: string;
+  initialDate?: string;
   onInterviewScheduled?: (interviewInfo: ScheduledInterviewInfo) => void;
 }
 
@@ -49,9 +54,11 @@ export function ScheduleInterviewModal({
   applications = [],
   selectedJobId,
   selectedApplicationId,
+  initialDate,
   onInterviewScheduled,
 }: ScheduleInterviewModalProps) {
   const { user } = useAuth();
+  const { data: members = [] } = useOrgMembers();
   const updateCandidateMutation = useUpdateCandidateMutation();
   const updateStageMutation = useUpdateStageMutation();
 
@@ -109,7 +116,7 @@ export function ScheduleInterviewModal({
     const existing = candidateObj ? parseInterviewFromNotes(candidateObj.notes) : null;
 
     if (existing) {
-      setInterviewDate(existing.date);
+      setInterviewDate(initialDate || existing.date);
       setInterviewTime(existing.time || "10:00");
       setInterviewType(existing.type || "Kỹ thuật (Technical)");
       setInterviewFormat(existing.format || "MEET");
@@ -119,7 +126,7 @@ export function ScheduleInterviewModal({
     } else {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      setInterviewDate(tomorrow.toISOString().split("T")[0]);
+      setInterviewDate(initialDate || tomorrow.toISOString().split("T")[0]);
       setInterviewTime("10:00");
       setInterviewType("Kỹ thuật (Technical)");
       setInterviewFormat("MEET");
@@ -127,7 +134,7 @@ export function ScheduleInterviewModal({
       setInterviewerName(user?.name || "Hiring Team");
       setInterviewNotes("");
     }
-  }, [isOpen, selectedJobId, selectedApplicationId, jobs, applications, user?.name]);
+  }, [isOpen, selectedJobId, selectedApplicationId, initialDate, jobs, applications, user?.name]);
 
   // When candidate changes manually, re-populate existing interview if any
   const handleCandidateChange = (candId: string) => {
@@ -413,9 +420,27 @@ export function ScheduleInterviewModal({
           {/* Section 5: Interviewer & Team */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <User className="h-3.5 w-3.5 text-slate-400" />
-                <span>Người phỏng vấn chính</span>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <User className="h-3.5 w-3.5 text-slate-400" />
+                  <span>Người phỏng vấn chính</span>
+                </span>
+                {members.length > 0 && (
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) setInterviewerName(e.target.value);
+                    }}
+                    value=""
+                    className="text-[10px] text-blue-600 dark:text-blue-400 bg-transparent border-none cursor-pointer outline-none font-semibold"
+                  >
+                    <option value="">+ Chọn từ thành viên...</option>
+                    {members.map((m) => (
+                      <option key={m.id} value={`${m.name} (${m.role})`}>
+                        {m.name} ({m.email})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </label>
               <Input
                 type="text"

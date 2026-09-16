@@ -521,8 +521,8 @@ export default function CareerJobPage() {
                     )}
                   </div>
 
-                  {/* Notes / Message */}
-                  <div className="space-y-1.5">
+                  {/* Notes / Message - Tạm thời ẩn */}
+                  {/* <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Lời nhắn gửi nhà tuyển dụng <span className="text-slate-400 font-normal">(Tùy chọn)</span>
                     </label>
@@ -533,7 +533,7 @@ export default function CareerJobPage() {
                       onChange={(e) => setNotes(e.target.value)}
                       className="rounded-xl text-xs resize-none"
                     />
-                  </div>
+                  </div> */}
 
                   {/* Submit Button */}
                   <Button

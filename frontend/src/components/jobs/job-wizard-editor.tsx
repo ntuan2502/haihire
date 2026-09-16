@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Eye,
   Monitor,
+  Tablet,
   Smartphone,
   Briefcase,
   FileUp,
@@ -53,6 +54,7 @@ import {
   Globe2,
   DollarSign,
   UploadCloud,
+  X,
 } from "lucide-react";
 import type { Job, JobType, JobStatus } from "@/types";
 
@@ -152,7 +154,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<StepId>(1);
-  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">(
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">(
     "desktop",
   );
 
@@ -589,14 +592,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => {
-                if (currentStep === 3 || currentStep === 4) {
-                  setCurrentStep(1);
-                }
-              }}
-              className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              onClick={() => setIsPreviewModalOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <Eye className="h-3.5 w-3.5 text-slate-400" />
+              <Eye className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
               <span>Candidate preview</span>
             </button>
             <Button
@@ -639,11 +638,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           </div>
         )}
 
-        {/* ================= STEPS 1 & 2: SPLIT SCREEN WITH LIVE PREVIEW ================= */}
+        {/* ================= STEPS 1 & 2: FORM EDITOR ================= */}
         {(currentStep === 1 || currentStep === 2) && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* LEFT COLUMN: FORM EDITOR */}
-            <div className="lg:col-span-7 space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="space-y-6">
               {/* TAB 1: JOB DETAILS */}
               {currentStep === 1 && (
                 <div className="space-y-6">
@@ -1461,305 +1459,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 </div>
               )}
             </div>
-
-            {/* RIGHT COLUMN: LIVE CANDIDATE PREVIEW */}
-            <div className="lg:col-span-5 lg:sticky lg:top-16 space-y-3">
-              {/* Preview Toolbar */}
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  LIVE CANDIDATE PREVIEW
-                </span>
-
-                <div className="flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200/80 dark:border-slate-700">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDevice("desktop")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                      previewDevice === "desktop"
-                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
-                    }`}
-                  >
-                    <Monitor className="h-3.5 w-3.5" />
-                    Desktop
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDevice("mobile")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                      previewDevice === "mobile"
-                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
-                    }`}
-                  >
-                    <Smartphone className="h-3.5 w-3.5" />
-                    Mobile
-                  </button>
-                </div>
-              </div>
-
-              {/* Candidate View Container with dedicated scroll (Mirrors Careers Page exactly) */}
-              <div
-                className={cn(
-                  "rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-6 transition-all max-h-[calc(100vh-140px)] overflow-y-auto overscroll-contain",
-                  previewDevice === "mobile" && "max-w-sm mx-auto border-2 border-slate-300 dark:border-slate-700"
-                )}
-              >
-                {/* 1. Careers Header Simulator */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white font-black text-xs shadow-xs">
-                      A
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Careers at</div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-                        {user?.organization?.name || "ATS Platform"}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80">
-                    Ứng tuyển ngay
-                  </span>
-                </div>
-
-                {/* 2. Department Tag (Above Job Title - matches Careers) */}
-                <div className="space-y-3 pt-0.5">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                    <span>{department || "Tuyển dụng"}</span>
-                  </div>
-
-                  {/* 3. Job Title */}
-                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-                    {jobTitle.trim() || "Tiêu đề công việc sẽ hiển thị ở đây"}
-                  </h1>
-
-                  {/* 4. Badges Grid (Exact format from Careers page) */}
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                      <MapPin className="h-3.5 w-3.5 text-blue-500" />
-                      <span>{location || "Toàn quốc"}{postalCode ? ` (${postalCode})` : ""}</span>
-                    </div>
-
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                      <Clock className="h-3.5 w-3.5 text-emerald-500" />
-                      <span>{employmentType}</span>
-                    </div>
-
-                    {workplace && workplace !== "Not specified" && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                        <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
-                        <span>{workplace}</span>
-                      </div>
-                    )}
-
-                    {(payNegotiable || minSalary || maxSalary) && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold shadow-2xs">
-                        <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>
-                          {payNegotiable
-                            ? "Thỏa thuận"
-                            : `${currency} ${minSalary || "0"} - ${maxSalary || "0"} / ${salaryPer.toLowerCase()}`}
-                        </span>
-                      </div>
-                    )}
-
-                    {experienceLevel && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200/70 dark:border-purple-800/60 text-purple-700 dark:text-purple-300 font-semibold shadow-2xs">
-                        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                        <span>{experienceLevel}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <hr className="border-slate-200/80 dark:border-slate-800" />
-
-                {/* 5. Job Description Section */}
-                <div className="space-y-3">
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-blue-600" />
-                    Mô tả công việc (Job Description)
-                  </h2>
-                  <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
-                    {description.trim() || "Thêm mô tả công việc ở cột bên trái để xem trước giao diện ứng viên sẽ thấy."}
-                  </div>
-                </div>
-
-                {/* 6. Requirements Section */}
-                <div className="space-y-3 pt-1">
-                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-indigo-600" />
-                    Yêu cầu ứng viên (Requirements)
-                  </h2>
-                  <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
-                    {requirements.trim() || "Thêm yêu cầu ứng viên ở cột bên trái để xem trước hiển thị."}
-                  </div>
-                </div>
-
-                {/* 7. Company Assurance Box */}
-                <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3">
-                  <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                  <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
-                    <p className="font-bold text-slate-800 dark:text-white">Quy trình tuyển dụng minh bạch</p>
-                    <p className="leading-relaxed text-[11px]">
-                      Hồ sơ của bạn được lưu trữ an toàn và bảo mật. Sau khi tiếp nhận, đội ngũ nhân sự sẽ phản hồi trạng thái hồ sơ trực tiếp qua email của bạn.
-                    </p>
-                  </div>
-                </div>
-
-                {/* 8. Application Form Preview (Matches Careers Application Form) */}
-                <div className="p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md space-y-4">
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                      Nộp đơn ứng tuyển
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Điền thông tin và đính kèm CV của bạn để ứng tuyển vào vị trí này.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3.5">
-                    {/* Họ và tên đệm / Tên */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Họ và tên đệm <span className="text-rose-500">*</span>
-                        </label>
-                        <Input
-                          type="text"
-                          placeholder="Ví dụ: Nguyễn Văn"
-                          disabled
-                          className="h-8 text-xs cursor-not-allowed opacity-80"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Tên <span className="text-rose-500">*</span>
-                        </label>
-                        <Input
-                          type="text"
-                          placeholder="Ví dụ: An"
-                          disabled
-                          className="h-8 text-xs cursor-not-allowed opacity-80"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Email */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Địa chỉ Email <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        type="email"
-                        placeholder="nguyenvana@example.com"
-                        disabled
-                        className="h-8 text-xs cursor-not-allowed opacity-80"
-                      />
-                    </div>
-
-                    {/* Phone */}
-                    {phoneSetting !== "hidden" && (
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Số điện thoại {phoneSetting === "required" ? <span className="text-rose-500">*</span> : <span className="text-slate-400 font-normal">(Tùy chọn)</span>}
-                        </label>
-                        <Input
-                          type="tel"
-                          placeholder="0912 345 678"
-                          disabled
-                          className="h-8 text-xs cursor-not-allowed opacity-80"
-                        />
-                      </div>
-                    )}
-
-                    {/* Cover Letter / Notes */}
-                    {coverLetterSetting === "required" && (
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Lời nhắn / Giới thiệu bản thân <span className="text-rose-500">*</span>
-                        </label>
-                        <Textarea
-                          placeholder="Giới thiệu ngắn về kinh nghiệm hoặc lý do bạn phù hợp..."
-                          disabled
-                          rows={2}
-                          className="text-xs cursor-not-allowed opacity-80 resize-none"
-                        />
-                      </div>
-                    )}
-
-                    {/* Screening Questions Preview */}
-                    {screeningQuestions.length > 0 && (
-                      <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-                        <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
-                          Câu hỏi sàng lọc (Screening Questions)
-                        </h4>
-                        {screeningQuestions.map((q) => (
-                          <div key={q.id} className="space-y-1">
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                              {q.text} {q.required && <span className="text-rose-500">*</span>}
-                            </label>
-                            {q.type === "yes_no" ? (
-                              <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-0.5">
-                                <label className="flex items-center gap-1.5">
-                                  <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
-                                  <span>Có (Yes)</span>
-                                </label>
-                                <label className="flex items-center gap-1.5">
-                                  <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
-                                  <span>Không (No)</span>
-                                </label>
-                              </div>
-                            ) : (
-                              <Input
-                                type="text"
-                                placeholder="Câu trả lời của bạn..."
-                                disabled
-                                className="h-8 text-xs cursor-not-allowed opacity-80"
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Resume / CV Upload Box */}
-                    {resumeSetting === "required" && (
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Hồ sơ đính kèm (CV) <span className="text-rose-500">*</span>
-                        </label>
-                        <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 rounded-2xl p-4 text-center cursor-not-allowed opacity-90">
-                          <UploadCloud className="h-7 w-7 text-blue-500 mx-auto mb-1.5" />
-                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                            Kéo thả file CV vào đây hoặc <span className="text-blue-600 dark:text-blue-400 underline">chọn từ thiết bị</span>
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-1">
-                            Định dạng hỗ trợ: PDF, DOC, DOCX (Tối đa 10MB)
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Submit Button */}
-                    <Button
-                      type="button"
-                      disabled
-                      className="w-full h-10 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-not-allowed opacity-90 mt-2"
-                    >
-                      Nộp hồ sơ ứng tuyển
-                    </Button>
-
-                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 pt-1">
-                      <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
-                      <span>Thông tin của bạn được bảo mật tuyệt đối</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -2389,6 +2088,355 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 >
                   {deleteJobMutation.isPending ? "Deleting..." : "Yes, Delete Job"}
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= CANDIDATE PREVIEW MODAL ================= */}
+        {isPreviewModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="w-full max-w-6xl bg-slate-100 dark:bg-slate-950 rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150">
+              {/* Modal Top Bar */}
+              <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                    <Eye className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>Candidate Preview</span>
+                      <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                        Live Preview
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400 hidden sm:block">
+                      Trang hiển thị nội dung tuyển dụng và mẫu đơn mà ứng viên sẽ thấy
+                    </p>
+                  </div>
+                </div>
+
+                {/* Center: Device Switcher (Desktop / Tablet / Mobile) */}
+                <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200/80 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice("desktop")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      previewDevice === "desktop"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <Monitor className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Desktop</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice("tablet")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      previewDevice === "tablet"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <Tablet className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Tablet</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPreviewDevice("mobile")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      previewDevice === "mobile"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Mobile</span>
+                  </button>
+                </div>
+
+                {/* Right: Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewModalOpen(false)}
+                  className="h-8 w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Đóng xem trước"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Modal Body: Scrollable Canvas with responsive width container */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/90 dark:bg-slate-950/80">
+                <div
+                  className={cn(
+                    "mx-auto transition-all duration-200 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm p-6 sm:p-8 space-y-8",
+                    previewDevice === "desktop" && "max-w-5xl",
+                    previewDevice === "tablet" && "max-w-2xl border-2 border-slate-300 dark:border-slate-700 shadow-md",
+                    previewDevice === "mobile" && "max-w-sm border-2 border-slate-300 dark:border-slate-700 shadow-lg px-4 py-6"
+                  )}
+                >
+                  {/* Top Branding / Department Tag (No Navbar, pure content) */}
+                  <div className="space-y-3">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                      <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                      <span>{department || "Tuyển dụng"}</span>
+                    </div>
+
+                    {/* Job Title */}
+                    <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                      {jobTitle.trim() || "Tiêu đề công việc sẽ hiển thị ở đây"}
+                    </h1>
+
+                    {/* Meta Badges Grid */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                        <MapPin className="h-3.5 w-3.5 text-blue-500" />
+                        <span>{location || "Toàn quốc"}{postalCode ? ` (${postalCode})` : ""}</span>
+                      </div>
+
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                        <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                        <span>{employmentType}</span>
+                      </div>
+
+                      {workplace && workplace !== "Not specified" && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                          <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
+                          <span>{workplace}</span>
+                        </div>
+                      )}
+
+                      {(payNegotiable || minSalary || maxSalary) && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold shadow-2xs">
+                          <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                          <span>
+                            {payNegotiable
+                              ? "Thỏa thuận"
+                              : `${currency} ${minSalary || "0"} - ${maxSalary || "0"} / ${salaryPer.toLowerCase()}`}
+                          </span>
+                        </div>
+                      )}
+
+                      {experienceLevel && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200/70 dark:border-purple-800/60 text-purple-700 dark:text-purple-300 font-semibold shadow-2xs">
+                          <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                          <span>{experienceLevel}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-200/80 dark:border-slate-800" />
+
+                  {/* Two-Column or Stack Layout based on device preview */}
+                  <div
+                    className={cn(
+                      "grid gap-8 items-start",
+                      previewDevice === "desktop" ? "grid-cols-12" : "grid-cols-1"
+                    )}
+                  >
+                    {/* Left Column in Preview: JD & Requirements */}
+                    <div
+                      className={cn(
+                        "space-y-6",
+                        previewDevice === "desktop" ? "col-span-7" : "col-span-1"
+                      )}
+                    >
+                      {/* Job Description */}
+                      <div className="space-y-3">
+                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-blue-600" />
+                          Mô tả công việc (Job Description)
+                        </h2>
+                        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
+                          {description.trim() || "Chưa nhập mô tả công việc."}
+                        </div>
+                      </div>
+
+                      {/* Requirements */}
+                      <div className="space-y-3 pt-2">
+                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-indigo-600" />
+                          Yêu cầu ứng viên (Requirements)
+                        </h2>
+                        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
+                          {requirements.trim() || "Chưa nhập yêu cầu ứng viên."}
+                        </div>
+                      </div>
+
+                      {/* Assurance Card */}
+                      <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3">
+                        <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                        <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
+                          <p className="font-bold text-slate-800 dark:text-white">Quy trình tuyển dụng minh bạch</p>
+                          <p className="leading-relaxed text-[11px]">
+                            Hồ sơ của bạn được bảo mật an toàn. Đội ngũ nhân sự sẽ phản hồi trạng thái hồ sơ trực tiếp qua email của bạn.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column in Preview: Application Form Simulation */}
+                    <div
+                      className={cn(
+                        previewDevice === "desktop" ? "col-span-5 sticky top-4" : "col-span-1"
+                      )}
+                    >
+                      <div className="p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shadow-xs space-y-4">
+                        <div>
+                          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                            Nộp đơn ứng tuyển
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Điền thông tin và đính kèm CV để ứng tuyển vào vị trí này.
+                          </p>
+                        </div>
+
+                        <div className="space-y-3.5">
+                          {/* Họ và tên đệm / Tên */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Họ và tên đệm <span className="text-rose-500">*</span>
+                              </label>
+                              <Input
+                                type="text"
+                                placeholder="Ví dụ: Nguyễn Văn"
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Tên <span className="text-rose-500">*</span>
+                              </label>
+                              <Input
+                                type="text"
+                                placeholder="Ví dụ: An"
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Email */}
+                          <div className="space-y-1">
+                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                              Địa chỉ Email <span className="text-rose-500">*</span>
+                            </label>
+                            <Input
+                              type="email"
+                              placeholder="nguyenvana@example.com"
+                              disabled
+                              className="h-8 text-xs cursor-not-allowed opacity-80"
+                            />
+                          </div>
+
+                          {/* Phone */}
+                          {phoneSetting !== "hidden" && (
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Số điện thoại {phoneSetting === "required" ? <span className="text-rose-500">*</span> : <span className="text-slate-400 font-normal">(Tùy chọn)</span>}
+                              </label>
+                              <Input
+                                type="tel"
+                                placeholder="0912 345 678"
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            </div>
+                          )}
+
+                          {/* Cover Letter / Notes */}
+                          {coverLetterSetting === "required" && (
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Lời nhắn / Giới thiệu bản thân <span className="text-rose-500">*</span>
+                              </label>
+                              <Textarea
+                                placeholder="Giới thiệu ngắn về kinh nghiệm hoặc lý do bạn phù hợp..."
+                                disabled
+                                rows={2}
+                                className="text-xs cursor-not-allowed opacity-80 resize-none"
+                              />
+                            </div>
+                          )}
+
+                          {/* Screening Questions Preview */}
+                          {screeningQuestions.length > 0 && (
+                            <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                              <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                                Câu hỏi sàng lọc (Screening Questions)
+                              </h4>
+                              {screeningQuestions.map((q) => (
+                                <div key={q.id} className="space-y-1">
+                                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    {q.text} {q.required && <span className="text-rose-500">*</span>}
+                                  </label>
+                                  {q.type === "yes_no" ? (
+                                    <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-0.5">
+                                      <label className="flex items-center gap-1.5">
+                                        <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
+                                        <span>Có (Yes)</span>
+                                      </label>
+                                      <label className="flex items-center gap-1.5">
+                                        <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
+                                        <span>Không (No)</span>
+                                      </label>
+                                    </div>
+                                  ) : (
+                                    <Input
+                                      type="text"
+                                      placeholder="Câu trả lời của bạn..."
+                                      disabled
+                                      className="h-8 text-xs cursor-not-allowed opacity-80"
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Resume / CV Upload Box */}
+                          {resumeSetting === "required" && (
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Hồ sơ đính kèm (CV) <span className="text-rose-500">*</span>
+                              </label>
+                              <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 rounded-2xl p-4 text-center cursor-not-allowed opacity-90">
+                                <UploadCloud className="h-7 w-7 text-blue-500 mx-auto mb-1.5" />
+                                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                  Kéo thả file CV vào đây hoặc <span className="text-blue-600 dark:text-blue-400 underline">chọn từ thiết bị</span>
+                                </p>
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                  Định dạng hỗ trợ: PDF, DOC, DOCX (Tối đa 10MB)
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Submit Button */}
+                          <Button
+                            type="button"
+                            disabled
+                            className="w-full h-10 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-not-allowed opacity-90 mt-2"
+                          >
+                            Nộp hồ sơ ứng tuyển
+                          </Button>
+
+                          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 pt-1">
+                            <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
+                            <span>Thông tin của bạn được bảo mật tuyệt đối</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

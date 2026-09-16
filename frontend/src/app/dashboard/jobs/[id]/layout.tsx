@@ -29,6 +29,7 @@ import {
   Plus,
   MoreHorizontal,
   ExternalLink,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApplyModal } from "@/components/applications/apply-modal";
@@ -49,6 +50,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
   const updateJobMutation = useUpdateJobMutation();
 
   const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [jdModalOpen, setJdModalOpen] = useState(false);
 
   // Active tab based on pathname
   const activeNavTab = React.useMemo(() => {
@@ -223,6 +225,17 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setJdModalOpen(true)}
+              className="h-7 px-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+              title="Xem nhanh Mô tả và Yêu cầu ứng viên"
+            >
+              <FileText className="h-3 w-3 text-slate-500" />
+              <span className="hidden sm:inline">Chi tiết JD</span>
+            </Button>
+
             <a
               href={`/careers/${job.id}`}
               target="_blank"
@@ -273,6 +286,100 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {children}
       </div>
+
+      {/* Quick JD & Requirements Modal */}
+      {jdModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/50">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                  <Briefcase className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    {job.title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                    <span>{job.department}</span>
+                    <span>•</span>
+                    <span>{jobTypeLabel}</span>
+                    <span>•</span>
+                    <span>{job.location}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setJdModalOpen(false)}
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Content body */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-sm text-slate-700 dark:text-slate-200">
+              {/* Description */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+                  Mô tả công việc (Job Description)
+                </h4>
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 whitespace-pre-line leading-relaxed text-xs sm:text-sm">
+                  {job.description || "Chưa có mô tả công việc."}
+                </div>
+              </div>
+
+              {/* Requirements */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-indigo-500" />
+                  Yêu cầu ứng viên (Requirements)
+                </h4>
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 whitespace-pre-line leading-relaxed text-xs sm:text-sm">
+                  {job.requirements || "Chưa thiết lập yêu cầu ứng viên cho vị trí này."}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/50">
+              <a
+                href={`/careers/${job.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Xem trang ứng tuyển công khai
+              </a>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setJdModalOpen(false);
+                    router.push(`/dashboard/jobs/${job.id}/settings`);
+                  }}
+                  className="h-8 text-xs font-semibold cursor-pointer"
+                >
+                  <Settings className="h-3.5 w-3.5 mr-1" />
+                  Chỉnh sửa trong Cài đặt
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setJdModalOpen(false)}
+                  className="h-8 text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 cursor-pointer"
+                >
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Apply Modal */}
       <ApplyModal

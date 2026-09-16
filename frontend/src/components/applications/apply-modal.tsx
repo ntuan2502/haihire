@@ -30,7 +30,7 @@ import {
   User,
   Phone,
 } from "lucide-react";
-import { formatFileSize } from "@/lib/utils";
+import { formatFileSize, buildCandidateNotes } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 interface ApplyModalProps {
@@ -52,7 +52,8 @@ export function ApplyModal({
   const [jobId, setJobId] = useState<string>(
     selectedJobId ? selectedJobId.toString() : "",
   );
-  const [candidateName, setCandidateName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
   const [candidatePhone, setCandidatePhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -100,7 +101,7 @@ export function ApplyModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobId || !candidateName || !candidateEmail) {
+    if (!jobId || !lastName.trim() || !firstName.trim() || !candidateEmail.trim()) {
       setError(t("applications.fillRequiredFields"));
       return;
     }
@@ -113,12 +114,19 @@ export function ApplyModal({
       setLoading(true);
       setError(null);
 
+      const fullName = `${lastName.trim()} ${firstName.trim()}`.trim();
+      const formattedNotes = buildCandidateNotes({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        customNotes: notes.trim() || undefined,
+      });
+
       const formData = new FormData();
       formData.append("jobId", jobId);
-      formData.append("candidateName", candidateName);
-      formData.append("candidateEmail", candidateEmail);
-      if (candidatePhone) formData.append("candidatePhone", candidatePhone);
-      if (notes) formData.append("notes", notes);
+      formData.append("candidateName", fullName);
+      formData.append("candidateEmail", candidateEmail.trim());
+      if (candidatePhone) formData.append("candidatePhone", candidatePhone.trim());
+      if (formattedNotes) formData.append("notes", formattedNotes);
       formData.append("resume", file);
 
       await applicationsApi.apply(formData);
@@ -127,7 +135,8 @@ export function ApplyModal({
 
       setTimeout(() => {
         setSuccess(false);
-        setCandidateName("");
+        setLastName("");
+        setFirstName("");
         setCandidateEmail("");
         setCandidatePhone("");
         setNotes("");
@@ -201,21 +210,37 @@ export function ApplyModal({
               </Select>
             </div>
 
-            {/* Candidate Details */}
+            {/* Candidate Name: Họ và Tên */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.displayName")} <span className="text-rose-500">*</span>
+                  <User className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.lastName")} <span className="text-rose-500">*</span>
                 </label>
                 <Input
-                  placeholder="e.g. Nguyen Van A"
-                  value={candidateName}
-                  onChange={(e) => setCandidateName(e.target.value)}
+                  placeholder="e.g. Nguyen"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   className="mt-1"
                   required
                 />
               </div>
 
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.firstName")} <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  placeholder="e.g. Van A"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="mt-1"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Email & Phone */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <Mail className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.email")} <span className="text-rose-500">*</span>
@@ -229,9 +254,7 @@ export function ApplyModal({
                   required
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.phone")}
@@ -243,18 +266,19 @@ export function ApplyModal({
                   className="mt-1"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {t("candidates.columns.quickNotes")}
-                </label>
-                <Input
-                  placeholder="e.g. 5+ years React, available immediately"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
+            {/* Quick Notes */}
+            <div>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                {t("candidates.columns.quickNotes")}
+              </label>
+              <Input
+                placeholder="e.g. 5+ years React, available immediately"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="mt-1"
+              />
             </div>
 
             {/* Resume Upload Dropzone */}

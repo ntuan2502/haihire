@@ -48,6 +48,11 @@ import {
   Check,
   AlertTriangle,
   Save,
+  Building2,
+  Clock,
+  Globe2,
+  DollarSign,
+  UploadCloud,
 } from "lucide-react";
 import type { Job, JobType, JobStatus } from "@/types";
 
@@ -182,8 +187,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const [currency, setCurrency] = useState("USD");
   const [salaryPer, setSalaryPer] = useState("Year");
 
-  // Description
+  // Description & Requirements
   const [description, setDescription] = useState(initialJob?.description || "");
+  const [requirements, setRequirements] = useState(initialJob?.requirements || "");
   const [formError, setFormError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
@@ -247,6 +253,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             : "Not specified"),
       );
       setDescription(initialJob.description || "");
+      setRequirements(initialJob.requirements || "");
 
       const typeMap: Record<JobType, string> = {
         FULL_TIME: "Full-time",
@@ -427,6 +434,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           description:
             description ||
             "We are seeking a talented professional to join our team.",
+          requirements: requirements || undefined,
           salaryRange: salaryRange || undefined,
           status: statusMapped,
           organizationId: user?.organizationId ?? null,
@@ -454,6 +462,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             description:
               description ||
               "We are seeking a talented professional to join our team.",
+            requirements: requirements || null,
             salaryRange: salaryRange || null,
             status: statusMapped,
           },
@@ -653,29 +662,48 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                   <div className="space-y-5 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
                     {/* Field 1: Job Title */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                        Job title <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="e.g. Senior Frontend Engineer"
-                        value={jobTitle}
-                        onChange={(e) => setJobTitle(e.target.value)}
-                        onBlur={() =>
-                          setTouched((prev) => ({ ...prev, title: true }))
-                        }
-                        className={cn(
-                          "h-10 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
-                          showTitleError && "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20"
+                    {/* Field 1 & 1.5: Job Title & Department */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                      <div className="sm:col-span-8">
+                        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                          Job title <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="e.g. Senior Frontend Engineer"
+                          value={jobTitle}
+                          onChange={(e) => setJobTitle(e.target.value)}
+                          onBlur={() =>
+                            setTouched((prev) => ({ ...prev, title: true }))
+                          }
+                          className={cn(
+                            "h-10 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
+                            showTitleError && "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20"
+                          )}
+                          required
+                        />
+                        {showTitleError && (
+                          <p className="text-[11px] text-rose-500 font-medium mt-1">
+                            Title is required
+                          </p>
                         )}
-                        required
-                      />
-                      {showTitleError && (
-                        <p className="text-[11px] text-rose-500 font-medium mt-1">
-                          Title is required
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                          Department (Phòng ban)
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="e.g. Engineering, Design..."
+                          value={department}
+                          onChange={(e) => setDepartment(e.target.value)}
+                          className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
+                        />
+                        <p className="text-[11px] text-slate-400 mt-1">
+                          Hiển thị ở tag phía trên Job title
                         </p>
-                      )}
+                      </div>
                     </div>
 
                     {/* Field 2 & 3: Location & Postal Code */}
@@ -998,6 +1026,22 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           {description.trim().length > 0 ? `${description.trim().length} chars` : "Required"}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Field 9: Requirements */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                        Requirements (Yêu cầu ứng viên)
+                      </label>
+                      <Textarea
+                        placeholder="Nêu các kỹ năng, kinh nghiệm chuyên môn, chứng chỉ hoặc tiêu chuẩn cần thiết cho vị trí này..."
+                        value={requirements}
+                        onChange={(e) => setRequirements(e.target.value)}
+                        className="h-32 text-xs bg-slate-50/50 dark:bg-slate-950 resize-none overflow-y-auto transition-colors"
+                      />
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                        Phần này sẽ hiển thị dưới mục &quot;Yêu cầu ứng viên (Requirements)&quot; trên trang tuyển dụng công khai.
+                      </p>
                     </div>
                   </div>
 
@@ -1454,192 +1498,264 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 </div>
               </div>
 
-              {/* Candidate View Container with dedicated scroll */}
+              {/* Candidate View Container with dedicated scroll (Mirrors Careers Page exactly) */}
               <div
                 className={cn(
-                  "rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-6 transition-all max-h-[calc(100vh-140px)] overflow-y-auto overscroll-contain",
+                  "rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-6 transition-all max-h-[calc(100vh-140px)] overflow-y-auto overscroll-contain",
                   previewDevice === "mobile" && "max-w-sm mx-auto border-2 border-slate-300 dark:border-slate-700"
                 )}
               >
-                {/* Header Badges */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    <Briefcase className="h-3 w-3 text-slate-500" />
-                    {employmentType}
+                {/* 1. Careers Header Simulator */}
+                <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white font-black text-xs shadow-xs">
+                      A
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Careers at</div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                        {user?.organization?.name || "ATS Platform"}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80">
+                    Ứng tuyển ngay
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    <Sparkles className="h-3 w-3 text-slate-500" />
-                    {experienceLevel}
-                  </span>
-                  {workplace && workplace !== "Not specified" && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-                      {workplace}
-                    </span>
-                  )}
-                  {location && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      <MapPin className="h-3 w-3 text-slate-500" />
-                      {location} {postalCode ? `(${postalCode})` : ""}
-                    </span>
-                  )}
                 </div>
 
-                {/* Dynamic Job Title */}
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-snug">
-                    {jobTitle.trim() || "Your job title will appear here"}
+                {/* 2. Department Tag (Above Job Title - matches Careers) */}
+                <div className="space-y-3 pt-0.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                    <span>{department || "Tuyển dụng"}</span>
+                  </div>
+
+                  {/* 3. Job Title */}
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                    {jobTitle.trim() || "Tiêu đề công việc sẽ hiển thị ở đây"}
+                  </h1>
+
+                  {/* 4. Badges Grid (Exact format from Careers page) */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                      <MapPin className="h-3.5 w-3.5 text-blue-500" />
+                      <span>{location || "Toàn quốc"}{postalCode ? ` (${postalCode})` : ""}</span>
+                    </div>
+
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                      <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                      <span>{employmentType}</span>
+                    </div>
+
+                    {workplace && workplace !== "Not specified" && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                        <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
+                        <span>{workplace}</span>
+                      </div>
+                    )}
+
+                    {(payNegotiable || minSalary || maxSalary) && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold shadow-2xs">
+                        <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>
+                          {payNegotiable
+                            ? "Thỏa thuận"
+                            : `${currency} ${minSalary || "0"} - ${maxSalary || "0"} / ${salaryPer.toLowerCase()}`}
+                        </span>
+                      </div>
+                    )}
+
+                    {experienceLevel && (
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200/70 dark:border-purple-800/60 text-purple-700 dark:text-purple-300 font-semibold shadow-2xs">
+                        <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                        <span>{experienceLevel}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <hr className="border-slate-200/80 dark:border-slate-800" />
+
+                {/* 5. Job Description Section */}
+                <div className="space-y-3">
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-blue-600" />
+                    Mô tả công việc (Job Description)
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 whitespace-pre-wrap leading-relaxed">
-                    {description.trim() || "Add a job description to preview the role candidates will see."}
-                  </p>
+                  <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
+                    {description.trim() || "Thêm mô tả công việc ở cột bên trái để xem trước giao diện ứng viên sẽ thấy."}
+                  </div>
                 </div>
 
-                {/* Application Form Sub-Card */}
-                <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 p-5 space-y-4">
+                {/* 6. Requirements Section */}
+                <div className="space-y-3 pt-1">
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-indigo-600" />
+                    Yêu cầu ứng viên (Requirements)
+                  </h2>
+                  <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
+                    {requirements.trim() || "Thêm yêu cầu ứng viên ở cột bên trái để xem trước hiển thị."}
+                  </div>
+                </div>
+
+                {/* 7. Company Assurance Box */}
+                <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3">
+                  <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
+                    <p className="font-bold text-slate-800 dark:text-white">Quy trình tuyển dụng minh bạch</p>
+                    <p className="leading-relaxed text-[11px]">
+                      Hồ sơ của bạn được lưu trữ an toàn và bảo mật. Sau khi tiếp nhận, đội ngũ nhân sự sẽ phản hồi trạng thái hồ sơ trực tiếp qua email của bạn.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 8. Application Form Preview (Matches Careers Application Form) */}
+                <div className="p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Your application
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                      Nộp đơn ứng tuyển
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      Fields marked with <span className="text-rose-500">*</span> are required.
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Điền thông tin và đính kèm CV của bạn để ứng tuyển vào vị trí này.
                     </p>
                   </div>
 
-                  {/* First Name / Last Name (Always mandatory) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        First Name <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Jane"
-                        disabled
-                        className="h-8 text-xs bg-white dark:bg-slate-900 cursor-not-allowed opacity-80"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Last Name <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Doe"
-                        disabled
-                        className="h-8 text-xs bg-white dark:bg-slate-900 cursor-not-allowed opacity-80"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email (Always mandatory) */}
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Email <span className="text-rose-500">*</span>
-                    </label>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      disabled
-                      className="h-8 text-xs bg-white dark:bg-slate-900 cursor-not-allowed opacity-80"
-                    />
-                  </div>
-
-                  {/* Phone Field (Dynamic based on phoneSetting) */}
-                  {phoneSetting !== "hidden" && (
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Phone {phoneSetting === "required" ? <span className="text-rose-500">*</span> : <span className="text-slate-400 font-normal">(optional)</span>}
-                      </label>
-                      <Input
-                        type="tel"
-                        placeholder="+1 (555) 123-4567"
-                        disabled
-                        className="h-8 text-xs bg-white dark:bg-slate-900 cursor-not-allowed opacity-80"
-                      />
-                    </div>
-                  )}
-
-                  {/* Resume / CV Field (Dynamic based on resumeSetting) */}
-                  {resumeSetting === "required" && (
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Resume / CV <span className="text-rose-500">*</span>
-                      </label>
-                      <div className="flex items-center justify-between rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5">
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <FileUp className="h-4 w-4 text-slate-400" />
-                          <span className="text-[11px]">PDF, DOC, or DOCX — max 10 MB</span>
-                        </div>
-                        <span className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 cursor-not-allowed">
-                          Choose file
-                        </span>
+                  <div className="space-y-3.5">
+                    {/* Họ và tên đệm / Tên */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Họ và tên đệm <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Ví dụ: Nguyễn Văn"
+                          disabled
+                          className="h-8 text-xs cursor-not-allowed opacity-80"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Tên <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Ví dụ: An"
+                          disabled
+                          className="h-8 text-xs cursor-not-allowed opacity-80"
+                        />
                       </div>
                     </div>
-                  )}
 
-                  {/* Cover Letter Field (Dynamic based on coverLetterSetting) */}
-                  {coverLetterSetting === "required" && (
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        Cover letter <span className="text-rose-500">*</span>
+                    {/* Email */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Địa chỉ Email <span className="text-rose-500">*</span>
                       </label>
-                      <Textarea
-                        placeholder="Write your cover letter here..."
+                      <Input
+                        type="email"
+                        placeholder="nguyenvana@example.com"
                         disabled
-                        rows={3}
-                        className="text-xs bg-white dark:bg-slate-900 cursor-not-allowed opacity-80"
+                        className="h-8 text-xs cursor-not-allowed opacity-80"
                       />
                     </div>
-                  )}
 
-                  {/* Screening Questions Preview */}
-                  {screeningQuestions.length > 0 && (
-                    <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-                      <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
-                        Screening Questions
-                      </h4>
-                      {screeningQuestions.map((q) => (
-                        <div key={q.id} className="space-y-1">
-                          <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                            {q.text} {q.required && <span className="text-rose-500">*</span>}
-                          </label>
-                          {q.type === "yes_no" ? (
-                            <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-0.5">
-                              <label className="flex items-center gap-1.5">
-                                <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
-                                <span>Yes</span>
-                              </label>
-                              <label className="flex items-center gap-1.5">
-                                <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
-                                <span>No</span>
-                              </label>
-                            </div>
-                          ) : (
-                            <Input
-                              type="text"
-                              placeholder="Your answer..."
-                              disabled
-                              className="h-8 text-xs bg-white dark:bg-slate-900 cursor-not-allowed opacity-80"
-                            />
-                          )}
+                    {/* Phone */}
+                    {phoneSetting !== "hidden" && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Số điện thoại {phoneSetting === "required" ? <span className="text-rose-500">*</span> : <span className="text-slate-400 font-normal">(Tùy chọn)</span>}
+                        </label>
+                        <Input
+                          type="tel"
+                          placeholder="0912 345 678"
+                          disabled
+                          className="h-8 text-xs cursor-not-allowed opacity-80"
+                        />
+                      </div>
+                    )}
+
+                    {/* Cover Letter / Notes */}
+                    {coverLetterSetting === "required" && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Lời nhắn / Giới thiệu bản thân <span className="text-rose-500">*</span>
+                        </label>
+                        <Textarea
+                          placeholder="Giới thiệu ngắn về kinh nghiệm hoặc lý do bạn phù hợp..."
+                          disabled
+                          rows={2}
+                          className="text-xs cursor-not-allowed opacity-80 resize-none"
+                        />
+                      </div>
+                    )}
+
+                    {/* Screening Questions Preview */}
+                    {screeningQuestions.length > 0 && (
+                      <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                          Câu hỏi sàng lọc (Screening Questions)
+                        </h4>
+                        {screeningQuestions.map((q) => (
+                          <div key={q.id} className="space-y-1">
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                              {q.text} {q.required && <span className="text-rose-500">*</span>}
+                            </label>
+                            {q.type === "yes_no" ? (
+                              <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-0.5">
+                                <label className="flex items-center gap-1.5">
+                                  <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
+                                  <span>Có (Yes)</span>
+                                </label>
+                                <label className="flex items-center gap-1.5">
+                                  <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
+                                  <span>Không (No)</span>
+                                </label>
+                              </div>
+                            ) : (
+                              <Input
+                                type="text"
+                                placeholder="Câu trả lời của bạn..."
+                                disabled
+                                className="h-8 text-xs cursor-not-allowed opacity-80"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Resume / CV Upload Box */}
+                    {resumeSetting === "required" && (
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Hồ sơ đính kèm (CV) <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 rounded-2xl p-4 text-center cursor-not-allowed opacity-90">
+                          <UploadCloud className="h-7 w-7 text-blue-500 mx-auto mb-1.5" />
+                          <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                            Kéo thả file CV vào đây hoặc <span className="text-blue-600 dark:text-blue-400 underline">chọn từ thiết bị</span>
+                          </p>
+                          <p className="text-[10px] text-slate-400 mt-1">
+                            Định dạng hỗ trợ: PDF, DOC, DOCX (Tối đa 10MB)
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    )}
 
-                  {/* Submit button & Privacy info */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                    {/* Submit Button */}
                     <Button
                       type="button"
                       disabled
-                      className="bg-blue-600/80 text-white text-xs font-bold px-4 py-2 rounded-xl opacity-90 cursor-not-allowed"
+                      className="w-full h-10 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-not-allowed opacity-90 mt-2"
                     >
-                      Submit Application
+                      Nộp hồ sơ ứng tuyển
                     </Button>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400">
-                      <ShieldCheck className="h-3 w-3 text-slate-400" />
-                      Your information is kept confidential.
-                    </span>
+
+                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 pt-1">
+                      <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Thông tin của bạn được bảo mật tuyệt đối</span>
+                    </div>
                   </div>
                 </div>
               </div>

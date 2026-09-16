@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LanguageDropdown } from "@/components/language-dropdown";
 import { useI18n } from "@/i18n";
+import { buildCandidateNotes } from "@/lib/utils";
 import {
   Briefcase,
   Building2,
@@ -40,7 +41,8 @@ export default function CareerJobPage() {
   const applyMutation = useCreateApplicationMutation();
 
   // Form states
-  const [candidateName, setCandidateName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
   const [candidatePhone, setCandidatePhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -99,8 +101,12 @@ export default function CareerJobPage() {
     e.preventDefault();
     setSubmitError(null);
 
-    if (!candidateName.trim()) {
-      setSubmitError("Vui lòng nhập họ và tên.");
+    if (!lastName.trim()) {
+      setSubmitError("Vui lòng nhập họ và tên đệm.");
+      return;
+    }
+    if (!firstName.trim()) {
+      setSubmitError("Vui lòng nhập tên.");
       return;
     }
     if (!candidateEmail.trim() || !candidateEmail.includes("@")) {
@@ -113,15 +119,22 @@ export default function CareerJobPage() {
     }
 
     try {
+      const fullName = `${lastName.trim()} ${firstName.trim()}`.trim();
       const formData = new FormData();
       formData.append("jobId", jobId);
-      formData.append("candidateName", candidateName.trim());
+      formData.append("candidateName", fullName);
       formData.append("candidateEmail", candidateEmail.trim());
+      const formattedNotes = buildCandidateNotes({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        customNotes: notes.trim() || undefined,
+      });
+
       if (candidatePhone.trim()) {
         formData.append("candidatePhone", candidatePhone.trim());
       }
-      if (notes.trim()) {
-        formData.append("notes", notes.trim());
+      if (formattedNotes) {
+        formData.append("notes", formattedNotes);
       }
       formData.append("resume", resumeFile);
 
@@ -322,7 +335,7 @@ export default function CareerJobPage() {
                     Ứng tuyển thành công!
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Cảm ơn <span className="font-bold text-slate-700 dark:text-slate-200">{candidateName}</span>! Hồ sơ của bạn cho vị trí{" "}
+                    Cảm ơn <span className="font-bold text-slate-700 dark:text-slate-200">{`${lastName} ${firstName}`.trim()}</span>! Hồ sơ của bạn cho vị trí{" "}
                     <span className="font-bold text-slate-700 dark:text-slate-200">{job.title}</span> đã được chuyển trực tiếp đến bộ phận tuyển dụng tại{" "}
                     <span className="font-bold text-slate-700 dark:text-slate-200">{orgName}</span>.
                   </p>
@@ -347,7 +360,8 @@ export default function CareerJobPage() {
                   onClick={() => {
                     setIsSuccess(false);
                     setResumeFile(null);
-                    setCandidateName("");
+                    setLastName("");
+                    setFirstName("");
                     setCandidateEmail("");
                     setCandidatePhone("");
                     setNotes("");
@@ -385,19 +399,34 @@ export default function CareerJobPage() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Candidate Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Họ và tên <span className="text-rose-500">*</span>
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="Ví dụ: Nguyễn Văn A"
-                      value={candidateName}
-                      onChange={(e) => setCandidateName(e.target.value)}
-                      className="h-9 rounded-xl text-xs"
-                      required
-                    />
+                  {/* Candidate Name: Họ và tên đệm / Tên */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Họ và tên đệm <span className="text-rose-500">*</span>
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Ví dụ: Nguyễn Văn"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="h-9 rounded-xl text-xs"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Tên <span className="text-rose-500">*</span>
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Ví dụ: An"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="h-9 rounded-xl text-xs"
+                        required
+                      />
+                    </div>
                   </div>
 
                   {/* Candidate Email */}

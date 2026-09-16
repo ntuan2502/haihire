@@ -30,9 +30,19 @@ import {
   MoreHorizontal,
   ExternalLink,
   X,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { JobStatusBadge } from "@/components/ui/job-status-badge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { ApplyModal } from "@/components/applications/apply-modal";
+import type { JobStatus } from "@/types";
 import { useI18n } from "@/i18n";
 
 function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
@@ -61,9 +71,8 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
     return "pipeline";
   }, [pathname]);
 
-  const handleToggleJobStatus = async () => {
-    if (!job) return;
-    const newStatus = job.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+  const handleUpdateJobStatus = async (newStatus: JobStatus) => {
+    if (!job || job.status === newStatus) return;
     try {
       await updateJobMutation.mutateAsync({
         id: job.id,
@@ -172,15 +181,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                   ({jobTypeLabel})
                 </span>
               </h1>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  job.status === "PUBLISHED"
-                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60"
-                    : "bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-900/60"
-                }`}
-              >
-                {job.status === "PUBLISHED" ? t("jobs.openStatus") : t("jobs.draftStatus")}
-              </span>
+              <JobStatusBadge status={job.status} />
             </div>
           </div>
 
@@ -256,17 +257,81 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               <span>{t("candidates.addCandidate")}</span>
             </Button>
 
-            <button
-              type="button"
-              onClick={handleToggleJobStatus}
-              className={`h-7 px-3 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors ${
-                job.status === "PUBLISHED"
-                  ? "bg-amber-500 hover:bg-amber-600 text-white"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
-              }`}
-            >
-              {job.status === "PUBLISHED" ? t("jobs.closed") : t("jobs.openStatus")}
-            </button>
+            {/* 3-Status Switcher Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border ${
+                  job.status === "PUBLISHED"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
+                    : job.status === "CLOSED"
+                      ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                      : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
+                }`}
+                title="Thay đổi trạng thái tin tuyển dụng"
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    job.status === "PUBLISHED"
+                      ? "bg-emerald-500"
+                      : job.status === "CLOSED"
+                        ? "bg-slate-400"
+                        : "bg-amber-500"
+                  }`}
+                />
+                <span>
+                  {job.status === "PUBLISHED"
+                    ? t("jobs.openStatus")
+                    : job.status === "CLOSED"
+                      ? t("jobs.closed")
+                      : t("jobs.draftStatus")}
+                </span>
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onClick={() => handleUpdateJobStatus("PUBLISHED")}
+                  className="text-xs flex items-center justify-between cursor-pointer py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                      {t("jobs.openStatus")}
+                    </span>
+                  </div>
+                  {job.status === "PUBLISHED" && (
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleUpdateJobStatus("DRAFT")}
+                  className="text-xs flex items-center justify-between cursor-pointer py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-amber-500" />
+                    <span className="font-semibold text-amber-700 dark:text-amber-300">
+                      {t("jobs.draftStatus")}
+                    </span>
+                  </div>
+                  {job.status === "DRAFT" && (
+                    <Check className="h-3.5 w-3.5 text-amber-600" />
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleUpdateJobStatus("CLOSED")}
+                  className="text-xs flex items-center justify-between cursor-pointer py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-slate-400" />
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {t("jobs.closed")}
+                    </span>
+                  </div>
+                  {job.status === "CLOSED" && (
+                    <Check className="h-3.5 w-3.5 text-slate-600" />
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <button
               type="button"

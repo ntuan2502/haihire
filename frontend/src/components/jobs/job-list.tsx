@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Job, Application, ApplicationStage } from "@/types";
+import { JobStatusBadge } from "@/components/ui/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 
@@ -102,13 +103,12 @@ export function JobList({
           job.location.toLowerCase().includes(search.toLowerCase()) ||
           job.description.toLowerCase().includes(search.toLowerCase());
 
-        // Status filter
+        // Status filter (Open, Draft, Closed)
         const matchStatus =
           statusFilters.length === 0 ||
           (statusFilters.includes("Open") && job.status === "PUBLISHED") ||
           (statusFilters.includes("Draft") && job.status === "DRAFT") ||
-          (statusFilters.includes("Closed") && job.status === "CLOSED") ||
-          (statusFilters.includes("Archived") && job.status === "ARCHIVED");
+          (statusFilters.includes("Closed") && (job.status === "CLOSED" || job.status === "ARCHIVED"));
 
         // Employment type
         const matchType =
@@ -298,9 +298,7 @@ export function JobList({
                     >
                       {job.title}
                     </h3>
-                    <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
-                      {job.status === "PUBLISHED" ? t("jobs.active") : t("jobs.draft")}
-                    </span>
+                    <JobStatusBadge status={job.status} className="shrink-0" />
                   </div>
 
                   {/* Sub-row: Type & Location */}
@@ -445,9 +443,7 @@ export function JobList({
                       >
                         {job.title}
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
-                        {job.status === "PUBLISHED" ? t("jobs.openStatus") : t("jobs.draftStatus")}
-                      </span>
+                      <JobStatusBadge status={job.status} />
                     </div>
 
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
@@ -627,9 +623,7 @@ export function JobList({
                         {job.title}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900/60">
-                          {job.status === "PUBLISHED" ? t("jobs.active") : t("jobs.draft")}
-                        </span>
+                        <JobStatusBadge status={job.status} />
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
                         {job.type === "FULL_TIME"
@@ -714,8 +708,7 @@ export function JobList({
                     {[
                       { id: "Open", label: t("jobs.openStatus") },
                       { id: "Draft", label: t("jobs.draftStatus") },
-                      { id: "Closed", label: t("jobs.closedStatus") },
-                      { id: "Archived", label: t("jobs.closed") },
+                      { id: "Closed", label: t("jobs.closed") },
                     ].map((st) => (
                       <button
                         key={st.id}

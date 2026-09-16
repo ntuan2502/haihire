@@ -169,7 +169,7 @@ export class ApplicationsService {
       "updatedAt",
     ).all();
 
-    return allApps.filter((a) => a.jobId && jobIds.has(a.jobId));
+    return allApps.filter((a) => !a.jobId || jobIds.has(a.jobId));
   }
 
   async findOne(id: string) {

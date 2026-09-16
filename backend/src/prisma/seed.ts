@@ -209,32 +209,88 @@ Bạn sẽ trực tiếp thiết kế cơ sở dữ liệu, quản lý kết n�
 
 const STAGES = ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"] as const;
 
-function generateCandidateName(index: number): { name: string; email: string; phone: string } {
-  const isVietnamese = index % 3 !== 0; // ~67% Vietnamese, 33% International
+function generate200UniqueCandidates(): Array<{
+  name: string;
+  email: string;
+  phone: string;
+  candidateIndex: number;
+}> {
+  const candidates: Array<{
+    name: string;
+    email: string;
+    phone: string;
+    candidateIndex: number;
+  }> = [];
+  const usedNames = new Set<string>();
 
-  let name = "";
-  if (isVietnamese) {
-    const fn = VIETNAMESE_FIRST_NAMES[index % VIETNAMESE_FIRST_NAMES.length];
-    const mn = VIETNAMESE_MIDDLE_NAMES[(index * 3) % VIETNAMESE_MIDDLE_NAMES.length];
-    const ln = VIETNAMESE_LAST_NAMES[(index * 7) % VIETNAMESE_LAST_NAMES.length];
-    name = `${fn} ${mn} ${ln}`;
-  } else {
-    const fn = INTL_FIRST_NAMES[index % INTL_FIRST_NAMES.length];
-    const ln = INTL_LAST_NAMES[(index * 3) % INTL_LAST_NAMES.length];
-    name = `${fn} ${ln}`;
+  // ~70% Vietnamese (140), ~30% International (60) = 200 candidates
+  const targetVietnamese = 140;
+  const targetIntl = 60;
+
+  let vnCount = 0;
+  for (const fn of VIETNAMESE_FIRST_NAMES) {
+    for (const mn of VIETNAMESE_MIDDLE_NAMES) {
+      for (const ln of VIETNAMESE_LAST_NAMES) {
+        if (vnCount >= targetVietnamese) break;
+        const name = `${fn} ${mn} ${ln}`;
+        if (!usedNames.has(name)) {
+          usedNames.add(name);
+          vnCount++;
+          const normalized = name
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/đ/g, "d")
+            .replace(/Đ/g, "D")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, ".");
+          const email = `${normalized}.${vnCount + 10}@example.com`;
+          const phone = `09${String(10000000 + vnCount * 137).slice(-8)}`;
+          candidates.push({
+            name,
+            email,
+            phone,
+            candidateIndex: vnCount,
+          });
+        }
+      }
+      if (vnCount >= targetVietnamese) break;
+    }
+    if (vnCount >= targetVietnamese) break;
   }
 
-  const normalized = name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, ".");
-  const email = `${normalized}.${index + 10}@example.com`;
-  const phone = `09${Math.floor(10000000 + Math.random() * 90000000)}`;
+  let intlCount = 0;
+  for (const fn of INTL_FIRST_NAMES) {
+    for (const ln of INTL_LAST_NAMES) {
+      if (intlCount >= targetIntl) break;
+      const name = `${fn} ${ln}`;
+      if (!usedNames.has(name)) {
+        usedNames.add(name);
+        intlCount++;
+        const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, ".");
+        const email = `${normalized}.${intlCount + 200}@example.com`;
+        const phone = `09${String(50000000 + intlCount * 179).slice(-8)}`;
+        candidates.push({
+          name,
+          email,
+          phone,
+          candidateIndex: vnCount + intlCount,
+        });
+      }
+    }
+    if (intlCount >= targetIntl) break;
+  }
 
-  return { name, email, phone };
+  // Shuffle candidate list
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  // Re-index candidates 1..200
+  return candidates.map((c, idx) => ({
+    ...c,
+    candidateIndex: idx + 1,
+  }));
 }
 
 function generateInterviewObject(
@@ -525,10 +581,40 @@ export async function runSeed(): Promise<void> {
   console.log(`   - CLOSED (Đã đóng):    ${statusCounts.CLOSED}`);
 
   console.log("==================================================");
-  console.log("👥 4. Seeding Candidates (10-30 candidates per stage per job)...");
+  console.log("👥 4. Seeding Exactly 200 Unique Candidates (0-6 jobs each)...");
   console.log("==================================================");
 
-  let candidateTotal = 0;
+  const uniqueCandidates = generate200UniqueCandidates();
+  console.log(`✅ Đã khởi tạo danh sách ${uniqueCandidates.length} ứng viên có họ và tên hoàn toàn khác nhau (không trùng lặp).`);
+
+  // Phân bổ số lượng job cho 200 ứng viên (0 đến 6 job):
+  // 0 job: 24 ứng viên (chưa ứng tuyển - Talent Pool)
+  // 1 job: 76 ứng viên
+  // 2 job: 40 ứng viên
+  // 3 job: 30 ứng viên
+  // 4 job: 16 ứng viên
+  // 5 job: 10 ứng viên
+  // 6 job:  4 ứng viên
+  // Tổng = 24 + 76 + 40 + 30 + 16 + 10 + 4 = 200 ứng viên
+  const jobCountsPool: number[] = [
+    ...Array(24).fill(0),
+    ...Array(76).fill(1),
+    ...Array(40).fill(2),
+    ...Array(30).fill(3),
+    ...Array(16).fill(4),
+    ...Array(10).fill(5),
+    ...Array(4).fill(6),
+  ];
+
+  // Shuffle pool để phân bổ ngẫu nhiên cho từng ứng viên
+  for (let i = jobCountsPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [jobCountsPool[i], jobCountsPool[j]] = [jobCountsPool[j], jobCountsPool[i]];
+  }
+
+  const jobDistributionStats: Record<number, number> = {
+    0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0,
+  };
   const stageStats: Record<string, number> = {
     APPLIED: 0,
     SCREENING: 0,
@@ -540,7 +626,7 @@ export async function runSeed(): Promise<void> {
 
   const applicationsToInsert: Array<{
     id: string;
-    jobId: string;
+    jobId: string | null;
     candidateName: string;
     candidateEmail: string;
     candidatePhone: string;
@@ -553,25 +639,57 @@ export async function runSeed(): Promise<void> {
     orderIndex: number;
   }> = [];
 
-  for (let j = 0; j < createdJobIds.length; j++) {
-    const jobId = createdJobIds[j];
+  const jobStageOrderCounter: Record<string, number> = {};
 
-    for (let sIdx = 0; sIdx < STAGES.length; sIdx++) {
-      const stage = STAGES[sIdx];
-      // Random candidates per stage: 10 to 30
-      const countInThisStage = Math.floor(Math.random() * (30 - 10 + 1)) + 10;
-      stageStats[stage] += countInThisStage;
+  for (let i = 0; i < uniqueCandidates.length; i++) {
+    const candidate = uniqueCandidates[i];
+    const jobCount = jobCountsPool[i];
+    jobDistributionStats[jobCount]++;
 
-      for (let k = 0; k < countInThisStage; k++) {
-        candidateTotal++;
-        const { name, email, phone } = generateCandidateName(candidateTotal);
-        const appId = crypto.randomUUID();
+    const fileName = `CV_${candidate.name.replace(/\s+/g, "_")}.pdf`;
+    const resumeUrl = `/ats-resumes/${fileName}`;
+    const resumeFileSize = Math.floor(500000 + Math.random() * 1500000); // 500KB - 2MB
+
+    if (jobCount === 0) {
+      // Ứng viên chưa thuộc job nào (Talent Pool)
+      stageStats.APPLIED++;
+      const score = 68 + (candidate.candidateIndex % 25);
+      const notes = `Hồ sơ ứng viên tiềm năng trong Talent Pool (chưa ứng tuyển vị trí cụ thể). Match Score: ${score}% | Sẵn sàng tiếp nhận cơ hội việc làm mới.`;
+
+      applicationsToInsert.push({
+        id: crypto.randomUUID(),
+        jobId: null,
+        candidateName: candidate.name,
+        candidateEmail: candidate.email,
+        candidatePhone: candidate.phone,
+        stage: "APPLIED",
+        resumeUrl,
+        resumeFileName: fileName,
+        resumeFileSize,
+        resumeMimeType: "application/pdf",
+        notes,
+        orderIndex: 0,
+      });
+    } else {
+      // Ứng viên ứng tuyển từ 1-6 jobs khác nhau
+      const shuffledJobIds = [...createdJobIds].sort(() => 0.5 - Math.random());
+      const selectedJobIds = shuffledJobIds.slice(0, jobCount);
+
+      for (let j = 0; j < selectedJobIds.length; j++) {
+        const jobId = selectedJobIds[j];
+        // Chọn stage đảm bảo phân bổ đều
+        const stage = STAGES[(candidate.candidateIndex + j) % STAGES.length];
+        stageStats[stage]++;
+
+        const orderKey = `${jobId}_${stage}`;
+        jobStageOrderCounter[orderKey] = (jobStageOrderCounter[orderKey] || 0) + 1;
+        const orderIndex = jobStageOrderCounter[orderKey];
 
         let notes = "";
 
         if (stage === "APPLIED" || stage === "SCREENING") {
           // Rule: Không cần có lịch phỏng vấn (0 lịch)
-          const score = 65 + (candidateTotal % 26);
+          const score = 65 + ((candidate.candidateIndex + j * 7) % 26);
           notes = `Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Match Score: ${score}% | Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.`;
         } else if (stage === "INTERVIEW") {
           // Rule: Có thể không có (0), có 1 hoặc nhiều lịch phỏng vấn (1-3 lịch)
@@ -588,29 +706,28 @@ export async function runSeed(): Promise<void> {
           }
 
           if (interviewCount === 0) {
-            notes = `Chờ lên lịch phỏng vấn chuyên sâu. Match Score: ${78 + (candidateTotal % 15)}% | Đã hoàn thành sơ vấn qua điện thoại.`;
+            notes = `Chờ lên lịch phỏng vấn chuyên sâu. Match Score: ${78 + ((candidate.candidateIndex + j) % 15)}% | Đã hoàn thành sơ vấn qua điện thoại.`;
           } else {
             const interviewBlocks: string[] = [];
             for (let r = 1; r <= interviewCount; r++) {
               // The last round is upcoming, prior rounds are completed
               const isCompleted = r < interviewCount;
-              const intv = generateInterviewObject(r, interviewCount, isCompleted, candidateTotal);
+              const intv = generateInterviewObject(r, interviewCount, isCompleted, candidate.candidateIndex + j);
               interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
             }
-            notes = `Match Score: ${80 + (candidateTotal % 16)}% | Đang trong quy trình phỏng vấn | ${interviewBlocks.join(" | ")}`;
+            notes = `Match Score: ${80 + ((candidate.candidateIndex + j) % 16)}% | Đang trong quy trình phỏng vấn | ${interviewBlocks.join(" | ")}`;
           }
         } else if (stage === "OFFER" || stage === "HIRED") {
-          // Rule: Bắt buộc phải có từ 1-3 lịch
+          // Rule: Bắt buộc phải có từ 1-3 lịch (tất cả các vòng đã hoàn thành)
           const interviewCount = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
           const interviewBlocks: string[] = [];
 
           for (let r = 1; r <= interviewCount; r++) {
-            // All prior rounds completed successfully
-            const intv = generateInterviewObject(r, interviewCount, true, candidateTotal);
+            const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
             interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
           }
 
-          const offerScore = 90 + (candidateTotal % 9);
+          const offerScore = 90 + ((candidate.candidateIndex + j) % 9);
           notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn chuyên môn. Match Score: ${offerScore}% | Đã chốt mức đãi ngộ và gửi thư mời làm việc | ${interviewBlocks.join(" | ")}`;
         } else if (stage === "REJECTED") {
           // Rule: Có thể không có hoặc có từ 0-3
@@ -621,34 +738,32 @@ export async function runSeed(): Promise<void> {
           } else {
             const interviewBlocks: string[] = [];
             for (let r = 1; r <= interviewCount; r++) {
-              const intv = generateInterviewObject(r, interviewCount, true, candidateTotal);
+              const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
               interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
             }
             notes = `Không đạt sau ${interviewCount} vòng phỏng vấn: Kỹ năng chuyên môn hoặc kỳ vọng đãi ngộ chưa đồng nhất | ${interviewBlocks.join(" | ")}`;
           }
         }
 
-        const fileName = `CV_${name.replace(/\s+/g, "_")}.pdf`;
-
         applicationsToInsert.push({
-          id: appId,
+          id: crypto.randomUUID(),
           jobId,
-          candidateName: name,
-          candidateEmail: email,
-          candidatePhone: phone,
+          candidateName: candidate.name,
+          candidateEmail: candidate.email,
+          candidatePhone: candidate.phone,
           stage,
-          resumeUrl: `/ats-resumes/${fileName}`,
+          resumeUrl,
           resumeFileName: fileName,
-          resumeFileSize: Math.floor(500000 + Math.random() * 1500000), // 500KB - 2MB
+          resumeFileSize,
           resumeMimeType: "application/pdf",
           notes,
-          orderIndex: sIdx * 100 + k,
+          orderIndex,
         });
       }
     }
   }
 
-  console.log(`\n⏳ Đang lưu ${applicationsToInsert.length} ứng viên vào cơ sở dữ liệu (xử lý theo lô)...`);
+  console.log(`\n⏳ Đang lưu ${applicationsToInsert.length} bản ghi ứng tuyển của 200 ứng viên vào cơ sở dữ liệu (xử lý theo lô)...`);
 
   // Batch insert in chunks of 50 for fast execution
   const BATCH_SIZE = 50;
@@ -663,16 +778,24 @@ export async function runSeed(): Promise<void> {
         }),
       ),
     );
-    process.stdout.write(`\r   Tiến độ: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} ứng viên`);
+    process.stdout.write(`\r   Tiến độ: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} bản ghi`);
   }
 
-  console.log(`\n\n✅ Thành công! Đã gieo mầm tổng cộng ${candidateTotal} ứng viên:`);
-  console.log(`   - APPLIED (Đã nộp hồ sơ):  ${stageStats.APPLIED} (0 lịch phỏng vấn)`);
-  console.log(`   - SCREENING (Sơ loại):      ${stageStats.SCREENING} (0 lịch phỏng vấn)`);
-  console.log(`   - INTERVIEW (Phỏng vấn):    ${stageStats.INTERVIEW} (0, 1 hoặc nhiều lịch)`);
-  console.log(`   - OFFER (Đề nghị việc làm): ${stageStats.OFFER} (1-3 lịch phỏng vấn)`);
-  console.log(`   - HIRED (Đã tuyển dụng):    ${stageStats.HIRED} (1-3 lịch phỏng vấn)`);
-  console.log(`   - REJECTED (Đã từ chối):    ${stageStats.REJECTED} (0-3 lịch phỏng vấn)`);
+  console.log(`\n\n✅ Thành công! Đã gieo mầm cố định 200 ứng viên độc nhất (tổng ${applicationsToInsert.length} đơn ứng tuyển):`);
+  console.log(`   - 0 job (Chưa ứng tuyển):  ${jobDistributionStats[0]} ứng viên`);
+  console.log(`   - 1 job:                   ${jobDistributionStats[1]} ứng viên`);
+  console.log(`   - 2 jobs:                  ${jobDistributionStats[2]} ứng viên`);
+  console.log(`   - 3 jobs:                  ${jobDistributionStats[3]} ứng viên`);
+  console.log(`   - 4 jobs:                  ${jobDistributionStats[4]} ứng viên`);
+  console.log(`   - 5 jobs:                  ${jobDistributionStats[5]} ứng viên`);
+  console.log(`   - 6 jobs:                  ${jobDistributionStats[6]} ứng viên`);
+  console.log(`   --------------------------------------------------`);
+  console.log(`   - APPLIED (Đã nộp hồ sơ):  ${stageStats.APPLIED} đơn (0 lịch phỏng vấn)`);
+  console.log(`   - SCREENING (Sơ loại):      ${stageStats.SCREENING} đơn (0 lịch phỏng vấn)`);
+  console.log(`   - INTERVIEW (Phỏng vấn):    ${stageStats.INTERVIEW} đơn (0, 1 hoặc nhiều lịch)`);
+  console.log(`   - OFFER (Đề nghị việc làm): ${stageStats.OFFER} đơn (1-3 lịch phỏng vấn)`);
+  console.log(`   - HIRED (Đã tuyển dụng):    ${stageStats.HIRED} đơn (1-3 lịch phỏng vấn)`);
+  console.log(`   - REJECTED (Đã từ chối):    ${stageStats.REJECTED} đơn (0-3 lịch phỏng vấn)`);
   console.log("==================================================");
 }
 

@@ -161,9 +161,11 @@ export function ApplicationsDataTable({
     return map;
   }, [jobs]);
 
-  // Filtered source list based on fixedJobId
   const baseApplications = useMemo(() => {
-    if (!fixedJobId) return initialApplications;
+    if (!fixedJobId) {
+      // Exclude applications not linked to any job (e.g. manually added candidates)
+      return initialApplications.filter((a) => !!a.jobId);
+    }
     return initialApplications.filter(
       (a) => String(a.jobId) === String(fixedJobId),
     );
@@ -690,9 +692,9 @@ export function ApplicationsDataTable({
                           <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
                             <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                             <span>
-                              {job?.title || "Role"}{" "}
+                              {job?.title || t("candidates.role")}{" "}
                               <span className="text-slate-400">
-                                ({job?.type === "FULL_TIME" ? "Full-Time" : job?.type === "PART_TIME" ? "Part-Time" : job?.type || "Full-Time"})
+                                ({job?.type === "FULL_TIME" ? t("jobs.fullTime") : job?.type === "PART_TIME" ? t("jobs.partTime") : job?.type || t("jobs.fullTime")})
                               </span>
                             </span>
                           </span>

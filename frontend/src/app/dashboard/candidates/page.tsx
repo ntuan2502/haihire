@@ -16,7 +16,6 @@ import {
   useUploadCandidateDocumentMutation,
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
-  useUpdateCandidateMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
@@ -63,7 +62,6 @@ import {
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import {
-  removeInterviewFromNotes,
   getInterviewsFromApplication,
 } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
@@ -85,7 +83,6 @@ function CandidatesPageContent() {
   const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
   const deleteAppDocMutation = useDeleteDocumentMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
   const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [search, setSearch] = useState("");
@@ -116,15 +113,6 @@ function CandidatesPageContent() {
       const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
       if (targetId) {
         await deleteInterviewMutation.mutateAsync(targetId);
-      }
-      if (targetApp.notes && targetApp.notes.includes("Interview:")) {
-        const updatedNotes = removeInterviewFromNotes(targetApp.notes);
-        await updateCandidateMutation.mutateAsync({
-          id: targetApp.id,
-          data: {
-            notes: updatedNotes,
-          },
-        });
       }
     } catch (err) {
       console.error("Failed to cancel interview in drawer:", err);

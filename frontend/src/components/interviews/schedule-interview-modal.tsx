@@ -32,7 +32,6 @@ import {
 import { getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
-  parseInterviewFromNotes,
   normalizeInterviewType,
   INTERVIEW_TYPE_OPTIONS,
 } from "@/lib/interviews";
@@ -118,8 +117,7 @@ export function ScheduleInterviewModal({
     // 2. Check if candidate has existing interview schedule
     const candidateObj = candidateToUse || applications.find((a) => a.id === initialCandId);
     const existing =
-      candidateObj?.interviews?.[candidateObj.interviews.length - 1] ||
-      (candidateObj ? parseInterviewFromNotes(candidateObj.notes) : null);
+      candidateObj?.interviews?.[candidateObj.interviews.length - 1] || null;
 
     if (existing) {
       setInterviewDate(initialDate || existing.date);
@@ -147,8 +145,7 @@ export function ScheduleInterviewModal({
     setModalCandidateId(candId);
     const candidate = applications.find((a) => a.id === candId);
     const existing =
-      candidate?.interviews?.[candidate.interviews.length - 1] ||
-      (candidate ? parseInterviewFromNotes(candidate.notes) : null);
+      candidate?.interviews?.[candidate.interviews.length - 1] || null;
     if (existing) {
       setInterviewDate(existing.date);
       setInterviewTime(existing.time || "10:00");

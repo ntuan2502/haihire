@@ -30,7 +30,6 @@ import { getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
   type InterviewScorecard,
-  saveInterviewScorecardToNotes,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
 
@@ -114,19 +113,6 @@ export function InterviewScorecardModal({
           id: interview.id,
           data: {
             scorecard: scorecardData,
-          },
-        });
-      } else {
-        const updatedNotes = saveInterviewScorecardToNotes(
-          application.notes,
-          interview,
-          scorecardData,
-        );
-
-        await updateCandidateMutation.mutateAsync({
-          id: application.id,
-          data: {
-            notes: updatedNotes,
           },
         });
       }

@@ -1,5 +1,4 @@
 import type { Application, Candidate, CandidateDocument, Gender } from "@/types";
-import { removeInterviewFromNotes } from "@/lib/interviews";
 
 /**
  * Format a date into consistent string formats (e.g. "08/27/2026", "8/27/2026", "Aug 27, 2026")
@@ -106,33 +105,15 @@ export function parseCandidateNotes(
     };
   }
 
-  const genderMatch = notes?.match(/Gender:\s*([^|]+)/i);
-  const dobMatch = notes?.match(/DOB:\s*([^|]+)/i);
-  const firstNameMatch = notes?.match(/FirstName:\s*([^|]+)/i);
-  const lastNameMatch = notes?.match(/LastName:\s*([^|]+)/i);
-  const displayNameMatch = notes?.match(/DisplayName:\s*([^|]+)/i);
-
-  let rawCustom = (notes || "")
-    .replace(/Gender:\s*[^|]+\|?/gi, "")
-    .replace(/DOB:\s*[^|]+\|?/gi, "")
-    .replace(/FirstName:\s*[^|]+\|?/gi, "")
-    .replace(/LastName:\s*[^|]+\|?/gi, "")
-    .replace(/DisplayName:\s*[^|]+\|?/gi, "")
-    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "");
-
-  rawCustom = removeInterviewFromNotes(rawCustom);
-  rawCustom = rawCustom
+  // Strip Docs segment and legacy brackets from candidate notes
+  const rawCustom = (notes || "")
+    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
     .replace(/^[|{}\s]+|[|{}\s]+$/g, "")
     .replace(/\|\s*\|/g, "|")
     .trim();
 
-  if (/^[{}|\s]+$/.test(rawCustom)) {
-    rawCustom = "";
-  }
-
-  const parsedFirst = structured?.firstName || (firstNameMatch ? firstNameMatch[1].trim() : "");
-  const parsedLast = structured?.lastName || (lastNameMatch ? lastNameMatch[1].trim() : "");
-  const parsedDisplay = displayNameMatch ? displayNameMatch[1].trim() : "";
+  const parsedFirst = structured?.firstName?.trim() || "";
+  const parsedLast = structured?.lastName?.trim() || "";
 
   let parsedDob = "";
   if (structured?.dateOfBirth) {
@@ -140,13 +121,11 @@ export function parseCandidateNotes(
       structured.dateOfBirth instanceof Date
         ? structured.dateOfBirth.toISOString().split("T")[0]
         : String(structured.dateOfBirth).split("T")[0];
-  } else if (dobMatch) {
-    parsedDob = dobMatch[1].trim();
   }
 
-  const parsedGender = structured?.gender || (genderMatch ? genderMatch[1].trim() : "");
+  const parsedGender = structured?.gender?.trim() || "";
 
-  // If first/last are not in notes or structured, infer from candidateName
+  // If first/last are not in structured, infer from candidateName
   let inferredFirst = parsedFirst;
   let inferredLast = parsedLast;
   if (!inferredFirst && !inferredLast && candidateName) {
@@ -159,12 +138,9 @@ export function parseCandidateNotes(
     }
   }
 
-  // The unified display name shown across all views:
-  // 1. Explicit DisplayName -> 2. candidateName -> 3. "firstName lastName"
   const effectiveName =
-    parsedDisplay ||
-    candidateName ||
     [inferredFirst, inferredLast].filter(Boolean).join(" ") ||
+    candidateName ||
     "—";
 
   return {
@@ -172,9 +148,9 @@ export function parseCandidateNotes(
     dob: parsedDob || "—",
     firstName: inferredFirst,
     lastName: inferredLast,
-    displayName: parsedDisplay,
+    displayName: "",
     effectiveName,
-    customNotes: rawCustom,
+    customNotes: /^[{}|\s]+$/.test(rawCustom) ? "" : rawCustom,
   };
 }
 

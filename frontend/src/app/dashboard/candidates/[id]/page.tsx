@@ -14,7 +14,6 @@ import {
   useDeleteCandidateMutation,
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
-  useUpdateCandidateMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -51,7 +50,6 @@ import {
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import {
-  removeInterviewFromNotes,
   getInterviewsFromApplication,
 } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
@@ -80,7 +78,6 @@ function CandidateDetailPageContent() {
   const deleteCandidateMutation = useDeleteCandidateMutation();
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
   const deleteAppDocMutation = useDeleteDocumentMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
   const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [activeTab, setActiveTab] = useState<"applications" | "documents">(
@@ -95,15 +92,6 @@ function CandidateDetailPageContent() {
       const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
       if (targetId) {
         await deleteInterviewMutation.mutateAsync(targetId);
-      }
-      if (targetApp.notes && targetApp.notes.includes("Interview:")) {
-        const updatedNotes = removeInterviewFromNotes(targetApp.notes);
-        await updateCandidateMutation.mutateAsync({
-          id: targetApp.id,
-          data: {
-            notes: updatedNotes,
-          },
-        });
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);

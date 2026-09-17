@@ -38,9 +38,7 @@ import { ApplicationDocumentsSection } from "@/components/applications/applicati
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
-import {
-  removeInterviewFromNotes,
-} from "@/lib/interviews";
+
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
@@ -107,15 +105,6 @@ function ApplicationDetailPageContent() {
       const targetId = interviewId || (app.interviews && app.interviews[0]?.id);
       if (targetId) {
         await deleteInterviewMutation.mutateAsync(targetId);
-      }
-      if (app.notes && app.notes.includes("Interview:")) {
-        const updatedNotes = removeInterviewFromNotes(app.notes);
-        await updateCandidateMutation.mutateAsync({
-          id: app.id,
-          data: {
-            notes: updatedNotes,
-          },
-        });
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);

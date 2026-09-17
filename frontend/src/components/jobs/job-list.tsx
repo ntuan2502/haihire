@@ -97,12 +97,11 @@ export function JobList({
           job.location.toLowerCase().includes(search.toLowerCase()) ||
           job.description.toLowerCase().includes(search.toLowerCase());
 
-        // Status filter (Open, Draft, Closed)
+        // Status filter (PUBLISHED, DRAFT, CLOSED)
         const matchStatus =
           statusFilters.length === 0 ||
-          (statusFilters.includes("Open") && job.status === "PUBLISHED") ||
-          (statusFilters.includes("Draft") && job.status === "DRAFT") ||
-          (statusFilters.includes("Closed") && (job.status === "CLOSED" || job.status === "ARCHIVED"));
+          (job.status && statusFilters.includes(job.status)) ||
+          (statusFilters.includes("CLOSED") && job.status === "ARCHIVED");
 
         // Employment type
         const matchType =
@@ -696,9 +695,9 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Open", label: t("jobs.openStatus") },
-                      { id: "Draft", label: t("jobs.draftStatus") },
-                      { id: "Closed", label: t("jobs.closed") },
+                      { id: "PUBLISHED", label: t("jobs.openStatus") },
+                      { id: "DRAFT", label: t("jobs.draftStatus") },
+                      { id: "CLOSED", label: t("jobs.closed") },
                     ].map((st) => (
                       <button
                         key={st.id}

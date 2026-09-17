@@ -38,8 +38,6 @@ import { DeleteApplicationModal } from "@/components/applications/delete-applica
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import {
-  removeInterviewFromNotes,
-  stringifyInterviewToNotes,
   getInterviewsFromApplication,
 } from "@/lib/interviews";
 import {
@@ -166,16 +164,6 @@ export function ApplicationsDataTable({
       const targetId = interviewId || (currentApp.interviews && currentApp.interviews[0]?.id);
       if (targetId) {
         await deleteInterviewMutation.mutateAsync(targetId);
-      }
-      if (currentApp.notes && currentApp.notes.includes("Interview:")) {
-        const updatedNotes = removeInterviewFromNotes(currentApp.notes);
-        await updateCandidateMutation.mutateAsync({
-          id: currentApp.id,
-          data: {
-            notes: updatedNotes,
-          },
-        });
-        setSelectedApp((prev) => (prev ? { ...prev, notes: updatedNotes } : null));
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
@@ -1427,15 +1415,8 @@ export function ApplicationsDataTable({
           applications={baseApplications}
           selectedJobId={currentApp.jobId || undefined}
           selectedApplicationId={currentApp.id}
-          onInterviewScheduled={(interviewInfo) => {
-            setSelectedApp((prev) => {
-              if (!prev) return null;
-              const updatedNotes = stringifyInterviewToNotes(
-                prev.notes,
-                interviewInfo,
-              );
-              return { ...prev, notes: updatedNotes, stage: "INTERVIEW" };
-            });
+          onInterviewScheduled={() => {
+            setSelectedApp((prev) => (prev ? { ...prev, stage: "INTERVIEW" } : null));
           }}
         />
       )}

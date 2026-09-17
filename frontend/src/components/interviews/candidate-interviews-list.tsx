@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
 import {
-  parseAllInterviewsFromNotes,
   getInterviewsFromApplication,
   getInterviewTypeLabel,
 } from "@/lib/interviews";
@@ -56,7 +55,7 @@ export function CandidateInterviewsList({
     if (application) {
       return getInterviewsFromApplication(application);
     }
-    return parseAllInterviewsFromNotes(notes);
+    return [];
   }, [application, interviews, notes]);
 
   const formatInterviewType = (type?: string) => {

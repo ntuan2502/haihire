@@ -59,6 +59,13 @@ export function usePublicOrg(slug: string | null) {
   });
 }
 
+export function useAllPublicJobs() {
+  return useQuery<Job[]>({
+    queryKey: ["jobs", "public-all-published"],
+    queryFn: () => jobsApi.getAll({ status: "PUBLISHED" }),
+  });
+}
+
 export function usePublicJobs(orgSlug: string | null) {
   return useQuery<Job[]>({
     queryKey: ["jobs", "public-list", orgSlug],

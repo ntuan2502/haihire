@@ -7,7 +7,8 @@ import { usePublicOrg, usePublicJobs } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LanguageDropdown } from "@/components/language-dropdown";
+import { CareersHeader } from "@/components/careers/careers-header";
+import { CareersFooter } from "@/components/careers/careers-footer";
 import { slugify } from "@/lib/utils";
 import {
   Briefcase,
@@ -19,8 +20,6 @@ import {
   ArrowRight,
   Sparkles,
   AlertCircle,
-  Share2,
-  Check,
   Globe2,
   ChevronRight,
 } from "lucide-react";
@@ -125,46 +124,14 @@ export default function OrgCareersPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
-              {orgName.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
-                <span>Careers Portal</span>
-              </div>
-              <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-                {orgName}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={handleCopyPortalLink}
-              type="button"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Sao chép liên kết trang tuyển dụng"
-            >
-              {copiedLink ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  <span className="text-emerald-600 font-bold">Đã sao chép!</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="hidden sm:inline">Chia sẻ cổng tuyển dụng</span>
-                </>
-              )}
-            </button>
-
-            <LanguageDropdown />
-          </div>
-        </div>
-      </header>
+      <CareersHeader
+        orgName={orgName}
+        orgSlug={orgSlug}
+        showShareButton={true}
+        onShare={handleCopyPortalLink}
+        copiedLink={copiedLink}
+        shareLabel="Chia sẻ"
+      />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-slate-100/50 dark:from-slate-900 dark:via-slate-900/50 dark:to-slate-950 border-b border-slate-200/80 dark:border-slate-800 py-16 sm:py-20">
@@ -355,19 +322,7 @@ export default function OrgCareersPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-              {orgName.charAt(0).toUpperCase()}
-            </div>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">{orgName} Careers</span>
-          </div>
-          <div>
-            Powered by <span className="font-bold text-slate-800 dark:text-slate-200">ATS Platform</span> • © {new Date().getFullYear()} {orgName}. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <CareersFooter orgName={orgName} orgSlug={orgSlug} />
     </div>
   );
 }

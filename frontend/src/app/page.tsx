@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, ArrowRight, Check } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Briefcase } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { LanguageDropdown } from "@/components/language-dropdown";
@@ -31,19 +31,15 @@ export default function HomePage() {
         </Link>
 
         {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-          <a href="#product" className="hover:text-white transition-colors">
-            {t("landing.product")}
-          </a>
-          <a href="#pricing" className="hover:text-white transition-colors">
-            {t("landing.pricing")}
-          </a>
-          <a href="#docs" className="hover:text-white transition-colors">
-            {t("landing.docs")}
-          </a>
-          <a href="#blog" className="hover:text-white transition-colors">
-            {t("landing.blog")}
-          </a>
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+          <Link
+            href="/careers"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold border border-white/15 shadow-sm transition-all hover:scale-105"
+          >
+            <Briefcase className="h-4 w-4 text-cyan-300" />
+            <span>Cơ hội nghề nghiệp</span>
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          </Link>
 
           {isAuthenticated ? (
             <Link
@@ -65,7 +61,14 @@ export default function HomePage() {
         </nav>
 
         {/* Right CTA Button & Language Dropdown */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <Link
+            href="/careers"
+            className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-xs font-bold text-white border border-white/10"
+          >
+            <Briefcase className="h-3.5 w-3.5 text-cyan-300" />
+            <span>Việc làm</span>
+          </Link>
           <LanguageDropdown variant="landing" />
 
           {isAuthenticated ? (
@@ -134,6 +137,14 @@ export default function HomePage() {
                 className="inline-flex items-center justify-center rounded-full bg-blue-700/90 hover:bg-blue-600 border border-blue-400/30 px-7 py-3 text-sm font-bold text-white shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
                 {t("landing.signInToAts")}
+              </Link>
+
+              <Link
+                href="/careers"
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 px-6 py-3 text-sm font-bold text-cyan-300 shadow-xl hover:scale-105 active:scale-95 transition-all"
+              >
+                <Briefcase className="h-4 w-4 text-cyan-400" />
+                <span>Khám phá việc làm</span>
               </Link>
             </>
           )}

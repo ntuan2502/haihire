@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
+import { ThemeToggle } from "./theme-toggle";
 import {
   LayoutDashboard,
   Briefcase,
@@ -24,7 +24,7 @@ import {
   Radio,
   Bot,
   Check,
-  Moon,
+  Sun,
   Globe,
   MessageSquareWarning,
   BarChart3,
@@ -79,12 +79,6 @@ export function Navbar({
   const [isMobileOrgDropdownOpen, setIsMobileOrgDropdownOpen] = useState(false);
   const [isMobileLangDropdownOpen, setIsMobileLangDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -96,13 +90,6 @@ export function Navbar({
       document.body.style.overflow = "";
     };
   }, [mobileMenuOpen]);
-
-  const isDark = mounted ? (resolvedTheme === "dark" || theme === "dark") : false;
-
-  const toggleDarkMode = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setTheme(isDark ? "light" : "dark");
-  };
 
   const handleCreateJobClick = () => {
     if (onOpenCreateJob) {
@@ -401,25 +388,13 @@ export function Navbar({
                     )}
                   </div>
 
-                  {/* 3. Dark Mode Row */}
-                  <div
-                    onClick={toggleDarkMode}
-                    className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
-                  >
+                  {/* 3. Theme Row */}
+                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <div className="flex items-center gap-2.5">
-                      <Moon className="h-4 w-4 text-slate-400" />
-                      <span>{t("nav.darkMode")}</span>
+                      <Sun className="h-4 w-4 text-slate-400" />
+                      <span>{locale === "vi" ? "Giao diện" : "Theme"}</span>
                     </div>
-                    <div
-                      className={cn(
-                        "w-8 h-4.5 rounded-full transition-colors flex items-center p-0.5",
-                        isDark
-                          ? "bg-blue-600 justify-end"
-                          : "bg-slate-200 dark:bg-slate-700 justify-start",
-                      )}
-                    >
-                      <div className="w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform" />
-                    </div>
+                    <ThemeToggle />
                   </div>
 
                   {/* 4. Language Row with shared LanguageDropdown */}
@@ -728,6 +703,15 @@ export function Navbar({
                     })}
                   </div>
                 )}
+              </div>
+
+              {/* Theme Selector (Mobile) */}
+              <div className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <Sun className="h-4 w-4 text-slate-400" />
+                  <span>{locale === "vi" ? "Giao diện" : "Theme"}</span>
+                </div>
+                <ThemeToggle />
               </div>
             </div>
           </div>

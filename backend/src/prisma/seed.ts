@@ -293,68 +293,196 @@ function generate200UniqueCandidates(): Array<{
   }));
 }
 
-function generateInterviewObject(
-  round: number,
-  totalRounds: number,
-  isCompleted: boolean,
-  candidateIdx: number,
-) {
-  const now = new Date();
-  const interviewDate = new Date(now);
+class InterviewSlotManager {
+  private usedSlots = new Set<string>();
+  private upcomingSlots: Array<{ date: string; time: string }> = [];
+  private pastTier1Slots: Array<{ date: string; time: string }> = [];
+  private pastTier2Slots: Array<{ date: string; time: string }> = [];
+  private pastTier3Slots: Array<{ date: string; time: string }> = [];
 
-  if (isCompleted) {
-    // Past date: between 1 and 14 days ago
-    const daysAgo = (totalRounds - round + 1) * 3 + (candidateIdx % 3);
-    interviewDate.setDate(now.getDate() - daysAgo);
-  } else {
-    // Upcoming date: between today and 10 days in the future
-    const daysAhead = (round - 1) * 3 + (candidateIdx % 4);
-    interviewDate.setDate(now.getDate() + daysAhead);
+  constructor() {
+    this.initQueues();
   }
 
-  const dateStr = interviewDate.toISOString().split("T")[0];
-  const times = ["09:00", "10:00", "10:30", "14:00", "15:30", "16:45"];
-  const timeStr = times[(candidateIdx + round) % times.length];
+  private initQueues() {
+    const DAILY_TIMES = [
+      "08:30",
+      "09:15",
+      "10:00",
+      "10:45",
+      "11:30",
+      "13:30",
+      "14:15",
+      "15:00",
+      "15:45",
+      "16:30",
+      "17:15",
+    ];
 
-  const roundTypes = [
-    "Sơ vấn Nhân sự (HR Screening)",
-    "Phỏng vấn Kỹ thuật & Chuyên môn (Technical)",
-    "Phỏng vấn Văn hóa & Đồng đội (Culture Fit)",
-    "Vòng cuối với Ban Lãnh đạo (Final Round)",
-  ];
-  const type = roundTypes[Math.min(round - 1, roundTypes.length - 1)];
+    const now = new Date();
 
-  const formats = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
-  const format = formats[(candidateIdx + round) % formats.length];
+    // 1. Upcoming slots: Day +1 to Day +50 (skipping weekends)
+    let upDay = 1;
+    while (this.upcomingSlots.length < 400) {
+      const d = new Date(now);
+      d.setDate(now.getDate() + upDay);
+      upDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.upcomingSlots.push({ date: dateStr, time });
+      }
+    }
 
-  const interviewers = [
-    "Nguyễn Văn A (Engineering Lead)",
-    "Trần Minh Đức (CTO)",
-    "Phạm Thu Hương (HR Director)",
-    "Sarah Jenkins (VP Product)",
-    "Lê Hoàng Long (Principal Architect)",
-    "Đặng Quốc Bảo (Senior Tech Lead)",
-    "Vũ Thanh Hà (Head of Talent)",
-  ];
-  const interviewer = interviewers[(candidateIdx * 2 + round) % interviewers.length];
+    // 2. Past Tier 3 (recent past: 1-25 days ago, skipping weekends)
+    let pDay = 1;
+    while (this.pastTier3Slots.length < 300) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - pDay);
+      pDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.pastTier3Slots.push({ date: dateStr, time });
+      }
+    }
 
-  const linkOrLocation =
-    format === "OFFICE"
-      ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
-      : `https://meet.google.com/ats-demo-${candidateIdx}-${round}`;
+    // 3. Past Tier 2 (mid past: 26-55 days ago, skipping weekends)
+    while (this.pastTier2Slots.length < 300) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - pDay);
+      pDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.pastTier2Slots.push({ date: dateStr, time });
+      }
+    }
 
-  return {
-    date: dateStr,
-    time: timeStr,
-    type,
-    format,
-    linkOrLocation,
-    interviewer,
-    notes: isCompleted
-      ? `Vòng ${round} đã hoàn thành. Đánh giá ứng viên đáp ứng tốt tiêu chuẩn.`
-      : `Lịch hẹn phỏng vấn Vòng ${round}. Vui lòng kiểm tra tài liệu trước cuộc họp.`,
-    round,
-  };
+    // 4. Past Tier 1 (older past: 56-100 days ago, skipping weekends)
+    while (this.pastTier1Slots.length < 400) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - pDay);
+      pDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.pastTier1Slots.push({ date: dateStr, time });
+      }
+    }
+  }
+
+  public allocateSlot(
+    round: number,
+    totalRounds: number,
+    isCompleted: boolean,
+  ): { date: string; time: string } {
+    let slot: { date: string; time: string } | undefined;
+
+    if (!isCompleted) {
+      slot = this.upcomingSlots.shift();
+    } else {
+      if (round === totalRounds || round >= 3) {
+        slot = this.pastTier3Slots.shift();
+      } else if (round === 2 || (round === totalRounds - 1 && totalRounds >= 2)) {
+        slot = this.pastTier2Slots.shift();
+      } else {
+        slot = this.pastTier1Slots.shift();
+      }
+    }
+
+    if (!slot) {
+      slot = this.generateFallbackSlot(isCompleted);
+    }
+
+    const key = `${slot.date} ${slot.time}`;
+    if (this.usedSlots.has(key)) {
+      return this.generateFallbackSlot(isCompleted);
+    }
+    this.usedSlots.add(key);
+    return slot;
+  }
+
+  private fallbackCounter = 90;
+  private generateFallbackSlot(isCompleted: boolean): { date: string; time: string } {
+    const DAILY_TIMES = [
+      "08:30", "09:15", "10:00", "10:45", "11:30",
+      "13:30", "14:15", "15:00", "15:45", "16:30", "17:15",
+    ];
+    while (true) {
+      this.fallbackCounter++;
+      const now = new Date();
+      const d = new Date(now);
+      const dayOffset = isCompleted ? -this.fallbackCounter : this.fallbackCounter;
+      d.setDate(now.getDate() + dayOffset);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        const key = `${dateStr} ${time}`;
+        if (!this.usedSlots.has(key)) {
+          this.usedSlots.add(key);
+          return { date: dateStr, time };
+        }
+      }
+    }
+  }
+
+  public generateInterviewObject(
+    round: number,
+    totalRounds: number,
+    isCompleted: boolean,
+    candidateIdx: number,
+  ) {
+    const slot = this.allocateSlot(round, totalRounds, isCompleted);
+
+    const roundTypes = [
+      "Sơ vấn Nhân sự (HR Screening)",
+      "Phỏng vấn Kỹ thuật & Chuyên môn (Technical)",
+      "Phỏng vấn Văn hóa & Đồng đội (Culture Fit)",
+      "Vòng cuối với Ban Lãnh đạo (Final Round)",
+    ];
+    const type = roundTypes[Math.min(round - 1, roundTypes.length - 1)];
+
+    const formats = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
+    const format = formats[(candidateIdx + round) % formats.length];
+
+    const interviewers = [
+      "Nguyễn Văn A (Engineering Lead)",
+      "Trần Minh Đức (CTO)",
+      "Phạm Thu Hương (HR Director)",
+      "Sarah Jenkins (VP Product)",
+      "Lê Hoàng Long (Principal Architect)",
+      "Đặng Quốc Bảo (Senior Tech Lead)",
+      "Vũ Thanh Hà (Head of Talent)",
+    ];
+    const interviewer = interviewers[(candidateIdx * 2 + round) % interviewers.length];
+
+    const linkOrLocation =
+      format === "OFFICE"
+        ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
+        : `https://meet.google.com/ats-demo-${candidateIdx}-${round}`;
+
+    return {
+      date: slot.date,
+      time: slot.time,
+      type,
+      format,
+      linkOrLocation,
+      interviewer,
+      notes: isCompleted
+        ? `Vòng ${round} đã hoàn thành. Đánh giá ứng viên đáp ứng tốt tiêu chuẩn.`
+        : `Lịch hẹn phỏng vấn Vòng ${round}. Vui lòng kiểm tra tài liệu trước cuộc họp.`,
+      round,
+    };
+  }
+
+  public getUsedCount(): number {
+    return this.usedSlots.size;
+  }
 }
 
 let pendingSeed: Promise<void> | undefined;
@@ -676,6 +804,7 @@ export async function runSeed(): Promise<void> {
   }> = [];
 
   const jobStageOrderCounter: Record<string, number> = {};
+  const slotManager = new InterviewSlotManager();
 
   for (let i = 0; i < uniqueCandidates.length; i++) {
     const candidate = uniqueCandidates[i];
@@ -747,7 +876,7 @@ export async function runSeed(): Promise<void> {
             notes = "Đang trong quy trình phỏng vấn.";
             for (let r = 1; r <= interviewCount; r++) {
               const isCompleted = r < interviewCount;
-              const intv = generateInterviewObject(r, interviewCount, isCompleted, candidate.candidateIndex + j);
+              const intv = slotManager.generateInterviewObject(r, interviewCount, isCompleted, candidate.candidateIndex + j);
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
                 applicationId: appId,
@@ -769,7 +898,7 @@ export async function runSeed(): Promise<void> {
           notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn. Đã gửi thư mời làm việc.`;
 
           for (let r = 1; r <= interviewCount; r++) {
-            const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
+            const intv = slotManager.generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
             interviewsToInsert.push({
               id: crypto.randomUUID(),
               applicationId: appId,
@@ -797,7 +926,7 @@ export async function runSeed(): Promise<void> {
           } else {
             notes = `Không đạt sau ${interviewCount} vòng phỏng vấn chuyên môn.`;
             for (let r = 1; r <= interviewCount; r++) {
-              const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
+              const intv = slotManager.generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
                 applicationId: appId,
@@ -862,7 +991,16 @@ export async function runSeed(): Promise<void> {
     process.stdout.write(`\r   Tiến độ: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} bản ghi`);
   }
 
-  console.log(`\n⏳ Đang lưu ${interviewsToInsert.length} lịch phỏng vấn vào cơ sở dữ liệu (xử lý theo lô)...`);
+  // Kiểm tra nghiêm ngặt tính độc nhất của khung giờ phỏng vấn
+  const slotCollisionCheck = new Set<string>();
+  for (const intv of interviewsToInsert) {
+    const key = `${intv.date} ${intv.time}`;
+    if (slotCollisionCheck.has(key)) {
+      throw new Error(`CRITICAL: Trùng khung giờ phỏng vấn: ${key}`);
+    }
+    slotCollisionCheck.add(key);
+  }
+  console.log(`\n⏳ Đang lưu ${interviewsToInsert.length} lịch phỏng vấn vào cơ sở dữ liệu (đã xác minh 100% khung giờ độc nhất)...`);
   for (let b = 0; b < interviewsToInsert.length; b += BATCH_SIZE) {
     const chunk = interviewsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
@@ -875,6 +1013,7 @@ export async function runSeed(): Promise<void> {
       ),
     );
   }
+  console.log(`   ✨ Đã lưu thành công: toàn bộ ${interviewsToInsert.length} khung giờ phỏng vấn không hề bị trùng lặp.`);
 
   console.log(`\n\n✅ Thành công! Đã gieo mầm cố định 200 ứng viên độc nhất (tổng ${applicationsToInsert.length} đơn ứng tuyển):`);
   console.log(`   - 0 job (Chưa ứng tuyển):  ${jobDistributionStats[0]} ứng viên`);

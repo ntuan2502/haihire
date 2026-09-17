@@ -38,6 +38,7 @@ import { ApplicationDocumentsSection } from "@/components/applications/applicati
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
+import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
 import {
   OverviewSectionsPopover,
@@ -90,6 +91,7 @@ function ApplicationDetailPageContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [editingInterview, setEditingInterview] = useState<ScheduledInterviewInfo | null>(null);
 
   // Overview sections visibility dropdown state
   const [overviewSections, setOverviewSections] =
@@ -527,7 +529,10 @@ function ApplicationDetailPageContent() {
                 <CandidateInterviewsList
                   application={app}
                   notes={app?.notes}
-                  onSchedule={() => setScheduleModalOpen(true)}
+                  onSchedule={(intv) => {
+                    setEditingInterview(intv || null);
+                    setScheduleModalOpen(true);
+                  }}
                   onCancelInterview={handleCancelInterview}
                   canEdit={canEdit}
                   title={t("applications.sections.interviews")}
@@ -666,7 +671,10 @@ function ApplicationDetailPageContent() {
             <CandidateInterviewsList
               application={app}
               notes={app?.notes}
-              onSchedule={() => setScheduleModalOpen(true)}
+              onSchedule={(intv) => {
+                setEditingInterview(intv || null);
+                setScheduleModalOpen(true);
+              }}
               onCancelInterview={handleCancelInterview}
               canEdit={canEdit}
               showSectionHeader={true}
@@ -805,11 +813,15 @@ function ApplicationDetailPageContent() {
       {app && (
         <ScheduleInterviewModal
           isOpen={scheduleModalOpen}
-          onClose={() => setScheduleModalOpen(false)}
+          onClose={() => {
+            setScheduleModalOpen(false);
+            setEditingInterview(null);
+          }}
           jobs={jobs}
           applications={app ? [app] : []}
           selectedJobId={app.jobId || undefined}
           selectedApplicationId={app.id}
+          editingInterview={editingInterview}
         />
       )}
     </div>

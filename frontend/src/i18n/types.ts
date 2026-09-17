@@ -884,6 +884,11 @@ export interface TranslationSchema {
       meetingUrl: string;
       interviewer: string;
       notes: string;
+      selectJob: string;
+      selectJobFirst: string;
+      selectCandidate: string;
+      selectRoundType: string;
+      selectFormat: string;
     };
     gridTitle: string;
     tableTitle: string;
@@ -928,6 +933,10 @@ export interface TranslationSchema {
     errors: {
       selectCandidate: string;
       selectDate: string;
+      selectTime: string;
+      selectType: string;
+      selectFormat: string;
+      enterInterviewer: string;
       candidateNotFound: string;
       saveFailed: string;
       saveScorecardFailed: string;

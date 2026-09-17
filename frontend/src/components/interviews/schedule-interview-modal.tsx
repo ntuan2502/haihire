@@ -23,9 +23,9 @@ import {
   Link as LinkIcon,
   Layers,
 } from "lucide-react";
-import { useAuth } from "@/context/auth-context";
 import {
   useCreateInterviewMutation,
+  useUpdateInterviewMutation,
   useUpdateStageMutation,
   useOrgMembers,
 } from "@/hooks/use-queries";
@@ -36,7 +36,7 @@ import {
   INTERVIEW_TYPE_OPTIONS,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
-import type { Application, Job, InterviewType, InterviewFormat } from "@/types";
+import type { Application, Job, Interview, InterviewType, InterviewFormat } from "@/types";
 
 export interface ScheduleInterviewModalProps {
   isOpen: boolean;
@@ -46,6 +46,7 @@ export interface ScheduleInterviewModalProps {
   selectedJobId?: string;
   selectedApplicationId?: string;
   initialDate?: string;
+  editingInterview?: ScheduledInterviewInfo | Interview | null;
   onInterviewScheduled?: (interviewInfo: ScheduledInterviewInfo) => void;
 }
 
@@ -57,21 +58,22 @@ export function ScheduleInterviewModal({
   selectedJobId,
   selectedApplicationId,
   initialDate,
+  editingInterview,
   onInterviewScheduled,
 }: ScheduleInterviewModalProps) {
   const { t } = useI18n();
-  const { user } = useAuth();
   const { data: members = [] } = useOrgMembers();
   const createInterviewMutation = useCreateInterviewMutation();
+  const updateInterviewMutation = useUpdateInterviewMutation();
   const updateStageMutation = useUpdateStageMutation();
 
   const [modalJobId, setModalJobId] = useState<string>("");
   const [modalCandidateId, setModalCandidateId] = useState<string>("");
   const [interviewDate, setInterviewDate] = useState<string>("");
-  const [interviewTime, setInterviewTime] = useState<string>("10:00");
-  const [interviewType, setInterviewType] = useState<InterviewType>("TECHNICAL");
-  const [interviewFormat, setInterviewFormat] = useState<InterviewFormat>("MEET");
-  const [linkOrLocation, setLinkOrLocation] = useState<string>("https://meet.google.com/");
+  const [interviewTime, setInterviewTime] = useState<string>("");
+  const [interviewType, setInterviewType] = useState<InterviewType | "">("");
+  const [interviewFormat, setInterviewFormat] = useState<InterviewFormat | "">("");
+  const [linkOrLocation, setLinkOrLocation] = useState<string>("");
   const [interviewerName, setInterviewerName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -97,64 +99,40 @@ export function ScheduleInterviewModal({
     let candidateToUse: Application | undefined;
     if (selectedApplicationId) {
       candidateToUse = applications.find((a) => a.id === selectedApplicationId);
+    } else if (editingInterview?.applicationId) {
+      candidateToUse = applications.find((a) => a.id === editingInterview.applicationId);
     }
 
-    const initialJobId =
-      selectedJobId ||
-      candidateToUse?.jobId ||
-      jobs[0]?.id ||
-      "";
-    setModalJobId(initialJobId);
-
-    const initialCandId =
-      selectedApplicationId ||
-      (initialJobId
-        ? applications.find((a) => String(a.jobId) === String(initialJobId))?.id
-        : applications[0]?.id) ||
-      "";
-    setModalCandidateId(initialCandId);
-
-    // 2. Check if candidate has existing interview schedule
-    const candidateObj = candidateToUse || applications.find((a) => a.id === initialCandId);
-    const existing =
-      candidateObj?.interviews?.[candidateObj.interviews.length - 1] || null;
-
-    if (existing) {
-      setInterviewDate(initialDate || existing.date);
-      setInterviewTime(existing.time || "10:00");
-      setInterviewType(normalizeInterviewType(existing.type));
-      setInterviewFormat(existing.format || "MEET");
-      setLinkOrLocation(existing.linkOrLocation || "https://meet.google.com/");
-      setInterviewerName(existing.interviewer || user?.name || "Hiring Team");
-      setInterviewNotes(existing.notes || "");
+    if (editingInterview) {
+      // Cập nhật lịch: đẩy toàn bộ dữ liệu của buổi phỏng vấn vào các trường
+      const initialJobId = selectedJobId || candidateToUse?.jobId || "";
+      setModalJobId(initialJobId);
+      setModalCandidateId(editingInterview.applicationId || selectedApplicationId || "");
+      setInterviewDate(editingInterview.date || "");
+      setInterviewTime(editingInterview.time || "");
+      setInterviewType(normalizeInterviewType(editingInterview.type));
+      setInterviewFormat((editingInterview.format as InterviewFormat) || "MEET");
+      setLinkOrLocation(editingInterview.linkOrLocation || "");
+      setInterviewerName(editingInterview.interviewer || "");
+      setInterviewNotes(editingInterview.notes || "");
     } else {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      setInterviewDate(initialDate || tomorrow.toISOString().split("T")[0]);
-      setInterviewTime("10:00");
-      setInterviewType("TECHNICAL");
-      setInterviewFormat("MEET");
-      setLinkOrLocation("https://meet.google.com/");
-      setInterviewerName(user?.name || "Hiring Team");
+      // Lên lịch mới: tất cả các trường bắt đầu rỗng / không điền sẵn
+      const initialJobId = selectedJobId || candidateToUse?.jobId || "";
+      setModalJobId(initialJobId);
+      setModalCandidateId(selectedApplicationId || "");
+      setInterviewDate(initialDate || "");
+      setInterviewTime("");
+      setInterviewType("");
+      setInterviewFormat("");
+      setLinkOrLocation("");
+      setInterviewerName("");
       setInterviewNotes("");
     }
-  }, [isOpen, selectedJobId, selectedApplicationId, initialDate, jobs, applications, user?.name]);
+  }, [isOpen, selectedJobId, selectedApplicationId, initialDate, editingInterview, applications]);
 
-  // When candidate changes manually, re-populate existing interview if any
+  // When candidate changes manually, keep other fields empty
   const handleCandidateChange = (candId: string) => {
     setModalCandidateId(candId);
-    const candidate = applications.find((a) => a.id === candId);
-    const existing =
-      candidate?.interviews?.[candidate.interviews.length - 1] || null;
-    if (existing) {
-      setInterviewDate(existing.date);
-      setInterviewTime(existing.time || "10:00");
-      setInterviewType(normalizeInterviewType(existing.type));
-      setInterviewFormat(existing.format || "MEET");
-      setLinkOrLocation(existing.linkOrLocation || "https://meet.google.com/");
-      setInterviewerName(existing.interviewer || user?.name || "Hiring Team");
-      setInterviewNotes(existing.notes || "");
-    }
   };
 
   const handleSaveInterview = async (e: FormEvent) => {
@@ -169,6 +147,22 @@ export function ScheduleInterviewModal({
       setFormError(t("interviews.errors.selectDate"));
       return;
     }
+    if (!interviewTime) {
+      setFormError(t("interviews.errors.selectTime"));
+      return;
+    }
+    if (!interviewType) {
+      setFormError(t("interviews.errors.selectType"));
+      return;
+    }
+    if (!interviewFormat) {
+      setFormError(t("interviews.errors.selectFormat"));
+      return;
+    }
+    if (!interviewerName.trim()) {
+      setFormError(t("interviews.errors.enterInterviewer"));
+      return;
+    }
 
     const candidate = applications.find((a) => a.id === modalCandidateId);
     if (!candidate) {
@@ -177,36 +171,54 @@ export function ScheduleInterviewModal({
     }
 
     const interviewInfo: ScheduledInterviewInfo = {
+      id: editingInterview?.id,
+      applicationId: candidate.id,
       date: interviewDate,
       time: interviewTime,
-      type: interviewType,
-      format: interviewFormat,
+      type: interviewType as InterviewType,
+      format: interviewFormat as InterviewFormat,
       linkOrLocation: linkOrLocation.trim(),
       interviewer: interviewerName.trim(),
       notes: interviewNotes.trim(),
     };
 
     try {
-      // 1. Create interview record in database
-      await createInterviewMutation.mutateAsync({
-        applicationId: candidate.id,
-        date: interviewDate,
-        time: interviewTime,
-        type: interviewType,
-        format: interviewFormat,
-        linkOrLocation: linkOrLocation.trim(),
-        interviewer: interviewerName.trim(),
-        notes: interviewNotes.trim() || undefined,
-        round: (candidate.interviews?.length || 0) + 1,
-      });
-
-      // 2. If candidate is still in APPLIED/SCREENING stage, advance to INTERVIEW stage
-      if (candidate.stage !== "INTERVIEW" && candidate.stage !== "OFFER" && candidate.stage !== "HIRED") {
-        await updateStageMutation.mutateAsync({
-          id: candidate.id,
-          stage: "INTERVIEW",
-          orderIndex: 0,
+      if (editingInterview?.id) {
+        // Cập nhật lịch phỏng vấn hiện có
+        await updateInterviewMutation.mutateAsync({
+          id: editingInterview.id,
+          data: {
+            date: interviewDate,
+            time: interviewTime,
+            type: interviewType as InterviewType,
+            format: (interviewFormat as InterviewFormat) || "MEET",
+            linkOrLocation: linkOrLocation.trim(),
+            interviewer: interviewerName.trim(),
+            notes: interviewNotes.trim() || undefined,
+          },
         });
+      } else {
+        // Tạo lịch phỏng vấn mới
+        await createInterviewMutation.mutateAsync({
+          applicationId: candidate.id,
+          date: interviewDate,
+          time: interviewTime,
+          type: interviewType as InterviewType,
+          format: (interviewFormat as InterviewFormat) || "MEET",
+          linkOrLocation: linkOrLocation.trim(),
+          interviewer: interviewerName.trim(),
+          notes: interviewNotes.trim() || undefined,
+          round: (candidate.interviews?.length || 0) + 1,
+        });
+
+        // If candidate is still in APPLIED/SCREENING stage, advance to INTERVIEW stage
+        if (candidate.stage !== "INTERVIEW" && candidate.stage !== "OFFER" && candidate.stage !== "HIRED") {
+          await updateStageMutation.mutateAsync({
+            id: candidate.id,
+            stage: "INTERVIEW",
+            orderIndex: 0,
+          });
+        }
       }
 
       onInterviewScheduled?.(interviewInfo);
@@ -217,7 +229,10 @@ export function ScheduleInterviewModal({
     }
   };
 
-  const isSaving = createInterviewMutation.isPending || updateStageMutation.isPending;
+  const isSaving =
+    createInterviewMutation.isPending ||
+    updateInterviewMutation.isPending ||
+    updateStageMutation.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -229,7 +244,7 @@ export function ScheduleInterviewModal({
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
-                {t("interviews.modalTitle")}
+                {editingInterview ? t("interviews.editScheduleBtn") : t("interviews.modalTitle")}
               </DialogTitle>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t("interviews.modalSubtitle")}
@@ -263,15 +278,10 @@ export function ScheduleInterviewModal({
                   value={modalJobId}
                   onChange={(newJobId) => {
                     setModalJobId(newJobId);
-                    const firstApp = applications.find((a) => String(a.jobId) === newJobId);
-                    if (firstApp) {
-                      handleCandidateChange(firstApp.id);
-                    } else {
-                      setModalCandidateId("");
-                    }
+                    setModalCandidateId("");
                   }}
                   disabled={Boolean(selectedJobId && selectedApplicationId)}
-                  placeholder={jobs.length === 0 ? t("interviews.noJobsAvailable") : undefined}
+                  placeholder={jobs.length === 0 ? t("interviews.noJobsAvailable") : t("interviews.placeholders.selectJob")}
                   options={
                     jobs.length === 0
                       ? [{ value: "", label: t("interviews.noJobsAvailable"), disabled: true }]
@@ -299,10 +309,16 @@ export function ScheduleInterviewModal({
                   value={modalCandidateId}
                   onChange={(val) => handleCandidateChange(val)}
                   disabled={Boolean(selectedApplicationId)}
-                  placeholder={modalCandidates.length === 0 ? t("interviews.noCandidatesForJob") : undefined}
+                  placeholder={
+                    !modalJobId && jobs.length > 0
+                      ? t("interviews.placeholders.selectJobFirst")
+                      : modalCandidates.length === 0
+                      ? t("interviews.noCandidatesForJob")
+                      : t("interviews.placeholders.selectCandidate")
+                  }
                   options={
                     modalCandidates.length === 0
-                      ? [{ value: "", label: t("interviews.noCandidatesForJob"), disabled: true }]
+                      ? [{ value: "", label: modalJobId ? t("interviews.noCandidatesForJob") : t("interviews.placeholders.selectJobFirst"), disabled: true }]
                       : modalCandidates.map((c) => ({
                           value: c.id,
                           label: `${getCandidateDisplayName(c)} — ${c.candidateEmail}`,
@@ -354,11 +370,12 @@ export function ScheduleInterviewModal({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Layers className="h-3.5 w-3.5 text-slate-400" />
-                <span>{t("interviews.roundType")}</span>
+                <span>{t("interviews.roundType")} <span className="text-rose-500">*</span></span>
               </label>
               <CustomSelect
                 value={interviewType}
                 onChange={(val) => setInterviewType(val as InterviewType)}
+                placeholder={t("interviews.placeholders.selectRoundType")}
                 options={INTERVIEW_TYPE_OPTIONS.map((opt) => ({
                   value: opt.value,
                   label: t(opt.labelKey),
@@ -376,19 +393,12 @@ export function ScheduleInterviewModal({
                 ) : (
                   <Video className="h-3.5 w-3.5 text-emerald-500" />
                 )}
-                <span>{t("interviews.formatLabel")}</span>
+                <span>{t("interviews.formatLabel")} <span className="text-rose-500">*</span></span>
               </label>
               <CustomSelect
                 value={interviewFormat}
-                onChange={(val) => {
-                  const fVal = val as InterviewFormat;
-                  setInterviewFormat(fVal);
-                  if (fVal === "MEET" && !linkOrLocation.includes("zoom") && !linkOrLocation.includes("teams")) {
-                    setLinkOrLocation("https://meet.google.com/");
-                  } else if (fVal === "OFFICE" && linkOrLocation.startsWith("http")) {
-                    setLinkOrLocation("");
-                  }
-                }}
+                onChange={(val) => setInterviewFormat(val as InterviewFormat)}
+                placeholder={t("interviews.placeholders.selectFormat")}
                 options={[
                   { value: "MEET", label: t("interviews.formats.meet") },
                   { value: "ZOOM", label: t("interviews.formats.zoom") },
@@ -430,7 +440,7 @@ export function ScheduleInterviewModal({
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{t("interviews.primaryInterviewer")}</span>
+                  <span>{t("interviews.primaryInterviewer")} <span className="text-rose-500">*</span></span>
                 </span>
                 {members.length > 0 && (
                   <CustomSelect
@@ -460,6 +470,7 @@ export function ScheduleInterviewModal({
                 value={interviewerName}
                 onChange={(e) => setInterviewerName(e.target.value)}
                 className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                required
               />
             </div>
 
@@ -492,7 +503,11 @@ export function ScheduleInterviewModal({
               disabled={isSaving}
               className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 cursor-pointer transition-all"
             >
-              {isSaving ? t("interviews.savingSchedule") : t("interviews.confirmSchedule")}
+              {isSaving
+                ? t("interviews.savingSchedule")
+                : editingInterview
+                ? t("interviews.updateSchedule")
+                : t("interviews.confirmSchedule")}
             </Button>
           </DialogFooter>
         </form>

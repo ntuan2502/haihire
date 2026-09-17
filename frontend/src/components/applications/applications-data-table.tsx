@@ -39,6 +39,7 @@ import { ScheduleInterviewModal } from "@/components/interviews/schedule-intervi
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import {
   getInterviewsFromApplication,
+  type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import {
   OverviewSectionsPopover,
@@ -101,6 +102,7 @@ export function ApplicationsDataTable({
   const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [editingInterview, setEditingInterview] = useState<ScheduledInterviewInfo | null>(null);
 
   // Drawer Overview sections visibility state
   const [drawerOverviewSections, setDrawerOverviewSections] =
@@ -1090,7 +1092,10 @@ export function ApplicationsDataTable({
                         <CandidateInterviewsList
                           application={currentApp}
                           notes={currentApp.notes}
-                          onSchedule={() => setIsScheduleModalOpen(true)}
+                          onSchedule={(intv) => {
+                            setEditingInterview(intv || null);
+                            setIsScheduleModalOpen(true);
+                          }}
                           onCancelInterview={handleCancelInterview}
                           canEdit={canEdit}
                           title={t("applications.sections.interviews")}
@@ -1202,7 +1207,10 @@ export function ApplicationsDataTable({
                     <CandidateInterviewsList
                       application={currentApp}
                       notes={currentApp.notes}
-                      onSchedule={() => setIsScheduleModalOpen(true)}
+                      onSchedule={(intv) => {
+                        setEditingInterview(intv || null);
+                        setIsScheduleModalOpen(true);
+                      }}
                       onCancelInterview={handleCancelInterview}
                       canEdit={canEdit}
                       showSectionHeader={true}
@@ -1410,11 +1418,15 @@ export function ApplicationsDataTable({
       {currentApp && (
         <ScheduleInterviewModal
           isOpen={isScheduleModalOpen}
-          onClose={() => setIsScheduleModalOpen(false)}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setEditingInterview(null);
+          }}
           jobs={jobs}
           applications={baseApplications}
           selectedJobId={currentApp.jobId || undefined}
           selectedApplicationId={currentApp.id}
+          editingInterview={editingInterview}
           onInterviewScheduled={() => {
             setSelectedApp((prev) => (prev ? { ...prev, stage: "INTERVIEW" } : null));
           }}

@@ -103,7 +103,7 @@ export function CustomSelect<T extends string = string>({
           }
         }}
         className={cn(
-          "w-full flex items-center justify-between gap-2 rounded-xl font-semibold transition-all cursor-pointer outline-none select-none",
+          "w-full flex items-center justify-between gap-2 rounded-xl font-normal transition-all cursor-pointer outline-none select-none",
           size === "sm" ? "px-2.5 py-1.5 text-xs" : "px-3 py-2 text-xs sm:text-sm",
           disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "active:scale-[0.98]",
           isLanding

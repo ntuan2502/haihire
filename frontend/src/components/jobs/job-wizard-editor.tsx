@@ -6,13 +6,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
@@ -963,90 +957,56 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
                           {t("jobs.wizard.employmentTypeLabel")}
                         </label>
-                        <Select
+                        <CustomSelect
                           value={employmentType}
-                          onValueChange={(val) => val && setEmploymentType(val)}
-                        >
-                          <SelectTrigger className="w-full h-10 text-xs bg-slate-50/50 dark:bg-slate-950">
-                            <SelectValue placeholder={t("jobs.fullTime")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Full-time" className="text-xs">
-                              {t("jobs.fullTime")}
-                            </SelectItem>
-                            <SelectItem value="Part-time" className="text-xs">
-                              {t("jobs.partTime")}
-                            </SelectItem>
-                            <SelectItem value="Contract" className="text-xs">
-                              {t("jobs.contract")}
-                            </SelectItem>
-                            <SelectItem value="Internship" className="text-xs">
-                              {t("jobs.internship")}
-                            </SelectItem>
-                            <SelectItem value="Temporary" className="text-xs">
-                              {t("jobs.temporary")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                          onChange={(val) => setEmploymentType(val)}
+                          options={[
+                            { value: "Full-time", label: t("jobs.fullTime") },
+                            { value: "Part-time", label: t("jobs.partTime") },
+                            { value: "Contract", label: t("jobs.contract") },
+                            { value: "Internship", label: t("jobs.internship") },
+                            { value: "Temporary", label: t("jobs.temporary") },
+                          ]}
+                          className="w-full"
+                          triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+                        />
                       </div>
 
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
                           {t("jobs.wizard.experienceLevelLabel")}
                         </label>
-                        <Select
+                        <CustomSelect
                           value={experienceLevel}
-                          onValueChange={(val) => val && setExperienceLevel(val)}
-                        >
-                          <SelectTrigger className="w-full h-10 text-xs bg-slate-50/50 dark:bg-slate-950">
-                            <SelectValue placeholder={t("jobs.experience.mid")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Entry-level" className="text-xs">
-                              {t("jobs.experience.junior")}
-                            </SelectItem>
-                            <SelectItem value="Mid-level" className="text-xs">
-                              {t("jobs.experience.mid")}
-                            </SelectItem>
-                            <SelectItem value="Senior-level" className="text-xs">
-                              {t("jobs.experience.senior")}
-                            </SelectItem>
-                            <SelectItem value="Lead" className="text-xs">
-                              {t("jobs.experience.lead")}
-                            </SelectItem>
-                            <SelectItem value="Executive" className="text-xs">
-                              {t("jobs.experience.executive")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                          onChange={(val) => setExperienceLevel(val)}
+                          options={[
+                            { value: "Entry-level", label: t("jobs.experience.junior") },
+                            { value: "Mid-level", label: t("jobs.experience.mid") },
+                            { value: "Senior-level", label: t("jobs.experience.senior") },
+                            { value: "Lead", label: t("jobs.experience.lead") },
+                            { value: "Executive", label: t("jobs.experience.executive") },
+                          ]}
+                          className="w-full"
+                          triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+                        />
                       </div>
 
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
                           {t("jobs.wizard.workplaceLabel")}
                         </label>
-                        <Select
+                        <CustomSelect
                           value={workplace}
-                          onValueChange={(val) => val && setWorkplace(val)}
-                        >
-                          <SelectTrigger className="w-full h-10 text-xs bg-slate-50/50 dark:bg-slate-950">
-                            <SelectValue placeholder={t("jobs.workplace.notSpecified")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Not specified" className="text-xs">
-                              {t("jobs.workplace.notSpecified")}
-                            </SelectItem>
-                            <SelectItem value="On-site" className="text-xs">
-                              {t("jobs.workplace.onsite")}
-                            </SelectItem>
-                            <SelectItem value="Hybrid" className="text-xs">
-                              {t("jobs.workplace.hybrid")}
-                            </SelectItem>
-                            <SelectItem value="Remote" className="text-xs">
-                              {t("jobs.workplace.remote")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                          onChange={(val) => setWorkplace(val)}
+                          options={[
+                            { value: "Not specified", label: t("jobs.workplace.notSpecified") },
+                            { value: "On-site", label: t("jobs.workplace.onsite") },
+                            { value: "Hybrid", label: t("jobs.workplace.hybrid") },
+                            { value: "Remote", label: t("jobs.workplace.remote") },
+                          ]}
+                          className="w-full"
+                          triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+                        />
                       </div>
                     </div>
 
@@ -1126,59 +1086,37 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                   {t("jobs.wizard.currency")}
                                 </label>
-                                <Select
+                                <CustomSelect
                                   value={currency}
-                                  onValueChange={(val) => val && setCurrency(val)}
-                                >
-                                  <SelectTrigger className="w-full h-9 text-xs bg-white dark:bg-slate-900">
-                                    <SelectValue placeholder="USD" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="USD" className="text-xs">
-                                      USD ($)
-                                    </SelectItem>
-                                    <SelectItem value="VND" className="text-xs">
-                                      VND (₫)
-                                    </SelectItem>
-                                    <SelectItem value="EUR" className="text-xs">
-                                      EUR (€)
-                                    </SelectItem>
-                                    <SelectItem value="NOK" className="text-xs">
-                                      NOK (kr)
-                                    </SelectItem>
-                                    <SelectItem value="GBP" className="text-xs">
-                                      GBP (£)
-                                    </SelectItem>
-                                    <SelectItem value="SGD" className="text-xs">
-                                      SGD (S$)
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  onChange={(val) => setCurrency(val)}
+                                  options={[
+                                    { value: "USD", label: "USD ($)" },
+                                    { value: "VND", label: "VND (₫)" },
+                                    { value: "EUR", label: "EUR (€)" },
+                                    { value: "NOK", label: "NOK (kr)" },
+                                    { value: "GBP", label: "GBP (£)" },
+                                    { value: "SGD", label: "SGD (S$)" },
+                                  ]}
+                                  className="w-full"
+                                  triggerClassName="w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl"
+                                />
                               </div>
 
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                   {t("jobs.wizard.perPeriod")}
                                 </label>
-                                <Select
+                                <CustomSelect
                                   value={salaryPer}
-                                  onValueChange={(val) => val && setSalaryPer(val)}
-                                >
-                                  <SelectTrigger className="w-full h-9 text-xs bg-white dark:bg-slate-900">
-                                    <SelectValue placeholder={t("jobs.wizard.periods.year")} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Year" className="text-xs">
-                                      {t("jobs.wizard.periods.year")}
-                                    </SelectItem>
-                                    <SelectItem value="Month" className="text-xs">
-                                      {t("jobs.wizard.periods.month")}
-                                    </SelectItem>
-                                    <SelectItem value="Hour" className="text-xs">
-                                      {t("jobs.wizard.periods.hour")}
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  onChange={(val) => setSalaryPer(val)}
+                                  options={[
+                                    { value: "Year", label: t("jobs.wizard.periods.year") },
+                                    { value: "Month", label: t("jobs.wizard.periods.month") },
+                                    { value: "Hour", label: t("jobs.wizard.periods.hour") },
+                                  ]}
+                                  className="w-full"
+                                  triggerClassName="w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl"
+                                />
                               </div>
                             </div>
                           )}
@@ -1803,10 +1741,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       {t("jobs.wizard.categoryLabel")}
                     </label>
-                    <Select
+                    <CustomSelect
                       value={newCriterionCategory}
-                      onValueChange={(val) =>
-                        val &&
+                      onChange={(val) =>
                         setNewCriterionCategory(
                           val as
                             | "Experience"
@@ -1815,25 +1752,15 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                             | "Custom",
                         )
                       }
-                    >
-                      <SelectTrigger className="w-full h-9 text-xs bg-white dark:bg-slate-900">
-                        <SelectValue placeholder={t("jobs.wizard.categories.custom")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Experience" className="text-xs">
-                          {t("jobs.wizard.categories.experience")}
-                        </SelectItem>
-                        <SelectItem value="Technical" className="text-xs">
-                          {t("jobs.wizard.categories.technical")}
-                        </SelectItem>
-                        <SelectItem value="Soft Skills" className="text-xs">
-                          {t("jobs.wizard.categories.softSkills")}
-                        </SelectItem>
-                        <SelectItem value="Custom" className="text-xs">
-                          {t("jobs.wizard.categories.custom")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { value: "Experience", label: t("jobs.wizard.categories.experience") },
+                        { value: "Technical", label: t("jobs.wizard.categories.technical") },
+                        { value: "Soft Skills", label: t("jobs.wizard.categories.softSkills") },
+                        { value: "Custom", label: t("jobs.wizard.categories.custom") },
+                      ]}
+                      className="w-full"
+                      triggerClassName="w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl"
+                    />
                   </div>
                 </div>
 

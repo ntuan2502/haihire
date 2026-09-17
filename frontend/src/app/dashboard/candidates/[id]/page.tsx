@@ -35,13 +35,7 @@ import {
   Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import {
   formatDate,
   parseCandidateNotes,
@@ -525,37 +519,21 @@ function CandidateDetailPageContent() {
             <div className="space-y-4">
               {/* Applications Action Row */}
               <div className="flex items-center justify-between gap-3">
-                <Select
+                <CustomSelect
                   value={stageFilter}
-                  onValueChange={(v) => v && setStageFilter(v)}
-                >
-                  <SelectTrigger className="h-8 w-36 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
-                    <SelectValue placeholder={t("candidates.allStages")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL" className="text-xs">
-                      {t("common.all")}
-                    </SelectItem>
-                    <SelectItem value="APPLIED" className="text-xs">
-                      {t("pipeline.stages.applied")}
-                    </SelectItem>
-                    <SelectItem value="SCREENING" className="text-xs">
-                      {t("pipeline.stages.screening")}
-                    </SelectItem>
-                    <SelectItem value="INTERVIEW" className="text-xs">
-                      {t("pipeline.stages.interview")}
-                    </SelectItem>
-                    <SelectItem value="OFFER" className="text-xs">
-                      {t("pipeline.stages.offer")}
-                    </SelectItem>
-                    <SelectItem value="HIRED" className="text-xs">
-                      {t("pipeline.stages.hired")}
-                    </SelectItem>
-                    <SelectItem value="REJECTED" className="text-xs">
-                      {t("pipeline.stages.rejected")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(v) => setStageFilter(v)}
+                  options={[
+                    { value: "ALL", label: t("common.all") },
+                    { value: "APPLIED", label: t("pipeline.stages.applied") },
+                    { value: "SCREENING", label: t("pipeline.stages.screening") },
+                    { value: "INTERVIEW", label: t("pipeline.stages.interview") },
+                    { value: "OFFER", label: t("pipeline.stages.offer") },
+                    { value: "HIRED", label: t("pipeline.stages.hired") },
+                    { value: "REJECTED", label: t("pipeline.stages.rejected") },
+                  ]}
+                  size="sm"
+                  triggerClassName="h-8 w-36 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl"
+                />
 
                 {canEdit && (
                   <button
@@ -684,28 +662,18 @@ function CandidateDetailPageContent() {
                 <div className="space-y-4">
                   {/* Document Toolbar: Filter + Upload Button */}
                   <div className="flex items-center justify-between gap-3">
-                    <Select
+                    <CustomSelect
                       value={documentFilter}
-                      onValueChange={(v) => v && setDocumentFilter(v)}
-                    >
-                      <SelectTrigger className="h-8 w-32 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
-                        <SelectValue placeholder={t("candidates.resume")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All" className="text-xs">
-                          {t("common.all")}
-                        </SelectItem>
-                        <SelectItem value="Resume" className="text-xs">
-                          {t("candidates.resume")}
-                        </SelectItem>
-                        <SelectItem value="Cover Letter" className="text-xs">
-                          Cover Letter
-                        </SelectItem>
-                        <SelectItem value="Other" className="text-xs">
-                          {t("candidates.otherGender")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => setDocumentFilter(v)}
+                      options={[
+                        { value: "All", label: t("common.all") },
+                        { value: "Resume", label: t("candidates.resume") },
+                        { value: "Cover Letter", label: t("candidates.coverLetter") },
+                        { value: "Other", label: t("common.other") },
+                      ]}
+                      size="sm"
+                      triggerClassName="h-8 w-32 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl"
+                    />
 
                     {canEdit && (
                       <div>

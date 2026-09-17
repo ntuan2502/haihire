@@ -13,13 +13,7 @@ import {
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
   parseCandidateNotes,
@@ -326,25 +320,18 @@ function EditCandidatePageContent() {
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {t("candidates.gender")}
               </label>
-              <Select value={gender} onValueChange={(val) => val && setGender(val)}>
-                <SelectTrigger className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl">
-                  <SelectValue placeholder={t("candidates.notSpecified")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Not specified" className="text-xs">
-                    {t("candidates.notSpecified")}
-                  </SelectItem>
-                  <SelectItem value="Male" className="text-xs">
-                    {t("candidates.male")}
-                  </SelectItem>
-                  <SelectItem value="Female" className="text-xs">
-                    {t("candidates.female")}
-                  </SelectItem>
-                  <SelectItem value="Other" className="text-xs">
-                    {t("candidates.otherGender")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <CustomSelect
+                value={gender}
+                onChange={(val) => setGender(val)}
+                options={[
+                  { value: "Not specified", label: t("candidates.notSpecified") },
+                  { value: "Male", label: t("candidates.male") },
+                  { value: "Female", label: t("candidates.female") },
+                  { value: "Other", label: t("candidates.otherGender") },
+                ]}
+                className="w-full"
+                triggerClassName="h-10 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+              />
             </div>
 
             {/* Date of Birth (Calendar date picker) */}

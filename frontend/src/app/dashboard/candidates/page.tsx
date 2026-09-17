@@ -9,13 +9,7 @@ import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import {
   useJobs,
   useAllApplications,
@@ -733,31 +727,21 @@ function CandidatesPageContent() {
 
                 <div className="flex items-center gap-1.5">
                   <span>{t("common.rows")}</span>
-                  <Select
+                  <CustomSelect
                     value={String(rowsPerPage)}
-                    onValueChange={(val) => {
+                    onChange={(val) => {
                       setRowsPerPage(Number(val));
                       setCurrentPage(1);
                     }}
-                  >
-                    <SelectTrigger className="h-7 px-2 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg">
-                      <SelectValue placeholder="20" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10" className="text-xs">
-                        10
-                      </SelectItem>
-                      <SelectItem value="20" className="text-xs">
-                        20
-                      </SelectItem>
-                      <SelectItem value="50" className="text-xs">
-                        50
-                      </SelectItem>
-                      <SelectItem value="100" className="text-xs">
-                        100
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { value: "10", label: "10" },
+                      { value: "20", label: "20" },
+                      { value: "50", label: "50" },
+                      { value: "100", label: "100" },
+                    ]}
+                    size="sm"
+                    triggerClassName="h-7 px-2 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg min-w-[60px]"
+                  />
                 </div>
               </div>
 
@@ -1012,37 +996,21 @@ function CandidatesPageContent() {
                     <div className="space-y-3">
                       {/* Applications Action Row */}
                       <div className="flex items-center justify-between gap-2">
-                        <Select
+                        <CustomSelect
                           value={drawerStageFilter}
-                          onValueChange={(v) => v && setDrawerStageFilter(v)}
-                        >
-                          <SelectTrigger className="h-7 w-28 text-[11px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg">
-                            <SelectValue placeholder={t("candidates.allStages")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ALL" className="text-[11px]">
-                              {t("candidates.allStages")}
-                            </SelectItem>
-                            <SelectItem value="APPLIED" className="text-[11px]">
-                              {t("pipeline.stages.applied")}
-                            </SelectItem>
-                            <SelectItem value="SCREENING" className="text-[11px]">
-                              {t("pipeline.stages.screening")}
-                            </SelectItem>
-                            <SelectItem value="INTERVIEW" className="text-[11px]">
-                              {t("pipeline.stages.interview")}
-                            </SelectItem>
-                            <SelectItem value="OFFER" className="text-[11px]">
-                              {t("pipeline.stages.offer")}
-                            </SelectItem>
-                            <SelectItem value="HIRED" className="text-[11px]">
-                              {t("pipeline.stages.hired")}
-                            </SelectItem>
-                            <SelectItem value="REJECTED" className="text-[11px]">
-                              {t("pipeline.stages.rejected")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                          onChange={(v) => setDrawerStageFilter(v)}
+                          options={[
+                            { value: "ALL", label: t("candidates.allStages") },
+                            { value: "APPLIED", label: t("pipeline.stages.applied") },
+                            { value: "SCREENING", label: t("pipeline.stages.screening") },
+                            { value: "INTERVIEW", label: t("pipeline.stages.interview") },
+                            { value: "OFFER", label: t("pipeline.stages.offer") },
+                            { value: "HIRED", label: t("pipeline.stages.hired") },
+                            { value: "REJECTED", label: t("pipeline.stages.rejected") },
+                          ]}
+                          size="sm"
+                          triggerClassName="h-7 w-28 text-[11px] font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
+                        />
 
                         {canEdit && (
                           <button
@@ -1179,28 +1147,18 @@ function CandidatesPageContent() {
                         <div className="space-y-3">
                           {/* Document Toolbar */}
                           <div className="flex items-center justify-between gap-2">
-                            <Select
+                            <CustomSelect
                               value={drawerDocFilter}
-                              onValueChange={(v) => v && setDrawerDocFilter(v)}
-                            >
-                              <SelectTrigger className="h-7 w-28 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg">
-                                <SelectValue placeholder={t("candidates.resume")} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="All" className="text-xs">
-                                  {t("common.all")}
-                                </SelectItem>
-                                <SelectItem value="Resume" className="text-xs">
-                                  {t("candidates.resume")}
-                                </SelectItem>
-                                <SelectItem value="Cover Letter" className="text-xs">
-                                  {t("candidates.coverLetter")}
-                                </SelectItem>
-                                <SelectItem value="Other" className="text-xs">
-                                  {t("common.other")}
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                              onChange={(v) => setDrawerDocFilter(v)}
+                              options={[
+                                { value: "All", label: t("common.all") },
+                                { value: "Resume", label: t("candidates.resume") },
+                                { value: "Cover Letter", label: t("candidates.coverLetter") },
+                                { value: "Other", label: t("common.other") },
+                              ]}
+                              size="sm"
+                              triggerClassName="h-7 w-28 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
+                            />
 
                             {canEdit && (
                               <div>

@@ -18,13 +18,7 @@ import {
 } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import { applicationsApi } from "@/lib/api";
 import type { Job } from "@/types";
 import {
@@ -200,21 +194,17 @@ export function ApplyModal({
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {t("applications.applyingForPosition")} <span className="text-rose-500">*</span>
               </label>
-              <Select
+              <CustomSelect
                 value={jobId}
-                onValueChange={(val) => val && setJobId(val)}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={t("applications.selectTargetRole")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(jobs || []).map((job) => (
-                    <SelectItem key={job.id} value={job.id.toString()}>
-                      {job.title} ({job.department})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(val) => setJobId(val)}
+                placeholder={t("applications.selectTargetRole")}
+                options={(jobs || []).map((job) => ({
+                  value: job.id.toString(),
+                  label: `${job.title} (${job.department})`,
+                }))}
+                className="w-full mt-1"
+                triggerClassName="h-10 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+              />
             </div>
 
             {/* Candidate Name: Họ và Tên */}

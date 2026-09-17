@@ -21,13 +21,7 @@ import {
 } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import type { Job, Application, ApplicationStage } from "@/types";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
@@ -815,42 +809,28 @@ export function JobList({
                     {t("jobs.sortByUpper")}
                   </span>
                   <div className="grid grid-cols-2 gap-2">
-                    <Select
+                    <CustomSelect
                       value={sortBy}
-                      onValueChange={(val) => val && setSortBy(val as "created" | "title" | "applicants")}
-                    >
-                      <SelectTrigger className="h-9 text-xs bg-white dark:bg-slate-950">
-                        <SelectValue placeholder={t("jobs.dateCreated")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="created" className="text-xs">
-                          {t("jobs.dateCreated")}
-                        </SelectItem>
-                        <SelectItem value="title" className="text-xs">
-                          {t("jobs.jobTitle")}
-                        </SelectItem>
-                        <SelectItem value="applicants" className="text-xs">
-                          {t("jobs.applicants")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      onChange={(val) => setSortBy(val as "created" | "title" | "applicants")}
+                      options={[
+                        { value: "created", label: t("jobs.dateCreated") },
+                        { value: "title", label: t("jobs.jobTitle") },
+                        { value: "applicants", label: t("jobs.applicants") },
+                      ]}
+                      className="w-full"
+                      triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                    />
 
-                    <Select
+                    <CustomSelect
                       value={sortOrder}
-                      onValueChange={(val) => val && setSortOrder(val as "desc" | "asc")}
-                    >
-                      <SelectTrigger className="h-9 text-xs bg-white dark:bg-slate-950">
-                        <SelectValue placeholder={t("jobs.descending")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="desc" className="text-xs">
-                          {t("jobs.descending")}
-                        </SelectItem>
-                        <SelectItem value="asc" className="text-xs">
-                          {t("jobs.ascending")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      onChange={(val) => setSortOrder(val as "desc" | "asc")}
+                      options={[
+                        { value: "desc", label: t("jobs.descending") },
+                        { value: "asc", label: t("jobs.ascending") },
+                      ]}
+                      className="w-full"
+                      triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                    />
                   </div>
                 </div>
               </div>

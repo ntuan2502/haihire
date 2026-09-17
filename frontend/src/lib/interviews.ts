@@ -16,6 +16,7 @@ import {
   type InterviewFormat,
   INTERVIEW_FORMATS,
 } from "@/types";
+import type { TranslationKey } from "@/i18n";
 
 export {
   type InterviewType,
@@ -33,49 +34,25 @@ export const INTERVIEW_TYPE_OPTIONS: { value: InterviewType; labelKey: string }[
 ];
 
 export function normalizeInterviewType(rawType?: string | null): InterviewType {
-  if (!rawType) return "TECHNICAL";
-  if (
-    rawType === "HR_SCREENING" ||
-    rawType.includes("Screening") ||
-    rawType.includes("Sơ bộ") ||
-    rawType.includes("Sơ vấn")
-  ) {
-    return "HR_SCREENING";
+  switch (rawType) {
+    case "HR_SCREENING":
+      return "HR_SCREENING";
+    case "TECHNICAL":
+      return "TECHNICAL";
+    case "CULTURE_FIT":
+      return "CULTURE_FIT";
+    case "FINAL_ROUND":
+      return "FINAL_ROUND";
+    case "ASSESSMENT":
+      return "ASSESSMENT";
+    default:
+      return "TECHNICAL";
   }
-  if (
-    rawType === "TECHNICAL" ||
-    rawType.includes("Technical") ||
-    rawType.includes("Kỹ thuật")
-  ) {
-    return "TECHNICAL";
-  }
-  if (
-    rawType === "CULTURE_FIT" ||
-    rawType.includes("Culture") ||
-    rawType.includes("Văn hóa")
-  ) {
-    return "CULTURE_FIT";
-  }
-  if (
-    rawType === "FINAL_ROUND" ||
-    rawType.includes("Final") ||
-    rawType.includes("Vòng cuối")
-  ) {
-    return "FINAL_ROUND";
-  }
-  if (
-    rawType === "ASSESSMENT" ||
-    rawType.includes("Assessment") ||
-    rawType.includes("Đánh giá")
-  ) {
-    return "ASSESSMENT";
-  }
-  return "TECHNICAL";
 }
 
 export function getInterviewTypeLabel(
   type?: string | null,
-  t?: (key: any, options?: any) => string,
+  t?: (key: TranslationKey, params?: Record<string, string | number>) => string,
 ): string {
   if (!type) return "";
   if (!t) return type;
@@ -92,21 +69,6 @@ export function getInterviewTypeLabel(
     case "ASSESSMENT":
       return t("interviews.types.assessment");
     default:
-      if (type.includes("HR Screening") || type.includes("Sơ bộ") || type.includes("Sơ vấn")) {
-        return t("interviews.types.hrScreening");
-      }
-      if (type.includes("Technical") || type.includes("Kỹ thuật")) {
-        return t("interviews.types.technical");
-      }
-      if (type.includes("Culture") || type.includes("Văn hóa")) {
-        return t("interviews.types.cultureFit");
-      }
-      if (type.includes("Final") || type.includes("Vòng cuối")) {
-        return t("interviews.types.finalRound");
-      }
-      if (type.includes("Assessment") || type.includes("Đánh giá")) {
-        return t("interviews.types.assessment");
-      }
       return type;
   }
 }

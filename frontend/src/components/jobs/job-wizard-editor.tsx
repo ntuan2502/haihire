@@ -52,7 +52,7 @@ import {
   X,
 } from "lucide-react";
 import type { Job, JobType, JobStatus, WorkplaceType, ExperienceLevel } from "@/types";
-import { getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
+import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 
 type StepId = 1 | 2 | 3 | 4;
 
@@ -161,21 +161,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const [department, setDepartment] = useState(initialJob?.department || "General");
   const [location, setLocation] = useState(initialJob?.location || "");
   const [postalCode, setPostalCode] = useState(initialJob?.postalCode || "");
-  const [employmentType, setEmploymentType] = useState(
-    initialJob?.type === "PART_TIME"
-      ? "Part-time"
-      : initialJob?.type === "CONTRACT"
-        ? "Contract"
-        : initialJob?.type === "INTERNSHIP"
-          ? "Internship"
-          : "Full-time",
+  const [employmentType, setEmploymentType] = useState<JobType | null>(
+    (initialJob?.type as JobType) || null,
   );
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(
-    (initialJob?.experienceLevel as ExperienceLevel) || "MID_LEVEL",
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | null>(
+    (initialJob?.experienceLevel as ExperienceLevel) || null,
   );
-  const [workplace, setWorkplace] = useState<WorkplaceType>(
-    (initialJob?.workplace as WorkplaceType) ||
-      (initialJob?.location?.toLowerCase().includes("remote") ? "REMOTE" : "HYBRID"),
+  const [workplace, setWorkplace] = useState<WorkplaceType | null>(
+    (initialJob?.workplace as WorkplaceType) || null,
   );
 
   // Compensation state
@@ -246,27 +239,17 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       setDepartment(initialJob.department || "General");
       setLocation(initialJob.location || "");
       setPostalCode(initialJob.postalCode || "");
+      setEmploymentType((initialJob.type as JobType) || null);
       setExperienceLevel(
-        (initialJob.experienceLevel as ExperienceLevel) || "MID_LEVEL",
+        (initialJob.experienceLevel as ExperienceLevel) || null,
       );
       setWorkplace(
-        (initialJob.workplace as WorkplaceType) ||
-          (initialJob.location?.toLowerCase().includes("remote")
-            ? "REMOTE"
-            : "HYBRID"),
+        (initialJob.workplace as WorkplaceType) || null,
       );
       setDescription(initialJob.description || "");
       setRequirements(initialJob.requirements || "");
 
-      const typeMap: Record<JobType, string> = {
-        FULL_TIME: "Full-time",
-        PART_TIME: "Part-time",
-        CONTRACT: "Contract",
-        INTERNSHIP: "Internship",
-      };
-      if (initialJob.type) {
-        setEmploymentType(typeMap[initialJob.type] || "Full-time");
-      }
+
 
       if (initialJob.status === "PUBLISHED") {
         setPublishMode("publish");
@@ -411,9 +394,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     setDepartment("General");
     setLocation("");
     setPostalCode("");
-    setEmploymentType("Full-time");
-    setExperienceLevel("MID_LEVEL");
-    setWorkplace("HYBRID");
+    setEmploymentType(null);
+    setExperienceLevel(null);
+    setWorkplace(null);
     setDescription("");
     setRequirements("");
     setCompensationOpen(false);
@@ -430,21 +413,43 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     title: false,
     location: false,
     description: false,
+    employmentType: false,
+    experienceLevel: false,
+    workplace: false,
   });
 
   const isTitleValid = jobTitle.trim().length > 0;
   const isLocationValid = location.trim().length > 0;
   const isDescriptionValid = description.trim().length > 0;
-  const isStep1Valid = isTitleValid && isLocationValid && isDescriptionValid;
+  const isEmploymentTypeValid = Boolean(employmentType);
+  const isExperienceLevelValid = Boolean(experienceLevel);
+  const isWorkplaceValid = Boolean(workplace);
+  const isStep1Valid =
+    isTitleValid &&
+    isLocationValid &&
+    isDescriptionValid &&
+    isEmploymentTypeValid &&
+    isExperienceLevelValid &&
+    isWorkplaceValid;
 
   const showTitleError = touched.title && !isTitleValid;
   const showLocationError = touched.location && !isLocationValid;
   const showDescriptionError = touched.description && !isDescriptionValid;
+  const showEmploymentTypeError = touched.employmentType && !isEmploymentTypeValid;
+  const showExperienceLevelError = touched.experienceLevel && !isExperienceLevelValid;
+  const showWorkplaceError = touched.workplace && !isWorkplaceValid;
 
   // Advance from Step 1 to Step 4 (since steps 2 & 3 are disabled)
   const handleStep1Continue = () => {
     if (!isStep1Valid) {
-      setTouched({ title: true, location: true, description: true });
+      setTouched({
+        title: true,
+        location: true,
+        description: true,
+        employmentType: true,
+        experienceLevel: true,
+        workplace: true,
+      });
       return;
     }
     setFormError(null);
@@ -455,7 +460,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     const targetStep = steps.find((s) => s.id === stepId);
     if (!targetStep?.implemented) return;
     if (currentStep === 1 && !isStep1Valid) {
-      setTouched({ title: true, location: true, description: true });
+      setTouched({
+        title: true,
+        location: true,
+        description: true,
+        employmentType: true,
+        experienceLevel: true,
+        workplace: true,
+      });
       return;
     }
     setCurrentStep(stepId);
@@ -538,14 +550,21 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       salaryRange = `${currency} ${minSalary || "0"} - ${maxSalary || "0"} / ${salaryPer.toLowerCase()}`;
     }
 
-    const typeMapped: JobType =
-      employmentType === "Part-time"
-        ? "PART_TIME"
-        : employmentType === "Contract"
-          ? "CONTRACT"
-          : employmentType === "Internship"
-            ? "INTERNSHIP"
-            : "FULL_TIME";
+    if (!isStep1Valid) {
+      setTouched({
+        title: true,
+        location: true,
+        description: true,
+        employmentType: true,
+        experienceLevel: true,
+        workplace: true,
+      });
+      setCurrentStep(1);
+      setFormError(t("jobs.fillRequiredFields"));
+      return;
+    }
+
+    const typeMapped: JobType = employmentType || "FULL_TIME";
 
     const statusMapped: JobStatus =
       publishMode === "publish"
@@ -958,30 +977,45 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          {t("jobs.wizard.employmentTypeLabel")}
+                          {t("jobs.wizard.employmentTypeLabel")} <span className="text-rose-500">*</span>
                         </label>
                         <CustomSelect
-                          value={employmentType}
-                          onChange={(val) => setEmploymentType(val)}
+                          value={employmentType || ""}
+                          onChange={(val) => {
+                            setEmploymentType(val as JobType);
+                            setTouched((prev) => ({ ...prev, employmentType: true }));
+                          }}
+                          placeholder={t("jobs.wizard.selectEmploymentType")}
                           options={[
-                            { value: "Full-time", label: t("jobs.fullTime") },
-                            { value: "Part-time", label: t("jobs.partTime") },
-                            { value: "Contract", label: t("jobs.contract") },
-                            { value: "Internship", label: t("jobs.internship") },
-                            { value: "Temporary", label: t("jobs.temporary") },
+                            { value: "FULL_TIME", label: t("jobs.fullTime") },
+                            { value: "PART_TIME", label: t("jobs.partTime") },
+                            { value: "CONTRACT", label: t("jobs.contract") },
+                            { value: "INTERNSHIP", label: t("jobs.internship") },
                           ]}
                           className="w-full"
-                          triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+                          triggerClassName={cn(
+                            "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
+                            showEmploymentTypeError && "border-rose-500 ring-1 ring-rose-500",
+                          )}
                         />
+                        {showEmploymentTypeError && (
+                          <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                            {t("jobs.wizard.employmentTypeError")}
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          {t("jobs.wizard.experienceLevelLabel")}
+                          {t("jobs.wizard.experienceLevelLabel")} <span className="text-rose-500">*</span>
                         </label>
                         <CustomSelect
-                          value={experienceLevel}
-                          onChange={(val) => setExperienceLevel(val as ExperienceLevel)}
+                          value={experienceLevel || ""}
+                          onChange={(val) => {
+                            setExperienceLevel(val as ExperienceLevel);
+                            setTouched((prev) => ({ ...prev, experienceLevel: true }));
+                          }}
+                          placeholder={t("jobs.wizard.selectExperienceLevel")}
                           options={[
                             { value: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
                             { value: "MID_LEVEL", label: t("jobs.experience.mid") },
@@ -990,25 +1024,45 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                             { value: "EXECUTIVE", label: t("jobs.experience.executive") },
                           ]}
                           className="w-full"
-                          triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+                          triggerClassName={cn(
+                            "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
+                            showExperienceLevelError && "border-rose-500 ring-1 ring-rose-500",
+                          )}
                         />
+                        {showExperienceLevelError && (
+                          <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                            {t("jobs.wizard.experienceLevelError")}
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          {t("jobs.wizard.workplaceLabel")}
+                          {t("jobs.wizard.workplaceLabel")} <span className="text-rose-500">*</span>
                         </label>
                         <CustomSelect
-                          value={workplace}
-                          onChange={(val) => setWorkplace(val as WorkplaceType)}
+                          value={workplace || ""}
+                          onChange={(val) => {
+                            setWorkplace(val as WorkplaceType);
+                            setTouched((prev) => ({ ...prev, workplace: true }));
+                          }}
+                          placeholder={t("jobs.wizard.selectWorkplace")}
                           options={[
-                            { value: "HYBRID", label: t("jobs.workplace.hybrid") },
                             { value: "ON_SITE", label: t("jobs.workplace.onsite") },
+                            { value: "HYBRID", label: t("jobs.workplace.hybrid") },
                             { value: "REMOTE", label: t("jobs.workplace.remote") },
                           ]}
                           className="w-full"
-                          triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
+                          triggerClassName={cn(
+                            "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
+                            showWorkplaceError && "border-rose-500 ring-1 ring-rose-500",
+                          )}
                         />
+                        {showWorkplaceError && (
+                          <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                            {t("jobs.wizard.workplaceError")}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -2329,10 +2383,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         <span>{location || t("jobs.wizard.nationwide")}{postalCode ? ` (${postalCode})` : ""}</span>
                       </div>
 
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-                        <Clock className="h-3.5 w-3.5 text-emerald-500" />
-                        <span>{employmentType}</span>
-                      </div>
+                      {employmentType && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                          <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                          <span>{getJobTypeLabel(employmentType, t)}</span>
+                        </div>
+                      )}
 
                       {workplace && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">

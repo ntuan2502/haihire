@@ -372,6 +372,12 @@ export interface TranslationSchema {
       employmentTypeLabel: string;
       experienceLevelLabel: string;
       workplaceLabel: string;
+      selectEmploymentType: string;
+      selectExperienceLevel: string;
+      selectWorkplace: string;
+      employmentTypeError: string;
+      experienceLevelError: string;
+      workplaceError: string;
       compensationTitle: string;
       compensationOptional: string;
       compensationHintClosed: string;

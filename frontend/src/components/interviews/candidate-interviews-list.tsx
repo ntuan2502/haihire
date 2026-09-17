@@ -10,12 +10,20 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useMemo } from "react";
 import {
   parseAllInterviewsFromNotes,
+  getInterviewsFromApplication,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
+import type { Interview } from "@/types";
 
 export interface CandidateInterviewsListProps {
+  application?: {
+    interviews?: Interview[] | null;
+    notes?: string | null;
+  } | null;
+  interviews?: Interview[] | null;
   notes?: string | null;
   onSchedule?: () => void;
   onCancelInterview?: () => void;
@@ -27,6 +35,8 @@ export interface CandidateInterviewsListProps {
 }
 
 export function CandidateInterviewsList({
+  application,
+  interviews,
   notes,
   onSchedule,
   onCancelInterview,
@@ -37,7 +47,16 @@ export function CandidateInterviewsList({
   hideIfEmpty = false,
 }: CandidateInterviewsListProps) {
   const { t } = useI18n();
-  const allInterviews = parseAllInterviewsFromNotes(notes);
+
+  const allInterviews = useMemo(() => {
+    if (interviews && Array.isArray(interviews) && interviews.length > 0) {
+      return getInterviewsFromApplication({ interviews, notes });
+    }
+    if (application) {
+      return getInterviewsFromApplication(application);
+    }
+    return parseAllInterviewsFromNotes(notes);
+  }, [application, interviews, notes]);
 
   const formatInterviewType = (type?: string) => {
     if (!type) return "";

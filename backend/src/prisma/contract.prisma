@@ -113,6 +113,10 @@ model Candidate {
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id])
   name           String
+  firstName      String?
+  lastName       String?
+  gender         String?
+  dateOfBirth    DateTime?
   email          String
   phone          String?
   notes          String?
@@ -134,16 +138,35 @@ model Application {
   jobId          String
   job            Job              @relation(fields: [jobId], references: [id])
   stage          ApplicationStage @default(APPLIED)
+  matchScore     Int?
   resumeUrl      String?
   resumeFileName String?
   resumeFileSize Int?
   resumeMimeType String?          @default("application/pdf")
   notes          String?
   orderIndex     Int              @default(0)
+  interviews     Interview[]
   createdAt      DateTime         @default(now())
   updatedAt      temporal.updatedAt()
 
   @@unique([candidateId, jobId])
+}
+
+model Interview {
+  id             String      @id @default(uuid())
+  applicationId  String
+  application    Application @relation(fields: [applicationId], references: [id])
+  date           String
+  time           String
+  type           String
+  format         String      @default("MEET")
+  linkOrLocation String
+  interviewer    String
+  round          Int         @default(1)
+  scorecard      String?
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      temporal.updatedAt()
 }
 
 

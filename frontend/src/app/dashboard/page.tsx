@@ -32,7 +32,7 @@ import { usePipelineStages } from "@/lib/stages";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
 import {
-  parseAllInterviewsFromNotes,
+  getInterviewsFromApplication,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { ApplicationStage } from "@/types";
@@ -113,7 +113,7 @@ function DashboardContent() {
     }[] = [];
 
     for (const app of applications) {
-      const all = parseAllInterviewsFromNotes(app.notes);
+      const all = getInterviewsFromApplication(app);
       const job = jobs.find((j) => j.id === app.jobId);
       for (const intv of all) {
         if (intv.date >= todayStr) {

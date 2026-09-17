@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AppController } from "./app.controller";
 import { ApplicationsModule } from "./applications/applications.module";
 import { CandidatesModule } from "./candidates/candidates.module";
+import { InterviewsModule } from "./interviews/interviews.module";
 import { AuthModule } from "./auth/auth.module";
 import { EventsModule } from "./events/events.module";
 import { JobsModule } from "./jobs/jobs.module";
@@ -22,6 +23,7 @@ import { UsersService } from "./users.service";
     JobsModule,
     ApplicationsModule,
     CandidatesModule,
+    InterviewsModule,
   ],
   controllers: [AppController, UsersController],
   providers: [PrismaService, UsersService],

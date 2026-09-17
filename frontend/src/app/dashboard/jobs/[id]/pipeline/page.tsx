@@ -9,6 +9,7 @@ import {
   useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
@@ -139,18 +140,25 @@ function JobPipelinePageContent() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   // Cancel scheduled interview
-  const handleCancelInterview = async () => {
+  const handleCancelInterview = async (interviewId?: string) => {
     if (!selectedCandidate) return;
     try {
-      const updatedNotes = removeInterviewFromNotes(selectedCandidate.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: selectedCandidate.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (selectedCandidate.interviews && selectedCandidate.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+      if (selectedCandidate.notes && selectedCandidate.notes.includes("Interview:")) {
+        const updatedNotes = removeInterviewFromNotes(selectedCandidate.notes);
+        await updateCandidateMutation.mutateAsync({
+          id: selectedCandidate.id,
+          data: {
+            notes: updatedNotes,
+          },
+        });
+      }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
     }
@@ -874,6 +882,7 @@ function JobPipelinePageContent() {
                     {/* 2. Interviews Card */}
                     {overviewSections.interviews && (
                       <CandidateInterviewsList
+                        application={selectedCandidate}
                         notes={selectedCandidate.notes}
                         onSchedule={() => setScheduleModalOpen(true)}
                         onCancelInterview={handleCancelInterview}
@@ -1030,6 +1039,7 @@ function JobPipelinePageContent() {
                 {/* Interviews Tab */}
                 {candidateTab === "interviews" && (
                   <CandidateInterviewsList
+                    application={selectedCandidate}
                     notes={selectedCandidate.notes}
                     onSchedule={() => setScheduleModalOpen(true)}
                     onCancelInterview={handleCancelInterview}

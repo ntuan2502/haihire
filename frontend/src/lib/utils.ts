@@ -79,6 +79,12 @@ export function getInitials(name?: string | null): string {
 export function parseCandidateNotes(
   notes?: string | null,
   candidateName?: string | null,
+  structured?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    gender?: string | null;
+    dateOfBirth?: string | Date | null;
+  } | null,
 ): {
   gender: string;
   dob: string;
@@ -88,7 +94,7 @@ export function parseCandidateNotes(
   effectiveName: string;
   customNotes: string;
 } {
-  if (!notes && !candidateName) {
+  if (!notes && !candidateName && !structured) {
     return {
       gender: "—",
       dob: "—",
@@ -124,11 +130,23 @@ export function parseCandidateNotes(
     rawCustom = "";
   }
 
-  const parsedFirst = firstNameMatch ? firstNameMatch[1].trim() : "";
-  const parsedLast = lastNameMatch ? lastNameMatch[1].trim() : "";
+  const parsedFirst = structured?.firstName || (firstNameMatch ? firstNameMatch[1].trim() : "");
+  const parsedLast = structured?.lastName || (lastNameMatch ? lastNameMatch[1].trim() : "");
   const parsedDisplay = displayNameMatch ? displayNameMatch[1].trim() : "";
 
-  // If first/last are not in notes, infer from candidateName
+  let parsedDob = "";
+  if (structured?.dateOfBirth) {
+    parsedDob =
+      structured.dateOfBirth instanceof Date
+        ? structured.dateOfBirth.toISOString().split("T")[0]
+        : String(structured.dateOfBirth).split("T")[0];
+  } else if (dobMatch) {
+    parsedDob = dobMatch[1].trim();
+  }
+
+  const parsedGender = structured?.gender || (genderMatch ? genderMatch[1].trim() : "");
+
+  // If first/last are not in notes or structured, infer from candidateName
   let inferredFirst = parsedFirst;
   let inferredLast = parsedLast;
   if (!inferredFirst && !inferredLast && candidateName) {
@@ -150,8 +168,8 @@ export function parseCandidateNotes(
     "—";
 
   return {
-    gender: genderMatch ? genderMatch[1].trim() : "—",
-    dob: dobMatch ? dobMatch[1].trim() : "—",
+    gender: parsedGender || "—",
+    dob: parsedDob || "—",
     firstName: inferredFirst,
     lastName: inferredLast,
     displayName: parsedDisplay,
@@ -271,12 +289,21 @@ export function buildCandidateNotes(params: {
  * Get unified candidate display name from candidate application or notes
  */
 export function getCandidateDisplayName(candidate?: {
+  name?: string | null;
   candidateName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   notes?: string | null;
 } | null): string {
   if (!candidate) return "—";
-  const { effectiveName } = parseCandidateNotes(candidate.notes, candidate.candidateName);
-  return effectiveName || candidate.candidateName || "—";
+  if (candidate.firstName || candidate.lastName) {
+    const combined = [candidate.firstName, candidate.lastName].filter(Boolean).join(" ");
+    if (combined.trim()) return combined.trim();
+  }
+  if (candidate.candidateName) return candidate.candidateName;
+  if (candidate.name) return candidate.name;
+  const { effectiveName } = parseCandidateNotes(candidate.notes, candidate.candidateName, candidate);
+  return effectiveName || "—";
 }
 
 /**

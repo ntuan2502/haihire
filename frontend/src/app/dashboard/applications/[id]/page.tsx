@@ -12,6 +12,7 @@ import {
   useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
@@ -74,6 +75,7 @@ function ApplicationDetailPageContent() {
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [noteInput, setNoteInput] = useState("");
@@ -90,16 +92,22 @@ function ApplicationDetailPageContent() {
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
 
   // Cancel scheduled interview
-  const handleCancelInterview = async () => {
+  const handleCancelInterview = async (interviewId?: string) => {
     if (!app) return;
     try {
-      const updatedNotes = removeInterviewFromNotes(app.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: app.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (app.interviews && app.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+      if (app.notes && app.notes.includes("Interview:")) {
+        const updatedNotes = removeInterviewFromNotes(app.notes);
+        await updateCandidateMutation.mutateAsync({
+          id: app.id,
+          data: {
+            notes: updatedNotes,
+          },
+        });
+      }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
     }
@@ -512,6 +520,7 @@ function ApplicationDetailPageContent() {
               {/* 2. Interviews */}
               {overviewSections.interviews && (
                 <CandidateInterviewsList
+                  application={app}
                   notes={app?.notes}
                   onSchedule={() => setScheduleModalOpen(true)}
                   onCancelInterview={handleCancelInterview}
@@ -656,6 +665,7 @@ function ApplicationDetailPageContent() {
 
           {activeTab === "interviews" && (
             <CandidateInterviewsList
+              application={app}
               notes={app?.notes}
               onSchedule={() => setScheduleModalOpen(true)}
               onCancelInterview={handleCancelInterview}

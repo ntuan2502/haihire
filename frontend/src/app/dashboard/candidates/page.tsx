@@ -17,6 +17,7 @@ import {
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
   useUpdateCandidateMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -59,7 +60,10 @@ import {
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
-import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
+import {
+  removeInterviewFromNotes,
+  getInterviewsFromApplication,
+} from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
@@ -82,6 +86,7 @@ function CandidatesPageContent() {
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
   const deleteAppDocMutation = useDeleteDocumentMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [search, setSearch] = useState("");
 
@@ -105,15 +110,21 @@ function CandidatesPageContent() {
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const drawerDocInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCancelInterview = async (targetApp: Application) => {
+  const handleCancelInterview = async (targetApp: Application, interviewId?: string) => {
     try {
-      const updatedNotes = removeInterviewFromNotes(targetApp.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: targetApp.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+      if (targetApp.notes && targetApp.notes.includes("Interview:")) {
+        const updatedNotes = removeInterviewFromNotes(targetApp.notes);
+        await updateCandidateMutation.mutateAsync({
+          id: targetApp.id,
+          data: {
+            notes: updatedNotes,
+          },
+        });
+      }
     } catch (err) {
       console.error("Failed to cancel interview in drawer:", err);
     }
@@ -398,7 +409,17 @@ function CandidatesPageContent() {
         customNotes: "",
       };
     }
-    return parseCandidateNotes(selectedCandidate.notes, selectedCandidate.name);
+    const cand = selectedCandidate.candidate;
+    const parsed = parseCandidateNotes(selectedCandidate.notes, selectedCandidate.name);
+    return {
+      gender: cand?.gender || parsed.gender,
+      dob: cand?.dateOfBirth ? formatDate(cand.dateOfBirth) : parsed.dob,
+      firstName: cand?.firstName || parsed.firstName,
+      lastName: cand?.lastName || parsed.lastName,
+      displayName: selectedCandidate.name || parsed.displayName,
+      effectiveName: selectedCandidate.name || parsed.effectiveName,
+      customNotes: selectedCandidate.notes || parsed.customNotes,
+    };
   }, [selectedCandidate]);
 
   return (
@@ -1079,7 +1100,7 @@ function CandidatesPageContent() {
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
                           {filteredDrawerApps.map((app) => {
                             const job = jobs.find((j) => j.id === app.jobId);
-                            const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                            const allInterviews = getInterviewsFromApplication(app);
                             return (
                               <div
                                 key={app.id}
@@ -1112,6 +1133,7 @@ function CandidatesPageContent() {
                                 </div>
 
                                 <CandidateInterviewsList
+                                  application={app}
                                   notes={app.notes}
                                   onSchedule={() => setScheduleInterviewApp(app)}
                                   onCancelInterview={() => handleCancelInterview(app)}

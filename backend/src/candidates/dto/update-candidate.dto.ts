@@ -5,6 +5,22 @@ export class UpdateCandidateDto {
   @IsOptional()
   name?: string;
 
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  gender?: string;
+
+  @IsString()
+  @IsOptional()
+  dateOfBirth?: string;
+
   @IsEmail()
   @IsOptional()
   email?: string;

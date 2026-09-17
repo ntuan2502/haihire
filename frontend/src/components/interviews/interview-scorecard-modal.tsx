@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
-import { useUpdateCandidateMutation } from "@/hooks/use-queries";
+import { useUpdateCandidateMutation, useUpdateInterviewMutation } from "@/hooks/use-queries";
 import { getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
@@ -51,9 +51,10 @@ export function InterviewScorecardModal({
   job,
   onSaved,
 }: InterviewScorecardModalProps) {
-  const { t } = useI18n();
   const { user } = useAuth();
+  const { t } = useI18n();
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const updateInterviewMutation = useUpdateInterviewMutation();
 
   const [overallRating, setOverallRating] = useState<number>(4);
   const [recommendation, setRecommendation] = useState<
@@ -108,18 +109,27 @@ export function InterviewScorecardModal({
         evaluatedAt: new Date().toISOString(),
       };
 
-      const updatedNotes = saveInterviewScorecardToNotes(
-        application.notes,
-        interview,
-        scorecardData,
-      );
+      if (interview.id) {
+        await updateInterviewMutation.mutateAsync({
+          id: interview.id,
+          data: {
+            scorecard: scorecardData,
+          },
+        });
+      } else {
+        const updatedNotes = saveInterviewScorecardToNotes(
+          application.notes,
+          interview,
+          scorecardData,
+        );
 
-      await updateCandidateMutation.mutateAsync({
-        id: application.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+        await updateCandidateMutation.mutateAsync({
+          id: application.id,
+          data: {
+            notes: updatedNotes,
+          },
+        });
+      }
 
       onSaved?.();
       onClose();

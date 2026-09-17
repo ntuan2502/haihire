@@ -28,7 +28,6 @@ import {
   X,
   CheckCircle2,
 } from "lucide-react";
-import { buildCandidateNotes } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 function AddCandidatePageContent() {
@@ -128,21 +127,17 @@ function AddCandidatePageContent() {
 
       const formData = new FormData();
       formData.append("name", effectiveDisplayName);
+      formData.append("firstName", firstName.trim());
+      formData.append("lastName", lastName.trim());
+      if (gender && gender !== "Not specified" && gender !== "—") {
+        formData.append("gender", gender);
+      }
+      if (dateOfBirth && dateOfBirth.trim() && dateOfBirth !== "—") {
+        formData.append("dateOfBirth", dateOfBirth.trim());
+      }
       formData.append("email", email.trim());
       if (phone.trim()) formData.append("phone", phone.trim());
       if (user?.organizationId) formData.append("organizationId", user.organizationId);
-
-      const notes = buildCandidateNotes({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        displayName: displayName.trim() || undefined,
-        gender,
-        dob: dateOfBirth,
-      });
-
-      if (notes) {
-        formData.append("notes", notes);
-      }
 
       if (selectedFile) {
         formData.append("resume", selectedFile);

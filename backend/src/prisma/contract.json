@@ -12,6 +12,10 @@
       "model": "Candidate",
       "namespace": "public"
     },
+    "interview": {
+      "model": "Interview",
+      "namespace": "public"
+    },
     "inviteLink": {
       "model": "InviteLink",
       "namespace": "public"
@@ -157,6 +161,13 @@
                   "kind": "scalar"
                 }
               },
+              "matchScore": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "notes": {
                 "nullable": true,
                 "type": {
@@ -236,6 +247,21 @@
                   "namespace": "public"
                 }
               },
+              "interviews": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "applicationId"
+                  ]
+                },
+                "to": {
+                  "model": "Interview",
+                  "namespace": "public"
+                }
+              },
               "job": {
                 "cardinality": "N:1",
                 "on": {
@@ -265,6 +291,9 @@
                 },
                 "jobId": {
                   "column": "jobId"
+                },
+                "matchScore": {
+                  "column": "matchScore"
                 },
                 "notes": {
                   "column": "notes"
@@ -304,6 +333,13 @@
                   "kind": "scalar"
                 }
               },
+              "dateOfBirth": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
               "email": {
                 "nullable": false,
                 "type": {
@@ -311,8 +347,29 @@
                   "kind": "scalar"
                 }
               },
+              "firstName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "gender": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastName": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -419,11 +476,23 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "dateOfBirth": {
+                  "column": "dateOfBirth"
+                },
                 "email": {
                   "column": "email"
                 },
+                "firstName": {
+                  "column": "firstName"
+                },
+                "gender": {
+                  "column": "gender"
+                },
                 "id": {
                   "column": "id"
+                },
+                "lastName": {
+                  "column": "lastName"
                 },
                 "name": {
                   "column": "name"
@@ -455,6 +524,163 @@
               },
               "namespaceId": "public",
               "table": "candidate"
+            }
+          },
+          "Interview": {
+            "fields": {
+              "applicationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
+              "date": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "format": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "interviewer": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "linkOrLocation": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "notes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "round": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "scorecard": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "time": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "type": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "application": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "applicationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Application",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "applicationId": {
+                  "column": "applicationId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "date": {
+                  "column": "date"
+                },
+                "format": {
+                  "column": "format"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "interviewer": {
+                  "column": "interviewer"
+                },
+                "linkOrLocation": {
+                  "column": "linkOrLocation"
+                },
+                "notes": {
+                  "column": "notes"
+                },
+                "round": {
+                  "column": "round"
+                },
+                "scorecard": {
+                  "column": "scorecard"
+                },
+                "time": {
+                  "column": "time"
+                },
+                "type": {
+                  "column": "type"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "interview"
             }
           },
           "InviteLink": {
@@ -1303,6 +1529,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "matchScore": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "notes": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1439,15 +1670,35 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "dateOfBirth": {
+                  "codecId": "pg/timestamptz@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "email": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
                 },
+                "firstName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "gender": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "lastName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -1540,6 +1791,121 @@
                   ]
                 }
               ]
+            },
+            "interview": {
+              "columns": {
+                "applicationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "date": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "format": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "MEET"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "interviewer": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "linkOrLocation": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "notes": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "round": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "scorecard": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "time": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "type": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "applicationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "interview"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "application"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "applicationId"
+                  ],
+                  "name": "interview_applicationId_idx_8158f91a",
+                  "prefix": "interview_applicationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
             },
             "inviteLink": {
               "columns": {
@@ -2178,10 +2544,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "81cf65b09ae8f995c945734c43f66b1e3a7b7aa5db2f79793da32f189ddb70d0"
+    "storageHash": "8c293eb06ca4e23905ad7fd63baa782693f029ecd5f2adc7c9e828d7d6b0b613"
   },
   "execution": {
-    "executionHash": "e673d2349423c3b9109935436bfc6acf19ebf59df08f0ae1526314dc246f89a7",
+    "executionHash": "e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2",
     "mutations": {
       "defaults": [
         {
@@ -2234,6 +2600,32 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "candidate"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "interview"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "interview"
           }
         },
         {

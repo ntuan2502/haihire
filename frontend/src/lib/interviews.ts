@@ -12,6 +12,7 @@ export interface InterviewScorecard {
 
 export interface ScheduledInterviewInfo {
   id?: string;
+  applicationId?: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   type: string; // Technical / Cultural / Screening / Final
@@ -21,6 +22,103 @@ export interface ScheduledInterviewInfo {
   notes?: string;
   round?: number;
   scorecard?: InterviewScorecard;
+}
+
+/**
+ * Extract interviews from an application, prioritizing structured interviews array,
+ * falling back to parsed notes for backward compatibility.
+ */
+export function getInterviewsFromApplication(
+  app?: {
+    interviews?: Array<{
+      id?: string;
+      applicationId?: string;
+      date: string;
+      time: string;
+      type: string;
+      format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+      linkOrLocation: string;
+      interviewer: string;
+      round?: number;
+      scorecard?: InterviewScorecard | string | null;
+      notes?: string | null;
+    }> | null;
+    notes?: string | null;
+  } | null,
+): ScheduledInterviewInfo[] {
+  if (!app) return [];
+
+  if (app.interviews && Array.isArray(app.interviews) && app.interviews.length > 0) {
+    const list: ScheduledInterviewInfo[] = app.interviews.map((inv) => {
+      let scorecard: InterviewScorecard | undefined;
+      if (inv.scorecard) {
+        if (typeof inv.scorecard === "string") {
+          try {
+            scorecard = JSON.parse(inv.scorecard);
+          } catch {
+            scorecard = undefined;
+          }
+        } else if (typeof inv.scorecard === "object") {
+          scorecard = inv.scorecard as InterviewScorecard;
+        }
+      }
+
+      return {
+        id: inv.id,
+        applicationId: inv.applicationId,
+        date: inv.date,
+        time: inv.time,
+        type: inv.type,
+        format: inv.format,
+        linkOrLocation: inv.linkOrLocation,
+        interviewer: inv.interviewer,
+        notes: inv.notes || undefined,
+        round: inv.round,
+        scorecard,
+      };
+    });
+
+    list.sort((a, b) => {
+      const dtA = `${a.date} ${a.time || "00:00"}`;
+      const dtB = `${b.date} ${b.time || "00:00"}`;
+      return dtB.localeCompare(dtA);
+    });
+
+    return list;
+  }
+
+  return parseAllInterviewsFromNotes(app.notes);
+}
+
+/**
+ * Get latest/upcoming interview for an application
+ */
+export function getLatestInterviewFromApplication(
+  app?: {
+    interviews?: Array<{
+      id?: string;
+      applicationId?: string;
+      date: string;
+      time: string;
+      type: string;
+      format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+      linkOrLocation: string;
+      interviewer: string;
+      round?: number;
+      scorecard?: InterviewScorecard | string | null;
+      notes?: string | null;
+    }> | null;
+    notes?: string | null;
+  } | null,
+): ScheduledInterviewInfo | null {
+  const all = getInterviewsFromApplication(app);
+  if (!all.length) return null;
+  const today = new Date().toISOString().split("T")[0];
+  const upcomingList = all.filter((item) => item.date >= today);
+  if (upcomingList.length > 0) {
+    return upcomingList[upcomingList.length - 1];
+  }
+  return all[0];
 }
 
 /**

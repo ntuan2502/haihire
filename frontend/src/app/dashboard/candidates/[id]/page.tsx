@@ -16,6 +16,7 @@ import {
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
   useUpdateCandidateMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
@@ -29,13 +30,13 @@ import {
   Trash2,
   Calendar,
   Clock,
-  Plus,
   Briefcase,
   FileText,
-  UploadCloud,
-  Loader2,
   Eye,
+  Plus,
   Download,
+  Loader2,
+  UploadCloud,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -48,7 +49,10 @@ import {
 } from "@/lib/utils";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
-import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
+import {
+  removeInterviewFromNotes,
+  getInterviewsFromApplication,
+} from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
@@ -78,6 +82,7 @@ function CandidateDetailPageContent() {
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
   const deleteAppDocMutation = useDeleteDocumentMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [activeTab, setActiveTab] = useState<"applications" | "documents">(
     "applications",
@@ -86,15 +91,21 @@ function CandidateDetailPageContent() {
   const [scheduleInterviewApp, setScheduleInterviewApp] =
     useState<Application | null>(null);
 
-  const handleCancelInterview = async (targetApp: Application) => {
+  const handleCancelInterview = async (targetApp: Application, interviewId?: string) => {
     try {
-      const updatedNotes = removeInterviewFromNotes(targetApp.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: targetApp.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+      if (targetApp.notes && targetApp.notes.includes("Interview:")) {
+        const updatedNotes = removeInterviewFromNotes(targetApp.notes);
+        await updateCandidateMutation.mutateAsync({
+          id: targetApp.id,
+          data: {
+            notes: updatedNotes,
+          },
+        });
+      }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
     }
@@ -179,8 +190,8 @@ function CandidateDetailPageContent() {
   }, [candidateDocuments, documentFilter]);
 
   const parsedNotes = parseCandidateNotes(candidate?.notes, candidate?.name);
-  const gender = parsedNotes.gender;
-  const dob = parsedNotes.dob;
+  const gender = candidate?.gender || parsedNotes.gender;
+  const dob = candidate?.dateOfBirth ? formatDate(candidate.dateOfBirth) : parsedNotes.dob;
   const candidateName = candidate?.name || "Candidate";
   const candidateEmail = candidate?.email || "—";
   const candidatePhone = candidate?.phone || "";
@@ -589,7 +600,7 @@ function CandidateDetailPageContent() {
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredCandidateApps.map((app) => {
                     const job = jobs.find((j) => j.id === app.jobId);
-                    const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                    const allInterviews = getInterviewsFromApplication(app);
                     return (
                       <div
                         key={app.id}
@@ -623,6 +634,7 @@ function CandidateDetailPageContent() {
                         </div>
 
                         <CandidateInterviewsList
+                          application={app}
                           notes={app.notes}
                           onSchedule={() => setScheduleInterviewApp(app)}
                           onCancelInterview={() => handleCancelInterview(app)}

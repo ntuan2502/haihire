@@ -9,6 +9,22 @@ export class CreateCandidateDto {
   @IsNotEmpty()
   name: string;
 
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  gender?: string;
+
+  @IsString()
+  @IsOptional()
+  dateOfBirth?: string;
+
   @IsEmail()
   @IsNotEmpty()
   email: string;

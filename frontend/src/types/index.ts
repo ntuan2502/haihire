@@ -93,6 +93,10 @@ export interface Candidate {
   id: string;
   organizationId: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  gender?: string | null;
+  dateOfBirth?: string | null;
   email: string;
   phone?: string | null;
   notes?: string | null;
@@ -105,6 +109,40 @@ export interface Candidate {
   applicationsCount?: number;
   applications?: Application[];
   allDocuments?: CandidateDocument[];
+}
+
+export interface InterviewScorecard {
+  overallRating: number;
+  recommendation: "STRONG_YES" | "YES" | "NEUTRAL" | "NO" | "STRONG_NO";
+  technicalScore?: number;
+  communicationScore?: number;
+  cultureScore?: number;
+  problemSolvingScore?: number;
+  feedback?: string;
+  evaluatedBy?: string;
+  evaluatedAt?: string;
+}
+
+export interface Interview {
+  id: string;
+  applicationId: string;
+  date: string;
+  time: string;
+  type: string;
+  format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+  linkOrLocation: string;
+  interviewer: string;
+  round: number;
+  scorecard?: InterviewScorecard | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  application?: Application;
+  candidateName?: string;
+  candidateEmail?: string;
+  jobTitle?: string;
+  jobId?: string;
+  organizationId?: string;
 }
 
 export interface Application {
@@ -123,6 +161,7 @@ export interface Application {
   notes?: string | null;
   orderIndex: number;
   matchScore?: number | null;
+  interviews?: Interview[];
   createdAt: string;
   updatedAt: string;
   job?: Partial<Job>;
@@ -146,6 +185,10 @@ export interface CreateJobInput {
 
 export interface CreateCandidateInput {
   name: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+  dateOfBirth?: string;
   email: string;
   phone?: string;
   notes?: string;
@@ -155,11 +198,40 @@ export interface CreateCandidateInput {
 
 export interface UpdateCandidateInput {
   name?: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+  dateOfBirth?: string;
   email?: string;
   phone?: string;
   notes?: string;
   resumeUrl?: string;
   resumeFileName?: string;
+}
+
+export interface CreateInterviewInput {
+  applicationId: string;
+  date: string;
+  time: string;
+  type: string;
+  format?: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+  linkOrLocation?: string;
+  interviewer: string;
+  round?: number;
+  scorecard?: InterviewScorecard;
+  notes?: string;
+}
+
+export interface UpdateInterviewInput {
+  date?: string;
+  time?: string;
+  type?: string;
+  format?: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+  linkOrLocation?: string;
+  interviewer?: string;
+  round?: number;
+  scorecard?: InterviewScorecard;
+  notes?: string;
 }
 
 export interface CreateApplicationInput {

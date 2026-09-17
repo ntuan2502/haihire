@@ -374,8 +374,16 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
+  await db.orm.public.Interview.all().then((intvs) =>
+    Promise.all(intvs.map((i) => db.orm.public.Interview.where((x) => x.id.eq(i.id)).delete())),
+  );
+
   await db.orm.public.Application.all().then((apps) =>
     Promise.all(apps.map((a) => db.orm.public.Application.where((x) => x.id.eq(a.id)).delete())),
+  );
+
+  await db.orm.public.Candidate.all().then((cands) =>
+    Promise.all(cands.map((c) => db.orm.public.Candidate.where((x) => x.id.eq(c.id)).delete())),
   );
 
   await db.orm.public.InviteLink.all().then((links) =>
@@ -628,6 +636,8 @@ export async function runSeed(): Promise<void> {
     id: string;
     organizationId: string;
     name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone: string;
     notes: string;
@@ -642,12 +652,27 @@ export async function runSeed(): Promise<void> {
     candidateId: string;
     jobId: string;
     stage: (typeof STAGES)[number];
+    matchScore: number;
     resumeUrl: string;
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
     notes: string;
     orderIndex: number;
+  }> = [];
+
+  const interviewsToInsert: Array<{
+    id: string;
+    applicationId: string;
+    date: string;
+    time: string;
+    type: string;
+    format: string;
+    linkOrLocation: string;
+    interviewer: string;
+    round: number;
+    scorecard: string | null;
+    notes: string | null;
   }> = [];
 
   const jobStageOrderCounter: Record<string, number> = {};
@@ -662,13 +687,19 @@ export async function runSeed(): Promise<void> {
     const resumeFileSize = Math.floor(500000 + Math.random() * 1500000); // 500KB - 2MB
     const candidateId = crypto.randomUUID();
 
+    const nameParts = candidate.name.trim().split(/\s+/);
+    const firstName = nameParts[0] || candidate.name;
+    const lastName = nameParts.slice(1).join(" ") || nameParts[0];
+
     candidatesToInsert.push({
       id: candidateId,
       organizationId: adminOrgId,
       name: candidate.name,
+      firstName,
+      lastName,
       email: candidate.email,
       phone: candidate.phone,
-      notes: `Ứng viên tiềm năng | Match Score: ${68 + (candidate.candidateIndex % 25)}%`,
+      notes: "Ứng viên tiềm năng trong Talent Pool.",
       resumeUrl,
       resumeFileName: fileName,
       resumeFileSize,
@@ -676,16 +707,13 @@ export async function runSeed(): Promise<void> {
     });
 
     if (jobCount === 0) {
-      // Ứng viên chưa thuộc job nào (Talent Pool) — lưu ở Candidate, không có Application
       stageStats.APPLIED++;
     } else {
-      // Ứng viên ứng tuyển từ 1-6 jobs khác nhau
       const shuffledJobIds = [...createdJobIds].sort(() => 0.5 - Math.random());
       const selectedJobIds = shuffledJobIds.slice(0, jobCount);
 
       for (let j = 0; j < selectedJobIds.length; j++) {
         const jobId = selectedJobIds[j];
-        // Chọn stage đảm bảo phân bổ đều
         const stage = STAGES[(candidate.candidateIndex + j) % STAGES.length];
         stageStats[stage]++;
 
@@ -693,71 +721,106 @@ export async function runSeed(): Promise<void> {
         jobStageOrderCounter[orderKey] = (jobStageOrderCounter[orderKey] || 0) + 1;
         const orderIndex = jobStageOrderCounter[orderKey];
 
+        const appId = crypto.randomUUID();
         let notes = "";
+        let matchScore = 65 + ((candidate.candidateIndex + j * 7) % 31);
 
         if (stage === "APPLIED" || stage === "SCREENING") {
-          // Rule: Không cần có lịch phỏng vấn (0 lịch)
-          const score = 65 + ((candidate.candidateIndex + j * 7) % 26);
-          notes = `Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Match Score: ${score}% | Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.`;
+          notes = "Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.";
         } else if (stage === "INTERVIEW") {
-          // Rule: Có thể không có (0), có 1 hoặc nhiều lịch phỏng vấn (1-3 lịch)
           const roll = Math.random();
           let interviewCount = 0;
           if (roll < 0.20) {
-            interviewCount = 0; // ~20% Chưa xếp lịch
+            interviewCount = 0;
           } else if (roll < 0.70) {
-            interviewCount = 1; // ~50% 1 lịch
+            interviewCount = 1;
           } else if (roll < 0.90) {
-            interviewCount = 2; // ~20% 2 lịch
+            interviewCount = 2;
           } else {
-            interviewCount = 3; // ~10% 3 lịch
+            interviewCount = 3;
           }
 
+          matchScore = 80 + ((candidate.candidateIndex + j) % 16);
           if (interviewCount === 0) {
-            notes = `Chờ lên lịch phỏng vấn chuyên sâu. Match Score: ${78 + ((candidate.candidateIndex + j) % 15)}% | Đã hoàn thành sơ vấn qua điện thoại.`;
+            notes = "Chờ lên lịch phỏng vấn chuyên sâu. Đã hoàn thành sơ vấn qua điện thoại.";
           } else {
-            const interviewBlocks: string[] = [];
+            notes = "Đang trong quy trình phỏng vấn.";
             for (let r = 1; r <= interviewCount; r++) {
-              // The last round is upcoming, prior rounds are completed
               const isCompleted = r < interviewCount;
               const intv = generateInterviewObject(r, interviewCount, isCompleted, candidate.candidateIndex + j);
-              interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
+              interviewsToInsert.push({
+                id: crypto.randomUUID(),
+                applicationId: appId,
+                date: intv.date,
+                time: intv.time,
+                type: intv.type,
+                format: intv.format,
+                linkOrLocation: intv.linkOrLocation,
+                interviewer: intv.interviewer,
+                round: intv.round,
+                scorecard: null,
+                notes: intv.notes,
+              });
             }
-            notes = `Match Score: ${80 + ((candidate.candidateIndex + j) % 16)}% | Đang trong quy trình phỏng vấn | ${interviewBlocks.join(" | ")}`;
           }
         } else if (stage === "OFFER" || stage === "HIRED") {
-          // Rule: Bắt buộc phải có từ 1-3 lịch (tất cả các vòng đã hoàn thành)
-          const interviewCount = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
-          const interviewBlocks: string[] = [];
+          const interviewCount = Math.floor(Math.random() * 3) + 1;
+          matchScore = 90 + ((candidate.candidateIndex + j) % 9);
+          notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn. Đã gửi thư mời làm việc.`;
 
           for (let r = 1; r <= interviewCount; r++) {
             const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
-            interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
+            interviewsToInsert.push({
+              id: crypto.randomUUID(),
+              applicationId: appId,
+              date: intv.date,
+              time: intv.time,
+              type: intv.type,
+              format: intv.format,
+              linkOrLocation: intv.linkOrLocation,
+              interviewer: intv.interviewer,
+              round: intv.round,
+              scorecard: JSON.stringify({
+                overallRating: 5,
+                recommendation: "STRONG_YES",
+                feedback: `Ứng viên hoàn thành xuất sắc vòng ${r}.`,
+              }),
+              notes: intv.notes,
+            });
           }
-
-          const offerScore = 90 + ((candidate.candidateIndex + j) % 9);
-          notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn chuyên môn. Match Score: ${offerScore}% | Đã chốt mức đãi ngộ và gửi thư mời làm việc | ${interviewBlocks.join(" | ")}`;
         } else if (stage === "REJECTED") {
-          // Rule: Có thể không có hoặc có từ 0-3
-          const interviewCount = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
+          const interviewCount = Math.floor(Math.random() * 4);
+          matchScore = 55 + ((candidate.candidateIndex + j) % 20);
 
           if (interviewCount === 0) {
-            notes = `Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí.`;
+            notes = "Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí.";
           } else {
-            const interviewBlocks: string[] = [];
+            notes = `Không đạt sau ${interviewCount} vòng phỏng vấn chuyên môn.`;
             for (let r = 1; r <= interviewCount; r++) {
               const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
-              interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
+              interviewsToInsert.push({
+                id: crypto.randomUUID(),
+                applicationId: appId,
+                date: intv.date,
+                time: intv.time,
+                type: intv.type,
+                format: intv.format,
+                linkOrLocation: intv.linkOrLocation,
+                interviewer: intv.interviewer,
+                round: intv.round,
+                scorecard: null,
+                notes: intv.notes,
+              });
             }
-            notes = `Không đạt sau ${interviewCount} vòng phỏng vấn: Kỹ năng chuyên môn hoặc kỳ vọng đãi ngộ chưa đồng nhất | ${interviewBlocks.join(" | ")}`;
           }
         }
 
         applicationsToInsert.push({
-          id: crypto.randomUUID(),
+          id: appId,
           candidateId,
           jobId,
           stage,
+          matchScore,
           resumeUrl,
           resumeFileName: fileName,
           resumeFileSize,
@@ -797,6 +860,20 @@ export async function runSeed(): Promise<void> {
       ),
     );
     process.stdout.write(`\r   Tiến độ: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} bản ghi`);
+  }
+
+  console.log(`\n⏳ Đang lưu ${interviewsToInsert.length} lịch phỏng vấn vào cơ sở dữ liệu (xử lý theo lô)...`);
+  for (let b = 0; b < interviewsToInsert.length; b += BATCH_SIZE) {
+    const chunk = interviewsToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((intv) =>
+        db.orm.public.Interview.upsert({
+          create: intv,
+          update: {},
+          conflictOn: { id: intv.id },
+        }),
+      ),
+    );
   }
 
   console.log(`\n\n✅ Thành công! Đã gieo mầm cố định 200 ứng viên độc nhất (tổng ${applicationsToInsert.length} đơn ứng tuyển):`);

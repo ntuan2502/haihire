@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import {
-  parseAllInterviewsFromNotes,
+  getInterviewsFromApplication,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
@@ -55,7 +55,7 @@ export function InterviewsCalendarView({
     const map = new Map<string, CalendarEventItem[]>();
 
     applications.forEach((app) => {
-      const allInterviews = parseAllInterviewsFromNotes(app.notes);
+      const allInterviews = getInterviewsFromApplication(app);
       const job = jobs.find((j) => String(j.id) === String(app.jobId));
 
       allInterviews.forEach((intv) => {

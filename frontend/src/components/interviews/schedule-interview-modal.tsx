@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import {
-  useUpdateCandidateMutation,
+  useCreateInterviewMutation,
   useUpdateStageMutation,
   useOrgMembers,
 } from "@/hooks/use-queries";
@@ -33,7 +33,6 @@ import { getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
   parseInterviewFromNotes,
-  stringifyInterviewToNotes,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
@@ -62,7 +61,7 @@ export function ScheduleInterviewModal({
   const { t } = useI18n();
   const { user } = useAuth();
   const { data: members = [] } = useOrgMembers();
-  const updateCandidateMutation = useUpdateCandidateMutation();
+  const createInterviewMutation = useCreateInterviewMutation();
   const updateStageMutation = useUpdateStageMutation();
 
   const [modalJobId, setModalJobId] = useState<string>("");
@@ -116,7 +115,9 @@ export function ScheduleInterviewModal({
 
     // 2. Check if candidate has existing interview schedule
     const candidateObj = candidateToUse || applications.find((a) => a.id === initialCandId);
-    const existing = candidateObj ? parseInterviewFromNotes(candidateObj.notes) : null;
+    const existing =
+      candidateObj?.interviews?.[candidateObj.interviews.length - 1] ||
+      (candidateObj ? parseInterviewFromNotes(candidateObj.notes) : null);
 
     if (existing) {
       setInterviewDate(initialDate || existing.date);
@@ -143,7 +144,9 @@ export function ScheduleInterviewModal({
   const handleCandidateChange = (candId: string) => {
     setModalCandidateId(candId);
     const candidate = applications.find((a) => a.id === candId);
-    const existing = candidate ? parseInterviewFromNotes(candidate.notes) : null;
+    const existing =
+      candidate?.interviews?.[candidate.interviews.length - 1] ||
+      (candidate ? parseInterviewFromNotes(candidate.notes) : null);
     if (existing) {
       setInterviewDate(existing.date);
       setInterviewTime(existing.time || "10:00");
@@ -184,15 +187,18 @@ export function ScheduleInterviewModal({
       notes: interviewNotes.trim(),
     };
 
-    const updatedNotes = stringifyInterviewToNotes(candidate.notes, interviewInfo);
-
     try {
-      // 1. Update candidate notes with interview metadata
-      await updateCandidateMutation.mutateAsync({
-        id: candidate.id,
-        data: {
-          notes: updatedNotes,
-        },
+      // 1. Create interview record in database
+      await createInterviewMutation.mutateAsync({
+        applicationId: candidate.id,
+        date: interviewDate,
+        time: interviewTime,
+        type: interviewType,
+        format: interviewFormat,
+        linkOrLocation: linkOrLocation.trim(),
+        interviewer: interviewerName.trim(),
+        notes: interviewNotes.trim() || undefined,
+        round: (candidate.interviews?.length || 0) + 1,
       });
 
       // 2. If candidate is still in APPLIED/SCREENING stage, advance to INTERVIEW stage
@@ -212,7 +218,7 @@ export function ScheduleInterviewModal({
     }
   };
 
-  const isSaving = updateCandidateMutation.isPending || updateStageMutation.isPending;
+  const isSaving = createInterviewMutation.isPending || updateStageMutation.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

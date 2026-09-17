@@ -270,6 +270,12 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                 }),
               })),
             },
+            Interview: {
+              all: vi.fn().mockResolvedValue([]),
+              where: vi.fn().mockImplementation(() => ({
+                all: vi.fn().mockResolvedValue([]),
+              })),
+            },
           },
         },
       },

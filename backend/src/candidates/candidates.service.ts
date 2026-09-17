@@ -106,6 +106,10 @@ export class CandidatesService {
       "id",
       "organizationId",
       "name",
+      "firstName",
+      "lastName",
+      "gender",
+      "dateOfBirth",
       "email",
       "phone",
       "notes",
@@ -153,6 +157,10 @@ export class CandidatesService {
       "id",
       "organizationId",
       "name",
+      "firstName",
+      "lastName",
+      "gender",
+      "dateOfBirth",
       "email",
       "phone",
       "notes",
@@ -289,9 +297,33 @@ export class CandidatesService {
       };
     }
 
+    let dateOfBirth: Date | null = null;
+    if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
+      const parsed = new Date(dto.dateOfBirth.trim());
+      if (!isNaN(parsed.getTime())) {
+        dateOfBirth = parsed;
+      }
+    }
+
+    let firstName = dto.firstName?.trim() || null;
+    let lastName = dto.lastName?.trim() || null;
+    if (!firstName && !lastName && dto.name) {
+      const parts = dto.name.trim().split(/\s+/);
+      if (parts.length > 1) {
+        firstName = parts[0];
+        lastName = parts.slice(1).join(" ");
+      } else {
+        firstName = parts[0] || null;
+      }
+    }
+
     const created = await this.prisma.db.orm.public.Candidate.create({
       organizationId: orgId,
       name: dto.name.trim(),
+      firstName,
+      lastName,
+      gender: dto.gender && dto.gender !== "Not specified" && dto.gender !== "—" ? dto.gender : null,
+      dateOfBirth,
       email,
       phone: dto.phone?.trim() || null,
       notes: dto.notes || null,
@@ -309,6 +341,19 @@ export class CandidatesService {
 
     const updatePayload: Record<string, any> = {};
     if (dto.name !== undefined) updatePayload.name = dto.name.trim();
+    if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName?.trim() || null;
+    if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName?.trim() || null;
+    if (dto.gender !== undefined) {
+      updatePayload.gender = dto.gender && dto.gender !== "Not specified" && dto.gender !== "—" ? dto.gender : null;
+    }
+    if (dto.dateOfBirth !== undefined) {
+      if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
+        const parsed = new Date(dto.dateOfBirth.trim());
+        updatePayload.dateOfBirth = !isNaN(parsed.getTime()) ? parsed : null;
+      } else {
+        updatePayload.dateOfBirth = null;
+      }
+    }
     if (dto.email !== undefined) updatePayload.email = dto.email.trim().toLowerCase();
     if (dto.phone !== undefined) updatePayload.phone = dto.phone?.trim() || null;
     if (dto.notes !== undefined) updatePayload.notes = dto.notes;

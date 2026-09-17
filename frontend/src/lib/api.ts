@@ -8,6 +8,9 @@ import type {
   User,
   InviteLink,
   UpdateCandidateInput,
+  Interview,
+  CreateInterviewInput,
+  UpdateInterviewInput,
 } from "../types";
 
 export const getApiBaseUrl = () => {
@@ -251,6 +254,37 @@ export const candidatesApi = {
     const encodedUrl = encodeURIComponent(url);
     const encodedName = encodeURIComponent(name);
     return `${baseUrl}/candidates/${id}/documents/download?url=${encodedUrl}&name=${encodedName}`;
+  },
+};
+
+export const interviewsApi = {
+  getAll: async (params?: {
+    organizationId?: string;
+    jobId?: string;
+    applicationId?: string;
+  }): Promise<Interview[]> => {
+    const response = await api.get<Interview[]>("/interviews", { params });
+    return response.data;
+  },
+
+  getById: async (id: string): Promise<Interview> => {
+    const response = await api.get<Interview>(`/interviews/${id}`);
+    return response.data;
+  },
+
+  create: async (data: CreateInterviewInput): Promise<Interview> => {
+    const response = await api.post<Interview>("/interviews", data);
+    return response.data;
+  },
+
+  update: async (id: string, data: UpdateInterviewInput): Promise<Interview> => {
+    const response = await api.patch<Interview>(`/interviews/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete(`/interviews/${id}`);
+    return response.data;
   },
 };
 

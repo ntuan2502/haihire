@@ -18,7 +18,6 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
   parseCandidateNotes,
-  buildCandidateNotes,
   normalizeDateForInput,
   isValidUuid,
 } from "@/lib/utils";
@@ -64,17 +63,19 @@ function EditCandidatePageContent() {
   useEffect(() => {
     if (candidate && !isInitialized) {
       const parsed = parseCandidateNotes(candidate.notes, candidate.name);
-      setFirstName(parsed.firstName);
-      setLastName(parsed.lastName);
-      setDisplayName(parsed.displayName);
+      setFirstName(candidate.firstName || parsed.firstName);
+      setLastName(candidate.lastName || parsed.lastName);
+      setDisplayName(candidate.name || parsed.displayName);
       setEmail(candidate.email || "");
       setPhone(candidate.phone || "");
 
-      if (parsed.gender && parsed.gender !== "—") {
-        setGender(parsed.gender);
+      const effGender = candidate.gender || parsed.gender;
+      if (effGender && effGender !== "—") {
+        setGender(effGender);
       }
-      if (parsed.dob && parsed.dob !== "—") {
-        setDateOfBirth(normalizeDateForInput(parsed.dob));
+      const effDob = candidate.dateOfBirth || parsed.dob;
+      if (effDob && effDob !== "—") {
+        setDateOfBirth(normalizeDateForInput(effDob));
       }
       setIsInitialized(true);
     }
@@ -105,24 +106,17 @@ function EditCandidatePageContent() {
         ? displayName.trim()
         : `${firstName.trim()} ${lastName.trim()}`.trim();
 
-      const parsedOld = parseCandidateNotes(candidate.notes, candidate.name);
-
-      const notes = buildCandidateNotes({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        displayName: displayName.trim() || undefined,
-        gender,
-        dob: dateOfBirth,
-        customNotes: parsedOld.customNotes,
-      });
-
       await updateCandidateDetailsMutation.mutateAsync({
         id: candidate.id,
         data: {
           name: effectiveDisplayName,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          gender: gender && gender !== "Not specified" && gender !== "—" ? gender : undefined,
+          dateOfBirth: dateOfBirth ? dateOfBirth : undefined,
           email: email.trim(),
           phone: phone.trim() || undefined,
-          notes: notes || undefined,
+          notes: candidate.notes || undefined,
         },
       });
 

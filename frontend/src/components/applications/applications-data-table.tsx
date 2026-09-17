@@ -38,9 +38,9 @@ import { DeleteApplicationModal } from "@/components/applications/delete-applica
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import {
-  parseAllInterviewsFromNotes,
   removeInterviewFromNotes,
   stringifyInterviewToNotes,
+  getInterviewsFromApplication,
 } from "@/lib/interviews";
 import {
   OverviewSectionsPopover,
@@ -53,6 +53,7 @@ import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
   useUpdateCandidateMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import {
   getInitials,
@@ -90,6 +91,7 @@ export function ApplicationsDataTable({
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [search, setSearch] = useState("");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -108,6 +110,40 @@ export function ApplicationsDataTable({
   const drawerOverviewBtnRef = useRef<HTMLButtonElement>(null);
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
+
+  // Get current selected application directly to ensure fresh state after updates
+  const currentApp = useMemo(() => {
+    if (!selectedApp) return null;
+    return (
+      initialApplications.find((a) => a.id === selectedApp.id) || selectedApp
+    );
+  }, [selectedApp, initialApplications]);
+
+  const allScheduledInterviews = useMemo(() => {
+    return getInterviewsFromApplication(currentApp);
+  }, [currentApp]);
+
+  const handleCancelInterview = async (interviewId?: string) => {
+    if (!currentApp) return;
+    try {
+      const targetId = interviewId || (currentApp.interviews && currentApp.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+      if (currentApp.notes && currentApp.notes.includes("Interview:")) {
+        const updatedNotes = removeInterviewFromNotes(currentApp.notes);
+        await updateCandidateMutation.mutateAsync({
+          id: currentApp.id,
+          data: {
+            notes: updatedNotes,
+          },
+        });
+        setSelectedApp((prev) => (prev ? { ...prev, notes: updatedNotes } : null));
+      }
+    } catch (err) {
+      console.error("Failed to cancel interview:", err);
+    }
+  };
 
   // Column Visibility Toggle State
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
@@ -234,32 +270,6 @@ export function ApplicationsDataTable({
     }
   };
 
-  const currentApp = useMemo(() => {
-    if (!selectedApp) return null;
-    return (
-      initialApplications.find((a) => a.id === selectedApp.id) || selectedApp
-    );
-  }, [selectedApp, initialApplications]);
-
-  const allScheduledInterviews = useMemo(() => {
-    return parseAllInterviewsFromNotes(currentApp?.notes);
-  }, [currentApp?.notes]);
-
-  const handleCancelInterview = async () => {
-    if (!currentApp) return;
-    try {
-      const updatedNotes = removeInterviewFromNotes(currentApp.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: currentApp.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
-      setSelectedApp((prev) => (prev ? { ...prev, notes: updatedNotes } : null));
-    } catch (err) {
-      console.error("Failed to cancel interview:", err);
-    }
-  };
 
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!currentApp) return;
@@ -1053,6 +1063,7 @@ export function ApplicationsDataTable({
                       {/* Interviews Card */}
                       {drawerOverviewSections.interviews && (
                         <CandidateInterviewsList
+                          application={currentApp}
                           notes={currentApp.notes}
                           onSchedule={() => setIsScheduleModalOpen(true)}
                           onCancelInterview={handleCancelInterview}
@@ -1172,6 +1183,7 @@ export function ApplicationsDataTable({
                   {/* Interviews Tab Content */}
                   {drawerTab === "interviews" && (
                     <CandidateInterviewsList
+                      application={currentApp}
                       notes={currentApp.notes}
                       onSchedule={() => setIsScheduleModalOpen(true)}
                       onCancelInterview={handleCancelInterview}

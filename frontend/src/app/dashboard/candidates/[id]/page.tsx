@@ -9,8 +9,11 @@ import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
   useAllApplications,
-  useUploadDocumentMutation,
-  useDeleteApplicationMutation,
+  useCandidates,
+  useCandidate,
+  useUploadCandidateDocumentMutation,
+  useDeleteCandidateMutation,
+  useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
   useUpdateCandidateMutation,
 } from "@/hooks/use-queries";
@@ -58,15 +61,22 @@ function CandidateDetailPageContent() {
   const { t } = useI18n();
   const candidateIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
+  // Strict UUID validation
+  const isCandidateIdValid = isValidUuid(candidateIdStr);
+  const { data: candidate, isLoading: candidateLoading } = useCandidate(
+    isCandidateIdValid ? candidateIdStr : null,
+  );
+  const { data: candidates = [] } = useCandidates(user?.organizationId);
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
   const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications();
+    useAllApplications(user?.organizationId);
 
-  const uploadDocumentMutation = useUploadDocumentMutation();
-  const deleteAppMutation = useDeleteApplicationMutation();
-  const deleteDocMutation = useDeleteDocumentMutation();
+  const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
+  const deleteCandidateMutation = useDeleteCandidateMutation();
+  const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
+  const deleteAppDocMutation = useDeleteDocumentMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
 
   const [activeTab, setActiveTab] = useState<"applications" | "documents">(
@@ -99,54 +109,66 @@ function CandidateDetailPageContent() {
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
 
-  const loading = jobsLoading || appsLoading;
+  const loading = candidateLoading || jobsLoading || appsLoading;
 
-  // Strict UUID validation — candidate URL MUST be a valid UUID
-  const isCandidateIdValid = isValidUuid(candidateIdStr);
-  const primaryApp = isCandidateIdValid
-    ? applications.find((a) => String(a.id) === String(candidateIdStr))
-    : undefined;
-
-  // Find all applications belonging to this candidate email/name
+  // Find all applications belonging to this candidate
   const candidateApps = useMemo(() => {
-    if (!primaryApp) return [];
+    if (!candidate) return [];
+    if (candidate.applications && candidate.applications.length > 0) {
+      return candidate.applications;
+    }
     return applications.filter(
       (a) =>
-        a.jobId &&
-        a.candidateEmail.toLowerCase() ===
-          primaryApp.candidateEmail.toLowerCase(),
+        a.candidateId === candidate.id ||
+        (a.candidateEmail &&
+          a.candidateEmail.toLowerCase() === candidate.email.toLowerCase()),
     );
-  }, [primaryApp, applications]);
+  }, [candidate, applications]);
 
   const filteredCandidateApps = useMemo(() => {
     if (stageFilter === "ALL") return candidateApps;
     return candidateApps.filter((a) => a.stage === stageFilter);
   }, [candidateApps, stageFilter]);
 
+  // Aggregate candidate documents + all CVs and documents from their applications
   const candidateDocuments = useMemo(() => {
-    if (!primaryApp) return [];
-    const allDocs: CandidateDocument[] = [];
-    const seenUrls = new Set<string>();
+    if (!candidate) return [];
+    if (candidate.allDocuments && candidate.allDocuments.length > 0) {
+      return candidate.allDocuments;
+    }
+    const directDocs = parseCandidateDocuments(candidate.notes, {
+      id: candidate.id,
+      resumeUrl: candidate.resumeUrl || "",
+      resumeFileName: candidate.resumeFileName || "Resume.pdf",
+      resumeFileSize: candidate.resumeFileSize,
+      resumeMimeType: candidate.resumeMimeType,
+      createdAt: candidate.createdAt,
+    });
+    const allDocs = [...directDocs];
+    const seenUrls = new Set(allDocs.map((d) => d.url).filter(Boolean));
 
-    for (const app of candidateApps.concat(primaryApp)) {
+    for (const app of candidateApps) {
       const appDocs = parseCandidateDocuments(app.notes, {
         id: app.id,
-        resumeUrl: app.resumeUrl,
-        resumeFileName: app.resumeFileName,
+        resumeUrl: app.resumeUrl || "",
+        resumeFileName: app.resumeFileName || "Application_Resume.pdf",
         resumeFileSize: app.resumeFileSize,
         resumeMimeType: app.resumeMimeType,
         createdAt: app.createdAt,
       });
-
       for (const d of appDocs) {
         if (d.url && !seenUrls.has(d.url)) {
           seenUrls.add(d.url);
-          allDocs.push(d);
+          allDocs.push({
+            ...d,
+            sourceApplicationId: app.id,
+            jobTitle: app.job?.title,
+          });
         }
       }
     }
     return allDocs;
-  }, [candidateApps, primaryApp]);
+  }, [candidate, candidateApps]);
 
   const filteredDocuments = useMemo(() => {
     if (!documentFilter || documentFilter === "All") return candidateDocuments;
@@ -156,14 +178,14 @@ function CandidateDetailPageContent() {
     );
   }, [candidateDocuments, documentFilter]);
 
-  const parsedNotes = parseCandidateNotes(primaryApp?.notes, primaryApp?.candidateName);
+  const parsedNotes = parseCandidateNotes(candidate?.notes, candidate?.name);
   const gender = parsedNotes.gender;
   const dob = parsedNotes.dob;
-  const candidateName = parsedNotes.effectiveName;
-  const candidateEmail = primaryApp?.candidateEmail || "—";
-  const candidatePhone = primaryApp?.candidatePhone || "";
-  const candidateCreated = formatDate(primaryApp?.createdAt);
-  const candidateUpdated = formatDate(primaryApp?.updatedAt || primaryApp?.createdAt);
+  const candidateName = candidate?.name || "Candidate";
+  const candidateEmail = candidate?.email || "—";
+  const candidatePhone = candidate?.phone || "";
+  const candidateCreated = formatDate(candidate?.createdAt);
+  const candidateUpdated = formatDate(candidate?.updatedAt || candidate?.createdAt);
 
   if (loading) {
     return (
@@ -172,7 +194,7 @@ function CandidateDetailPageContent() {
           activeTab="candidates"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
@@ -181,21 +203,21 @@ function CandidateDetailPageContent() {
     );
   }
 
-  if ((!isCandidateIdValid || !primaryApp) && !loading) {
+  if ((!isCandidateIdValid || !candidate) && !loading) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <Navbar
           activeTab="candidates"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
             <span className="text-lg font-black">404</span>
           </div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Candidate Not Found
+            {t("candidates.noCandidatesYet")}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {!isCandidateIdValid
@@ -208,7 +230,7 @@ function CandidateDetailPageContent() {
               variant="outline"
               className="text-xs font-semibold rounded-xl"
             >
-              Back to Candidates
+              {t("common.back")}: {t("candidates.title")}
             </Button>
           </div>
         </main>
@@ -219,12 +241,12 @@ function CandidateDetailPageContent() {
   const handleDocumentUpload = async (
     e: ChangeEvent<HTMLInputElement>,
   ) => {
-    if (e.target.files && e.target.files[0] && primaryApp) {
+    if (e.target.files && e.target.files[0] && candidate) {
       const file = e.target.files[0];
       try {
         setIsUploadingDoc(true);
-        await uploadDocumentMutation.mutateAsync({
-          id: primaryApp.id,
+        await uploadCandidateDocMutation.mutateAsync({
+          id: candidate.id,
           file,
           type: documentFilter,
         });
@@ -238,10 +260,10 @@ function CandidateDetailPageContent() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!primaryApp) return;
+    if (!candidate) return;
     try {
       setIsDeleting(true);
-      await deleteAppMutation.mutateAsync(primaryApp.id);
+      await deleteCandidateMutation.mutateAsync(candidate.id);
       setIsDeleteModalOpen(false);
       router.push("/dashboard/candidates");
     } catch (err) {
@@ -267,7 +289,9 @@ function CandidateDetailPageContent() {
     try {
       const targetUrl = appId
         ? `${apiUrl}/applications/${appId}/documents/download${queryString}`
-        : getDocumentUrl(url);
+        : candidate
+          ? `${apiUrl}/candidates/${candidate.id}/documents/download${queryString}`
+          : getDocumentUrl(url);
 
       const response = await fetch(targetUrl);
       if (!response.ok) throw new Error("Download request failed");
@@ -295,14 +319,22 @@ function CandidateDetailPageContent() {
   };
 
   const handleConfirmDeleteDoc = async () => {
-    if (!primaryApp || !docToDelete) return;
+    if (!candidate || !docToDelete) return;
     try {
       setIsDeletingDoc(true);
-      await deleteDocMutation.mutateAsync({
-        id: primaryApp.id,
-        documentId: docToDelete.id,
-        url: docToDelete.url,
-      });
+      if (docToDelete.sourceApplicationId) {
+        await deleteAppDocMutation.mutateAsync({
+          id: docToDelete.sourceApplicationId,
+          documentId: docToDelete.id,
+          url: docToDelete.url,
+        });
+      } else {
+        await deleteCandidateDocMutation.mutateAsync({
+          id: candidate.id,
+          documentId: docToDelete.id,
+          url: docToDelete.url,
+        });
+      }
       if (
         previewDoc?.id === docToDelete.id ||
         previewDoc?.url === docToDelete.url
@@ -324,7 +356,7 @@ function CandidateDetailPageContent() {
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Container */}
@@ -373,7 +405,7 @@ function CandidateDetailPageContent() {
                 type="button"
                 onClick={() =>
                   router.push(
-                    `/dashboard/candidates/${primaryApp?.id || candidateIdStr}/edit`,
+                    `/dashboard/candidates/${candidate?.id || candidateIdStr}/edit`,
                   )
                 }
                 className="h-8 px-3 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
@@ -629,7 +661,7 @@ function CandidateDetailPageContent() {
                         handleDownloadDoc(
                           previewDoc.url,
                           previewDoc.name,
-                          primaryApp?.id,
+                          previewDoc.sourceApplicationId,
                         )
                       }
                       className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -748,7 +780,7 @@ function CandidateDetailPageContent() {
                                 handleDownloadDoc(
                                   doc.url,
                                   doc.name,
-                                  primaryApp?.id,
+                                  doc.sourceApplicationId,
                                 )
                               }
                               className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -800,14 +832,15 @@ function CandidateDetailPageContent() {
         isOpen={applyModalOpen}
         onClose={() => setApplyModalOpen(false)}
         candidate={
-          primaryApp
+          candidate
             ? {
-                id: primaryApp.id,
-                name: primaryApp.candidateName,
-                email: primaryApp.candidateEmail,
-                phone: primaryApp.candidatePhone || undefined,
-                notes: primaryApp.notes || undefined,
-                rawApp: primaryApp,
+                id: candidate.id,
+                name: candidate.name,
+                email: candidate.email,
+                phone: candidate.phone || undefined,
+                notes: candidate.notes || undefined,
+                resumeUrl: candidate.resumeUrl,
+                resumeFileName: candidate.resumeFileName,
               }
             : null
         }
@@ -816,7 +849,7 @@ function CandidateDetailPageContent() {
       />
 
       {/* Delete Candidate Confirmation Modal matching screenshot */}
-      {primaryApp && (
+      {candidate && (
         <DeleteCandidateModal
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}

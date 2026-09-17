@@ -8,8 +8,9 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useAllApplications,
-  useUpdateCandidateMutation,
+  useCandidates,
+  useCandidate,
+  useUpdateCandidateDetailsMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,14 +39,12 @@ function EditCandidatePageContent() {
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: jobs = [] } = useJobs(user?.organizationId);
-  const { data: applications = [], isLoading: loadingApps } = useAllApplications();
-  const updateCandidateMutation = useUpdateCandidateMutation();
+  const { data: candidates = [] } = useCandidates(user?.organizationId);
+  const { data: candidate, isLoading: candidateLoading } = useCandidate(rawId);
+  const updateCandidateDetailsMutation = useUpdateCandidateDetailsMutation();
 
   // Strict UUID validation — edit candidate URL MUST be a valid UUID
   const isCandidateIdValid = isValidUuid(rawId);
-  const primaryApp = isCandidateIdValid
-    ? applications.find((a) => String(a.id) === String(rawId))
-    : undefined;
 
   // Form States
   const [firstName, setFirstName] = useState("");
@@ -63,13 +62,13 @@ function EditCandidatePageContent() {
 
   // Pre-fill form when candidate data is loaded
   useEffect(() => {
-    if (primaryApp && !isInitialized) {
-      const parsed = parseCandidateNotes(primaryApp.notes, primaryApp.candidateName);
+    if (candidate && !isInitialized) {
+      const parsed = parseCandidateNotes(candidate.notes, candidate.name);
       setFirstName(parsed.firstName);
       setLastName(parsed.lastName);
       setDisplayName(parsed.displayName);
-      setEmail(primaryApp.candidateEmail || "");
-      setPhone(primaryApp.candidatePhone || "");
+      setEmail(candidate.email || "");
+      setPhone(candidate.phone || "");
 
       if (parsed.gender && parsed.gender !== "—") {
         setGender(parsed.gender);
@@ -79,11 +78,11 @@ function EditCandidatePageContent() {
       }
       setIsInitialized(true);
     }
-  }, [primaryApp, isInitialized]);
+  }, [candidate, isInitialized]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!primaryApp) return;
+    if (!candidate) return;
 
     setErrorMsg("");
 
@@ -106,7 +105,7 @@ function EditCandidatePageContent() {
         ? displayName.trim()
         : `${firstName.trim()} ${lastName.trim()}`.trim();
 
-      const parsedOld = parseCandidateNotes(primaryApp.notes, primaryApp.candidateName);
+      const parsedOld = parseCandidateNotes(candidate.notes, candidate.name);
 
       const notes = buildCandidateNotes({
         firstName: firstName.trim(),
@@ -117,18 +116,18 @@ function EditCandidatePageContent() {
         customNotes: parsedOld.customNotes,
       });
 
-      await updateCandidateMutation.mutateAsync({
-        id: primaryApp.id,
+      await updateCandidateDetailsMutation.mutateAsync({
+        id: candidate.id,
         data: {
-          candidateName: effectiveDisplayName,
-          candidateEmail: email.trim(),
-          candidatePhone: phone.trim() || undefined,
+          name: effectiveDisplayName,
+          email: email.trim(),
+          phone: phone.trim() || undefined,
           notes: notes || undefined,
         },
       });
 
       // Navigate back to Candidate Detail using UUID
-      router.push(`/dashboard/candidates/${primaryApp.id}`);
+      router.push(`/dashboard/candidates/${candidate.id}`);
     } catch (err: unknown) {
       console.error("Failed to update candidate:", err);
       const maybeAxios = err as { response?: { data?: { message?: string } } };
@@ -141,14 +140,14 @@ function EditCandidatePageContent() {
     }
   };
 
-  if (loadingApps && !isInitialized && isCandidateIdValid) {
+  if (candidateLoading && !isInitialized && isCandidateIdValid) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <Navbar
           activeTab="candidates"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
@@ -157,14 +156,14 @@ function EditCandidatePageContent() {
     );
   }
 
-  if ((!isCandidateIdValid || !primaryApp) && !loadingApps) {
+  if ((!isCandidateIdValid || !candidate) && !candidateLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
         <Navbar
           activeTab="candidates"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
@@ -199,7 +198,7 @@ function EditCandidatePageContent() {
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Content Form */}
@@ -208,8 +207,8 @@ function EditCandidatePageContent() {
         <div>
           <Link
             href={
-              primaryApp
-                ? `/dashboard/candidates/${primaryApp.id}`
+              candidate
+                ? `/dashboard/candidates/${candidate.id}`
                 : "/dashboard/candidates"
             }
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -361,8 +360,8 @@ function EditCandidatePageContent() {
               disabled={isSubmitting}
               onClick={() =>
                 router.push(
-                  primaryApp
-                    ? `/dashboard/candidates/${primaryApp.id}`
+                  candidate
+                    ? `/dashboard/candidates/${candidate.id}`
                     : "/dashboard/candidates",
                 )
               }

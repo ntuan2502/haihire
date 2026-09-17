@@ -624,12 +624,23 @@ export async function runSeed(): Promise<void> {
     REJECTED: 0,
   };
 
+  const candidatesToInsert: Array<{
+    id: string;
+    organizationId: string;
+    name: string;
+    email: string;
+    phone: string;
+    notes: string;
+    resumeUrl: string;
+    resumeFileName: string;
+    resumeFileSize: number;
+    resumeMimeType: string;
+  }> = [];
+
   const applicationsToInsert: Array<{
     id: string;
-    jobId: string | null;
-    candidateName: string;
-    candidateEmail: string;
-    candidatePhone: string;
+    candidateId: string;
+    jobId: string;
     stage: (typeof STAGES)[number];
     resumeUrl: string;
     resumeFileName: string;
@@ -649,27 +660,24 @@ export async function runSeed(): Promise<void> {
     const fileName = `CV_${candidate.name.replace(/\s+/g, "_")}.pdf`;
     const resumeUrl = `/ats-resumes/${fileName}`;
     const resumeFileSize = Math.floor(500000 + Math.random() * 1500000); // 500KB - 2MB
+    const candidateId = crypto.randomUUID();
+
+    candidatesToInsert.push({
+      id: candidateId,
+      organizationId: adminOrgId,
+      name: candidate.name,
+      email: candidate.email,
+      phone: candidate.phone,
+      notes: `Ứng viên tiềm năng | Match Score: ${68 + (candidate.candidateIndex % 25)}%`,
+      resumeUrl,
+      resumeFileName: fileName,
+      resumeFileSize,
+      resumeMimeType: "application/pdf",
+    });
 
     if (jobCount === 0) {
-      // Ứng viên chưa thuộc job nào (Talent Pool)
+      // Ứng viên chưa thuộc job nào (Talent Pool) — lưu ở Candidate, không có Application
       stageStats.APPLIED++;
-      const score = 68 + (candidate.candidateIndex % 25);
-      const notes = `Hồ sơ ứng viên tiềm năng trong Talent Pool (chưa ứng tuyển vị trí cụ thể). Match Score: ${score}% | Sẵn sàng tiếp nhận cơ hội việc làm mới.`;
-
-      applicationsToInsert.push({
-        id: crypto.randomUUID(),
-        jobId: null,
-        candidateName: candidate.name,
-        candidateEmail: candidate.email,
-        candidatePhone: candidate.phone,
-        stage: "APPLIED",
-        resumeUrl,
-        resumeFileName: fileName,
-        resumeFileSize,
-        resumeMimeType: "application/pdf",
-        notes,
-        orderIndex: 0,
-      });
     } else {
       // Ứng viên ứng tuyển từ 1-6 jobs khác nhau
       const shuffledJobIds = [...createdJobIds].sort(() => 0.5 - Math.random());
@@ -747,10 +755,8 @@ export async function runSeed(): Promise<void> {
 
         applicationsToInsert.push({
           id: crypto.randomUUID(),
+          candidateId,
           jobId,
-          candidateName: candidate.name,
-          candidateEmail: candidate.email,
-          candidatePhone: candidate.phone,
           stage,
           resumeUrl,
           resumeFileName: fileName,
@@ -763,10 +769,22 @@ export async function runSeed(): Promise<void> {
     }
   }
 
-  console.log(`\n⏳ Đang lưu ${applicationsToInsert.length} bản ghi ứng tuyển của 200 ứng viên vào cơ sở dữ liệu (xử lý theo lô)...`);
-
-  // Batch insert in chunks of 50 for fast execution
+  console.log(`\n⏳ Đang lưu ${candidatesToInsert.length} ứng viên vào cơ sở dữ liệu...`);
   const BATCH_SIZE = 50;
+  for (let b = 0; b < candidatesToInsert.length; b += BATCH_SIZE) {
+    const chunk = candidatesToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((cand) =>
+        db.orm.public.Candidate.upsert({
+          create: cand,
+          update: {},
+          conflictOn: { id: cand.id },
+        }),
+      ),
+    );
+  }
+
+  console.log(`\n⏳ Đang lưu ${applicationsToInsert.length} bản ghi ứng tuyển vào cơ sở dữ liệu (xử lý theo lô)...`);
   for (let b = 0; b < applicationsToInsert.length; b += BATCH_SIZE) {
     const chunk = applicationsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(

@@ -8,6 +8,10 @@
       "model": "Application",
       "namespace": "public"
     },
+    "candidate": {
+      "model": "Candidate",
+      "namespace": "public"
+    },
     "inviteLink": {
       "model": "InviteLink",
       "namespace": "public"
@@ -125,22 +129,8 @@
         "models": {
           "Application": {
             "fields": {
-              "candidateEmail": {
+              "candidateId": {
                 "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "candidateName": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "candidatePhone": {
-                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -161,7 +151,7 @@
                 }
               },
               "jobId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -182,7 +172,7 @@
                 }
               },
               "resumeFileName": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -203,7 +193,7 @@
                 }
               },
               "resumeUrl": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -231,6 +221,21 @@
               }
             },
             "relations": {
+              "candidate": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "candidateId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Candidate",
+                  "namespace": "public"
+                }
+              },
               "job": {
                 "cardinality": "N:1",
                 "on": {
@@ -249,14 +254,8 @@
             },
             "storage": {
               "fields": {
-                "candidateEmail": {
-                  "column": "candidateEmail"
-                },
-                "candidateName": {
-                  "column": "candidateName"
-                },
-                "candidatePhone": {
-                  "column": "candidatePhone"
+                "candidateId": {
+                  "column": "candidateId"
                 },
                 "createdAt": {
                   "column": "createdAt"
@@ -294,6 +293,168 @@
               },
               "namespaceId": "public",
               "table": "application"
+            }
+          },
+          "Candidate": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "notes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "phone": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "resumeFileName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "resumeFileSize": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "resumeMimeType": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "resumeUrl": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "applications": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "candidateId"
+                  ]
+                },
+                "to": {
+                  "model": "Application",
+                  "namespace": "public"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "notes": {
+                  "column": "notes"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "phone": {
+                  "column": "phone"
+                },
+                "resumeFileName": {
+                  "column": "resumeFileName"
+                },
+                "resumeFileSize": {
+                  "column": "resumeFileSize"
+                },
+                "resumeMimeType": {
+                  "column": "resumeMimeType"
+                },
+                "resumeUrl": {
+                  "column": "resumeUrl"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "candidate"
             }
           },
           "InviteLink": {
@@ -723,6 +884,21 @@
               }
             },
             "relations": {
+              "candidates": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "Candidate",
+                  "namespace": "public"
+                }
+              },
               "inviteLinks": {
                 "cardinality": "1:N",
                 "on": {
@@ -1103,20 +1279,10 @@
                 }
               ],
               "columns": {
-                "candidateEmail": {
+                "candidateId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
-                },
-                "candidateName": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
-                "candidatePhone": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": true
                 },
                 "createdAt": {
                   "codecId": "pg/timestamptz@1",
@@ -1135,7 +1301,7 @@
                 "jobId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "notes": {
                   "codecId": "pg/text@1",
@@ -1154,7 +1320,7 @@
                 "resumeFileName": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "resumeFileSize": {
                   "codecId": "pg/int4@1",
@@ -1173,7 +1339,7 @@
                 "resumeUrl": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "stage": {
                   "codecId": "pg/text@1",
@@ -1200,6 +1366,22 @@
                 {
                   "source": {
                     "columns": [
+                      "candidateId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "application"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "candidate"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
                       "jobId"
                     ],
                     "namespaceId": "public",
@@ -1217,6 +1399,14 @@
               "indexes": [
                 {
                   "columns": [
+                    "candidateId"
+                  ],
+                  "name": "application_candidateId_idx_462b5869",
+                  "prefix": "application_candidateId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "jobId"
                   ],
                   "name": "application_jobId_idx_623c8f77",
@@ -1229,7 +1419,127 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "candidateId",
+                    "jobId"
+                  ]
+                }
+              ]
+            },
+            "candidate": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "notes": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "phone": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "resumeFileName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "resumeFileSize": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "resumeMimeType": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "application/pdf"
+                  },
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "resumeUrl": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "candidate"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "candidate_organizationId_idx_2e17ef41",
+                  "prefix": "candidate_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "email"
+                  ]
+                }
+              ]
             },
             "inviteLink": {
               "columns": {
@@ -1868,10 +2178,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c8888a317bd7d9f036795f3974f5b7b1e9e23f81fb4b74cf22f9e07f2eb624cf"
+    "storageHash": "81cf65b09ae8f995c945734c43f66b1e3a7b7aa5db2f79793da32f189ddb70d0"
   },
   "execution": {
-    "executionHash": "30417b3721b37bc06c1112c84c970c8b6545b5ee31ff44c7e6b000567548f1bf",
+    "executionHash": "e673d2349423c3b9109935436bfc6acf19ebf59df08f0ae1526314dc246f89a7",
     "mutations": {
       "defaults": [
         {
@@ -1898,6 +2208,32 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "application"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "candidate"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "candidate"
           }
         },
         {

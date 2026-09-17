@@ -133,10 +133,8 @@ export class JobsService {
 
     const applications = await this.prisma.db.orm.public.Application.select(
       "id",
+      "candidateId",
       "jobId",
-      "candidateName",
-      "candidateEmail",
-      "candidatePhone",
       "stage",
       "resumeUrl",
       "resumeFileName",
@@ -149,6 +147,29 @@ export class JobsService {
     )
       .where((a) => a.jobId.eq(id))
       .all();
+
+    const candidates = await this.prisma.db.orm.public.Candidate.select(
+      "id",
+      "name",
+      "email",
+      "phone",
+      "resumeUrl",
+      "resumeFileName",
+    ).all();
+    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+
+    const populatedApps = applications.map((a) => {
+      const candidate = candidateMap.get(a.candidateId);
+      return {
+        ...a,
+        candidate,
+        candidateName: candidate?.name || "Unknown",
+        candidateEmail: candidate?.email || "",
+        candidatePhone: candidate?.phone || null,
+        resumeUrl: a.resumeUrl || candidate?.resumeUrl || "",
+        resumeFileName: a.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+      };
+    });
 
     let organization = null;
     if (job.organizationId) {
@@ -164,8 +185,8 @@ export class JobsService {
     return {
       ...job,
       organization,
-      applications,
-      applicationsCount: applications.length,
+      applications: populatedApps,
+      applicationsCount: populatedApps.length,
     };
   }
 

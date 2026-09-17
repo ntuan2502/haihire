@@ -1,18 +1,21 @@
-import { Type } from "class-transformer";
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class CreateApplicationDto {
   @IsString()
-  @IsOptional()
-  jobId?: string;
+  @IsNotEmpty()
+  jobId: string;
 
   @IsString()
-  @IsNotEmpty()
-  candidateName: string;
+  @IsOptional()
+  candidateId?: string;
+
+  @IsString()
+  @IsOptional()
+  candidateName?: string;
 
   @IsEmail()
-  @IsNotEmpty()
-  candidateEmail: string;
+  @IsOptional()
+  candidateEmail?: string;
 
   @IsString()
   @IsOptional()

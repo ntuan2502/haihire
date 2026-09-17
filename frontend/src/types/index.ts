@@ -85,11 +85,33 @@ export interface CandidateDocument {
   mimeType?: string | null;
   type?: string;
   createdAt: string;
+  sourceApplicationId?: string;
+  jobTitle?: string;
+}
+
+export interface Candidate {
+  id: string;
+  organizationId: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  notes?: string | null;
+  resumeUrl?: string | null;
+  resumeFileName?: string | null;
+  resumeFileSize?: number | null;
+  resumeMimeType?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  applicationsCount?: number;
+  applications?: Application[];
+  allDocuments?: CandidateDocument[];
 }
 
 export interface Application {
   id: string;
-  jobId?: string | null;
+  candidateId: string;
+  jobId: string;
+  candidate?: Candidate | null;
   candidateName: string;
   candidateEmail: string;
   candidatePhone?: string | null;
@@ -122,11 +144,31 @@ export interface CreateJobInput {
   createdById?: string | null;
 }
 
+export interface CreateCandidateInput {
+  name: string;
+  email: string;
+  phone?: string;
+  notes?: string;
+  resume?: File;
+  organizationId?: string;
+}
+
+export interface UpdateCandidateInput {
+  name?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  resumeUrl?: string;
+  resumeFileName?: string;
+}
+
 export interface CreateApplicationInput {
-  jobId?: string | null;
-  candidateName: string;
-  candidateEmail: string;
+  jobId: string;
+  candidateId?: string;
+  candidateName?: string;
+  candidateEmail?: string;
   candidatePhone?: string;
   notes?: string;
   resume?: File;
 }
+

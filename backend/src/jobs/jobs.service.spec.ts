@@ -150,12 +150,25 @@ describe("JobsService - Multi-Tenant Job Management", () => {
             },
             Organization: {
               select: vi.fn().mockImplementation(() => ({
+                all: vi.fn().mockResolvedValue([
+                  { id: "org-1", name: "Acme Corp", slug: "acme-corp" },
+                  { id: "org-2", name: "Beta Corp", slug: "beta-corp" },
+                ]),
                 where: vi.fn().mockImplementation(() => ({
                   first: vi.fn().mockResolvedValue({
                     id: "org-1",
                     name: "Acme Corp",
                     slug: "acme-corp",
                   }),
+                })),
+              })),
+            },
+            Candidate: {
+              select: vi.fn().mockImplementation(() => ({
+                all: vi.fn().mockResolvedValue([]),
+                where: vi.fn().mockImplementation(() => ({
+                  all: vi.fn().mockResolvedValue([]),
+                  first: vi.fn().mockResolvedValue(null),
                 })),
               })),
             },

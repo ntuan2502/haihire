@@ -12,7 +12,9 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import {
   useJobs,
   useAllApplications,
-  useUploadDocumentMutation,
+  useCandidates,
+  useUploadCandidateDocumentMutation,
+  useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
   useUpdateCandidateMutation,
 } from "@/hooks/use-queries";
@@ -53,7 +55,6 @@ import {
   parseCandidateNotes,
   parseCandidateDocuments,
   fixUtf8String,
-  aggregateCandidates,
   type CandidateItem,
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
@@ -73,9 +74,14 @@ function CandidatesPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
+  const { data: candidates = [], isLoading: candidatesLoading } =
+    useCandidates(user?.organizationId);
   const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications();
-  const uploadDocumentMutation = useUploadDocumentMutation();
+    useAllApplications(user?.organizationId);
+  const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
+  const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
+  const deleteAppDocMutation = useDeleteDocumentMutation();
+  const updateCandidateMutation = useUpdateCandidateMutation();
 
   const [search, setSearch] = useState("");
 
@@ -98,8 +104,6 @@ function CandidatesPageContent() {
     useState<CandidateDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const drawerDocInputRef = useRef<HTMLInputElement>(null);
-  const deleteDocMutation = useDeleteDocumentMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
 
   const handleCancelInterview = async (targetApp: Application) => {
     try {
@@ -110,16 +114,6 @@ function CandidatesPageContent() {
           notes: updatedNotes,
         },
       });
-      setSelectedCandidate((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          rawApp:
-            prev.rawApp.id === targetApp.id
-              ? { ...prev.rawApp, notes: updatedNotes }
-              : prev.rawApp,
-        };
-      });
     } catch (err) {
       console.error("Failed to cancel interview in drawer:", err);
     }
@@ -127,15 +121,49 @@ function CandidatesPageContent() {
 
   const drawerCandidateDocuments = useMemo(() => {
     if (!selectedCandidate) return [];
-    return parseCandidateDocuments(selectedCandidate.rawApp.notes, {
-      id: selectedCandidate.rawApp.id,
-      resumeUrl: selectedCandidate.rawApp.resumeUrl,
-      resumeFileName: selectedCandidate.rawApp.resumeFileName,
-      resumeFileSize: selectedCandidate.rawApp.resumeFileSize,
-      resumeMimeType: selectedCandidate.rawApp.resumeMimeType,
-      createdAt: selectedCandidate.rawApp.createdAt,
+    const directDocs = parseCandidateDocuments(selectedCandidate.notes, {
+      id: selectedCandidate.id,
+      resumeUrl: selectedCandidate.resumeUrl || "",
+      resumeFileName: selectedCandidate.resumeFileName || "Resume.pdf",
+      resumeFileSize: selectedCandidate.resumeFileSize,
+      resumeMimeType: selectedCandidate.resumeMimeType,
+      createdAt: selectedCandidate.createdAt,
     });
-  }, [selectedCandidate]);
+    const allDocs = [...directDocs];
+    const seenUrls = new Set(allDocs.map((d) => d.url).filter(Boolean));
+
+    // Also include CVs and documents from all applications of this candidate
+    const candidateApps = applications.filter(
+      (a) =>
+        a.candidateId === selectedCandidate.id ||
+        (a.candidateEmail &&
+          a.candidateEmail.toLowerCase() ===
+            selectedCandidate.email.toLowerCase()),
+    );
+
+    for (const app of candidateApps) {
+      const appDocs = parseCandidateDocuments(app.notes, {
+        id: app.id,
+        resumeUrl: app.resumeUrl || "",
+        resumeFileName: app.resumeFileName || "Application_Resume.pdf",
+        resumeFileSize: app.resumeFileSize,
+        resumeMimeType: app.resumeMimeType,
+        createdAt: app.createdAt,
+      });
+      for (const doc of appDocs) {
+        if (doc.url && !seenUrls.has(doc.url)) {
+          seenUrls.add(doc.url);
+          allDocs.push({
+            ...doc,
+            sourceApplicationId: app.id,
+            jobTitle: app.job?.title,
+          });
+        }
+      }
+    }
+
+    return allDocs;
+  }, [selectedCandidate, applications]);
 
   const filteredDrawerDocuments = useMemo(() => {
     if (!drawerDocFilter || drawerDocFilter === "All")
@@ -193,19 +221,19 @@ function CandidatesPageContent() {
     if (!selectedCandidate || !drawerDocToDelete) return;
     try {
       setIsDeletingDoc(true);
-      const updated = await deleteDocMutation.mutateAsync({
-        id: selectedCandidate.rawApp.id,
-        documentId: drawerDocToDelete.id,
-        url: drawerDocToDelete.url,
-      });
-      setSelectedCandidate((prev) =>
-        prev
-          ? {
-              ...prev,
-              rawApp: updated,
-            }
-          : null,
-      );
+      if (drawerDocToDelete.sourceApplicationId) {
+        await deleteAppDocMutation.mutateAsync({
+          id: drawerDocToDelete.sourceApplicationId,
+          documentId: drawerDocToDelete.id,
+          url: drawerDocToDelete.url,
+        });
+      } else {
+        await deleteCandidateDocMutation.mutateAsync({
+          id: selectedCandidate.id,
+          documentId: drawerDocToDelete.id,
+          url: drawerDocToDelete.url,
+        });
+      }
       if (
         drawerPreviewDoc?.id === drawerDocToDelete.id ||
         drawerPreviewDoc?.url === drawerDocToDelete.url
@@ -265,13 +293,26 @@ function CandidatesPageContent() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(20);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const loading = jobsLoading || appsLoading;
+  const loading = jobsLoading || candidatesLoading || appsLoading;
 
-  // Aggregate Candidates from Applications using shared utility
-  const candidateRows: CandidateItem[] = useMemo(
-    () => aggregateCandidates(applications),
-    [applications],
-  );
+  // Real candidates from Candidate database
+  const candidateRows: CandidateItem[] = useMemo(() => {
+    return candidates.map((cand) => ({
+      id: cand.id,
+      name: cand.name,
+      email: cand.email,
+      phone: cand.phone || "—",
+      applicationsCount: cand.applicationsCount ?? (cand.applications?.length ?? 0),
+      createdAt: cand.createdAt,
+      updatedAt: cand.updatedAt,
+      notes: cand.notes || "",
+      resumeUrl: cand.resumeUrl,
+      resumeFileName: cand.resumeFileName,
+      resumeFileSize: cand.resumeFileSize,
+      resumeMimeType: cand.resumeMimeType,
+      candidate: cand,
+    }));
+  }, [candidates]);
 
   // Filter & Sort
   const filteredCandidates = useMemo(() => {
@@ -329,16 +370,14 @@ function CandidatesPageContent() {
     }
   };
 
-
-
-  // Find all applications of the selected candidate in drawer
   const selectedCandidateApps = useMemo(() => {
     if (!selectedCandidate) return [];
     return applications.filter(
       (a) =>
-        a.jobId &&
-        a.candidateEmail.toLowerCase() ===
-        selectedCandidate.email.toLowerCase(),
+        a.candidateId === selectedCandidate.id ||
+        (a.candidateEmail &&
+          a.candidateEmail.toLowerCase() ===
+            selectedCandidate.email.toLowerCase()),
     );
   }, [selectedCandidate, applications]);
 
@@ -369,7 +408,7 @@ function CandidatesPageContent() {
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Content */}
@@ -1111,7 +1150,7 @@ function CandidatesPageContent() {
                                 handleDownloadDoc(
                                   drawerPreviewDoc.url,
                                   drawerPreviewDoc.name,
-                                  selectedCandidate.rawApp.id,
+                                  drawerPreviewDoc.sourceApplicationId,
                                 )
                               }
                               className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -1185,20 +1224,11 @@ function CandidatesPageContent() {
                                       const file = e.target.files[0];
                                       try {
                                         setIsUploadingDrawerDoc(true);
-                                        const updated =
-                                          await uploadDocumentMutation.mutateAsync({
-                                            id: selectedCandidate.rawApp.id,
-                                            file,
-                                            type: drawerDocFilter,
-                                          });
-                                        setSelectedCandidate((prev) =>
-                                          prev
-                                            ? {
-                                                ...prev,
-                                                rawApp: updated,
-                                              }
-                                            : null,
-                                        );
+                                        await uploadCandidateDocMutation.mutateAsync({
+                                          id: selectedCandidate.id,
+                                          file,
+                                          type: drawerDocFilter,
+                                        });
                                       } catch (err) {
                                         console.error(
                                           "Failed to upload document in drawer:",
@@ -1268,7 +1298,7 @@ function CandidatesPageContent() {
                                         handleDownloadDoc(
                                           doc.url,
                                           doc.name,
-                                          selectedCandidate.rawApp.id,
+                                          doc.sourceApplicationId,
                                         )
                                       }
                                       className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"

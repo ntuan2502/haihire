@@ -3,6 +3,7 @@
 ## Project
 - [project] All memory files must be written in English only → project-conventions.md
 - [project] Always create a new dedicated branch for major code changes → project-conventions.md
+- [project] Commit message format: Conventional Commits with scope — `type(scope): description`, English, lowercase, no trailing period → project-conventions.md
 - [project] AG Kit only supports Gemini CLI and Google Antigravity (not other AI coding tools) → project-conventions.md
 - [project] Component metadata uses SemVer while toolkit releases use CalVer → tech-decisions.md
 - [project] Prisma 8 Contract-first architecture, scaffolding, and CLI conventions → tech-decisions.md

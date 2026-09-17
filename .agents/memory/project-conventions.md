@@ -1,7 +1,7 @@
 ---
 type: project
 created: 2026-05-25
-updated: 2026-09-17
+updated: 2026-09-17T11:22
 ---
 
 # Project Conventions
@@ -13,6 +13,11 @@ updated: 2026-09-17
 - Always create a new dedicated branch for major code changes.
 - Branch name format should follow: `feature/[task-slug]` or `fix/[bug-slug]`.
 - When committing, ALWAYS use `git add .` (do NOT add individual files separately). Run `git add .` as a separate command first, then `git commit -m "..."` as a separate command. Never chain them together.
+- **Commit message format: Conventional Commits with scope** → `type(scope): description`.
+  - Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`.
+  - Scope is mandatory. Use the affected module/area, e.g. `i18n`, `navigation`, `jobs`, `ui`, `auth`, `api`.
+  - Examples: `feat(i18n): add missing Vietnamese keys`, `refactor(jobs): remove legacy popup`, `fix(auth): handle token expiry`.
+  - Message is in English, lowercase, no period at the end.
 - Local commit only, do not `git push` unless explicitly requested.
 
 ## Supported AI platforms (AG Kit)

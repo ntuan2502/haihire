@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'0960f53cfe638a1251757fc285c694deaa521505a77b39c800ce38b1e6cc8e45'>;
+  StorageHashBase<'6922c7eed1414eddc6ee0159e9ec088ce8792af3b361a4da9acce801df5e4699'>;
 export type ExecutionHash =
   ExecutionHashBase<'e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2'>;
 export type ProfileHash =
@@ -215,7 +215,7 @@ export type FieldOutputTypes = {
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly firstName: CodecTypes['pg/text@1']['output'] | null;
       readonly lastName: CodecTypes['pg/text@1']['output'] | null;
-      readonly gender: CodecTypes['pg/text@1']['output'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
       readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['output'] | null;
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly phone: CodecTypes['pg/text@1']['output'] | null;
@@ -233,7 +233,7 @@ export type FieldOutputTypes = {
       readonly date: CodecTypes['pg/text@1']['output'];
       readonly time: CodecTypes['pg/text@1']['output'];
       readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
-      readonly format: CodecTypes['pg/text@1']['output'];
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
       readonly linkOrLocation: CodecTypes['pg/text@1']['output'];
       readonly interviewer: CodecTypes['pg/text@1']['output'];
       readonly round: CodecTypes['pg/int4@1']['output'];
@@ -245,11 +245,11 @@ export type FieldOutputTypes = {
     readonly InviteLink: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly token: CodecTypes['pg/text@1']['output'];
-      readonly role: CodecTypes['pg/text@1']['output'];
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly expiresAt: CodecTypes['pg/timestamptz@1']['output'] | null;
       readonly maxUses: CodecTypes['pg/int4@1']['output'] | null;
       readonly usesCount: CodecTypes['pg/int4@1']['output'];
-      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly organizationId: CodecTypes['pg/text@1']['output'];
       readonly createdById: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -261,8 +261,9 @@ export type FieldOutputTypes = {
       readonly department: CodecTypes['pg/text@1']['output'];
       readonly location: CodecTypes['pg/text@1']['output'];
       readonly postalCode: CodecTypes['pg/text@1']['output'] | null;
-      readonly experienceLevel: CodecTypes['pg/text@1']['output'] | null;
-      readonly workplace: CodecTypes['pg/text@1']['output'] | null;
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly description: CodecTypes['pg/text@1']['output'];
       readonly requirements: CodecTypes['pg/text@1']['output'] | null;
@@ -325,7 +326,7 @@ export type FieldInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly firstName: CodecTypes['pg/text@1']['input'] | null;
       readonly lastName: CodecTypes['pg/text@1']['input'] | null;
-      readonly gender: CodecTypes['pg/text@1']['input'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
       readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['input'] | null;
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly phone: CodecTypes['pg/text@1']['input'] | null;
@@ -343,7 +344,7 @@ export type FieldInputTypes = {
       readonly date: CodecTypes['pg/text@1']['input'];
       readonly time: CodecTypes['pg/text@1']['input'];
       readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
-      readonly format: CodecTypes['pg/text@1']['input'];
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
       readonly linkOrLocation: CodecTypes['pg/text@1']['input'];
       readonly interviewer: CodecTypes['pg/text@1']['input'];
       readonly round: CodecTypes['pg/int4@1']['input'];
@@ -355,11 +356,11 @@ export type FieldInputTypes = {
     readonly InviteLink: {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly token: CodecTypes['pg/text@1']['input'];
-      readonly role: CodecTypes['pg/text@1']['input'];
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly expiresAt: CodecTypes['pg/timestamptz@1']['input'] | null;
       readonly maxUses: CodecTypes['pg/int4@1']['input'] | null;
       readonly usesCount: CodecTypes['pg/int4@1']['input'];
-      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly organizationId: CodecTypes['pg/text@1']['input'];
       readonly createdById: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -371,8 +372,9 @@ export type FieldInputTypes = {
       readonly department: CodecTypes['pg/text@1']['input'];
       readonly location: CodecTypes['pg/text@1']['input'];
       readonly postalCode: CodecTypes['pg/text@1']['input'] | null;
-      readonly experienceLevel: CodecTypes['pg/text@1']['input'] | null;
-      readonly workplace: CodecTypes['pg/text@1']['input'] | null;
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly description: CodecTypes['pg/text@1']['input'];
       readonly requirements: CodecTypes['pg/text@1']['input'] | null;
@@ -434,7 +436,7 @@ export type StorageColumnTypes = {
       readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['output'] | null;
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly firstName: CodecTypes['pg/text@1']['output'] | null;
-      readonly gender: CodecTypes['pg/text@1']['output'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly lastName: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
@@ -451,7 +453,7 @@ export type StorageColumnTypes = {
       readonly applicationId: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly date: CodecTypes['pg/text@1']['output'];
-      readonly format: CodecTypes['pg/text@1']['output'];
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly interviewer: CodecTypes['pg/text@1']['output'];
       readonly linkOrLocation: CodecTypes['pg/text@1']['output'];
@@ -469,8 +471,8 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly maxUses: CodecTypes['pg/int4@1']['output'] | null;
       readonly organizationId: CodecTypes['pg/text@1']['output'];
-      readonly role: CodecTypes['pg/text@1']['output'];
-      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly role: 'ADMIN' | 'MEMBER';
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly token: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly usesCount: CodecTypes['pg/int4@1']['output'];
@@ -480,7 +482,8 @@ export type StorageColumnTypes = {
       readonly createdById: CodecTypes['pg/text@1']['output'] | null;
       readonly department: CodecTypes['pg/text@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'];
-      readonly experienceLevel: CodecTypes['pg/text@1']['output'] | null;
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly location: CodecTypes['pg/text@1']['output'];
       readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
@@ -491,7 +494,7 @@ export type StorageColumnTypes = {
       readonly title: CodecTypes['pg/text@1']['output'];
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
-      readonly workplace: CodecTypes['pg/text@1']['output'] | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
     };
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -544,7 +547,7 @@ export type StorageColumnInputTypes = {
       readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['input'] | null;
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly firstName: CodecTypes['pg/text@1']['input'] | null;
-      readonly gender: CodecTypes['pg/text@1']['input'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly lastName: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
@@ -561,7 +564,7 @@ export type StorageColumnInputTypes = {
       readonly applicationId: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly date: CodecTypes['pg/text@1']['input'];
-      readonly format: CodecTypes['pg/text@1']['input'];
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly interviewer: CodecTypes['pg/text@1']['input'];
       readonly linkOrLocation: CodecTypes['pg/text@1']['input'];
@@ -579,8 +582,8 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly maxUses: CodecTypes['pg/int4@1']['input'] | null;
       readonly organizationId: CodecTypes['pg/text@1']['input'];
-      readonly role: CodecTypes['pg/text@1']['input'];
-      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly role: 'ADMIN' | 'MEMBER';
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly token: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly usesCount: CodecTypes['pg/int4@1']['input'];
@@ -590,7 +593,8 @@ export type StorageColumnInputTypes = {
       readonly createdById: CodecTypes['pg/text@1']['input'] | null;
       readonly department: CodecTypes['pg/text@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'];
-      readonly experienceLevel: CodecTypes['pg/text@1']['input'] | null;
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly location: CodecTypes['pg/text@1']['input'];
       readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
@@ -601,7 +605,7 @@ export type StorageColumnInputTypes = {
       readonly title: CodecTypes['pg/text@1']['input'];
       readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
-      readonly workplace: CodecTypes['pg/text@1']['input'] | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
     };
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -1039,7 +1043,7 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly default: {
                     readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'active'>;
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'ACTIVE'>;
                   };
                 };
                 readonly organizationId: {
@@ -1453,6 +1457,24 @@ type ContractBase = Omit<
                 'REJECTED',
               ];
             };
+            readonly ExperienceLevel: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'ENTRY_LEVEL',
+                'MID_LEVEL',
+                'SENIOR_LEVEL',
+                'LEAD',
+                'EXECUTIVE',
+              ];
+            };
+            readonly Gender: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['MALE', 'FEMALE', 'OTHER'];
+            };
+            readonly InterviewFormat: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['MEET', 'ZOOM', 'TEAMS', 'OFFICE'];
+            };
             readonly InterviewType: {
               readonly kind: 'valueSet';
               readonly values: readonly [
@@ -1462,6 +1484,10 @@ type ContractBase = Omit<
                 'FINAL_ROUND',
                 'ASSESSMENT',
               ];
+            };
+            readonly InviteStatus: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['ACTIVE', 'EXPIRED', 'REVOKED'];
             };
             readonly JobStatus: {
               readonly kind: 'valueSet';
@@ -1474,6 +1500,10 @@ type ContractBase = Omit<
             readonly Role: {
               readonly kind: 'valueSet';
               readonly values: readonly ['ADMIN', 'MEMBER'];
+            };
+            readonly WorkplaceType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['ON_SITE', 'HYBRID', 'REMOTE'];
             };
           };
         };
@@ -2324,6 +2354,49 @@ type ContractBase = Omit<
               { readonly name: 'CULTURE_FIT'; readonly value: 'CULTURE_FIT' },
               { readonly name: 'FINAL_ROUND'; readonly value: 'FINAL_ROUND' },
               { readonly name: 'ASSESSMENT'; readonly value: 'ASSESSMENT' },
+            ];
+          };
+          readonly InterviewFormat: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'MEET'; readonly value: 'MEET' },
+              { readonly name: 'ZOOM'; readonly value: 'ZOOM' },
+              { readonly name: 'TEAMS'; readonly value: 'TEAMS' },
+              { readonly name: 'OFFICE'; readonly value: 'OFFICE' },
+            ];
+          };
+          readonly WorkplaceType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ON_SITE'; readonly value: 'ON_SITE' },
+              { readonly name: 'HYBRID'; readonly value: 'HYBRID' },
+              { readonly name: 'REMOTE'; readonly value: 'REMOTE' },
+            ];
+          };
+          readonly ExperienceLevel: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ENTRY_LEVEL'; readonly value: 'ENTRY_LEVEL' },
+              { readonly name: 'MID_LEVEL'; readonly value: 'MID_LEVEL' },
+              { readonly name: 'SENIOR_LEVEL'; readonly value: 'SENIOR_LEVEL' },
+              { readonly name: 'LEAD'; readonly value: 'LEAD' },
+              { readonly name: 'EXECUTIVE'; readonly value: 'EXECUTIVE' },
+            ];
+          };
+          readonly Gender: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'MALE'; readonly value: 'MALE' },
+              { readonly name: 'FEMALE'; readonly value: 'FEMALE' },
+              { readonly name: 'OTHER'; readonly value: 'OTHER' },
+            ];
+          };
+          readonly InviteStatus: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ACTIVE'; readonly value: 'ACTIVE' },
+              { readonly name: 'EXPIRED'; readonly value: 'EXPIRED' },
+              { readonly name: 'REVOKED'; readonly value: 'REVOKED' },
             ];
           };
         };

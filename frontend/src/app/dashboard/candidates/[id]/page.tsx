@@ -46,6 +46,7 @@ import {
   parseCandidateDocuments,
   fixUtf8String,
   isValidUuid,
+  getGenderLabel,
 } from "@/lib/utils";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
@@ -477,7 +478,7 @@ function CandidateDetailPageContent() {
             <div>
               <span className="text-slate-400 text-[11px] block">{t("candidates.gender")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
-                {gender}
+                {getGenderLabel(gender, t)}
               </span>
             </div>
 

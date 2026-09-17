@@ -57,6 +57,7 @@ import {
   parseCandidateNotes,
   parseCandidateDocuments,
   fixUtf8String,
+  getGenderLabel,
   type CandidateItem,
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
@@ -382,7 +383,7 @@ function CandidatesPageContent() {
     const cand = selectedCandidate.candidate;
     const parsed = parseCandidateNotes(selectedCandidate.notes, selectedCandidate.name);
     return {
-      gender: cand?.gender || parsed.gender,
+      gender: getGenderLabel(cand?.gender || parsed.gender, t),
       dob: cand?.dateOfBirth ? formatDate(cand.dateOfBirth) : parsed.dob,
       firstName: cand?.firstName || parsed.firstName,
       lastName: cand?.lastName || parsed.lastName,
@@ -390,7 +391,7 @@ function CandidatesPageContent() {
       effectiveName: selectedCandidate.name || parsed.effectiveName,
       customNotes: selectedCandidate.notes || parsed.customNotes,
     };
-  }, [selectedCandidate]);
+  }, [selectedCandidate, t]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">

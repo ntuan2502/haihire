@@ -27,7 +27,7 @@ import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import { getJobPublicUrl } from "@/lib/utils";
-import { getJobTypeLabel } from "@/lib/jobs";
+import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 
 type ViewMode = "grid" | "list" | "table";
 
@@ -106,11 +106,7 @@ export function JobList({
 
         // Employment type
         const matchType =
-          typeFilters.length === 0 ||
-          (typeFilters.includes("Full-time") && job.type === "FULL_TIME") ||
-          (typeFilters.includes("Part-time") && job.type === "PART_TIME") ||
-          (typeFilters.includes("Contract") && job.type === "CONTRACT") ||
-          (typeFilters.includes("Internship") && job.type === "INTERNSHIP");
+          typeFilters.length === 0 || (job.type && typeFilters.includes(job.type));
 
         // Experience level
         const matchExp =
@@ -293,9 +289,21 @@ export function JobList({
                     <JobStatusBadge status={job.status} className="shrink-0" />
                   </div>
 
-                  {/* Sub-row: Type & Location */}
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                  {/* Sub-row: Type, Workplace, Experience & Location */}
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
                     <span>{getJobTypeLabel(job.type, t)}</span>
+                    {job.workplace && (
+                      <>
+                        <span>•</span>
+                        <span>{getWorkplaceLabel(job.workplace, t)}</span>
+                      </>
+                    )}
+                    {job.experienceLevel && (
+                      <>
+                        <span>•</span>
+                        <span>{getExperienceLevelLabel(job.experienceLevel, t)}</span>
+                      </>
+                    )}
                     <span>•</span>
                     <span className="flex items-center gap-0.5 truncate">
                       <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
@@ -430,8 +438,20 @@ export function JobList({
                       <JobStatusBadge status={job.status} />
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
                       <span>{getJobTypeLabel(job.type, t)}</span>
+                      {job.workplace && (
+                        <>
+                          <span>•</span>
+                          <span>{getWorkplaceLabel(job.workplace, t)}</span>
+                        </>
+                      )}
+                      {job.experienceLevel && (
+                        <>
+                          <span>•</span>
+                          <span>{getExperienceLevelLabel(job.experienceLevel, t)}</span>
+                        </>
+                      )}
                       <span>•</span>
                       <span className="flex items-center gap-0.5">
                         <MapPin className="h-3 w-3 text-slate-400" />
@@ -703,10 +723,10 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Full-time", label: t("jobs.fullTime") },
-                      { id: "Part-time", label: t("jobs.partTime") },
-                      { id: "Contract", label: t("jobs.contract") },
-                      { id: "Internship", label: t("jobs.internship") },
+                      { id: "FULL_TIME", label: t("jobs.fullTime") },
+                      { id: "PART_TIME", label: t("jobs.partTime") },
+                      { id: "CONTRACT", label: t("jobs.contract") },
+                      { id: "INTERNSHIP", label: t("jobs.internship") },
                     ].map((item) => (
                       <button
                         key={item.id}
@@ -731,11 +751,11 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Entry-level", label: t("jobs.experience.junior") },
-                      { id: "Mid-level", label: t("jobs.experience.mid") },
-                      { id: "Senior-level", label: t("jobs.experience.senior") },
-                      { id: "Lead", label: t("jobs.experience.lead") },
-                      { id: "Executive", label: t("jobs.experience.executive") },
+                      { id: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
+                      { id: "MID_LEVEL", label: t("jobs.experience.mid") },
+                      { id: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
+                      { id: "LEAD", label: t("jobs.experience.lead") },
+                      { id: "EXECUTIVE", label: t("jobs.experience.executive") },
                     ].map((exp) => (
                       <button
                         key={exp.id}
@@ -760,9 +780,9 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Remote", label: t("jobs.workplace.remote") },
-                      { id: "Hybrid", label: t("jobs.workplace.hybrid") },
-                      { id: "On-site", label: t("jobs.workplace.onsite") },
+                      { id: "REMOTE", label: t("jobs.workplace.remote") },
+                      { id: "HYBRID", label: t("jobs.workplace.hybrid") },
+                      { id: "ON_SITE", label: t("jobs.workplace.onsite") },
                     ].map((w) => (
                       <button
                         key={w.id}

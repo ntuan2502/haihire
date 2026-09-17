@@ -1,4 +1,5 @@
-import { IsEmail, IsOptional, IsString } from "class-validator";
+import { IsEmail, IsEnum, IsOptional, IsString } from "class-validator";
+import { Gender } from "./create-candidate.dto";
 
 export class UpdateCandidateDto {
   @IsString()
@@ -13,9 +14,9 @@ export class UpdateCandidateDto {
   @IsOptional()
   lastName?: string;
 
-  @IsString()
+  @IsEnum(Gender)
   @IsOptional()
-  gender?: string;
+  gender?: Gender;
 
   @IsString()
   @IsOptional()

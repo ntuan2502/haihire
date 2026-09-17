@@ -349,7 +349,7 @@ export class CandidatesService {
       name: dto.name.trim(),
       firstName,
       lastName,
-      gender: dto.gender && dto.gender !== "Not specified" && dto.gender !== "—" ? dto.gender : null,
+      gender: dto.gender ? dto.gender : null,
       dateOfBirth,
       email,
       phone: dto.phone?.trim() || null,
@@ -371,7 +371,7 @@ export class CandidatesService {
     if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName?.trim() || null;
     if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName?.trim() || null;
     if (dto.gender !== undefined) {
-      updatePayload.gender = dto.gender && dto.gender !== "Not specified" && dto.gender !== "—" ? dto.gender : null;
+      updatePayload.gender = dto.gender ? dto.gender : null;
     }
     if (dto.dateOfBirth !== undefined) {
       if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {

@@ -8,6 +8,19 @@ export type JobType =
 
 export type JobStatus = "DRAFT" | "PUBLISHED" | "CLOSED" | "ARCHIVED";
 
+export type WorkplaceType = "ON_SITE" | "HYBRID" | "REMOTE";
+
+export type ExperienceLevel =
+  | "ENTRY_LEVEL"
+  | "MID_LEVEL"
+  | "SENIOR_LEVEL"
+  | "LEAD"
+  | "EXECUTIVE";
+
+export type Gender = "MALE" | "FEMALE" | "OTHER";
+
+export type InviteStatus = "ACTIVE" | "EXPIRED" | "REVOKED";
+
 export type ApplicationStage =
   | "APPLIED"
   | "SCREENING"
@@ -30,14 +43,14 @@ export interface InviteLink {
   organizationId: string;
   organizationName: string;
   organizationSlug: string;
-  role: string;
+  role: Role;
   expiresInDays: number | null;
   expiresAt: string | null;
   maxUses: number | null;
   usesCount: number;
   createdById: string;
   createdByName: string;
-  status: "active" | "inactive" | "revoked";
+  status: InviteStatus;
   createdAt: string;
 }
 
@@ -59,8 +72,8 @@ export interface Job {
   department: string;
   location: string;
   postalCode?: string | null;
-  experienceLevel?: string | null;
-  workplace?: string | null;
+  experienceLevel?: ExperienceLevel | null;
+  workplace?: WorkplaceType | null;
   type: JobType;
   description: string;
   requirements?: string | null;
@@ -94,7 +107,7 @@ export interface Candidate {
   name: string;
   firstName?: string | null;
   lastName?: string | null;
-  gender?: string | null;
+  gender?: Gender | null;
   dateOfBirth?: string | null;
   email: string;
   phone?: string | null;
@@ -132,13 +145,17 @@ export const INTERVIEW_TYPES = [
 
 export type InterviewType = (typeof INTERVIEW_TYPES)[number];
 
+export const INTERVIEW_FORMATS = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
+
+export type InterviewFormat = (typeof INTERVIEW_FORMATS)[number];
+
 export interface Interview {
   id: string;
   applicationId: string;
   date: string;
   time: string;
-  type: InterviewType | string;
-  format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+  type: InterviewType;
+  format: InterviewFormat;
   linkOrLocation: string;
   interviewer: string;
   round: number;
@@ -181,8 +198,8 @@ export interface CreateJobInput {
   department: string;
   location: string;
   postalCode?: string | null;
-  experienceLevel?: string | null;
-  workplace?: string | null;
+  experienceLevel?: ExperienceLevel | null;
+  workplace?: WorkplaceType | null;
   type?: JobType;
   description: string;
   requirements?: string | null;
@@ -196,7 +213,7 @@ export interface CreateCandidateInput {
   name: string;
   firstName?: string;
   lastName?: string;
-  gender?: string;
+  gender?: Gender;
   dateOfBirth?: string;
   email: string;
   phone?: string;
@@ -209,7 +226,7 @@ export interface UpdateCandidateInput {
   name?: string;
   firstName?: string;
   lastName?: string;
-  gender?: string;
+  gender?: Gender;
   dateOfBirth?: string;
   email?: string;
   phone?: string;
@@ -222,8 +239,8 @@ export interface CreateInterviewInput {
   applicationId: string;
   date: string;
   time: string;
-  type: string;
-  format?: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+  type: InterviewType;
+  format?: InterviewFormat;
   linkOrLocation?: string;
   interviewer: string;
   round?: number;
@@ -234,8 +251,8 @@ export interface CreateInterviewInput {
 export interface UpdateInterviewInput {
   date?: string;
   time?: string;
-  type?: string;
-  format?: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+  type?: InterviewType;
+  format?: InterviewFormat;
   linkOrLocation?: string;
   interviewer?: string;
   round?: number;

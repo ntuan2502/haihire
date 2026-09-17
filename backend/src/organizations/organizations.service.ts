@@ -189,7 +189,7 @@ export class OrganizationsService implements OnModuleInit {
       .where((l) => l.token.eq(rawInput))
       .first();
 
-    if (!inviteLink || inviteLink.status !== "active") {
+    if (!inviteLink || inviteLink.status !== "ACTIVE") {
       throw new NotFoundException(
         "Invalid or inactive invite link. Please ask an administrator for a new invite link.",
       );
@@ -937,7 +937,7 @@ export class OrganizationsService implements OnModuleInit {
         expiresAt,
         maxUses,
         usesCount: 0,
-        status: "active",
+        status: "ACTIVE" as any,
         createdById: user.id,
       },
       update: {},
@@ -956,7 +956,7 @@ export class OrganizationsService implements OnModuleInit {
       usesCount: 0,
       createdById: user.id,
       createdByName: user.name || "Team Member",
-      status: "active",
+      status: "ACTIVE",
       createdAt: new Date().toISOString(),
     };
   }
@@ -1007,7 +1007,7 @@ export class OrganizationsService implements OnModuleInit {
       .where((l) => l.organizationId.eq(orgId))
       .all();
 
-    const links = allLinks.filter((l) => l.status !== "revoked");
+    const links = allLinks.filter((l) => l.status !== "REVOKED");
 
     const users = await this.prisma.db.orm.public.User.select("id", "name")
       .where((u) => u.organizationId.eq(orgId))
@@ -1017,11 +1017,11 @@ export class OrganizationsService implements OnModuleInit {
     const now = new Date();
     return links.map((link) => {
       let status = link.status;
-      if (status === "active") {
+      if (status === "ACTIVE") {
         if (link.expiresAt && new Date(link.expiresAt) < now) {
-          status = "inactive";
+          status = "EXPIRED";
         } else if (link.maxUses !== null && link.usesCount >= link.maxUses) {
-          status = "inactive";
+          status = "EXPIRED";
         }
       }
 
@@ -1075,7 +1075,7 @@ export class OrganizationsService implements OnModuleInit {
     await this.prisma.db.orm.public.InviteLink.where((l) =>
       l.id.eq(linkId),
     ).update({
-      status: "revoked",
+      status: "REVOKED" as any,
     });
 
     return { success: true, message: "Invite link revoked successfully" };
@@ -1103,7 +1103,7 @@ export class OrganizationsService implements OnModuleInit {
       };
     }
 
-    if (link.status === "revoked") {
+    if (link.status === "REVOKED") {
       return {
         valid: false,
         message: "This invitation link has been revoked by an administrator",
@@ -1177,7 +1177,7 @@ export class OrganizationsService implements OnModuleInit {
       throw new NotFoundException("Invite link not found or invalid");
     }
 
-    if (link.status === "revoked") {
+    if (link.status === "REVOKED") {
       throw new BadRequestException("This invitation link has been revoked");
     }
 
@@ -1241,13 +1241,13 @@ export class OrganizationsService implements OnModuleInit {
     // Increment uses count
     const nextUses = link.usesCount + 1;
     const nextStatus =
-      link.maxUses !== null && nextUses >= link.maxUses ? "inactive" : link.status;
+      link.maxUses !== null && nextUses >= link.maxUses ? ("EXPIRED" as any) : link.status;
 
     await this.prisma.db.orm.public.InviteLink.where((l) =>
       l.id.eq(link.id),
     ).update({
       usesCount: nextUses,
-      status: nextStatus,
+      status: nextStatus as any,
     });
 
     const org = await this.prisma.db.orm.public.Organization.select(

@@ -10,9 +10,19 @@ export interface InterviewScorecard {
   evaluatedAt?: string;
 }
 
-import { type InterviewType, INTERVIEW_TYPES } from "@/types";
+import {
+  type InterviewType,
+  INTERVIEW_TYPES,
+  type InterviewFormat,
+  INTERVIEW_FORMATS,
+} from "@/types";
 
-export { type InterviewType, INTERVIEW_TYPES };
+export {
+  type InterviewType,
+  INTERVIEW_TYPES,
+  type InterviewFormat,
+  INTERVIEW_FORMATS,
+};
 
 export const INTERVIEW_TYPE_OPTIONS: { value: InterviewType; labelKey: string }[] = [
   { value: "HR_SCREENING", labelKey: "interviews.types.hrScreening" },
@@ -65,7 +75,7 @@ export function normalizeInterviewType(rawType?: string | null): InterviewType {
 
 export function getInterviewTypeLabel(
   type?: string | null,
-  t?: (key: string, options?: Record<string, unknown>) => string,
+  t?: (key: any, options?: any) => string,
 ): string {
   if (!type) return "";
   if (!t) return type;
@@ -106,8 +116,8 @@ export interface ScheduledInterviewInfo {
   applicationId?: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
-  type: InterviewType | string;
-  format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+  type: InterviewType;
+  format: InterviewFormat;
   linkOrLocation: string;
   interviewer: string;
   notes?: string;
@@ -126,8 +136,8 @@ export function getInterviewsFromApplication(
       applicationId?: string;
       date: string;
       time: string;
-      type: string;
-      format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+      type?: InterviewType | string;
+      format?: InterviewFormat | string;
       linkOrLocation: string;
       interviewer: string;
       round?: number;
@@ -159,8 +169,8 @@ export function getInterviewsFromApplication(
         applicationId: inv.applicationId,
         date: inv.date,
         time: inv.time,
-        type: inv.type,
-        format: inv.format,
+        type: normalizeInterviewType(inv.type),
+        format: (inv.format as InterviewFormat) || "MEET",
         linkOrLocation: inv.linkOrLocation,
         interviewer: inv.interviewer,
         notes: inv.notes || undefined,
@@ -278,7 +288,14 @@ export function extractInterviewJsonBlocks(notes?: string | null): {
       const rawStr = notes.slice(foundIdx, braceEnd + 1);
       let parsed: ScheduledInterviewInfo | null = null;
       try {
-        parsed = JSON.parse(jsonStr) as ScheduledInterviewInfo;
+        const rawObj = JSON.parse(jsonStr);
+        if (rawObj) {
+          parsed = {
+            ...rawObj,
+            type: normalizeInterviewType(rawObj.type),
+            format: (rawObj.format as InterviewFormat) || "MEET",
+          };
+        }
       } catch {
         parsed = null;
       }

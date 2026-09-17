@@ -25,7 +25,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { getJobTypeLabel, getWorkplaceLabel } from "@/lib/jobs";
+import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 
 export default function OrgCareersPage() {
   const { t } = useI18n();
@@ -277,6 +277,12 @@ export default function OrgCareersPage() {
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                           <Globe2 className="h-3 w-3 text-indigo-500" />
                           {getWorkplaceLabel(job.workplace, t)}
+                        </span>
+                      )}
+                      {job.experienceLevel && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          <Briefcase className="h-3 w-3 text-blue-500" />
+                          {getExperienceLevelLabel(job.experienceLevel, t)}
                         </span>
                       )}
                       {job.salaryRange && (

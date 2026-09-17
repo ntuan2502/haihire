@@ -1,4 +1,4 @@
-import type { Application, Candidate, CandidateDocument } from "@/types";
+import type { Application, Candidate, CandidateDocument, Gender } from "@/types";
 import { removeInterviewFromNotes } from "@/lib/interviews";
 
 /**
@@ -272,7 +272,12 @@ export function buildCandidateNotes(params: {
   if (params.displayName?.trim()) {
     segments.push(`DisplayName: ${params.displayName.trim()}`);
   }
-  if (params.gender && params.gender !== "Not specified" && params.gender !== "—") {
+  if (
+    params.gender &&
+    params.gender !== "Not specified" &&
+    params.gender !== "NOT_SPECIFIED" &&
+    params.gender !== "—"
+  ) {
     segments.push(`Gender: ${params.gender.trim()}`);
   }
   if (params.dob?.trim() && params.dob !== "—") {
@@ -283,6 +288,23 @@ export function buildCandidateNotes(params: {
   }
 
   return segments.length > 0 ? segments.join(" | ") : undefined;
+}
+
+/**
+ * Get localized display label for candidate gender
+ */
+export function getGenderLabel(
+  gender: Gender | string | null | undefined,
+  t: (key: string) => string,
+): string {
+  if (!gender || gender === "—" || gender === "NOT_SPECIFIED" || gender === "Not specified") {
+    return "—";
+  }
+  const upper = gender.toUpperCase();
+  if (upper === "MALE") return t("candidates.male");
+  if (upper === "FEMALE") return t("candidates.female");
+  if (upper === "OTHER") return t("candidates.otherGender");
+  return gender;
 }
 
 /**

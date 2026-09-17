@@ -37,7 +37,7 @@ import {
   INTERVIEW_TYPE_OPTIONS,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
-import type { Application, Job } from "@/types";
+import type { Application, Job, InterviewType, InterviewFormat } from "@/types";
 
 export interface ScheduleInterviewModalProps {
   isOpen: boolean;
@@ -70,8 +70,8 @@ export function ScheduleInterviewModal({
   const [modalCandidateId, setModalCandidateId] = useState<string>("");
   const [interviewDate, setInterviewDate] = useState<string>("");
   const [interviewTime, setInterviewTime] = useState<string>("10:00");
-  const [interviewType, setInterviewType] = useState<string>("TECHNICAL");
-  const [interviewFormat, setInterviewFormat] = useState<"MEET" | "ZOOM" | "TEAMS" | "OFFICE">("MEET");
+  const [interviewType, setInterviewType] = useState<InterviewType>("TECHNICAL");
+  const [interviewFormat, setInterviewFormat] = useState<InterviewFormat>("MEET");
   const [linkOrLocation, setLinkOrLocation] = useState<string>("https://meet.google.com/");
   const [interviewerName, setInterviewerName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
@@ -361,7 +361,7 @@ export function ScheduleInterviewModal({
               </label>
               <CustomSelect
                 value={interviewType}
-                onChange={(val) => setInterviewType(val)}
+                onChange={(val) => setInterviewType(val as InterviewType)}
                 options={INTERVIEW_TYPE_OPTIONS.map((opt) => ({
                   value: opt.value,
                   label: t(opt.labelKey),
@@ -384,7 +384,7 @@ export function ScheduleInterviewModal({
               <CustomSelect
                 value={interviewFormat}
                 onChange={(val) => {
-                  const fVal = val as "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+                  const fVal = val as InterviewFormat;
                   setInterviewFormat(fVal);
                   if (fVal === "MEET" && !linkOrLocation.includes("zoom") && !linkOrLocation.includes("teams")) {
                     setLinkOrLocation("https://meet.google.com/");

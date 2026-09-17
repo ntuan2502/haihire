@@ -1,4 +1,4 @@
-import type { JobType } from "@/types";
+import type { JobType, WorkplaceType, ExperienceLevel } from "@/types";
 
 /**
  * Returns translated display label for a Job Type / Employment Type (Loại hợp đồng / Hình thức làm việc)
@@ -36,41 +36,54 @@ export function getJobTypeLabel(
  * Returns translated display label for a Workplace / Work Arrangement (Mô hình làm việc)
  */
 export function getWorkplaceLabel(
-  workplace: string | null | undefined,
+  workplace: WorkplaceType | string | null | undefined,
   t: (key: string) => string,
 ): string {
   if (!workplace) return "";
-  const normalized = workplace.trim().toLowerCase();
-  if (normalized === "remote") return t("jobs.workplace.remote");
-  if (normalized === "hybrid") return t("jobs.workplace.hybrid");
-  if (normalized === "on-site" || normalized === "onsite") return t("jobs.workplace.onsite");
-  if (normalized === "not specified") return t("jobs.workplace.notSpecified");
-  return workplace;
+  switch (workplace) {
+    case "REMOTE":
+    case "Remote":
+      return t("jobs.workplace.remote");
+    case "HYBRID":
+    case "Hybrid":
+      return t("jobs.workplace.hybrid");
+    case "ON_SITE":
+    case "On-site":
+    case "onsite":
+      return t("jobs.workplace.onsite");
+    default:
+      return String(workplace);
+  }
 }
 
 /**
  * Returns translated display label for an Experience Level (Cấp bậc kinh nghiệm)
  */
 export function getExperienceLevelLabel(
-  level: string | null | undefined,
+  level: ExperienceLevel | string | null | undefined,
   t: (key: string) => string,
 ): string {
   if (!level) return "";
-  const normalized = level.trim().toLowerCase();
-  if (normalized === "entry-level" || normalized === "junior" || normalized === "entry") {
-    return t("jobs.experience.junior");
+  switch (level) {
+    case "ENTRY_LEVEL":
+    case "Entry-level":
+    case "junior":
+      return t("jobs.experience.junior");
+    case "MID_LEVEL":
+    case "Mid-level":
+    case "mid":
+      return t("jobs.experience.mid");
+    case "SENIOR_LEVEL":
+    case "Senior-level":
+    case "senior":
+      return t("jobs.experience.senior");
+    case "LEAD":
+    case "Lead":
+      return t("jobs.experience.lead");
+    case "EXECUTIVE":
+    case "Executive":
+      return t("jobs.experience.executive");
+    default:
+      return String(level);
   }
-  if (normalized === "mid-level" || normalized === "mid") {
-    return t("jobs.experience.mid");
-  }
-  if (normalized === "senior-level" || normalized === "senior") {
-    return t("jobs.experience.senior");
-  }
-  if (normalized === "lead") {
-    return t("jobs.experience.lead");
-  }
-  if (normalized === "executive" || normalized === "principal" || normalized === "director") {
-    return t("jobs.experience.executive");
-  }
-  return level;
 }

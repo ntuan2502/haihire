@@ -21,6 +21,7 @@ import {
   normalizeDateForInput,
   isValidUuid,
 } from "@/lib/utils";
+import type { Gender } from "@/types";
 import { useI18n } from "@/i18n";
 
 function EditCandidatePageContent() {
@@ -51,7 +52,7 @@ function EditCandidatePageContent() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("Not specified");
+  const [gender, setGender] = useState<Gender | "NOT_SPECIFIED">("NOT_SPECIFIED");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -71,7 +72,16 @@ function EditCandidatePageContent() {
 
       const effGender = candidate.gender || parsed.gender;
       if (effGender && effGender !== "—") {
-        setGender(effGender);
+        const upper = effGender.toUpperCase();
+        if (upper === "MALE" || upper === "FEMALE" || upper === "OTHER") {
+          setGender(upper as Gender);
+        } else if (effGender === "Nam") {
+          setGender("MALE");
+        } else if (effGender === "Nữ") {
+          setGender("FEMALE");
+        } else {
+          setGender("NOT_SPECIFIED");
+        }
       }
       const effDob = candidate.dateOfBirth || parsed.dob;
       if (effDob && effDob !== "—") {
@@ -112,7 +122,7 @@ function EditCandidatePageContent() {
           name: effectiveDisplayName,
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          gender: gender && gender !== "Not specified" && gender !== "—" ? gender : undefined,
+          gender: gender && gender !== "NOT_SPECIFIED" ? gender : undefined,
           dateOfBirth: dateOfBirth ? dateOfBirth : undefined,
           email: email.trim(),
           phone: phone.trim() || undefined,
@@ -312,12 +322,12 @@ function EditCandidatePageContent() {
               </label>
               <CustomSelect
                 value={gender}
-                onChange={(val) => setGender(val)}
+                onChange={(val) => setGender(val as Gender | "NOT_SPECIFIED")}
                 options={[
-                  { value: "Not specified", label: t("candidates.notSpecified") },
-                  { value: "Male", label: t("candidates.male") },
-                  { value: "Female", label: t("candidates.female") },
-                  { value: "Other", label: t("candidates.otherGender") },
+                  { value: "NOT_SPECIFIED", label: t("candidates.notSpecified") },
+                  { value: "MALE", label: t("candidates.male") },
+                  { value: "FEMALE", label: t("candidates.female") },
+                  { value: "OTHER", label: t("candidates.otherGender") },
                 ]}
                 className="w-full"
                 triggerClassName="h-10 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"

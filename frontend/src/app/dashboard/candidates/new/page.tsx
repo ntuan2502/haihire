@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
+import type { Gender } from "@/types";
 import {
   ArrowLeft,
   UploadCloud,
@@ -51,7 +52,7 @@ function AddCandidatePageContent() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("Not specified");
+  const [gender, setGender] = useState<Gender | "NOT_SPECIFIED">("NOT_SPECIFIED");
   const [dateOfBirth, setDateOfBirth] = useState("");
 
   // File Upload State
@@ -129,7 +130,7 @@ function AddCandidatePageContent() {
       formData.append("name", effectiveDisplayName);
       formData.append("firstName", firstName.trim());
       formData.append("lastName", lastName.trim());
-      if (gender && gender !== "Not specified" && gender !== "—") {
+      if (gender && gender !== "NOT_SPECIFIED") {
         formData.append("gender", gender);
       }
       if (dateOfBirth && dateOfBirth.trim() && dateOfBirth !== "—") {
@@ -339,12 +340,12 @@ function AddCandidatePageContent() {
               </label>
               <CustomSelect
                 value={gender}
-                onChange={(val) => setGender(val)}
+                onChange={(val) => setGender(val as Gender | "NOT_SPECIFIED")}
                 options={[
-                  { value: "Not specified", label: t("candidates.notSpecified") },
-                  { value: "Male", label: t("candidates.male") },
-                  { value: "Female", label: t("candidates.female") },
-                  { value: "Other", label: t("candidates.otherGender") },
+                  { value: "NOT_SPECIFIED", label: t("candidates.notSpecified") },
+                  { value: "MALE", label: t("candidates.male") },
+                  { value: "FEMALE", label: t("candidates.female") },
+                  { value: "OTHER", label: t("candidates.otherGender") },
                 ]}
                 className="w-full"
                 triggerClassName="h-10 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"

@@ -36,6 +36,39 @@ enum InterviewType {
   ASSESSMENT
 }
 
+enum InterviewFormat {
+  MEET
+  ZOOM
+  TEAMS
+  OFFICE
+}
+
+enum WorkplaceType {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum ExperienceLevel {
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR_LEVEL
+  LEAD
+  EXECUTIVE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum InviteStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
 model Organization {
   id          String               @id @default(uuid())
   name        String
@@ -80,11 +113,11 @@ model OrganizationMember {
 model InviteLink {
   id             String       @id @default(uuid())
   token          String       @unique
-  role           String       @default("MEMBER")
+  role           Role         @default(MEMBER)
   expiresAt      DateTime?
   maxUses        Int?
   usesCount      Int          @default(0)
-  status         String       @default("active")
+  status         InviteStatus @default(ACTIVE)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdById    String?
@@ -99,8 +132,8 @@ model Job {
   department      String
   location        String
   postalCode      String?
-  experienceLevel String?
-  workplace       String?
+  experienceLevel ExperienceLevel?
+  workplace       WorkplaceType?
   type            JobType       @default(FULL_TIME)
   description     String
   requirements    String?
@@ -122,7 +155,7 @@ model Candidate {
   name           String
   firstName      String?
   lastName       String?
-  gender         String?
+  gender         Gender?
   dateOfBirth    DateTime?
   email          String
   phone          String?
@@ -165,8 +198,8 @@ model Interview {
   application    Application @relation(fields: [applicationId], references: [id])
   date           String
   time           String
-  type           InterviewType @default(TECHNICAL)
-  format         String        @default("MEET")
+  type           InterviewType   @default(TECHNICAL)
+  format         InterviewFormat @default(MEET)
   linkOrLocation String
   interviewer    String
   round          Int         @default(1)

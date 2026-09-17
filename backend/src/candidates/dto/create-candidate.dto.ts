@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
+
+export enum Gender {
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+  OTHER = "OTHER",
+}
 
 export class CreateCandidateDto {
   @IsString()
@@ -17,9 +23,9 @@ export class CreateCandidateDto {
   @IsOptional()
   lastName?: string;
 
-  @IsString()
+  @IsEnum(Gender)
   @IsOptional()
-  gender?: string;
+  gender?: Gender;
 
   @IsString()
   @IsOptional()

@@ -1,5 +1,10 @@
 import { IsNotEmpty, IsOptional, IsString, IsNumber, IsIn } from "class-validator";
-import { INTERVIEW_TYPES, type InterviewType } from "../constants";
+import {
+  INTERVIEW_TYPES,
+  type InterviewType,
+  INTERVIEW_FORMATS,
+  type InterviewFormat,
+} from "../constants";
 
 export class CreateInterviewDto {
   @IsString()
@@ -17,12 +22,12 @@ export class CreateInterviewDto {
   @IsString()
   @IsNotEmpty()
   @IsIn(INTERVIEW_TYPES)
-  type!: InterviewType | string;
+  type!: InterviewType;
 
   @IsString()
   @IsOptional()
-  @IsIn(["MEET", "ZOOM", "TEAMS", "OFFICE"])
-  format?: string;
+  @IsIn(INTERVIEW_FORMATS)
+  format?: InterviewFormat;
 
   @IsString()
   @IsOptional()

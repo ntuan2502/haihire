@@ -186,14 +186,14 @@ describe("InterviewsService", () => {
       applicationId: "app-1",
       date: "2026-09-25",
       time: "14:00",
-      type: "Cultural",
+      type: "CULTURE_FIT",
       format: "ZOOM",
       linkOrLocation: "https://zoom.us/test",
       interviewer: "HR Manager",
       round: 2,
     });
 
-    expect(created.type).toBe("Cultural");
+    expect(created.type).toBe("CULTURE_FIT");
     expect(mockApps[0].stage).toBe("INTERVIEW");
   });
 

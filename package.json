@@ -9,6 +9,8 @@
     "build": "pnpm --filter ./backend run build && pnpm --filter ./frontend run build",
     "lint": "pnpm --filter ./backend run lint && pnpm --filter ./frontend run lint",
     "test": "pnpm --filter ./backend run test",
+    "seed": "pnpm --filter ./backend run seed",
+    "contract:emit": "pnpm --filter ./backend run contract:emit",
     "check:i18n": "pnpm --filter ./frontend run check:i18n"
   }
 }

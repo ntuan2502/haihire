@@ -656,9 +656,15 @@ export async function runSeed(): Promise<void> {
     "Tokyo, Japan / Remote",
     "Global Remote",
   ];
-  const WORKPLACES = ["Hybrid", "Remote", "On-site"];
+  const WORKPLACES = ["HYBRID", "REMOTE", "ON_SITE"] as const;
   const JOB_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"] as const;
-  const EXP_LEVELS = ["Entry-level", "Mid-level", "Senior-level", "Lead", "Executive"];
+  const EXP_LEVELS = [
+    "ENTRY_LEVEL",
+    "MID_LEVEL",
+    "SENIOR_LEVEL",
+    "LEAD",
+    "EXECUTIVE",
+  ] as const;
   const SALARY_RANGES = [
     "$1,200 - $1,800 / month",
     "$1,800 - $2,800 / month",
@@ -693,9 +699,9 @@ export async function runSeed(): Promise<void> {
         title: baseConfig.title,
         department: baseConfig.department,
         location,
-        workplace,
+        workplace: workplace as any,
         type,
-        experienceLevel,
+        experienceLevel: experienceLevel as any,
         salaryRange,
         description: baseConfig.description,
         requirements: baseConfig.requirements,
@@ -769,7 +775,7 @@ export async function runSeed(): Promise<void> {
     name: string;
     firstName: string;
     lastName: string;
-    gender: string;
+    gender: any;
     dateOfBirth: Date;
     email: string;
     phone: string;
@@ -802,7 +808,7 @@ export async function runSeed(): Promise<void> {
     date: string;
     time: string;
     type: any;
-    format: string;
+    format: any;
     linkOrLocation: string;
     interviewer: string;
     round: number;
@@ -821,13 +827,13 @@ export async function runSeed(): Promise<void> {
       "Mason", "Logan", "Benjamin", "Henry",
     ];
 
-    let gender = "Male";
+    let gender = "MALE";
     if (femaleHints.some((h) => name.includes(h))) {
-      gender = "Female";
+      gender = "FEMALE";
     } else if (maleHints.some((h) => name.includes(h))) {
-      gender = "Male";
+      gender = "MALE";
     } else {
-      gender = index % 2 === 0 ? "Male" : "Female";
+      gender = index % 2 === 0 ? "MALE" : "FEMALE";
     }
 
     // Realistic date of birth (ages 22 - 38)

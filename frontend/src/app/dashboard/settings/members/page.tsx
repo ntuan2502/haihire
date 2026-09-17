@@ -472,7 +472,7 @@ export default function MembersSettingsPage() {
                 const isCopied = copiedLinkId === link.id;
                 const isFull =
                   link.maxUses !== null && link.usesCount >= link.maxUses;
-                const isInactive = link.status !== "active" || isFull;
+                const isInactive = link.status !== "ACTIVE" || isFull;
 
                 const daysRemaining = calculateDaysRemaining(link.expiresAt);
 

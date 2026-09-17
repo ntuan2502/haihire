@@ -51,7 +51,8 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import type { Job, JobType, JobStatus } from "@/types";
+import type { Job, JobType, JobStatus, WorkplaceType, ExperienceLevel } from "@/types";
+import { getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 
 type StepId = 1 | 2 | 3 | 4;
 
@@ -169,11 +170,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           ? "Internship"
           : "Full-time",
   );
-  const [experienceLevel, setExperienceLevel] = useState(
-    initialJob?.experienceLevel || "Mid-level",
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(
+    (initialJob?.experienceLevel as ExperienceLevel) || "MID_LEVEL",
   );
-  const [workplace, setWorkplace] = useState(
-    initialJob?.workplace || (initialJob?.location?.toLowerCase().includes("remote") ? "Remote" : "Not specified"),
+  const [workplace, setWorkplace] = useState<WorkplaceType>(
+    (initialJob?.workplace as WorkplaceType) ||
+      (initialJob?.location?.toLowerCase().includes("remote") ? "REMOTE" : "HYBRID"),
   );
 
   // Compensation state
@@ -244,12 +246,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       setDepartment(initialJob.department || "General");
       setLocation(initialJob.location || "");
       setPostalCode(initialJob.postalCode || "");
-      setExperienceLevel(initialJob.experienceLevel || "Mid-level");
+      setExperienceLevel(
+        (initialJob.experienceLevel as ExperienceLevel) || "MID_LEVEL",
+      );
       setWorkplace(
-        initialJob.workplace ||
+        (initialJob.workplace as WorkplaceType) ||
           (initialJob.location?.toLowerCase().includes("remote")
-            ? "Remote"
-            : "Not specified"),
+            ? "REMOTE"
+            : "HYBRID"),
       );
       setDescription(initialJob.description || "");
       setRequirements(initialJob.requirements || "");
@@ -408,8 +412,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     setLocation("");
     setPostalCode("");
     setEmploymentType("Full-time");
-    setExperienceLevel("Mid-level");
-    setWorkplace("Not specified");
+    setExperienceLevel("MID_LEVEL");
+    setWorkplace("HYBRID");
     setDescription("");
     setRequirements("");
     setCompensationOpen(false);
@@ -977,13 +981,13 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         </label>
                         <CustomSelect
                           value={experienceLevel}
-                          onChange={(val) => setExperienceLevel(val)}
+                          onChange={(val) => setExperienceLevel(val as ExperienceLevel)}
                           options={[
-                            { value: "Entry-level", label: t("jobs.experience.junior") },
-                            { value: "Mid-level", label: t("jobs.experience.mid") },
-                            { value: "Senior-level", label: t("jobs.experience.senior") },
-                            { value: "Lead", label: t("jobs.experience.lead") },
-                            { value: "Executive", label: t("jobs.experience.executive") },
+                            { value: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
+                            { value: "MID_LEVEL", label: t("jobs.experience.mid") },
+                            { value: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
+                            { value: "LEAD", label: t("jobs.experience.lead") },
+                            { value: "EXECUTIVE", label: t("jobs.experience.executive") },
                           ]}
                           className="w-full"
                           triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
@@ -996,12 +1000,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         </label>
                         <CustomSelect
                           value={workplace}
-                          onChange={(val) => setWorkplace(val)}
+                          onChange={(val) => setWorkplace(val as WorkplaceType)}
                           options={[
-                            { value: "Not specified", label: t("jobs.workplace.notSpecified") },
-                            { value: "On-site", label: t("jobs.workplace.onsite") },
-                            { value: "Hybrid", label: t("jobs.workplace.hybrid") },
-                            { value: "Remote", label: t("jobs.workplace.remote") },
+                            { value: "HYBRID", label: t("jobs.workplace.hybrid") },
+                            { value: "ON_SITE", label: t("jobs.workplace.onsite") },
+                            { value: "REMOTE", label: t("jobs.workplace.remote") },
                           ]}
                           className="w-full"
                           triggerClassName="w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl"
@@ -2331,10 +2334,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         <span>{employmentType}</span>
                       </div>
 
-                      {workplace && workplace !== "Not specified" && (
+                      {workplace && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
                           <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
-                          <span>{workplace}</span>
+                          <span>{getWorkplaceLabel(workplace, t)}</span>
                         </div>
                       )}
 
@@ -2352,7 +2355,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       {experienceLevel && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200/70 dark:border-purple-800/60 text-purple-700 dark:text-purple-300 font-semibold shadow-2xs">
                           <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                          <span>{experienceLevel}</span>
+                          <span>{getExperienceLevelLabel(experienceLevel, t)}</span>
                         </div>
                       )}
                     </div>

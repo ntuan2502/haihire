@@ -172,6 +172,12 @@ describe("JobsService - Multi-Tenant Job Management", () => {
                 })),
               })),
             },
+            Interview: {
+              all: vi.fn().mockResolvedValue([]),
+              where: vi.fn().mockImplementation(() => ({
+                all: vi.fn().mockResolvedValue([]),
+              })),
+            },
           },
         },
       },

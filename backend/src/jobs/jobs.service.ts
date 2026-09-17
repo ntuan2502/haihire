@@ -161,8 +161,10 @@ export class JobsService {
 
     // Fetch interviews for each application
     const appIds = new Set(applications.map((a) => a.id));
-    const allInterviews = await this.prisma.db.orm.public.Interview.all();
-    const jobInterviews = allInterviews.filter((i) => appIds.has(i.applicationId));
+    const allInterviews = this.prisma.db.orm.public.Interview?.all
+      ? await this.prisma.db.orm.public.Interview.all()
+      : [];
+    const jobInterviews = allInterviews.filter((i: any) => appIds.has(i.applicationId));
     const interviewsByApp = new Map<string, any[]>();
     for (const intv of jobInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];

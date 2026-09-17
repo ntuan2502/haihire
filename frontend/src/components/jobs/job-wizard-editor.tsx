@@ -688,7 +688,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         ? `${step.label} (${t("jobs.wizard.comingSoon")})`
                         : undefined
                     }
-                    className={`flex items-center gap-2 text-xs transition-all ${
+                    className={`flex items-center gap-2 text-xs transition-all whitespace-nowrap shrink-0 ${
                       !isImplemented
                         ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
                         : isActive
@@ -762,10 +762,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             <button
               type="button"
               onClick={() => setIsPreviewModalOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap shrink-0"
             >
               <Eye className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{t("jobs.wizard.candidatePreview")}</span>
+              <span className="whitespace-nowrap">{t("jobs.wizard.candidatePreview")}</span>
             </button>
             <Button
               type="button"

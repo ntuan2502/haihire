@@ -149,81 +149,45 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
         />
       </div>
 
-      {/* 1. Job Workspace Header (Matching Screenshot Row 1) */}
-      <header className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 sm:px-6 z-20 shadow-2xs">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+      {/* 1. Job Workspace Header: Two-tier Navigation */}
+      <header className="shrink-0 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 z-20 shadow-2xs">
+        {/* Tier 1: Context & Primary Actions */}
+        <div className="flex items-center justify-between gap-4 px-4 py-2 sm:px-6 border-b border-slate-100 dark:border-slate-800/60">
           {/* Left: Back button & Job Title */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/dashboard/jobs"
-              className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors shrink-0"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>{t("jobs.allJobs")}</span>
             </Link>
 
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 shrink-0" />
 
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shrink-0">
                 <Briefcase className="h-3.5 w-3.5" />
               </div>
-              <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[240px] sm:max-w-md">
+              <h1 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-md lg:max-w-xl">
                 {job.title}{" "}
                 <span className="font-normal text-slate-500 dark:text-slate-400">
                   ({jobTypeLabel})
                 </span>
               </h1>
-              <JobStatusBadge status={job.status} />
+              <div className="shrink-0">
+                <JobStatusBadge status={job.status} />
+              </div>
             </div>
           </div>
 
-          {/* Middle: Job Feature Tabs */}
-          <div className="hidden lg:flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-            {[
-              { id: "pipeline", label: t("jobs.tabs.pipeline"), icon: Columns3, implemented: true },
-              { id: "promote", label: t("jobs.tabs.promote"), icon: Megaphone, implemented: false },
-              { id: "table", label: t("jobs.tabs.table"), icon: Table, implemented: true },
-              { id: "import", label: t("jobs.tabs.import"), icon: Download, implemented: false },
-              { id: "inbox", label: t("jobs.tabs.inbox"), icon: Mail, implemented: false },
-              { id: "form", label: t("jobs.tabs.applicationForm"), icon: FileText, implemented: false },
-              { id: "automation", label: t("jobs.tabs.automation"), icon: Zap, implemented: false },
-              { id: "tracking", label: t("jobs.tabs.sourceTracking"), icon: BarChart2, implemented: false },
-              { id: "ai", label: t("jobs.tabs.aiAnalysis"), icon: Sparkles, implemented: false },
-              { id: "settings", label: t("jobs.tabs.settings"), icon: Settings, implemented: true },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeNavTab === tab.id;
-              const isImplemented = tab.implemented;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  disabled={!isImplemented}
-                  onClick={() => isImplemented && handleNavTabClick(tab.id)}
-                  title={!isImplemented ? `${tab.label} (${t("common.comingSoon")})` : undefined}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-                    !isImplemented
-                      ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
-                      : isActive
-                        ? "bg-slate-100 text-slate-900 font-bold dark:bg-slate-800 dark:text-white cursor-pointer"
-                        : "hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800/60 dark:hover:text-slate-200 cursor-pointer"
-                  }`}
-                >
-                  <Icon className="h-3 w-3" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
           {/* Right: Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <a
               href={getJobPublicUrl(job)}
               target="_blank"
               rel="noopener noreferrer"
-              className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+              className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs whitespace-nowrap"
               title={t("jobs.openPublicCareerPage")}
             >
               <ExternalLink className="h-3 w-3" />
@@ -233,7 +197,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
             {/* 3-Status Switcher Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border ${
+                className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border whitespace-nowrap ${
                   job.status === "PUBLISHED"
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
                     : job.status === "CLOSED"
@@ -311,12 +275,51 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
               onClick={() =>
                 router.push(`/dashboard/candidates?jobId=${job.id}`)
               }
-              className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               title={t("jobs.moreOptions")}
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
           </div>
+        </div>
+
+        {/* Tier 2: Feature Navigation Tabs (Dedicated horizontal scrollable bar) */}
+        <div className="flex items-center gap-1 px-4 py-1.5 sm:px-6 overflow-x-auto no-scrollbar bg-slate-50/60 dark:bg-slate-950/40 text-xs font-medium text-slate-500 dark:text-slate-400">
+          {[
+            { id: "pipeline", label: t("jobs.tabs.pipeline"), icon: Columns3, implemented: true },
+            { id: "promote", label: t("jobs.tabs.promote"), icon: Megaphone, implemented: false },
+            { id: "table", label: t("jobs.tabs.table"), icon: Table, implemented: true },
+            { id: "import", label: t("jobs.tabs.import"), icon: Download, implemented: false },
+            { id: "inbox", label: t("jobs.tabs.inbox"), icon: Mail, implemented: false },
+            { id: "form", label: t("jobs.tabs.applicationForm"), icon: FileText, implemented: false },
+            { id: "automation", label: t("jobs.tabs.automation"), icon: Zap, implemented: false },
+            { id: "tracking", label: t("jobs.tabs.sourceTracking"), icon: BarChart2, implemented: false },
+            { id: "ai", label: t("jobs.tabs.aiAnalysis"), icon: Sparkles, implemented: false },
+            { id: "settings", label: t("jobs.tabs.settings"), icon: Settings, implemented: true },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeNavTab === tab.id;
+            const isImplemented = tab.implemented;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                disabled={!isImplemented}
+                onClick={() => isImplemented && handleNavTabClick(tab.id)}
+                title={!isImplemented ? `${tab.label} (${t("common.comingSoon")})` : undefined}
+                className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 ${
+                  !isImplemented
+                    ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
+                    : isActive
+                      ? "bg-white text-blue-600 font-bold dark:bg-slate-800 dark:text-blue-400 shadow-2xs border border-slate-200/80 dark:border-slate-700/80 cursor-pointer"
+                      : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800/60 dark:hover:text-slate-200 cursor-pointer"
+                }`}
+              >
+                <Icon className="h-3 w-3" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </header>
 

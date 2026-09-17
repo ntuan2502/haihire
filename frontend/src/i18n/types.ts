@@ -347,6 +347,7 @@ export interface TranslationSchema {
         publishStatus: string;
       };
       backToPipeline: string;
+      comingSoon: string;
       discardDraft: string;
       draftRestored: string;
       draftSaved: string;
@@ -536,6 +537,7 @@ export interface TranslationSchema {
     searchCandidates: string;
     filterByStage: string;
     addCandidate: string;
+    addNote: string;
     toggleColumns: string;
     columns: {
       name: string;
@@ -610,6 +612,7 @@ export interface TranslationSchema {
     job: string;
     status: string;
     score: string;
+    matchScore: string;
     applied: string;
     actions: string;
     noApplicationsFound: string;
@@ -801,6 +804,9 @@ export interface TranslationSchema {
     awaitingScheduleBadge: string;
     latestBadge: string;
     roundBadge: string;
+    round: string;
+    interviewer: string;
+    role: string;
     interviewerLabel: string;
     atOffice: string;
     onlineFormat: string;
@@ -1063,6 +1069,7 @@ export interface TranslationSchema {
     dark: string;
     system: string;
     switchTheme: string;
+    toggleTheme: string;
   };
   careers: {
     title: string;

@@ -14,6 +14,7 @@
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
 - [user] Zero hardcoded text: strictly enforce translation keys across all `.tsx` and `.ts` files → user-preferences.md
 - [user] Named imports for React: never use `import React` or `React.x` (preserve `components/ui/` untouched) → user-preferences.md
+- [user] TypeScript Only: Never create `.js` files, always use `.ts` or `.tsx` exclusively → user-preferences.md
 
 ## Feedback
 - [feedback] 2026-09-17: Memory documentation must be in English → feedback-history.md

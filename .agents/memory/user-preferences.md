@@ -16,3 +16,6 @@ updated: 2026-09-17
 - **Always use named imports from `"react"`**: e.g., `import { useState, useEffect, type ReactNode } from "react"`.
 - **Forbidden in application code**: Do NOT use default `import React from "react"`, wildcard `import * as React from "react"`, or namespace syntax like `React.useState`, `React.ReactNode`, etc.
 - **Strict Exception**: The `frontend/src/components/ui/` directory is exclusively reserved for pristine Shadcn CLI primitives and must NEVER be modified.
+
+## TypeScript Only (No JavaScript Files)
+- **Zero `.js` files**: Never create `.js` files anywhere in the project (including scripts, utilities, configs, tools). Always use TypeScript (`.ts` or `.tsx`) exclusively.

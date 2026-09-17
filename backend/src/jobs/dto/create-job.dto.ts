@@ -5,7 +5,6 @@ export enum JobType {
   PART_TIME = "PART_TIME",
   CONTRACT = "CONTRACT",
   INTERNSHIP = "INTERNSHIP",
-  REMOTE = "REMOTE",
 }
 
 export enum JobStatus {
@@ -13,6 +12,20 @@ export enum JobStatus {
   PUBLISHED = "PUBLISHED",
   CLOSED = "CLOSED",
   ARCHIVED = "ARCHIVED",
+}
+
+export enum WorkplaceType {
+  ON_SITE = "ON_SITE",
+  HYBRID = "HYBRID",
+  REMOTE = "REMOTE",
+}
+
+export enum ExperienceLevel {
+  ENTRY_LEVEL = "ENTRY_LEVEL",
+  MID_LEVEL = "MID_LEVEL",
+  SENIOR_LEVEL = "SENIOR_LEVEL",
+  LEAD = "LEAD",
+  EXECUTIVE = "EXECUTIVE",
 }
 
 export class CreateJobDto {
@@ -32,13 +45,13 @@ export class CreateJobDto {
   @IsOptional()
   postalCode?: string;
 
-  @IsString()
+  @IsEnum(ExperienceLevel)
   @IsOptional()
-  experienceLevel?: string;
+  experienceLevel?: ExperienceLevel;
 
-  @IsString()
+  @IsEnum(WorkplaceType)
   @IsOptional()
-  workplace?: string;
+  workplace?: WorkplaceType;
 
   @IsEnum(JobType)
   @IsOptional()

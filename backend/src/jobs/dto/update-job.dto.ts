@@ -1,5 +1,10 @@
 import { IsEnum, IsOptional, IsString } from "class-validator";
-import { JobStatus, JobType } from "./create-job.dto";
+import {
+  JobStatus,
+  JobType,
+  WorkplaceType,
+  ExperienceLevel,
+} from "./create-job.dto";
 
 export class UpdateJobDto {
   @IsString()
@@ -18,13 +23,13 @@ export class UpdateJobDto {
   @IsOptional()
   postalCode?: string;
 
-  @IsString()
+  @IsEnum(ExperienceLevel)
   @IsOptional()
-  experienceLevel?: string;
+  experienceLevel?: ExperienceLevel;
 
-  @IsString()
+  @IsEnum(WorkplaceType)
   @IsOptional()
-  workplace?: string;
+  workplace?: WorkplaceType;
 
   @IsEnum(JobType)
   @IsOptional()

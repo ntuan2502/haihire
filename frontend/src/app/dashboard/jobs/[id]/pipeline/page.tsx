@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   useJob,
-  useAllApplications,
+  useJobApplications,
   useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
@@ -40,9 +41,7 @@ import { ApplicationDocumentsSection } from "@/components/applications/applicati
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
-import {
-  removeInterviewFromNotes,
-} from "@/lib/interviews";
+
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
@@ -75,8 +74,8 @@ function JobPipelinePageContent() {
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: allApplications = [], isLoading: appsLoading } =
-    useAllApplications();
+  const { data: jobApplications = [], isLoading: appsLoading } =
+    useJobApplications(jobId);
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -139,18 +138,16 @@ function JobPipelinePageContent() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   // Cancel scheduled interview
-  const handleCancelInterview = async () => {
+  const handleCancelInterview = async (interviewId?: string) => {
     if (!selectedCandidate) return;
     try {
-      const updatedNotes = removeInterviewFromNotes(selectedCandidate.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: selectedCandidate.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (selectedCandidate.interviews && selectedCandidate.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
     }
@@ -160,11 +157,7 @@ function JobPipelinePageContent() {
   const [candidateNotesList, setCandidateNotesList] = useState<string[]>([]);
   const [candidateNoteInput, setCandidateNoteInput] = useState("");
 
-  // Filter applications belonging to this job
-  const jobApplications = useMemo(() => {
-    if (!jobId) return [];
-    return allApplications.filter((a) => String(a.jobId) === String(jobId));
-  }, [allApplications, jobId]);
+
 
   // Stage counts for this job
   const stageCounts = useMemo(() => {
@@ -270,7 +263,7 @@ function JobPipelinePageContent() {
     if (!selectedCandidate) return [];
     const seenUrls = new Set<string>();
     const allDocs: CandidateDocument[] = [];
-    const relatedApps = allApplications.filter(
+    const relatedApps = jobApplications.filter(
       (a) =>
         a.candidateEmail &&
         a.candidateEmail === selectedCandidate.candidateEmail,
@@ -295,7 +288,7 @@ function JobPipelinePageContent() {
       }
     }
     return allDocs;
-  }, [selectedCandidate, allApplications]);
+  }, [selectedCandidate, jobApplications]);
 
   // Sync initial notes list
   useEffect(() => {
@@ -304,15 +297,33 @@ function JobPipelinePageContent() {
         selectedCandidate.notes,
         selectedCandidate.candidateName,
       );
-      setCandidateNotesList(parsed.customNotes ? [parsed.customNotes] : []);
+      const noteText = parsed.customNotes || selectedCandidate.notes || "";
+      const items = noteText
+        ? noteText.split(/\s*\|\s*|\n+/).filter(Boolean)
+        : [];
+      setCandidateNotesList(items);
       setCandidateNoteInput("");
+    } else {
+      setCandidateNotesList([]);
     }
   }, [selectedCandidate]);
 
-  const handleAddNote = () => {
-    if (!candidateNoteInput.trim()) return;
-    setCandidateNotesList((prev) => [...prev, candidateNoteInput.trim()]);
+  const handleAddNote = async () => {
+    if (!candidateNoteInput.trim() || !selectedCandidate) return;
+    const trimmed = candidateNoteInput.trim();
+    const updated = [...candidateNotesList, trimmed];
+    setCandidateNotesList(updated);
     setCandidateNoteInput("");
+    try {
+      await updateCandidateMutation.mutateAsync({
+        id: selectedCandidate.id,
+        data: {
+          notes: updated.join(" | "),
+        },
+      });
+    } catch (err) {
+      console.error("Failed to save pipeline candidate note:", err);
+    }
   };
 
   // Handle stage change for selected candidate
@@ -874,6 +885,7 @@ function JobPipelinePageContent() {
                     {/* 2. Interviews Card */}
                     {overviewSections.interviews && (
                       <CandidateInterviewsList
+                        application={selectedCandidate}
                         notes={selectedCandidate.notes}
                         onSchedule={() => setScheduleModalOpen(true)}
                         onCancelInterview={handleCancelInterview}
@@ -1030,6 +1042,7 @@ function JobPipelinePageContent() {
                 {/* Interviews Tab */}
                 {candidateTab === "interviews" && (
                   <CandidateInterviewsList
+                    application={selectedCandidate}
                     notes={selectedCandidate.notes}
                     onSchedule={() => setScheduleModalOpen(true)}
                     onCancelInterview={handleCancelInterview}
@@ -1174,7 +1187,7 @@ function JobPipelinePageContent() {
           isOpen={scheduleModalOpen}
           onClose={() => setScheduleModalOpen(false)}
           jobs={[job]}
-          applications={allApplications}
+          applications={jobApplications}
           selectedJobId={job.id}
           selectedApplicationId={selectedCandidate?.id}
         />

@@ -27,6 +27,7 @@ import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import { getJobPublicUrl } from "@/lib/utils";
+import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 
 type ViewMode = "grid" | "list" | "table";
 
@@ -41,7 +42,7 @@ interface JobListProps {
 
 export function JobList({
   jobs,
-  applications = [],
+  applications: _applications = [],
   onViewCandidates: _onViewCandidates,
   _onOpenCreateJob,
 }: JobListProps & { _onOpenCreateJob?: () => void }) {
@@ -96,22 +97,27 @@ export function JobList({
           job.location.toLowerCase().includes(search.toLowerCase()) ||
           job.description.toLowerCase().includes(search.toLowerCase());
 
-        // Status filter (Open, Draft, Closed)
+        // Status filter (PUBLISHED, DRAFT, CLOSED)
         const matchStatus =
           statusFilters.length === 0 ||
-          (statusFilters.includes("Open") && job.status === "PUBLISHED") ||
-          (statusFilters.includes("Draft") && job.status === "DRAFT") ||
-          (statusFilters.includes("Closed") && (job.status === "CLOSED" || job.status === "ARCHIVED"));
+          (job.status && statusFilters.includes(job.status)) ||
+          (statusFilters.includes("CLOSED") && job.status === "ARCHIVED");
 
         // Employment type
         const matchType =
-          typeFilters.length === 0 ||
-          (typeFilters.includes("Full-time") && job.type === "FULL_TIME") ||
-          (typeFilters.includes("Part-time") && job.type === "PART_TIME") ||
-          (typeFilters.includes("Contract") && job.type === "CONTRACT") ||
-          (typeFilters.includes("Internship") && job.type === "INTERNSHIP");
+          typeFilters.length === 0 || (job.type && typeFilters.includes(job.type));
 
-        return matchSearch && matchStatus && matchType;
+        // Experience level
+        const matchExp =
+          expFilters.length === 0 ||
+          (job.experienceLevel && expFilters.includes(job.experienceLevel));
+
+        // Workplace
+        const matchWorkplace =
+          workplaceFilters.length === 0 ||
+          (job.workplace && workplaceFilters.includes(job.workplace));
+
+        return matchSearch && matchStatus && matchType && matchExp && matchWorkplace;
       })
       .sort((a, b) => {
         if (sortBy === "title") {
@@ -129,33 +135,21 @@ export function JobList({
         const bDate = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
       });
-  }, [jobs, search, statusFilters, typeFilters, sortBy, sortOrder]);
+  }, [jobs, search, statusFilters, typeFilters, expFilters, workplaceFilters, sortBy, sortOrder]);
 
   // Stage count helper for a job
   const getJobStageCounts = (jobId: string) => {
-    const jobApps = applications.filter((a) => a.jobId === jobId);
-    const byStage: Record<ApplicationStage, number> = {
-      APPLIED: 0,
-      SCREENING: 0,
-      INTERVIEW: 0,
-      OFFER: 0,
-      HIRED: 0,
-      REJECTED: 0,
-    };
-    for (const a of jobApps) {
-      if (byStage[a.stage] !== undefined) {
-        byStage[a.stage]++;
-      }
-    }
+    const job = jobs.find((j) => j.id === jobId);
+    const byStage = (job?.applicationsByStage || {}) as Record<string, number>;
     return {
-      new: byStage.APPLIED,
-      screening: byStage.SCREENING,
-      interview: byStage.INTERVIEW,
-      offer: byStage.OFFER,
-      hired: byStage.HIRED,
-      rejected: byStage.REJECTED,
-      byStage,
-      total: jobApps.length,
+      new: byStage.APPLIED || 0,
+      screening: byStage.SCREENING || 0,
+      interview: byStage.INTERVIEW || 0,
+      offer: byStage.OFFER || 0,
+      hired: byStage.HIRED || 0,
+      rejected: byStage.REJECTED || 0,
+      byStage: byStage as Record<ApplicationStage, number>,
+      total: job?.applicationsCount || 0,
     };
   };
 
@@ -294,17 +288,21 @@ export function JobList({
                     <JobStatusBadge status={job.status} className="shrink-0" />
                   </div>
 
-                  {/* Sub-row: Type & Location */}
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                    <span>
-                      {job.type === "FULL_TIME"
-                        ? t("jobs.fullTime")
-                        : job.type === "PART_TIME"
-                          ? t("jobs.partTime")
-                          : job.type === "CONTRACT"
-                            ? t("jobs.contract")
-                            : t("jobs.internship")}
-                    </span>
+                  {/* Sub-row: Type, Workplace, Experience & Location */}
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
+                    <span>{getJobTypeLabel(job.type, t)}</span>
+                    {job.workplace && (
+                      <>
+                        <span>•</span>
+                        <span>{getWorkplaceLabel(job.workplace, t)}</span>
+                      </>
+                    )}
+                    {job.experienceLevel && (
+                      <>
+                        <span>•</span>
+                        <span>{getExperienceLevelLabel(job.experienceLevel, t)}</span>
+                      </>
+                    )}
                     <span>•</span>
                     <span className="flex items-center gap-0.5 truncate">
                       <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
@@ -439,16 +437,20 @@ export function JobList({
                       <JobStatusBadge status={job.status} />
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                      <span>
-                        {job.type === "FULL_TIME"
-                          ? t("jobs.fullTime")
-                          : job.type === "PART_TIME"
-                            ? t("jobs.partTime")
-                            : job.type === "CONTRACT"
-                              ? t("jobs.contract")
-                              : t("jobs.internship")}
-                      </span>
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
+                      <span>{getJobTypeLabel(job.type, t)}</span>
+                      {job.workplace && (
+                        <>
+                          <span>•</span>
+                          <span>{getWorkplaceLabel(job.workplace, t)}</span>
+                        </>
+                      )}
+                      {job.experienceLevel && (
+                        <>
+                          <span>•</span>
+                          <span>{getExperienceLevelLabel(job.experienceLevel, t)}</span>
+                        </>
+                      )}
                       <span>•</span>
                       <span className="flex items-center gap-0.5">
                         <MapPin className="h-3 w-3 text-slate-400" />
@@ -619,13 +621,7 @@ export function JobList({
                         <JobStatusBadge status={job.status} />
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
-                        {job.type === "FULL_TIME"
-                          ? t("jobs.fullTime")
-                          : job.type === "PART_TIME"
-                            ? t("jobs.partTime")
-                            : job.type === "CONTRACT"
-                              ? t("jobs.contract")
-                              : t("jobs.internship")}
+                        {getJobTypeLabel(job.type, t)}
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1">
                         <MapPin className="h-3 w-3 text-slate-400" />
@@ -699,9 +695,9 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Open", label: t("jobs.openStatus") },
-                      { id: "Draft", label: t("jobs.draftStatus") },
-                      { id: "Closed", label: t("jobs.closed") },
+                      { id: "PUBLISHED", label: t("jobs.openStatus") },
+                      { id: "DRAFT", label: t("jobs.draftStatus") },
+                      { id: "CLOSED", label: t("jobs.closed") },
                     ].map((st) => (
                       <button
                         key={st.id}
@@ -726,10 +722,10 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Full-time", label: t("jobs.fullTime") },
-                      { id: "Part-time", label: t("jobs.partTime") },
-                      { id: "Contract", label: t("jobs.contract") },
-                      { id: "Internship", label: t("jobs.internship") },
+                      { id: "FULL_TIME", label: t("jobs.fullTime") },
+                      { id: "PART_TIME", label: t("jobs.partTime") },
+                      { id: "CONTRACT", label: t("jobs.contract") },
+                      { id: "INTERNSHIP", label: t("jobs.internship") },
                     ].map((item) => (
                       <button
                         key={item.id}
@@ -754,10 +750,11 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Junior", label: t("jobs.experience.junior") },
-                      { id: "Mid", label: t("jobs.experience.mid") },
-                      { id: "Senior", label: t("jobs.experience.senior") },
-                      { id: "Lead", label: t("jobs.experience.lead") },
+                      { id: "ENTRY_LEVEL", label: t("jobs.experience.junior") },
+                      { id: "MID_LEVEL", label: t("jobs.experience.mid") },
+                      { id: "SENIOR_LEVEL", label: t("jobs.experience.senior") },
+                      { id: "LEAD", label: t("jobs.experience.lead") },
+                      { id: "EXECUTIVE", label: t("jobs.experience.executive") },
                     ].map((exp) => (
                       <button
                         key={exp.id}
@@ -782,9 +779,9 @@ export function JobList({
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {[
-                      { id: "Remote", label: t("jobs.workplace.remote") },
-                      { id: "Hybrid", label: t("jobs.workplace.hybrid") },
-                      { id: "On-site", label: t("jobs.workplace.onsite") },
+                      { id: "REMOTE", label: t("jobs.workplace.remote") },
+                      { id: "HYBRID", label: t("jobs.workplace.hybrid") },
+                      { id: "ON_SITE", label: t("jobs.workplace.onsite") },
                     ].map((w) => (
                       <button
                         key={w.id}

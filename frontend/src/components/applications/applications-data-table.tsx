@@ -38,9 +38,7 @@ import { DeleteApplicationModal } from "@/components/applications/delete-applica
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import {
-  parseAllInterviewsFromNotes,
-  removeInterviewFromNotes,
-  stringifyInterviewToNotes,
+  getInterviewsFromApplication,
 } from "@/lib/interviews";
 import {
   OverviewSectionsPopover,
@@ -53,15 +51,18 @@ import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
   useUpdateCandidateMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import {
   getInitials,
   formatRelativeTime,
   formatDate,
   getStageInfo,
+  parseCandidateNotes,
   parseCandidateDocuments,
   fixUtf8String,
 } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import type { Job, Application, ApplicationStage, CandidateDocument } from "@/types";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/auth-context";
@@ -90,6 +91,7 @@ export function ApplicationsDataTable({
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [search, setSearch] = useState("");
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
@@ -108,6 +110,65 @@ export function ApplicationsDataTable({
   const drawerOverviewBtnRef = useRef<HTMLButtonElement>(null);
   const [drawerPreviewDoc, setDrawerPreviewDoc] =
     useState<CandidateDocument | null>(null);
+
+  // Get current selected application directly to ensure fresh state after updates
+  const currentApp = useMemo(() => {
+    if (!selectedApp) return null;
+    return (
+      initialApplications.find((a) => a.id === selectedApp.id) || selectedApp
+    );
+  }, [selectedApp, initialApplications]);
+
+  const allScheduledInterviews = useMemo(() => {
+    return getInterviewsFromApplication(currentApp);
+  }, [currentApp]);
+
+  useEffect(() => {
+    if (currentApp?.notes) {
+      const { customNotes } = parseCandidateNotes(
+        currentApp.notes,
+        currentApp.candidateName,
+      );
+      const noteText = customNotes || currentApp.notes;
+      const items = noteText.split(/\s*\|\s*|\n+/).filter(Boolean);
+      setDrawerNotesList(items);
+    } else {
+      setDrawerNotesList([]);
+    }
+  }, [currentApp?.notes, currentApp?.candidateName]);
+
+  const handleAddDrawerNote = async () => {
+    if (!drawerNoteInput.trim() || !currentApp) return;
+    const trimmed = drawerNoteInput.trim();
+    const updated = [trimmed, ...drawerNotesList];
+    setDrawerNotesList(updated);
+    setDrawerNoteInput("");
+    try {
+      await updateCandidateMutation.mutateAsync({
+        id: currentApp.id,
+        data: {
+          notes: updated.join(" | "),
+        },
+      });
+      setSelectedApp((prev) =>
+        prev ? { ...prev, notes: updated.join(" | ") } : null,
+      );
+    } catch (err) {
+      console.error("Failed to save drawer application note:", err);
+    }
+  };
+
+  const handleCancelInterview = async (interviewId?: string) => {
+    if (!currentApp) return;
+    try {
+      const targetId = interviewId || (currentApp.interviews && currentApp.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
+    } catch (err) {
+      console.error("Failed to cancel interview:", err);
+    }
+  };
 
   // Column Visibility Toggle State
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
@@ -234,32 +295,6 @@ export function ApplicationsDataTable({
     }
   };
 
-  const currentApp = useMemo(() => {
-    if (!selectedApp) return null;
-    return (
-      initialApplications.find((a) => a.id === selectedApp.id) || selectedApp
-    );
-  }, [selectedApp, initialApplications]);
-
-  const allScheduledInterviews = useMemo(() => {
-    return parseAllInterviewsFromNotes(currentApp?.notes);
-  }, [currentApp?.notes]);
-
-  const handleCancelInterview = async () => {
-    if (!currentApp) return;
-    try {
-      const updatedNotes = removeInterviewFromNotes(currentApp.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: currentApp.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
-      setSelectedApp((prev) => (prev ? { ...prev, notes: updatedNotes } : null));
-    } catch (err) {
-      console.error("Failed to cancel interview:", err);
-    }
-  };
 
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!currentApp) return;
@@ -693,7 +728,7 @@ export function ApplicationsDataTable({
                             <span>
                               {job?.title || t("candidates.role")}{" "}
                               <span className="text-slate-400">
-                                ({job?.type === "FULL_TIME" ? t("jobs.fullTime") : job?.type === "PART_TIME" ? t("jobs.partTime") : job?.type || t("jobs.fullTime")})
+                                ({getJobTypeLabel(job?.type, t)})
                               </span>
                             </span>
                           </span>
@@ -1053,6 +1088,7 @@ export function ApplicationsDataTable({
                       {/* Interviews Card */}
                       {drawerOverviewSections.interviews && (
                         <CandidateInterviewsList
+                          application={currentApp}
                           notes={currentApp.notes}
                           onSchedule={() => setIsScheduleModalOpen(true)}
                           onCancelInterview={handleCancelInterview}
@@ -1139,15 +1175,7 @@ export function ApplicationsDataTable({
                             <div className="flex justify-end">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (drawerNoteInput.trim()) {
-                                    setDrawerNotesList((prev) => [
-                                      drawerNoteInput.trim(),
-                                      ...prev,
-                                    ]);
-                                    setDrawerNoteInput("");
-                                  }
-                                }}
+                                onClick={handleAddDrawerNote}
                                 className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                               >
                                 {t("candidates.addNote")}
@@ -1172,6 +1200,7 @@ export function ApplicationsDataTable({
                   {/* Interviews Tab Content */}
                   {drawerTab === "interviews" && (
                     <CandidateInterviewsList
+                      application={currentApp}
                       notes={currentApp.notes}
                       onSchedule={() => setIsScheduleModalOpen(true)}
                       onCancelInterview={handleCancelInterview}
@@ -1261,9 +1290,8 @@ export function ApplicationsDataTable({
                           value={drawerNoteInput}
                           onChange={(e) => setDrawerNoteInput(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && drawerNoteInput.trim()) {
-                              setDrawerNotesList((prev) => [...prev, drawerNoteInput.trim()]);
-                              setDrawerNoteInput("");
+                            if (e.key === "Enter") {
+                              handleAddDrawerNote();
                             }
                           }}
                           className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
@@ -1271,12 +1299,7 @@ export function ApplicationsDataTable({
                         {drawerNoteInput.trim() && (
                           <Button
                             size="sm"
-                            onClick={() => {
-                              if (drawerNoteInput.trim()) {
-                                setDrawerNotesList((prev) => [...prev, drawerNoteInput.trim()]);
-                                setDrawerNoteInput("");
-                              }
-                            }}
+                            onClick={handleAddDrawerNote}
                             className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                           >
                             {t("candidates.addNote")}
@@ -1392,15 +1415,8 @@ export function ApplicationsDataTable({
           applications={baseApplications}
           selectedJobId={currentApp.jobId || undefined}
           selectedApplicationId={currentApp.id}
-          onInterviewScheduled={(interviewInfo) => {
-            setSelectedApp((prev) => {
-              if (!prev) return null;
-              const updatedNotes = stringifyInterviewToNotes(
-                prev.notes,
-                interviewInfo,
-              );
-              return { ...prev, notes: updatedNotes, stage: "INTERVIEW" };
-            });
+          onInterviewScheduled={() => {
+            setSelectedApp((prev) => (prev ? { ...prev, stage: "INTERVIEW" } : null));
           }}
         />
       )}

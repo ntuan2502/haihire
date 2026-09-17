@@ -30,9 +30,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'81cf65b09ae8f995c945734c43f66b1e3a7b7aa5db2f79793da32f189ddb70d0'>;
+  StorageHashBase<'6922c7eed1414eddc6ee0159e9ec088ce8792af3b361a4da9acce801df5e4699'>;
 export type ExecutionHash =
-  ExecutionHashBase<'e673d2349423c3b9109935436bfc6acf19ebf59df08f0ae1526314dc246f89a7'>;
+  ExecutionHashBase<'e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -199,6 +199,7 @@ export type FieldOutputTypes = {
       readonly candidateId: CodecTypes['pg/text@1']['output'];
       readonly jobId: CodecTypes['pg/text@1']['output'];
       readonly stage: 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+      readonly matchScore: CodecTypes['pg/int4@1']['output'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeFileName: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['output'] | null;
@@ -212,6 +213,10 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly organizationId: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly firstName: CodecTypes['pg/text@1']['output'] | null;
+      readonly lastName: CodecTypes['pg/text@1']['output'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
+      readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['output'] | null;
       readonly email: CodecTypes['pg/text@1']['output'];
       readonly phone: CodecTypes['pg/text@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
@@ -222,14 +227,29 @@ export type FieldOutputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
+    readonly Interview: {
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly applicationId: CodecTypes['pg/text@1']['output'];
+      readonly date: CodecTypes['pg/text@1']['output'];
+      readonly time: CodecTypes['pg/text@1']['output'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
+      readonly linkOrLocation: CodecTypes['pg/text@1']['output'];
+      readonly interviewer: CodecTypes['pg/text@1']['output'];
+      readonly round: CodecTypes['pg/int4@1']['output'];
+      readonly scorecard: CodecTypes['pg/text@1']['output'] | null;
+      readonly notes: CodecTypes['pg/text@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
     readonly InviteLink: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly token: CodecTypes['pg/text@1']['output'];
-      readonly role: CodecTypes['pg/text@1']['output'];
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly expiresAt: CodecTypes['pg/timestamptz@1']['output'] | null;
       readonly maxUses: CodecTypes['pg/int4@1']['output'] | null;
       readonly usesCount: CodecTypes['pg/int4@1']['output'];
-      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly organizationId: CodecTypes['pg/text@1']['output'];
       readonly createdById: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -241,9 +261,10 @@ export type FieldOutputTypes = {
       readonly department: CodecTypes['pg/text@1']['output'];
       readonly location: CodecTypes['pg/text@1']['output'];
       readonly postalCode: CodecTypes['pg/text@1']['output'] | null;
-      readonly experienceLevel: CodecTypes['pg/text@1']['output'] | null;
-      readonly workplace: CodecTypes['pg/text@1']['output'] | null;
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly description: CodecTypes['pg/text@1']['output'];
       readonly requirements: CodecTypes['pg/text@1']['output'] | null;
       readonly salaryRange: CodecTypes['pg/text@1']['output'] | null;
@@ -289,6 +310,7 @@ export type FieldInputTypes = {
       readonly candidateId: CodecTypes['pg/text@1']['input'];
       readonly jobId: CodecTypes['pg/text@1']['input'];
       readonly stage: 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+      readonly matchScore: CodecTypes['pg/int4@1']['input'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeFileName: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['input'] | null;
@@ -302,6 +324,10 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly organizationId: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly firstName: CodecTypes['pg/text@1']['input'] | null;
+      readonly lastName: CodecTypes['pg/text@1']['input'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
+      readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['input'] | null;
       readonly email: CodecTypes['pg/text@1']['input'];
       readonly phone: CodecTypes['pg/text@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
@@ -312,14 +338,29 @@ export type FieldInputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
+    readonly Interview: {
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly applicationId: CodecTypes['pg/text@1']['input'];
+      readonly date: CodecTypes['pg/text@1']['input'];
+      readonly time: CodecTypes['pg/text@1']['input'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
+      readonly linkOrLocation: CodecTypes['pg/text@1']['input'];
+      readonly interviewer: CodecTypes['pg/text@1']['input'];
+      readonly round: CodecTypes['pg/int4@1']['input'];
+      readonly scorecard: CodecTypes['pg/text@1']['input'] | null;
+      readonly notes: CodecTypes['pg/text@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
     readonly InviteLink: {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly token: CodecTypes['pg/text@1']['input'];
-      readonly role: CodecTypes['pg/text@1']['input'];
+      readonly role: 'ADMIN' | 'MEMBER';
       readonly expiresAt: CodecTypes['pg/timestamptz@1']['input'] | null;
       readonly maxUses: CodecTypes['pg/int4@1']['input'] | null;
       readonly usesCount: CodecTypes['pg/int4@1']['input'];
-      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly organizationId: CodecTypes['pg/text@1']['input'];
       readonly createdById: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -331,9 +372,10 @@ export type FieldInputTypes = {
       readonly department: CodecTypes['pg/text@1']['input'];
       readonly location: CodecTypes['pg/text@1']['input'];
       readonly postalCode: CodecTypes['pg/text@1']['input'] | null;
-      readonly experienceLevel: CodecTypes['pg/text@1']['input'] | null;
-      readonly workplace: CodecTypes['pg/text@1']['input'] | null;
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly description: CodecTypes['pg/text@1']['input'];
       readonly requirements: CodecTypes['pg/text@1']['input'] | null;
       readonly salaryRange: CodecTypes['pg/text@1']['input'] | null;
@@ -379,6 +421,7 @@ export type StorageColumnTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly jobId: CodecTypes['pg/text@1']['output'];
+      readonly matchScore: CodecTypes['pg/int4@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['output'];
       readonly resumeFileName: CodecTypes['pg/text@1']['output'] | null;
@@ -390,8 +433,12 @@ export type StorageColumnTypes = {
     };
     readonly candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['output'] | null;
       readonly email: CodecTypes['pg/text@1']['output'];
+      readonly firstName: CodecTypes['pg/text@1']['output'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly lastName: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly organizationId: CodecTypes['pg/text@1']['output'];
@@ -402,6 +449,21 @@ export type StorageColumnTypes = {
       readonly resumeUrl: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
+    readonly interview: {
+      readonly applicationId: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly date: CodecTypes['pg/text@1']['output'];
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly interviewer: CodecTypes['pg/text@1']['output'];
+      readonly linkOrLocation: CodecTypes['pg/text@1']['output'];
+      readonly notes: CodecTypes['pg/text@1']['output'] | null;
+      readonly round: CodecTypes['pg/int4@1']['output'];
+      readonly scorecard: CodecTypes['pg/text@1']['output'] | null;
+      readonly time: CodecTypes['pg/text@1']['output'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
     readonly inviteLink: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly createdById: CodecTypes['pg/text@1']['output'] | null;
@@ -409,8 +471,8 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly maxUses: CodecTypes['pg/int4@1']['output'] | null;
       readonly organizationId: CodecTypes['pg/text@1']['output'];
-      readonly role: CodecTypes['pg/text@1']['output'];
-      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly role: 'ADMIN' | 'MEMBER';
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly token: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly usesCount: CodecTypes['pg/int4@1']['output'];
@@ -420,7 +482,8 @@ export type StorageColumnTypes = {
       readonly createdById: CodecTypes['pg/text@1']['output'] | null;
       readonly department: CodecTypes['pg/text@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'];
-      readonly experienceLevel: CodecTypes['pg/text@1']['output'] | null;
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly location: CodecTypes['pg/text@1']['output'];
       readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
@@ -429,9 +492,9 @@ export type StorageColumnTypes = {
       readonly salaryRange: CodecTypes['pg/text@1']['output'] | null;
       readonly status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
       readonly title: CodecTypes['pg/text@1']['output'];
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
-      readonly workplace: CodecTypes['pg/text@1']['output'] | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
     };
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -469,6 +532,7 @@ export type StorageColumnInputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly jobId: CodecTypes['pg/text@1']['input'];
+      readonly matchScore: CodecTypes['pg/int4@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['input'];
       readonly resumeFileName: CodecTypes['pg/text@1']['input'] | null;
@@ -480,8 +544,12 @@ export type StorageColumnInputTypes = {
     };
     readonly candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly dateOfBirth: CodecTypes['pg/timestamptz@1']['input'] | null;
       readonly email: CodecTypes['pg/text@1']['input'];
+      readonly firstName: CodecTypes['pg/text@1']['input'] | null;
+      readonly gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly lastName: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly organizationId: CodecTypes['pg/text@1']['input'];
@@ -492,6 +560,21 @@ export type StorageColumnInputTypes = {
       readonly resumeUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
+    readonly interview: {
+      readonly applicationId: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly date: CodecTypes['pg/text@1']['input'];
+      readonly format: 'MEET' | 'ZOOM' | 'TEAMS' | 'OFFICE';
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly interviewer: CodecTypes['pg/text@1']['input'];
+      readonly linkOrLocation: CodecTypes['pg/text@1']['input'];
+      readonly notes: CodecTypes['pg/text@1']['input'] | null;
+      readonly round: CodecTypes['pg/int4@1']['input'];
+      readonly scorecard: CodecTypes['pg/text@1']['input'] | null;
+      readonly time: CodecTypes['pg/text@1']['input'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
     readonly inviteLink: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly createdById: CodecTypes['pg/text@1']['input'] | null;
@@ -499,8 +582,8 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly maxUses: CodecTypes['pg/int4@1']['input'] | null;
       readonly organizationId: CodecTypes['pg/text@1']['input'];
-      readonly role: CodecTypes['pg/text@1']['input'];
-      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly role: 'ADMIN' | 'MEMBER';
+      readonly status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
       readonly token: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly usesCount: CodecTypes['pg/int4@1']['input'];
@@ -510,7 +593,8 @@ export type StorageColumnInputTypes = {
       readonly createdById: CodecTypes['pg/text@1']['input'] | null;
       readonly department: CodecTypes['pg/text@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'];
-      readonly experienceLevel: CodecTypes['pg/text@1']['input'] | null;
+      readonly experienceLevel:
+        'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'LEAD' | 'EXECUTIVE' | null;
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly location: CodecTypes['pg/text@1']['input'];
       readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
@@ -519,9 +603,9 @@ export type StorageColumnInputTypes = {
       readonly salaryRange: CodecTypes['pg/text@1']['input'] | null;
       readonly status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
       readonly title: CodecTypes['pg/text@1']['input'];
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
-      readonly workplace: CodecTypes['pg/text@1']['input'] | null;
+      readonly workplace: 'ON_SITE' | 'HYBRID' | 'REMOTE' | null;
     };
     readonly organization: {
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -595,6 +679,11 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/text@1', 'APPLIED'>;
                   };
+                };
+                readonly matchScore: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
                 };
                 readonly resumeUrl: {
                   readonly nativeType: 'text';
@@ -706,6 +795,26 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
+                readonly firstName: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly lastName: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly gender: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly dateOfBirth: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: true;
+                };
                 readonly email: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -782,6 +891,112 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly interview: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly applicationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly date: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly time: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly type: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'TECHNICAL'>;
+                  };
+                };
+                readonly format: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'MEET'>;
+                  };
+                };
+                readonly linkOrLocation: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly interviewer: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly round: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 1>;
+                  };
+                };
+                readonly scorecard: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly notes: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'interview_applicationId_idx_8158f91a';
+                  readonly prefix: 'interview_applicationId_idx';
+                  readonly columns: readonly ['applicationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'interview';
+                    readonly columns: readonly ['applicationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'application';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly inviteLink: {
               columns: {
                 readonly id: {
@@ -828,7 +1043,7 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly default: {
                     readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'active'>;
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'ACTIVE'>;
                   };
                 };
                 readonly organizationId: {
@@ -1242,23 +1457,53 @@ type ContractBase = Omit<
                 'REJECTED',
               ];
             };
+            readonly ExperienceLevel: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'ENTRY_LEVEL',
+                'MID_LEVEL',
+                'SENIOR_LEVEL',
+                'LEAD',
+                'EXECUTIVE',
+              ];
+            };
+            readonly Gender: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['MALE', 'FEMALE', 'OTHER'];
+            };
+            readonly InterviewFormat: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['MEET', 'ZOOM', 'TEAMS', 'OFFICE'];
+            };
+            readonly InterviewType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'HR_SCREENING',
+                'TECHNICAL',
+                'CULTURE_FIT',
+                'FINAL_ROUND',
+                'ASSESSMENT',
+              ];
+            };
+            readonly InviteStatus: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['ACTIVE', 'EXPIRED', 'REVOKED'];
+            };
             readonly JobStatus: {
               readonly kind: 'valueSet';
               readonly values: readonly ['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'];
             };
             readonly JobType: {
               readonly kind: 'valueSet';
-              readonly values: readonly [
-                'FULL_TIME',
-                'PART_TIME',
-                'CONTRACT',
-                'INTERNSHIP',
-                'REMOTE',
-              ];
+              readonly values: readonly ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP'];
             };
             readonly Role: {
               readonly kind: 'valueSet';
               readonly values: readonly ['ADMIN', 'MEMBER'];
+            };
+            readonly WorkplaceType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['ON_SITE', 'HYBRID', 'REMOTE'];
             };
           };
         };
@@ -1290,6 +1535,7 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Application';
     };
+    readonly interview: { readonly namespace: 'public' & NamespaceId; readonly model: 'Interview' };
   };
   readonly domain: {
     readonly namespaces: {
@@ -1312,6 +1558,10 @@ type ContractBase = Omit<
               readonly stage: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly matchScore: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly resumeUrl: {
                 readonly nullable: true;
@@ -1358,6 +1608,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly interviews: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Interview';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['applicationId'];
+                };
+              };
               readonly job: {
                 readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Job' };
                 readonly cardinality: 'N:1';
@@ -1375,6 +1636,7 @@ type ContractBase = Omit<
                 readonly candidateId: { readonly column: 'candidateId' };
                 readonly jobId: { readonly column: 'jobId' };
                 readonly stage: { readonly column: 'stage' };
+                readonly matchScore: { readonly column: 'matchScore' };
                 readonly resumeUrl: { readonly column: 'resumeUrl' };
                 readonly resumeFileName: { readonly column: 'resumeFileName' };
                 readonly resumeFileSize: { readonly column: 'resumeFileSize' };
@@ -1399,6 +1661,22 @@ type ContractBase = Omit<
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly firstName: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly lastName: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly gender: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly dateOfBirth: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
               };
               readonly email: {
                 readonly nullable: false;
@@ -1468,6 +1746,10 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly organizationId: { readonly column: 'organizationId' };
                 readonly name: { readonly column: 'name' };
+                readonly firstName: { readonly column: 'firstName' };
+                readonly lastName: { readonly column: 'lastName' };
+                readonly gender: { readonly column: 'gender' };
+                readonly dateOfBirth: { readonly column: 'dateOfBirth' };
                 readonly email: { readonly column: 'email' };
                 readonly phone: { readonly column: 'phone' };
                 readonly notes: { readonly column: 'notes' };
@@ -1475,6 +1757,94 @@ type ContractBase = Omit<
                 readonly resumeFileName: { readonly column: 'resumeFileName' };
                 readonly resumeFileSize: { readonly column: 'resumeFileSize' };
                 readonly resumeMimeType: { readonly column: 'resumeMimeType' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly Interview: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly applicationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly date: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly time: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly type: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly format: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly linkOrLocation: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly interviewer: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly round: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly scorecard: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly notes: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+            };
+            readonly relations: {
+              readonly application: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Application';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['applicationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'interview';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly applicationId: { readonly column: 'applicationId' };
+                readonly date: { readonly column: 'date' };
+                readonly time: { readonly column: 'time' };
+                readonly type: { readonly column: 'type' };
+                readonly format: { readonly column: 'format' };
+                readonly linkOrLocation: { readonly column: 'linkOrLocation' };
+                readonly interviewer: { readonly column: 'interviewer' };
+                readonly round: { readonly column: 'round' };
+                readonly scorecard: { readonly column: 'scorecard' };
+                readonly notes: { readonly column: 'notes' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
@@ -1954,7 +2324,6 @@ type ContractBase = Omit<
               { readonly name: 'PART_TIME'; readonly value: 'PART_TIME' },
               { readonly name: 'CONTRACT'; readonly value: 'CONTRACT' },
               { readonly name: 'INTERNSHIP'; readonly value: 'INTERNSHIP' },
-              { readonly name: 'REMOTE'; readonly value: 'REMOTE' },
             ];
           };
           readonly JobStatus: {
@@ -1975,6 +2344,59 @@ type ContractBase = Omit<
               { readonly name: 'OFFER'; readonly value: 'OFFER' },
               { readonly name: 'HIRED'; readonly value: 'HIRED' },
               { readonly name: 'REJECTED'; readonly value: 'REJECTED' },
+            ];
+          };
+          readonly InterviewType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'HR_SCREENING'; readonly value: 'HR_SCREENING' },
+              { readonly name: 'TECHNICAL'; readonly value: 'TECHNICAL' },
+              { readonly name: 'CULTURE_FIT'; readonly value: 'CULTURE_FIT' },
+              { readonly name: 'FINAL_ROUND'; readonly value: 'FINAL_ROUND' },
+              { readonly name: 'ASSESSMENT'; readonly value: 'ASSESSMENT' },
+            ];
+          };
+          readonly InterviewFormat: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'MEET'; readonly value: 'MEET' },
+              { readonly name: 'ZOOM'; readonly value: 'ZOOM' },
+              { readonly name: 'TEAMS'; readonly value: 'TEAMS' },
+              { readonly name: 'OFFICE'; readonly value: 'OFFICE' },
+            ];
+          };
+          readonly WorkplaceType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ON_SITE'; readonly value: 'ON_SITE' },
+              { readonly name: 'HYBRID'; readonly value: 'HYBRID' },
+              { readonly name: 'REMOTE'; readonly value: 'REMOTE' },
+            ];
+          };
+          readonly ExperienceLevel: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ENTRY_LEVEL'; readonly value: 'ENTRY_LEVEL' },
+              { readonly name: 'MID_LEVEL'; readonly value: 'MID_LEVEL' },
+              { readonly name: 'SENIOR_LEVEL'; readonly value: 'SENIOR_LEVEL' },
+              { readonly name: 'LEAD'; readonly value: 'LEAD' },
+              { readonly name: 'EXECUTIVE'; readonly value: 'EXECUTIVE' },
+            ];
+          };
+          readonly Gender: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'MALE'; readonly value: 'MALE' },
+              { readonly name: 'FEMALE'; readonly value: 'FEMALE' },
+              { readonly name: 'OTHER'; readonly value: 'OTHER' },
+            ];
+          };
+          readonly InviteStatus: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ACTIVE'; readonly value: 'ACTIVE' },
+              { readonly name: 'EXPIRED'; readonly value: 'EXPIRED' },
+              { readonly name: 'REVOKED'; readonly value: 'REVOKED' },
             ];
           };
         };
@@ -2033,6 +2455,23 @@ type ContractBase = Omit<
           readonly ref: {
             readonly namespace: 'public';
             readonly table: 'candidate';
+            readonly column: 'updatedAt';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'interview';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'interview';
             readonly column: 'updatedAt';
           };
           readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };

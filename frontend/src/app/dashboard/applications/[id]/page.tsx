@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -8,10 +8,12 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useAllApplications,
+  useApplication,
+  useCandidates,
   useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
@@ -36,9 +38,7 @@ import { ApplicationDocumentsSection } from "@/components/applications/applicati
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
-import {
-  removeInterviewFromNotes,
-} from "@/lib/interviews";
+
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
@@ -53,9 +53,11 @@ import {
   formatDate,
   isValidUuid,
   getCandidateDisplayName,
+  parseCandidateNotes,
   parseCandidateDocuments,
   fixUtf8String,
 } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import { useI18n } from "@/i18n";
 
 function ApplicationDetailPageContent() {
@@ -65,15 +67,22 @@ function ApplicationDetailPageContent() {
   const { t } = useI18n();
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
+  const isAppIdValid = isValidUuid(appIdStr);
+  const { data: app, isLoading: appLoading } = useApplication(
+    isAppIdValid ? appIdStr : null,
+  );
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications();
+  const { data: candidates = [], isLoading: candidatesLoading } = useCandidates(
+    user?.organizationId,
+  );
+  const loading = appLoading || jobsLoading || candidatesLoading;
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [noteInput, setNoteInput] = useState("");
@@ -90,56 +99,60 @@ function ApplicationDetailPageContent() {
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
 
   // Cancel scheduled interview
-  const handleCancelInterview = async () => {
+  const handleCancelInterview = async (interviewId?: string) => {
     if (!app) return;
     try {
-      const updatedNotes = removeInterviewFromNotes(app.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: app.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (app.interviews && app.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
     }
   };
 
-  const loading = jobsLoading || appsLoading;
-
-  const isAppIdValid = isValidUuid(appIdStr);
-  const app = isAppIdValid
-    ? applications.find((a) => String(a.id) === String(appIdStr))
-    : undefined;
   const job = jobs.find((j) => j.id === app?.jobId);
 
   const candidateDocuments = useMemo(() => {
     if (!app) return [];
-    const seenUrls = new Set<string>();
-    const allDocs: CandidateDocument[] = [];
-    const relatedApps = applications.filter(
-      (a) => a.candidateEmail && a.candidateEmail === app.candidateEmail,
-    );
-    const appsToScan = relatedApps.length > 0 ? relatedApps : [app];
+    return parseCandidateDocuments(app.notes, {
+      id: app.id,
+      resumeUrl: app.resumeUrl,
+      resumeFileName: app.resumeFileName,
+      resumeFileSize: app.resumeFileSize,
+      resumeMimeType: app.resumeMimeType,
+      createdAt: app.createdAt,
+    });
+  }, [app]);
 
-    for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.notes, {
-        id: a.id,
-        resumeUrl: a.resumeUrl,
-        resumeFileName: a.resumeFileName,
-        resumeFileSize: a.resumeFileSize,
-        resumeMimeType: a.resumeMimeType,
-        createdAt: a.createdAt,
-      });
-      for (const d of docs) {
-        if (d.url && !seenUrls.has(d.url)) {
-          seenUrls.add(d.url);
-          allDocs.push(d);
-        }
-      }
+  useEffect(() => {
+    if (app?.notes) {
+      const { customNotes } = parseCandidateNotes(app.notes, app.candidateName);
+      const noteText = customNotes || app.notes;
+      const items = noteText.split(/\s*\|\s*|\n+/).filter(Boolean);
+      setNotesList(items);
+    } else {
+      setNotesList([]);
     }
-    return allDocs;
-  }, [app, applications]);
+  }, [app?.notes, app?.candidateName]);
+
+  const handleAddNote = async () => {
+    if (!noteInput.trim() || !app) return;
+    const trimmed = noteInput.trim();
+    const updated = [...notesList, trimmed];
+    setNotesList(updated);
+    setNoteInput("");
+    try {
+      await updateCandidateMutation.mutateAsync({
+        id: app.id,
+        data: {
+          notes: updated.join(" | "),
+        },
+      });
+    } catch (err) {
+      console.error("Failed to save application note:", err);
+    }
+  };
 
   const handleDownloadDoc = async (
     url: string,
@@ -218,7 +231,7 @@ function ApplicationDetailPageContent() {
           activeTab="applications"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
@@ -234,7 +247,7 @@ function ApplicationDetailPageContent() {
           activeTab="applications"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
@@ -266,7 +279,7 @@ function ApplicationDetailPageContent() {
   const candidateEmail = app?.candidateEmail || "—";
   const candidatePhone = app?.candidatePhone || "";
   const jobTitle = job
-    ? `${job.title} (${job.type === "FULL_TIME" ? t("jobs.fullTime") : job.type === "PART_TIME" ? t("jobs.partTime") : job.type})`
+    ? `${job.title} (${getJobTypeLabel(job.type, t)})`
     : app?.jobId
       ? `${t("jobs.jobTitle")} #${app.jobId}`
       : t("candidates.role");
@@ -280,7 +293,7 @@ function ApplicationDetailPageContent() {
         activeTab="applications"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Container */}
@@ -512,6 +525,7 @@ function ApplicationDetailPageContent() {
               {/* 2. Interviews */}
               {overviewSections.interviews && (
                 <CandidateInterviewsList
+                  application={app}
                   notes={app?.notes}
                   onSchedule={() => setScheduleModalOpen(true)}
                   onCancelInterview={handleCancelInterview}
@@ -572,9 +586,8 @@ function ApplicationDetailPageContent() {
                       value={noteInput}
                       onChange={(e) => setNoteInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && noteInput.trim()) {
-                          setNotesList((prev) => [...prev, noteInput.trim()]);
-                          setNoteInput("");
+                        if (e.key === "Enter") {
+                          handleAddNote();
                         }
                       }}
                       className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
@@ -582,12 +595,7 @@ function ApplicationDetailPageContent() {
                     {noteInput.trim() && (
                       <Button
                         size="sm"
-                        onClick={() => {
-                          if (noteInput.trim()) {
-                            setNotesList((prev) => [...prev, noteInput.trim()]);
-                            setNoteInput("");
-                          }
-                        }}
+                        onClick={handleAddNote}
                         className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                       >
                         {t("common.save")}
@@ -656,6 +664,7 @@ function ApplicationDetailPageContent() {
 
           {activeTab === "interviews" && (
             <CandidateInterviewsList
+              application={app}
               notes={app?.notes}
               onSchedule={() => setScheduleModalOpen(true)}
               onCancelInterview={handleCancelInterview}
@@ -703,9 +712,8 @@ function ApplicationDetailPageContent() {
                   value={noteInput}
                   onChange={(e) => setNoteInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && noteInput.trim()) {
-                      setNotesList((prev) => [...prev, noteInput.trim()]);
-                      setNoteInput("");
+                    if (e.key === "Enter") {
+                      handleAddNote();
                     }
                   }}
                   className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
@@ -713,12 +721,7 @@ function ApplicationDetailPageContent() {
                 {noteInput.trim() && (
                   <Button
                     size="sm"
-                    onClick={() => {
-                      if (noteInput.trim()) {
-                        setNotesList((prev) => [...prev, noteInput.trim()]);
-                        setNoteInput("");
-                      }
-                    }}
+                    onClick={handleAddNote}
                     className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                   >
                     {t("common.save")}
@@ -804,7 +807,7 @@ function ApplicationDetailPageContent() {
           isOpen={scheduleModalOpen}
           onClose={() => setScheduleModalOpen(false)}
           jobs={jobs}
-          applications={applications}
+          applications={app ? [app] : []}
           selectedJobId={app.jobId || undefined}
           selectedApplicationId={app.id}
         />

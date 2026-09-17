@@ -383,7 +383,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(link).toBeDefined();
       expect(link.token).toHaveLength(64);
       expect(link.organizationId).toBe("org-1");
-      expect(link.status).toBe("active");
+      expect(link.status).toBe("ACTIVE");
       expect(link.maxUses).toBe(5);
     });
 

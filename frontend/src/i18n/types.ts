@@ -372,6 +372,12 @@ export interface TranslationSchema {
       employmentTypeLabel: string;
       experienceLevelLabel: string;
       workplaceLabel: string;
+      selectEmploymentType: string;
+      selectExperienceLevel: string;
+      selectWorkplace: string;
+      employmentTypeError: string;
+      experienceLevelError: string;
+      workplaceError: string;
       compensationTitle: string;
       compensationOptional: string;
       compensationHintClosed: string;
@@ -382,6 +388,10 @@ export interface TranslationSchema {
       maxSalary: string;
       currency: string;
       perPeriod: string;
+      selectCurrency: string;
+      selectSalaryPer: string;
+      currencyError: string;
+      salaryPerError: string;
       periods: {
         year: string;
         month: string;
@@ -563,6 +573,7 @@ export interface TranslationSchema {
     displayNameHint: string;
     gender: string;
     dateOfBirth: string;
+    notes: string;
     notSpecified: string;
     male: string;
     female: string;

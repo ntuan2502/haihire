@@ -122,6 +122,7 @@ export class ApplicationsService {
       "candidateId",
       "jobId",
       "stage",
+      "matchScore",
       "resumeUrl",
       "resumeFileName",
       "resumeFileSize",
@@ -138,6 +139,10 @@ export class ApplicationsService {
     const candidates = await this.prisma.db.orm.public.Candidate.select(
       "id",
       "name",
+      "firstName",
+      "lastName",
+      "gender",
+      "dateOfBirth",
       "email",
       "phone",
       "resumeUrl",
@@ -146,6 +151,29 @@ export class ApplicationsService {
       "resumeMimeType",
     ).all();
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+
+    const allInterviews = await this.prisma.db.orm.public.Interview.all();
+    const interviewsByApp = new Map<string, any[]>();
+    for (const intv of allInterviews) {
+      const list = interviewsByApp.get(intv.applicationId) || [];
+      let parsedScorecard: any = null;
+      if (intv.scorecard) {
+        try {
+          parsedScorecard = JSON.parse(intv.scorecard);
+        } catch {
+          parsedScorecard = null;
+        }
+      }
+      list.push({
+        ...intv,
+        type: fixUtf8String(intv.type),
+        linkOrLocation: fixUtf8String(intv.linkOrLocation),
+        interviewer: fixUtf8String(intv.interviewer),
+        scorecard: parsedScorecard,
+        notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      });
+      interviewsByApp.set(intv.applicationId, list);
+    }
 
     const populated = applications.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
@@ -159,6 +187,7 @@ export class ApplicationsService {
         resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
         resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
         resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+        interviews: interviewsByApp.get(app.id) || [],
       };
     });
 
@@ -189,6 +218,7 @@ export class ApplicationsService {
       "candidateId",
       "jobId",
       "stage",
+      "matchScore",
       "resumeUrl",
       "resumeFileName",
       "resumeFileSize",
@@ -207,6 +237,10 @@ export class ApplicationsService {
     const candidates = await this.prisma.db.orm.public.Candidate.select(
       "id",
       "name",
+      "firstName",
+      "lastName",
+      "gender",
+      "dateOfBirth",
       "email",
       "phone",
       "resumeUrl",
@@ -215,6 +249,29 @@ export class ApplicationsService {
       "resumeMimeType",
     ).all();
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+
+    const allInterviews = await this.prisma.db.orm.public.Interview.all();
+    const interviewsByApp = new Map<string, any[]>();
+    for (const intv of allInterviews) {
+      const list = interviewsByApp.get(intv.applicationId) || [];
+      let parsedScorecard: any = null;
+      if (intv.scorecard) {
+        try {
+          parsedScorecard = JSON.parse(intv.scorecard);
+        } catch {
+          parsedScorecard = null;
+        }
+      }
+      list.push({
+        ...intv,
+        type: fixUtf8String(intv.type),
+        linkOrLocation: fixUtf8String(intv.linkOrLocation),
+        interviewer: fixUtf8String(intv.interviewer),
+        scorecard: parsedScorecard,
+        notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      });
+      interviewsByApp.set(intv.applicationId, list);
+    }
 
     return orgApps.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
@@ -230,6 +287,7 @@ export class ApplicationsService {
         resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
         resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
         resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+        interviews: interviewsByApp.get(app.id) || [],
       };
     });
   }
@@ -240,6 +298,7 @@ export class ApplicationsService {
       "candidateId",
       "jobId",
       "stage",
+      "matchScore",
       "resumeUrl",
       "resumeFileName",
       "resumeFileSize",
@@ -269,6 +328,10 @@ export class ApplicationsService {
     const candidate = await this.prisma.db.orm.public.Candidate.select(
       "id",
       "name",
+      "firstName",
+      "lastName",
+      "gender",
+      "dateOfBirth",
       "email",
       "phone",
       "notes",
@@ -281,6 +344,28 @@ export class ApplicationsService {
       .where((c) => c.id.eq(app.candidateId))
       .first();
 
+    const allInterviews = await this.prisma.db.orm.public.Interview.all();
+    const appInterviews = allInterviews
+      .filter((i) => i.applicationId === id)
+      .map((intv) => {
+        let parsedScorecard: any = null;
+        if (intv.scorecard) {
+          try {
+            parsedScorecard = JSON.parse(intv.scorecard);
+          } catch {
+            parsedScorecard = null;
+          }
+        }
+        return {
+          ...intv,
+          type: fixUtf8String(intv.type),
+          linkOrLocation: fixUtf8String(intv.linkOrLocation),
+          interviewer: fixUtf8String(intv.interviewer),
+          scorecard: parsedScorecard,
+          notes: intv.notes ? fixUtf8String(intv.notes) : null,
+        };
+      });
+
     return {
       ...app,
       job: job || null,
@@ -292,6 +377,7 @@ export class ApplicationsService {
       resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
       resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
       resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+      interviews: appInterviews,
     };
   }
 

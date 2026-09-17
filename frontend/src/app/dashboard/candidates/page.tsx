@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
 import {
   useJobs,
-  useAllApplications,
   useCandidates,
+  useCandidate,
   useUploadCandidateDocumentMutation,
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
-  useUpdateCandidateMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -48,6 +48,7 @@ import {
   Download,
   Trash2,
   ArrowLeft,
+  MessageSquare,
 } from "lucide-react";
 
 import {
@@ -55,11 +56,14 @@ import {
   parseCandidateNotes,
   parseCandidateDocuments,
   fixUtf8String,
+  getGenderLabel,
   type CandidateItem,
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
-import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
+import {
+  getInterviewsFromApplication,
+} from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
@@ -76,18 +80,17 @@ function CandidatesPageContent() {
   );
   const { data: candidates = [], isLoading: candidatesLoading } =
     useCandidates(user?.organizationId);
-  const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications(user?.organizationId);
   const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
   const deleteAppDocMutation = useDeleteDocumentMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [search, setSearch] = useState("");
 
   // Selected Candidate for Right Slide-over Sidebar Drawer
   const [selectedCandidate, setSelectedCandidate] =
     useState<CandidateItem | null>(null);
+  const { data: selectedCandidateFull } = useCandidate(selectedCandidate?.id);
   const [applyToJobModalCandidate, setApplyToJobModalCandidate] =
     useState<CandidateItem | null>(null);
   const [scheduleInterviewApp, setScheduleInterviewApp] =
@@ -105,15 +108,12 @@ function CandidatesPageContent() {
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const drawerDocInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCancelInterview = async (targetApp: Application) => {
+  const handleCancelInterview = async (targetApp: Application, interviewId?: string) => {
     try {
-      const updatedNotes = removeInterviewFromNotes(targetApp.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: targetApp.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
     } catch (err) {
       console.error("Failed to cancel interview in drawer:", err);
     }
@@ -121,7 +121,13 @@ function CandidatesPageContent() {
 
   const drawerCandidateDocuments = useMemo(() => {
     if (!selectedCandidate) return [];
-    const directDocs = parseCandidateDocuments(selectedCandidate.notes, {
+    if (
+      selectedCandidateFull?.allDocuments &&
+      selectedCandidateFull.allDocuments.length > 0
+    ) {
+      return selectedCandidateFull.allDocuments;
+    }
+    return parseCandidateDocuments(selectedCandidate.notes, {
       id: selectedCandidate.id,
       resumeUrl: selectedCandidate.resumeUrl || "",
       resumeFileName: selectedCandidate.resumeFileName || "Resume.pdf",
@@ -129,41 +135,7 @@ function CandidatesPageContent() {
       resumeMimeType: selectedCandidate.resumeMimeType,
       createdAt: selectedCandidate.createdAt,
     });
-    const allDocs = [...directDocs];
-    const seenUrls = new Set(allDocs.map((d) => d.url).filter(Boolean));
-
-    // Also include CVs and documents from all applications of this candidate
-    const candidateApps = applications.filter(
-      (a) =>
-        a.candidateId === selectedCandidate.id ||
-        (a.candidateEmail &&
-          a.candidateEmail.toLowerCase() ===
-            selectedCandidate.email.toLowerCase()),
-    );
-
-    for (const app of candidateApps) {
-      const appDocs = parseCandidateDocuments(app.notes, {
-        id: app.id,
-        resumeUrl: app.resumeUrl || "",
-        resumeFileName: app.resumeFileName || "Application_Resume.pdf",
-        resumeFileSize: app.resumeFileSize,
-        resumeMimeType: app.resumeMimeType,
-        createdAt: app.createdAt,
-      });
-      for (const doc of appDocs) {
-        if (doc.url && !seenUrls.has(doc.url)) {
-          seenUrls.add(doc.url);
-          allDocs.push({
-            ...doc,
-            sourceApplicationId: app.id,
-            jobTitle: app.job?.title,
-          });
-        }
-      }
-    }
-
-    return allDocs;
-  }, [selectedCandidate, applications]);
+  }, [selectedCandidate, selectedCandidateFull]);
 
   const filteredDrawerDocuments = useMemo(() => {
     if (!drawerDocFilter || drawerDocFilter === "All")
@@ -293,7 +265,7 @@ function CandidatesPageContent() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(20);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const loading = jobsLoading || candidatesLoading || appsLoading;
+  const loading = jobsLoading || candidatesLoading;
 
   // Real candidates from Candidate database
   const candidateRows: CandidateItem[] = useMemo(() => {
@@ -372,14 +344,12 @@ function CandidatesPageContent() {
 
   const selectedCandidateApps = useMemo(() => {
     if (!selectedCandidate) return [];
-    return applications.filter(
-      (a) =>
-        a.candidateId === selectedCandidate.id ||
-        (a.candidateEmail &&
-          a.candidateEmail.toLowerCase() ===
-            selectedCandidate.email.toLowerCase()),
+    return (
+      (selectedCandidateFull?.applications ||
+        selectedCandidate.candidate?.applications ||
+        []) as Application[]
     );
-  }, [selectedCandidate, applications]);
+  }, [selectedCandidate, selectedCandidateFull]);
 
   const filteredDrawerApps = useMemo(() => {
     if (drawerStageFilter === "ALL") return selectedCandidateApps;
@@ -398,8 +368,18 @@ function CandidatesPageContent() {
         customNotes: "",
       };
     }
-    return parseCandidateNotes(selectedCandidate.notes, selectedCandidate.name);
-  }, [selectedCandidate]);
+    const cand = selectedCandidate.candidate;
+    const parsed = parseCandidateNotes(selectedCandidate.notes, selectedCandidate.name);
+    return {
+      gender: getGenderLabel(cand?.gender || parsed.gender, t),
+      dob: cand?.dateOfBirth ? formatDate(cand.dateOfBirth) : parsed.dob,
+      firstName: cand?.firstName || parsed.firstName,
+      lastName: cand?.lastName || parsed.lastName,
+      displayName: selectedCandidate.name || parsed.displayName,
+      effectiveName: selectedCandidate.name || parsed.effectiveName,
+      customNotes: selectedCandidate.notes || parsed.customNotes,
+    };
+  }, [selectedCandidate, t]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -740,9 +720,20 @@ function CandidatesPageContent() {
                         </td>
                       )}
 
-                      {/* Quick notes - Empty as requested */}
+                      {/* Quick notes */}
                       {visibleColumns.quickNotes && (
-                        <td className="py-4 px-5"></td>
+                        <td className="py-4 px-5 max-w-xs">
+                          {candidate.notes ? (
+                            <span
+                              className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[220px]"
+                              title={candidate.notes}
+                            >
+                              {candidate.notes}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
                       )}
                     </tr>
                   ))}
@@ -979,6 +970,17 @@ function CandidatesPageContent() {
                         )}
                       </span>
                     </div>
+
+                    {/* Notes */}
+                    <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
+                        <MessageSquare className="h-3 w-3" />
+                        {t("candidates.notes")}
+                      </span>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
+                        {selectedCandidateDetails.customNotes || selectedCandidate.notes || "—"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1079,7 +1081,7 @@ function CandidatesPageContent() {
                         <div className="divide-y divide-slate-100 dark:divide-slate-800">
                           {filteredDrawerApps.map((app) => {
                             const job = jobs.find((j) => j.id === app.jobId);
-                            const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                            const allInterviews = getInterviewsFromApplication(app);
                             return (
                               <div
                                 key={app.id}
@@ -1112,6 +1114,7 @@ function CandidatesPageContent() {
                                 </div>
 
                                 <CandidateInterviewsList
+                                  application={app}
                                   notes={app.notes}
                                   onSchedule={() => setScheduleInterviewApp(app)}
                                   onCancelInterview={() => handleCancelInterview(app)}
@@ -1119,6 +1122,13 @@ function CandidatesPageContent() {
                                   showSectionHeader={false}
                                   hideIfEmpty={allInterviews.length === 0}
                                 />
+
+                                {app.notes && (
+                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 p-2.5 rounded-xl flex items-start gap-2">
+                                    <MessageSquare className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
+                                    <span className="line-clamp-2">{app.notes}</span>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -1355,7 +1365,7 @@ function CandidatesPageContent() {
         onClose={() => setApplyToJobModalCandidate(null)}
         candidate={applyToJobModalCandidate}
         jobs={jobs}
-        existingApplications={applications}
+        existingApplications={selectedCandidateApps}
       />
 
       {/* Schedule Interview Modal */}
@@ -1364,7 +1374,7 @@ function CandidatesPageContent() {
           isOpen={!!scheduleInterviewApp}
           onClose={() => setScheduleInterviewApp(null)}
           jobs={jobs}
-          applications={applications}
+          applications={selectedCandidateApps}
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
         />

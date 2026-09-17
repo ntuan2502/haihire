@@ -18,6 +18,7 @@ import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
 import { useI18n } from "@/i18n";
 import { buildCandidateNotes } from "@/lib/utils";
+import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 import {
   Briefcase,
   Building2,
@@ -271,13 +272,20 @@ export default function CareerJobSlugPage() {
 
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
                   <Clock className="h-3.5 w-3.5 text-emerald-500" />
-                  <span>{job.type.replace("_", " ")}</span>
+                  <span>{getJobTypeLabel(job.type, t)}</span>
                 </div>
 
                 {job.workplace && (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
                     <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
-                    <span>{job.workplace}</span>
+                    <span>{getWorkplaceLabel(job.workplace, t)}</span>
+                  </div>
+                )}
+
+                {job.experienceLevel && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                    <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+                    <span>{getExperienceLevelLabel(job.experienceLevel, t)}</span>
                   </div>
                 )}
 

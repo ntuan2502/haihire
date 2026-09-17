@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import {
   useJob,
   useJobs,
-  useAllApplications,
+  useJobApplications,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
@@ -20,13 +20,8 @@ function JobTablePageContent() {
   const { user } = useAuth();
   const { data: jobs = [] } = useJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: allApplications = [], isLoading: appsLoading } =
-    useAllApplications();
-
-  const jobApplications = useMemo(() => {
-    if (!jobId) return [];
-    return allApplications.filter((a) => String(a.jobId) === String(jobId));
-  }, [allApplications, jobId]);
+  const { data: jobApplications = [], isLoading: appsLoading } =
+    useJobApplications(jobId);
 
   if (jobLoading || appsLoading) {
     return (

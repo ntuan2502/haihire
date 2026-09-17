@@ -38,8 +38,9 @@ import {
 } from "lucide-react";
 import { getInitials, getCandidateDisplayName } from "@/lib/utils";
 import {
-  parseInterviewFromNotes,
-  parseAllInterviewsFromNotes,
+  getLatestInterviewFromApplication,
+  getInterviewsFromApplication,
+  getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
@@ -81,7 +82,7 @@ function InterviewsPageContent() {
   // Candidates currently in INTERVIEW stage or having a scheduled interview
   const interviewApplications = useMemo(() => {
     return applications.filter((app) => {
-      const hasScheduled = parseInterviewFromNotes(app.notes) !== null;
+      const hasScheduled = getLatestInterviewFromApplication(app) !== null;
       return app.stage === "INTERVIEW" || hasScheduled;
     });
   }, [applications]);
@@ -125,7 +126,7 @@ function InterviewsPageContent() {
       }
 
       // Tab filter
-      const scheduled = parseInterviewFromNotes(app.notes);
+      const scheduled = getLatestInterviewFromApplication(app);
       if (activeTab === "UPCOMING") {
         return scheduled !== null;
       }
@@ -146,8 +147,8 @@ function InterviewsPageContent() {
       }
 
       // Default: "upcoming"
-      const scheduledA = parseInterviewFromNotes(a.notes);
-      const scheduledB = parseInterviewFromNotes(b.notes);
+      const scheduledA = getLatestInterviewFromApplication(a);
+      const scheduledB = getLatestInterviewFromApplication(b);
 
       if (scheduledA && !scheduledB) return -1;
       if (!scheduledA && scheduledB) return 1;
@@ -172,8 +173,8 @@ function InterviewsPageContent() {
   }, [filteredAndSortedList, currentPageClamped, pageSize]);
 
   // KPIs
-  const scheduledCount = interviewApplications.filter((a) => parseInterviewFromNotes(a.notes) !== null).length;
-  const awaitingCount = interviewApplications.filter((a) => a.stage === "INTERVIEW" && parseInterviewFromNotes(a.notes) === null).length;
+  const scheduledCount = interviewApplications.filter((a) => getLatestInterviewFromApplication(a) !== null).length;
+  const awaitingCount = interviewApplications.filter((a) => a.stage === "INTERVIEW" && getLatestInterviewFromApplication(a) === null).length;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -465,7 +466,7 @@ function InterviewsPageContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
               {paginatedList.map((app) => {
                 const job = jobs.find((j) => String(j.id) === String(app.jobId));
-                const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                const allInterviews = getInterviewsFromApplication(app);
                 const currentInterview = allInterviews[0];
                 const previousInterviews = allInterviews.slice(1);
                 const displayName = getCandidateDisplayName(app);
@@ -543,7 +544,7 @@ function InterviewsPageContent() {
                           {/* Interview Type Badge: Own row so it never squishes date/time */}
                           <div>
                             <span className="inline-block px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-slate-200/80 dark:border-slate-700 shadow-2xs max-w-full truncate">
-                              {currentInterview.type}
+                              {getInterviewTypeLabel(currentInterview.type, t)}
                             </span>
                           </div>
 
@@ -670,7 +671,7 @@ function InterviewsPageContent() {
                                   <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-medium gap-2">
                                     <span className="whitespace-nowrap">{prev.date} ({prev.time})</span>
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
-                                      {prev.round ? t("interviews.roundInterview", { round: prev.round }) : prev.type}
+                                      {prev.round ? t("interviews.roundInterview", { round: prev.round }) : getInterviewTypeLabel(prev.type, t)}
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between text-[10px] text-slate-400">
@@ -738,7 +739,7 @@ function InterviewsPageContent() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                   {paginatedList.map((app) => {
                     const job = jobs.find((j) => String(j.id) === String(app.jobId));
-                    const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                    const allInterviews = getInterviewsFromApplication(app);
                     const currentInterview = allInterviews[0];
                     const displayName = getCandidateDisplayName(app);
                     const initials = getInitials(displayName);
@@ -789,7 +790,7 @@ function InterviewsPageContent() {
                               {/* Dòng 2: Loại vòng phỏng vấn */}
                               <div>
                                 <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
-                                  {currentInterview.type}
+                                  {getInterviewTypeLabel(currentInterview.type, t)}
                                 </span>
                               </div>
                               {/* Dòng 3: Cắt trực tuyến / văn phòng xuống dòng */}

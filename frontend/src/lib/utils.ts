@@ -1,5 +1,4 @@
-import type { Application, Candidate, CandidateDocument } from "@/types";
-import { removeInterviewFromNotes } from "@/lib/interviews";
+import type { Application, Candidate, CandidateDocument, Gender } from "@/types";
 
 /**
  * Format a date into consistent string formats (e.g. "08/27/2026", "8/27/2026", "Aug 27, 2026")
@@ -79,6 +78,12 @@ export function getInitials(name?: string | null): string {
 export function parseCandidateNotes(
   notes?: string | null,
   candidateName?: string | null,
+  structured?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    gender?: string | null;
+    dateOfBirth?: string | Date | null;
+  } | null,
 ): {
   gender: string;
   dob: string;
@@ -88,7 +93,7 @@ export function parseCandidateNotes(
   effectiveName: string;
   customNotes: string;
 } {
-  if (!notes && !candidateName) {
+  if (!notes && !candidateName && !structured) {
     return {
       gender: "—",
       dob: "—",
@@ -100,35 +105,27 @@ export function parseCandidateNotes(
     };
   }
 
-  const genderMatch = notes?.match(/Gender:\s*([^|]+)/i);
-  const dobMatch = notes?.match(/DOB:\s*([^|]+)/i);
-  const firstNameMatch = notes?.match(/FirstName:\s*([^|]+)/i);
-  const lastNameMatch = notes?.match(/LastName:\s*([^|]+)/i);
-  const displayNameMatch = notes?.match(/DisplayName:\s*([^|]+)/i);
-
-  let rawCustom = (notes || "")
-    .replace(/Gender:\s*[^|]+\|?/gi, "")
-    .replace(/DOB:\s*[^|]+\|?/gi, "")
-    .replace(/FirstName:\s*[^|]+\|?/gi, "")
-    .replace(/LastName:\s*[^|]+\|?/gi, "")
-    .replace(/DisplayName:\s*[^|]+\|?/gi, "")
-    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "");
-
-  rawCustom = removeInterviewFromNotes(rawCustom);
-  rawCustom = rawCustom
+  // Strip Docs segment and legacy brackets from candidate notes
+  const rawCustom = (notes || "")
+    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
     .replace(/^[|{}\s]+|[|{}\s]+$/g, "")
     .replace(/\|\s*\|/g, "|")
     .trim();
 
-  if (/^[{}|\s]+$/.test(rawCustom)) {
-    rawCustom = "";
+  const parsedFirst = structured?.firstName?.trim() || "";
+  const parsedLast = structured?.lastName?.trim() || "";
+
+  let parsedDob = "";
+  if (structured?.dateOfBirth) {
+    parsedDob =
+      structured.dateOfBirth instanceof Date
+        ? structured.dateOfBirth.toISOString().split("T")[0]
+        : String(structured.dateOfBirth).split("T")[0];
   }
 
-  const parsedFirst = firstNameMatch ? firstNameMatch[1].trim() : "";
-  const parsedLast = lastNameMatch ? lastNameMatch[1].trim() : "";
-  const parsedDisplay = displayNameMatch ? displayNameMatch[1].trim() : "";
+  const parsedGender = structured?.gender?.trim() || "";
 
-  // If first/last are not in notes, infer from candidateName
+  // If first/last are not in structured, infer from candidateName
   let inferredFirst = parsedFirst;
   let inferredLast = parsedLast;
   if (!inferredFirst && !inferredLast && candidateName) {
@@ -141,22 +138,19 @@ export function parseCandidateNotes(
     }
   }
 
-  // The unified display name shown across all views:
-  // 1. Explicit DisplayName -> 2. candidateName -> 3. "firstName lastName"
   const effectiveName =
-    parsedDisplay ||
-    candidateName ||
     [inferredFirst, inferredLast].filter(Boolean).join(" ") ||
+    candidateName ||
     "—";
 
   return {
-    gender: genderMatch ? genderMatch[1].trim() : "—",
-    dob: dobMatch ? dobMatch[1].trim() : "—",
+    gender: parsedGender || "—",
+    dob: parsedDob || "—",
     firstName: inferredFirst,
     lastName: inferredLast,
-    displayName: parsedDisplay,
+    displayName: "",
     effectiveName,
-    customNotes: rawCustom,
+    customNotes: /^[{}|\s]+$/.test(rawCustom) ? "" : rawCustom,
   };
 }
 
@@ -254,7 +248,12 @@ export function buildCandidateNotes(params: {
   if (params.displayName?.trim()) {
     segments.push(`DisplayName: ${params.displayName.trim()}`);
   }
-  if (params.gender && params.gender !== "Not specified" && params.gender !== "—") {
+  if (
+    params.gender &&
+    params.gender !== "Not specified" &&
+    params.gender !== "NOT_SPECIFIED" &&
+    params.gender !== "—"
+  ) {
     segments.push(`Gender: ${params.gender.trim()}`);
   }
   if (params.dob?.trim() && params.dob !== "—") {
@@ -268,15 +267,41 @@ export function buildCandidateNotes(params: {
 }
 
 /**
+ * Get localized display label for candidate gender
+ */
+export function getGenderLabel(
+  gender: Gender | string | null | undefined,
+  t: (key: string) => string,
+): string {
+  if (!gender || gender === "—" || gender === "NOT_SPECIFIED" || gender === "Not specified") {
+    return "—";
+  }
+  const upper = gender.toUpperCase();
+  if (upper === "MALE") return t("candidates.male");
+  if (upper === "FEMALE") return t("candidates.female");
+  if (upper === "OTHER") return t("candidates.otherGender");
+  return gender;
+}
+
+/**
  * Get unified candidate display name from candidate application or notes
  */
 export function getCandidateDisplayName(candidate?: {
+  name?: string | null;
   candidateName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   notes?: string | null;
 } | null): string {
   if (!candidate) return "—";
-  const { effectiveName } = parseCandidateNotes(candidate.notes, candidate.candidateName);
-  return effectiveName || candidate.candidateName || "—";
+  if (candidate.firstName || candidate.lastName) {
+    const combined = [candidate.firstName, candidate.lastName].filter(Boolean).join(" ");
+    if (combined.trim()) return combined.trim();
+  }
+  if (candidate.candidateName) return candidate.candidateName;
+  if (candidate.name) return candidate.name;
+  const { effectiveName } = parseCandidateNotes(candidate.notes, candidate.candidateName, candidate);
+  return effectiveName || "—";
 }
 
 /**

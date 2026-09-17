@@ -25,18 +25,18 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import {
-  useUpdateCandidateMutation,
+  useCreateInterviewMutation,
   useUpdateStageMutation,
   useOrgMembers,
 } from "@/hooks/use-queries";
 import { getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
-  parseInterviewFromNotes,
-  stringifyInterviewToNotes,
+  normalizeInterviewType,
+  INTERVIEW_TYPE_OPTIONS,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
-import type { Application, Job } from "@/types";
+import type { Application, Job, InterviewType, InterviewFormat } from "@/types";
 
 export interface ScheduleInterviewModalProps {
   isOpen: boolean;
@@ -62,15 +62,15 @@ export function ScheduleInterviewModal({
   const { t } = useI18n();
   const { user } = useAuth();
   const { data: members = [] } = useOrgMembers();
-  const updateCandidateMutation = useUpdateCandidateMutation();
+  const createInterviewMutation = useCreateInterviewMutation();
   const updateStageMutation = useUpdateStageMutation();
 
   const [modalJobId, setModalJobId] = useState<string>("");
   const [modalCandidateId, setModalCandidateId] = useState<string>("");
   const [interviewDate, setInterviewDate] = useState<string>("");
   const [interviewTime, setInterviewTime] = useState<string>("10:00");
-  const [interviewType, setInterviewType] = useState<string>("Kỹ thuật (Technical)");
-  const [interviewFormat, setInterviewFormat] = useState<"MEET" | "ZOOM" | "TEAMS" | "OFFICE">("MEET");
+  const [interviewType, setInterviewType] = useState<InterviewType>("TECHNICAL");
+  const [interviewFormat, setInterviewFormat] = useState<InterviewFormat>("MEET");
   const [linkOrLocation, setLinkOrLocation] = useState<string>("https://meet.google.com/");
   const [interviewerName, setInterviewerName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
@@ -116,12 +116,13 @@ export function ScheduleInterviewModal({
 
     // 2. Check if candidate has existing interview schedule
     const candidateObj = candidateToUse || applications.find((a) => a.id === initialCandId);
-    const existing = candidateObj ? parseInterviewFromNotes(candidateObj.notes) : null;
+    const existing =
+      candidateObj?.interviews?.[candidateObj.interviews.length - 1] || null;
 
     if (existing) {
       setInterviewDate(initialDate || existing.date);
       setInterviewTime(existing.time || "10:00");
-      setInterviewType(existing.type || "Kỹ thuật (Technical)");
+      setInterviewType(normalizeInterviewType(existing.type));
       setInterviewFormat(existing.format || "MEET");
       setLinkOrLocation(existing.linkOrLocation || "https://meet.google.com/");
       setInterviewerName(existing.interviewer || user?.name || "Hiring Team");
@@ -131,7 +132,7 @@ export function ScheduleInterviewModal({
       tomorrow.setDate(tomorrow.getDate() + 1);
       setInterviewDate(initialDate || tomorrow.toISOString().split("T")[0]);
       setInterviewTime("10:00");
-      setInterviewType("Kỹ thuật (Technical)");
+      setInterviewType("TECHNICAL");
       setInterviewFormat("MEET");
       setLinkOrLocation("https://meet.google.com/");
       setInterviewerName(user?.name || "Hiring Team");
@@ -143,11 +144,12 @@ export function ScheduleInterviewModal({
   const handleCandidateChange = (candId: string) => {
     setModalCandidateId(candId);
     const candidate = applications.find((a) => a.id === candId);
-    const existing = candidate ? parseInterviewFromNotes(candidate.notes) : null;
+    const existing =
+      candidate?.interviews?.[candidate.interviews.length - 1] || null;
     if (existing) {
       setInterviewDate(existing.date);
       setInterviewTime(existing.time || "10:00");
-      setInterviewType(existing.type || "Kỹ thuật (Technical)");
+      setInterviewType(normalizeInterviewType(existing.type));
       setInterviewFormat(existing.format || "MEET");
       setLinkOrLocation(existing.linkOrLocation || "https://meet.google.com/");
       setInterviewerName(existing.interviewer || user?.name || "Hiring Team");
@@ -184,15 +186,18 @@ export function ScheduleInterviewModal({
       notes: interviewNotes.trim(),
     };
 
-    const updatedNotes = stringifyInterviewToNotes(candidate.notes, interviewInfo);
-
     try {
-      // 1. Update candidate notes with interview metadata
-      await updateCandidateMutation.mutateAsync({
-        id: candidate.id,
-        data: {
-          notes: updatedNotes,
-        },
+      // 1. Create interview record in database
+      await createInterviewMutation.mutateAsync({
+        applicationId: candidate.id,
+        date: interviewDate,
+        time: interviewTime,
+        type: interviewType,
+        format: interviewFormat,
+        linkOrLocation: linkOrLocation.trim(),
+        interviewer: interviewerName.trim(),
+        notes: interviewNotes.trim() || undefined,
+        round: (candidate.interviews?.length || 0) + 1,
       });
 
       // 2. If candidate is still in APPLIED/SCREENING stage, advance to INTERVIEW stage
@@ -212,7 +217,7 @@ export function ScheduleInterviewModal({
     }
   };
 
-  const isSaving = updateCandidateMutation.isPending || updateStageMutation.isPending;
+  const isSaving = createInterviewMutation.isPending || updateStageMutation.isPending;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -353,14 +358,11 @@ export function ScheduleInterviewModal({
               </label>
               <CustomSelect
                 value={interviewType}
-                onChange={(val) => setInterviewType(val)}
-                options={[
-                  { value: "Sơ bộ (HR Screening)", label: t("interviews.types.hrScreening") },
-                  { value: "Kỹ thuật (Technical)", label: t("interviews.types.technical") },
-                  { value: "Văn hóa (Culture fit)", label: t("interviews.types.cultureFit") },
-                  { value: "Vòng cuối (Final round)", label: t("interviews.types.finalRound") },
-                  { value: "Đánh giá năng lực (Assessment)", label: t("interviews.types.assessment") },
-                ]}
+                onChange={(val) => setInterviewType(val as InterviewType)}
+                options={INTERVIEW_TYPE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: t(opt.labelKey),
+                }))}
                 className="w-full"
                 triggerClassName="h-10 text-xs font-medium"
               />
@@ -379,7 +381,7 @@ export function ScheduleInterviewModal({
               <CustomSelect
                 value={interviewFormat}
                 onChange={(val) => {
-                  const fVal = val as "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+                  const fVal = val as InterviewFormat;
                   setInterviewFormat(fVal);
                   if (fVal === "MEET" && !linkOrLocation.includes("zoom") && !linkOrLocation.includes("teams")) {
                     setLinkOrLocation("https://meet.google.com/");

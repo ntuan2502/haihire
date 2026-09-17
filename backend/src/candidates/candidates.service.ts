@@ -106,6 +106,10 @@ export class CandidatesService {
       "id",
       "organizationId",
       "name",
+      "firstName",
+      "lastName",
+      "gender",
+      "dateOfBirth",
       "email",
       "phone",
       "notes",
@@ -153,6 +157,10 @@ export class CandidatesService {
       "id",
       "organizationId",
       "name",
+      "firstName",
+      "lastName",
+      "gender",
+      "dateOfBirth",
       "email",
       "phone",
       "notes",
@@ -198,12 +206,39 @@ export class CandidatesService {
     ).all();
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
 
+    // Fetch interviews for each application
+    const appIds = new Set(applications.map((a) => a.id));
+    const allInterviews = await this.prisma.db.orm.public.Interview.all();
+    const candidateInterviews = allInterviews.filter((i) => appIds.has(i.applicationId));
+    const interviewsByApp = new Map<string, any[]>();
+    for (const intv of candidateInterviews) {
+      const list = interviewsByApp.get(intv.applicationId) || [];
+      let parsedScorecard: any = null;
+      if (intv.scorecard) {
+        try {
+          parsedScorecard = JSON.parse(intv.scorecard);
+        } catch {
+          parsedScorecard = null;
+        }
+      }
+      list.push({
+        ...intv,
+        type: fixUtf8String(intv.type),
+        linkOrLocation: fixUtf8String(intv.linkOrLocation),
+        interviewer: fixUtf8String(intv.interviewer),
+        scorecard: parsedScorecard,
+        notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      });
+      interviewsByApp.set(intv.applicationId, list);
+    }
+
     const populatedApps = applications.map((app) => ({
       ...app,
       job: jobMap.get(app.jobId) || null,
       candidateName: candidate.name,
       candidateEmail: candidate.email,
       candidatePhone: candidate.phone,
+      interviews: interviewsByApp.get(app.id) || [],
     }));
 
     // Aggregate all documents: candidate's documents + all documents from applications
@@ -289,9 +324,33 @@ export class CandidatesService {
       };
     }
 
+    let dateOfBirth: Date | null = null;
+    if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
+      const parsed = new Date(dto.dateOfBirth.trim());
+      if (!isNaN(parsed.getTime())) {
+        dateOfBirth = parsed;
+      }
+    }
+
+    let firstName = dto.firstName?.trim() || null;
+    let lastName = dto.lastName?.trim() || null;
+    if (!firstName && !lastName && dto.name) {
+      const parts = dto.name.trim().split(/\s+/);
+      if (parts.length > 1) {
+        firstName = parts[0];
+        lastName = parts.slice(1).join(" ");
+      } else {
+        firstName = parts[0] || null;
+      }
+    }
+
     const created = await this.prisma.db.orm.public.Candidate.create({
       organizationId: orgId,
       name: dto.name.trim(),
+      firstName,
+      lastName,
+      gender: dto.gender ? dto.gender : null,
+      dateOfBirth,
       email,
       phone: dto.phone?.trim() || null,
       notes: dto.notes || null,
@@ -309,6 +368,19 @@ export class CandidatesService {
 
     const updatePayload: Record<string, any> = {};
     if (dto.name !== undefined) updatePayload.name = dto.name.trim();
+    if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName?.trim() || null;
+    if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName?.trim() || null;
+    if (dto.gender !== undefined) {
+      updatePayload.gender = dto.gender ? dto.gender : null;
+    }
+    if (dto.dateOfBirth !== undefined) {
+      if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
+        const parsed = new Date(dto.dateOfBirth.trim());
+        updatePayload.dateOfBirth = !isNaN(parsed.getTime()) ? parsed : null;
+      } else {
+        updatePayload.dateOfBirth = null;
+      }
+    }
     if (dto.email !== undefined) updatePayload.email = dto.email.trim().toLowerCase();
     if (dto.phone !== undefined) updatePayload.phone = dto.phone?.trim() || null;
     if (dto.notes !== undefined) updatePayload.notes = dto.notes;

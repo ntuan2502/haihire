@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import {
-  parseAllInterviewsFromNotes,
+  getInterviewsFromApplication,
+  getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
@@ -55,7 +56,7 @@ export function InterviewsCalendarView({
     const map = new Map<string, CalendarEventItem[]>();
 
     applications.forEach((app) => {
-      const allInterviews = parseAllInterviewsFromNotes(app.notes);
+      const allInterviews = getInterviewsFromApplication(app);
       const job = jobs.find((j) => String(j.id) === String(app.jobId));
 
       allInterviews.forEach((intv) => {
@@ -394,7 +395,7 @@ export function InterviewsCalendarView({
                   {/* Bottom Counter if > 2 events */}
                   {events.length > 2 && (
                     <span className="text-[10px] font-bold text-slate-400 text-right block">
-                      {events.length} {t("interviews.pvPrefix")}
+                      {t("interviews.roundsBadge", { count: events.length })}
                     </span>
                   )}
                 </div>
@@ -483,7 +484,7 @@ export function InterviewsCalendarView({
                                 </span>
                               ) : (
                                 <span className="px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
-                                  {evt.interview.round ? `${t("interviews.round")} ${evt.interview.round}` : t("interviews.roundInterview")}
+                                  {evt.interview.round ? t("interviews.roundInterview", { round: evt.interview.round }) : t("interviews.round")}
                                 </span>
                               )}
                             </div>
@@ -504,7 +505,7 @@ export function InterviewsCalendarView({
                               {evt.interview.format === "OFFICE" ? (
                                 <span className="text-rose-600 font-semibold">{t("interviews.atOffice")}</span>
                               ) : (
-                                <span className="text-emerald-600 font-semibold">{t("interviews.onlineFormat")}</span>
+                                <span className="text-emerald-600 font-semibold">{t("interviews.onlineFormat", { format: evt.interview.format || "ONLINE" })}</span>
                               )}
                             </div>
 
@@ -583,9 +584,19 @@ export function InterviewsCalendarView({
               </div>
 
               <div className="flex items-center justify-between">
+                <span className="text-slate-400">{t("interviews.roundType")}:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">
+                  {getInterviewTypeLabel(selectedEvent.interview.type, t)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
                 <span className="text-slate-400">{t("interviews.timeLabel")}:</span>
                 <span className="font-bold text-blue-600 dark:text-blue-400">
-                  {selectedEvent.interview.date} {t("interviews.atTime")} {selectedEvent.interview.time}
+                  {t("interviews.atTime", {
+                    date: selectedEvent.interview.date,
+                    time: selectedEvent.interview.time,
+                  })}
                 </span>
               </div>
 
@@ -601,7 +612,9 @@ export function InterviewsCalendarView({
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {selectedEvent.interview.format === "OFFICE"
                     ? t("interviews.atOffice")
-                    : `${t("interviews.onlineFormat")} (${selectedEvent.interview.format})`}
+                    : t("interviews.onlineFormat", {
+                        format: selectedEvent.interview.format,
+                      })}
                 </span>
               </div>
 
@@ -634,7 +647,11 @@ export function InterviewsCalendarView({
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                    <span>{t("interviews.ratingResult")}: {selectedEvent.interview.scorecard.overallRating} / 5</span>
+                    <span>
+                      {t("interviews.ratingResult", {
+                        score: selectedEvent.interview.scorecard.overallRating,
+                      })}
+                    </span>
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 font-bold text-[10px] text-emerald-600 border">
                     {selectedEvent.interview.scorecard.recommendation}

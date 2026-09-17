@@ -18,10 +18,10 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import {
   parseCandidateNotes,
-  buildCandidateNotes,
   normalizeDateForInput,
   isValidUuid,
 } from "@/lib/utils";
+import type { Gender } from "@/types";
 import { useI18n } from "@/i18n";
 
 function EditCandidatePageContent() {
@@ -52,7 +52,7 @@ function EditCandidatePageContent() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState("Not specified");
+  const [gender, setGender] = useState<Gender | "NOT_SPECIFIED">("NOT_SPECIFIED");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -64,17 +64,28 @@ function EditCandidatePageContent() {
   useEffect(() => {
     if (candidate && !isInitialized) {
       const parsed = parseCandidateNotes(candidate.notes, candidate.name);
-      setFirstName(parsed.firstName);
-      setLastName(parsed.lastName);
-      setDisplayName(parsed.displayName);
+      setFirstName(candidate.firstName || parsed.firstName);
+      setLastName(candidate.lastName || parsed.lastName);
+      setDisplayName(candidate.name || parsed.displayName);
       setEmail(candidate.email || "");
       setPhone(candidate.phone || "");
 
-      if (parsed.gender && parsed.gender !== "—") {
-        setGender(parsed.gender);
+      const effGender = candidate.gender || parsed.gender;
+      if (effGender && effGender !== "—") {
+        const upper = effGender.toUpperCase();
+        if (upper === "MALE" || upper === "FEMALE" || upper === "OTHER") {
+          setGender(upper as Gender);
+        } else if (effGender === "Nam") {
+          setGender("MALE");
+        } else if (effGender === "Nữ") {
+          setGender("FEMALE");
+        } else {
+          setGender("NOT_SPECIFIED");
+        }
       }
-      if (parsed.dob && parsed.dob !== "—") {
-        setDateOfBirth(normalizeDateForInput(parsed.dob));
+      const effDob = candidate.dateOfBirth || parsed.dob;
+      if (effDob && effDob !== "—") {
+        setDateOfBirth(normalizeDateForInput(effDob));
       }
       setIsInitialized(true);
     }
@@ -105,24 +116,17 @@ function EditCandidatePageContent() {
         ? displayName.trim()
         : `${firstName.trim()} ${lastName.trim()}`.trim();
 
-      const parsedOld = parseCandidateNotes(candidate.notes, candidate.name);
-
-      const notes = buildCandidateNotes({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        displayName: displayName.trim() || undefined,
-        gender,
-        dob: dateOfBirth,
-        customNotes: parsedOld.customNotes,
-      });
-
       await updateCandidateDetailsMutation.mutateAsync({
         id: candidate.id,
         data: {
           name: effectiveDisplayName,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          gender: gender && gender !== "NOT_SPECIFIED" ? gender : undefined,
+          dateOfBirth: dateOfBirth ? dateOfBirth : undefined,
           email: email.trim(),
           phone: phone.trim() || undefined,
-          notes: notes || undefined,
+          notes: candidate.notes || undefined,
         },
       });
 
@@ -318,12 +322,12 @@ function EditCandidatePageContent() {
               </label>
               <CustomSelect
                 value={gender}
-                onChange={(val) => setGender(val)}
+                onChange={(val) => setGender(val as Gender | "NOT_SPECIFIED")}
                 options={[
-                  { value: "Not specified", label: t("candidates.notSpecified") },
-                  { value: "Male", label: t("candidates.male") },
-                  { value: "Female", label: t("candidates.female") },
-                  { value: "Other", label: t("candidates.otherGender") },
+                  { value: "NOT_SPECIFIED", label: t("candidates.notSpecified") },
+                  { value: "MALE", label: t("candidates.male") },
+                  { value: "FEMALE", label: t("candidates.female") },
+                  { value: "OTHER", label: t("candidates.otherGender") },
                 ]}
                 className="w-full"
                 triggerClassName="h-10 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"

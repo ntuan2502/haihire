@@ -293,68 +293,196 @@ function generate200UniqueCandidates(): Array<{
   }));
 }
 
-function generateInterviewObject(
-  round: number,
-  totalRounds: number,
-  isCompleted: boolean,
-  candidateIdx: number,
-) {
-  const now = new Date();
-  const interviewDate = new Date(now);
+class InterviewSlotManager {
+  private usedSlots = new Set<string>();
+  private upcomingSlots: Array<{ date: string; time: string }> = [];
+  private pastTier1Slots: Array<{ date: string; time: string }> = [];
+  private pastTier2Slots: Array<{ date: string; time: string }> = [];
+  private pastTier3Slots: Array<{ date: string; time: string }> = [];
 
-  if (isCompleted) {
-    // Past date: between 1 and 14 days ago
-    const daysAgo = (totalRounds - round + 1) * 3 + (candidateIdx % 3);
-    interviewDate.setDate(now.getDate() - daysAgo);
-  } else {
-    // Upcoming date: between today and 10 days in the future
-    const daysAhead = (round - 1) * 3 + (candidateIdx % 4);
-    interviewDate.setDate(now.getDate() + daysAhead);
+  constructor() {
+    this.initQueues();
   }
 
-  const dateStr = interviewDate.toISOString().split("T")[0];
-  const times = ["09:00", "10:00", "10:30", "14:00", "15:30", "16:45"];
-  const timeStr = times[(candidateIdx + round) % times.length];
+  private initQueues() {
+    const DAILY_TIMES = [
+      "08:30",
+      "09:15",
+      "10:00",
+      "10:45",
+      "11:30",
+      "13:30",
+      "14:15",
+      "15:00",
+      "15:45",
+      "16:30",
+      "17:15",
+    ];
 
-  const roundTypes = [
-    "Sơ vấn Nhân sự (HR Screening)",
-    "Phỏng vấn Kỹ thuật & Chuyên môn (Technical)",
-    "Phỏng vấn Văn hóa & Đồng đội (Culture Fit)",
-    "Vòng cuối với Ban Lãnh đạo (Final Round)",
-  ];
-  const type = roundTypes[Math.min(round - 1, roundTypes.length - 1)];
+    const now = new Date();
 
-  const formats = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
-  const format = formats[(candidateIdx + round) % formats.length];
+    // 1. Upcoming slots: Day +1 to Day +50 (skipping weekends)
+    let upDay = 1;
+    while (this.upcomingSlots.length < 400) {
+      const d = new Date(now);
+      d.setDate(now.getDate() + upDay);
+      upDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.upcomingSlots.push({ date: dateStr, time });
+      }
+    }
 
-  const interviewers = [
-    "Nguyễn Văn A (Engineering Lead)",
-    "Trần Minh Đức (CTO)",
-    "Phạm Thu Hương (HR Director)",
-    "Sarah Jenkins (VP Product)",
-    "Lê Hoàng Long (Principal Architect)",
-    "Đặng Quốc Bảo (Senior Tech Lead)",
-    "Vũ Thanh Hà (Head of Talent)",
-  ];
-  const interviewer = interviewers[(candidateIdx * 2 + round) % interviewers.length];
+    // 2. Past Tier 3 (recent past: 1-25 days ago, skipping weekends)
+    let pDay = 1;
+    while (this.pastTier3Slots.length < 300) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - pDay);
+      pDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.pastTier3Slots.push({ date: dateStr, time });
+      }
+    }
 
-  const linkOrLocation =
-    format === "OFFICE"
-      ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
-      : `https://meet.google.com/ats-demo-${candidateIdx}-${round}`;
+    // 3. Past Tier 2 (mid past: 26-55 days ago, skipping weekends)
+    while (this.pastTier2Slots.length < 300) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - pDay);
+      pDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.pastTier2Slots.push({ date: dateStr, time });
+      }
+    }
 
-  return {
-    date: dateStr,
-    time: timeStr,
-    type,
-    format,
-    linkOrLocation,
-    interviewer,
-    notes: isCompleted
-      ? `Vòng ${round} đã hoàn thành. Đánh giá ứng viên đáp ứng tốt tiêu chuẩn.`
-      : `Lịch hẹn phỏng vấn Vòng ${round}. Vui lòng kiểm tra tài liệu trước cuộc họp.`,
-    round,
-  };
+    // 4. Past Tier 1 (older past: 56-100 days ago, skipping weekends)
+    while (this.pastTier1Slots.length < 400) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - pDay);
+      pDay++;
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        this.pastTier1Slots.push({ date: dateStr, time });
+      }
+    }
+  }
+
+  public allocateSlot(
+    round: number,
+    totalRounds: number,
+    isCompleted: boolean,
+  ): { date: string; time: string } {
+    let slot: { date: string; time: string } | undefined;
+
+    if (!isCompleted) {
+      slot = this.upcomingSlots.shift();
+    } else {
+      if (round === totalRounds || round >= 3) {
+        slot = this.pastTier3Slots.shift();
+      } else if (round === 2 || (round === totalRounds - 1 && totalRounds >= 2)) {
+        slot = this.pastTier2Slots.shift();
+      } else {
+        slot = this.pastTier1Slots.shift();
+      }
+    }
+
+    if (!slot) {
+      slot = this.generateFallbackSlot(isCompleted);
+    }
+
+    const key = `${slot.date} ${slot.time}`;
+    if (this.usedSlots.has(key)) {
+      return this.generateFallbackSlot(isCompleted);
+    }
+    this.usedSlots.add(key);
+    return slot;
+  }
+
+  private fallbackCounter = 90;
+  private generateFallbackSlot(isCompleted: boolean): { date: string; time: string } {
+    const DAILY_TIMES = [
+      "08:30", "09:15", "10:00", "10:45", "11:30",
+      "13:30", "14:15", "15:00", "15:45", "16:30", "17:15",
+    ];
+    while (true) {
+      this.fallbackCounter++;
+      const now = new Date();
+      const d = new Date(now);
+      const dayOffset = isCompleted ? -this.fallbackCounter : this.fallbackCounter;
+      d.setDate(now.getDate() + dayOffset);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      const dateStr = d.toISOString().split("T")[0];
+      for (const time of DAILY_TIMES) {
+        const key = `${dateStr} ${time}`;
+        if (!this.usedSlots.has(key)) {
+          this.usedSlots.add(key);
+          return { date: dateStr, time };
+        }
+      }
+    }
+  }
+
+  public generateInterviewObject(
+    round: number,
+    totalRounds: number,
+    isCompleted: boolean,
+    candidateIdx: number,
+  ) {
+    const slot = this.allocateSlot(round, totalRounds, isCompleted);
+
+    const roundTypes = [
+      "HR_SCREENING",
+      "TECHNICAL",
+      "CULTURE_FIT",
+      "FINAL_ROUND",
+    ];
+    const type = roundTypes[Math.min(round - 1, roundTypes.length - 1)];
+
+    const formats = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
+    const format = formats[(candidateIdx + round) % formats.length];
+
+    const interviewers = [
+      "Nguyễn Văn A (Engineering Lead)",
+      "Trần Minh Đức (CTO)",
+      "Phạm Thu Hương (HR Director)",
+      "Sarah Jenkins (VP Product)",
+      "Lê Hoàng Long (Principal Architect)",
+      "Đặng Quốc Bảo (Senior Tech Lead)",
+      "Vũ Thanh Hà (Head of Talent)",
+    ];
+    const interviewer = interviewers[(candidateIdx * 2 + round) % interviewers.length];
+
+    const linkOrLocation =
+      format === "OFFICE"
+        ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
+        : `https://meet.google.com/ats-demo-${candidateIdx}-${round}`;
+
+    return {
+      date: slot.date,
+      time: slot.time,
+      type,
+      format,
+      linkOrLocation,
+      interviewer,
+      notes: isCompleted
+        ? `Vòng ${round} đã hoàn thành. Đánh giá ứng viên đáp ứng tốt tiêu chuẩn.`
+        : `Lịch hẹn phỏng vấn Vòng ${round}. Vui lòng kiểm tra tài liệu trước cuộc họp.`,
+      round,
+    };
+  }
+
+  public getUsedCount(): number {
+    return this.usedSlots.size;
+  }
 }
 
 let pendingSeed: Promise<void> | undefined;
@@ -374,8 +502,16 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
+  await db.orm.public.Interview.all().then((intvs) =>
+    Promise.all(intvs.map((i) => db.orm.public.Interview.where((x) => x.id.eq(i.id)).delete())),
+  );
+
   await db.orm.public.Application.all().then((apps) =>
     Promise.all(apps.map((a) => db.orm.public.Application.where((x) => x.id.eq(a.id)).delete())),
+  );
+
+  await db.orm.public.Candidate.all().then((cands) =>
+    Promise.all(cands.map((c) => db.orm.public.Candidate.where((x) => x.id.eq(c.id)).delete())),
   );
 
   await db.orm.public.InviteLink.all().then((links) =>
@@ -520,9 +656,15 @@ export async function runSeed(): Promise<void> {
     "Tokyo, Japan / Remote",
     "Global Remote",
   ];
-  const WORKPLACES = ["Hybrid", "Remote", "On-site"];
-  const JOB_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"] as const;
-  const EXP_LEVELS = ["Junior", "Mid-level", "Senior", "Lead", "Principal"];
+  const WORKPLACES = ["HYBRID", "REMOTE", "ON_SITE"] as const;
+  const JOB_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"] as const;
+  const EXP_LEVELS = [
+    "ENTRY_LEVEL",
+    "MID_LEVEL",
+    "SENIOR_LEVEL",
+    "LEAD",
+    "EXECUTIVE",
+  ] as const;
   const SALARY_RANGES = [
     "$1,200 - $1,800 / month",
     "$1,800 - $2,800 / month",
@@ -548,6 +690,8 @@ export async function runSeed(): Promise<void> {
     const salaryRange = SALARY_RANGES[Math.floor(Math.random() * SALARY_RANGES.length)];
 
     const jobId = crypto.randomUUID();
+    const jobAgeDays = 5 + Math.floor((i * 3.5) % 45);
+    const jobCreatedAt = new Date(Date.now() - jobAgeDays * 86400000);
 
     await db.orm.public.Job.upsert({
       create: {
@@ -555,15 +699,16 @@ export async function runSeed(): Promise<void> {
         title: baseConfig.title,
         department: baseConfig.department,
         location,
-        workplace,
+        workplace: workplace as any,
         type,
-        experienceLevel,
+        experienceLevel: experienceLevel as any,
         salaryRange,
         description: baseConfig.description,
         requirements: baseConfig.requirements,
         status,
         organizationId: adminOrgId,
         createdById: adminUserId,
+        createdAt: jobCreatedAt,
       },
       update: {},
       conflictOn: { id: jobId },
@@ -628,6 +773,10 @@ export async function runSeed(): Promise<void> {
     id: string;
     organizationId: string;
     name: string;
+    firstName: string;
+    lastName: string;
+    gender: any;
+    dateOfBirth: Date;
     email: string;
     phone: string;
     notes: string;
@@ -635,6 +784,7 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
+    createdAt: Date;
   }> = [];
 
   const applicationsToInsert: Array<{
@@ -642,15 +792,61 @@ export async function runSeed(): Promise<void> {
     candidateId: string;
     jobId: string;
     stage: (typeof STAGES)[number];
+    matchScore: number;
     resumeUrl: string;
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
     notes: string;
     orderIndex: number;
+    createdAt: Date;
   }> = [];
 
+  const interviewsToInsert: Array<{
+    id: string;
+    applicationId: string;
+    date: string;
+    time: string;
+    type: any;
+    format: any;
+    linkOrLocation: string;
+    interviewer: string;
+    round: number;
+    scorecard: string | null;
+    notes: string | null;
+  }> = [];
+
+  function getCandidateDemographics(name: string, index: number) {
+    const femaleHints = [
+      "Thị", "Hồng", "Thảo", "Hương", "Trang", "Uyên", "Yến", "Loan", "Oanh", "Linh",
+      "Sarah", "Emily", "Jessica", "Sophia", "Emma", "Ava", "Chloe", "Grace", "Charlotte", "Amelia",
+    ];
+    const maleHints = [
+      "Văn", "Đức", "Hoàng", "Quốc", "Hải", "Tuấn", "Dũng", "Cường", "Nam", "Thắng", "Kiên", "Tú",
+      "James", "Alexander", "Michael", "David", "Daniel", "Lucas", "Oliver", "Ethan", "Liam", "Noah",
+      "Mason", "Logan", "Benjamin", "Henry",
+    ];
+
+    let gender = "MALE";
+    if (femaleHints.some((h) => name.includes(h))) {
+      gender = "FEMALE";
+    } else if (maleHints.some((h) => name.includes(h))) {
+      gender = "MALE";
+    } else {
+      gender = index % 2 === 0 ? "MALE" : "FEMALE";
+    }
+
+    // Realistic date of birth (ages 22 - 38)
+    const birthYear = 1988 + (index % 15);
+    const birthMonth = (index % 12) + 1;
+    const birthDay = ((index * 3) % 27) + 1;
+    const dateOfBirth = new Date(Date.UTC(birthYear, birthMonth - 1, birthDay));
+
+    return { gender, dateOfBirth };
+  }
+
   const jobStageOrderCounter: Record<string, number> = {};
+  const slotManager = new InterviewSlotManager();
 
   for (let i = 0; i < uniqueCandidates.length; i++) {
     const candidate = uniqueCandidates[i];
@@ -662,30 +858,41 @@ export async function runSeed(): Promise<void> {
     const resumeFileSize = Math.floor(500000 + Math.random() * 1500000); // 500KB - 2MB
     const candidateId = crypto.randomUUID();
 
+    const nameParts = candidate.name.trim().split(/\s+/);
+    const firstName = nameParts[0] || candidate.name;
+    const lastName = nameParts.slice(1).join(" ") || nameParts[0];
+
+    const { gender, dateOfBirth } = getCandidateDemographics(candidate.name, i);
+    // Candidates spread over past 60 days
+    const daysAgo = ((i * 0.3) % 60) + (i % 2 === 0 ? 0.05 : 0.2);
+    const candidateCreatedAt = new Date(Date.now() - Math.floor(daysAgo * 86400000));
+
     candidatesToInsert.push({
       id: candidateId,
       organizationId: adminOrgId,
       name: candidate.name,
+      firstName,
+      lastName,
+      gender,
+      dateOfBirth,
       email: candidate.email,
       phone: candidate.phone,
-      notes: `Ứng viên tiềm năng | Match Score: ${68 + (candidate.candidateIndex % 25)}%`,
+      notes: "Ứng viên tiềm năng trong Talent Pool.",
       resumeUrl,
       resumeFileName: fileName,
       resumeFileSize,
       resumeMimeType: "application/pdf",
+      createdAt: candidateCreatedAt,
     });
 
     if (jobCount === 0) {
-      // Ứng viên chưa thuộc job nào (Talent Pool) — lưu ở Candidate, không có Application
       stageStats.APPLIED++;
     } else {
-      // Ứng viên ứng tuyển từ 1-6 jobs khác nhau
       const shuffledJobIds = [...createdJobIds].sort(() => 0.5 - Math.random());
       const selectedJobIds = shuffledJobIds.slice(0, jobCount);
 
       for (let j = 0; j < selectedJobIds.length; j++) {
         const jobId = selectedJobIds[j];
-        // Chọn stage đảm bảo phân bổ đều
         const stage = STAGES[(candidate.candidateIndex + j) % STAGES.length];
         stageStats[stage]++;
 
@@ -693,77 +900,117 @@ export async function runSeed(): Promise<void> {
         jobStageOrderCounter[orderKey] = (jobStageOrderCounter[orderKey] || 0) + 1;
         const orderIndex = jobStageOrderCounter[orderKey];
 
+        const appId = crypto.randomUUID();
         let notes = "";
+        let matchScore = 65 + ((candidate.candidateIndex + j * 7) % 31);
 
         if (stage === "APPLIED" || stage === "SCREENING") {
-          // Rule: Không cần có lịch phỏng vấn (0 lịch)
-          const score = 65 + ((candidate.candidateIndex + j * 7) % 26);
-          notes = `Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Match Score: ${score}% | Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.`;
+          notes = "Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.";
         } else if (stage === "INTERVIEW") {
-          // Rule: Có thể không có (0), có 1 hoặc nhiều lịch phỏng vấn (1-3 lịch)
           const roll = Math.random();
           let interviewCount = 0;
           if (roll < 0.20) {
-            interviewCount = 0; // ~20% Chưa xếp lịch
+            interviewCount = 0;
           } else if (roll < 0.70) {
-            interviewCount = 1; // ~50% 1 lịch
+            interviewCount = 1;
           } else if (roll < 0.90) {
-            interviewCount = 2; // ~20% 2 lịch
+            interviewCount = 2;
           } else {
-            interviewCount = 3; // ~10% 3 lịch
+            interviewCount = 3;
           }
 
+          matchScore = 80 + ((candidate.candidateIndex + j) % 16);
           if (interviewCount === 0) {
-            notes = `Chờ lên lịch phỏng vấn chuyên sâu. Match Score: ${78 + ((candidate.candidateIndex + j) % 15)}% | Đã hoàn thành sơ vấn qua điện thoại.`;
+            notes = "Chờ lên lịch phỏng vấn chuyên sâu. Đã hoàn thành sơ vấn qua điện thoại.";
           } else {
-            const interviewBlocks: string[] = [];
+            notes = "Đang trong quy trình phỏng vấn.";
             for (let r = 1; r <= interviewCount; r++) {
-              // The last round is upcoming, prior rounds are completed
               const isCompleted = r < interviewCount;
-              const intv = generateInterviewObject(r, interviewCount, isCompleted, candidate.candidateIndex + j);
-              interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
+              const intv = slotManager.generateInterviewObject(r, interviewCount, isCompleted, candidate.candidateIndex + j);
+              interviewsToInsert.push({
+                id: crypto.randomUUID(),
+                applicationId: appId,
+                date: intv.date,
+                time: intv.time,
+                type: intv.type,
+                format: intv.format,
+                linkOrLocation: intv.linkOrLocation,
+                interviewer: intv.interviewer,
+                round: intv.round,
+                scorecard: null,
+                notes: intv.notes,
+              });
             }
-            notes = `Match Score: ${80 + ((candidate.candidateIndex + j) % 16)}% | Đang trong quy trình phỏng vấn | ${interviewBlocks.join(" | ")}`;
           }
         } else if (stage === "OFFER" || stage === "HIRED") {
-          // Rule: Bắt buộc phải có từ 1-3 lịch (tất cả các vòng đã hoàn thành)
-          const interviewCount = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
-          const interviewBlocks: string[] = [];
+          const interviewCount = Math.floor(Math.random() * 3) + 1;
+          matchScore = 90 + ((candidate.candidateIndex + j) % 9);
+          notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn. Đã gửi thư mời làm việc.`;
 
           for (let r = 1; r <= interviewCount; r++) {
-            const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
-            interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
+            const intv = slotManager.generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
+            interviewsToInsert.push({
+              id: crypto.randomUUID(),
+              applicationId: appId,
+              date: intv.date,
+              time: intv.time,
+              type: intv.type,
+              format: intv.format,
+              linkOrLocation: intv.linkOrLocation,
+              interviewer: intv.interviewer,
+              round: intv.round,
+              scorecard: JSON.stringify({
+                overallRating: 5,
+                recommendation: "STRONG_YES",
+                feedback: `Ứng viên hoàn thành xuất sắc vòng ${r}.`,
+              }),
+              notes: intv.notes,
+            });
           }
-
-          const offerScore = 90 + ((candidate.candidateIndex + j) % 9);
-          notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn chuyên môn. Match Score: ${offerScore}% | Đã chốt mức đãi ngộ và gửi thư mời làm việc | ${interviewBlocks.join(" | ")}`;
         } else if (stage === "REJECTED") {
-          // Rule: Có thể không có hoặc có từ 0-3
-          const interviewCount = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
+          const interviewCount = Math.floor(Math.random() * 4);
+          matchScore = 55 + ((candidate.candidateIndex + j) % 20);
 
           if (interviewCount === 0) {
-            notes = `Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí.`;
+            notes = "Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí.";
           } else {
-            const interviewBlocks: string[] = [];
+            notes = `Không đạt sau ${interviewCount} vòng phỏng vấn chuyên môn.`;
             for (let r = 1; r <= interviewCount; r++) {
-              const intv = generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
-              interviewBlocks.push(`Interview: ${JSON.stringify(intv)}`);
+              const intv = slotManager.generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
+              interviewsToInsert.push({
+                id: crypto.randomUUID(),
+                applicationId: appId,
+                date: intv.date,
+                time: intv.time,
+                type: intv.type,
+                format: intv.format,
+                linkOrLocation: intv.linkOrLocation,
+                interviewer: intv.interviewer,
+                round: intv.round,
+                scorecard: null,
+                notes: intv.notes,
+              });
             }
-            notes = `Không đạt sau ${interviewCount} vòng phỏng vấn: Kỹ năng chuyên môn hoặc kỳ vọng đãi ngộ chưa đồng nhất | ${interviewBlocks.join(" | ")}`;
           }
         }
 
+        const appOffsetMs = Math.floor((1 + ((candidate.candidateIndex + j * 7) % 36)) * 3600000);
+        const appTime = Math.min(Date.now() - 1800000, candidateCreatedAt.getTime() + appOffsetMs);
+        const appCreatedAt = new Date(appTime);
+
         applicationsToInsert.push({
-          id: crypto.randomUUID(),
+          id: appId,
           candidateId,
           jobId,
           stage,
+          matchScore,
           resumeUrl,
           resumeFileName: fileName,
           resumeFileSize,
           resumeMimeType: "application/pdf",
           notes,
           orderIndex,
+          createdAt: appCreatedAt,
         });
       }
     }
@@ -798,6 +1045,30 @@ export async function runSeed(): Promise<void> {
     );
     process.stdout.write(`\r   Tiến độ: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} bản ghi`);
   }
+
+  // Kiểm tra nghiêm ngặt tính độc nhất của khung giờ phỏng vấn
+  const slotCollisionCheck = new Set<string>();
+  for (const intv of interviewsToInsert) {
+    const key = `${intv.date} ${intv.time}`;
+    if (slotCollisionCheck.has(key)) {
+      throw new Error(`CRITICAL: Trùng khung giờ phỏng vấn: ${key}`);
+    }
+    slotCollisionCheck.add(key);
+  }
+  console.log(`\n⏳ Đang lưu ${interviewsToInsert.length} lịch phỏng vấn vào cơ sở dữ liệu (đã xác minh 100% khung giờ độc nhất)...`);
+  for (let b = 0; b < interviewsToInsert.length; b += BATCH_SIZE) {
+    const chunk = interviewsToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((intv) =>
+        db.orm.public.Interview.upsert({
+          create: intv,
+          update: {},
+          conflictOn: { id: intv.id },
+        }),
+      ),
+    );
+  }
+  console.log(`   ✨ Đã lưu thành công: toàn bộ ${interviewsToInsert.length} khung giờ phỏng vấn không hề bị trùng lặp.`);
 
   console.log(`\n\n✅ Thành công! Đã gieo mầm cố định 200 ứng viên độc nhất (tổng ${applicationsToInsert.length} đơn ứng tuyển):`);
   console.log(`   - 0 job (Chưa ứng tuyển):  ${jobDistributionStats[0]} ứng viên`);

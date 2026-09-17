@@ -10,7 +10,6 @@ enum JobType {
   PART_TIME
   CONTRACT
   INTERNSHIP
-  REMOTE
 }
 
 enum JobStatus {
@@ -27,6 +26,47 @@ enum ApplicationStage {
   OFFER
   HIRED
   REJECTED
+}
+
+enum InterviewType {
+  HR_SCREENING
+  TECHNICAL
+  CULTURE_FIT
+  FINAL_ROUND
+  ASSESSMENT
+}
+
+enum InterviewFormat {
+  MEET
+  ZOOM
+  TEAMS
+  OFFICE
+}
+
+enum WorkplaceType {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum ExperienceLevel {
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR_LEVEL
+  LEAD
+  EXECUTIVE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum InviteStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
 }
 
 model Organization {
@@ -73,11 +113,11 @@ model OrganizationMember {
 model InviteLink {
   id             String       @id @default(uuid())
   token          String       @unique
-  role           String       @default("MEMBER")
+  role           Role         @default(MEMBER)
   expiresAt      DateTime?
   maxUses        Int?
   usesCount      Int          @default(0)
-  status         String       @default("active")
+  status         InviteStatus @default(ACTIVE)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdById    String?
@@ -92,8 +132,8 @@ model Job {
   department      String
   location        String
   postalCode      String?
-  experienceLevel String?
-  workplace       String?
+  experienceLevel ExperienceLevel?
+  workplace       WorkplaceType?
   type            JobType       @default(FULL_TIME)
   description     String
   requirements    String?
@@ -113,6 +153,10 @@ model Candidate {
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id])
   name           String
+  firstName      String?
+  lastName       String?
+  gender         Gender?
+  dateOfBirth    DateTime?
   email          String
   phone          String?
   notes          String?
@@ -134,16 +178,35 @@ model Application {
   jobId          String
   job            Job              @relation(fields: [jobId], references: [id])
   stage          ApplicationStage @default(APPLIED)
+  matchScore     Int?
   resumeUrl      String?
   resumeFileName String?
   resumeFileSize Int?
   resumeMimeType String?          @default("application/pdf")
   notes          String?
   orderIndex     Int              @default(0)
+  interviews     Interview[]
   createdAt      DateTime         @default(now())
   updatedAt      temporal.updatedAt()
 
   @@unique([candidateId, jobId])
+}
+
+model Interview {
+  id             String      @id @default(uuid())
+  applicationId  String
+  application    Application @relation(fields: [applicationId], references: [id])
+  date           String
+  time           String
+  type           InterviewType   @default(TECHNICAL)
+  format         InterviewFormat @default(MEET)
+  linkOrLocation String
+  interviewer    String
+  round          Int         @default(1)
+  scorecard      String?
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      temporal.updatedAt()
 }
 
 

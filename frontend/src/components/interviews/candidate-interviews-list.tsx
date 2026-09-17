@@ -10,12 +10,20 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useMemo } from "react";
 import {
-  parseAllInterviewsFromNotes,
+  getInterviewsFromApplication,
+  getInterviewTypeLabel,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
+import type { Interview } from "@/types";
 
 export interface CandidateInterviewsListProps {
+  application?: {
+    interviews?: Interview[] | null;
+    notes?: string | null;
+  } | null;
+  interviews?: Interview[] | null;
   notes?: string | null;
   onSchedule?: () => void;
   onCancelInterview?: () => void;
@@ -27,6 +35,8 @@ export interface CandidateInterviewsListProps {
 }
 
 export function CandidateInterviewsList({
+  application,
+  interviews,
   notes,
   onSchedule,
   onCancelInterview,
@@ -37,16 +47,19 @@ export function CandidateInterviewsList({
   hideIfEmpty = false,
 }: CandidateInterviewsListProps) {
   const { t } = useI18n();
-  const allInterviews = parseAllInterviewsFromNotes(notes);
+
+  const allInterviews = useMemo(() => {
+    if (interviews && Array.isArray(interviews) && interviews.length > 0) {
+      return getInterviewsFromApplication({ interviews, notes });
+    }
+    if (application) {
+      return getInterviewsFromApplication(application);
+    }
+    return [];
+  }, [application, interviews, notes]);
 
   const formatInterviewType = (type?: string) => {
-    if (!type) return "";
-    if (type.includes("HR Screening") || type.includes("Sơ bộ")) return t("interviews.types.hrScreening");
-    if (type.includes("Technical") || type.includes("Kỹ thuật")) return t("interviews.types.technical");
-    if (type.includes("Culture") || type.includes("Văn hóa")) return t("interviews.types.cultureFit");
-    if (type.includes("Final") || type.includes("Vòng cuối")) return t("interviews.types.finalRound");
-    if (type.includes("Assessment") || type.includes("Đánh giá")) return t("interviews.types.assessment");
-    return type;
+    return getInterviewTypeLabel(type, t);
   };
 
   if (allInterviews.length === 0) {
@@ -164,7 +177,10 @@ export function CandidateInterviewsList({
                 <span className="text-slate-400 block">{t("interviews.timeLabel")}</span>
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                  {scheduled.date} {t("interviews.atTime")} {scheduled.time}
+                  {t("interviews.atTime", {
+                    date: scheduled.date,
+                    time: scheduled.time,
+                  })}
                 </span>
               </div>
 
@@ -178,13 +194,13 @@ export function CandidateInterviewsList({
                 ) : (
                   <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <Video className="h-3.5 w-3.5 shrink-0" />
-                    {t("interviews.onlineFormat")} ({scheduled.format})
+                    {t("interviews.onlineFormat", { format: scheduled.format })}
                   </span>
                 )}
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">{t("interviews.tableHeaders.interviewer")}:</span>
+                <span className="text-slate-400 block">{t("interviews.tableHeaders.interviewer")}</span>
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                   {scheduled.interviewer}
@@ -233,10 +249,10 @@ export function CandidateInterviewsList({
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                     <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                    <span>{t("interviews.ratingResult")}: {scheduled.scorecard.overallRating} / 5 {t("interviews.rateStar")}</span>
+                    <span>{t("interviews.ratingResult", { score: scheduled.scorecard.overallRating })}</span>
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
-                    {t("interviews.recommendationLabel")}: {scheduled.scorecard.recommendation}
+                    {t("interviews.recommendationLabel", { recommendation: scheduled.scorecard.recommendation })}
                   </span>
                 </div>
 

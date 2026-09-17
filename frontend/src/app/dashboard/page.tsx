@@ -32,7 +32,8 @@ import { usePipelineStages } from "@/lib/stages";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
 import {
-  parseAllInterviewsFromNotes,
+  getInterviewsFromApplication,
+  getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { ApplicationStage } from "@/types";
@@ -113,7 +114,7 @@ function DashboardContent() {
     }[] = [];
 
     for (const app of applications) {
-      const all = parseAllInterviewsFromNotes(app.notes);
+      const all = getInterviewsFromApplication(app);
       const job = jobs.find((j) => j.id === app.jobId);
       for (const intv of all) {
         if (intv.date >= todayStr) {
@@ -583,7 +584,7 @@ function DashboardContent() {
                                             </Link>
                                             <span className="text-[10px] text-slate-400 shrink-0">•</span>
                                             <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                                              {intv.type}
+                                              {getInterviewTypeLabel(intv.type, t)}
                                             </span>
                                           </div>
                                           <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">

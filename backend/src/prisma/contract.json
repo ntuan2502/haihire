@@ -12,6 +12,10 @@
       "model": "Candidate",
       "namespace": "public"
     },
+    "interview": {
+      "model": "Interview",
+      "namespace": "public"
+    },
     "inviteLink": {
       "model": "InviteLink",
       "namespace": "public"
@@ -66,6 +70,111 @@
               }
             ]
           },
+          "ExperienceLevel": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ENTRY_LEVEL",
+                "value": "ENTRY_LEVEL"
+              },
+              {
+                "name": "MID_LEVEL",
+                "value": "MID_LEVEL"
+              },
+              {
+                "name": "SENIOR_LEVEL",
+                "value": "SENIOR_LEVEL"
+              },
+              {
+                "name": "LEAD",
+                "value": "LEAD"
+              },
+              {
+                "name": "EXECUTIVE",
+                "value": "EXECUTIVE"
+              }
+            ]
+          },
+          "Gender": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "MALE",
+                "value": "MALE"
+              },
+              {
+                "name": "FEMALE",
+                "value": "FEMALE"
+              },
+              {
+                "name": "OTHER",
+                "value": "OTHER"
+              }
+            ]
+          },
+          "InterviewFormat": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "MEET",
+                "value": "MEET"
+              },
+              {
+                "name": "ZOOM",
+                "value": "ZOOM"
+              },
+              {
+                "name": "TEAMS",
+                "value": "TEAMS"
+              },
+              {
+                "name": "OFFICE",
+                "value": "OFFICE"
+              }
+            ]
+          },
+          "InterviewType": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "HR_SCREENING",
+                "value": "HR_SCREENING"
+              },
+              {
+                "name": "TECHNICAL",
+                "value": "TECHNICAL"
+              },
+              {
+                "name": "CULTURE_FIT",
+                "value": "CULTURE_FIT"
+              },
+              {
+                "name": "FINAL_ROUND",
+                "value": "FINAL_ROUND"
+              },
+              {
+                "name": "ASSESSMENT",
+                "value": "ASSESSMENT"
+              }
+            ]
+          },
+          "InviteStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ACTIVE",
+                "value": "ACTIVE"
+              },
+              {
+                "name": "EXPIRED",
+                "value": "EXPIRED"
+              },
+              {
+                "name": "REVOKED",
+                "value": "REVOKED"
+              }
+            ]
+          },
           "JobStatus": {
             "codecId": "pg/text@1",
             "members": [
@@ -105,10 +214,6 @@
               {
                 "name": "INTERNSHIP",
                 "value": "INTERNSHIP"
-              },
-              {
-                "name": "REMOTE",
-                "value": "REMOTE"
               }
             ]
           },
@@ -122,6 +227,23 @@
               {
                 "name": "MEMBER",
                 "value": "MEMBER"
+              }
+            ]
+          },
+          "WorkplaceType": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ON_SITE",
+                "value": "ON_SITE"
+              },
+              {
+                "name": "HYBRID",
+                "value": "HYBRID"
+              },
+              {
+                "name": "REMOTE",
+                "value": "REMOTE"
               }
             ]
           }
@@ -154,6 +276,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "matchScore": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -236,6 +365,21 @@
                   "namespace": "public"
                 }
               },
+              "interviews": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "applicationId"
+                  ]
+                },
+                "to": {
+                  "model": "Interview",
+                  "namespace": "public"
+                }
+              },
               "job": {
                 "cardinality": "N:1",
                 "on": {
@@ -265,6 +409,9 @@
                 },
                 "jobId": {
                   "column": "jobId"
+                },
+                "matchScore": {
+                  "column": "matchScore"
                 },
                 "notes": {
                   "column": "notes"
@@ -304,6 +451,13 @@
                   "kind": "scalar"
                 }
               },
+              "dateOfBirth": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
               "email": {
                 "nullable": false,
                 "type": {
@@ -311,8 +465,35 @@
                   "kind": "scalar"
                 }
               },
+              "firstName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "gender": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "Gender",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
               "id": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastName": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -419,11 +600,23 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "dateOfBirth": {
+                  "column": "dateOfBirth"
+                },
                 "email": {
                   "column": "email"
                 },
+                "firstName": {
+                  "column": "firstName"
+                },
+                "gender": {
+                  "column": "gender"
+                },
                 "id": {
                   "column": "id"
+                },
+                "lastName": {
+                  "column": "lastName"
                 },
                 "name": {
                   "column": "name"
@@ -455,6 +648,175 @@
               },
               "namespaceId": "public",
               "table": "candidate"
+            }
+          },
+          "Interview": {
+            "fields": {
+              "applicationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
+              "date": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "format": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "InterviewFormat",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "interviewer": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "linkOrLocation": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "notes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "round": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "scorecard": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "time": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "type": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "InterviewType",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "application": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "applicationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Application",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "applicationId": {
+                  "column": "applicationId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "date": {
+                  "column": "date"
+                },
+                "format": {
+                  "column": "format"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "interviewer": {
+                  "column": "interviewer"
+                },
+                "linkOrLocation": {
+                  "column": "linkOrLocation"
+                },
+                "notes": {
+                  "column": "notes"
+                },
+                "round": {
+                  "column": "round"
+                },
+                "scorecard": {
+                  "column": "scorecard"
+                },
+                "time": {
+                  "column": "time"
+                },
+                "type": {
+                  "column": "type"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "interview"
             }
           },
           "InviteLink": {
@@ -506,6 +868,12 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "Role",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "status": {
@@ -513,6 +881,12 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "InviteStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "token": {
@@ -644,6 +1018,12 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "ExperienceLevel",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "id": {
@@ -733,6 +1113,12 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "WorkplaceType",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               }
             },
@@ -1303,6 +1689,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "matchScore": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "notes": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1429,6 +1820,13 @@
               ]
             },
             "candidate": {
+              "checks": [
+                {
+                  "expression": "\"gender\" IN ('MALE', 'FEMALE', 'OTHER')",
+                  "name": "candidate_gender_check_30490488",
+                  "prefix": "candidate_gender_check"
+                }
+              ],
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz@1",
@@ -1439,15 +1837,41 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "dateOfBirth": {
+                  "codecId": "pg/timestamptz@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "email": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
                 },
+                "firstName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "gender": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Gender",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "lastName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -1541,7 +1965,162 @@
                 }
               ]
             },
+            "interview": {
+              "checks": [
+                {
+                  "expression": "\"format\" IN ('MEET', 'ZOOM', 'TEAMS', 'OFFICE')",
+                  "name": "interview_format_check_581367dc",
+                  "prefix": "interview_format_check"
+                },
+                {
+                  "expression": "\"type\" IN ('HR_SCREENING', 'TECHNICAL', 'CULTURE_FIT', 'FINAL_ROUND', 'ASSESSMENT')",
+                  "name": "interview_type_check_710710c6",
+                  "prefix": "interview_type_check"
+                }
+              ],
+              "columns": {
+                "applicationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "date": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "format": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "MEET"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "InterviewFormat",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "interviewer": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "linkOrLocation": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "notes": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "round": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "scorecard": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "time": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "type": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "TECHNICAL"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "InterviewType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "applicationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "interview"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "application"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "applicationId"
+                  ],
+                  "name": "interview_applicationId_idx_8158f91a",
+                  "prefix": "interview_applicationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "inviteLink": {
+              "checks": [
+                {
+                  "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
+                  "name": "inviteLink_role_check_ddb31015",
+                  "prefix": "inviteLink_role_check"
+                },
+                {
+                  "expression": "\"status\" IN ('ACTIVE', 'EXPIRED', 'REVOKED')",
+                  "name": "inviteLink_status_check_4a183461",
+                  "prefix": "inviteLink_status_check"
+                }
+              ],
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz@1",
@@ -1584,16 +2163,28 @@
                     "value": "MEMBER"
                   },
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Role",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "status": {
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "active"
+                    "value": "ACTIVE"
                   },
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "InviteStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "token": {
                   "codecId": "pg/text@1",
@@ -1683,14 +2274,24 @@
             "job": {
               "checks": [
                 {
+                  "expression": "\"experienceLevel\" IN ('ENTRY_LEVEL', 'MID_LEVEL', 'SENIOR_LEVEL', 'LEAD', 'EXECUTIVE')",
+                  "name": "job_experienceLevel_check_c0bba8bd",
+                  "prefix": "job_experienceLevel_check"
+                },
+                {
                   "expression": "\"status\" IN ('DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED')",
                   "name": "job_status_check_aaf19bbb",
                   "prefix": "job_status_check"
                 },
                 {
-                  "expression": "\"type\" IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE')",
-                  "name": "job_type_check_5d86cbf7",
+                  "expression": "\"type\" IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP')",
+                  "name": "job_type_check_11718726",
                   "prefix": "job_type_check"
+                },
+                {
+                  "expression": "\"workplace\" IN ('ON_SITE', 'HYBRID', 'REMOTE')",
+                  "name": "job_workplace_check_e95ad321",
+                  "prefix": "job_workplace_check"
                 }
               ],
               "columns": {
@@ -1721,7 +2322,13 @@
                 "experienceLevel": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": true,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "ExperienceLevel",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "id": {
                   "codecId": "pg/text@1",
@@ -1796,7 +2403,13 @@
                 "workplace": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": true,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "WorkplaceType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 }
               },
               "foreignKeys": [
@@ -2146,6 +2759,51 @@
                 "REJECTED"
               ]
             },
+            "ExperienceLevel": {
+              "kind": "valueSet",
+              "values": [
+                "ENTRY_LEVEL",
+                "MID_LEVEL",
+                "SENIOR_LEVEL",
+                "LEAD",
+                "EXECUTIVE"
+              ]
+            },
+            "Gender": {
+              "kind": "valueSet",
+              "values": [
+                "MALE",
+                "FEMALE",
+                "OTHER"
+              ]
+            },
+            "InterviewFormat": {
+              "kind": "valueSet",
+              "values": [
+                "MEET",
+                "ZOOM",
+                "TEAMS",
+                "OFFICE"
+              ]
+            },
+            "InterviewType": {
+              "kind": "valueSet",
+              "values": [
+                "HR_SCREENING",
+                "TECHNICAL",
+                "CULTURE_FIT",
+                "FINAL_ROUND",
+                "ASSESSMENT"
+              ]
+            },
+            "InviteStatus": {
+              "kind": "valueSet",
+              "values": [
+                "ACTIVE",
+                "EXPIRED",
+                "REVOKED"
+              ]
+            },
             "JobStatus": {
               "kind": "valueSet",
               "values": [
@@ -2161,8 +2819,7 @@
                 "FULL_TIME",
                 "PART_TIME",
                 "CONTRACT",
-                "INTERNSHIP",
-                "REMOTE"
+                "INTERNSHIP"
               ]
             },
             "Role": {
@@ -2171,6 +2828,14 @@
                 "ADMIN",
                 "MEMBER"
               ]
+            },
+            "WorkplaceType": {
+              "kind": "valueSet",
+              "values": [
+                "ON_SITE",
+                "HYBRID",
+                "REMOTE"
+              ]
             }
           }
         },
@@ -2178,10 +2843,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "81cf65b09ae8f995c945734c43f66b1e3a7b7aa5db2f79793da32f189ddb70d0"
+    "storageHash": "6922c7eed1414eddc6ee0159e9ec088ce8792af3b361a4da9acce801df5e4699"
   },
   "execution": {
-    "executionHash": "e673d2349423c3b9109935436bfc6acf19ebf59df08f0ae1526314dc246f89a7",
+    "executionHash": "e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2",
     "mutations": {
       "defaults": [
         {
@@ -2234,6 +2899,32 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "candidate"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "interview"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "interview"
           }
         },
         {

@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi, applicationsApi, organizationsApi, candidatesApi } from "@/lib/api";
+import { jobsApi, applicationsApi, organizationsApi, candidatesApi, interviewsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Job, Application, Candidate, ApplicationStage, Organization, User, InviteLink } from "@/types";
+import type { Job, Application, Candidate, ApplicationStage, Organization, User, InviteLink, Interview, CreateInterviewInput, UpdateInterviewInput } from "@/types";
 
 // ==========================================
 // QUERY KEYS
@@ -12,9 +12,12 @@ import type { Job, Application, Candidate, ApplicationStage, Organization, User,
 export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
+  application: (id?: string | null) => ["applications", "detail", id] as const,
   allApplications: (orgId?: string | null) => ["applications", "all", { orgId }] as const,
   candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,
   candidate: (id?: string | null) => ["candidates", id] as const,
+  interviews: (params?: { orgId?: string | null; jobId?: string | null; applicationId?: string | null }) => ["interviews", params] as const,
+  interview: (id?: string | null) => ["interviews", "detail", id] as const,
   myOrg: () => ["organization", "my"] as const,
   myOrgs: () => ["organization", "my-all"] as const,
   orgMembers: () => ["organization", "members"] as const,
@@ -159,6 +162,17 @@ export function useJobApplications(jobId: string | null) {
       return applicationsApi.getByJob(jobId);
     },
     enabled: jobId !== null && jobId !== undefined && jobId !== "",
+  });
+}
+
+export function useApplication(id: string | null | undefined) {
+  return useQuery<Application>({
+    queryKey: queryKeys.application(id),
+    queryFn: () => {
+      if (!id) throw new Error("Application ID is required");
+      return applicationsApi.getById(id);
+    },
+    enabled: Boolean(id),
   });
 }
 
@@ -487,6 +501,83 @@ export function useRemoveMemberMutation() {
     mutationFn: (memberId: string) => organizationsApi.removeMember(memberId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+    },
+  });
+}
+
+// ==========================================
+// INTERVIEWS HOOKS
+// ==========================================
+export function useInterviews(params?: {
+  organizationId?: string | null;
+  jobId?: string | null;
+  applicationId?: string | null;
+}) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+
+  return useQuery<Interview[]>({
+    queryKey: queryKeys.interviews({
+      orgId: effectiveOrgId,
+      jobId: params?.jobId,
+      applicationId: params?.applicationId,
+    }),
+    queryFn: () => {
+      return interviewsApi.getAll({
+        organizationId: effectiveOrgId || undefined,
+        jobId: params?.jobId || undefined,
+        applicationId: params?.applicationId || undefined,
+      });
+    },
+  });
+}
+
+export function useInterview(id: string | null | undefined) {
+  return useQuery<Interview>({
+    queryKey: queryKeys.interview(id),
+    queryFn: () => {
+      if (!id) throw new Error("Interview ID is required");
+      return interviewsApi.getById(id);
+    },
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateInterviewMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateInterviewInput) => interviewsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useUpdateInterviewMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateInterviewInput }) =>
+      interviewsApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.interview(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useDeleteInterviewMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => interviewsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
   });
 }

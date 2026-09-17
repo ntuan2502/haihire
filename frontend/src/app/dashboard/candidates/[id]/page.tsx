@@ -8,14 +8,13 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useAllApplications,
   useCandidates,
   useCandidate,
   useUploadCandidateDocumentMutation,
   useDeleteCandidateMutation,
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
-  useUpdateCandidateMutation,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
@@ -29,13 +28,14 @@ import {
   Trash2,
   Calendar,
   Clock,
-  Plus,
   Briefcase,
   FileText,
-  UploadCloud,
-  Loader2,
   Eye,
+  Plus,
   Download,
+  Loader2,
+  UploadCloud,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -45,10 +45,13 @@ import {
   parseCandidateDocuments,
   fixUtf8String,
   isValidUuid,
+  getGenderLabel,
 } from "@/lib/utils";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
-import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
+import {
+  getInterviewsFromApplication,
+} from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
@@ -70,14 +73,12 @@ function CandidateDetailPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications(user?.organizationId);
 
   const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
   const deleteCandidateMutation = useDeleteCandidateMutation();
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
   const deleteAppDocMutation = useDeleteDocumentMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
+  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [activeTab, setActiveTab] = useState<"applications" | "documents">(
     "applications",
@@ -86,15 +87,12 @@ function CandidateDetailPageContent() {
   const [scheduleInterviewApp, setScheduleInterviewApp] =
     useState<Application | null>(null);
 
-  const handleCancelInterview = async (targetApp: Application) => {
+  const handleCancelInterview = async (targetApp: Application, interviewId?: string) => {
     try {
-      const updatedNotes = removeInterviewFromNotes(targetApp.notes);
-      await updateCandidateMutation.mutateAsync({
-        id: targetApp.id,
-        data: {
-          notes: updatedNotes,
-        },
-      });
+      const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
+      if (targetId) {
+        await deleteInterviewMutation.mutateAsync(targetId);
+      }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
     }
@@ -109,21 +107,12 @@ function CandidateDetailPageContent() {
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
 
-  const loading = candidateLoading || jobsLoading || appsLoading;
+  const loading = candidateLoading || jobsLoading;
 
   // Find all applications belonging to this candidate
   const candidateApps = useMemo(() => {
-    if (!candidate) return [];
-    if (candidate.applications && candidate.applications.length > 0) {
-      return candidate.applications;
-    }
-    return applications.filter(
-      (a) =>
-        a.candidateId === candidate.id ||
-        (a.candidateEmail &&
-          a.candidateEmail.toLowerCase() === candidate.email.toLowerCase()),
-    );
-  }, [candidate, applications]);
+    return candidate?.applications || [];
+  }, [candidate]);
 
   const filteredCandidateApps = useMemo(() => {
     if (stageFilter === "ALL") return candidateApps;
@@ -179,8 +168,8 @@ function CandidateDetailPageContent() {
   }, [candidateDocuments, documentFilter]);
 
   const parsedNotes = parseCandidateNotes(candidate?.notes, candidate?.name);
-  const gender = parsedNotes.gender;
-  const dob = parsedNotes.dob;
+  const gender = candidate?.gender || parsedNotes.gender;
+  const dob = candidate?.dateOfBirth ? formatDate(candidate.dateOfBirth) : parsedNotes.dob;
   const candidateName = candidate?.name || "Candidate";
   const candidateEmail = candidate?.email || "—";
   const candidatePhone = candidate?.phone || "";
@@ -477,7 +466,7 @@ function CandidateDetailPageContent() {
             <div>
               <span className="text-slate-400 text-[11px] block">{t("candidates.gender")}</span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
-                {gender}
+                {getGenderLabel(gender, t)}
               </span>
             </div>
 
@@ -504,11 +493,22 @@ function CandidateDetailPageContent() {
             <div>
               <span className="text-slate-400 text-[11px] flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {t("candidates.columns.added")}
+                {t("common.updated")}
               </span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {candidateUpdated}
               </span>
+            </div>
+
+            {/* Notes */}
+            <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
+                <MessageSquare className="h-3 w-3" />
+                {t("candidates.notes")}
+              </span>
+              <p className="text-xs text-slate-700 dark:text-slate-300 mt-1.5 bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
+                {parsedNotes.customNotes || candidate?.notes || "—"}
+              </p>
             </div>
           </div>
         </div>
@@ -589,7 +589,7 @@ function CandidateDetailPageContent() {
                 <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredCandidateApps.map((app) => {
                     const job = jobs.find((j) => j.id === app.jobId);
-                    const allInterviews = parseAllInterviewsFromNotes(app.notes);
+                    const allInterviews = getInterviewsFromApplication(app);
                     return (
                       <div
                         key={app.id}
@@ -623,6 +623,7 @@ function CandidateDetailPageContent() {
                         </div>
 
                         <CandidateInterviewsList
+                          application={app}
                           notes={app.notes}
                           onSchedule={() => setScheduleInterviewApp(app)}
                           onCancelInterview={() => handleCancelInterview(app)}
@@ -630,6 +631,13 @@ function CandidateDetailPageContent() {
                           showSectionHeader={false}
                           hideIfEmpty={allInterviews.length === 0}
                         />
+
+                        {app.notes && (
+                          <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 p-2.5 rounded-xl flex items-start gap-2">
+                            <MessageSquare className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="line-clamp-2">{app.notes}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -845,7 +853,7 @@ function CandidateDetailPageContent() {
             : null
         }
         jobs={jobs}
-        existingApplications={applications}
+        existingApplications={candidateApps}
       />
 
       {/* Delete Candidate Confirmation Modal matching screenshot */}
@@ -873,7 +881,7 @@ function CandidateDetailPageContent() {
           isOpen={!!scheduleInterviewApp}
           onClose={() => setScheduleInterviewApp(null)}
           jobs={jobs}
-          applications={applications}
+          applications={candidateApps}
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
         />

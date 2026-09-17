@@ -232,10 +232,10 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               variant="outline"
               onClick={() => setJdModalOpen(true)}
               className="h-7 px-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-              title="Xem nhanh Mô tả và Yêu cầu ứng viên"
+              title={t("jobs.viewJdQuick")}
             >
               <FileText className="h-3 w-3 text-slate-500" />
-              <span className="hidden sm:inline">Chi tiết JD</span>
+              <span className="hidden sm:inline">{t("jobs.jdDetails")}</span>
             </Button>
 
             <a
@@ -243,10 +243,10 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               target="_blank"
               rel="noopener noreferrer"
               className="h-7 px-2.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 border border-blue-200/80 dark:border-blue-800/80 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-              title="Mở trang tuyển dụng công khai cho ứng viên"
+              title={t("jobs.openPublicCareerPage")}
             >
               <ExternalLink className="h-3 w-3" />
-              <span className="hidden sm:inline">Trang tuyển dụng</span>
+              <span className="hidden sm:inline">{t("jobs.careerPage")}</span>
             </a>
 
             <Button
@@ -268,7 +268,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                       ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
                       : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
                 }`}
-                title="Thay đổi trạng thái tin tuyển dụng"
+                title={t("jobs.changeJobStatus")}
               >
                 <span
                   className={`h-2 w-2 rounded-full ${
@@ -391,10 +391,10 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               <div className="space-y-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <Briefcase className="h-3.5 w-3.5 text-blue-500" />
-                  Mô tả công việc (Job Description)
+                  {t("careers.jobDescription")}
                 </h4>
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 whitespace-pre-line leading-relaxed text-xs sm:text-sm">
-                  {job.description || "Chưa có mô tả công việc."}
+                  {job.description || t("jobs.wizard.noDescEntered")}
                 </div>
               </div>
 
@@ -402,10 +402,10 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
               <div className="space-y-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5 text-indigo-500" />
-                  Yêu cầu ứng viên (Requirements)
+                  {t("careers.requirements")}
                 </h4>
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 whitespace-pre-line leading-relaxed text-xs sm:text-sm">
-                  {job.requirements || "Chưa thiết lập yêu cầu ứng viên cho vị trí này."}
+                  {job.requirements || t("jobs.wizard.noReqEntered")}
                 </div>
               </div>
             </div>
@@ -419,7 +419,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                 className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
               >
                 <ExternalLink className="h-3 w-3" />
-                Xem trang ứng tuyển công khai
+                {t("jobs.viewPublicPage")}
               </a>
               <div className="flex items-center gap-2">
                 <Button
@@ -432,14 +432,14 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
                   className="h-8 text-xs font-semibold cursor-pointer"
                 >
                   <Settings className="h-3.5 w-3.5 mr-1" />
-                  Chỉnh sửa trong Cài đặt
+                  {t("jobs.editInSettings")}
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => setJdModalOpen(false)}
                   className="h-8 text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 cursor-pointer"
                 >
-                  Đóng
+                  {t("common.close")}
                 </Button>
               </div>
             </div>

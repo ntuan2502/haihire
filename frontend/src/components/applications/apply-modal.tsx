@@ -145,7 +145,7 @@ export function ApplyModal({
       }, 1500);
     } catch (err: unknown) {
       console.error(err);
-      setError("Failed to upload CV and submit application. Please check backend status.");
+      setError(t("applications.submitFailed"));
     } finally {
       setLoading(false);
     }
@@ -217,7 +217,7 @@ export function ApplyModal({
                   <User className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.lastName")} <span className="text-rose-500">*</span>
                 </label>
                 <Input
-                  placeholder="e.g. Nguyen"
+                  placeholder={t("applications.placeholders.lastName")}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   className="mt-1"
@@ -230,7 +230,7 @@ export function ApplyModal({
                   <User className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.firstName")} <span className="text-rose-500">*</span>
                 </label>
                 <Input
-                  placeholder="e.g. Van A"
+                  placeholder={t("applications.placeholders.firstName")}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   className="mt-1"
@@ -247,7 +247,7 @@ export function ApplyModal({
                 </label>
                 <Input
                   type="email"
-                  placeholder="e.g. candidate@example.com"
+                  placeholder={t("applications.placeholders.email")}
                   value={candidateEmail}
                   onChange={(e) => setCandidateEmail(e.target.value)}
                   className="mt-1"
@@ -260,7 +260,7 @@ export function ApplyModal({
                   <Phone className="h-3.5 w-3.5 text-slate-400" /> {t("candidates.phone")}
                 </label>
                 <Input
-                  placeholder="e.g. +84 901 234 567"
+                  placeholder={t("applications.placeholders.phone")}
                   value={candidatePhone}
                   onChange={(e) => setCandidatePhone(e.target.value)}
                   className="mt-1"
@@ -274,7 +274,7 @@ export function ApplyModal({
                 {t("candidates.columns.quickNotes")}
               </label>
               <Input
-                placeholder="e.g. 5+ years React, available immediately"
+                placeholder={t("applications.placeholders.quickNotes")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="mt-1"

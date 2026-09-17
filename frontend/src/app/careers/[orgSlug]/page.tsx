@@ -23,8 +23,10 @@ import {
   Globe2,
   ChevronRight,
 } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 export default function OrgCareersPage() {
+  const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
   const rawOrgSlug = params?.orgSlug;
@@ -93,7 +95,7 @@ export default function OrgCareersPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
         <LoadingSpinner />
-        <p className="mt-4 text-xs font-semibold text-slate-500">Đang tải trang cơ hội nghề nghiệp...</p>
+        <p className="mt-4 text-xs font-semibold text-slate-500">{t("careers.loadingPortal")}</p>
       </div>
     );
   }
@@ -104,22 +106,22 @@ export default function OrgCareersPage() {
         <div className="h-14 w-14 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Không tìm thấy tổ chức</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("careers.orgNotFound")}</h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md">
-          Tổ chức <span className="font-semibold text-slate-700 dark:text-slate-300">&quot;{orgSlug}&quot;</span> không tồn tại hoặc chưa kích hoạt trang nghề nghiệp công khai.
+          {t("careers.orgNotFoundDesc", { slug: orgSlug })}
         </p>
         <Button
           onClick={() => router.push("/")}
           className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
           variant="outline"
         >
-          Về trang chủ
+          {t("careers.backToHome")}
         </Button>
       </div>
     );
   }
 
-  const orgName = org.name || "Doanh nghiệp";
+  const orgName = org.name || t("careers.companyPage");
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
@@ -130,7 +132,7 @@ export default function OrgCareersPage() {
         showShareButton={true}
         onShare={handleCopyPortalLink}
         copiedLink={copiedLink}
-        shareLabel="Chia sẻ"
+        shareLabel={t("careers.share")}
       />
 
       {/* Hero Section */}
@@ -140,18 +142,18 @@ export default function OrgCareersPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-5 relative">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 shadow-2xs">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Chúng tôi đang tuyển dụng tài năng mới!</span>
+            <span>{t("careers.hiringTalentBadge")}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-            Xây dựng sự nghiệp vững chắc cùng{" "}
+            {t("careers.buildCareerWith")}{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               {orgName}
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Khám phá các cơ hội nghề nghiệp thú vị, môi trường làm việc cởi mở, sáng tạo cùng chế độ đãi ngộ hấp dẫn. Hãy cùng chúng tôi tạo nên những bước đột phá tiếp theo.
+            {t("careers.companyHeroDesc")}
           </p>
 
           {/* Quick Metrics */}
@@ -159,14 +161,14 @@ export default function OrgCareersPage() {
             <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-blue-600" />
               <span>
-                <strong className="text-slate-900 dark:text-white font-extrabold">{filteredJobs.length}</strong> Vị trí đang mở
+                <strong className="text-slate-900 dark:text-white font-extrabold">{filteredJobs.length}</strong> {t("careers.openPositions")}
               </span>
             </div>
             {departments.length > 0 && (
               <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-indigo-600" />
                 <span>
-                  <strong className="text-slate-900 dark:text-white font-extrabold">{departments.length}</strong> Phòng ban
+                  <strong className="text-slate-900 dark:text-white font-extrabold">{departments.length}</strong> {t("careers.departmentsCount")}
                 </span>
               </div>
             )}
@@ -182,7 +184,7 @@ export default function OrgCareersPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="text"
-              placeholder="Tìm kiếm theo chức danh, địa điểm hoặc từ khóa..."
+              placeholder={t("careers.searchInCompany")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 h-10 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
@@ -197,7 +199,7 @@ export default function OrgCareersPage() {
                 onChange={(e) => setSelectedDept(e.target.value)}
                 className="h-10 px-3 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer w-full md:w-auto"
               >
-                <option value="all">Tất cả phòng ban</option>
+                <option value="all">{t("careers.allDepartmentsOption")}</option>
                 {departments.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
@@ -212,12 +214,12 @@ export default function OrgCareersPage() {
               onChange={(e) => setSelectedType(e.target.value)}
               className="h-10 px-3 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer w-full md:w-auto"
             >
-              <option value="all">Tất cả hình thức</option>
-              <option value="FULL_TIME">Toàn thời gian (Full-time)</option>
-              <option value="PART_TIME">Bán thời gian (Part-time)</option>
-              <option value="CONTRACT">Hợp đồng (Contract)</option>
-              <option value="INTERNSHIP">Thực tập (Internship)</option>
-              <option value="REMOTE">Từ xa (Remote)</option>
+              <option value="all">{t("careers.allTypesOption")}</option>
+              <option value="FULL_TIME">{t("jobs.fullTime")}</option>
+              <option value="PART_TIME">{t("jobs.partTime")}</option>
+              <option value="CONTRACT">{t("jobs.contract")}</option>
+              <option value="INTERNSHIP">{t("jobs.internship")}</option>
+              <option value="REMOTE">{t("jobs.workplace.remote")}</option>
             </select>
           </div>
         </div>
@@ -229,10 +231,10 @@ export default function OrgCareersPage() {
               <Briefcase className="h-6 w-6" />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Không tìm thấy vị trí tuyển dụng phù hợp
+              {t("careers.noCompanyJobs")}
             </h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn các bộ lọc phòng ban để xem thêm vị trí khác.
+              {t("careers.noCompanyJobsDesc")}
             </p>
             {(search || selectedDept !== "all" || selectedType !== "all") && (
               <Button
@@ -245,7 +247,7 @@ export default function OrgCareersPage() {
                 }}
                 className="mt-2 text-xs rounded-xl cursor-pointer"
               >
-                Xóa bộ lọc
+                {t("careers.resetFilter")}
               </Button>
             )}
           </div>
@@ -307,7 +309,7 @@ export default function OrgCareersPage() {
                   {/* Card Action footer */}
                   <div className="pt-6 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
                     <span className="text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                      Xem chi tiết & Ứng tuyển
+                      {t("careers.viewDetailAndApply")}
                       <ChevronRight className="h-3.5 w-3.5" />
                     </span>
                     <div className="h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 text-slate-400 group-hover:text-blue-600 flex items-center justify-center transition-colors">

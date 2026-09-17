@@ -293,15 +293,15 @@ export function Navbar({
                       </span>
                       {isOwner ? (
                         <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 rounded-md border border-amber-200/60 dark:border-amber-800/60 shrink-0">
-                          Owner
+                          {t("members.roleOwner")}
                         </span>
                       ) : isAdmin ? (
                         <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 rounded-md border border-blue-200/60 dark:border-blue-800/60 shrink-0">
-                          Admin
+                          {t("members.roleAdmin")}
                         </span>
                       ) : (
                         <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700 shrink-0">
-                          Member
+                          {t("members.roleMember")}
                         </span>
                       )}
                     </div>
@@ -320,7 +320,7 @@ export function Navbar({
                       className="w-full p-2 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
                     >
                       <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
-                        {user.organization?.name || "No Organization"}
+                        {user.organization?.name || t("nav.noOrganization")}
                       </span>
                       <ChevronDown
                         className={cn(
@@ -392,7 +392,7 @@ export function Navbar({
                   <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <div className="flex items-center gap-2.5">
                       <Sun className="h-4 w-4 text-slate-400" />
-                      <span>{locale === "vi" ? "Giao diện" : "Theme"}</span>
+                      <span>{t("nav.theme")}</span>
                     </div>
                     <ThemeToggle />
                   </div>
@@ -596,7 +596,7 @@ export function Navbar({
                   onClick={() => setIsMobileOrgDropdownOpen(!isMobileOrgDropdownOpen)}
                   className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  <span className="truncate">{user?.organization?.name || "No Organization"}</span>
+                  <span className="truncate">{user?.organization?.name || t("nav.noOrganization")}</span>
                   <ChevronDown
                     className={cn(
                       "h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-200",
@@ -709,7 +709,7 @@ export function Navbar({
               <div className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
                   <Sun className="h-4 w-4 text-slate-400" />
-                  <span>{locale === "vi" ? "Giao diện" : "Theme"}</span>
+                  <span>{t("nav.theme")}</span>
                 </div>
                 <ThemeToggle />
               </div>

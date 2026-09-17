@@ -34,6 +34,7 @@ import {
   parseInterviewFromNotes,
   stringifyInterviewToNotes,
 } from "@/lib/interviews";
+import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
 
 export interface ScheduleInterviewModalProps {
@@ -57,6 +58,7 @@ export function ScheduleInterviewModal({
   initialDate,
   onInterviewScheduled,
 }: ScheduleInterviewModalProps) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { data: members = [] } = useOrgMembers();
   const updateCandidateMutation = useUpdateCandidateMutation();
@@ -157,17 +159,17 @@ export function ScheduleInterviewModal({
     setFormError(null);
 
     if (!modalCandidateId) {
-      setFormError("Vui lòng chọn ứng viên.");
+      setFormError(t("interviews.errors.selectCandidate"));
       return;
     }
     if (!interviewDate) {
-      setFormError("Vui lòng chọn ngày phỏng vấn.");
+      setFormError(t("interviews.errors.selectDate"));
       return;
     }
 
     const candidate = applications.find((a) => a.id === modalCandidateId);
     if (!candidate) {
-      setFormError("Không tìm thấy thông tin ứng viên.");
+      setFormError(t("interviews.errors.candidateNotFound"));
       return;
     }
 
@@ -205,7 +207,7 @@ export function ScheduleInterviewModal({
       onClose();
     } catch (err) {
       console.error("Schedule interview failed:", err);
-      setFormError("Có lỗi xảy ra khi lưu lịch phỏng vấn. Vui lòng thử lại.");
+      setFormError(t("interviews.errors.saveFailed"));
     }
   };
 
@@ -221,10 +223,10 @@ export function ScheduleInterviewModal({
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
-                Lên lịch phỏng vấn ứng viên
+                {t("interviews.modalTitle")}
               </DialogTitle>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Thiết lập thời gian, hình thức và người đánh giá cho buổi phỏng vấn. Dữ liệu sẽ đồng bộ tự động trên toàn hệ thống.
+                {t("interviews.modalSubtitle")}
               </p>
             </div>
           </div>
@@ -242,14 +244,14 @@ export function ScheduleInterviewModal({
           <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 space-y-3.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               <Briefcase className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              <span>Vị trí tuyển dụng & Ứng viên</span>
+              <span>{t("interviews.targetJobAndCandidate")}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {/* Job Selector */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Vị trí tuyển dụng
+                  {t("interviews.targetJob")}
                 </label>
                 <select
                   value={modalJobId}
@@ -267,7 +269,7 @@ export function ScheduleInterviewModal({
                   className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
                 >
                   {jobs.length === 0 ? (
-                    <option value="">(Không có vị trí)</option>
+                    <option value="">{t("interviews.noJobsAvailable")}</option>
                   ) : (
                     jobs.map((j) => (
                       <option key={j.id} value={j.id}>
@@ -281,10 +283,10 @@ export function ScheduleInterviewModal({
               {/* Candidate Selector */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                  <span>Ứng viên <span className="text-rose-500">*</span></span>
+                  <span>{t("interviews.targetCandidate")} <span className="text-rose-500">*</span></span>
                   {currentCandidate && (
                     <span className="text-[10px] font-normal text-slate-400">
-                      Giai đoạn: <strong className="font-semibold text-blue-600 dark:text-blue-400">{currentCandidate.stage}</strong>
+                      {t("interviews.stageLabel")} <strong className="font-semibold text-blue-600 dark:text-blue-400">{currentCandidate.stage}</strong>
                     </span>
                   )}
                 </label>
@@ -296,7 +298,7 @@ export function ScheduleInterviewModal({
                   required
                 >
                   {modalCandidates.length === 0 ? (
-                    <option value="">(Chưa có ứng viên nào cho vị trí này)</option>
+                    <option value="">{t("interviews.noCandidatesForJob")}</option>
                   ) : (
                     modalCandidates.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -315,7 +317,7 @@ export function ScheduleInterviewModal({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                <span>Ngày phỏng vấn <span className="text-rose-500">*</span></span>
+                <span>{t("interviews.interviewDate")} <span className="text-rose-500">*</span></span>
               </label>
               <Input
                 type="date"
@@ -330,7 +332,7 @@ export function ScheduleInterviewModal({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5 text-slate-400" />
-                <span>Giờ hẹn <span className="text-rose-500">*</span></span>
+                <span>{t("interviews.interviewTime")} <span className="text-rose-500">*</span></span>
               </label>
               <Input
                 type="time"
@@ -348,18 +350,18 @@ export function ScheduleInterviewModal({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Layers className="h-3.5 w-3.5 text-slate-400" />
-                <span>Vòng phỏng vấn</span>
+                <span>{t("interviews.roundType")}</span>
               </label>
               <select
                 value={interviewType}
                 onChange={(e) => setInterviewType(e.target.value)}
                 className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20"
               >
-                <option value="Sơ bộ (HR Screening)">HR Sơ loại (HR Screening)</option>
-                <option value="Kỹ thuật (Technical)">Vòng Kỹ thuật (Technical Interview)</option>
-                <option value="Văn hóa (Culture fit)">Văn hóa doanh nghiệp (Culture Fit)</option>
-                <option value="Vòng cuối (Final round)">Vòng phỏng vấn Lãnh đạo (Final Round)</option>
-                <option value="Đánh giá năng lực (Assessment)">Bài kiểm tra năng lực (Assessment / Live Coding)</option>
+                <option value="Sơ bộ (HR Screening)">{t("interviews.types.hrScreening")}</option>
+                <option value="Kỹ thuật (Technical)">{t("interviews.types.technical")}</option>
+                <option value="Văn hóa (Culture fit)">{t("interviews.types.cultureFit")}</option>
+                <option value="Vòng cuối (Final round)">{t("interviews.types.finalRound")}</option>
+                <option value="Đánh giá năng lực (Assessment)">{t("interviews.types.assessment")}</option>
               </select>
             </div>
 
@@ -371,7 +373,7 @@ export function ScheduleInterviewModal({
                 ) : (
                   <Video className="h-3.5 w-3.5 text-emerald-500" />
                 )}
-                <span>Hình thức tổ chức</span>
+                <span>{t("interviews.formatLabel")}</span>
               </label>
               <select
                 value={interviewFormat}
@@ -386,10 +388,10 @@ export function ScheduleInterviewModal({
                 }}
                 className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20"
               >
-                <option value="MEET">Google Meet</option>
-                <option value="ZOOM">Zoom Meeting</option>
-                <option value="TEAMS">Microsoft Teams</option>
-                <option value="OFFICE">Trực tiếp tại văn phòng công ty</option>
+                <option value="MEET">{t("interviews.formats.meet")}</option>
+                <option value="ZOOM">{t("interviews.formats.zoom")}</option>
+                <option value="TEAMS">{t("interviews.formats.teams")}</option>
+                <option value="OFFICE">{t("interviews.formats.office")}</option>
               </select>
             </div>
           </div>
@@ -400,16 +402,16 @@ export function ScheduleInterviewModal({
               <LinkIcon className="h-3.5 w-3.5 text-slate-400" />
               <span>
                 {interviewFormat === "OFFICE"
-                  ? "Địa chỉ văn phòng / Phòng họp trực tiếp"
-                  : "Đường dẫn phòng họp trực tuyến (Meeting URL)"}
+                  ? t("interviews.officeAddressLabel")
+                  : t("interviews.meetingUrlLabel")}
               </span>
             </label>
             <Input
               type="text"
               placeholder={
                 interviewFormat === "OFFICE"
-                  ? "VD: Tầng 8, Tòa nhà ABC, 123 Đường XYZ, Quận 1, TP.HCM"
-                  : "https://meet.google.com/xyz-abcd-efg"
+                  ? t("interviews.placeholders.officeLocation")
+                  : t("interviews.placeholders.meetingUrl")
               }
               value={linkOrLocation}
               onChange={(e) => setLinkOrLocation(e.target.value)}
@@ -423,7 +425,7 @@ export function ScheduleInterviewModal({
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Người phỏng vấn chính</span>
+                  <span>{t("interviews.primaryInterviewer")}</span>
                 </span>
                 {members.length > 0 && (
                   <select
@@ -433,7 +435,7 @@ export function ScheduleInterviewModal({
                     value=""
                     className="text-[10px] text-blue-600 dark:text-blue-400 bg-transparent border-none cursor-pointer outline-none font-semibold"
                   >
-                    <option value="">+ Chọn từ thành viên...</option>
+                    <option value="">{t("interviews.selectFromMembers")}</option>
                     {members.map((m) => (
                       <option key={m.id} value={`${m.name} (${m.role})`}>
                         {m.name} ({m.email})
@@ -444,7 +446,7 @@ export function ScheduleInterviewModal({
               </label>
               <Input
                 type="text"
-                placeholder="VD: Nguyễn Văn A (Engineering Lead)"
+                placeholder={t("interviews.placeholders.interviewer")}
                 value={interviewerName}
                 onChange={(e) => setInterviewerName(e.target.value)}
                 className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
@@ -454,11 +456,11 @@ export function ScheduleInterviewModal({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <FileText className="h-3.5 w-3.5 text-slate-400" />
-                <span>Ghi chú / Yêu cầu cho ứng viên (Tùy chọn)</span>
+                <span>{t("interviews.notesOrRequirements")}</span>
               </label>
               <Input
                 type="text"
-                placeholder="VD: Mang theo laptop hoặc chuẩn bị portfolio..."
+                placeholder={t("interviews.placeholders.notes")}
                 value={interviewNotes}
                 onChange={(e) => setInterviewNotes(e.target.value)}
                 className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
@@ -473,14 +475,14 @@ export function ScheduleInterviewModal({
               onClick={onClose}
               className="h-10 px-5 rounded-xl text-xs font-semibold cursor-pointer"
             >
-              Hủy bỏ
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isSaving}
               className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 cursor-pointer transition-all"
             >
-              {isSaving ? "Đang lưu lịch..." : "Xác nhận lên lịch"}
+              {isSaving ? t("interviews.savingSchedule") : t("interviews.confirmSchedule")}
             </Button>
           </DialogFooter>
         </form>

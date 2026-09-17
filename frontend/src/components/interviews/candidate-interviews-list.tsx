@@ -40,6 +40,16 @@ export function CandidateInterviewsList({
   const { t } = useI18n();
   const allInterviews = parseAllInterviewsFromNotes(notes);
 
+  const formatInterviewType = (type?: string) => {
+    if (!type) return "";
+    if (type.includes("HR Screening") || type.includes("Sơ bộ")) return t("interviews.types.hrScreening");
+    if (type.includes("Technical") || type.includes("Kỹ thuật")) return t("interviews.types.technical");
+    if (type.includes("Culture") || type.includes("Văn hóa")) return t("interviews.types.cultureFit");
+    if (type.includes("Final") || type.includes("Vòng cuối")) return t("interviews.types.finalRound");
+    if (type.includes("Assessment") || type.includes("Đánh giá")) return t("interviews.types.assessment");
+    return type;
+  };
+
   if (allInterviews.length === 0) {
     if (hideIfEmpty) {
       return null;
@@ -69,14 +79,14 @@ export function CandidateInterviewsList({
           <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
             {t("applications.noInterviews")}
           </h4>
-          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
             {t("applications.noInterviewsDesc")}
           </p>
           {canEdit && onSchedule && (
             <Button
               size="sm"
               onClick={onSchedule}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs cursor-pointer shadow-xs inline-flex items-center gap-1.5"
+              className="mt-2 h-8 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Calendar className="h-3.5 w-3.5" />
               <span>{t("applications.scheduleInterview")}</span>
@@ -94,20 +104,12 @@ export function CandidateInterviewsList({
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <Calendar className="h-4 w-4 text-slate-500" />
-              <span>
-                {title ||
-                  (allInterviews.length > 1
-                    ? `Danh sách lịch phỏng vấn (${allInterviews.length})`
-                    : "Lịch phỏng vấn")}
-              </span>
+              <span>{title || t("applications.sections.interviews")}</span>
             </h3>
-            {allInterviews.length > 1 && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
-                Mới nhất trên cùng
-              </span>
-            )}
+            <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200/60 dark:border-blue-900/40">
+              {allInterviews.length}
+            </span>
           </div>
-
           {canEdit && onSchedule && (
             <Button
               size="sm"
@@ -115,7 +117,7 @@ export function CandidateInterviewsList({
               className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Calendar className="h-3.5 w-3.5" />
-              <span>+ Lên lịch phỏng vấn mới</span>
+              <span>+ {t("applications.scheduleInterview")}</span>
             </Button>
           )}
         </div>
@@ -135,55 +137,55 @@ export function CandidateInterviewsList({
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {scheduled.type}
+                      {formatInterviewType(scheduled.type)}
                     </h4>
                     {allInterviews.length > 1 && (
                       <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
                         {scheduled.round
-                          ? `Vòng ${scheduled.round}`
-                          : `Lịch #${allInterviews.length - idx}`}
+                          ? `${t("interviews.round")} ${scheduled.round}`
+                          : `#${allInterviews.length - idx}`}
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {idx === 0
-                      ? "Lịch phỏng vấn gần nhất / sắp tới"
-                      : "Lịch phỏng vấn vòng trước"}
+                      ? t("interviews.latestUpcomingSchedule")
+                      : t("interviews.previousRoundSchedule")}
                   </p>
                 </div>
               </div>
 
               <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-900/60 shrink-0">
-                {idx === 0 ? "Lịch hiện tại" : "Đã hoàn thành"}
+                {idx === 0 ? t("interviews.currentScheduleBadge") : t("interviews.completedScheduleBadge")}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 text-xs">
               <div className="space-y-1">
-                <span className="text-slate-400 block">Thời gian:</span>
+                <span className="text-slate-400 block">{t("interviews.timeLabel")}</span>
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                  {scheduled.date} lúc {scheduled.time}
+                  {scheduled.date} {t("interviews.atTime")} {scheduled.time}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">Hình thức:</span>
+                <span className="text-slate-400 block">{t("interviews.formatLabelShort")}</span>
                 {scheduled.format === "OFFICE" ? (
                   <span className="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5 shrink-0" />
-                    Tại văn phòng công ty
+                    {t("interviews.atOffice")}
                   </span>
                 ) : (
                   <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <Video className="h-3.5 w-3.5 shrink-0" />
-                    Trực tuyến ({scheduled.format})
+                    {t("interviews.onlineFormat")} ({scheduled.format})
                   </span>
                 )}
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">Người phỏng vấn:</span>
+                <span className="text-slate-400 block">{t("interviews.tableHeaders.interviewer")}:</span>
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                   {scheduled.interviewer}
@@ -193,8 +195,8 @@ export function CandidateInterviewsList({
               <div className="space-y-1">
                 <span className="text-slate-400 block">
                   {scheduled.format === "OFFICE"
-                    ? "Địa điểm:"
-                    : "Đường dẫn phòng họp:"}
+                    ? t("interviews.officeAddressLabel")
+                    : t("interviews.meetingUrlLabel")}
                 </span>
                 {scheduled.linkOrLocation &&
                 scheduled.linkOrLocation.startsWith("http") ? (
@@ -205,7 +207,7 @@ export function CandidateInterviewsList({
                     className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                    <span>Vào phòng họp</span>
+                    <span>{t("interviews.openMeetingShort")}</span>
                   </a>
                 ) : (
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
@@ -218,7 +220,7 @@ export function CandidateInterviewsList({
             {scheduled.notes && (
               <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 text-xs space-y-1">
                 <span className="font-bold text-blue-950 dark:text-blue-200">
-                  Ghi chú kèm theo:
+                  {t("interviews.notesAttached")}
                 </span>
                 <p className="text-blue-800 dark:text-blue-300">
                   {scheduled.notes}
@@ -232,10 +234,10 @@ export function CandidateInterviewsList({
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                     <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                    <span>Đánh giá kết quả: {scheduled.scorecard.overallRating} / 5 sao</span>
+                    <span>{t("interviews.ratingResult")}: {scheduled.scorecard.overallRating} / 5 {t("interviews.rateStar")}</span>
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
-                    Đề xuất: {scheduled.scorecard.recommendation}
+                    {t("interviews.recommendationLabel")}: {scheduled.scorecard.recommendation}
                   </span>
                 </div>
 
@@ -247,7 +249,7 @@ export function CandidateInterviewsList({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
                     {scheduled.scorecard.technicalScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Kỹ thuật</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.technicalCriteria")}</span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.technicalScore}/5
@@ -256,7 +258,7 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.communicationScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Giao tiếp</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.communicationCriteria")}</span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.communicationScore}/5
@@ -265,7 +267,7 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.cultureScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Văn hóa</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.cultureFitCriteria")}</span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.cultureScore}/5
@@ -274,7 +276,7 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.problemSolvingScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">Giải quyết vấn đề</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.problemSolvingCriteria")}</span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.problemSolvingScore}/5
@@ -287,7 +289,7 @@ export function CandidateInterviewsList({
                 {scheduled.scorecard.feedback && (
                   <div className="pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
                     <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 block mb-0.5">
-                      Nhận xét chi tiết:
+                      {t("interviews.detailedFeedback")}:
                     </span>
                     <p className="text-slate-700 dark:text-slate-300 italic bg-white/60 dark:bg-slate-900/40 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
                       &ldquo;{scheduled.scorecard.feedback}&rdquo;
@@ -306,7 +308,7 @@ export function CandidateInterviewsList({
                     onClick={onCancelInterview}
                     className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
                   >
-                    Hủy lịch này
+                    {t("interviews.cancelThisSchedule")}
                   </Button>
                 )}
                 {onSchedule && (
@@ -316,7 +318,7 @@ export function CandidateInterviewsList({
                     onClick={onSchedule}
                     className="text-xs font-semibold cursor-pointer"
                   >
-                    {idx === 0 ? "Chỉnh sửa lịch phỏng vấn" : "Cập nhật"}
+                    {idx === 0 ? t("interviews.editScheduleBtn") : t("interviews.updateBtn")}
                   </Button>
                 )}
               </div>

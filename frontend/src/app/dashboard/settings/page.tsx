@@ -164,7 +164,7 @@ export default function GeneralSettingsPage() {
             </label>
             <Input
               type="text"
-              placeholder="e.g. Acme Corp"
+              placeholder={t("settings.placeholders.orgName")}
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
@@ -184,7 +184,7 @@ export default function GeneralSettingsPage() {
               </span>
               <input
                 type="text"
-                placeholder="company-slug"
+                placeholder={t("settings.placeholders.orgSlug")}
                 value={orgSlug}
                 onChange={(e) =>
                   setOrgSlug(

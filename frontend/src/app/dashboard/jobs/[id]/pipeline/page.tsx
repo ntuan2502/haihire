@@ -640,7 +640,7 @@ function JobPipelinePageContent() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  <span>Quay lại danh sách ứng viên</span>
+                  <span>{t("applications.backToApplications")}</span>
                 </button>
               </div>
 

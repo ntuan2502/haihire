@@ -140,7 +140,7 @@ function EditCandidatePageContent() {
       const maybeAxios = err as { response?: { data?: { message?: string } } };
       setErrorMsg(
         maybeAxios?.response?.data?.message ||
-          "Failed to update candidate. Please check your connection and try again.",
+          t("candidates.updateFailed"),
       );
     } finally {
       setIsSubmitting(false);
@@ -183,8 +183,8 @@ function EditCandidatePageContent() {
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {!isCandidateIdValid
-              ? "The candidate ID provided is invalid. A valid UUID is required."
-              : "The candidate you are trying to edit does not exist or has been removed."}
+              ? t("candidates.invalidCandidateId")
+              : t("candidates.candidateNotFound")}
           </p>
           <div className="pt-2">
             <Button
@@ -253,7 +253,7 @@ function EditCandidatePageContent() {
             </label>
             <Input
               required
-              placeholder="e.g. Jane"
+              placeholder={t("candidates.placeholders.firstName")}
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -267,7 +267,7 @@ function EditCandidatePageContent() {
             </label>
             <Input
               required
-              placeholder="e.g. Doe"
+              placeholder={t("candidates.placeholders.lastName")}
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -282,7 +282,7 @@ function EditCandidatePageContent() {
             <Input
               type="email"
               required
-              placeholder="e.g. jane.doe@gmail.com"
+              placeholder={t("candidates.placeholders.email")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -296,7 +296,7 @@ function EditCandidatePageContent() {
             </label>
             <Input
               type="tel"
-              placeholder="e.g. +64155409586"
+              placeholder={t("candidates.placeholders.phone")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -312,7 +312,7 @@ function EditCandidatePageContent() {
               </span>
             </label>
             <Input
-              placeholder="e.g. Nguyễn Văn A"
+              placeholder={t("candidates.placeholders.displayName")}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 import {
   parseAllInterviewsFromNotes,
   type ScheduledInterviewInfo,
@@ -44,6 +45,7 @@ export function InterviewsCalendarView({
   onOpenScorecard,
   canEdit = true,
 }: InterviewsCalendarViewProps) {
+  const { t, locale } = useI18n();
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
@@ -188,24 +190,35 @@ export function InterviewsCalendarView({
       days.push({
         dateStr,
         dayNumber: d.getDate(),
-        monthName: `Th${d.getMonth() + 1}`,
+        monthName: locale === "vi" ? `Th${d.getMonth() + 1}` : `M${d.getMonth() + 1}`,
         isToday: dateStr === todayStr,
       });
     }
 
     return days;
-  }, [currentDate, todayStr]);
+  }, [currentDate, todayStr, locale]);
 
   const monthTitle = useMemo(() => {
-    return `Tháng ${currentMonth + 1}, ${currentYear}`;
-  }, [currentMonth, currentYear]);
+    return currentDate.toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  }, [currentDate, locale]);
 
   const weekTitle = useMemo(() => {
     if (weekDays.length < 7) return "";
-    return `Tuần: ${weekDays[0].dayNumber}/${weekDays[0].monthName} - ${weekDays[6].dayNumber}/${weekDays[6].monthName}, ${currentYear}`;
-  }, [weekDays, currentYear]);
+    return `${t("interviews.week")}: ${weekDays[0].dayNumber}/${weekDays[0].monthName} - ${weekDays[6].dayNumber}/${weekDays[6].monthName}, ${currentYear}`;
+  }, [weekDays, currentYear, t]);
 
-  const dayHeaders = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+  const dayHeaders = useMemo(() => [
+    t("interviews.daysOfWeek.mon"),
+    t("interviews.daysOfWeek.tue"),
+    t("interviews.daysOfWeek.wed"),
+    t("interviews.daysOfWeek.thu"),
+    t("interviews.daysOfWeek.fri"),
+    t("interviews.daysOfWeek.sat"),
+    t("interviews.daysOfWeek.sun"),
+  ], [t]);
 
   return (
     <div className="space-y-4">
@@ -218,7 +231,7 @@ export function InterviewsCalendarView({
               type="button"
               onClick={handlePrevMonth}
               className="h-8 w-8 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-              title="Kỳ trước"
+              title={t("interviews.prevPeriod")}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -226,7 +239,7 @@ export function InterviewsCalendarView({
               type="button"
               onClick={handleNextMonth}
               className="h-8 w-8 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-              title="Kỳ tiếp theo"
+              title={t("interviews.nextPeriod")}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -238,7 +251,7 @@ export function InterviewsCalendarView({
             onClick={handleToday}
             className="h-8 px-3 rounded-xl text-xs font-bold cursor-pointer"
           >
-            Hôm nay
+            {t("interviews.today")}
           </Button>
 
           <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
@@ -258,7 +271,7 @@ export function InterviewsCalendarView({
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              Tháng
+              {t("interviews.month")}
             </button>
             <button
               type="button"
@@ -269,7 +282,7 @@ export function InterviewsCalendarView({
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              Tuần
+              {t("interviews.week")}
             </button>
           </div>
         </div>
@@ -325,7 +338,7 @@ export function InterviewsCalendarView({
                         type="button"
                         onClick={() => onScheduleDate(day.dateStr)}
                         className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center transition-all cursor-pointer"
-                        title={`Lên lịch phỏng vấn ngày ${day.dateStr}`}
+                        title={`${t("interviews.scheduleInterview")} ${day.dateStr}`}
                       >
                         <Plus className="h-3 w-3" />
                       </button>
@@ -364,7 +377,7 @@ export function InterviewsCalendarView({
 
                           <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                             <span className="truncate max-w-[70px]">
-                              {evt.job?.title || "Vị trí"}
+                              {evt.job?.title || t("interviews.defaultJob")}
                             </span>
                             {hasScorecard && (
                               <span className="inline-flex items-center text-amber-500 font-bold shrink-0">
@@ -381,7 +394,7 @@ export function InterviewsCalendarView({
                   {/* Bottom Counter if > 2 events */}
                   {events.length > 2 && (
                     <span className="text-[10px] font-bold text-slate-400 text-right block">
-                      {events.length} buổi PV
+                      {events.length} {t("interviews.pvPrefix")}
                     </span>
                   )}
                 </div>
@@ -430,7 +443,7 @@ export function InterviewsCalendarView({
                         variant="ghost"
                         onClick={() => onScheduleDate(day.dateStr)}
                         className="h-7 w-7 p-0 rounded-lg hover:bg-blue-50 text-blue-600 dark:text-blue-400 cursor-pointer"
-                        title="Thêm lịch phỏng vấn"
+                        title={t("interviews.scheduleInterview")}
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </Button>
@@ -441,7 +454,7 @@ export function InterviewsCalendarView({
                   <div className="flex-1 space-y-2.5 overflow-y-auto">
                     {events.length === 0 ? (
                       <p className="text-[11px] text-slate-400 italic text-center py-6">
-                        Không có lịch
+                        {t("interviews.noScheduleForDay")}
                       </p>
                     ) : (
                       events.map((evt, eIdx) => {
@@ -470,7 +483,7 @@ export function InterviewsCalendarView({
                                 </span>
                               ) : (
                                 <span className="px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
-                                  {evt.interview.round ? `Vòng ${evt.interview.round}` : "Phỏng vấn"}
+                                  {evt.interview.round ? `${t("interviews.round")} ${evt.interview.round}` : t("interviews.roundInterview")}
                                 </span>
                               )}
                             </div>
@@ -486,12 +499,12 @@ export function InterviewsCalendarView({
 
                             <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
                               <span className="truncate max-w-[80px]">
-                                PV: {evt.interview.interviewer}
+                                {t("interviews.tableHeaders.interviewer")}: {evt.interview.interviewer}
                               </span>
                               {evt.interview.format === "OFFICE" ? (
-                                <span className="text-rose-600 font-semibold">Văn phòng</span>
+                                <span className="text-rose-600 font-semibold">{t("interviews.atOffice")}</span>
                               ) : (
-                                <span className="text-emerald-600 font-semibold">Online</span>
+                                <span className="text-emerald-600 font-semibold">{t("interviews.onlineFormat")}</span>
                               )}
                             </div>
 
@@ -505,7 +518,7 @@ export function InterviewsCalendarView({
                                   className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
                                 >
                                   <Video className="h-2.5 w-2.5" />
-                                  <span>Vào họp</span>
+                                  <span>{t("interviews.joinMeetingShort")}</span>
                                 </a>
                               )}
 
@@ -514,7 +527,7 @@ export function InterviewsCalendarView({
                                 onClick={() => onOpenScorecard(evt.application, evt.interview)}
                                 className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer ml-auto"
                               >
-                                {hasScorecard ? "Xem đánh giá" : "Chấm điểm ⭐"}
+                                {hasScorecard ? t("interviews.viewEvaluation") : t("interviews.scorecardAction")}
                               </button>
                             </div>
                           </div>
@@ -556,45 +569,45 @@ export function InterviewsCalendarView({
 
               {selectedEvent.interview.round && (
                 <span className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800">
-                  Vòng {selectedEvent.interview.round}
+                  {t("interviews.round")} {selectedEvent.interview.round}
                 </span>
               )}
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Vị trí:</span>
+                <span className="text-slate-400">{t("interviews.role")}:</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
-                  {selectedEvent.job?.title || "Vị trí tuyển dụng"}
+                  {selectedEvent.job?.title || t("interviews.defaultJob")}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Thời gian:</span>
+                <span className="text-slate-400">{t("interviews.timeLabel")}:</span>
                 <span className="font-bold text-blue-600 dark:text-blue-400">
-                  {selectedEvent.interview.date} lúc {selectedEvent.interview.time}
+                  {selectedEvent.interview.date} {t("interviews.atTime")} {selectedEvent.interview.time}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Người phỏng vấn:</span>
+                <span className="text-slate-400">{t("interviews.tableHeaders.interviewer")}:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {selectedEvent.interview.interviewer}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Hình thức:</span>
+                <span className="text-slate-400">{t("interviews.formatLabel")}:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {selectedEvent.interview.format === "OFFICE"
-                    ? "Tại văn phòng công ty"
-                    : `Trực tuyến (${selectedEvent.interview.format})`}
+                    ? t("interviews.atOffice")
+                    : `${t("interviews.onlineFormat")} (${selectedEvent.interview.format})`}
                 </span>
               </div>
 
               {selectedEvent.interview.linkOrLocation && (
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                  <span className="text-slate-400">Liên kết:</span>
+                  <span className="text-slate-400">{t("interviews.meetingUrlLabel")}:</span>
                   {selectedEvent.interview.linkOrLocation.startsWith("http") ? (
                     <a
                       href={selectedEvent.interview.linkOrLocation}
@@ -603,7 +616,7 @@ export function InterviewsCalendarView({
                       className="font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
                     >
                       <Video className="h-3.5 w-3.5" />
-                      <span>Vào phòng họp</span>
+                      <span>{t("interviews.openMeetingShort")}</span>
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   ) : (
@@ -621,7 +634,7 @@ export function InterviewsCalendarView({
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                    <span>Đánh giá: {selectedEvent.interview.scorecard.overallRating} / 5</span>
+                    <span>{t("interviews.ratingResult")}: {selectedEvent.interview.scorecard.overallRating} / 5</span>
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 font-bold text-[10px] text-emerald-600 border">
                     {selectedEvent.interview.scorecard.recommendation}
@@ -643,7 +656,7 @@ export function InterviewsCalendarView({
                 onClick={() => setSelectedEvent(null)}
                 className="h-8 rounded-xl text-xs cursor-pointer"
               >
-                Đóng
+                {t("common.close")}
               </Button>
 
               <div className="flex items-center gap-2">
@@ -658,7 +671,7 @@ export function InterviewsCalendarView({
                     }}
                     className="h-8 rounded-xl text-xs font-semibold cursor-pointer"
                   >
-                    Sửa lịch
+                    {t("interviews.editSchedule")}
                   </Button>
                 )}
 
@@ -673,7 +686,7 @@ export function InterviewsCalendarView({
                 >
                   <Star className="h-3 w-3" />
                   <span>
-                    {selectedEvent.interview.scorecard ? "Cập nhật đánh giá" : "Chấm điểm (Scorecard)"}
+                    {selectedEvent.interview.scorecard ? t("interviews.updateSchedule") : t("interviews.scorecardAction")}
                   </span>
                 </Button>
               </div>

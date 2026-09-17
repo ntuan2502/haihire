@@ -48,15 +48,15 @@ function formatInterviewDate(dateStr: string, timeStr?: string) {
   const timeSuffix = timeStr ? ` ${timeStr}` : "";
 
   if (dateStr === todayStr) {
-    return { label: `Hôm nay${timeSuffix}`, isToday: true };
+    return { type: "today" as const, timeSuffix, isToday: true, label: "" };
   }
   if (dateStr === tomorrowStr) {
-    return { label: `Ngày mai${timeSuffix}`, isTomorrow: true };
+    return { type: "tomorrow" as const, timeSuffix, isTomorrow: true, label: "" };
   }
   const parts = dateStr.split("-");
   const d = parts[2] || "";
   const m = parts[1] || "";
-  return { label: `${d}/${m}${timeSuffix}`, isFuture: true };
+  return { type: "future" as const, label: `${d}/${m}${timeSuffix}`, isFuture: true, timeSuffix };
 }
 
 function DashboardContent() {
@@ -307,7 +307,7 @@ function DashboardContent() {
                                 {t("dashboard.hiringPipeline")}
                               </h3>
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60">
-                                {pipelineJobs.length} vị trí đang mở
+                                {t("dashboard.openPositionsCount", { count: pipelineJobs.length })}
                               </span>
                             </div>
                             <Link
@@ -547,9 +547,9 @@ function DashboardContent() {
                               </p>
                               <Link
                                 href="/dashboard/interviews"
-                                className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                                 className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                               >
-                                <span>+ Lên lịch phỏng vấn mới</span>
+                                <span>+ {t("dashboard.scheduleNew")}</span>
                               </Link>
                             </div>
                           ) : (
@@ -558,6 +558,11 @@ function DashboardContent() {
                                 const { application: app, interview: intv, job } = item;
                                 const dateMeta = formatInterviewDate(intv.date, intv.time);
                                 const isOnline = intv.format !== "OFFICE";
+                                const dateBadgeText = dateMeta.type === "today"
+                                  ? `${t("dashboard.today")}${dateMeta.timeSuffix}`
+                                  : dateMeta.type === "tomorrow"
+                                  ? `${t("dashboard.tomorrow")}${dateMeta.timeSuffix}`
+                                  : dateMeta.label;
 
                                 return (
                                   <div
@@ -583,7 +588,7 @@ function DashboardContent() {
                                             </span>
                                           </div>
                                           <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                                            {job?.title || "Vị trí tuyển dụng"}
+                                            {job?.title || t("jobs.title")}
                                           </p>
                                         </div>
                                       </div>
@@ -598,7 +603,7 @@ function DashboardContent() {
                                             : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80"
                                         }`}
                                       >
-                                        {dateMeta.label}
+                                        {dateBadgeText}
                                       </span>
                                     </div>
 
@@ -621,7 +626,7 @@ function DashboardContent() {
                                             <>
                                               <MapPin className="h-3 w-3 text-rose-500 shrink-0" />
                                               <span className="text-rose-600 dark:text-rose-400 font-medium text-[10px]">
-                                                Tại VP
+                                                {t("dashboard.officeMeeting")}
                                               </span>
                                             </>
                                           )}
@@ -636,7 +641,7 @@ function DashboardContent() {
                                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shrink-0"
                                         >
                                           <Video className="h-2.5 w-2.5" />
-                                          <span>Vào họp</span>
+                                          <span>{t("dashboard.joinMeeting")}</span>
                                         </a>
                                       )}
                                     </div>

@@ -3,6 +3,8 @@
 import React from "react";
 import Link from "next/link";
 
+import { useI18n } from "@/i18n";
+
 export interface CareersFooterProps {
   /** Company/Organization name (optional) */
   orgName?: string;
@@ -11,6 +13,7 @@ export interface CareersFooterProps {
 }
 
 export function CareersFooter({ orgName, orgSlug }: CareersFooterProps) {
+  const { t } = useI18n();
   const currentYear = new Date().getFullYear();
   const displayName = orgName || "ATS";
 
@@ -27,7 +30,7 @@ export function CareersFooter({ orgName, orgSlug }: CareersFooterProps) {
                 {displayName.charAt(0).toUpperCase()}
               </div>
               <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {displayName} Careers
+                {displayName} {t("careers.title")}
               </span>
             </Link>
           ) : (
@@ -36,21 +39,21 @@ export function CareersFooter({ orgName, orgSlug }: CareersFooterProps) {
                 A
               </div>
               <span className="font-semibold text-slate-700 dark:text-slate-300">
-                ATS Careers
+                ATS {t("careers.title")}
               </span>
             </div>
           )}
         </div>
 
         <div className="text-slate-500 dark:text-slate-400">
-          Powered by{" "}
+          {t("careers.poweredBy")}{" "}
           <Link
             href="/"
             className="font-bold text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             ATS Platform
           </Link>{" "}
-          • © {currentYear} {displayName}. All rights reserved.
+          • © {t("careers.allRightsReserved", { year: currentYear, name: displayName })}
         </div>
       </div>
     </footer>

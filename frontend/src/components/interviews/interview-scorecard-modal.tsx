@@ -24,6 +24,7 @@ import {
   Check,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { useI18n } from "@/i18n";
 import { useUpdateCandidateMutation } from "@/hooks/use-queries";
 import { getCandidateDisplayName } from "@/lib/utils";
 import {
@@ -50,6 +51,7 @@ export function InterviewScorecardModal({
   job,
   onSaved,
 }: InterviewScorecardModalProps) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const updateCandidateMutation = useUpdateCandidateMutation();
 
@@ -102,7 +104,7 @@ export function InterviewScorecardModal({
         cultureScore,
         problemSolvingScore,
         feedback: feedback.trim() || undefined,
-        evaluatedBy: user?.name || "Interviewer",
+        evaluatedBy: user?.name || t("interviews.interviewer"),
         evaluatedAt: new Date().toISOString(),
       };
 
@@ -126,7 +128,7 @@ export function InterviewScorecardModal({
       setErrorMsg(
         err instanceof Error
           ? err.message
-          : "Đã có lỗi xảy ra khi lưu phiếu đánh giá. Vui lòng thử lại.",
+          : t("interviews.errors.saveScorecardFailed"),
       );
     }
   };
@@ -163,15 +165,15 @@ export function InterviewScorecardModal({
   const getScoreLabel = (score: number) => {
     switch (score) {
       case 5:
-        return "Xuất sắc (5/5)";
+        return `${t("interviews.ratings.excellent")} (5/5)`;
       case 4:
-        return "Tốt (4/5)";
+        return `${t("interviews.ratings.good")} (4/5)`;
       case 3:
-        return "Đạt yêu cầu (3/5)";
+        return `${t("interviews.ratings.meetsExpectations")} (3/5)`;
       case 2:
-        return "Dưới kỳ vọng (2/5)";
+        return `${t("interviews.ratings.belowExpectations")} (2/5)`;
       case 1:
-        return "Không đạt (1/5)";
+        return `${t("interviews.ratings.poor")} (1/5)`;
       default:
         return `${score}/5`;
     }
@@ -188,10 +190,10 @@ export function InterviewScorecardModal({
             </span>
             <div>
               <DialogTitle className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                Phiếu Đánh giá Phỏng vấn (Scorecard)
+                {t("interviews.scorecardTitle")}
               </DialogTitle>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Chấm điểm tiêu chí và đưa ra đề xuất tuyển dụng cho ứng viên sau buổi phỏng vấn.
+                {t("interviews.scorecardSubtitle")}
               </p>
             </div>
           </div>
@@ -213,7 +215,7 @@ export function InterviewScorecardModal({
             <div className="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
               <div className="flex items-center gap-1 font-medium">
                 <Briefcase className="h-3.5 w-3.5 text-blue-500" />
-                <span className="truncate max-w-[140px]">{job?.title || "Vị trí tuyển"}</span>
+                <span className="truncate max-w-[140px]">{job?.title || t("interviews.defaultJob")}</span>
               </div>
 
               <div className="flex items-center gap-1 font-medium">
@@ -225,7 +227,7 @@ export function InterviewScorecardModal({
 
               {interview.round && (
                 <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
-                  Vòng {interview.round}
+                  {t("interviews.round")} {interview.round}
                 </span>
               )}
             </div>
@@ -244,8 +246,8 @@ export function InterviewScorecardModal({
           {/* 1. Recommendation Decision */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
-              <span>Đề xuất tuyển dụng (Hiring Recommendation)</span>
-              <span className="text-[11px] font-normal text-slate-400">Bắt buộc</span>
+              <span>{t("interviews.hiringRecommendation")}</span>
+              <span className="text-[11px] font-normal text-slate-400">{t("interviews.requiredLabel")}</span>
             </label>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -260,10 +262,10 @@ export function InterviewScorecardModal({
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
                   <ThumbsUp className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Tuyển ngay</span>
+                  <span>{t("interviews.recommendations.strongYes")}</span>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                  Rất xuất sắc, đạt trọn vẹn tiêu chí
+                  {t("interviews.recommendations.strongYesDesc")}
                 </p>
               </button>
 
@@ -278,10 +280,10 @@ export function InterviewScorecardModal({
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold text-blue-700 dark:text-blue-300">
                   <Check className="h-3.5 w-3.5 text-blue-600" />
-                  <span>Đồng ý</span>
+                  <span>{t("interviews.recommendations.yes")}</span>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                  Đạt yêu cầu chuyên môn
+                  {t("interviews.recommendations.yesDesc")}
                 </p>
               </button>
 
@@ -296,10 +298,10 @@ export function InterviewScorecardModal({
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300">
                   <HelpCircle className="h-3.5 w-3.5 text-amber-600" />
-                  <span>Cân nhắc</span>
+                  <span>{t("interviews.recommendations.neutral")}</span>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                  Cần thảo luận thêm / Vòng phụ
+                  {t("interviews.recommendations.neutralDesc")}
                 </p>
               </button>
 
@@ -314,10 +316,10 @@ export function InterviewScorecardModal({
               >
                 <div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300">
                   <ThumbsDown className="h-3.5 w-3.5 text-rose-600" />
-                  <span>Không đạt</span>
+                  <span>{t("interviews.recommendations.no")}</span>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                  Chưa phù hợp với vị trí này
+                  {t("interviews.recommendations.noDesc")}
                 </p>
               </button>
             </div>
@@ -327,10 +329,10 @@ export function InterviewScorecardModal({
           <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                Điểm Đánh Giá Tổng Thể
+                {t("interviews.overallRatingTitle")}
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Mức độ ấn tượng chung về năng lực và tiềm năng của ứng viên
+                {t("interviews.overallRatingSubtitle")}
               </span>
             </div>
 
@@ -345,7 +347,7 @@ export function InterviewScorecardModal({
           {/* 3. Core Competencies Criteria (4 items) */}
           <div className="space-y-3">
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-              Đánh Giá Theo Bộ Tiêu Chí (Competency Breakdown)
+              {t("interviews.competencyTitle")}
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -353,9 +355,9 @@ export function InterviewScorecardModal({
               <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-2 shadow-2xs">
                 <div>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Kỹ năng Chuyên môn
+                    {t("interviews.technicalCriteria")}
                   </p>
-                  <p className="text-[10px] text-slate-400">Kiến thức chuyên sâu & nghiệp vụ</p>
+                  <p className="text-[10px] text-slate-400">{t("interviews.technicalDesc")}</p>
                 </div>
                 {renderStarRating(technicalScore, setTechnicalScore)}
               </div>
@@ -364,9 +366,9 @@ export function InterviewScorecardModal({
               <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-2 shadow-2xs">
                 <div>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Giao tiếp & Ứng xử
+                    {t("interviews.communicationCriteria")}
                   </p>
-                  <p className="text-[10px] text-slate-400">Truyền đạt rõ ràng, lắng nghe tốt</p>
+                  <p className="text-[10px] text-slate-400">{t("interviews.communicationDesc")}</p>
                 </div>
                 {renderStarRating(communicationScore, setCommunicationScore)}
               </div>
@@ -375,9 +377,9 @@ export function InterviewScorecardModal({
               <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-2 shadow-2xs">
                 <div>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Phù hợp Văn hóa
+                    {t("interviews.cultureFitCriteria")}
                   </p>
-                  <p className="text-[10px] text-slate-400">Thái độ tích cực, tinh thần đội nhóm</p>
+                  <p className="text-[10px] text-slate-400">{t("interviews.cultureFitDesc")}</p>
                 </div>
                 {renderStarRating(cultureScore, setCultureScore)}
               </div>
@@ -386,9 +388,9 @@ export function InterviewScorecardModal({
               <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-2 shadow-2xs">
                 <div>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    Giải quyết Vấn đề
+                    {t("interviews.problemSolvingCriteria")}
                   </p>
-                  <p className="text-[10px] text-slate-400">Tư duy logic, giải pháp tình huống</p>
+                  <p className="text-[10px] text-slate-400">{t("interviews.problemSolvingDesc")}</p>
                 </div>
                 {renderStarRating(problemSolvingScore, setProblemSolvingScore)}
               </div>
@@ -398,11 +400,11 @@ export function InterviewScorecardModal({
           {/* 4. Detailed Feedback & Comments */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              Nhận xét chi tiết & Ghi chú phỏng vấn
+              {t("interviews.detailedFeedback")}
             </label>
             <Textarea
               rows={4}
-              placeholder="Nhập điểm mạnh nổi bật, điểm cần lưu ý cải thiện hoặc câu hỏi khuyến nghị cho vòng phỏng vấn tiếp theo..."
+              placeholder={t("interviews.feedbackPlaceholder")}
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               className="rounded-2xl text-xs resize-none"
@@ -418,7 +420,7 @@ export function InterviewScorecardModal({
             onClick={onClose}
             className="h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer"
           >
-            Đóng
+            {t("common.close")}
           </Button>
 
           <Button
@@ -430,12 +432,12 @@ export function InterviewScorecardModal({
             {updateCandidateMutation.isPending ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Đang lưu...</span>
+                <span>{t("interviews.savingScorecard")}</span>
               </>
             ) : (
               <>
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Lưu Phiếu Đánh Giá</span>
+                <span>{t("interviews.saveScorecard")}</span>
               </>
             )}
           </Button>

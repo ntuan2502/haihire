@@ -382,17 +382,17 @@ export function JobList({
                         }
                       }}
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
-                      title="Sao chép link nộp CV công khai"
+                      title={t("jobs.copyPublicApplyLink")}
                     >
                       {copiedJobId === job.id ? (
                         <>
                           <Check className="h-3 w-3 text-emerald-600" />
-                          <span className="text-emerald-600">Đã copy link!</span>
+                          <span className="text-emerald-600">{t("jobs.linkCopiedSuccess")}</span>
                         </>
                       ) : (
                         <>
                           <Share2 className="h-3 w-3" />
-                          <span>Link CV</span>
+                          <span>{t("jobs.applyLink")}</span>
                         </>
                       )}
                     </button>
@@ -527,17 +527,17 @@ export function JobList({
                         }
                       }}
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                      title="Sao chép link nộp CV công khai"
+                      title={t("jobs.copyPublicApplyLink")}
                     >
                       {copiedJobId === job.id ? (
                         <>
                           <Check className="h-3.5 w-3.5 text-emerald-600" />
-                          <span className="text-emerald-600 font-bold">Đã copy link!</span>
+                          <span className="text-emerald-600 font-bold">{t("jobs.linkCopiedSuccess")}</span>
                         </>
                       ) : (
                         <>
                           <Share2 className="h-3.5 w-3.5" />
-                          <span>Link nộp CV</span>
+                          <span>{t("jobs.applyLink")}</span>
                         </>
                       )}
                     </button>

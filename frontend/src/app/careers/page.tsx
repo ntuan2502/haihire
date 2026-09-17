@@ -20,8 +20,10 @@ import {
 } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import type { Job } from "@/types";
+import { useI18n } from "@/i18n";
 
 export default function CareersDirectoryPage() {
+  const { t } = useI18n();
   const { data: jobs = [], isLoading } = useAllPublicJobs();
 
   const [search, setSearch] = useState("");
@@ -146,18 +148,18 @@ export default function CareersDirectoryPage() {
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-xs font-bold uppercase tracking-wider">
             <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
-            <span>Khám phá công ty & Cơ hội nghề nghiệp</span>
+            <span>{t("careers.heroBadge")}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Khám phá các doanh nghiệp đang{" "}
+            {t("careers.heroTitlePart1")}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
-              mở tuyển dụng
+              {t("careers.heroTitleHighlight")}
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto">
-            Tìm kiếm cơ hội việc làm hấp dẫn từ các công ty hàng đầu đang sử dụng nền tảng ATS. Nộp đơn trực tiếp chỉ với 1 bước tải lên CV.
+            {t("careers.heroDesc")}
           </p>
 
           {/* Search Box */}
@@ -168,7 +170,7 @@ export default function CareersDirectoryPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo tên công ty, vị trí ứng tuyển, kỹ năng hoặc phòng ban..."
+                placeholder={t("careers.searchPlaceholder")}
                 className="w-full bg-transparent px-3 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-white outline-none placeholder:text-slate-400 font-medium"
               />
               {search && (
@@ -177,7 +179,7 @@ export default function CareersDirectoryPage() {
                   onClick={() => setSearch("")}
                   className="px-2.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                 >
-                  Xóa
+                  {t("careers.clearSearch")}
                 </button>
               )}
             </div>
@@ -187,15 +189,15 @@ export default function CareersDirectoryPage() {
           <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-300 font-medium">
             <span className="flex items-center gap-1.5">
               <Building2 className="h-4 w-4 text-cyan-400" />
-              <strong className="text-white font-bold">{companiesList.length}</strong> công ty đang tuyển dụng
+              <strong className="text-white font-bold">{companiesList.length}</strong> {t("careers.metricsCompanies")}
             </span>
             <span className="flex items-center gap-1.5">
               <Briefcase className="h-4 w-4 text-cyan-400" />
-              <strong className="text-white font-bold">{jobs.filter((j) => j.status === "PUBLISHED").length}</strong> vị trí mở
+              <strong className="text-white font-bold">{jobs.filter((j) => j.status === "PUBLISHED").length}</strong> {t("careers.metricsPositions")}
             </span>
             <span className="flex items-center gap-1.5">
               <Users className="h-4 w-4 text-cyan-400" />
-              <strong className="text-white font-bold">{allDepartments.length}</strong> chuyên ngành
+              <strong className="text-white font-bold">{allDepartments.length}</strong> {t("careers.metricsDepartments")}
             </span>
           </div>
         </div>
@@ -217,7 +219,7 @@ export default function CareersDirectoryPage() {
               }`}
             >
               <Building2 className="h-3.5 w-3.5" />
-              <span>Theo Công ty ({companiesList.length})</span>
+              <span>{t("careers.viewByCompanyWithCount", { count: companiesList.length })}</span>
             </button>
 
             <button
@@ -230,19 +232,19 @@ export default function CareersDirectoryPage() {
               }`}
             >
               <Briefcase className="h-3.5 w-3.5" />
-              <span>Tất cả Vị trí ({jobs.filter((j) => j.status === "PUBLISHED").length})</span>
+              <span>{t("careers.viewAllJobsWithCount", { count: jobs.filter((j) => j.status === "PUBLISHED").length })}</span>
             </button>
           </div>
 
           {/* Department Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 shrink-0">Phòng ban:</span>
+            <span className="text-xs font-semibold text-slate-500 shrink-0">{t("careers.allDeptsLabel")}</span>
             <select
               value={selectedDept}
               onChange={(e) => setSelectedDept(e.target.value)}
               className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer focus:border-blue-500"
             >
-              <option value="all">Tất cả phòng ban</option>
+              <option value="all">{t("careers.allDepartmentsOption")}</option>
               {allDepartments.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept}
@@ -256,7 +258,7 @@ export default function CareersDirectoryPage() {
         {isLoading ? (
           <div className="py-24 flex flex-col items-center justify-center space-y-3">
             <LoadingSpinner />
-            <p className="text-xs font-semibold text-slate-400">Đang tải danh sách công ty tuyển dụng...</p>
+            <p className="text-xs font-semibold text-slate-400">{t("careers.loadingCompanies")}</p>
           </div>
         ) : viewMode === "companies" ? (
           /* ========================================================
@@ -268,10 +270,10 @@ export default function CareersDirectoryPage() {
                 <Building2 className="h-6 w-6" />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Không tìm thấy công ty phù hợp
+                {t("careers.noCompaniesFound")}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                Không có doanh nghiệp nào phù hợp với từ khóa &ldquo;{search}&rdquo;. Vui lòng thử tìm với từ khóa khác.
+                {t("careers.companyNotFoundMatching", { query: search })}
               </p>
             </div>
           ) : (
@@ -308,7 +310,7 @@ export default function CareersDirectoryPage() {
                         {/* Active hiring badge */}
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60 shrink-0">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>Đang tuyển</span>
+                          <span>{t("careers.hiringBadge")}</span>
                         </span>
                       </div>
 
@@ -322,7 +324,7 @@ export default function CareersDirectoryPage() {
                         )}
                         <span>•</span>
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
-                          {company.jobs.length} vị trí mở
+                          {company.jobs.length} {t("careers.metricsPositions")}
                         </span>
                       </div>
 
@@ -343,7 +345,7 @@ export default function CareersDirectoryPage() {
                       {/* Top 2 Open Jobs Preview */}
                       <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                          Vị trí tiêu biểu:
+                          {t("careers.featuredRoles")}
                         </span>
                         {company.jobs.slice(0, 2).map((job) => (
                           <Link
@@ -356,7 +358,7 @@ export default function CareersDirectoryPage() {
                                 {job.title}
                               </span>
                               <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold shrink-0">
-                                Ứng tuyển &rarr;
+                                {t("careers.applyArrow")}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
@@ -381,7 +383,7 @@ export default function CareersDirectoryPage() {
                         href={`/careers/${company.slug}`}
                         className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
                       >
-                        <span>Xem tất cả {company.jobs.length} vị trí & nộp đơn</span>
+                        <span>{t("careers.viewAllRolesAndApply", { count: company.jobs.length })}</span>
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     </div>
@@ -400,10 +402,10 @@ export default function CareersDirectoryPage() {
                 <Briefcase className="h-6 w-6" />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Không tìm thấy vị trí tuyển dụng
+                {t("careers.noJobsFound")}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn bộ lọc phòng ban.
+                {t("careers.noJobsDesc")}
               </p>
             </div>
           ) : (
@@ -460,14 +462,14 @@ export default function CareersDirectoryPage() {
                         href={`/careers/${orgSlug}`}
                         className="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                       >
-                        Trang công ty &rarr;
+                        {t("careers.companyPage")} &rarr;
                       </Link>
 
                       <Link
                         href={`/careers/${orgSlug}/${slugify(job.title)}`}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer"
                       >
-                        <span>Nộp hồ sơ ngay</span>
+                        <span>{t("careers.applyNow")}</span>
                         <ChevronRight className="h-3.5 w-3.5" />
                       </Link>
                     </div>

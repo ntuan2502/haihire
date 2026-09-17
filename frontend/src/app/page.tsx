@@ -37,7 +37,7 @@ export default function HomePage() {
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold border border-white/15 shadow-sm transition-all hover:scale-105"
           >
             <Briefcase className="h-4 w-4 text-cyan-300" />
-            <span>Cơ hội nghề nghiệp</span>
+            <span>{t("landing.careers")}</span>
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           </Link>
 
@@ -67,7 +67,7 @@ export default function HomePage() {
             className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-xs font-bold text-white border border-white/10"
           >
             <Briefcase className="h-3.5 w-3.5 text-cyan-300" />
-            <span>Việc làm</span>
+            <span>{t("landing.careers")}</span>
           </Link>
           <LanguageDropdown variant="landing" />
 
@@ -144,7 +144,7 @@ export default function HomePage() {
                 className="inline-flex items-center gap-2 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 px-6 py-3 text-sm font-bold text-cyan-300 shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
                 <Briefcase className="h-4 w-4 text-cyan-400" />
-                <span>Khám phá việc làm</span>
+                <span>{t("landing.exploreCareers")}</span>
               </Link>
             </>
           )}

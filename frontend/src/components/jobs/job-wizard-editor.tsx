@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/context/auth-context";
+import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
   useCreateJobMutation,
@@ -146,6 +147,7 @@ interface JobWizardEditorProps {
 }
 
 export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
+  const { t } = useI18n();
   const router = useRouter();
   const { user } = useAuth();
   const createJobMutation = useCreateJobMutation();
@@ -235,10 +237,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const steps = [
-    { id: 1 as StepId, label: "Job details", implemented: true },
-    { id: 2 as StepId, label: "Application form", implemented: false },
-    { id: 3 as StepId, label: "AI scoring criteria", implemented: false },
-    { id: 4 as StepId, label: mode === "create" ? "Publish & distribute" : "Publish & status", implemented: true },
+    { id: 1 as StepId, label: t("jobs.wizard.steps.details"), implemented: true },
+    { id: 2 as StepId, label: t("jobs.wizard.steps.applicationForm"), implemented: false },
+    { id: 3 as StepId, label: t("jobs.wizard.steps.aiScoring"), implemented: false },
+    { id: 4 as StepId, label: mode === "create" ? t("jobs.wizard.steps.publishDistribute") : t("jobs.wizard.steps.publishStatus"), implemented: true },
   ];
 
   // Populate from initialJob if provided or changes
@@ -620,12 +622,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           setTimeout(() => setCopiedLink(false), 2500);
         }
 
-        setSaveSuccess("Job settings updated successfully.");
+        setSaveSuccess(t("jobs.wizard.saveSuccess"));
         setTimeout(() => setSaveSuccess(null), 3500);
       }
     } catch (err) {
       console.error("Failed to save job opening:", err);
-      setFormError("Failed to save job opening. Please try again.");
+      setFormError(t("jobs.wizard.errors.saveFailed"));
     }
   };
 
@@ -637,7 +639,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       router.push("/dashboard/jobs");
     } catch (err) {
       console.error("Failed to delete job:", err);
-      setFormError("Failed to delete job. Please try again.");
+      setFormError(t("jobs.wizard.errors.deleteFailed"));
     }
   };
 
@@ -659,7 +661,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Jobs</span>
+                <span>{t("jobs.title")}</span>
               </Link>
             ) : (
               <button
@@ -670,7 +672,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Back to Pipeline</span>
+                <span>{t("jobs.wizard.backToPipeline")}</span>
               </button>
             )}
 
@@ -689,7 +691,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     onClick={() => handleStepClick(step.id)}
                     title={
                       !isImplemented
-                        ? `${step.label} (Coming soon)`
+                        ? `${step.label} (${t("jobs.wizard.comingSoon")})`
                         : undefined
                     }
                     className={`flex items-center gap-2 text-xs transition-all ${
@@ -721,7 +723,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     </span>
                     <span>{step.label}</span>
                     {!isImplemented && (
-                      <span className="text-[10px] text-slate-400 font-normal">(Coming soon)</span>
+                      <span className="text-[10px] text-slate-400 font-normal">({t("jobs.wizard.comingSoon")})</span>
                     )}
                   </button>
                 );
@@ -760,7 +762,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             {mode === "create" && draftSavedAt && (
               <span className="text-[11px] text-slate-400 hidden lg:flex items-center gap-1">
                 <Check className="h-3 w-3 text-emerald-500" />
-                <span>Auto-saved</span>
+                <span>{t("jobs.wizard.autoSaved")}</span>
               </span>
             )}
             <button
@@ -769,7 +771,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <Eye className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              <span>Candidate preview</span>
+              <span>{t("jobs.wizard.candidatePreview")}</span>
             </button>
             <Button
               type="button"
@@ -783,11 +785,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               )}
             >
               {mode === "create" ? (
-                <span>{isSaving ? "Saving..." : "Save & publish"}</span>
+                <span>{isSaving ? t("jobs.wizard.saving") : t("jobs.wizard.saveAndPublish")}</span>
               ) : (
                 <>
                   <Save className="h-3.5 w-3.5" />
-                  <span>{isSaving ? "Saving..." : "Save changes"}</span>
+                  <span>{isSaving ? t("jobs.wizard.saving") : t("jobs.wizard.saveChanges")}</span>
                 </>
               )}
             </Button>
@@ -803,7 +805,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>
-                Đã tự động khôi phục bản nháp chưa lưu{draftSavedAt ? ` (lưu lúc ${draftSavedAt})` : ""}.
+                {t("jobs.wizard.draftRestored")}{draftSavedAt ? ` (${draftSavedAt})` : ""}.
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -812,14 +814,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 onClick={handleDiscardDraft}
                 className="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
               >
-                Xóa bản nháp
+                {t("jobs.wizard.discardDraft")}
               </button>
               <button
                 type="button"
                 onClick={() => setDraftBannerDismissed(true)}
                 className="px-2.5 py-1 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors cursor-pointer"
               >
-                Tiếp tục chỉnh sửa
+                {t("jobs.wizard.continueEditing")}
               </button>
             </div>
           </div>
@@ -847,14 +849,13 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 <div className="space-y-6">
                   <div>
                     <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                      Job details
+                      {t("jobs.wizard.jobDetailsTitle")}
                     </h1>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      Title, location and description are what job boards need to accept this role. Everything else is optional — and you can{" "}
+                      {t("jobs.wizard.jobDetailsDesc")}{" "}
                       <span className="underline decoration-slate-300 dark:decoration-slate-700 cursor-pointer">
-                        save changes
-                      </span>{" "}
-                      at any point.
+                        {t("jobs.wizard.saveChangesLink")}
+                      </span>
                     </p>
                   </div>
 
@@ -864,11 +865,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                       <div className="sm:col-span-8">
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          Job title <span className="text-rose-500">*</span>
+                          {t("jobs.wizard.jobTitleLabel")} <span className="text-rose-500">*</span>
                         </label>
                         <Input
                           type="text"
-                          placeholder="e.g. Senior Frontend Engineer"
+                          placeholder={t("jobs.wizard.placeholders.title")}
                           value={jobTitle}
                           onChange={(e) => setJobTitle(e.target.value)}
                           onBlur={() =>
@@ -882,24 +883,24 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         />
                         {showTitleError && (
                           <p className="text-[11px] text-rose-500 font-medium mt-1">
-                            Title is required
+                            {t("jobs.wizard.errors.titleRequired")}
                           </p>
                         )}
                       </div>
 
                       <div className="sm:col-span-4">
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          Department (Phòng ban)
+                          {t("jobs.wizard.departmentLabel")}
                         </label>
                         <Input
                           type="text"
-                          placeholder="e.g. Engineering, Design..."
+                          placeholder={t("jobs.wizard.placeholders.department")}
                           value={department}
                           onChange={(e) => setDepartment(e.target.value)}
                           className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
                         />
                         <p className="text-[11px] text-slate-400 mt-1">
-                          Hiển thị ở tag phía trên Job title
+                          {t("jobs.wizard.departmentHint")}
                         </p>
                       </div>
                     </div>
@@ -908,13 +909,13 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                       <div className="sm:col-span-8">
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          Location <span className="text-rose-500">*</span>
+                          {t("jobs.wizard.locationLabel")} <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
                           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                           <Input
                             type="text"
-                            placeholder="Search for a city or country..."
+                            placeholder={t("jobs.wizard.placeholders.location")}
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
                             onBlur={() =>
@@ -929,28 +930,29 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         </div>
                         {showLocationError ? (
                           <p className="text-[11px] text-rose-500 font-medium mt-1">
-                            Add a country so job boards can place this role in their search results.
+                            {t("jobs.wizard.locationErrorHelp")}
                           </p>
                         ) : (
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                            Boards place listings by country. For a role with no base, set Workplace to Remote instead.
+                            {t("jobs.wizard.locationDesc")}
                           </p>
                         )}
                       </div>
 
                       <div className="sm:col-span-4">
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          Postal code <span className="text-slate-400 font-normal">(optional)</span>
+                          {t("jobs.wizard.postalCodeLabel")}{" "}
+                          <span className="text-slate-400 font-normal">({t("common.optional")})</span>
                         </label>
                         <Input
                           type="text"
-                          placeholder="e.g. 0150"
+                          placeholder={t("jobs.wizard.placeholders.postalCode")}
                           value={postalCode}
                           onChange={(e) => setPostalCode(e.target.value)}
                           className="h-10 text-xs bg-slate-50/50 dark:bg-slate-950"
                         />
                         <p className="text-[11px] text-slate-400 mt-1">
-                          Pick a location first.
+                          {t("jobs.wizard.pickLocationFirst")}
                         </p>
                       </div>
                     </div>
@@ -959,30 +961,30 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          Employment type
+                          {t("jobs.wizard.employmentTypeLabel")}
                         </label>
                         <Select
                           value={employmentType}
                           onValueChange={(val) => val && setEmploymentType(val)}
                         >
                           <SelectTrigger className="w-full h-10 text-xs bg-slate-50/50 dark:bg-slate-950">
-                            <SelectValue placeholder="Full-time" />
+                            <SelectValue placeholder={t("jobs.fullTime")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Full-time" className="text-xs">
-                              Full-time
+                              {t("jobs.fullTime")}
                             </SelectItem>
                             <SelectItem value="Part-time" className="text-xs">
-                              Part-time
+                              {t("jobs.partTime")}
                             </SelectItem>
                             <SelectItem value="Contract" className="text-xs">
-                              Contract
+                              {t("jobs.contract")}
                             </SelectItem>
                             <SelectItem value="Internship" className="text-xs">
-                              Internship
+                              {t("jobs.internship")}
                             </SelectItem>
                             <SelectItem value="Temporary" className="text-xs">
-                              Temporary
+                              {t("jobs.temporary")}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -990,30 +992,30 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          Experience level
+                          {t("jobs.wizard.experienceLevelLabel")}
                         </label>
                         <Select
                           value={experienceLevel}
                           onValueChange={(val) => val && setExperienceLevel(val)}
                         >
                           <SelectTrigger className="w-full h-10 text-xs bg-slate-50/50 dark:bg-slate-950">
-                            <SelectValue placeholder="Mid-level" />
+                            <SelectValue placeholder={t("jobs.experience.mid")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Entry-level" className="text-xs">
-                              Entry-level
+                              {t("jobs.experience.junior")}
                             </SelectItem>
                             <SelectItem value="Mid-level" className="text-xs">
-                              Mid-level
+                              {t("jobs.experience.mid")}
                             </SelectItem>
                             <SelectItem value="Senior-level" className="text-xs">
-                              Senior-level
+                              {t("jobs.experience.senior")}
                             </SelectItem>
                             <SelectItem value="Lead" className="text-xs">
-                              Lead
+                              {t("jobs.experience.lead")}
                             </SelectItem>
                             <SelectItem value="Executive" className="text-xs">
-                              Executive
+                              {t("jobs.experience.executive")}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1021,27 +1023,27 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                       <div>
                         <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                          Workplace
+                          {t("jobs.wizard.workplaceLabel")}
                         </label>
                         <Select
                           value={workplace}
                           onValueChange={(val) => val && setWorkplace(val)}
                         >
                           <SelectTrigger className="w-full h-10 text-xs bg-slate-50/50 dark:bg-slate-950">
-                            <SelectValue placeholder="Not specified" />
+                            <SelectValue placeholder={t("jobs.workplace.notSpecified")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Not specified" className="text-xs">
-                              Not specified
+                              {t("jobs.workplace.notSpecified")}
                             </SelectItem>
                             <SelectItem value="On-site" className="text-xs">
-                              On-site
+                              {t("jobs.workplace.onsite")}
                             </SelectItem>
                             <SelectItem value="Hybrid" className="text-xs">
-                              Hybrid
+                              {t("jobs.workplace.hybrid")}
                             </SelectItem>
                             <SelectItem value="Remote" className="text-xs">
-                              Remote
+                              {t("jobs.workplace.remote")}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1062,22 +1064,22 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                             <ChevronRight className="h-4 w-4 text-slate-500" />
                           )}
                           <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                            Compensation
+                            {t("jobs.wizard.compensationTitle")}
                           </span>
                           <span className="rounded-md bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
-                            Optional
+                            {t("jobs.wizard.compensationOptional")}
                           </span>
                         </div>
                       </button>
 
                       {!compensationOpen ? (
                         <div className="px-4 pb-4 pt-0 text-[11px] text-slate-500 dark:text-slate-400">
-                          Not stated — roles that state pay rank higher on Google Jobs and most aggregators.
+                          {t("jobs.wizard.compensationHintClosed")}
                         </div>
                       ) : (
                         <div className="px-4 pb-5 pt-0 space-y-4 border-t border-slate-200/60 dark:border-slate-800/80">
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-3">
-                            Roles that state pay get a rich result on Google Jobs and are sorted higher by most aggregators. You can change this later in job settings.
+                            {t("jobs.wizard.compensationHintOpen")}
                           </p>
 
                           <label className="flex items-center gap-2 cursor-pointer">
@@ -1088,7 +1090,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                               className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
                             />
                             <span className="text-xs text-slate-700 dark:text-slate-300">
-                              Pay is negotiable — show &quot;Negotiable&quot; instead of a range
+                              {t("jobs.wizard.payNegotiableDetail")}
                             </span>
                           </label>
 
@@ -1096,11 +1098,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                  Minimum
+                                  {t("jobs.wizard.minSalary")}
                                 </label>
                                 <Input
                                   type="text"
-                                  placeholder="e.g. 500,000"
+                                  placeholder={t("jobs.wizard.placeholders.minSalary")}
                                   value={minSalary}
                                   onChange={(e) => setMinSalary(e.target.value)}
                                   className="h-9 text-xs bg-white dark:bg-slate-900"
@@ -1109,11 +1111,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                  Maximum
+                                  {t("jobs.wizard.maxSalary")}
                                 </label>
                                 <Input
                                   type="text"
-                                  placeholder="e.g. 650,000"
+                                  placeholder={t("jobs.wizard.placeholders.maxSalary")}
                                   value={maxSalary}
                                   onChange={(e) => setMaxSalary(e.target.value)}
                                   className="h-9 text-xs bg-white dark:bg-slate-900"
@@ -1122,7 +1124,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                  Currency
+                                  {t("jobs.wizard.currency")}
                                 </label>
                                 <Select
                                   value={currency}
@@ -1156,24 +1158,24 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                  Per
+                                  {t("jobs.wizard.perPeriod")}
                                 </label>
                                 <Select
                                   value={salaryPer}
                                   onValueChange={(val) => val && setSalaryPer(val)}
                                 >
                                   <SelectTrigger className="w-full h-9 text-xs bg-white dark:bg-slate-900">
-                                    <SelectValue placeholder="Year" />
+                                    <SelectValue placeholder={t("jobs.wizard.periods.year")} />
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="Year" className="text-xs">
-                                      Year
+                                      {t("jobs.wizard.periods.year")}
                                     </SelectItem>
                                     <SelectItem value="Month" className="text-xs">
-                                      Month
+                                      {t("jobs.wizard.periods.month")}
                                     </SelectItem>
                                     <SelectItem value="Hour" className="text-xs">
-                                      Hour
+                                      {t("jobs.wizard.periods.hour")}
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
@@ -1187,10 +1189,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     {/* Field 8: Description */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                        Description <span className="text-rose-500">*</span>
+                        {t("jobs.wizard.descriptionTitle")} <span className="text-rose-500">*</span>
                       </label>
                       <Textarea
-                        placeholder="Describe the role, responsibilities, and requirements..."
+                        placeholder={t("jobs.wizard.placeholders.description")}
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         onBlur={() =>
@@ -1205,11 +1207,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="flex items-center justify-between text-[11px] mt-1">
                         {showDescriptionError ? (
                           <span className="text-rose-500 font-medium">
-                            Please provide a job description.
+                            {t("jobs.wizard.errors.descRequired")}
                           </span>
                         ) : (
                           <span className="text-slate-500 dark:text-slate-400">
-                            A clear description improves AI scoring and attracts better candidates.
+                            {t("jobs.wizard.descriptionHelpText")}
                           </span>
                         )}
                         <span
@@ -1221,7 +1223,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-400 font-medium shrink-0 ml-2"
                           }
                         >
-                          {description.trim().length > 0 ? `${description.trim().length} chars` : "Required"}
+                          {description.trim().length > 0 ? `${description.trim().length} ${t("jobs.wizard.charsCount")}` : t("common.required")}
                         </span>
                       </div>
                     </div>
@@ -1229,16 +1231,16 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     {/* Field 9: Requirements */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                        Requirements (Yêu cầu ứng viên)
+                        {t("jobs.wizard.requirementsTitle")}
                       </label>
                       <Textarea
-                        placeholder="Nêu các kỹ năng, kinh nghiệm chuyên môn, chứng chỉ hoặc tiêu chuẩn cần thiết cho vị trí này..."
+                        placeholder={t("jobs.wizard.placeholders.requirements")}
                         value={requirements}
                         onChange={(e) => setRequirements(e.target.value)}
                         className="h-32 text-xs bg-slate-50/50 dark:bg-slate-950 resize-none overflow-y-auto transition-colors"
                       />
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                        Phần này sẽ hiển thị dưới mục &quot;Yêu cầu ứng viên (Requirements)&quot; trên trang tuyển dụng công khai.
+                        {t("jobs.wizard.requirementsNotice")}
                       </p>
                     </div>
                   </div>
@@ -1255,7 +1257,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       }
                       className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
 
                     <Button
@@ -1269,7 +1271,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           : "bg-blue-600/50 cursor-not-allowed opacity-60"
                       )}
                     >
-                      Save & continue
+                      {t("jobs.wizard.continueToPublish")}
                     </Button>
                   </div>
                 </div>
@@ -1280,47 +1282,47 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 <div className="space-y-6">
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                      CUSTOMIZE YOUR APPLICATION FORM
+                      {t("jobs.wizard.customizeFormTitle")}
                     </span>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      Edit the form on the left and watch the candidate&apos;s view update live. Locked fields are always collected and cannot be turned off.
+                      {t("jobs.wizard.customizeFormDesc")}
                     </p>
                   </div>
 
                   {/* Section 1: Personal Information */}
                   <div className="space-y-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
                     <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                      Personal information
+                      {t("jobs.wizard.personalInfoTitle")}
                     </h3>
 
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50">
                         <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
-                          <span>First name</span>
+                          <span>{t("jobs.wizard.firstNameLabel")}</span>
                           <Lock className="h-3 w-3 text-slate-400" />
                         </div>
                         <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
-                          Mandatory
+                          {t("jobs.wizard.mandatoryBadge")}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50">
                         <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
-                          <span>Last name</span>
+                          <span>{t("jobs.wizard.lastNameLabel")}</span>
                           <Lock className="h-3 w-3 text-slate-400" />
                         </div>
                         <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
-                          Mandatory
+                          {t("jobs.wizard.mandatoryBadge")}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50">
                         <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
-                          <span>Email</span>
+                          <span>{t("jobs.wizard.emailLabel")}</span>
                           <Lock className="h-3 w-3 text-slate-400" />
                         </div>
                         <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
-                          Mandatory
+                          {t("jobs.wizard.mandatoryBadge")}
                         </span>
                       </div>
 
@@ -1328,10 +1330,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
                         <div>
                           <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                            Phone
+                            {t("jobs.wizard.phoneLabel")}
                           </span>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            Choose whether candidates see this field.
+                            {t("jobs.wizard.phoneChooseHint")}
                           </p>
                         </div>
 
@@ -1345,7 +1347,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            Hidden
+                            {t("jobs.wizard.hiddenOption")}
                           </button>
                           <button
                             type="button"
@@ -1356,7 +1358,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            Optional
+                            {t("jobs.wizard.optionalOption")}
                           </button>
                           <button
                             type="button"
@@ -1367,7 +1369,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            Required
+                            {t("jobs.wizard.requiredOption")}
                           </button>
                         </div>
                       </div>
@@ -1377,7 +1379,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   {/* Section 2: Documents */}
                   <div className="space-y-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
                     <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                      Documents
+                      {t("jobs.wizard.documentsTitle")}
                     </h3>
 
                     <div className="space-y-3">
@@ -1389,10 +1391,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           </div>
                           <div>
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              Resume / CV
+                              {t("jobs.wizard.resumeCvTitle")}
                             </span>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                              PDF, DOC, or DOCX up to 10 MB
+                              {t("jobs.wizard.resumeCvDesc")}
                             </p>
                           </div>
                         </div>
@@ -1407,7 +1409,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            Required
+                            {t("jobs.wizard.requiredOption")}
                           </button>
                           <button
                             type="button"
@@ -1418,7 +1420,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            Off
+                            {t("jobs.wizard.offOption")}
                           </button>
                         </div>
                       </div>
@@ -1431,10 +1433,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           </div>
                           <div>
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              Cover letter
+                              {t("jobs.wizard.coverLetterTitle")}
                             </span>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                              Free text field, max 10,000 characters
+                              {t("jobs.wizard.coverLetterDesc")}
                             </p>
                           </div>
                         </div>
@@ -1449,7 +1451,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            Required
+                            {t("jobs.wizard.requiredOption")}
                           </button>
                           <button
                             type="button"
@@ -1460,7 +1462,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 : "text-slate-500 hover:text-slate-800"
                             }`}
                           >
-                            Off
+                            {t("jobs.wizard.offOption")}
                           </button>
                         </div>
                       </div>
@@ -1471,7 +1473,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   <div className="space-y-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                        Screening questions
+                        {t("jobs.wizard.screeningQuestionsTitle")}
                       </h3>
 
                       <div className="flex items-center gap-2">
@@ -1483,7 +1485,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           className="h-8 text-xs font-semibold text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/60 gap-1.5"
                         >
                           <Bot className="h-3.5 w-3.5" />
-                          Generate with AI
+                          {t("jobs.wizard.generateWithAi")}
                         </Button>
                         <Button
                           type="button"
@@ -1493,7 +1495,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           className="h-8 text-xs font-semibold text-slate-700 dark:text-slate-300 gap-1.5"
                         >
                           <Clipboard className="h-3.5 w-3.5" />
-                          Paste existing
+                          {t("jobs.wizard.pasteExisting")}
                         </Button>
                       </div>
                     </div>
@@ -1505,10 +1507,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                          AI can draft questions from the job description.
+                          {t("jobs.wizard.aiQuestionsNoticeTitle")}
                         </h4>
                         <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                          Safety filters are designed to exclude protected or sensitive traits. Laws vary by jurisdiction, so review every draft before publishing.
+                          {t("jobs.wizard.aiQuestionsNoticeDesc")}
                         </p>
                       </div>
                     </div>
@@ -1516,7 +1518,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     {/* Questions List or Empty State */}
                     {screeningQuestions.length === 0 && !isAddingQuestion ? (
                       <div className="py-6 text-center text-xs text-slate-400">
-                        No screening questions added yet.
+                        {t("jobs.wizard.noScreeningQuestions")}
                       </div>
                     ) : (
                       <div className="space-y-2.5">
@@ -1535,8 +1537,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                 </p>
                                 <span className="text-[10px] text-slate-400">
                                   {q.type === "yes_no"
-                                    ? "Yes / No Question"
-                                    : "Free text answer"}
+                                    ? t("jobs.wizard.yesNoQuestion")
+                                    : t("jobs.wizard.freeTextAnswer")}
                                 </span>
                               </div>
                             </div>
@@ -1545,7 +1547,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                               type="button"
                               onClick={() => handleRemoveQuestion(q.id)}
                               className="text-slate-400 hover:text-rose-500 p-1 transition-colors cursor-pointer"
-                              title="Delete question"
+                              title={t("jobs.wizard.deleteQuestion")}
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -1559,7 +1561,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/30 dark:bg-blue-950/20 space-y-3">
                         <Input
                           type="text"
-                          placeholder="Enter your custom screening question..."
+                          placeholder={t("jobs.wizard.placeholders.screeningQuestion")}
                           value={newQuestionText}
                           onChange={(e) => setNewQuestionText(e.target.value)}
                           className="h-9 text-xs bg-white dark:bg-slate-900"
@@ -1576,7 +1578,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                             }}
                             className="h-8 text-xs"
                           >
-                            Cancel
+                            {t("common.cancel")}
                           </Button>
                           <Button
                             type="button"
@@ -1585,7 +1587,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                             disabled={!newQuestionText.trim()}
                             className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
                           >
-                            Add Question
+                            {t("jobs.wizard.addQuestionAction")}
                           </Button>
                         </div>
                       </div>
@@ -1601,7 +1603,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         className="h-9 text-xs font-bold text-slate-800 dark:text-slate-200 gap-1.5 w-full sm:w-auto"
                       >
                         <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                        Add a question
+                        {t("jobs.wizard.addQuestionAction")}
                       </Button>
                     )}
 
@@ -1610,14 +1612,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                         <Zap className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
                         <span>
-                          Build custom automation and knockout rules from these questions — e.g. auto reject a wrong answer — anytime from the role&apos;s Automation Rules tab.
+                          {t("jobs.wizard.automationKnockoutHint")}
                         </span>
                       </div>
 
                       <div className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                         <Target className="h-3.5 w-3.5 text-blue-500 shrink-0 mt-0.5" />
                         <span>
-                          Scoring criteria written from your job description — review them in step 3.
+                          {t("jobs.wizard.scoringCriteriaHint")}
                         </span>
                       </div>
                     </div>
@@ -1635,7 +1637,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       }
                       className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
 
                     <div className="flex items-center gap-2.5">
@@ -1645,14 +1647,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         onClick={() => setCurrentStep(1)}
                         className="text-xs font-semibold text-slate-700 dark:text-slate-300"
                       >
-                        Back
+                        {t("jobs.wizard.backAction")}
                       </Button>
                       <Button
                         type="button"
                         onClick={() => setCurrentStep(3)}
                         className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-6 py-2 rounded-xl shadow-xs cursor-pointer"
                       >
-                        Save & continue
+                        {t("jobs.wizard.continueToPublish")}
                       </Button>
                     </div>
                   </div>
@@ -1669,14 +1671,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Candidate scoring
+                  {t("jobs.wizard.scoringTitle")}
                 </h1>
                 <span className="rounded-md bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                  {mode === "create" ? "Optional" : "Configured"}
+                  {mode === "create" ? t("jobs.wizard.compensationOptional") : t("jobs.wizard.scoringConfiguredBadge")}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-3xl">
-                Every applicant is ranked against the criteria below. They&apos;re written from your job description, so read them over and change anything that doesn&apos;t fit.
+                {t("jobs.wizard.scoringDesc")}
               </p>
             </div>
 
@@ -1688,16 +1690,16 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 className="flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Back to form options</span>
+                <span>{t("jobs.wizard.backToFormOptions")}</span>
               </button>
 
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
                   <Sparkles className="h-3 w-3" />
-                  Written by AI from your description
+                  {t("jobs.wizard.writtenByAiBadge")}
                 </span>
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {criteria.length} criteria configured
+                  {criteria.length} {t("jobs.wizard.criteriaConfiguredCount")}
                 </span>
               </div>
             </div>
@@ -1733,7 +1735,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       type="button"
                       onClick={() => handleRemoveCriterion(crit.id)}
                       className="text-slate-400 hover:text-rose-500 p-1 transition-colors cursor-pointer"
-                      title="Delete criterion"
+                      title={t("jobs.wizard.deleteCriterion")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -1745,7 +1747,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      <span>Weight</span>
+                      <span>{t("jobs.wizard.weightLabel")}</span>
                       <span className="font-bold text-blue-600 dark:text-blue-400">
                         {crit.weight}
                       </span>
@@ -1767,9 +1769,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   </div>
 
                   <div className="flex items-center gap-4 text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/80">
-                    <span>Max score: {crit.maxScore}</span>
+                    <span>{t("jobs.wizard.maxScoreLabel")}: {crit.maxScore}</span>
                     <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300">
-                      Key: {crit.key}
+                      {t("jobs.wizard.keyLabel")}: {crit.key}
                     </span>
                   </div>
                 </div>
@@ -1780,17 +1782,17 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             {isAddingCriterion ? (
               <div className="p-5 rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/30 dark:bg-blue-950/20 space-y-4">
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  Add Custom Scoring Criterion
+                  {t("jobs.wizard.addCustomCriterionTitle")}
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
                     <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Criterion Title
+                      {t("jobs.wizard.criterionTitleLabel")}
                     </label>
                     <Input
                       type="text"
-                      placeholder="e.g. Leadership and Team Mentorship"
+                      placeholder={t("jobs.wizard.placeholders.criterionTitle")}
                       value={newCriterionTitle}
                       onChange={(e) => setNewCriterionTitle(e.target.value)}
                       className="h-9 text-xs bg-white dark:bg-slate-900"
@@ -1799,7 +1801,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Category
+                      {t("jobs.wizard.categoryLabel")}
                     </label>
                     <Select
                       value={newCriterionCategory}
@@ -1815,20 +1817,20 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       }
                     >
                       <SelectTrigger className="w-full h-9 text-xs bg-white dark:bg-slate-900">
-                        <SelectValue placeholder="Custom" />
+                        <SelectValue placeholder={t("jobs.wizard.categories.custom")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Experience" className="text-xs">
-                          Experience
+                          {t("jobs.wizard.categories.experience")}
                         </SelectItem>
                         <SelectItem value="Technical" className="text-xs">
-                          Technical
+                          {t("jobs.wizard.categories.technical")}
                         </SelectItem>
                         <SelectItem value="Soft Skills" className="text-xs">
-                          Soft Skills
+                          {t("jobs.wizard.categories.softSkills")}
                         </SelectItem>
                         <SelectItem value="Custom" className="text-xs">
-                          Custom
+                          {t("jobs.wizard.categories.custom")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -1837,10 +1839,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Evaluation Description
+                    {t("jobs.wizard.evaluationDescLabel")}
                   </label>
                   <Textarea
-                    placeholder="Describe how candidates should be evaluated against this criterion..."
+                    placeholder={t("jobs.wizard.placeholders.criterionDesc")}
                     value={newCriterionDesc}
                     onChange={(e) => setNewCriterionDesc(e.target.value)}
                     rows={2}
@@ -1860,7 +1862,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     }}
                     className="h-8 text-xs"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="button"
@@ -1869,7 +1871,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     disabled={!newCriterionTitle.trim()}
                     className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    Add Criterion
+                    {t("jobs.wizard.addCriterionAction")}
                   </Button>
                 </div>
               </div>
@@ -1881,7 +1883,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 className="h-10 text-xs font-bold text-slate-800 dark:text-slate-200 gap-1.5 w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 stroke-[2.5]" />
-                Add criterion
+                {t("jobs.wizard.addCriterionAction")}
               </Button>
             )}
 
@@ -1896,10 +1898,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 />
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    Automatically score every new applicant
+                    {t("jobs.wizard.autoScoreTitle")}
                   </span>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    When a candidate applies, AI will automatically analyze their resume against these criteria and assign a score.
+                    {t("jobs.wizard.autoScoreDesc")}
                   </p>
                 </div>
               </label>
@@ -1917,7 +1919,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 }
                 className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
 
               <div className="flex items-center gap-2.5">
@@ -1927,7 +1929,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   onClick={() => setCurrentStep(2)}
                   className="text-xs font-semibold text-slate-700 dark:text-slate-300"
                 >
-                  Back
+                  {t("jobs.wizard.backAction")}
                 </Button>
                 {mode === "create" && (
                   <Button
@@ -1936,7 +1938,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     onClick={() => setCurrentStep(4)}
                     className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   >
-                    Skip for now
+                    {t("jobs.wizard.skipForNow")}
                   </Button>
                 )}
                 <Button
@@ -1944,7 +1946,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   onClick={() => setCurrentStep(4)}
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-6 py-2 rounded-xl shadow-xs cursor-pointer"
                 >
-                  Save & continue
+                  {t("jobs.wizard.continueToPublish")}
                 </Button>
               </div>
             </div>
@@ -1957,12 +1959,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             {/* Header */}
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                {mode === "create" ? "Ready to go?" : "Publishing & distribution"}
+                {mode === "create" ? t("jobs.wizard.readyToGo") : t("jobs.wizard.publishDistributionTitle")}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 {mode === "create"
-                  ? "Publish your job to start receiving applications. After publishing, you'll be able to create tracked links."
-                  : `Control the live status and visibility of "${jobTitle}".`}
+                  ? t("jobs.wizard.readyToGoDesc")
+                  : t("jobs.wizard.controlStatusDesc")}
               </p>
             </div>
 
@@ -1990,10 +1992,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    {mode === "create" ? "Publish now" : "Open / Published"}
+                    {mode === "create" ? t("jobs.wizard.publishNow") : t("jobs.wizard.openPublished")}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                    Live job posting. Candidates can apply and submissions are recorded.
+                    {t("jobs.wizard.publishNowDesc")}
                   </p>
                 </div>
               </div>
@@ -2020,10 +2022,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Save as draft
+                    {t("jobs.wizard.saveDraft")}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                    Internal preview only. Hidden from candidates and public boards.
+                    {t("jobs.wizard.saveDraftDesc")}
                   </p>
                 </div>
               </div>
@@ -2051,10 +2053,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Closed
+                      {t("jobs.wizard.closeJob")}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      No longer accepting new applications. Existing applicants remain.
+                      {t("jobs.wizard.closeJobDesc")}
                     </p>
                   </div>
                 </div>
@@ -2072,10 +2074,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 />
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    Also list on external job boards
+                    {t("jobs.wizard.externalBoardsTitle")}
                   </span>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Free syndication to Jooble, Adzuna, Careerjet, Talent.com and others.
+                    {t("jobs.wizard.externalBoardsDesc")}
                   </p>
                 </div>
               </label>
@@ -2084,7 +2086,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             {/* Job Summary Card */}
             <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-4">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                Job summary
+                {t("jobs.wizard.jobSummaryTitle")}
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -2093,9 +2095,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <Briefcase className="h-3.5 w-3.5" />
                   </span>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Title</span>
+                    <span className="text-slate-400 block text-[10px]">{t("jobs.wizard.titleSub")}</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {jobTitle.trim() || "Untitled Job"}
+                      {jobTitle.trim() || t("jobs.wizard.untitledJob")}
                     </span>
                   </div>
                 </div>
@@ -2105,9 +2107,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <MapPin className="h-3.5 w-3.5" />
                   </span>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Location</span>
+                    <span className="text-slate-400 block text-[10px]">{t("jobs.wizard.locationSub")}</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {location.trim() || "Remote"}
+                      {location.trim() || t("jobs.workplace.remote")}
                     </span>
                   </div>
                 </div>
@@ -2117,9 +2119,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <FileUp className="h-3.5 w-3.5" />
                   </span>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Resume</span>
+                    <span className="text-slate-400 block text-[10px]">{t("jobs.wizard.resumeSub")}</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {resumeSetting === "required" ? "Required" : "Off"}
+                      {resumeSetting === "required" ? t("jobs.wizard.requiredOption") : t("jobs.wizard.offOption")}
                     </span>
                   </div>
                 </div>
@@ -2129,9 +2131,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     <Target className="h-3.5 w-3.5" />
                   </span>
                   <div>
-                    <span className="text-slate-400 block text-[10px]">Questions</span>
+                    <span className="text-slate-400 block text-[10px]">{t("jobs.wizard.questionsSub")}</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {screeningQuestions.length} custom questions
+                      {screeningQuestions.length} {t("jobs.wizard.questionsCountText")}
                     </span>
                   </div>
                 </div>
@@ -2145,12 +2147,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               </div>
               <div className="space-y-0.5">
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                  {mode === "create" ? "After publishing" : "Job Workspace Link"}
+                  {mode === "create" ? t("jobs.wizard.afterPublishingTitle") : t("jobs.wizard.workspaceLinkTitle")}
                 </h4>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                   {mode === "create"
-                    ? "You'll get tracked links for LinkedIn, Indeed, and other platforms so you can see exactly where your applicants come from."
-                    : `Direct pipeline link: ${typeof window !== "undefined" && initialJob ? `${window.location.origin}/dashboard/jobs/${initialJob.id}/pipeline` : `/dashboard/jobs/${initialJob?.id}/pipeline`}`}
+                    ? t("jobs.wizard.afterPublishingDesc")
+                    : `${t("jobs.wizard.workspaceLinkDesc")} ${typeof window !== "undefined" && initialJob ? `${window.location.origin}/dashboard/jobs/${initialJob.id}/pipeline` : `/dashboard/jobs/${initialJob?.id}/pipeline`}`}
                 </p>
               </div>
             </div>
@@ -2161,20 +2163,20 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 <div>
                   <h3 className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    <span>Danger Zone</span>
+                    <span>{t("jobs.wizard.dangerZoneTitle")}</span>
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Irreversible actions related to this job opening.
+                    {t("jobs.wizard.dangerZoneDesc")}
                   </p>
                 </div>
 
                 <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-rose-100 dark:border-rose-950">
                   <div>
                     <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Permanently delete this job opening
+                      {t("jobs.wizard.deletePermanentTitle")}
                     </h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Once deleted, all candidate applications associated with this job will be permanently removed.
+                      {t("jobs.wizard.deletePermanentDesc")}
                     </p>
                   </div>
 
@@ -2186,7 +2188,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     className="h-9 px-4 text-xs font-bold border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/60 dark:hover:bg-rose-950/40 rounded-xl cursor-pointer shrink-0"
                   >
                     <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    <span>{deleteJobMutation.isPending ? "Deleting..." : "Delete Job"}</span>
+                    <span>{deleteJobMutation.isPending ? t("jobs.wizard.deletingAction") : t("jobs.wizard.deleteJobAction")}</span>
                   </Button>
                 </div>
               </div>
@@ -2204,7 +2206,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 }
                 className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
 
               <div className="flex items-center gap-2.5">
@@ -2214,7 +2216,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   onClick={() => setCurrentStep(1)}
                   className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
                 >
-                  Back
+                  {t("jobs.wizard.backAction")}
                 </Button>
                 <Button
                   type="button"
@@ -2223,23 +2225,23 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-xs gap-1.5 cursor-pointer"
                 >
                   {isSaving ? (
-                    "Saving..."
+                    t("jobs.wizard.saving")
                   ) : mode === "create" ? (
                     publishMode === "publish" ? (
                       <>
                         <Send className="h-3.5 w-3.5" />
-                        {copiedLink ? "Link copied!" : "Publish & copy link"}
+                        {copiedLink ? t("jobs.wizard.linkCopied") : t("jobs.wizard.publishAndCopyLink")}
                       </>
                     ) : (
                       <>
                         <FileEdit className="h-3.5 w-3.5" />
-                        Save as draft
+                        {t("jobs.wizard.saveDraft")}
                       </>
                     )
                   ) : (
                     <>
                       <Save className="h-3.5 w-3.5" />
-                      {copiedLink ? "Saved & Link Copied!" : "Save & Update Job"}
+                      {copiedLink ? t("jobs.wizard.savedAndLinkCopied") : t("jobs.wizard.saveAndUpdateJob")}
                     </>
                   )}
                 </Button>
@@ -2258,16 +2260,16 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Delete Job Opening
+                    {t("jobs.wizard.deleteConfirmTitle")}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Are you sure you want to delete &quot;{jobTitle}&quot;?
+                    {t("jobs.wizard.deleteConfirmQuestion", { title: jobTitle })}
                   </p>
                 </div>
               </div>
 
               <p className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
-                This action is permanent and cannot be undone. All application data for this job will be wiped.
+                {t("jobs.wizard.deleteConfirmNotice")}
               </p>
 
               <div className="flex items-center justify-end gap-2.5 pt-2">
@@ -2278,7 +2280,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   disabled={deleteJobMutation.isPending}
                   className="h-9 px-4 text-xs rounded-xl cursor-pointer"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="button"
@@ -2286,7 +2288,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   disabled={deleteJobMutation.isPending}
                   className="h-9 px-4 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl cursor-pointer"
                 >
-                  {deleteJobMutation.isPending ? "Deleting..." : "Yes, Delete Job"}
+                  {deleteJobMutation.isPending ? t("jobs.wizard.deletingAction") : t("jobs.wizard.confirmDeleteButton")}
                 </Button>
               </div>
             </div>
@@ -2305,13 +2307,13 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   </div>
                   <div>
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>Candidate Preview</span>
+                      <span>{t("jobs.wizard.previewModalTitle")}</span>
                       <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
-                        Live Preview
+                        {t("jobs.wizard.previewLiveBadge")}
                       </span>
                     </h3>
                     <p className="text-[11px] text-slate-400 hidden sm:block">
-                      Trang hiển thị nội dung tuyển dụng và mẫu đơn mà ứng viên sẽ thấy
+                      {t("jobs.wizard.previewSubtitle")}
                     </p>
                   </div>
                 </div>
@@ -2328,7 +2330,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     }`}
                   >
                     <Monitor className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Desktop</span>
+                    <span className="hidden sm:inline">{t("jobs.wizard.desktop")}</span>
                   </button>
 
                   <button
@@ -2341,7 +2343,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     }`}
                   >
                     <Tablet className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Tablet</span>
+                    <span className="hidden sm:inline">{t("jobs.wizard.tablet")}</span>
                   </button>
 
                   <button
@@ -2354,7 +2356,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     }`}
                   >
                     <Smartphone className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Mobile</span>
+                    <span className="hidden sm:inline">{t("jobs.wizard.mobile")}</span>
                   </button>
                 </div>
 
@@ -2363,7 +2365,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   type="button"
                   onClick={() => setIsPreviewModalOpen(false)}
                   className="h-8 w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Đóng xem trước"
+                  title={t("jobs.wizard.closePreview")}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -2383,19 +2385,19 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   <div className="space-y-3">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
                       <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                      <span>{department || "Tuyển dụng"}</span>
+                      <span>{department || t("jobs.wizard.generalDepartment")}</span>
                     </div>
 
                     {/* Job Title */}
                     <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-                      {jobTitle.trim() || "Tiêu đề công việc sẽ hiển thị ở đây"}
+                      {jobTitle.trim() || t("jobs.wizard.untitledJobPreview")}
                     </h1>
 
                     {/* Meta Badges Grid */}
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                       <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
                         <MapPin className="h-3.5 w-3.5 text-blue-500" />
-                        <span>{location || "Toàn quốc"}{postalCode ? ` (${postalCode})` : ""}</span>
+                        <span>{location || t("jobs.wizard.nationwide")}{postalCode ? ` (${postalCode})` : ""}</span>
                       </div>
 
                       <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
@@ -2415,7 +2417,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
                           <span>
                             {payNegotiable
-                              ? "Thỏa thuận"
+                              ? t("jobs.wizard.payNegotiable")
                               : `${currency} ${minSalary || "0"} - ${maxSalary || "0"} / ${salaryPer.toLowerCase()}`}
                           </span>
                         </div>
@@ -2450,10 +2452,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="space-y-3">
                         <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                           <Briefcase className="h-4 w-4 text-blue-600" />
-                          Mô tả công việc (Job Description)
+                          {t("careers.jobDescription")}
                         </h2>
                         <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
-                          {description.trim() || "Chưa nhập mô tả công việc."}
+                          {description.trim() || t("jobs.wizard.noDescEntered")}
                         </div>
                       </div>
 
@@ -2461,10 +2463,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="space-y-3 pt-2">
                         <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                           <Building2 className="h-4 w-4 text-indigo-600" />
-                          Yêu cầu ứng viên (Requirements)
+                          {t("careers.requirements")}
                         </h2>
                         <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-2 font-normal">
-                          {requirements.trim() || "Chưa nhập yêu cầu ứng viên."}
+                          {requirements.trim() || t("jobs.wizard.noReqEntered")}
                         </div>
                       </div>
 
@@ -2472,9 +2474,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3">
                         <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                         <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
-                          <p className="font-bold text-slate-800 dark:text-white">Quy trình tuyển dụng minh bạch</p>
+                          <p className="font-bold text-slate-800 dark:text-white">{t("careers.transparentProcessTitle")}</p>
                           <p className="leading-relaxed text-[11px]">
-                            Hồ sơ của bạn được bảo mật an toàn. Đội ngũ nhân sự sẽ phản hồi trạng thái hồ sơ trực tiếp qua email của bạn.
+                            {t("careers.transparentProcessDesc").replace("{orgName}", user?.organization?.name || t("jobs.wizard.generalDepartment"))}
                           </p>
                         </div>
                       </div>
@@ -2489,10 +2491,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       <div className="p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shadow-xs space-y-4">
                         <div>
                           <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                            Nộp đơn ứng tuyển
+                            {t("careers.applicationFormTitle")}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Điền thông tin và đính kèm CV để ứng tuyển vào vị trí này.
+                            {t("careers.applicationFormSubtitle")}
                           </p>
                         </div>
 
@@ -2501,22 +2503,22 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                Họ và tên đệm <span className="text-rose-500">*</span>
+                                {t("careers.lastName")} <span className="text-rose-500">*</span>
                               </label>
                               <Input
                                 type="text"
-                                placeholder="Ví dụ: Nguyễn Văn"
+                                placeholder={t("careers.placeholders.lastName")}
                                 disabled
                                 className="h-8 text-xs cursor-not-allowed opacity-80"
                               />
                             </div>
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                Tên <span className="text-rose-500">*</span>
+                                {t("careers.firstName")} <span className="text-rose-500">*</span>
                               </label>
                               <Input
                                 type="text"
-                                placeholder="Ví dụ: An"
+                                placeholder={t("careers.placeholders.firstName")}
                                 disabled
                                 className="h-8 text-xs cursor-not-allowed opacity-80"
                               />
@@ -2526,11 +2528,11 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           {/* Email */}
                           <div className="space-y-1">
                             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                              Địa chỉ Email <span className="text-rose-500">*</span>
+                              {t("careers.email")} <span className="text-rose-500">*</span>
                             </label>
                             <Input
                               type="email"
-                              placeholder="nguyenvana@example.com"
+                              placeholder={t("careers.placeholders.email")}
                               disabled
                               className="h-8 text-xs cursor-not-allowed opacity-80"
                             />
@@ -2540,11 +2542,16 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           {phoneSetting !== "hidden" && (
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                Số điện thoại {phoneSetting === "required" ? <span className="text-rose-500">*</span> : <span className="text-slate-400 font-normal">(Tùy chọn)</span>}
+                                {t("candidates.phone")}{" "}
+                                {phoneSetting === "required" ? (
+                                  <span className="text-rose-500">*</span>
+                                ) : (
+                                  <span className="text-slate-400 font-normal">({t("jobs.wizard.optionalOption")})</span>
+                                )}
                               </label>
                               <Input
                                 type="tel"
-                                placeholder="0912 345 678"
+                                placeholder={t("careers.placeholders.phone")}
                                 disabled
                                 className="h-8 text-xs cursor-not-allowed opacity-80"
                               />
@@ -2555,10 +2562,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           {coverLetterSetting === "required" && (
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                Lời nhắn / Giới thiệu bản thân <span className="text-rose-500">*</span>
+                                {t("careers.notes")} <span className="text-rose-500">*</span>
                               </label>
                               <Textarea
-                                placeholder="Giới thiệu ngắn về kinh nghiệm hoặc lý do bạn phù hợp..."
+                                placeholder={t("careers.placeholders.notes")}
                                 disabled
                                 rows={2}
                                 className="text-xs cursor-not-allowed opacity-80 resize-none"
@@ -2570,7 +2577,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           {screeningQuestions.length > 0 && (
                             <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
                               <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">
-                                Câu hỏi sàng lọc (Screening Questions)
+                                {t("jobs.wizard.screeningQuestionsPreviewTitle")}
                               </h4>
                               {screeningQuestions.map((q) => (
                                 <div key={q.id} className="space-y-1">
@@ -2581,17 +2588,17 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                     <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-0.5">
                                       <label className="flex items-center gap-1.5">
                                         <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
-                                        <span>Có (Yes)</span>
+                                        <span>{t("jobs.wizard.yesOption")}</span>
                                       </label>
                                       <label className="flex items-center gap-1.5">
                                         <input type="radio" disabled name={`q_${q.id}`} className="h-3 w-3" />
-                                        <span>Không (No)</span>
+                                        <span>{t("jobs.wizard.noOption")}</span>
                                       </label>
                                     </div>
                                   ) : (
                                     <Input
                                       type="text"
-                                      placeholder="Câu trả lời của bạn..."
+                                      placeholder={t("jobs.wizard.answerPlaceholder")}
                                       disabled
                                       className="h-8 text-xs cursor-not-allowed opacity-80"
                                     />
@@ -2605,15 +2612,15 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           {resumeSetting === "required" && (
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                Hồ sơ đính kèm (CV) <span className="text-rose-500">*</span>
+                                {t("careers.resume")} <span className="text-rose-500">*</span>
                               </label>
                               <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 rounded-2xl p-4 text-center cursor-not-allowed opacity-90">
                                 <UploadCloud className="h-7 w-7 text-blue-500 mx-auto mb-1.5" />
                                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                                  Kéo thả file CV vào đây hoặc <span className="text-blue-600 dark:text-blue-400 underline">chọn từ thiết bị</span>
+                                  {t("careers.dragDropResume")}
                                 </p>
                                 <p className="text-[10px] text-slate-400 mt-1">
-                                  Định dạng hỗ trợ: PDF, DOC, DOCX (Tối đa 10MB)
+                                  {t("careers.resumeFormats")}
                                 </p>
                               </div>
                             </div>
@@ -2625,12 +2632,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                             disabled
                             className="w-full h-10 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs cursor-not-allowed opacity-90 mt-2"
                           >
-                            Nộp hồ sơ ứng tuyển
+                            {t("careers.submitApplication")}
                           </Button>
 
                           <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 pt-1">
                             <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
-                            <span>Thông tin của bạn được bảo mật tuyệt đối</span>
+                            <span>{t("jobs.wizard.securityGuaranteed")}</span>
                           </div>
                         </div>
                       </div>
@@ -2658,7 +2665,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               }
               className="text-xs font-semibold text-slate-600 dark:text-slate-400"
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="button"
@@ -2672,7 +2679,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   : "bg-blue-600/50 cursor-not-allowed opacity-60",
               )}
             >
-              Save & continue
+              {t("jobs.wizard.continueToPublish")}
             </Button>
           </>
         ) : currentStep === 4 ? (
@@ -2684,7 +2691,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               onClick={() => setCurrentStep(1)}
               className="text-xs font-semibold text-slate-700 dark:text-slate-300"
             >
-              Back
+              {t("jobs.wizard.backAction")}
             </Button>
             <Button
               type="button"
@@ -2694,12 +2701,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs gap-1.5"
             >
               {isSaving
-                ? "Saving..."
+                ? t("jobs.wizard.saving")
                 : mode === "create"
                   ? publishMode === "publish"
-                    ? "Publish"
-                    : "Save draft"
-                  : "Save changes"}
+                    ? t("jobs.wizard.publishNow")
+                    : t("jobs.wizard.saveDraft")
+                  : t("jobs.wizard.saveChanges")}
             </Button>
           </>
         ) : null}

@@ -1303,7 +1303,7 @@ export function ApplicationsDataTable({
                         {t("applications.tabs.inbox")}
                       </h4>
                       <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                        Chưa có cuộc hội thoại hoặc email nào gửi tới ứng viên này.
+                        {t("applications.noMessagesYetDesc")}
                       </p>
                     </div>
                   )}

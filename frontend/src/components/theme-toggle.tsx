@@ -16,7 +16,7 @@ export function ThemeToggle({
   className,
 }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
-  const { locale } = useI18n();
+  const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -38,24 +38,23 @@ export function ThemeToggle({
   }, [isOpen]);
 
   const isLanding = variant === "landing";
-  const isVi = locale === "vi";
 
   const THEME_OPTIONS = [
     {
       id: "light",
-      label: isVi ? "Sáng" : "Light",
+      label: t("theme.light"),
       icon: Sun,
       iconColor: "text-amber-500",
     },
     {
       id: "dark",
-      label: isVi ? "Tối" : "Dark",
+      label: t("theme.dark"),
       icon: Moon,
       iconColor: "text-indigo-400",
     },
     {
       id: "system",
-      label: isVi ? "Hệ thống" : "System",
+      label: t("theme.system"),
       icon: Laptop,
       iconColor: "text-blue-500 dark:text-blue-400",
     },
@@ -75,7 +74,7 @@ export function ThemeToggle({
           )}
         >
           <Sun className="h-3.5 w-3.5 text-amber-500" />
-          <span className="font-medium">{isVi ? "Sáng" : "Light"}</span>
+          <span className="font-medium">{t("theme.light")}</span>
           <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
         </button>
       </div>
@@ -104,7 +103,7 @@ export function ThemeToggle({
             ? "bg-white/10 hover:bg-white/15 border border-white/10 text-cyan-200 shadow-sm"
             : "bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200"
         )}
-        title={isVi ? "Đổi giao diện" : "Switch theme"}
+        title={t("theme.switchTheme")}
         aria-expanded={isOpen}
       >
         <CurrentIcon className={cn("h-3.5 w-3.5 shrink-0", currentOption.iconColor)} />

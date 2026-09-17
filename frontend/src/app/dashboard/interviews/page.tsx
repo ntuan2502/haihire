@@ -44,6 +44,7 @@ import {
 } from "@/lib/interviews";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
 import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
+import { useI18n } from "@/i18n";
 import type { Application } from "@/types";
 
 type ViewMode = "grid" | "table" | "calendar";
@@ -52,6 +53,7 @@ type SortOption = "upcoming" | "newest" | "name";
 function InterviewsPageContent() {
   const router = useRouter();
   const { user, canEdit } = useAuth();
+  const { t } = useI18n();
 
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(user?.organizationId);
   const { data: applications = [], isLoading: appsLoading } = useAllApplications(user?.organizationId);
@@ -192,14 +194,14 @@ function InterviewsPageContent() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Không gian Phỏng vấn
+                {t("interviews.title")}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60">
-                {interviewApplications.length} ứng viên
+                {t("interviews.candidatesCount", { count: interviewApplications.length })}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Quản lý lịch hẹn phỏng vấn, liên kết phòng họp trực tuyến và điều phối quy trình tuyển dụng.
+              {t("interviews.pageSubtitle")}
             </p>
           </div>
 
@@ -209,7 +211,7 @@ function InterviewsPageContent() {
               className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Lên lịch phỏng vấn mới</span>
+              <span>{t("interviews.scheduleNew")}</span>
             </Button>
           )}
         </div>
@@ -218,10 +220,10 @@ function InterviewsPageContent() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
             <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Đã lên lịch hẹn</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiScheduled")}</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{scheduledCount}</span>
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Sẵn sàng phỏng vấn</span>
+                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{t("interviews.kpiReady")}</span>
               </div>
             </div>
             <div className="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-900/50">
@@ -231,10 +233,10 @@ function InterviewsPageContent() {
 
           <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
             <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Chờ xếp lịch phỏng vấn</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiAwaiting")}</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">{awaitingCount}</span>
-                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Cần hành động</span>
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">{t("interviews.kpiActionRequired")}</span>
               </div>
             </div>
             <div className="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-900/50">
@@ -244,10 +246,10 @@ function InterviewsPageContent() {
 
           <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
             <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tổng ứng viên vòng này</p>
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiTotalCandidates")}</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{interviewApplications.length}</span>
-                <span className="text-[11px] font-semibold text-slate-400">Ứng viên</span>
+                <span className="text-[11px] font-semibold text-slate-400">{t("interviews.candidatesCount", { count: interviewApplications.length })}</span>
               </div>
             </div>
             <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200/80 dark:border-slate-700">
@@ -274,7 +276,7 @@ function InterviewsPageContent() {
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                Tất cả ({interviewApplications.length})
+                {t("interviews.tabAll", { count: interviewApplications.length })}
               </button>
               <button
                 type="button"
@@ -288,7 +290,7 @@ function InterviewsPageContent() {
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                Đã có lịch ({scheduledCount})
+                {t("interviews.tabScheduled", { count: scheduledCount })}
               </button>
               <button
                 type="button"
@@ -302,14 +304,14 @@ function InterviewsPageContent() {
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                Cần lên lịch ({awaitingCount})
+                {t("interviews.tabAwaiting", { count: awaitingCount })}
               </button>
             </div>
 
             {/* Right Controls: Item Count + View Mode Switcher */}
             <div className="flex items-center gap-2.5 self-end sm:self-auto">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">
-                {filteredAndSortedList.length} ứng viên
+                {t("interviews.candidatesCount", { count: filteredAndSortedList.length })}
               </span>
               <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
                 <button
@@ -320,10 +322,10 @@ function InterviewsPageContent() {
                       ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                   }`}
-                  title="Dạng thẻ lưới"
+                  title={t("interviews.gridTitle")}
                 >
                   <LayoutGrid className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Lưới</span>
+                  <span className="hidden md:inline">{t("interviews.grid")}</span>
                 </button>
                 <button
                   type="button"
@@ -333,10 +335,10 @@ function InterviewsPageContent() {
                       ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                   }`}
-                  title="Dạng bảng danh sách"
+                  title={t("interviews.tableTitle")}
                 >
                   <List className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Bảng</span>
+                  <span className="hidden md:inline">{t("interviews.table")}</span>
                 </button>
                 <button
                   type="button"
@@ -346,10 +348,10 @@ function InterviewsPageContent() {
                       ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                   }`}
-                  title="Dạng lịch trực quan theo tháng/tuần"
+                  title={t("interviews.calendarTitle")}
                 >
                   <CalendarDays className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Lịch</span>
+                  <span className="hidden md:inline">{t("interviews.calendar")}</span>
                 </button>
               </div>
             </div>
@@ -362,7 +364,7 @@ function InterviewsPageContent() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <Input
                 type="text"
-                placeholder="Tìm kiếm ứng viên theo tên, email..."
+                placeholder={t("interviews.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -394,7 +396,7 @@ function InterviewsPageContent() {
                 }}
                 className="w-full h-9.5 px-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer focus:border-blue-500"
               >
-                <option value="ALL">Tất cả vị trí tuyển dụng</option>
+                <option value="ALL">{t("interviews.allJobsOption")}</option>
                 {jobs.map((job) => (
                   <option key={job.id} value={job.id}>
                     {job.title} ({job.department})
@@ -411,9 +413,9 @@ function InterviewsPageContent() {
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
                 className="w-full bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
               >
-                <option value="upcoming">Lịch gần nhất trước</option>
-                <option value="newest">Ứng tuyển mới nhất</option>
-                <option value="name">Tên ứng viên (A - Z)</option>
+                <option value="upcoming">{t("interviews.sortUpcoming")}</option>
+                <option value="newest">{t("interviews.sortNewest")}</option>
+                <option value="name">{t("interviews.sortName")}</option>
               </select>
             </div>
           </div>
@@ -430,10 +432,10 @@ function InterviewsPageContent() {
               <Calendar className="h-6 w-6" />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Chưa có ứng viên nào trong danh sách
+              {t("interviews.noInterviewsFound")}
             </h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Không tìm thấy ứng viên phù hợp với tiêu chí lọc hiện tại.
+              {t("interviews.noInterviewsFoundDesc")}
             </p>
             {canEdit && (
               <Button
@@ -441,7 +443,7 @@ function InterviewsPageContent() {
                 className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Lên lịch phỏng vấn mới</span>
+                <span>{t("interviews.scheduleNew")}</span>
               </Button>
             )}
           </div>
@@ -493,12 +495,12 @@ function InterviewsPageContent() {
                         {allInterviews.length > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200/80 dark:border-emerald-900/60 shrink-0 whitespace-nowrap">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            <span>{allInterviews.length > 1 ? `${allInterviews.length} vòng PV` : "Đã có lịch"}</span>
+                            <span>{allInterviews.length > 1 ? t("interviews.roundsBadge", { count: allInterviews.length }) : t("interviews.hasScheduleBadge")}</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[11px] font-bold border border-amber-200/80 dark:border-amber-900/60 shrink-0 whitespace-nowrap">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            <span>Chờ lên lịch</span>
+                            <span>{t("interviews.awaitingScheduleBadge")}</span>
                           </span>
                         )}
                       </div>
@@ -507,11 +509,11 @@ function InterviewsPageContent() {
                       <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                         <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
                         <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                          {job?.title || "Vị trí tuyển dụng"}
+                          {job?.title || t("interviews.defaultJob")}
                         </span>
                         <span className="text-slate-300 dark:text-slate-600">•</span>
                         <span className="text-[11px] text-slate-400 shrink-0">
-                          {job?.department || "HR"}
+                          {job?.department || t("interviews.defaultDepartment")}
                         </span>
                       </div>
 
@@ -528,11 +530,11 @@ function InterviewsPageContent() {
                             </div>
                             {currentInterview.round ? (
                               <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
-                                Vòng {currentInterview.round}
+                                {t("interviews.roundInterview", { round: currentInterview.round })}
                               </span>
                             ) : allInterviews.length > 1 ? (
                               <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
-                                Mới nhất
+                                {t("interviews.latestBadge")}
                               </span>
                             ) : null}
                           </div>
@@ -548,7 +550,7 @@ function InterviewsPageContent() {
                           <div className="space-y-1.5 text-xs">
                             <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                               <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              <span className="text-[11px] text-slate-400">Người PV:</span>
+                              <span className="text-[11px] text-slate-400">{t("interviews.interviewerLabel")}</span>
                               <strong className="text-slate-800 dark:text-slate-200 text-xs truncate">
                                 {currentInterview.interviewer}
                               </strong>
@@ -559,14 +561,14 @@ function InterviewsPageContent() {
                                 <>
                                   <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
                                   <span className="text-rose-600 dark:text-rose-400 font-semibold text-[11px]">
-                                    Tại văn phòng
+                                    {t("interviews.atOffice")}
                                   </span>
                                 </>
                               ) : (
                                 <>
                                   <Video className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                                   <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-                                    Trực tuyến ({currentInterview.format})
+                                    {t("interviews.onlineFormat", { format: currentInterview.format })}
                                   </span>
                                 </>
                               )}
@@ -584,12 +586,12 @@ function InterviewsPageContent() {
                                   className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline"
                                 >
                                   <Video className="h-3.5 w-3.5" />
-                                  <span>Vào phòng họp trực tuyến</span>
+                                  <span>{t("interviews.joinOnlineMeeting")}</span>
                                   <ExternalLink className="h-3 w-3 ml-0.5" />
                                 </a>
                               ) : (
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                  Địa điểm: <strong className="text-slate-700 dark:text-slate-300">{currentInterview.linkOrLocation}</strong>
+                                  {t("interviews.locationLabel", { location: currentInterview.linkOrLocation })}
                                 </p>
                               )}
                             </div>
@@ -600,13 +602,13 @@ function InterviewsPageContent() {
                             <div
                               onClick={() => handleOpenScorecard(app, currentInterview)}
                               className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs cursor-pointer hover:opacity-85 transition-opacity"
-                              title="Xem hoặc cập nhật phiếu đánh giá"
+                              title={t("interviews.scorecardTooltip")}
                             >
                               <div className="flex items-center gap-1 font-bold text-amber-700 dark:text-amber-400">
                                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                                 <span>{currentInterview.scorecard.overallRating} / 5</span>
                                 <span className="text-[10px] font-normal text-slate-400 ml-0.5 hidden sm:inline">
-                                  (Đã đánh giá)
+                                  {t("interviews.ratedStatus")}
                                 </span>
                               </div>
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
@@ -621,7 +623,7 @@ function InterviewsPageContent() {
                                 className="w-full py-1.5 px-3 rounded-xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold border border-amber-200/70 dark:border-amber-800/60 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                               >
                                 <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                <span>Chấm điểm phỏng vấn (Scorecard)</span>
+                                <span>{t("interviews.scorecardAction")}</span>
                               </button>
                             </div>
                           )}
@@ -630,10 +632,10 @@ function InterviewsPageContent() {
                         <div className="rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 p-3.5 space-y-1">
                           <p className="font-bold text-xs text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                             <Clock className="h-3.5 w-3.5 text-amber-600" />
-                            Sẵn sàng phỏng vấn
+                            {t("interviews.kpiReady")}
                           </p>
                           <p className="text-[11px] text-amber-700/80 dark:text-amber-400">
-                            Ứng viên đã vượt qua sơ loại, hiện chưa được lên lịch hẹn cụ thể.
+                            {t("interviews.readyForInterviewDesc")}
                           </p>
                         </div>
                       )}
@@ -648,7 +650,7 @@ function InterviewsPageContent() {
                           >
                             <div className="flex items-center gap-1.5">
                               <History className="h-3.5 w-3.5 text-slate-400" />
-                              <span>Đã qua {previousInterviews.length} vòng trước đó</span>
+                              <span>{t("interviews.previousRoundsCount", { count: previousInterviews.length })}</span>
                             </div>
                             <ChevronDown
                               className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
@@ -667,12 +669,12 @@ function InterviewsPageContent() {
                                   <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-medium gap-2">
                                     <span className="whitespace-nowrap">{prev.date} ({prev.time})</span>
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
-                                      {prev.round ? `Vòng ${prev.round}` : prev.type}
+                                      {prev.round ? t("interviews.roundInterview", { round: prev.round }) : prev.type}
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between text-[10px] text-slate-400">
-                                    <span>PV: {prev.interviewer}</span>
-                                    <span>{prev.format === "OFFICE" ? "Tại văn phòng" : "Trực tuyến"}</span>
+                                    <span>{t("interviews.pvPrefix", { interviewer: prev.interviewer })}</span>
+                                    <span>{prev.format === "OFFICE" ? t("interviews.atOffice") : t("interviews.onlineMeeting")}</span>
                                   </div>
                                 </div>
                               ))}
@@ -693,7 +695,7 @@ function InterviewsPageContent() {
                         }}
                         className="text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        <span>Bảng đánh giá</span>
+                        <span>{t("interviews.scorecardBoard")}</span>
                         <ChevronRight className="h-3 w-3" />
                       </button>
 
@@ -704,7 +706,7 @@ function InterviewsPageContent() {
                           variant="outline"
                           className="h-7.5 px-3 rounded-xl text-xs font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-800 transition-colors"
                         >
-                          {allInterviews.length > 0 ? "Cập nhật lịch" : "Lên lịch ngay"}
+                          {allInterviews.length > 0 ? t("interviews.updateSchedule") : t("interviews.scheduleNow")}
                         </Button>
                       )}
                     </div>
@@ -722,14 +724,14 @@ function InterviewsPageContent() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] font-bold">
-                    <th className="py-3 px-3.5">Ứng viên</th>
-                    <th className="py-3 px-3.5">Vị trí tuyển dụng</th>
-                    <th className="py-3 px-3.5">Lịch phỏng vấn</th>
-                    <th className="py-3 px-3.5">Người phỏng vấn</th>
-                    <th className="py-3 px-3 text-center">Số vòng</th>
-                    <th className="py-3 px-3 text-center">Trạng thái</th>
-                    <th className="py-3 px-3 text-center">Đánh giá</th>
-                    <th className="py-3 px-3.5 text-right">Thao tác</th>
+                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.candidate")}</th>
+                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.job")}</th>
+                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.schedule")}</th>
+                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.interviewer")}</th>
+                    <th className="py-3 px-3 text-center">{t("interviews.tableHeaders.rounds")}</th>
+                    <th className="py-3 px-3 text-center">{t("interviews.tableHeaders.status")}</th>
+                    <th className="py-3 px-3 text-center">{t("interviews.tableHeaders.rating")}</th>
+                    <th className="py-3 px-3.5 text-right">{t("interviews.tableHeaders.actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -766,10 +768,10 @@ function InterviewsPageContent() {
                         <td className="py-3 px-3.5">
                           <div className="max-w-[140px] xl:max-w-[180px]">
                             <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                              {job?.title || "Vị trí tuyển dụng"}
+                              {job?.title || t("interviews.defaultJob")}
                             </p>
                             <p className="text-[11px] text-slate-400 truncate">
-                              {job?.department || "HR"}
+                              {job?.department || t("interviews.defaultDepartment")}
                             </p>
                           </div>
                         </td>
@@ -781,7 +783,7 @@ function InterviewsPageContent() {
                               {/* Dòng 1: Ngày giờ */}
                               <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs">
                                 <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
-                                <span>{currentInterview.date} lúc {currentInterview.time}</span>
+                                <span>{t("interviews.atTime", { date: currentInterview.date, time: currentInterview.time })}</span>
                               </div>
                               {/* Dòng 2: Loại vòng phỏng vấn */}
                               <div>
@@ -794,18 +796,18 @@ function InterviewsPageContent() {
                                 {currentInterview.format === "OFFICE" ? (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50">
                                     <MapPin className="h-2.5 w-2.5" />
-                                    <span>Tại văn phòng</span>
+                                    <span>{t("interviews.atOffice")}</span>
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50">
                                     <Video className="h-2.5 w-2.5" />
-                                    <span>Trực tuyến</span>
+                                    <span>{t("interviews.onlineMeeting")}</span>
                                   </span>
                                 )}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-slate-400 italic text-[11px] whitespace-nowrap">Chưa xếp lịch</span>
+                            <span className="text-slate-400 italic text-[11px] whitespace-nowrap">{t("interviews.notScheduledYet")}</span>
                           )}
                         </td>
 
@@ -825,7 +827,7 @@ function InterviewsPageContent() {
                         <td className="py-3 px-3 text-center whitespace-nowrap">
                           {allInterviews.length > 0 ? (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
-                              {allInterviews.length} vòng
+                              {t("interviews.roundsCount", { count: allInterviews.length })}
                             </span>
                           ) : (
                             <span className="text-slate-400">—</span>
@@ -837,12 +839,12 @@ function InterviewsPageContent() {
                           {allInterviews.length > 0 ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-900/60">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              <span>Đã có lịch</span>
+                              <span>{t("interviews.hasScheduleBadge")}</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-900/60">
                               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                              <span>Chờ lên lịch</span>
+                              <span>{t("interviews.awaitingScheduleBadge")}</span>
                             </span>
                           )}
                         </td>
@@ -854,7 +856,7 @@ function InterviewsPageContent() {
                               type="button"
                               onClick={() => handleOpenScorecard(app, currentInterview)}
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
-                              title="Bấm để xem hoặc sửa đánh giá"
+                              title={t("interviews.scorecardTooltip")}
                             >
                               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                               <span>{currentInterview.scorecard.overallRating} ⭐</span>
@@ -865,7 +867,7 @@ function InterviewsPageContent() {
                               onClick={() => handleOpenScorecard(app, currentInterview)}
                               className="text-[10px] text-amber-700 dark:text-amber-400 font-bold hover:underline cursor-pointer"
                             >
-                              + Chấm điểm
+                              {t("interviews.rateNow")}
                             </button>
                           ) : (
                             <span className="text-slate-400">—</span>
@@ -882,10 +884,10 @@ function InterviewsPageContent() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="h-6 px-2 rounded-md border border-blue-200 dark:border-blue-800 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 inline-flex items-center gap-1 transition-colors"
-                                  title="Vào phòng họp trực tuyến"
+                                  title={t("interviews.joinOnlineMeeting")}
                                 >
                                   <Video className="h-2.5 w-2.5" />
-                                  <span>Họp</span>
+                                  <span>{t("interviews.joinMeetingShort")}</span>
                                 </a>
                               )}
 
@@ -896,7 +898,7 @@ function InterviewsPageContent() {
                                   onClick={() => handleOpenScheduleModal(app)}
                                   className="h-6 px-2 rounded-md text-[10px] font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 transition-colors"
                                 >
-                                  {allInterviews.length > 0 ? "Sửa lịch" : "Lên lịch"}
+                                  {allInterviews.length > 0 ? t("interviews.editSchedule") : t("interviews.scheduleNow")}
                                 </Button>
                               )}
                             </div>
@@ -910,7 +912,7 @@ function InterviewsPageContent() {
                                 }
                               }}
                               className="h-7 w-6 p-0 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
-                              title="Xem đánh giá pipeline"
+                              title={t("interviews.pipelineReviewTooltip")}
                             >
                               <ChevronRight className="h-3.5 w-3.5" />
                             </Button>
@@ -929,16 +931,11 @@ function InterviewsPageContent() {
         {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-500 dark:text-slate-400">
             <div>
-              Hiển thị{" "}
-              <strong className="text-slate-800 dark:text-slate-200">
-                {(currentPageClamped - 1) * pageSize + 1}
-              </strong>{" "}
-              -{" "}
-              <strong className="text-slate-800 dark:text-slate-200">
-                {Math.min(currentPageClamped * pageSize, totalItems)}
-              </strong>{" "}
-              trong tổng số{" "}
-              <strong className="text-slate-800 dark:text-slate-200">{totalItems}</strong> ứng viên
+              {t("interviews.showingPagination", {
+                start: (currentPageClamped - 1) * pageSize + 1,
+                end: Math.min(currentPageClamped * pageSize, totalItems),
+                total: totalItems,
+              })}
             </div>
 
             {totalPages > 1 && (
@@ -951,7 +948,7 @@ function InterviewsPageContent() {
                   className="h-8 px-2.5 text-xs rounded-xl cursor-pointer disabled:opacity-40"
                 >
                   <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                  <span>Trước</span>
+                  <span>{t("interviews.previous")}</span>
                 </Button>
 
                 {/* Page Number Pills (Show window around current page) */}
@@ -993,7 +990,7 @@ function InterviewsPageContent() {
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   className="h-8 px-2.5 text-xs rounded-xl cursor-pointer disabled:opacity-40"
                 >
-                  <span>Sau</span>
+                  <span>{t("interviews.next")}</span>
                   <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
               </div>

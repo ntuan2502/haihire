@@ -530,7 +530,7 @@ function CandidateDetailPageContent() {
                   onValueChange={(v) => v && setStageFilter(v)}
                 >
                   <SelectTrigger className="h-8 w-36 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl">
-                    <SelectValue placeholder="All stages" />
+                    <SelectValue placeholder={t("candidates.allStages")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL" className="text-xs">
@@ -606,10 +606,10 @@ function CandidateDetailPageContent() {
                                 type="button"
                                 onClick={() => setScheduleInterviewApp(app)}
                                 className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                                title="Lên lịch phỏng vấn"
+                                title={t("interviews.scheduleInterview")}
                               >
                                 <Calendar className="h-3 w-3 inline mr-1" />
-                                <span>Lên lịch</span>
+                                <span>{t("interviews.scheduleInterview")}</span>
                               </button>
                             )}
                           </div>

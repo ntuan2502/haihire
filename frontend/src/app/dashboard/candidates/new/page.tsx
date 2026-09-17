@@ -152,7 +152,7 @@ function AddCandidatePageContent() {
       const errResponse = err as { response?: { data?: { message?: string } } };
       setErrorMsg(
         errResponse?.response?.data?.message ||
-          "Failed to create candidate. Please try again.",
+          t("candidates.createFailed"),
       );
     } finally {
       setIsSubmitting(false);
@@ -268,7 +268,7 @@ function AddCandidatePageContent() {
             </label>
             <Input
               required
-              placeholder="e.g. Jane"
+              placeholder={t("candidates.placeholders.firstName")}
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -282,7 +282,7 @@ function AddCandidatePageContent() {
             </label>
             <Input
               required
-              placeholder="e.g. Doe"
+              placeholder={t("candidates.placeholders.lastName")}
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -298,7 +298,7 @@ function AddCandidatePageContent() {
               </span>
             </label>
             <Input
-              placeholder="e.g. Nguyễn Văn A"
+              placeholder={t("candidates.placeholders.displayName")}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -313,7 +313,7 @@ function AddCandidatePageContent() {
             <Input
               type="email"
               required
-              placeholder="e.g. jane.doe@example.com"
+              placeholder={t("candidates.placeholders.email")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -327,7 +327,7 @@ function AddCandidatePageContent() {
             </label>
             <Input
               type="tel"
-              placeholder="e.g. +1 (555) 123-4567"
+              placeholder={t("candidates.placeholders.phone")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
@@ -369,7 +369,7 @@ function AddCandidatePageContent() {
               </label>
               <Input
                 type="date"
-                placeholder="mm/dd/yyyy"
+                placeholder={t("candidates.placeholders.dob")}
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
                 className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"

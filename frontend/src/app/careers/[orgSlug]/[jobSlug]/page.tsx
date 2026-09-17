@@ -82,7 +82,7 @@ export default function CareerJobSlugPage() {
 
     // Check size limit: 10MB
     if (file.size > 10 * 1024 * 1024) {
-      setFileError(t("applications.fileTooLarge") || "Kích thước tệp vượt quá giới hạn 10MB.");
+      setFileError(t("careers.fileTooLarge"));
       return;
     }
 
@@ -104,19 +104,19 @@ export default function CareerJobSlugPage() {
     if (!job?.id) return;
 
     if (!lastName.trim()) {
-      setSubmitError("Vui lòng nhập họ và tên đệm.");
+      setSubmitError(t("careers.errorLastName"));
       return;
     }
     if (!firstName.trim()) {
-      setSubmitError("Vui lòng nhập tên.");
+      setSubmitError(t("careers.errorFirstName"));
       return;
     }
     if (!candidateEmail.trim() || !candidateEmail.includes("@")) {
-      setSubmitError("Vui lòng nhập địa chỉ email hợp lệ.");
+      setSubmitError(t("careers.errorEmail"));
       return;
     }
     if (!resumeFile) {
-      setSubmitError("Vui lòng đính kèm tệp CV của bạn (PDF/DOCX).");
+      setSubmitError(t("careers.errorResume"));
       return;
     }
 
@@ -146,7 +146,7 @@ export default function CareerJobSlugPage() {
     } catch (err: unknown) {
       console.error("Apply error:", err);
       const errorMsg =
-        err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nộp hồ sơ. Vui lòng thử lại.";
+        err instanceof Error ? err.message : t("careers.errorGeneric");
       setSubmitError(errorMsg);
     }
   };
@@ -155,7 +155,7 @@ export default function CareerJobSlugPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
         <LoadingSpinner />
-        <p className="mt-4 text-xs font-semibold text-slate-500">Đang tải thông tin vị trí tuyển dụng...</p>
+        <p className="mt-4 text-xs font-semibold text-slate-500">{t("careers.loadingJob")}</p>
       </div>
     );
   }
@@ -166,9 +166,9 @@ export default function CareerJobSlugPage() {
         <div className="h-14 w-14 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Không tìm thấy vị trí tuyển dụng</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("careers.jobNotFound")}</h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md">
-          Vị trí này có thể không tồn tại hoặc đường dẫn không còn chính xác.
+          {t("careers.jobNotFoundDesc")}
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Button
@@ -177,14 +177,14 @@ export default function CareerJobSlugPage() {
             variant="default"
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-            Xem các vị trí khác
+            {t("careers.viewOtherJobs")}
           </Button>
           <Button
             onClick={() => router.push("/")}
             className="h-9 rounded-xl text-xs font-semibold cursor-pointer"
             variant="outline"
           >
-            Về trang chủ
+            {t("careers.backToHome")}
           </Button>
         </div>
       </div>
@@ -198,9 +198,9 @@ export default function CareerJobSlugPage() {
         <div className="h-14 w-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Vị trí tuyển dụng chưa mở hoặc đã đóng</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("careers.jobClosed")}</h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md leading-relaxed">
-          Vị trí này hiện đang ở trạng thái bản nháp hoặc đã ngừng nhận hồ sơ ứng tuyển. Vui lòng quay lại sau hoặc tham khảo các vị trí khác của công ty.
+          {t("careers.jobClosedDesc")}
         </p>
         <Button
           onClick={() => router.push(`/careers/${orgSlug}`)}
@@ -208,13 +208,13 @@ export default function CareerJobSlugPage() {
           variant="outline"
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-          Về danh sách việc làm
+          {t("careers.backToJobList")}
         </Button>
       </div>
     );
   }
 
-  const orgName = job.organization?.name || "Doanh nghiệp";
+  const orgName = job.organization?.name || t("careers.companyPage");
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/70 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
@@ -225,7 +225,7 @@ export default function CareerJobSlugPage() {
         showShareButton={true}
         onShare={handleCopyLink}
         copiedLink={copiedLink}
-        shareLabel="Chia sẻ"
+        shareLabel={t("careers.share")}
       />
 
       {/* Main Content Area */}
@@ -237,7 +237,7 @@ export default function CareerJobSlugPage() {
             className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-            <span>Tất cả vị trí tại {orgName}</span>
+            <span>{t("careers.backToOrgJobs", { name: orgName })}</span>
           </Link>
         </div>
 
@@ -248,7 +248,7 @@ export default function CareerJobSlugPage() {
             <div className="space-y-4">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>{job.department || "Tuyển dụng"}</span>
+                <span>{job.department || t("jobs.title")}</span>
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
@@ -259,7 +259,7 @@ export default function CareerJobSlugPage() {
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 text-xs font-medium text-slate-600 dark:text-slate-300">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
                   <MapPin className="h-3.5 w-3.5 text-blue-500" />
-                  <span>{job.location || "Toàn quốc"}</span>
+                  <span>{job.location}</span>
                 </div>
 
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
@@ -289,7 +289,7 @@ export default function CareerJobSlugPage() {
             <div className="space-y-4">
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-blue-600" />
-                Mô tả công việc (Job Description)
+                {t("careers.jobDescription")}
               </h2>
               <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-3 font-normal">
                 {job.description}
@@ -301,7 +301,7 @@ export default function CareerJobSlugPage() {
               <div className="space-y-4 pt-2">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-indigo-600" />
-                  Yêu cầu ứng viên (Requirements)
+                  {t("careers.requirements")}
                 </h2>
                 <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-3 font-normal">
                   {job.requirements}
@@ -313,9 +313,9 @@ export default function CareerJobSlugPage() {
             <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3.5">
               <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                <p className="font-bold text-slate-800 dark:text-white">Quy trình tuyển dụng minh bạch</p>
+                <p className="font-bold text-slate-800 dark:text-white">{t("careers.transparentProcessTitle")}</p>
                 <p className="leading-relaxed">
-                  Hồ sơ của bạn được lưu trữ an toàn và bảo mật. Sau khi tiếp nhận, đội ngũ nhân sự của {orgName} sẽ xem xét và phản hồi trực tiếp qua email của bạn.
+                  {t("careers.transparentProcessDesc", { orgName })}
                 </p>
               </div>
             </div>
@@ -330,23 +330,25 @@ export default function CareerJobSlugPage() {
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                    Ứng tuyển thành công!
+                    {t("careers.submitSuccessTitle")}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Cảm ơn <span className="font-bold text-slate-700 dark:text-slate-200">{`${lastName} ${firstName}`.trim()}</span>! Hồ sơ của bạn cho vị trí{" "}
-                    <span className="font-bold text-slate-700 dark:text-slate-200">{job.title}</span> đã được chuyển trực tiếp đến bộ phận tuyển dụng tại{" "}
-                    <span className="font-bold text-slate-700 dark:text-slate-200">{orgName}</span>.
+                    {t("careers.submitSuccessDesc", {
+                      name: `${lastName} ${firstName}`.trim(),
+                      jobTitle: job.title,
+                      orgName,
+                    })}
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 text-left text-xs text-slate-600 dark:text-slate-300 space-y-1.5 border border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Email liên hệ:</span>
+                    <span className="text-slate-400">{t("careers.contactEmail")}</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">{candidateEmail}</span>
                   </div>
                   {resumeFile && (
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Tệp hồ sơ:</span>
+                      <span className="text-slate-400">{t("careers.attachedFile")}</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[180px]">
                         {resumeFile.name}
                       </span>
@@ -368,13 +370,13 @@ export default function CareerJobSlugPage() {
                     variant="outline"
                     className="w-full h-9 rounded-xl text-xs font-semibold cursor-pointer"
                   >
-                    Nộp một hồ sơ khác
+                    {t("careers.applyAnother")}
                   </Button>
                   <Button
                     onClick={() => router.push(`/careers/${orgSlug}`)}
                     className="w-full h-9 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                   >
-                    Xem các vị trí khác tại {orgName}
+                    {t("careers.backToOrgJobs", { name: orgName })}
                   </Button>
                 </div>
               </div>
@@ -382,10 +384,10 @@ export default function CareerJobSlugPage() {
               <div className="p-6 sm:p-8 rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md space-y-6">
                 <div>
                   <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                    Nộp đơn ứng tuyển
+                    {t("careers.applicationFormTitle")}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Điền thông tin và đính kèm CV của bạn để ứng tuyển vào vị trí này.
+                    {t("careers.applicationFormSubtitle")}
                   </p>
                 </div>
 
@@ -401,11 +403,11 @@ export default function CareerJobSlugPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Họ và tên đệm <span className="text-rose-500">*</span>
+                        {t("careers.lastName")} <span className="text-rose-500">*</span>
                       </label>
                       <Input
                         type="text"
-                        placeholder="Ví dụ: Nguyễn Văn"
+                        placeholder={t("careers.placeholders.lastName")}
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         className="h-9 rounded-xl text-xs"
@@ -414,11 +416,11 @@ export default function CareerJobSlugPage() {
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Tên <span className="text-rose-500">*</span>
+                        {t("careers.firstName")} <span className="text-rose-500">*</span>
                       </label>
                       <Input
                         type="text"
-                        placeholder="Ví dụ: An"
+                        placeholder={t("careers.placeholders.firstName")}
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         className="h-9 rounded-xl text-xs"
@@ -430,11 +432,11 @@ export default function CareerJobSlugPage() {
                   {/* Candidate Email */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Địa chỉ Email <span className="text-rose-500">*</span>
+                      {t("careers.email")} <span className="text-rose-500">*</span>
                     </label>
                     <Input
                       type="email"
-                      placeholder="nguyenvana@example.com"
+                      placeholder={t("careers.placeholders.email")}
                       value={candidateEmail}
                       onChange={(e) => setCandidateEmail(e.target.value)}
                       className="h-9 rounded-xl text-xs"
@@ -445,11 +447,11 @@ export default function CareerJobSlugPage() {
                   {/* Candidate Phone */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Số điện thoại <span className="text-slate-400 font-normal">(Tùy chọn)</span>
+                      {t("careers.phone")}
                     </label>
                     <Input
                       type="tel"
-                      placeholder="0912 345 678"
+                      placeholder={t("careers.placeholders.phone")}
                       value={candidatePhone}
                       onChange={(e) => setCandidatePhone(e.target.value)}
                       className="h-9 rounded-xl text-xs"
@@ -459,7 +461,7 @@ export default function CareerJobSlugPage() {
                   {/* Resume Upload Dropzone */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Tệp đính kèm CV (Resume) <span className="text-rose-500">*</span>
+                      {t("careers.resume")} <span className="text-rose-500">*</span>
                     </label>
 
                     <input
@@ -506,10 +508,10 @@ export default function CareerJobSlugPage() {
                           <UploadCloud className="h-5 w-5" />
                         </div>
                         <div className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                          Nhấp để tải lên hoặc kéo thả CV vào đây
+                          {t("careers.dragDropResume")}
                         </div>
                         <div className="text-[11px] text-slate-400 mt-0.5">
-                          Hỗ trợ tệp PDF, DOC, DOCX (Tối đa 10MB)
+                          {t("careers.resumeFormats")}
                         </div>
                       </label>
                     )}
@@ -528,10 +530,10 @@ export default function CareerJobSlugPage() {
                     {applyMutation.isPending ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin text-white" />
-                        <span>Đang nộp hồ sơ...</span>
+                        <span>{t("careers.submitting")}</span>
                       </div>
                     ) : (
-                      "Nộp hồ sơ ứng tuyển ngay"
+                      t("careers.submitApplication")
                     )}
                   </Button>
                 </form>

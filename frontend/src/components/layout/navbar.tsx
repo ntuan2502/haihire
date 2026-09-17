@@ -57,7 +57,6 @@ interface NavbarProps {
   activeTab?: NavTab;
   onTabChange?: (tab: NavTab) => void;
   onOpenCreateJob?: () => void;
-  onOpenApplyModal?: () => void;
   jobsCount?: number;
   candidatesCount?: number;
 }
@@ -66,7 +65,6 @@ export function Navbar({
   activeTab = "dashboard",
   onTabChange,
   onOpenCreateJob,
-  onOpenApplyModal: _onOpenApplyModal,
   jobsCount: _jobsCount = 0,
   candidatesCount: _candidatesCount = 0,
 }: NavbarProps) {

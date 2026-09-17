@@ -166,7 +166,6 @@ function AddCandidatePageContent() {
       <Navbar
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => {}}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
       />

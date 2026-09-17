@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
-import { ApplyModal } from "@/components/applications/apply-modal";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
@@ -79,7 +78,6 @@ function CandidatesPageContent() {
   const uploadDocumentMutation = useUploadDocumentMutation();
 
   const [search, setSearch] = useState("");
-  const [applyModalOpen, setApplyModalOpen] = useState(false);
 
   // Selected Candidate for Right Slide-over Sidebar Drawer
   const [selectedCandidate, setSelectedCandidate] =
@@ -267,7 +265,6 @@ function CandidatesPageContent() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(20);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const activeJobId = jobs.length > 0 ? jobs[0].id : null;
   const loading = jobsLoading || appsLoading;
 
   // Aggregate Candidates from Applications using shared utility
@@ -371,7 +368,6 @@ function CandidatesPageContent() {
       <Navbar
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
       />
@@ -1330,14 +1326,6 @@ function CandidatesPageContent() {
         candidate={applyToJobModalCandidate}
         jobs={jobs}
         existingApplications={applications}
-      />
-
-      {/* Apply Modal */}
-      <ApplyModal
-        isOpen={applyModalOpen}
-        onClose={() => setApplyModalOpen(false)}
-        jobs={jobs}
-        selectedJobId={activeJobId}
       />
 
       {/* Schedule Interview Modal */}

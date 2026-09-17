@@ -35,7 +35,6 @@ interface JobListProps {
   applications?: Application[];
   loading: boolean;
   onViewCandidates: (jobId: string) => void;
-  onApply: (job: Job) => void;
   onOpenCreateJob: () => void;
   onDeleteJob: (jobId: string) => void;
 }

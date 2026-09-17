@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
-import { ApplyModal } from "@/components/applications/apply-modal";
 import { useAuth } from "@/context/auth-context";
 import { useJobs, useAllApplications } from "@/hooks/use-queries";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
@@ -18,15 +16,12 @@ function ApplicationsPageContent() {
   const { data: rawApplications = [], isLoading: appsLoading } =
     useAllApplications();
 
-  const [applyModalOpen, setApplyModalOpen] = useState(false);
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       {/* Navbar */}
       <Navbar
         activeTab="applications"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={rawApplications.length}
       />
@@ -39,13 +34,6 @@ function ApplicationsPageContent() {
           loading={jobsLoading || appsLoading}
         />
       </main>
-
-      {/* Apply Modal */}
-      <ApplyModal
-        isOpen={applyModalOpen}
-        onClose={() => setApplyModalOpen(false)}
-        jobs={jobs}
-      />
     </div>
   );
 }

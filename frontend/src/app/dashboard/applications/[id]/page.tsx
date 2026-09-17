@@ -217,7 +217,6 @@ function ApplicationDetailPageContent() {
         <Navbar
           activeTab="applications"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          onOpenApplyModal={() => {}}
           jobsCount={jobs.length}
           candidatesCount={applications.length}
         />
@@ -234,7 +233,6 @@ function ApplicationDetailPageContent() {
         <Navbar
           activeTab="applications"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          onOpenApplyModal={() => {}}
           jobsCount={jobs.length}
           candidatesCount={applications.length}
         />
@@ -281,7 +279,6 @@ function ApplicationDetailPageContent() {
       <Navbar
         activeTab="applications"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => {}}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
       />

@@ -26,7 +26,6 @@ import {
   BarChart2,
   Sparkles,
   Settings,
-  Plus,
   MoreHorizontal,
   ExternalLink,
   X,
@@ -41,7 +40,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ApplyModal } from "@/components/applications/apply-modal";
 import type { JobStatus } from "@/types";
 import { getJobPublicUrl } from "@/lib/utils";
 import { useI18n } from "@/i18n";
@@ -60,7 +58,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const { data: allApplications = [] } = useAllApplications();
   const updateJobMutation = useUpdateJobMutation();
 
-  const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [jdModalOpen, setJdModalOpen] = useState(false);
 
   // Active tab based on pathname
@@ -110,7 +107,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
         <Navbar
           activeTab="jobs"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          onOpenApplyModal={() => setApplyModalOpen(true)}
           jobsCount={jobs.length}
           candidatesCount={allApplications.length}
         />
@@ -151,7 +147,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
         <Navbar
           activeTab="jobs"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-          onOpenApplyModal={() => setApplyModalOpen(true)}
           jobsCount={jobs.length}
           candidatesCount={allApplications.length}
         />
@@ -248,15 +243,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
               <ExternalLink className="h-3 w-3" />
               <span className="hidden sm:inline">{t("jobs.careerPage")}</span>
             </a>
-
-            <Button
-              size="sm"
-              onClick={() => setApplyModalOpen(true)}
-              className="h-7 px-2.5 text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 shadow-2xs rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
-            >
-              <Plus className="h-3 w-3" />
-              <span>{t("candidates.addCandidate")}</span>
-            </Button>
 
             {/* 3-Status Switcher Dropdown */}
             <DropdownMenu>
@@ -447,13 +433,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Apply Modal */}
-      <ApplyModal
-        isOpen={applyModalOpen}
-        onClose={() => setApplyModalOpen(false)}
-        jobs={jobs}
-        selectedJobId={job.id}
-      />
     </div>
   );
 }

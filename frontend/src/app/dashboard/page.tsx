@@ -172,7 +172,6 @@ function DashboardContent() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => {}}
         jobsCount={jobs.length}
         candidatesCount={totalCandidatesCount}
       />

@@ -4,7 +4,6 @@ import { useState, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
-import { ApplyModal } from "@/components/applications/apply-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,6 @@ function InterviewsPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(user?.organizationId);
   const { data: applications = [], isLoading: appsLoading } = useAllApplications(user?.organizationId);
 
-  const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<Application | undefined>(undefined);
   const [scheduleDate, setScheduleDate] = useState<string | undefined>(undefined);
@@ -183,7 +181,6 @@ function InterviewsPageContent() {
       <Navbar
         activeTab="interviews"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
       />
@@ -1029,13 +1026,6 @@ function InterviewsPageContent() {
         application={selectedAppForScorecard}
         interview={selectedInterviewForScorecard}
         job={jobs.find((j) => String(j.id) === String(selectedAppForScorecard?.jobId))}
-      />
-
-      {/* Global Apply Modal */}
-      <ApplyModal
-        isOpen={applyModalOpen}
-        onClose={() => setApplyModalOpen(false)}
-        jobs={jobs}
       />
     </div>
   );

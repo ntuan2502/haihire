@@ -4,7 +4,6 @@ import { useState } from "react";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { JobList } from "@/components/jobs/job-list";
-import { ApplyModal } from "@/components/applications/apply-modal";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
@@ -15,7 +14,6 @@ import {
   useDeleteJobMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import type { Job } from "@/types";
 
 function JobsPageContent() {
   const router = useRouter();
@@ -30,7 +28,6 @@ function JobsPageContent() {
   const deleteJobMutation = useDeleteJobMutation();
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [applyModalOpen, setApplyModalOpen] = useState(false);
 
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
@@ -66,7 +63,6 @@ function JobsPageContent() {
       <Navbar
         activeTab="jobs"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        onOpenApplyModal={() => setApplyModalOpen(true)}
         jobsCount={jobs.length}
         candidatesCount={applications.length}
       />
@@ -91,25 +87,12 @@ function JobsPageContent() {
                 setSelectedJobId(jobId);
                 router.push(`/dashboard/candidates?jobId=${jobId}`);
               }}
-              onApply={(job: Job) => {
-                setSelectedJobId(job.id);
-                setApplyModalOpen(true);
-              }}
               onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
               onDeleteJob={handleJobDeleted}
             />
           </div>
         )}
       </main>
-
-
-      {/* Apply Modal */}
-      <ApplyModal
-        isOpen={applyModalOpen}
-        onClose={() => setApplyModalOpen(false)}
-        jobs={jobs}
-        selectedJobId={selectedJobId}
-      />
     </div>
   );
 }

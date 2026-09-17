@@ -8,7 +8,6 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useAllApplications,
   useCandidates,
   useCandidate,
   useUploadCandidateDocumentMutation,
@@ -75,8 +74,6 @@ function CandidateDetailPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications(user?.organizationId);
 
   const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
   const deleteCandidateMutation = useDeleteCandidateMutation();
@@ -121,31 +118,12 @@ function CandidateDetailPageContent() {
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
 
-  const loading = candidateLoading || jobsLoading || appsLoading;
+  const loading = candidateLoading || jobsLoading;
 
   // Find all applications belonging to this candidate
   const candidateApps = useMemo(() => {
-    if (!candidate) return [];
-    const baseApps =
-      candidate.applications && candidate.applications.length > 0
-        ? candidate.applications
-        : applications.filter(
-            (a) =>
-              a.candidateId === candidate.id ||
-              (a.candidateEmail &&
-                a.candidateEmail.toLowerCase() === candidate.email.toLowerCase()),
-          );
-
-    // Enrich applications with cached applications data (which may already have interviews, rich job info, etc.)
-    const appMap = new Map(applications.map((a) => [a.id, a]));
-    return baseApps.map((base) => {
-      const full = appMap.get(base.id);
-      const interviews = (base as any).interviews?.length
-        ? (base as any).interviews
-        : full?.interviews || [];
-      return full ? { ...base, ...full, interviews } : { ...base, interviews };
-    });
-  }, [candidate, applications]);
+    return candidate?.applications || [];
+  }, [candidate]);
 
   const filteredCandidateApps = useMemo(() => {
     if (stageFilter === "ALL") return candidateApps;
@@ -886,7 +864,7 @@ function CandidateDetailPageContent() {
             : null
         }
         jobs={jobs}
-        existingApplications={applications}
+        existingApplications={candidateApps}
       />
 
       {/* Delete Candidate Confirmation Modal matching screenshot */}
@@ -914,7 +892,7 @@ function CandidateDetailPageContent() {
           isOpen={!!scheduleInterviewApp}
           onClose={() => setScheduleInterviewApp(null)}
           jobs={jobs}
-          applications={applications}
+          applications={candidateApps}
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
         />

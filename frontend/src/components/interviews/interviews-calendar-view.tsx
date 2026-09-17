@@ -16,6 +16,7 @@ import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import {
   getInterviewsFromApplication,
+  getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
@@ -579,6 +580,13 @@ export function InterviewsCalendarView({
                 <span className="text-slate-400">{t("interviews.role")}:</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
                   {selectedEvent.job?.title || t("interviews.defaultJob")}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">{t("interviews.roundType")}:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">
+                  {getInterviewTypeLabel(selectedEvent.interview.type, t)}
                 </span>
               </div>
 

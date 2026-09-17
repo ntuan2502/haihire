@@ -28,6 +28,14 @@ enum ApplicationStage {
   REJECTED
 }
 
+enum InterviewType {
+  HR_SCREENING
+  TECHNICAL
+  CULTURE_FIT
+  FINAL_ROUND
+  ASSESSMENT
+}
+
 model Organization {
   id          String               @id @default(uuid())
   name        String
@@ -157,8 +165,8 @@ model Interview {
   application    Application @relation(fields: [applicationId], references: [id])
   date           String
   time           String
-  type           String
-  format         String      @default("MEET")
+  type           InterviewType @default(TECHNICAL)
+  format         String        @default("MEET")
   linkOrLocation String
   interviewer    String
   round          Int         @default(1)

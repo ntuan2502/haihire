@@ -191,7 +191,7 @@ export class InterviewsService {
       applicationId: dto.applicationId,
       date: dto.date,
       time: dto.time,
-      type: dto.type,
+      type: dto.type as any,
       format: dto.format || "MEET",
       linkOrLocation: dto.linkOrLocation || "",
       interviewer: dto.interviewer,
@@ -218,7 +218,7 @@ export class InterviewsService {
     const updateData: any = {};
     if (dto.date !== undefined) updateData.date = dto.date;
     if (dto.time !== undefined) updateData.time = dto.time;
-    if (dto.type !== undefined) updateData.type = dto.type;
+    if (dto.type !== undefined) updateData.type = dto.type as any;
     if (dto.format !== undefined) updateData.format = dto.format;
     if (dto.linkOrLocation !== undefined) updateData.linkOrLocation = dto.linkOrLocation;
     if (dto.interviewer !== undefined) updateData.interviewer = dto.interviewer;

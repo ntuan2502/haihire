@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'1cbf6618dff2e0e637444dbc11d0f6c8e4bb94fbffdc4853e9bd68bda5bf1f79'>;
+  StorageHashBase<'0960f53cfe638a1251757fc285c694deaa521505a77b39c800ce38b1e6cc8e45'>;
 export type ExecutionHash =
   ExecutionHashBase<'e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2'>;
 export type ProfileHash =
@@ -232,7 +232,7 @@ export type FieldOutputTypes = {
       readonly applicationId: CodecTypes['pg/text@1']['output'];
       readonly date: CodecTypes['pg/text@1']['output'];
       readonly time: CodecTypes['pg/text@1']['output'];
-      readonly type: CodecTypes['pg/text@1']['output'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
       readonly format: CodecTypes['pg/text@1']['output'];
       readonly linkOrLocation: CodecTypes['pg/text@1']['output'];
       readonly interviewer: CodecTypes['pg/text@1']['output'];
@@ -342,7 +342,7 @@ export type FieldInputTypes = {
       readonly applicationId: CodecTypes['pg/text@1']['input'];
       readonly date: CodecTypes['pg/text@1']['input'];
       readonly time: CodecTypes['pg/text@1']['input'];
-      readonly type: CodecTypes['pg/text@1']['input'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
       readonly format: CodecTypes['pg/text@1']['input'];
       readonly linkOrLocation: CodecTypes['pg/text@1']['input'];
       readonly interviewer: CodecTypes['pg/text@1']['input'];
@@ -459,7 +459,7 @@ export type StorageColumnTypes = {
       readonly round: CodecTypes['pg/int4@1']['output'];
       readonly scorecard: CodecTypes['pg/text@1']['output'] | null;
       readonly time: CodecTypes['pg/text@1']['output'];
-      readonly type: CodecTypes['pg/text@1']['output'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
     readonly inviteLink: {
@@ -569,7 +569,7 @@ export type StorageColumnInputTypes = {
       readonly round: CodecTypes['pg/int4@1']['input'];
       readonly scorecard: CodecTypes['pg/text@1']['input'] | null;
       readonly time: CodecTypes['pg/text@1']['input'];
-      readonly type: CodecTypes['pg/text@1']['input'];
+      readonly type: 'HR_SCREENING' | 'TECHNICAL' | 'CULTURE_FIT' | 'FINAL_ROUND' | 'ASSESSMENT';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
     readonly inviteLink: {
@@ -913,6 +913,10 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'TECHNICAL'>;
+                  };
                 };
                 readonly format: {
                   readonly nativeType: 'text';
@@ -1447,6 +1451,16 @@ type ContractBase = Omit<
                 'OFFER',
                 'HIRED',
                 'REJECTED',
+              ];
+            };
+            readonly InterviewType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'HR_SCREENING',
+                'TECHNICAL',
+                'CULTURE_FIT',
+                'FINAL_ROUND',
+                'ASSESSMENT',
               ];
             };
             readonly JobStatus: {
@@ -2300,6 +2314,16 @@ type ContractBase = Omit<
               { readonly name: 'OFFER'; readonly value: 'OFFER' },
               { readonly name: 'HIRED'; readonly value: 'HIRED' },
               { readonly name: 'REJECTED'; readonly value: 'REJECTED' },
+            ];
+          };
+          readonly InterviewType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'HR_SCREENING'; readonly value: 'HR_SCREENING' },
+              { readonly name: 'TECHNICAL'; readonly value: 'TECHNICAL' },
+              { readonly name: 'CULTURE_FIT'; readonly value: 'CULTURE_FIT' },
+              { readonly name: 'FINAL_ROUND'; readonly value: 'FINAL_ROUND' },
+              { readonly name: 'ASSESSMENT'; readonly value: 'ASSESSMENT' },
             ];
           };
         };

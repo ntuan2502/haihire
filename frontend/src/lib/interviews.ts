@@ -10,12 +10,103 @@ export interface InterviewScorecard {
   evaluatedAt?: string;
 }
 
+import { type InterviewType, INTERVIEW_TYPES } from "@/types";
+
+export { type InterviewType, INTERVIEW_TYPES };
+
+export const INTERVIEW_TYPE_OPTIONS: { value: InterviewType; labelKey: string }[] = [
+  { value: "HR_SCREENING", labelKey: "interviews.types.hrScreening" },
+  { value: "TECHNICAL", labelKey: "interviews.types.technical" },
+  { value: "CULTURE_FIT", labelKey: "interviews.types.cultureFit" },
+  { value: "FINAL_ROUND", labelKey: "interviews.types.finalRound" },
+  { value: "ASSESSMENT", labelKey: "interviews.types.assessment" },
+];
+
+export function normalizeInterviewType(rawType?: string | null): InterviewType {
+  if (!rawType) return "TECHNICAL";
+  if (
+    rawType === "HR_SCREENING" ||
+    rawType.includes("Screening") ||
+    rawType.includes("Sơ bộ") ||
+    rawType.includes("Sơ vấn")
+  ) {
+    return "HR_SCREENING";
+  }
+  if (
+    rawType === "TECHNICAL" ||
+    rawType.includes("Technical") ||
+    rawType.includes("Kỹ thuật")
+  ) {
+    return "TECHNICAL";
+  }
+  if (
+    rawType === "CULTURE_FIT" ||
+    rawType.includes("Culture") ||
+    rawType.includes("Văn hóa")
+  ) {
+    return "CULTURE_FIT";
+  }
+  if (
+    rawType === "FINAL_ROUND" ||
+    rawType.includes("Final") ||
+    rawType.includes("Vòng cuối")
+  ) {
+    return "FINAL_ROUND";
+  }
+  if (
+    rawType === "ASSESSMENT" ||
+    rawType.includes("Assessment") ||
+    rawType.includes("Đánh giá")
+  ) {
+    return "ASSESSMENT";
+  }
+  return "TECHNICAL";
+}
+
+export function getInterviewTypeLabel(
+  type?: string | null,
+  t?: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  if (!type) return "";
+  if (!t) return type;
+
+  switch (type) {
+    case "HR_SCREENING":
+      return t("interviews.types.hrScreening");
+    case "TECHNICAL":
+      return t("interviews.types.technical");
+    case "CULTURE_FIT":
+      return t("interviews.types.cultureFit");
+    case "FINAL_ROUND":
+      return t("interviews.types.finalRound");
+    case "ASSESSMENT":
+      return t("interviews.types.assessment");
+    default:
+      if (type.includes("HR Screening") || type.includes("Sơ bộ") || type.includes("Sơ vấn")) {
+        return t("interviews.types.hrScreening");
+      }
+      if (type.includes("Technical") || type.includes("Kỹ thuật")) {
+        return t("interviews.types.technical");
+      }
+      if (type.includes("Culture") || type.includes("Văn hóa")) {
+        return t("interviews.types.cultureFit");
+      }
+      if (type.includes("Final") || type.includes("Vòng cuối")) {
+        return t("interviews.types.finalRound");
+      }
+      if (type.includes("Assessment") || type.includes("Đánh giá")) {
+        return t("interviews.types.assessment");
+      }
+      return type;
+  }
+}
+
 export interface ScheduledInterviewInfo {
   id?: string;
   applicationId?: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
-  type: string; // Technical / Cultural / Screening / Final
+  type: InterviewType | string;
   format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
   linkOrLocation: string;
   interviewer: string;

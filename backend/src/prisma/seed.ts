@@ -440,10 +440,10 @@ class InterviewSlotManager {
     const slot = this.allocateSlot(round, totalRounds, isCompleted);
 
     const roundTypes = [
-      "Sơ vấn Nhân sự (HR Screening)",
-      "Phỏng vấn Kỹ thuật & Chuyên môn (Technical)",
-      "Phỏng vấn Văn hóa & Đồng đội (Culture Fit)",
-      "Vòng cuối với Ban Lãnh đạo (Final Round)",
+      "HR_SCREENING",
+      "TECHNICAL",
+      "CULTURE_FIT",
+      "FINAL_ROUND",
     ];
     const type = roundTypes[Math.min(round - 1, roundTypes.length - 1)];
 
@@ -684,6 +684,8 @@ export async function runSeed(): Promise<void> {
     const salaryRange = SALARY_RANGES[Math.floor(Math.random() * SALARY_RANGES.length)];
 
     const jobId = crypto.randomUUID();
+    const jobAgeDays = 5 + Math.floor((i * 3.5) % 45);
+    const jobCreatedAt = new Date(Date.now() - jobAgeDays * 86400000);
 
     await db.orm.public.Job.upsert({
       create: {
@@ -700,6 +702,7 @@ export async function runSeed(): Promise<void> {
         status,
         organizationId: adminOrgId,
         createdById: adminUserId,
+        createdAt: jobCreatedAt,
       },
       update: {},
       conflictOn: { id: jobId },
@@ -766,6 +769,8 @@ export async function runSeed(): Promise<void> {
     name: string;
     firstName: string;
     lastName: string;
+    gender: string;
+    dateOfBirth: Date;
     email: string;
     phone: string;
     notes: string;
@@ -773,6 +778,7 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
+    createdAt: Date;
   }> = [];
 
   const applicationsToInsert: Array<{
@@ -787,6 +793,7 @@ export async function runSeed(): Promise<void> {
     resumeMimeType: string;
     notes: string;
     orderIndex: number;
+    createdAt: Date;
   }> = [];
 
   const interviewsToInsert: Array<{
@@ -794,7 +801,7 @@ export async function runSeed(): Promise<void> {
     applicationId: string;
     date: string;
     time: string;
-    type: string;
+    type: any;
     format: string;
     linkOrLocation: string;
     interviewer: string;
@@ -802,6 +809,35 @@ export async function runSeed(): Promise<void> {
     scorecard: string | null;
     notes: string | null;
   }> = [];
+
+  function getCandidateDemographics(name: string, index: number) {
+    const femaleHints = [
+      "Thị", "Hồng", "Thảo", "Hương", "Trang", "Uyên", "Yến", "Loan", "Oanh", "Linh",
+      "Sarah", "Emily", "Jessica", "Sophia", "Emma", "Ava", "Chloe", "Grace", "Charlotte", "Amelia",
+    ];
+    const maleHints = [
+      "Văn", "Đức", "Hoàng", "Quốc", "Hải", "Tuấn", "Dũng", "Cường", "Nam", "Thắng", "Kiên", "Tú",
+      "James", "Alexander", "Michael", "David", "Daniel", "Lucas", "Oliver", "Ethan", "Liam", "Noah",
+      "Mason", "Logan", "Benjamin", "Henry",
+    ];
+
+    let gender = "Male";
+    if (femaleHints.some((h) => name.includes(h))) {
+      gender = "Female";
+    } else if (maleHints.some((h) => name.includes(h))) {
+      gender = "Male";
+    } else {
+      gender = index % 2 === 0 ? "Male" : "Female";
+    }
+
+    // Realistic date of birth (ages 22 - 38)
+    const birthYear = 1988 + (index % 15);
+    const birthMonth = (index % 12) + 1;
+    const birthDay = ((index * 3) % 27) + 1;
+    const dateOfBirth = new Date(Date.UTC(birthYear, birthMonth - 1, birthDay));
+
+    return { gender, dateOfBirth };
+  }
 
   const jobStageOrderCounter: Record<string, number> = {};
   const slotManager = new InterviewSlotManager();
@@ -820,12 +856,19 @@ export async function runSeed(): Promise<void> {
     const firstName = nameParts[0] || candidate.name;
     const lastName = nameParts.slice(1).join(" ") || nameParts[0];
 
+    const { gender, dateOfBirth } = getCandidateDemographics(candidate.name, i);
+    // Candidates spread over past 60 days
+    const daysAgo = ((i * 0.3) % 60) + (i % 2 === 0 ? 0.05 : 0.2);
+    const candidateCreatedAt = new Date(Date.now() - Math.floor(daysAgo * 86400000));
+
     candidatesToInsert.push({
       id: candidateId,
       organizationId: adminOrgId,
       name: candidate.name,
       firstName,
       lastName,
+      gender,
+      dateOfBirth,
       email: candidate.email,
       phone: candidate.phone,
       notes: "Ứng viên tiềm năng trong Talent Pool.",
@@ -833,6 +876,7 @@ export async function runSeed(): Promise<void> {
       resumeFileName: fileName,
       resumeFileSize,
       resumeMimeType: "application/pdf",
+      createdAt: candidateCreatedAt,
     });
 
     if (jobCount === 0) {
@@ -944,6 +988,10 @@ export async function runSeed(): Promise<void> {
           }
         }
 
+        const appOffsetMs = Math.floor((1 + ((candidate.candidateIndex + j * 7) % 36)) * 3600000);
+        const appTime = Math.min(Date.now() - 1800000, candidateCreatedAt.getTime() + appOffsetMs);
+        const appCreatedAt = new Date(appTime);
+
         applicationsToInsert.push({
           id: appId,
           candidateId,
@@ -956,6 +1004,7 @@ export async function runSeed(): Promise<void> {
           resumeMimeType: "application/pdf",
           notes,
           orderIndex,
+          createdAt: appCreatedAt,
         });
       }
     }

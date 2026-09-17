@@ -33,6 +33,7 @@ import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
 import {
   getInterviewsFromApplication,
+  getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { ApplicationStage } from "@/types";
@@ -583,7 +584,7 @@ function DashboardContent() {
                                             </Link>
                                             <span className="text-[10px] text-slate-400 shrink-0">•</span>
                                             <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                                              {intv.type}
+                                              {getInterviewTypeLabel(intv.type, t)}
                                             </span>
                                           </div>
                                           <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">

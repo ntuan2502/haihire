@@ -14,6 +14,7 @@ import { useMemo } from "react";
 import {
   parseAllInterviewsFromNotes,
   getInterviewsFromApplication,
+  getInterviewTypeLabel,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
 import type { Interview } from "@/types";
@@ -59,13 +60,7 @@ export function CandidateInterviewsList({
   }, [application, interviews, notes]);
 
   const formatInterviewType = (type?: string) => {
-    if (!type) return "";
-    if (type.includes("HR Screening") || type.includes("Sơ bộ")) return t("interviews.types.hrScreening");
-    if (type.includes("Technical") || type.includes("Kỹ thuật")) return t("interviews.types.technical");
-    if (type.includes("Culture") || type.includes("Văn hóa")) return t("interviews.types.cultureFit");
-    if (type.includes("Final") || type.includes("Vòng cuối")) return t("interviews.types.finalRound");
-    if (type.includes("Assessment") || type.includes("Đánh giá")) return t("interviews.types.assessment");
-    return type;
+    return getInterviewTypeLabel(type, t);
   };
 
   if (allInterviews.length === 0) {

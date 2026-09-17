@@ -33,6 +33,8 @@ import { getCandidateDisplayName } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
   parseInterviewFromNotes,
+  normalizeInterviewType,
+  INTERVIEW_TYPE_OPTIONS,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
@@ -68,7 +70,7 @@ export function ScheduleInterviewModal({
   const [modalCandidateId, setModalCandidateId] = useState<string>("");
   const [interviewDate, setInterviewDate] = useState<string>("");
   const [interviewTime, setInterviewTime] = useState<string>("10:00");
-  const [interviewType, setInterviewType] = useState<string>("Kỹ thuật (Technical)");
+  const [interviewType, setInterviewType] = useState<string>("TECHNICAL");
   const [interviewFormat, setInterviewFormat] = useState<"MEET" | "ZOOM" | "TEAMS" | "OFFICE">("MEET");
   const [linkOrLocation, setLinkOrLocation] = useState<string>("https://meet.google.com/");
   const [interviewerName, setInterviewerName] = useState<string>("");
@@ -122,7 +124,7 @@ export function ScheduleInterviewModal({
     if (existing) {
       setInterviewDate(initialDate || existing.date);
       setInterviewTime(existing.time || "10:00");
-      setInterviewType(existing.type || "Kỹ thuật (Technical)");
+      setInterviewType(normalizeInterviewType(existing.type));
       setInterviewFormat(existing.format || "MEET");
       setLinkOrLocation(existing.linkOrLocation || "https://meet.google.com/");
       setInterviewerName(existing.interviewer || user?.name || "Hiring Team");
@@ -132,7 +134,7 @@ export function ScheduleInterviewModal({
       tomorrow.setDate(tomorrow.getDate() + 1);
       setInterviewDate(initialDate || tomorrow.toISOString().split("T")[0]);
       setInterviewTime("10:00");
-      setInterviewType("Kỹ thuật (Technical)");
+      setInterviewType("TECHNICAL");
       setInterviewFormat("MEET");
       setLinkOrLocation("https://meet.google.com/");
       setInterviewerName(user?.name || "Hiring Team");
@@ -150,7 +152,7 @@ export function ScheduleInterviewModal({
     if (existing) {
       setInterviewDate(existing.date);
       setInterviewTime(existing.time || "10:00");
-      setInterviewType(existing.type || "Kỹ thuật (Technical)");
+      setInterviewType(normalizeInterviewType(existing.type));
       setInterviewFormat(existing.format || "MEET");
       setLinkOrLocation(existing.linkOrLocation || "https://meet.google.com/");
       setInterviewerName(existing.interviewer || user?.name || "Hiring Team");
@@ -360,13 +362,10 @@ export function ScheduleInterviewModal({
               <CustomSelect
                 value={interviewType}
                 onChange={(val) => setInterviewType(val)}
-                options={[
-                  { value: "Sơ bộ (HR Screening)", label: t("interviews.types.hrScreening") },
-                  { value: "Kỹ thuật (Technical)", label: t("interviews.types.technical") },
-                  { value: "Văn hóa (Culture fit)", label: t("interviews.types.cultureFit") },
-                  { value: "Vòng cuối (Final round)", label: t("interviews.types.finalRound") },
-                  { value: "Đánh giá năng lực (Assessment)", label: t("interviews.types.assessment") },
-                ]}
+                options={INTERVIEW_TYPE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: t(opt.labelKey),
+                }))}
                 className="w-full"
                 triggerClassName="h-10 text-xs font-medium"
               />

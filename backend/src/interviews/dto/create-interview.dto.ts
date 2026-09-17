@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsOptional, IsString, IsNumber, IsIn } from "class-validator";
+import { INTERVIEW_TYPES, type InterviewType } from "../constants";
 
 export class CreateInterviewDto {
   @IsString()
@@ -15,7 +16,8 @@ export class CreateInterviewDto {
 
   @IsString()
   @IsNotEmpty()
-  type!: string;
+  @IsIn(INTERVIEW_TYPES)
+  type!: InterviewType | string;
 
   @IsString()
   @IsOptional()

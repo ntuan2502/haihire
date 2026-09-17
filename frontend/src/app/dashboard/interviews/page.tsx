@@ -40,6 +40,7 @@ import { getInitials, getCandidateDisplayName } from "@/lib/utils";
 import {
   getLatestInterviewFromApplication,
   getInterviewsFromApplication,
+  getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
@@ -543,7 +544,7 @@ function InterviewsPageContent() {
                           {/* Interview Type Badge: Own row so it never squishes date/time */}
                           <div>
                             <span className="inline-block px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-slate-200/80 dark:border-slate-700 shadow-2xs max-w-full truncate">
-                              {currentInterview.type}
+                              {getInterviewTypeLabel(currentInterview.type, t)}
                             </span>
                           </div>
 
@@ -670,7 +671,7 @@ function InterviewsPageContent() {
                                   <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-medium gap-2">
                                     <span className="whitespace-nowrap">{prev.date} ({prev.time})</span>
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
-                                      {prev.round ? t("interviews.roundInterview", { round: prev.round }) : prev.type}
+                                      {prev.round ? t("interviews.roundInterview", { round: prev.round }) : getInterviewTypeLabel(prev.type, t)}
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between text-[10px] text-slate-400">
@@ -789,7 +790,7 @@ function InterviewsPageContent() {
                               {/* Dòng 2: Loại vòng phỏng vấn */}
                               <div>
                                 <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
-                                  {currentInterview.type}
+                                  {getInterviewTypeLabel(currentInterview.type, t)}
                                 </span>
                               </div>
                               {/* Dòng 3: Cắt trực tuyến / văn phòng xuống dòng */}

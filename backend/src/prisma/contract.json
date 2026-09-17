@@ -70,6 +70,31 @@
               }
             ]
           },
+          "InterviewType": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "HR_SCREENING",
+                "value": "HR_SCREENING"
+              },
+              {
+                "name": "TECHNICAL",
+                "value": "TECHNICAL"
+              },
+              {
+                "name": "CULTURE_FIT",
+                "value": "CULTURE_FIT"
+              },
+              {
+                "name": "FINAL_ROUND",
+                "value": "FINAL_ROUND"
+              },
+              {
+                "name": "ASSESSMENT",
+                "value": "ASSESSMENT"
+              }
+            ]
+          },
           "JobStatus": {
             "codecId": "pg/text@1",
             "members": [
@@ -606,6 +631,12 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "InterviewType",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "updatedAt": {
@@ -1789,6 +1820,13 @@
               ]
             },
             "interview": {
+              "checks": [
+                {
+                  "expression": "\"type\" IN ('HR_SCREENING', 'TECHNICAL', 'CULTURE_FIT', 'FINAL_ROUND', 'ASSESSMENT')",
+                  "name": "interview_type_check_710710c6",
+                  "prefix": "interview_type_check"
+                }
+              ],
               "columns": {
                 "applicationId": {
                   "codecId": "pg/text@1",
@@ -1859,8 +1897,18 @@
                 },
                 "type": {
                   "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "TECHNICAL"
+                  },
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "InterviewType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz@1",
@@ -2508,6 +2556,16 @@
                 "REJECTED"
               ]
             },
+            "InterviewType": {
+              "kind": "valueSet",
+              "values": [
+                "HR_SCREENING",
+                "TECHNICAL",
+                "CULTURE_FIT",
+                "FINAL_ROUND",
+                "ASSESSMENT"
+              ]
+            },
             "JobStatus": {
               "kind": "valueSet",
               "values": [
@@ -2539,7 +2597,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "1cbf6618dff2e0e637444dbc11d0f6c8e4bb94fbffdc4853e9bd68bda5bf1f79"
+    "storageHash": "0960f53cfe638a1251757fc285c694deaa521505a77b39c800ce38b1e6cc8e45"
   },
   "execution": {
     "executionHash": "e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2",

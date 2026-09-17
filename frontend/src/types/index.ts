@@ -122,12 +122,22 @@ export interface InterviewScorecard {
   evaluatedAt?: string;
 }
 
+export const INTERVIEW_TYPES = [
+  "HR_SCREENING",
+  "TECHNICAL",
+  "CULTURE_FIT",
+  "FINAL_ROUND",
+  "ASSESSMENT",
+] as const;
+
+export type InterviewType = (typeof INTERVIEW_TYPES)[number];
+
 export interface Interview {
   id: string;
   applicationId: string;
   date: string;
   time: string;
-  type: string;
+  type: InterviewType | string;
   format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
   linkOrLocation: string;
   interviewer: string;

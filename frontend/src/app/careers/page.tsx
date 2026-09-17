@@ -6,6 +6,7 @@ import { useAllPublicJobs } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
+import { CustomSelect } from "@/components/ui/custom-select";
 import {
   Briefcase,
   Building2,
@@ -239,18 +240,19 @@ export default function CareersDirectoryPage() {
           {/* Department Filter */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 shrink-0">{t("careers.allDeptsLabel")}</span>
-            <select
+            <CustomSelect
               value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
-              className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer focus:border-blue-500"
-            >
-              <option value="all">{t("careers.allDepartmentsOption")}</option>
-              {allDepartments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedDept(val)}
+              options={[
+                { value: "all", label: t("careers.allDepartmentsOption") },
+                ...allDepartments.map((dept) => ({
+                  value: dept,
+                  label: dept,
+                })),
+              ]}
+              className="w-48"
+              triggerClassName="h-9 text-xs font-semibold"
+            />
           </div>
         </div>
 

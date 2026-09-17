@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { slugify } from "@/lib/utils";
 import {
   Briefcase,
@@ -194,33 +195,36 @@ export default function OrgCareersPage() {
           <div className="flex items-center gap-2.5 w-full md:w-auto">
             {/* Department Filter */}
             {departments.length > 0 && (
-              <select
+              <CustomSelect
                 value={selectedDept}
-                onChange={(e) => setSelectedDept(e.target.value)}
-                className="h-10 px-3 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer w-full md:w-auto"
-              >
-                <option value="all">{t("careers.allDepartmentsOption")}</option>
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedDept(val)}
+                options={[
+                  { value: "all", label: t("careers.allDepartmentsOption") },
+                  ...departments.map((dept) => ({
+                    value: dept,
+                    label: dept,
+                  })),
+                ]}
+                className="w-full md:w-48"
+                triggerClassName="h-10 text-xs font-semibold"
+              />
             )}
 
             {/* Type Filter */}
-            <select
+            <CustomSelect
               value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="h-10 px-3 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 cursor-pointer w-full md:w-auto"
-            >
-              <option value="all">{t("careers.allTypesOption")}</option>
-              <option value="FULL_TIME">{t("jobs.fullTime")}</option>
-              <option value="PART_TIME">{t("jobs.partTime")}</option>
-              <option value="CONTRACT">{t("jobs.contract")}</option>
-              <option value="INTERNSHIP">{t("jobs.internship")}</option>
-              <option value="REMOTE">{t("jobs.workplace.remote")}</option>
-            </select>
+              onChange={(val) => setSelectedType(val)}
+              options={[
+                { value: "all", label: t("careers.allTypesOption") },
+                { value: "FULL_TIME", label: t("jobs.fullTime") },
+                { value: "PART_TIME", label: t("jobs.partTime") },
+                { value: "CONTRACT", label: t("jobs.contract") },
+                { value: "INTERNSHIP", label: t("jobs.internship") },
+                { value: "REMOTE", label: t("jobs.workplace.remote") },
+              ]}
+              className="w-full md:w-44"
+              triggerClassName="h-10 text-xs font-semibold"
+            />
           </div>
         </div>
 

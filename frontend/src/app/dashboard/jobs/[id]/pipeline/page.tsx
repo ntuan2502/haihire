@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
@@ -494,27 +495,28 @@ function JobPipelinePageContent() {
 
             {/* Sort toolbar */}
             <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
-              <div className="flex items-center gap-1.5">
-                <ArrowUpDown className="h-3 w-3" />
-                <select
-                  value={sortBy}
-                  onChange={(e) =>
-                    setSortBy(
-                      e.target.value as
-                        | "score"
-                        | "newest"
-                        | "oldest"
-                        | "name",
-                    )
-                  }
-                  className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 border-none outline-none cursor-pointer"
-                >
-                  <option value="score">{t("applications.columns.score")}</option>
-                  <option value="newest">{t("candidates.columns.added")}</option>
-                  <option value="oldest">{t("common.created")}</option>
-                  <option value="name">{t("candidates.candidateName")}</option>
-                </select>
-              </div>
+              <CustomSelect
+                value={sortBy}
+                onChange={(val) =>
+                  setSortBy(
+                    val as
+                      | "score"
+                      | "newest"
+                      | "oldest"
+                      | "name",
+                  )
+                }
+                size="sm"
+                icon={ArrowUpDown}
+                options={[
+                  { value: "score", label: t("applications.columns.score") },
+                  { value: "newest", label: t("candidates.columns.added") },
+                  { value: "oldest", label: t("common.created") },
+                  { value: "name", label: t("candidates.candidateName") },
+                ]}
+                className="w-auto"
+                triggerClassName="h-7 text-xs py-1 px-2.5 font-semibold"
+              />
 
               <button
                 type="button"

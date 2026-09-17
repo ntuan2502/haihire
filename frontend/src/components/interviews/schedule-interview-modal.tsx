@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CustomSelect } from "@/components/ui/custom-select";
 import {
   Calendar,
   Clock,
@@ -253,10 +254,9 @@ export function ScheduleInterviewModal({
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   {t("interviews.targetJob")}
                 </label>
-                <select
+                <CustomSelect
                   value={modalJobId}
-                  onChange={(e) => {
-                    const newJobId = e.target.value;
+                  onChange={(newJobId) => {
                     setModalJobId(newJobId);
                     const firstApp = applications.find((a) => String(a.jobId) === newJobId);
                     if (firstApp) {
@@ -266,18 +266,18 @@ export function ScheduleInterviewModal({
                     }
                   }}
                   disabled={Boolean(selectedJobId && selectedApplicationId)}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
-                >
-                  {jobs.length === 0 ? (
-                    <option value="">{t("interviews.noJobsAvailable")}</option>
-                  ) : (
-                    jobs.map((j) => (
-                      <option key={j.id} value={j.id}>
-                        {j.title} ({j.department})
-                      </option>
-                    ))
-                  )}
-                </select>
+                  placeholder={jobs.length === 0 ? t("interviews.noJobsAvailable") : undefined}
+                  options={
+                    jobs.length === 0
+                      ? [{ value: "", label: t("interviews.noJobsAvailable"), disabled: true }]
+                      : jobs.map((j) => ({
+                          value: j.id,
+                          label: `${j.title} (${j.department})`,
+                        }))
+                  }
+                  className="w-full"
+                  triggerClassName="h-10 text-xs font-medium"
+                />
               </div>
 
               {/* Candidate Selector */}
@@ -290,23 +290,22 @@ export function ScheduleInterviewModal({
                     </span>
                   )}
                 </label>
-                <select
+                <CustomSelect
                   value={modalCandidateId}
-                  onChange={(e) => handleCandidateChange(e.target.value)}
+                  onChange={(val) => handleCandidateChange(val)}
                   disabled={Boolean(selectedApplicationId)}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
-                  required
-                >
-                  {modalCandidates.length === 0 ? (
-                    <option value="">{t("interviews.noCandidatesForJob")}</option>
-                  ) : (
-                    modalCandidates.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {getCandidateDisplayName(c)} — {c.candidateEmail}
-                      </option>
-                    ))
-                  )}
-                </select>
+                  placeholder={modalCandidates.length === 0 ? t("interviews.noCandidatesForJob") : undefined}
+                  options={
+                    modalCandidates.length === 0
+                      ? [{ value: "", label: t("interviews.noCandidatesForJob"), disabled: true }]
+                      : modalCandidates.map((c) => ({
+                          value: c.id,
+                          label: `${getCandidateDisplayName(c)} — ${c.candidateEmail}`,
+                        }))
+                  }
+                  className="w-full"
+                  triggerClassName="h-10 text-xs font-medium"
+                />
               </div>
             </div>
           </div>
@@ -352,17 +351,19 @@ export function ScheduleInterviewModal({
                 <Layers className="h-3.5 w-3.5 text-slate-400" />
                 <span>{t("interviews.roundType")}</span>
               </label>
-              <select
+              <CustomSelect
                 value={interviewType}
-                onChange={(e) => setInterviewType(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20"
-              >
-                <option value="Sơ bộ (HR Screening)">{t("interviews.types.hrScreening")}</option>
-                <option value="Kỹ thuật (Technical)">{t("interviews.types.technical")}</option>
-                <option value="Văn hóa (Culture fit)">{t("interviews.types.cultureFit")}</option>
-                <option value="Vòng cuối (Final round)">{t("interviews.types.finalRound")}</option>
-                <option value="Đánh giá năng lực (Assessment)">{t("interviews.types.assessment")}</option>
-              </select>
+                onChange={(val) => setInterviewType(val)}
+                options={[
+                  { value: "Sơ bộ (HR Screening)", label: t("interviews.types.hrScreening") },
+                  { value: "Kỹ thuật (Technical)", label: t("interviews.types.technical") },
+                  { value: "Văn hóa (Culture fit)", label: t("interviews.types.cultureFit") },
+                  { value: "Vòng cuối (Final round)", label: t("interviews.types.finalRound") },
+                  { value: "Đánh giá năng lực (Assessment)", label: t("interviews.types.assessment") },
+                ]}
+                className="w-full"
+                triggerClassName="h-10 text-xs font-medium"
+              />
             </div>
 
             {/* Meeting Format */}
@@ -375,24 +376,26 @@ export function ScheduleInterviewModal({
                 )}
                 <span>{t("interviews.formatLabel")}</span>
               </label>
-              <select
+              <CustomSelect
                 value={interviewFormat}
-                onChange={(e) => {
-                  const val = e.target.value as "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
-                  setInterviewFormat(val);
-                  if (val === "MEET" && !linkOrLocation.includes("zoom") && !linkOrLocation.includes("teams")) {
+                onChange={(val) => {
+                  const fVal = val as "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+                  setInterviewFormat(fVal);
+                  if (fVal === "MEET" && !linkOrLocation.includes("zoom") && !linkOrLocation.includes("teams")) {
                     setLinkOrLocation("https://meet.google.com/");
-                  } else if (val === "OFFICE" && linkOrLocation.startsWith("http")) {
+                  } else if (fVal === "OFFICE" && linkOrLocation.startsWith("http")) {
                     setLinkOrLocation("");
                   }
                 }}
-                className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/20"
-              >
-                <option value="MEET">{t("interviews.formats.meet")}</option>
-                <option value="ZOOM">{t("interviews.formats.zoom")}</option>
-                <option value="TEAMS">{t("interviews.formats.teams")}</option>
-                <option value="OFFICE">{t("interviews.formats.office")}</option>
-              </select>
+                options={[
+                  { value: "MEET", label: t("interviews.formats.meet") },
+                  { value: "ZOOM", label: t("interviews.formats.zoom") },
+                  { value: "TEAMS", label: t("interviews.formats.teams") },
+                  { value: "OFFICE", label: t("interviews.formats.office") },
+                ]}
+                className="w-full"
+                triggerClassName="h-10 text-xs font-medium"
+              />
             </div>
           </div>
 
@@ -428,20 +431,25 @@ export function ScheduleInterviewModal({
                   <span>{t("interviews.primaryInterviewer")}</span>
                 </span>
                 {members.length > 0 && (
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) setInterviewerName(e.target.value);
-                    }}
+                  <CustomSelect
+                    size="sm"
+                    align="right"
                     value=""
-                    className="text-[10px] text-blue-600 dark:text-blue-400 bg-transparent border-none cursor-pointer outline-none font-semibold"
-                  >
-                    <option value="">{t("interviews.selectFromMembers")}</option>
-                    {members.map((m) => (
-                      <option key={m.id} value={`${m.name} (${m.role})`}>
-                        {m.name} ({m.email})
-                      </option>
-                    ))}
-                  </select>
+                    placeholder={t("interviews.selectFromMembers")}
+                    onChange={(val) => {
+                      if (val) setInterviewerName(val);
+                    }}
+                    options={[
+                      { value: "", label: t("interviews.selectFromMembers"), disabled: true },
+                      ...members.map((m) => ({
+                        value: `${m.name} (${m.role})`,
+                        label: `${m.name} (${m.email})`,
+                      })),
+                    ]}
+                    className="w-auto"
+                    triggerClassName="h-6 py-0.5 px-2 text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/50 rounded-lg"
+                    popupClassName="min-w-[220px]"
+                  />
                 )}
               </label>
               <Input

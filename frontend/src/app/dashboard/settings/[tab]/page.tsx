@@ -12,8 +12,9 @@ import {
   Sparkles,
   ExternalLink,
 } from "lucide-react";
-import { useI18n } from "@/i18n";
+import { useI18n, SUPPORTED_LOCALES } from "@/i18n";
 import type { SupportedLocale } from "@/i18n/config";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 export default function SubSettingsPage() {
   const params = useParams();
@@ -23,6 +24,7 @@ export default function SubSettingsPage() {
   const { user, logout } = useAuth();
   const { data: org } = useMyOrg();
   const { t, locale, setLocale } = useI18n();
+  const [timeZone, setTimeZone] = useState("Asia/Ho_Chi_Minh");
 
   const [appHost, setAppHost] = useState("");
   useEffect(() => {
@@ -51,29 +53,47 @@ export default function SubSettingsPage() {
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
               {t("nav.language")}
             </label>
-            <select
+            <CustomSelect
               value={locale}
-              onChange={(e) => setLocale(e.target.value as SupportedLocale)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-            >
-              <option value="en">English (US)</option>
-              <option value="vi">Tiếng Việt (Vietnamese)</option>
-            </select>
+              onChange={(val) => setLocale(val as SupportedLocale)}
+              options={(Object.keys(SUPPORTED_LOCALES) as SupportedLocale[]).map((locKey) => ({
+                value: locKey,
+                label: (
+                  <span className="flex items-center gap-2">
+                    <span>{SUPPORTED_LOCALES[locKey].flag}</span>
+                    <span>{SUPPORTED_LOCALES[locKey].label}</span>
+                  </span>
+                ),
+              }))}
+              className="w-full"
+              triggerClassName="h-10 text-xs"
+            />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
               {t("settings.timeZone")}
             </label>
-            <select className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200 outline-none">
-              <option value="Asia/Ho_Chi_Minh">
-                (GMT+07:00) Indochina Time - Hanoi, Bangkok, Jakarta
-              </option>
-              <option value="UTC">(GMT+00:00) UTC</option>
-              <option value="America/New_York">
-                (GMT-05:00) Eastern Time - New York
-              </option>
-            </select>
+            <CustomSelect
+              value={timeZone}
+              onChange={(val) => setTimeZone(val)}
+              options={[
+                {
+                  value: "Asia/Ho_Chi_Minh",
+                  label: "(GMT+07:00) Indochina Time - Hanoi, Bangkok, Jakarta",
+                },
+                {
+                  value: "UTC",
+                  label: "(GMT+00:00) UTC",
+                },
+                {
+                  value: "America/New_York",
+                  label: "(GMT-05:00) Eastern Time - New York",
+                },
+              ]}
+              className="w-full"
+              triggerClassName="h-10 text-xs"
+            />
           </div>
 
           <div className="pt-2">

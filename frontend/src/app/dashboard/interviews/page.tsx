@@ -9,6 +9,7 @@ import { ScheduleInterviewModal } from "@/components/interviews/schedule-intervi
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CustomSelect } from "@/components/ui/custom-select";
 import {
   useJobs,
   useAllApplications,
@@ -388,35 +389,38 @@ function InterviewsPageContent() {
 
             {/* Job Filter Dropdown */}
             <div className="sm:w-64">
-              <select
+              <CustomSelect
                 value={selectedJobFilter}
-                onChange={(e) => {
-                  setSelectedJobFilter(e.target.value);
+                onChange={(val) => {
+                  setSelectedJobFilter(val);
                   setCurrentPage(1);
                 }}
-                className="w-full h-9.5 px-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer focus:border-blue-500"
-              >
-                <option value="ALL">{t("interviews.allJobsOption")}</option>
-                {jobs.map((job) => (
-                  <option key={job.id} value={job.id}>
-                    {job.title} ({job.department})
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "ALL", label: t("interviews.allJobsOption") },
+                  ...jobs.map((job) => ({
+                    value: job.id,
+                    label: `${job.title} (${job.department})`,
+                  })),
+                ]}
+                className="w-full"
+                triggerClassName="h-9.5 text-xs font-medium"
+              />
             </div>
 
             {/* Sort Dropdown */}
-            <div className="sm:w-56 flex items-center gap-1.5 h-9.5 px-3 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300">
-              <ArrowUpDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <select
+            <div className="sm:w-56">
+              <CustomSelect
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="w-full bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
-              >
-                <option value="upcoming">{t("interviews.sortUpcoming")}</option>
-                <option value="newest">{t("interviews.sortNewest")}</option>
-                <option value="name">{t("interviews.sortName")}</option>
-              </select>
+                onChange={(val) => setSortBy(val as SortOption)}
+                icon={ArrowUpDown}
+                options={[
+                  { value: "upcoming", label: t("interviews.sortUpcoming") },
+                  { value: "newest", label: t("interviews.sortNewest") },
+                  { value: "name", label: t("interviews.sortName") },
+                ]}
+                className="w-full"
+                triggerClassName="h-9.5 text-xs font-medium"
+              />
             </div>
           </div>
         </div>

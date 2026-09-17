@@ -12,6 +12,7 @@ import {
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { CustomSelect } from "@/components/ui/custom-select";
 import {
   UserPlus,
   Link2,
@@ -312,14 +313,16 @@ export default function MembersSettingsPage() {
             </div>
 
             <div className="shrink-0">
-              <select
+              <CustomSelect
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
-                className="w-full sm:w-auto h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-              >
-                <option value="MEMBER">{t("members.roleMember")}</option>
-                <option value="ADMIN">{t("members.roleAdmin")}</option>
-              </select>
+                onChange={(val) => setInviteRole(val)}
+                options={[
+                  { value: "MEMBER", label: t("members.roleMember") },
+                  { value: "ADMIN", label: t("members.roleAdmin") },
+                ]}
+                className="w-full sm:w-36"
+                triggerClassName="h-10 text-xs font-semibold"
+              />
             </div>
 
             <Button
@@ -385,46 +388,52 @@ export default function MembersSettingsPage() {
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                     {t("members.roleLabel")}
                   </label>
-                  <select
+                  <CustomSelect
                     value={linkRole}
-                    onChange={(e) => setLinkRole(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-                  >
-                    <option value="MEMBER">{t("members.roleMember")}</option>
-                    <option value="ADMIN">{t("members.roleAdmin")}</option>
-                  </select>
+                    onChange={(val) => setLinkRole(val)}
+                    options={[
+                      { value: "MEMBER", label: t("members.roleMember") },
+                      { value: "ADMIN", label: t("members.roleAdmin") },
+                    ]}
+                    className="w-32"
+                    triggerClassName="h-9 text-xs font-semibold"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                     {t("members.expiresInLabel")}
                   </label>
-                  <select
+                  <CustomSelect
                     value={linkExpiresIn}
-                    onChange={(e) => setLinkExpiresIn(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-                  >
-                    <option value="1 day">1 day</option>
-                    <option value="7 days">{t("members.expires7Days")}</option>
-                    <option value="30 days">{t("members.expires30Days")}</option>
-                    <option value="Never">{t("members.expiresNever")}</option>
-                  </select>
+                    onChange={(val) => setLinkExpiresIn(val)}
+                    options={[
+                      { value: "1 day", label: "1 day" },
+                      { value: "7 days", label: t("members.expires7Days") },
+                      { value: "30 days", label: t("members.expires30Days") },
+                      { value: "Never", label: t("members.expiresNever") },
+                    ]}
+                    className="w-36"
+                    triggerClassName="h-9 text-xs font-semibold"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                     {t("members.maxUsesLabel")} ({t("common.optional")})
                   </label>
-                  <select
+                  <CustomSelect
                     value={linkMaxUses}
-                    onChange={(e) => setLinkMaxUses(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-                  >
-                    <option value="1">{t("members.uses1")}</option>
-                    <option value="5">5 uses</option>
-                    <option value="10">10 uses</option>
-                    <option value="Unlimited">{t("members.usesUnlimited")}</option>
-                  </select>
+                    onChange={(val) => setLinkMaxUses(val)}
+                    options={[
+                      { value: "1", label: t("members.uses1") },
+                      { value: "5", label: "5 uses" },
+                      { value: "10", label: "10 uses" },
+                      { value: "Unlimited", label: t("members.usesUnlimited") },
+                    ]}
+                    className="w-36"
+                    triggerClassName="h-9 text-xs font-semibold"
+                  />
                 </div>
 
                 <div>

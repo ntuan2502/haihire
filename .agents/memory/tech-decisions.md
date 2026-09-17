@@ -25,5 +25,9 @@ updated: 2026-08-27
   - **4. Context Providers (`frontend/src/components/providers/`)**: App-wide providers wrapping client state and caches (`query-provider.tsx`, `theme-provider.tsx`).
   - **5. Feature Modules (`frontend/src/components/[feature]/`)**: Domain-specific components organized by domain (`jobs/`, `candidates/`, `applications/`, `interviews/`, `careers/`).
   - **Rule**: Never leave loose component files at the root of `frontend/src/components/`.
+- **React Named Import Convention**:
+  - Always use named imports from `"react"` (e.g. `import { useState, useEffect, type ReactNode } from "react"`).
+  - Never use default `import React from "react"`, wildcard `import * as React from "react"`, or namespace prefixing `React.x` in application code.
+  - **Exception**: Files in `frontend/src/components/ui/` (pristine Shadcn CLI primitives) must NEVER be modified to preserve CLI overwrite compatibility.
 
 

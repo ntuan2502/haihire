@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  type DragEvent,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -35,7 +42,7 @@ function AddCandidatePageContent() {
   const { user, canEdit, loading: authLoading } = useAuth();
   const { t } = useI18n();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!authLoading && !canEdit) {
       router.replace("/dashboard/candidates");
     }
@@ -64,7 +71,7 @@ function AddCandidatePageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle Drag & Drop
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
@@ -73,7 +80,7 @@ function AddCandidatePageContent() {
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -81,7 +88,7 @@ function AddCandidatePageContent() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       processFile(e.target.files[0]);
     }
@@ -102,7 +109,7 @@ function AddCandidatePageContent() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 

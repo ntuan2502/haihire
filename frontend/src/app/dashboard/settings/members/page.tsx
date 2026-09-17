@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { useAuth } from "@/context/auth-context";
 import {
   useOrgMembers,
@@ -83,7 +83,7 @@ export default function MembersSettingsPage() {
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
   // Handle sending email invite
-  const handleSendInvite = (e: React.FormEvent) => {
+  const handleSendInvite = (e: FormEvent) => {
     e.preventDefault();
     setInviteSuccessMsg(null);
     setInviteErrorMsg(null);
@@ -200,7 +200,7 @@ export default function MembersSettingsPage() {
   };
 
   // Derive members from server query, with fallback to current user
-  const combinedMembers = React.useMemo(() => {
+  const combinedMembers = useMemo(() => {
     if (members && members.length > 0) {
       return members.map((m) => ({
         id: m.id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { ElementType } from "react";
+import type { ElementType, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -122,7 +122,7 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
 export default function SettingsLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const pathname = usePathname();
   const { t } = useI18n();

@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+} from "react";
 import {
   Dialog,
   DialogContent,
@@ -65,7 +72,7 @@ export function ApplyModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync selected job ID if changed from props
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedJobId) {
       setJobId(selectedJobId.toString());
     } else if (jobs.length > 0 && !jobId) {
@@ -73,7 +80,7 @@ export function ApplyModal({
     }
   }, [selectedJobId, jobs, jobId]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
       if (selected.type !== "application/pdf" && !selected.name.endsWith(".pdf")) {
@@ -85,7 +92,7 @@ export function ApplyModal({
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -99,7 +106,7 @@ export function ApplyModal({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!jobId || !lastName.trim() || !firstName.trim() || !candidateEmail.trim()) {
       setError(t("applications.fillRequiredFields"));

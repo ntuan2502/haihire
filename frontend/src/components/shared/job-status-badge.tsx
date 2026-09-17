@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import type { JobStatus } from "@/types";
 import { useI18n } from "@/i18n";
 

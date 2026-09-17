@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, type ElementType } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -112,7 +112,7 @@ export function Navbar({
   const navItems: {
     id: NavTab;
     label: string;
-    icon: React.ElementType;
+    icon: ElementType;
     implemented?: boolean;
   }[] = [
     { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard, implemented: true },

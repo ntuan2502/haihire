@@ -1,12 +1,13 @@
 "use client";
 
-import React, {
+import {
   createContext,
   useContext,
   useState,
   useEffect,
   useCallback,
   useMemo,
+  type ReactNode,
 } from "react";
 import {
   type SupportedLocale,
@@ -65,7 +66,7 @@ function detectBrowserLocale(): SupportedLocale {
   return DEFAULT_LOCALE;
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
+export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<SupportedLocale>(DEFAULT_LOCALE);
   const [isReady, setIsReady] = useState(false);
 

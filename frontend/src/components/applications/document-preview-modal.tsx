@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { FileText, Download, X } from "lucide-react";
 import type { CandidateDocument } from "@/types";
 import { getDocumentUrl } from "@/lib/api";

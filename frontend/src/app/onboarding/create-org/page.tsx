@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  Suspense,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -75,7 +81,7 @@ function OnboardingContent() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Auto-generate slug from organization name
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setOrgName(value);
 
@@ -91,7 +97,7 @@ function OnboardingContent() {
     setError(null);
   };
 
-  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
     setIsSlugManuallyEdited(true);
     setSlug(
       e.target.value
@@ -123,7 +129,7 @@ function OnboardingContent() {
   };
 
   // Handle Create Organization
-  const handleCreateOrg = async (e: React.FormEvent) => {
+  const handleCreateOrg = async (e: FormEvent) => {
     e.preventDefault();
     if (!orgName.trim()) {
       setError("Please enter your organization name.");

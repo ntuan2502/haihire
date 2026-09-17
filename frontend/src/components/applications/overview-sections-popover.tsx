@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { Check } from "lucide-react";
 import { useI18n } from "@/i18n";
@@ -28,7 +28,7 @@ interface OverviewSectionsPopoverProps {
   onClose: () => void;
   sections: OverviewSectionsState;
   onToggleSection: (key: keyof OverviewSectionsState) => void;
-  triggerRef: React.RefObject<HTMLElement | null>;
+  triggerRef: RefObject<HTMLElement | null>;
 }
 
 export function OverviewSectionsPopover({

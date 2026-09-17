@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import { useState, useMemo, Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -46,7 +46,7 @@ import type { JobStatus } from "@/types";
 import { getJobPublicUrl } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
-function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
+function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -64,7 +64,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
   const [jdModalOpen, setJdModalOpen] = useState(false);
 
   // Active tab based on pathname
-  const activeNavTab = React.useMemo(() => {
+  const activeNavTab = useMemo(() => {
     if (pathname.includes("/table")) return "table";
     if (pathname.includes("/pipeline")) return "pipeline";
     if (pathname.includes("/promote")) return "promote";
@@ -461,7 +461,7 @@ function JobDetailLayoutContent({ children }: { children: React.ReactNode }) {
 export default function JobDetailLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <AuthGuard>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, type Dispatch, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -73,7 +73,7 @@ export function JobList({
   // Toggle filter pill helper
   const toggleFilter = (
     list: string[],
-    setList: React.Dispatch<React.SetStateAction<string[]>>,
+    setList: Dispatch<SetStateAction<string[]>>,
     val: string,
   ) => {
     if (list.includes(val)) {

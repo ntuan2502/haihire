@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { useParams } from "next/navigation";
 import { useJob } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
@@ -967,7 +967,7 @@ function InterviewsPageContent() {
                     .map((p, idx, arr) => {
                       const prev = arr[idx - 1];
                       return (
-                        <React.Fragment key={p}>
+                        <Fragment key={p}>
                           {prev && p - prev > 1 && (
                             <span className="px-1 text-slate-400">...</span>
                           )}
@@ -982,7 +982,7 @@ function InterviewsPageContent() {
                           >
                             {p}
                           </button>
-                        </React.Fragment>
+                        </Fragment>
                       );
                     })}
                 </div>

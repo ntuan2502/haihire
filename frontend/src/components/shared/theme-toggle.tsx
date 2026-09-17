@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Moon, Sun, Laptop, ChevronDown, Check } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useI18n } from "@/i18n";

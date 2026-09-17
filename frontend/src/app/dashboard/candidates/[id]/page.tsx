@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, useRef, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -103,7 +103,7 @@ function CandidateDetailPageContent() {
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
   const [docToDelete, setDocToDelete] = useState<CandidateDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
-  const docInputRef = React.useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
 
   const loading = jobsLoading || appsLoading;
 
@@ -225,7 +225,7 @@ function CandidateDetailPageContent() {
   }
 
   const handleDocumentUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: ChangeEvent<HTMLInputElement>,
   ) => {
     if (e.target.files && e.target.files[0] && primaryApp) {
       const file = e.target.files[0];

@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useRef, useId } from "react";
+import {
+  useState,
+  useRef,
+  useId,
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePublicJob, useCreateApplicationMutation } from "@/hooks/use-queries";
@@ -61,16 +68,16 @@ export default function CareerJobSlugPage() {
   const fileInputId = useId();
 
   // Handle file drop & select
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     validateAndSetFile(file);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     validateAndSetFile(file);
@@ -97,7 +104,7 @@ export default function CareerJobSlugPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 

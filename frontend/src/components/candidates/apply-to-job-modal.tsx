@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { X, Building2, Check, Loader2 } from "lucide-react";
 import { useCreateApplicationMutation } from "@/hooks/use-queries";
 import { useI18n } from "@/i18n";

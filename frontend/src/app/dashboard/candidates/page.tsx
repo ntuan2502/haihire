@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
@@ -105,7 +105,7 @@ function CandidatesPageContent() {
   const [drawerDocToDelete, setDrawerDocToDelete] =
     useState<CandidateDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
-  const drawerDocInputRef = React.useRef<HTMLInputElement>(null);
+  const drawerDocInputRef = useRef<HTMLInputElement>(null);
   const deleteDocMutation = useDeleteDocumentMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
 

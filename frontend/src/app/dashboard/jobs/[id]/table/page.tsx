@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -23,7 +23,7 @@ function JobTablePageContent() {
   const { data: allApplications = [], isLoading: appsLoading } =
     useAllApplications();
 
-  const jobApplications = React.useMemo(() => {
+  const jobApplications = useMemo(() => {
     if (!jobId) return [];
     return allApplications.filter((a) => String(a.jobId) === String(jobId));
   }, [allApplications, jobId]);

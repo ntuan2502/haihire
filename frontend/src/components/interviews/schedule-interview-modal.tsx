@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -155,7 +155,7 @@ export function ScheduleInterviewModal({
     }
   };
 
-  const handleSaveInterview = async (e: React.FormEvent) => {
+  const handleSaveInterview = async (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
 

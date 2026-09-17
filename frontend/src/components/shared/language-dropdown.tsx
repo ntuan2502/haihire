@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 import { cn } from "cn";

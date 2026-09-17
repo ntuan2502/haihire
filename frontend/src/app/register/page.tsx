@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import { useState, useEffect, Suspense, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
@@ -38,7 +38,7 @@ function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
 
   // If already logged in, block access to register page and redirect immediately
-  React.useEffect(() => {
+  useEffect(() => {
     if (!authLoading && isAuthenticated) {
       if (redirectUrl) {
         router.replace(redirectUrl);
@@ -61,7 +61,7 @@ function RegisterForm() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) {
       setError(t("auth.errorRegisterRequired"));

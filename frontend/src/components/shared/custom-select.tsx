@@ -1,13 +1,19 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  type ReactNode,
+  type ComponentType,
+} from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "cn";
 
 export interface CustomSelectOption<T extends string = string> {
   value: T;
-  label: React.ReactNode;
-  icon?: React.ComponentType<{ className?: string }>;
+  label: ReactNode;
+  icon?: ComponentType<{ className?: string }>;
   disabled?: boolean;
 }
 
@@ -21,7 +27,7 @@ export interface CustomSelectProps<T extends string = string> {
   popupClassName?: string;
   align?: "left" | "right";
   disabled?: boolean;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
   variant?: "default" | "landing";
   size?: "sm" | "default";
   id?: string;

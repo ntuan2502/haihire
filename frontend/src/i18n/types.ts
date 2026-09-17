@@ -563,6 +563,7 @@ export interface TranslationSchema {
     displayNameHint: string;
     gender: string;
     dateOfBirth: string;
+    notes: string;
     notSpecified: string;
     male: string;
     female: string;

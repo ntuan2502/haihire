@@ -37,6 +37,7 @@ import {
   Download,
   Loader2,
   UploadCloud,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -515,11 +516,22 @@ function CandidateDetailPageContent() {
             <div>
               <span className="text-slate-400 text-[11px] flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {t("candidates.columns.added")}
+                {t("common.updated")}
               </span>
               <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">
                 {candidateUpdated}
               </span>
+            </div>
+
+            {/* Notes */}
+            <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
+                <MessageSquare className="h-3 w-3" />
+                {t("candidates.notes")}
+              </span>
+              <p className="text-xs text-slate-700 dark:text-slate-300 mt-1.5 bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
+                {parsedNotes.customNotes || candidate?.notes || "—"}
+              </p>
             </div>
           </div>
         </div>
@@ -642,6 +654,13 @@ function CandidateDetailPageContent() {
                           showSectionHeader={false}
                           hideIfEmpty={allInterviews.length === 0}
                         />
+
+                        {app.notes && (
+                          <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 p-2.5 rounded-xl flex items-start gap-2">
+                            <MessageSquare className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="line-clamp-2">{app.notes}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

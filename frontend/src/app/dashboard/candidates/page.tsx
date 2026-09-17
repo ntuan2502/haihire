@@ -49,6 +49,7 @@ import {
   Download,
   Trash2,
   ArrowLeft,
+  MessageSquare,
 } from "lucide-react";
 
 import {
@@ -761,9 +762,20 @@ function CandidatesPageContent() {
                         </td>
                       )}
 
-                      {/* Quick notes - Empty as requested */}
+                      {/* Quick notes */}
                       {visibleColumns.quickNotes && (
-                        <td className="py-4 px-5"></td>
+                        <td className="py-4 px-5 max-w-xs">
+                          {candidate.notes ? (
+                            <span
+                              className="inline-block text-xs text-slate-600 dark:text-slate-300 truncate max-w-[220px]"
+                              title={candidate.notes}
+                            >
+                              {candidate.notes}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 dark:text-slate-600">—</span>
+                          )}
+                        </td>
                       )}
                     </tr>
                   ))}
@@ -1000,6 +1012,17 @@ function CandidatesPageContent() {
                         )}
                       </span>
                     </div>
+
+                    {/* Notes */}
+                    <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
+                        <MessageSquare className="h-3 w-3" />
+                        {t("candidates.notes")}
+                      </span>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
+                        {selectedCandidateDetails.customNotes || selectedCandidate.notes || "—"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1141,6 +1164,13 @@ function CandidatesPageContent() {
                                   showSectionHeader={false}
                                   hideIfEmpty={allInterviews.length === 0}
                                 />
+
+                                {app.notes && (
+                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 p-2.5 rounded-xl flex items-start gap-2">
+                                    <MessageSquare className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
+                                    <span className="line-clamp-2">{app.notes}</span>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}

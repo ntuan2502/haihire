@@ -312,15 +312,33 @@ function JobPipelinePageContent() {
         selectedCandidate.notes,
         selectedCandidate.candidateName,
       );
-      setCandidateNotesList(parsed.customNotes ? [parsed.customNotes] : []);
+      const noteText = parsed.customNotes || selectedCandidate.notes || "";
+      const items = noteText
+        ? noteText.split(/\s*\|\s*|\n+/).filter(Boolean)
+        : [];
+      setCandidateNotesList(items);
       setCandidateNoteInput("");
+    } else {
+      setCandidateNotesList([]);
     }
   }, [selectedCandidate]);
 
-  const handleAddNote = () => {
-    if (!candidateNoteInput.trim()) return;
-    setCandidateNotesList((prev) => [...prev, candidateNoteInput.trim()]);
+  const handleAddNote = async () => {
+    if (!candidateNoteInput.trim() || !selectedCandidate) return;
+    const trimmed = candidateNoteInput.trim();
+    const updated = [...candidateNotesList, trimmed];
+    setCandidateNotesList(updated);
     setCandidateNoteInput("");
+    try {
+      await updateCandidateMutation.mutateAsync({
+        id: selectedCandidate.id,
+        data: {
+          notes: updated.join(" | "),
+        },
+      });
+    } catch (err) {
+      console.error("Failed to save pipeline candidate note:", err);
+    }
   };
 
   // Handle stage change for selected candidate

@@ -60,6 +60,7 @@ import {
   formatRelativeTime,
   formatDate,
   getStageInfo,
+  parseCandidateNotes,
   parseCandidateDocuments,
   fixUtf8String,
 } from "@/lib/utils";
@@ -122,6 +123,41 @@ export function ApplicationsDataTable({
   const allScheduledInterviews = useMemo(() => {
     return getInterviewsFromApplication(currentApp);
   }, [currentApp]);
+
+  useEffect(() => {
+    if (currentApp?.notes) {
+      const { customNotes } = parseCandidateNotes(
+        currentApp.notes,
+        currentApp.candidateName,
+      );
+      const noteText = customNotes || currentApp.notes;
+      const items = noteText.split(/\s*\|\s*|\n+/).filter(Boolean);
+      setDrawerNotesList(items);
+    } else {
+      setDrawerNotesList([]);
+    }
+  }, [currentApp?.notes, currentApp?.candidateName]);
+
+  const handleAddDrawerNote = async () => {
+    if (!drawerNoteInput.trim() || !currentApp) return;
+    const trimmed = drawerNoteInput.trim();
+    const updated = [trimmed, ...drawerNotesList];
+    setDrawerNotesList(updated);
+    setDrawerNoteInput("");
+    try {
+      await updateCandidateMutation.mutateAsync({
+        id: currentApp.id,
+        data: {
+          notes: updated.join(" | "),
+        },
+      });
+      setSelectedApp((prev) =>
+        prev ? { ...prev, notes: updated.join(" | ") } : null,
+      );
+    } catch (err) {
+      console.error("Failed to save drawer application note:", err);
+    }
+  };
 
   const handleCancelInterview = async (interviewId?: string) => {
     if (!currentApp) return;
@@ -1150,15 +1186,7 @@ export function ApplicationsDataTable({
                             <div className="flex justify-end">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  if (drawerNoteInput.trim()) {
-                                    setDrawerNotesList((prev) => [
-                                      drawerNoteInput.trim(),
-                                      ...prev,
-                                    ]);
-                                    setDrawerNoteInput("");
-                                  }
-                                }}
+                                onClick={handleAddDrawerNote}
                                 className="h-7 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
                               >
                                 {t("candidates.addNote")}
@@ -1273,9 +1301,8 @@ export function ApplicationsDataTable({
                           value={drawerNoteInput}
                           onChange={(e) => setDrawerNoteInput(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && drawerNoteInput.trim()) {
-                              setDrawerNotesList((prev) => [...prev, drawerNoteInput.trim()]);
-                              setDrawerNoteInput("");
+                            if (e.key === "Enter") {
+                              handleAddDrawerNote();
                             }
                           }}
                           className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
@@ -1283,12 +1310,7 @@ export function ApplicationsDataTable({
                         {drawerNoteInput.trim() && (
                           <Button
                             size="sm"
-                            onClick={() => {
-                              if (drawerNoteInput.trim()) {
-                                setDrawerNotesList((prev) => [...prev, drawerNoteInput.trim()]);
-                                setDrawerNoteInput("");
-                              }
-                            }}
+                            onClick={handleAddDrawerNote}
                             className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                           >
                             {t("candidates.addNote")}

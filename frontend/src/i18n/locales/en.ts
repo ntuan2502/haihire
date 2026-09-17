@@ -565,6 +565,7 @@ export const en: TranslationSchema = {
     displayNameHint: "(optional — overrides default name format)",
     gender: "Gender",
     dateOfBirth: "Date of Birth",
+    notes: "Notes",
     notSpecified: "Not specified",
     male: "Male",
     female: "Female",

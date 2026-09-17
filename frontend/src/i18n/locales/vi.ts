@@ -565,6 +565,7 @@ export const vi: TranslationSchema = {
     displayNameHint: "(tùy chọn — ghi đè định dạng tên mặc định)",
     gender: "Giới tính",
     dateOfBirth: "Ngày sinh",
+    notes: "Ghi chú",
     notSpecified: "Không xác định",
     male: "Nam",
     female: "Nữ",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -54,6 +54,7 @@ import {
   formatDate,
   isValidUuid,
   getCandidateDisplayName,
+  parseCandidateNotes,
   parseCandidateDocuments,
   fixUtf8String,
 } from "@/lib/utils";
@@ -148,6 +149,35 @@ function ApplicationDetailPageContent() {
     }
     return allDocs;
   }, [app, applications]);
+
+  useEffect(() => {
+    if (app?.notes) {
+      const { customNotes } = parseCandidateNotes(app.notes, app.candidateName);
+      const noteText = customNotes || app.notes;
+      const items = noteText.split(/\s*\|\s*|\n+/).filter(Boolean);
+      setNotesList(items);
+    } else {
+      setNotesList([]);
+    }
+  }, [app?.notes, app?.candidateName]);
+
+  const handleAddNote = async () => {
+    if (!noteInput.trim() || !app) return;
+    const trimmed = noteInput.trim();
+    const updated = [...notesList, trimmed];
+    setNotesList(updated);
+    setNoteInput("");
+    try {
+      await updateCandidateMutation.mutateAsync({
+        id: app.id,
+        data: {
+          notes: updated.join(" | "),
+        },
+      });
+    } catch (err) {
+      console.error("Failed to save application note:", err);
+    }
+  };
 
   const handleDownloadDoc = async (
     url: string,
@@ -581,9 +611,8 @@ function ApplicationDetailPageContent() {
                       value={noteInput}
                       onChange={(e) => setNoteInput(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && noteInput.trim()) {
-                          setNotesList((prev) => [...prev, noteInput.trim()]);
-                          setNoteInput("");
+                        if (e.key === "Enter") {
+                          handleAddNote();
                         }
                       }}
                       className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
@@ -591,12 +620,7 @@ function ApplicationDetailPageContent() {
                     {noteInput.trim() && (
                       <Button
                         size="sm"
-                        onClick={() => {
-                          if (noteInput.trim()) {
-                            setNotesList((prev) => [...prev, noteInput.trim()]);
-                            setNoteInput("");
-                          }
-                        }}
+                        onClick={handleAddNote}
                         className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                       >
                         {t("common.save")}
@@ -713,9 +737,8 @@ function ApplicationDetailPageContent() {
                   value={noteInput}
                   onChange={(e) => setNoteInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && noteInput.trim()) {
-                      setNotesList((prev) => [...prev, noteInput.trim()]);
-                      setNoteInput("");
+                    if (e.key === "Enter") {
+                      handleAddNote();
                     }
                   }}
                   className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
@@ -723,12 +746,7 @@ function ApplicationDetailPageContent() {
                 {noteInput.trim() && (
                   <Button
                     size="sm"
-                    onClick={() => {
-                      if (noteInput.trim()) {
-                        setNotesList((prev) => [...prev, noteInput.trim()]);
-                        setNoteInput("");
-                      }
-                    }}
+                    onClick={handleAddNote}
                     className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl cursor-pointer"
                   >
                     {t("common.save")}

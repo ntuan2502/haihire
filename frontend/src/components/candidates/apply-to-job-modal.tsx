@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Building2, Check, Loader2 } from "lucide-react";
 import { useCreateApplicationMutation } from "@/hooks/use-queries";
 import { useI18n } from "@/i18n";
+import { getJobTypeLabel } from "@/lib/jobs";
 import type { Job, Application } from "@/types";
 
 interface ApplyToJobModalProps {
@@ -126,16 +127,7 @@ export function ApplyToJobModal({
               const isSubmitting = submittingJobId === job.id;
               const isSuccess = successJobId === job.id;
 
-              const jobTypeLabel =
-                job.type === "FULL_TIME"
-                  ? t("jobs.fullTime")
-                  : job.type === "PART_TIME"
-                    ? t("jobs.partTime")
-                    : job.type === "CONTRACT"
-                      ? t("jobs.contract")
-                      : job.type === "INTERNSHIP"
-                        ? t("jobs.internship")
-                        : job.type;
+              const jobTypeLabel = getJobTypeLabel(job.type, t);
 
               const jobTitle = `${job.title} (${jobTypeLabel})`;
 

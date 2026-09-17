@@ -59,6 +59,7 @@ import {
   parseCandidateDocuments,
   fixUtf8String,
 } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import { useI18n } from "@/i18n";
 
 function ApplicationDetailPageContent() {
@@ -289,7 +290,7 @@ function ApplicationDetailPageContent() {
   const candidateEmail = app?.candidateEmail || "—";
   const candidatePhone = app?.candidatePhone || "";
   const jobTitle = job
-    ? `${job.title} (${job.type === "FULL_TIME" ? t("jobs.fullTime") : job.type === "PART_TIME" ? t("jobs.partTime") : job.type})`
+    ? `${job.title} (${getJobTypeLabel(job.type, t)})`
     : app?.jobId
       ? `${t("jobs.jobTitle")} #${app.jobId}`
       : t("candidates.role");

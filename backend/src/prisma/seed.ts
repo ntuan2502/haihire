@@ -657,8 +657,8 @@ export async function runSeed(): Promise<void> {
     "Global Remote",
   ];
   const WORKPLACES = ["Hybrid", "Remote", "On-site"];
-  const JOB_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE"] as const;
-  const EXP_LEVELS = ["Junior", "Mid-level", "Senior", "Lead", "Principal"];
+  const JOB_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"] as const;
+  const EXP_LEVELS = ["Entry-level", "Mid-level", "Senior-level", "Lead", "Executive"];
   const SALARY_RANGES = [
     "$1,200 - $1,800 / month",
     "$1,800 - $2,800 / month",

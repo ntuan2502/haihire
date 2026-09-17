@@ -64,6 +64,7 @@ import {
   parseCandidateDocuments,
   fixUtf8String,
 } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import type { Job, Application, ApplicationStage, CandidateDocument } from "@/types";
 import { useI18n } from "@/i18n";
 import { useAuth } from "@/context/auth-context";
@@ -739,7 +740,7 @@ export function ApplicationsDataTable({
                             <span>
                               {job?.title || t("candidates.role")}{" "}
                               <span className="text-slate-400">
-                                ({job?.type === "FULL_TIME" ? t("jobs.fullTime") : job?.type === "PART_TIME" ? t("jobs.partTime") : job?.type || t("jobs.fullTime")})
+                                ({getJobTypeLabel(job?.type, t)})
                               </span>
                             </span>
                           </span>

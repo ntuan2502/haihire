@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { JobStatus } from "@/types";
 import { getJobPublicUrl } from "@/lib/utils";
+import { getJobTypeLabel } from "@/lib/jobs";
 import { useI18n } from "@/i18n";
 
 function JobDetailLayoutContent({ children }: { children: ReactNode }) {
@@ -128,14 +129,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
     );
   }
 
-  const jobTypeLabel =
-    job.type === "FULL_TIME"
-      ? t("jobs.fullTime")
-      : job.type === "PART_TIME"
-        ? t("jobs.partTime")
-        : job.type === "CONTRACT"
-          ? t("jobs.contract")
-          : t("jobs.internship");
+  const jobTypeLabel = getJobTypeLabel(job.type, t);
 
   return (
     <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans overflow-hidden transition-colors duration-200">

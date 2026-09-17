@@ -3,8 +3,8 @@
 import React, { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
@@ -13,7 +13,7 @@ import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   ArrowLeft,
   Mail,
@@ -46,7 +46,7 @@ import {
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { PIPELINE_STAGES } from "@/lib/stages";
-import { StageBadge } from "@/components/ui/stage-badge";
+import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl } from "@/lib/api";
 import {
   getInitials,

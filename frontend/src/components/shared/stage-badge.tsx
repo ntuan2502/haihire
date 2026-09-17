@@ -1,7 +1,10 @@
+"use client";
+
+import React from "react";
 import type { ApplicationStage } from "@/types";
 import { useStageInfo } from "@/lib/stages";
 
-interface StageBadgeProps {
+export interface StageBadgeProps {
   stage?: ApplicationStage | string | null;
   className?: string;
 }

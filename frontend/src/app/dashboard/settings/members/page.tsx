@@ -12,7 +12,7 @@ import {
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CustomSelect } from "@/components/ui/custom-select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import {
   UserPlus,
   Link2,

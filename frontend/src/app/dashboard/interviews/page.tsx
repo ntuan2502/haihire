@@ -2,19 +2,19 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar } from "@/components/layout";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect } from "@/components/ui/custom-select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import {
   useJobs,
   useAllApplications,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   Calendar,
   CalendarDays,

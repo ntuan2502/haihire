@@ -3,8 +3,10 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useI18n } from "@/i18n";
+import { LoadingSpinner } from "./loading-spinner";
 
-interface AuthGuardProps {
+export interface AuthGuardProps {
   children: React.ReactNode;
   requireOrg?: boolean;
 }
@@ -12,6 +14,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   const router = useRouter();
   const { user, isAuthenticated, loading, refreshUser } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -30,14 +33,7 @@ export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   }, [isAuthenticated, user, loading, requireOrg, router]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          <p className="text-xs text-slate-500 font-medium">Loading workspace...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text={t("common.loading") || "Loading workspace..."} />;
   }
 
   if (!isAuthenticated) {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import {
   LayoutDashboard,
   Briefcase,
@@ -29,7 +29,7 @@ import {
   MessageSquareWarning,
   BarChart3,
 } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
 import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
 import {
@@ -37,8 +37,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { LanguageDropdown } from "./language-dropdown";
+} from "@/components/ui/dropdown-menu";
+import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { cn, getInitials } from "@/lib/utils";
 import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 

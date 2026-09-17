@@ -3,7 +3,7 @@
 import React, { Suspense } from "react";
 import { useParams } from "next/navigation";
 import { useJob } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { JobWizardEditor } from "@/components/jobs/job-wizard-editor";
 
 function JobSettingsPageContent() {

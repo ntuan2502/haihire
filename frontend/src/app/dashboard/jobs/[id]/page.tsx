@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 
 function JobDetailRedirect() {
   const params = useParams();

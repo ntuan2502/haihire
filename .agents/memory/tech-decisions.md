@@ -18,3 +18,12 @@ updated: 2026-08-27
 - **Shadcn UI Installation Convention**:
   - **Official CLI**: Always initialize and add Shadcn components directly from the official Shadcn CLI (`pnpx shadcn@latest init`, `pnpx shadcn@latest add <component>`).
   - **No Manual Components**: Never manually write/create Shadcn UI primitive files; always pull them directly from the official registry.
+- **Component Architecture & Shadcn Isolation (5-Layer Modular Structure)**:
+  - **1. UI Primitives (`frontend/src/components/ui/`)**: Exclusively reserved for pristine components generated via `pnpx shadcn add <component>`. Never place proprietary or custom domain components here.
+  - **2. Shared Design System (`frontend/src/components/shared/`)**: Proprietary reusable controls, custom selects, spinners, badges, and guards (`custom-select.tsx`, `loading-spinner.tsx`, `job-status-badge.tsx`, `stage-badge.tsx`, `language-dropdown.tsx`, `theme-toggle.tsx`, `auth-guard.tsx`).
+  - **3. Layout Components (`frontend/src/components/layout/`)**: Application shell and global navigation structures (`navbar.tsx`, headers, sidebars, footers).
+  - **4. Context Providers (`frontend/src/components/providers/`)**: App-wide providers wrapping client state and caches (`query-provider.tsx`, `theme-provider.tsx`).
+  - **5. Feature Modules (`frontend/src/components/[feature]/`)**: Domain-specific components organized by domain (`jobs/`, `candidates/`, `applications/`, `interviews/`, `careers/`).
+  - **Rule**: Never leave loose component files at the root of `frontend/src/components/`.
+
+

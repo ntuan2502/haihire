@@ -3,10 +3,10 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useAllPublicJobs } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
-import { CustomSelect } from "@/components/ui/custom-select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import {
   Briefcase,
   Building2,

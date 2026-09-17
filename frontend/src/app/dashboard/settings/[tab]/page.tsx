@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useI18n, SUPPORTED_LOCALES } from "@/i18n";
 import type { SupportedLocale } from "@/i18n/config";
-import { CustomSelect } from "@/components/ui/custom-select";
+import { CustomSelect } from "@/components/shared/custom-select";
 
 export default function SubSettingsPage() {
   const params = useParams();

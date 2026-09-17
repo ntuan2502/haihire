@@ -4,7 +4,7 @@ import React from "react";
 import type { JobStatus } from "@/types";
 import { useI18n } from "@/i18n";
 
-interface JobStatusBadgeProps {
+export interface JobStatusBadgeProps {
   status: JobStatus | string;
   className?: string;
 }

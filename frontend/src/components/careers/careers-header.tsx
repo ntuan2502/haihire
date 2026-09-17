@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { LanguageDropdown } from "@/components/language-dropdown";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageDropdown } from "@/components/shared/language-dropdown";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { useI18n } from "@/i18n";
 import {
   Building2,

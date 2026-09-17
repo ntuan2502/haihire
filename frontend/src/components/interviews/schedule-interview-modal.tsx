@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect } from "@/components/ui/custom-select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import {
   Calendar,
   Clock,

@@ -40,3 +40,21 @@ updated: 2026-09-17
   2. Add the Vietnamese translation in `frontend/src/i18n/locales/vi.ts`.
   3. Add the English translation in `frontend/src/i18n/locales/en.ts`.
   4. Access via `t("key.path")` in the component or page. Direct text hardcoding is strictly forbidden.
+
+## Component Organization & Directory Conventions (MANDATORY)
+- **Shadcn Isolation (`frontend/src/components/ui/`)**:
+  - Reserved strictly for pristine Shadcn primitives added via `pnpx shadcn add`.
+  - Never add custom, domain, or proprietary components into `components/ui/`.
+- **ATS Shared Components (`frontend/src/components/shared/`)**:
+  - All proprietary shared components, wrappers, custom selects, spinners, badges, and controls must reside in `frontend/src/components/shared/`.
+  - If a Shadcn primitive requires deep customization, wrap or extend it inside `components/shared/` instead of directly modifying the pristine registry file in `components/ui/`.
+- **Layout Components (`frontend/src/components/layout/`)**:
+  - Application shell and navigation components (`navbar.tsx`, headers, footers, sidebars).
+- **Application Context Providers (`frontend/src/components/providers/`)**:
+  - App-level providers (`query-provider.tsx`, `theme-provider.tsx`).
+- **Zero Loose Root Components**:
+  - Never place loose `.tsx` files directly at `frontend/src/components/` root. Every component belongs in `ui/`, `shared/`, `layout/`, `providers/`, or a domain feature folder.
+- **Dropdown & Select Conventions**:
+  - Zero native HTML `<select>` elements. Use `CustomSelect` (`@/components/shared/custom-select`) or styled Base-UI/Shadcn primitives with `rounded-xl` trigger, rotating chevron, and `rounded-2xl backdrop-blur-xl` popup.
+
+

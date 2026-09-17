@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar } from "@/components/layout";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { useAuth } from "@/context/auth-context";
 import { useJobs, useAllApplications } from "@/hooks/use-queries";

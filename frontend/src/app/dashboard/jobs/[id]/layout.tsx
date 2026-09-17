@@ -3,8 +3,8 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useRouter, usePathname } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJob,
@@ -12,7 +12,7 @@ import {
   useAllApplications,
   useUpdateJobMutation,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   Briefcase,
   ArrowLeft,
@@ -34,7 +34,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { JobStatusBadge } from "@/components/ui/job-status-badge";
+import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

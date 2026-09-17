@@ -1,5 +1,8 @@
+"use client";
 
-interface LoadingSpinnerProps {
+import React from "react";
+
+export interface LoadingSpinnerProps {
   text?: string;
   fullScreen?: boolean;
 }
@@ -10,10 +13,11 @@ export function LoadingSpinner({
 }: LoadingSpinnerProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center ${fullScreen
+      className={`flex flex-col items-center justify-center ${
+        fullScreen
           ? "min-h-screen bg-slate-50 dark:bg-slate-950"
           : "min-h-[50vh] py-16"
-        }`}
+      }`}
     >
       <div className="flex flex-col items-center gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent shadow-xs" />

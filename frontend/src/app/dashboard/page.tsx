@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar, type NavTab } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar, type NavTab } from "@/components/layout";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -12,7 +12,7 @@ import {
   useAllApplications,
   useCreateJobMutation,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   Briefcase,
   Users,
@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { getInitials, formatRelativeTime } from "@/lib/utils";
 import { usePipelineStages } from "@/lib/stages";
-import { StageBadge } from "@/components/ui/stage-badge";
+import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
 import {
   parseAllInterviewsFromNotes,

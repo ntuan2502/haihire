@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
@@ -14,7 +14,7 @@ import {
   useDeleteDocumentMutation,
   useUpdateCandidateMutation,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-modal";
 import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
@@ -53,7 +53,7 @@ import { CandidateInterviewsList } from "@/components/interviews/candidate-inter
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
-import { StageBadge } from "@/components/ui/stage-badge";
+import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
 import { useI18n } from "@/i18n";
 

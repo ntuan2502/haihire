@@ -4,7 +4,7 @@ import React, { useState, useRef, useId } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePublicJob, useCreateApplicationMutation } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CareersHeader } from "@/components/careers/careers-header";

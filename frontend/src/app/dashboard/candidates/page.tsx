@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar } from "@/components/layout";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { useAuth } from "@/context/auth-context";
@@ -24,7 +24,7 @@ import {
   useUpdateCandidateMutation,
 } from "@/hooks/use-queries";
 import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
 import {
   Search,
@@ -67,7 +67,7 @@ import { ScheduleInterviewModal } from "@/components/interviews/schedule-intervi
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { parseAllInterviewsFromNotes, removeInterviewFromNotes } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
-import { StageBadge } from "@/components/ui/stage-badge";
+import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
 
 type SortField = "name" | "email" | "phone" | "applications" | "added";

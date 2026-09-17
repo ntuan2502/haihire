@@ -10,7 +10,7 @@ import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   Search,
   ArrowUpDown,
@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect } from "@/components/ui/custom-select";
+import { CustomSelect } from "@/components/shared/custom-select";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
@@ -50,7 +50,7 @@ import {
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { PIPELINE_STAGES, usePipelineStages } from "@/lib/stages";
-import { StageBadge } from "@/components/ui/stage-badge";
+import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import {

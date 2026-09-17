@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Job, Application, ApplicationStage } from "@/types";
-import { JobStatusBadge } from "@/components/ui/job-status-badge";
+import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import { getJobPublicUrl } from "@/lib/utils";

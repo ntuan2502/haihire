@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { AuthGuard } from "@/components/auth-guard";
+import { AuthGuard } from "@/components/shared/auth-guard";
 import { api } from "@/lib/api";
 import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";

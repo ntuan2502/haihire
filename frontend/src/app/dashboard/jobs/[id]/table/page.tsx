@@ -8,7 +8,7 @@ import {
   useJobs,
   useAllApplications,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
 
 function JobTablePageContent() {

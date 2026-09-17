@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Sparkles, ArrowRight, Check, Briefcase } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
-import { LanguageDropdown } from "@/components/language-dropdown";
+import { LanguageDropdown } from "@/components/shared/language-dropdown";
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { AuthGuard } from "@/components/auth-guard";
-import { Navbar } from "@/components/navbar";
+import { AuthGuard } from "@/components/shared/auth-guard";
+import { Navbar } from "@/components/layout";
 import { JobList } from "@/components/jobs/job-list";
 import { ApplyModal } from "@/components/applications/apply-modal";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
@@ -14,7 +14,7 @@ import {
   useCreateJobMutation,
   useDeleteJobMutation,
 } from "@/hooks/use-queries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import type { Job } from "@/types";
 
 function JobsPageContent() {

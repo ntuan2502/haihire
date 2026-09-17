@@ -1,11 +1,5 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
 import type { Application, CandidateDocument } from "@/types";
 import { removeInterviewFromNotes } from "@/lib/interviews";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 /**
  * Format a date into consistent string formats (e.g. "08/27/2026", "8/27/2026", "Aug 27, 2026")

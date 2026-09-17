@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 export interface CustomSelectOption<T extends string = string> {
   value: T;

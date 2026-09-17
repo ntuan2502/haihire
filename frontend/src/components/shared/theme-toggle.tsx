@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Moon, Sun, Laptop, ChevronDown, Check } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useI18n } from "@/i18n";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 export interface ThemeToggleProps {
   variant?: "landing" | "default";

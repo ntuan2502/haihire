@@ -39,7 +39,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
-import { cn, getInitials } from "@/lib/utils";
+import { cn } from "cn";
+import { getInitials } from "@/lib/utils";
 import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 
 export type NavTab =

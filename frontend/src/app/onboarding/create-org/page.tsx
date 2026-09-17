@@ -21,7 +21,7 @@ import {
   Sun,
   Globe,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 import type { Organization } from "@/types";
 import { useI18n } from "@/i18n";
 

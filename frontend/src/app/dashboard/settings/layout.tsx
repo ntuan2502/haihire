@@ -21,7 +21,7 @@ import {
   User as UserIcon,
   Lock,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 import { useI18n } from "@/i18n";
 
 interface NavItem {

@@ -388,6 +388,10 @@ export interface TranslationSchema {
       maxSalary: string;
       currency: string;
       perPeriod: string;
+      selectCurrency: string;
+      selectSalaryPer: string;
+      currencyError: string;
+      salaryPerError: string;
       periods: {
         year: string;
         month: string;

@@ -141,6 +141,35 @@ interface JobWizardEditorProps {
   initialJob?: Job | null;
 }
 
+function parseSalaryRange(salaryRange?: string | null) {
+  if (!salaryRange) {
+    return { min: "", max: "", currency: null, per: null, negotiable: false };
+  }
+  if (salaryRange.toLowerCase().includes("negotiable")) {
+    return { min: "", max: "", currency: null, per: null, negotiable: true };
+  }
+  const parts = salaryRange.split("-");
+  const min = parts.length >= 2 ? parts[0].replace(/[^0-9]/g, "").trim() : "";
+  const max = parts.length >= 2 ? parts[1].replace(/[^0-9]/g, "").trim() : "";
+
+  let parsedCurrency: string | null = null;
+  const upper = salaryRange.toUpperCase();
+  if (upper.includes("VND") || upper.includes("₫")) parsedCurrency = "VND";
+  else if (upper.includes("EUR") || upper.includes("€")) parsedCurrency = "EUR";
+  else if (upper.includes("NOK")) parsedCurrency = "NOK";
+  else if (upper.includes("GBP") || upper.includes("£")) parsedCurrency = "GBP";
+  else if (upper.includes("SGD")) parsedCurrency = "SGD";
+  else if (upper.includes("USD") || upper.includes("$")) parsedCurrency = "USD";
+
+  let parsedPer: string | null = null;
+  const lower = salaryRange.toLowerCase();
+  if (lower.includes("month") || lower.includes("tháng")) parsedPer = "Month";
+  else if (lower.includes("hour") || lower.includes("giờ")) parsedPer = "Hour";
+  else if (lower.includes("year") || lower.includes("năm")) parsedPer = "Year";
+
+  return { min, max, currency: parsedCurrency, per: parsedPer, negotiable: false };
+}
+
 export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const { t } = useI18n();
   const router = useRouter();
@@ -158,7 +187,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
   // STEP 1: Job Details State
   const [jobTitle, setJobTitle] = useState(initialJob?.title || "");
-  const [department, setDepartment] = useState(initialJob?.department || "General");
+  const [department, setDepartment] = useState(initialJob?.department || "");
   const [location, setLocation] = useState(initialJob?.location || "");
   const [postalCode, setPostalCode] = useState(initialJob?.postalCode || "");
   const [employmentType, setEmploymentType] = useState<JobType | null>(
@@ -172,14 +201,13 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   );
 
   // Compensation state
+  const initialSalary = parseSalaryRange(initialJob?.salaryRange);
   const [compensationOpen, setCompensationOpen] = useState(!!initialJob?.salaryRange);
-  const [payNegotiable, setPayNegotiable] = useState(
-    !!initialJob?.salaryRange?.toLowerCase().includes("negotiable"),
-  );
-  const [minSalary, setMinSalary] = useState("");
-  const [maxSalary, setMaxSalary] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [salaryPer, setSalaryPer] = useState("Year");
+  const [payNegotiable, setPayNegotiable] = useState(initialSalary.negotiable);
+  const [minSalary, setMinSalary] = useState(initialSalary.min);
+  const [maxSalary, setMaxSalary] = useState(initialSalary.max);
+  const [currency, setCurrency] = useState<string | null>(initialSalary.currency);
+  const [salaryPer, setSalaryPer] = useState<string | null>(initialSalary.per);
 
   // Description & Requirements
   const [description, setDescription] = useState(initialJob?.description || "");
@@ -236,7 +264,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   useEffect(() => {
     if (initialJob) {
       setJobTitle(initialJob.title || "");
-      setDepartment(initialJob.department || "General");
+      setDepartment(initialJob.department || "");
       setLocation(initialJob.location || "");
       setPostalCode(initialJob.postalCode || "");
       setEmploymentType((initialJob.type as JobType) || null);
@@ -249,8 +277,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       setDescription(initialJob.description || "");
       setRequirements(initialJob.requirements || "");
 
-
-
       if (initialJob.status === "PUBLISHED") {
         setPublishMode("publish");
       } else if (initialJob.status === "CLOSED") {
@@ -261,15 +287,19 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
       if (initialJob.salaryRange) {
         setCompensationOpen(true);
-        if (initialJob.salaryRange.toLowerCase().includes("negotiable")) {
-          setPayNegotiable(true);
-        } else {
-          const parts = initialJob.salaryRange.split("-");
-          if (parts.length >= 2) {
-            setMinSalary(parts[0].replace(/[^0-9]/g, "").trim());
-            setMaxSalary(parts[1].replace(/[^0-9]/g, "").trim());
-          }
-        }
+        const parsed = parseSalaryRange(initialJob.salaryRange);
+        setPayNegotiable(parsed.negotiable);
+        setMinSalary(parsed.min);
+        setMaxSalary(parsed.max);
+        setCurrency(parsed.currency);
+        setSalaryPer(parsed.per);
+      } else {
+        setCompensationOpen(false);
+        setPayNegotiable(false);
+        setMinSalary("");
+        setMaxSalary("");
+        setCurrency(null);
+        setSalaryPer(null);
       }
     }
   }, [initialJob]);
@@ -391,7 +421,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
       }
     }
     setJobTitle("");
-    setDepartment("General");
+    setDepartment("");
     setLocation("");
     setPostalCode("");
     setEmploymentType(null);
@@ -403,6 +433,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     setPayNegotiable(false);
     setMinSalary("");
     setMaxSalary("");
+    setCurrency(null);
+    setSalaryPer(null);
     setCurrentStep(1);
     setHasRestoredDraft(false);
     setDraftSavedAt(null);
@@ -416,6 +448,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     employmentType: false,
     experienceLevel: false,
     workplace: false,
+    currency: false,
+    salaryPer: false,
   });
 
   const isTitleValid = jobTitle.trim().length > 0;
@@ -424,13 +458,25 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const isEmploymentTypeValid = Boolean(employmentType);
   const isExperienceLevelValid = Boolean(experienceLevel);
   const isWorkplaceValid = Boolean(workplace);
+
+  const hasSalaryData =
+    !payNegotiable &&
+    (minSalary.trim().length > 0 ||
+      maxSalary.trim().length > 0 ||
+      currency !== null ||
+      salaryPer !== null);
+  const isCurrencyValid = !hasSalaryData || Boolean(currency);
+  const isSalaryPerValid = !hasSalaryData || Boolean(salaryPer);
+
   const isStep1Valid =
     isTitleValid &&
     isLocationValid &&
     isDescriptionValid &&
     isEmploymentTypeValid &&
     isExperienceLevelValid &&
-    isWorkplaceValid;
+    isWorkplaceValid &&
+    isCurrencyValid &&
+    isSalaryPerValid;
 
   const showTitleError = touched.title && !isTitleValid;
   const showLocationError = touched.location && !isLocationValid;
@@ -438,6 +484,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   const showEmploymentTypeError = touched.employmentType && !isEmploymentTypeValid;
   const showExperienceLevelError = touched.experienceLevel && !isExperienceLevelValid;
   const showWorkplaceError = touched.workplace && !isWorkplaceValid;
+  const showCurrencyError = hasSalaryData && touched.currency && !isCurrencyValid;
+  const showSalaryPerError = hasSalaryData && touched.salaryPer && !isSalaryPerValid;
 
   // Advance from Step 1 to Step 4 (since steps 2 & 3 are disabled)
   const handleStep1Continue = () => {
@@ -449,6 +497,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         employmentType: true,
         experienceLevel: true,
         workplace: true,
+        currency: true,
+        salaryPer: true,
       });
       return;
     }
@@ -467,6 +517,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         employmentType: true,
         experienceLevel: true,
         workplace: true,
+        currency: true,
+        salaryPer: true,
       });
       return;
     }
@@ -547,7 +599,9 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
     if (payNegotiable) {
       salaryRange = "Negotiable";
     } else if (minSalary || maxSalary) {
-      salaryRange = `${currency} ${minSalary || "0"} - ${maxSalary || "0"} / ${salaryPer.toLowerCase()}`;
+      const cur = currency ? `${currency} ` : "";
+      const per = salaryPer ? ` / ${salaryPer.toLowerCase()}` : "";
+      salaryRange = `${cur}${minSalary || "0"} - ${maxSalary || "0"}${per}`.trim();
     }
 
     if (!isStep1Valid) {
@@ -558,6 +612,8 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         employmentType: true,
         experienceLevel: true,
         workplace: true,
+        currency: true,
+        salaryPer: true,
       });
       setCurrentStep(1);
       setFormError(t("jobs.fillRequiredFields"));
@@ -710,26 +766,24 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         ? `${step.label} (${t("jobs.wizard.comingSoon")})`
                         : undefined
                     }
-                    className={`flex items-center gap-2 text-xs transition-all whitespace-nowrap shrink-0 ${
-                      !isImplemented
+                    className={`flex items-center gap-2 text-xs transition-all whitespace-nowrap shrink-0 ${!isImplemented
                         ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
                         : isActive
                           ? "font-bold text-slate-900 dark:text-white cursor-pointer"
                           : isPassed
                             ? "font-medium text-slate-600 dark:text-slate-300 cursor-pointer"
                             : "font-normal text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                        !isImplemented
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${!isImplemented
                           ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600"
                           : isActive
                             ? "bg-blue-600 text-white"
                             : isPassed
                               ? "bg-emerald-500 text-white"
                               : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                      }`}
+                        }`}
                     >
                       {isPassed ? (
                         <CheckCircle2 className="h-3.5 w-3.5 stroke-[2.5]" />
@@ -1067,11 +1121,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     </div>
 
                     {/* Field 7: Compensation Accordion Card */}
-                    <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 transition-all overflow-hidden">
+                    <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 transition-all">
                       <button
                         type="button"
                         onClick={() => setCompensationOpen(!compensationOpen)}
-                        className="w-full flex items-center justify-between p-4 text-left cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors"
+                        className={cn(
+                          "w-full flex items-center justify-between p-4 text-left cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors",
+                          !compensationOpen ? "rounded-xl" : "rounded-t-xl"
+                        )}
                       >
                         <div className="flex items-center gap-2">
                           {compensationOpen ? (
@@ -1120,7 +1177,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                   type="text"
                                   placeholder={t("jobs.wizard.placeholders.minSalary")}
                                   value={minSalary}
-                                  onChange={(e) => setMinSalary(e.target.value)}
+                                  onChange={(e) => {
+                                    setMinSalary(e.target.value);
+                                    if (e.target.value.trim().length > 0) {
+                                      setTouched((prev) => ({ ...prev, currency: true, salaryPer: true }));
+                                    }
+                                  }}
                                   className="h-9 text-xs bg-white dark:bg-slate-900"
                                 />
                               </div>
@@ -1133,18 +1195,27 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                   type="text"
                                   placeholder={t("jobs.wizard.placeholders.maxSalary")}
                                   value={maxSalary}
-                                  onChange={(e) => setMaxSalary(e.target.value)}
+                                  onChange={(e) => {
+                                    setMaxSalary(e.target.value);
+                                    if (e.target.value.trim().length > 0) {
+                                      setTouched((prev) => ({ ...prev, currency: true, salaryPer: true }));
+                                    }
+                                  }}
                                   className="h-9 text-xs bg-white dark:bg-slate-900"
                                 />
                               </div>
 
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                  {t("jobs.wizard.currency")}
+                                  {t("jobs.wizard.currency")}{hasSalaryData && <span className="text-rose-500 ml-0.5">*</span>}
                                 </label>
                                 <CustomSelect
-                                  value={currency}
-                                  onChange={(val) => setCurrency(val)}
+                                  value={currency || ""}
+                                  onChange={(val) => {
+                                    setCurrency(val);
+                                    setTouched((prev) => ({ ...prev, currency: true }));
+                                  }}
+                                  placeholder={t("jobs.wizard.selectCurrency")}
                                   options={[
                                     { value: "USD", label: "USD ($)" },
                                     { value: "VND", label: "VND (₫)" },
@@ -1154,25 +1225,46 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                                     { value: "SGD", label: "SGD (S$)" },
                                   ]}
                                   className="w-full"
-                                  triggerClassName="w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl"
+                                  triggerClassName={cn(
+                                    "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
+                                    showCurrencyError && "border-rose-500 ring-1 ring-rose-500",
+                                  )}
                                 />
+                                {showCurrencyError && (
+                                  <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                                    {t("jobs.wizard.currencyError")}
+                                  </p>
+                                )}
                               </div>
 
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                  {t("jobs.wizard.perPeriod")}
+                                  {t("jobs.wizard.perPeriod")}{hasSalaryData && <span className="text-rose-500 ml-0.5">*</span>}
                                 </label>
                                 <CustomSelect
-                                  value={salaryPer}
-                                  onChange={(val) => setSalaryPer(val)}
+                                  value={salaryPer || ""}
+                                  onChange={(val) => {
+                                    setSalaryPer(val);
+                                    setTouched((prev) => ({ ...prev, salaryPer: true }));
+                                  }}
+                                  placeholder={t("jobs.wizard.selectSalaryPer")}
+                                  align="right"
                                   options={[
                                     { value: "Year", label: t("jobs.wizard.periods.year") },
                                     { value: "Month", label: t("jobs.wizard.periods.month") },
                                     { value: "Hour", label: t("jobs.wizard.periods.hour") },
                                   ]}
                                   className="w-full"
-                                  triggerClassName="w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl"
+                                  triggerClassName={cn(
+                                    "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
+                                    showSalaryPerError && "border-rose-500 ring-1 ring-rose-500",
+                                  )}
                                 />
+                                {showSalaryPerError && (
+                                  <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                                    {t("jobs.wizard.salaryPerError")}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           )}
@@ -1335,33 +1427,30 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           <button
                             type="button"
                             onClick={() => setPhoneSetting("hidden")}
-                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                              phoneSetting === "hidden"
+                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${phoneSetting === "hidden"
                                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                                 : "text-slate-500 hover:text-slate-800"
-                            }`}
+                              }`}
                           >
                             {t("jobs.wizard.hiddenOption")}
                           </button>
                           <button
                             type="button"
                             onClick={() => setPhoneSetting("optional")}
-                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                              phoneSetting === "optional"
+                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${phoneSetting === "optional"
                                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                                 : "text-slate-500 hover:text-slate-800"
-                            }`}
+                              }`}
                           >
                             {t("jobs.wizard.optionalOption")}
                           </button>
                           <button
                             type="button"
                             onClick={() => setPhoneSetting("required")}
-                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                              phoneSetting === "required"
+                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${phoneSetting === "required"
                                 ? "bg-blue-600 text-white shadow-xs"
                                 : "text-slate-500 hover:text-slate-800"
-                            }`}
+                              }`}
                           >
                             {t("jobs.wizard.requiredOption")}
                           </button>
@@ -1397,22 +1486,20 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           <button
                             type="button"
                             onClick={() => setResumeSetting("required")}
-                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                              resumeSetting === "required"
+                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${resumeSetting === "required"
                                 ? "bg-blue-600 text-white shadow-xs"
                                 : "text-slate-500 hover:text-slate-800"
-                            }`}
+                              }`}
                           >
                             {t("jobs.wizard.requiredOption")}
                           </button>
                           <button
                             type="button"
                             onClick={() => setResumeSetting("off")}
-                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                              resumeSetting === "off"
+                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${resumeSetting === "off"
                                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                                 : "text-slate-500 hover:text-slate-800"
-                            }`}
+                              }`}
                           >
                             {t("jobs.wizard.offOption")}
                           </button>
@@ -1439,22 +1526,20 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           <button
                             type="button"
                             onClick={() => setCoverLetterSetting("required")}
-                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                              coverLetterSetting === "required"
+                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${coverLetterSetting === "required"
                                 ? "bg-blue-600 text-white shadow-xs"
                                 : "text-slate-500 hover:text-slate-800"
-                            }`}
+                              }`}
                           >
                             {t("jobs.wizard.requiredOption")}
                           </button>
                           <button
                             type="button"
                             onClick={() => setCoverLetterSetting("off")}
-                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                              coverLetterSetting === "off"
+                            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${coverLetterSetting === "off"
                                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                                 : "text-slate-500 hover:text-slate-800"
-                            }`}
+                              }`}
                           >
                             {t("jobs.wizard.offOption")}
                           </button>
@@ -1711,15 +1796,14 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                         {crit.title}
                       </h3>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          crit.category === "Experience"
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${crit.category === "Experience"
                             ? "bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400"
                             : crit.category === "Technical"
                               ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400"
                               : crit.category === "Soft Skills"
                                 ? "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
                                 : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                        }`}
+                          }`}
                       >
                         {crit.category}
                       </span>
@@ -1802,10 +1886,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       onChange={(val) =>
                         setNewCriterionCategory(
                           val as
-                            | "Experience"
-                            | "Technical"
-                            | "Soft Skills"
-                            | "Custom",
+                          | "Experience"
+                          | "Technical"
+                          | "Soft Skills"
+                          | "Custom",
                         )
                       }
                       options={[
@@ -1956,11 +2040,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               {/* Card 1: Publish Now */}
               <div
                 onClick={() => setPublishMode("publish")}
-                className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
-                  publishMode === "publish"
+                className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${publishMode === "publish"
                     ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
                     : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
@@ -1986,11 +2069,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               {/* Card 2: Save as draft */}
               <div
                 onClick={() => setPublishMode("draft")}
-                className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
-                  publishMode === "draft"
+                className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${publishMode === "draft"
                     ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
                     : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -2017,11 +2099,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               {mode === "edit" && (
                 <div
                   onClick={() => setPublishMode("closed")}
-                  className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
-                    publishMode === "closed"
+                  className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${publishMode === "closed"
                       ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
                       : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
@@ -2306,11 +2387,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   <button
                     type="button"
                     onClick={() => setPreviewDevice("desktop")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      previewDevice === "desktop"
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${previewDevice === "desktop"
                         ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                         : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    }`}
+                      }`}
                   >
                     <Monitor className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">{t("jobs.wizard.desktop")}</span>
@@ -2319,11 +2399,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   <button
                     type="button"
                     onClick={() => setPreviewDevice("tablet")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      previewDevice === "tablet"
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${previewDevice === "tablet"
                         ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                         : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    }`}
+                      }`}
                   >
                     <Tablet className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">{t("jobs.wizard.tablet")}</span>
@@ -2332,11 +2411,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   <button
                     type="button"
                     onClick={() => setPreviewDevice("mobile")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      previewDevice === "mobile"
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${previewDevice === "mobile"
                         ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
                         : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    }`}
+                      }`}
                   >
                     <Smartphone className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">{t("jobs.wizard.mobile")}</span>
@@ -2403,7 +2481,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                           <span>
                             {payNegotiable
                               ? t("jobs.wizard.payNegotiable")
-                              : `${currency} ${minSalary || "0"} - ${maxSalary || "0"} / ${salaryPer.toLowerCase()}`}
+                              : `${currency ? `${currency} ` : ""}${minSalary || "0"} - ${maxSalary || "0"}${salaryPer ? ` / ${salaryPer.toLowerCase()}` : ""}`}
                           </span>
                         </div>
                       )}

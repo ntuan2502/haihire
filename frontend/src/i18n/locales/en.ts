@@ -390,6 +390,10 @@ export const en: TranslationSchema = {
       maxSalary: "Maximum",
       currency: "Currency",
       perPeriod: "Per",
+      selectCurrency: "Select currency",
+      selectSalaryPer: "Select pay period",
+      currencyError: "Please select a currency",
+      salaryPerError: "Please select a pay period",
       periods: {
         year: "Year",
         month: "Month",

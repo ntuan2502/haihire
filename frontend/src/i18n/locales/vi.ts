@@ -390,6 +390,10 @@ export const vi: TranslationSchema = {
       maxSalary: "Lương tối đa",
       currency: "Đơn vị tiền tệ",
       perPeriod: "Theo kỳ",
+      selectCurrency: "Chọn đơn vị tiền tệ",
+      selectSalaryPer: "Chọn theo kỳ",
+      currencyError: "Vui lòng chọn đơn vị tiền tệ",
+      salaryPerError: "Vui lòng chọn theo kỳ trả lương",
       periods: {
         year: "Năm",
         month: "Tháng",

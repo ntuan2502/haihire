@@ -163,8 +163,7 @@ export function ApplicationsDataTable({
 
   const baseApplications = useMemo(() => {
     if (!fixedJobId) {
-      // Exclude applications not linked to any job (e.g. manually added candidates)
-      return initialApplications.filter((a) => !!a.jobId);
+      return initialApplications;
     }
     return initialApplications.filter(
       (a) => String(a.jobId) === String(fixedJobId),

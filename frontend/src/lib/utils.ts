@@ -1,4 +1,4 @@
-import type { Application, CandidateDocument } from "@/types";
+import type { Application, Candidate, CandidateDocument } from "@/types";
 import { removeInterviewFromNotes } from "@/lib/interviews";
 
 /**
@@ -327,7 +327,12 @@ export interface CandidateItem {
   createdAt: string;
   updatedAt?: string;
   notes: string;
-  rawApp: Application;
+  resumeUrl?: string | null;
+  resumeFileName?: string | null;
+  resumeFileSize?: number | null;
+  resumeMimeType?: string | null;
+  rawApp?: Application;
+  candidate?: Candidate;
 }
 
 /**

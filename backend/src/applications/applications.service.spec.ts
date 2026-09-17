@@ -9,6 +9,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
   let mockMinioService: any;
 
   let mockJobs: any[] = [];
+  let mockCandidates: any[] = [];
   let mockApps: any[] = [];
 
   beforeEach(() => {
@@ -30,13 +31,56 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
     ];
 
+    mockCandidates = [
+      {
+        id: "cand-1",
+        organizationId: "org-1",
+        name: "Alice Nguyen",
+        email: "alice@gmail.com",
+        phone: "0901234567",
+        resumeUrl: "https://s3.local/resumes/alice.pdf",
+        resumeFileName: "alice.pdf",
+        resumeFileSize: 1024,
+        resumeMimeType: "application/pdf",
+        notes: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "cand-2",
+        organizationId: "org-1",
+        name: "Bob Tran",
+        email: "bob@gmail.com",
+        phone: "0912345678",
+        resumeUrl: "https://s3.local/resumes/bob.pdf",
+        resumeFileName: "bob.pdf",
+        resumeFileSize: 2048,
+        resumeMimeType: "application/pdf",
+        notes: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "cand-3",
+        organizationId: "org-2",
+        name: "Charlie Competitor Candidate",
+        email: "charlie@gmail.com",
+        phone: "0987654321",
+        resumeUrl: "https://s3.local/resumes/charlie.pdf",
+        resumeFileName: "charlie.pdf",
+        resumeFileSize: 3072,
+        resumeMimeType: "application/pdf",
+        notes: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
     mockApps = [
       {
         id: "app-1",
+        candidateId: "cand-1",
         jobId: "job-org1-a",
-        candidateName: "Alice Nguyen",
-        candidateEmail: "alice@gmail.com",
-        candidatePhone: "0901234567",
         stage: "APPLIED",
         resumeUrl: "https://s3.local/resumes/alice.pdf",
         resumeFileName: "alice.pdf",
@@ -49,10 +93,8 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
       {
         id: "app-2",
+        candidateId: "cand-2",
         jobId: "job-org1-b",
-        candidateName: "Bob Tran",
-        candidateEmail: "bob@gmail.com",
-        candidatePhone: "0912345678",
         stage: "INTERVIEW",
         resumeUrl: "https://s3.local/resumes/bob.pdf",
         resumeFileName: "bob.pdf",
@@ -65,11 +107,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
       {
         id: "app-3",
+        candidateId: "cand-3",
         jobId: "job-org2-c", // Belongs to org-2!
-        candidateName: "Charlie Competitor Candidate",
-        candidateEmail: "charlie@gmail.com",
-        candidatePhone: "0987654321",
-        stage: "OFFERED",
+        stage: "OFFER",
         resumeUrl: "https://s3.local/resumes/charlie.pdf",
         resumeFileName: "charlie.pdf",
         resumeFileSize: 3072,
@@ -97,6 +137,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
           public: {
             Job: {
               select: vi.fn().mockImplementation((...fields: string[]) => ({
+                all: vi.fn().mockImplementation(async () => {
+                  return mockJobs.map((j) => ({ ...j }));
+                }),
                 where: vi.fn().mockImplementation((predicateFn) => ({
                   all: vi.fn().mockImplementation(async () => {
                     return mockJobs.filter((j) => {
@@ -118,6 +161,51 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                 })),
               })),
             },
+            Candidate: {
+              select: vi.fn().mockImplementation(() => ({
+                all: vi.fn().mockImplementation(async () => {
+                  return mockCandidates.map((c) => ({ ...c }));
+                }),
+                where: vi.fn().mockImplementation((predicateFn) => ({
+                  all: vi.fn().mockImplementation(async () => {
+                    return mockCandidates.filter((c) => {
+                      const mockRecord = {
+                        id: { eq: (target: string) => c.id === target },
+                        organizationId: { eq: (target: string) => c.organizationId === target },
+                        email: { eq: (target: string) => c.email === target },
+                      };
+                      return predicateFn(mockRecord);
+                    });
+                  }),
+                  first: vi.fn().mockImplementation(async () => {
+                    const match = mockCandidates.find((c) => {
+                      const mockRecord = {
+                        id: { eq: (target: string) => c.id === target },
+                        organizationId: { eq: (target: string) => c.organizationId === target },
+                        email: { eq: (target: string) => c.email === target },
+                      };
+                      return predicateFn(mockRecord);
+                    });
+                    return match ? { ...match } : null;
+                  }),
+                })),
+              })),
+              where: vi.fn().mockImplementation((predicateFn) => ({
+                update: vi.fn().mockImplementation(async (updates) => {
+                  const target = mockCandidates.find((c) => {
+                    const mockRecord = {
+                      id: { eq: (targetId: string) => c.id === targetId },
+                    };
+                    return predicateFn(mockRecord);
+                  });
+                  if (target) {
+                    Object.assign(target, updates);
+                    return { ...target };
+                  }
+                  return null;
+                }),
+              })),
+            },
             Application: {
               select: vi.fn().mockImplementation((...fields: string[]) => ({
                 all: vi.fn().mockImplementation(async () => {
@@ -129,7 +217,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                       const mockRecord = {
                         id: { eq: (target: string) => a.id === target },
                         jobId: { eq: (target: string) => a.jobId === target },
-                        candidateEmail: { eq: (target: string) => a.candidateEmail === target },
+                        candidateId: { eq: (target: string) => a.candidateId === target },
                       };
                       return predicateFn(mockRecord);
                     });
@@ -139,7 +227,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                       const mockRecord = {
                         id: { eq: (target: string) => a.id === target },
                         jobId: { eq: (target: string) => a.jobId === target },
-                        candidateEmail: { eq: (target: string) => a.candidateEmail === target },
+                        candidateId: { eq: (target: string) => a.candidateId === target },
                       };
                       return predicateFn(mockRecord);
                     });
@@ -147,9 +235,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                   }),
                 })),
               })),
-              upsert: vi.fn().mockImplementation(async ({ create }) => {
-                mockApps.push({ ...create, createdAt: new Date(), updatedAt: new Date() });
-                return create;
+              create: vi.fn().mockImplementation(async (data) => {
+                const newApp = { id: `app-${Date.now()}`, ...data, createdAt: new Date(), updatedAt: new Date() };
+                mockApps.push(newApp);
+                return newApp;
               }),
               where: vi.fn().mockImplementation((predicateFn) => ({
                 update: vi.fn().mockImplementation(async (updates) => {
@@ -157,7 +246,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                     const mockRecord = {
                       id: { eq: (targetId: string) => a.id === targetId },
                       jobId: { eq: (targetId: string) => a.jobId === targetId },
-                      candidateEmail: { eq: (targetId: string) => a.candidateEmail === targetId },
+                      candidateId: { eq: (targetId: string) => a.candidateId === targetId },
                     };
                     return predicateFn(mockRecord);
                   });
@@ -172,7 +261,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                     const mockRecord = {
                       id: { eq: (targetId: string) => a.id === targetId },
                       jobId: { eq: (targetId: string) => a.jobId === targetId },
-                      candidateEmail: { eq: (targetId: string) => a.candidateEmail === targetId },
+                      candidateId: { eq: (targetId: string) => a.candidateId === targetId },
                     };
                     return predicateFn(mockRecord);
                   });
@@ -255,11 +344,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(updated.candidatePhone).toBe("0999999999");
     });
 
-    it("should delete an application (detach from job)", async () => {
+    it("should delete an application", async () => {
       const result = await service.remove("app-1");
       expect(result.success).toBe(true);
-      const app = await service.findOne("app-1");
-      expect(app.jobId).toBeNull();
+      await expect(service.findOne("app-1")).rejects.toThrow(NotFoundException);
     });
   });
 });

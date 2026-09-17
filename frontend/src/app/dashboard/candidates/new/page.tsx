@@ -15,8 +15,8 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useAllApplications,
-  useCreateApplicationMutation,
+  useCandidates,
+  useCreateCandidateMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,8 +43,8 @@ function AddCandidatePageContent() {
   }, [authLoading, canEdit, router]);
 
   const { data: jobs = [] } = useJobs(user?.organizationId);
-  const { data: applications = [] } = useAllApplications();
-  const createApplicationMutation = useCreateApplicationMutation();
+  const { data: candidates = [] } = useCandidates(user?.organizationId);
+  const createCandidateMutation = useCreateCandidateMutation();
 
   // Form State
   const [firstName, setFirstName] = useState("");
@@ -127,9 +127,10 @@ function AddCandidatePageContent() {
         : `${firstName.trim()} ${lastName.trim()}`.trim();
 
       const formData = new FormData();
-      formData.append("candidateName", effectiveDisplayName);
-      formData.append("candidateEmail", email.trim());
-      if (phone.trim()) formData.append("candidatePhone", phone.trim());
+      formData.append("name", effectiveDisplayName);
+      formData.append("email", email.trim());
+      if (phone.trim()) formData.append("phone", phone.trim());
+      if (user?.organizationId) formData.append("organizationId", user.organizationId);
 
       const notes = buildCandidateNotes({
         firstName: firstName.trim(),
@@ -147,7 +148,7 @@ function AddCandidatePageContent() {
         formData.append("resume", selectedFile);
       }
 
-      await createApplicationMutation.mutateAsync(formData);
+      await createCandidateMutation.mutateAsync(formData);
       router.push("/dashboard/candidates");
     } catch (err: unknown) {
       const errResponse = err as { response?: { data?: { message?: string } } };
@@ -167,7 +168,7 @@ function AddCandidatePageContent() {
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Content Form */}

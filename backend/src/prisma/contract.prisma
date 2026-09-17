@@ -36,6 +36,7 @@ model Organization {
   ownerId     String?
   users       User[]
   jobs        Job[]
+  candidates  Candidate[]
   inviteLinks InviteLink[]
   members     OrganizationMember[]
   createdAt   DateTime             @default(now())
@@ -107,20 +108,42 @@ model Job {
   updatedAt       temporal.updatedAt()
 }
 
+model Candidate {
+  id             String        @id @default(uuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  name           String
+  email          String
+  phone          String?
+  notes          String?
+  resumeUrl      String?
+  resumeFileName String?
+  resumeFileSize Int?
+  resumeMimeType String?       @default("application/pdf")
+  applications   Application[]
+  createdAt      DateTime      @default(now())
+  updatedAt      temporal.updatedAt()
+
+  @@unique([organizationId, email])
+}
+
 model Application {
   id             String           @id @default(uuid())
-  jobId          String?
-  job            Job?             @relation(fields: [jobId], references: [id])
-  candidateName  String
-  candidateEmail String
-  candidatePhone String?
+  candidateId    String
+  candidate      Candidate        @relation(fields: [candidateId], references: [id])
+  jobId          String
+  job            Job              @relation(fields: [jobId], references: [id])
   stage          ApplicationStage @default(APPLIED)
-  resumeUrl      String
-  resumeFileName String
+  resumeUrl      String?
+  resumeFileName String?
   resumeFileSize Int?
   resumeMimeType String?          @default("application/pdf")
   notes          String?
   orderIndex     Int              @default(0)
   createdAt      DateTime         @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@unique([candidateId, jobId])
 }
+
+

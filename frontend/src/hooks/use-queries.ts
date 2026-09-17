@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi, applicationsApi, organizationsApi } from "@/lib/api";
+import { jobsApi, applicationsApi, organizationsApi, candidatesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Job, Application, ApplicationStage, Organization, User, InviteLink } from "@/types";
+import type { Job, Application, Candidate, ApplicationStage, Organization, User, InviteLink } from "@/types";
 
 // ==========================================
 // QUERY KEYS
@@ -13,6 +13,8 @@ export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
   allApplications: (orgId?: string | null) => ["applications", "all", { orgId }] as const,
+  candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,
+  candidate: (id?: string | null) => ["candidates", id] as const,
   myOrg: () => ["organization", "my"] as const,
   myOrgs: () => ["organization", "my-all"] as const,
   orgMembers: () => ["organization", "members"] as const,
@@ -249,6 +251,103 @@ export function useDeleteDocumentMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+// ==========================================
+// CANDIDATES HOOKS
+// ==========================================
+export function useCandidates(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<Candidate[]>({
+    queryKey: queryKeys.candidates(effectiveOrgId),
+    queryFn: () => {
+      if (!effectiveOrgId) return [];
+      return candidatesApi.getAll(effectiveOrgId);
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
+export function useCandidate(id: string | null | undefined) {
+  return useQuery<Candidate>({
+    queryKey: queryKeys.candidate(id),
+    queryFn: () => {
+      if (!id) throw new Error("Candidate ID is required");
+      return candidatesApi.getById(id);
+    },
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateCandidateMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (formData: FormData) => candidatesApi.create(formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+export function useUpdateCandidateDetailsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof candidatesApi.update>[1];
+    }) => candidatesApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useDeleteCandidateMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => candidatesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useUploadCandidateDocumentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, file, type }: { id: string; file: File; type?: string }) =>
+      candidatesApi.uploadDocument(id, file, type),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+export function useDeleteCandidateDocumentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, documentId, url }: { id: string; documentId?: string; url?: string }) =>
+      candidatesApi.deleteDocument(id, { documentId, url }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
@@ -7,7 +8,7 @@ import {
 import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
-import { ApplicationStage, UpdateStageDto } from "./dto/update-stage.dto";
+import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 
 export interface ApplicationDocument {
@@ -33,7 +34,7 @@ export function fixUtf8String(str?: string | null): string {
   return str.normalize("NFC");
 }
 
-function extractDocsFromNotes(
+export function extractDocsFromNotes(
   notes: string | null,
   fallback?: {
     id: string;
@@ -84,7 +85,7 @@ function extractDocsFromNotes(
   return docs;
 }
 
-function packDocsIntoNotes(
+export function packDocsIntoNotes(
   existingNotes: string | null,
   docs: ApplicationDocument[],
 ): string {
@@ -118,10 +119,8 @@ export class ApplicationsService {
 
     const applications = await this.prisma.db.orm.public.Application.select(
       "id",
+      "candidateId",
       "jobId",
-      "candidateName",
-      "candidateEmail",
-      "candidatePhone",
       "stage",
       "resumeUrl",
       "resumeFileName",
@@ -135,7 +134,35 @@ export class ApplicationsService {
       .where((a) => a.jobId.eq(jobId))
       .all();
 
-    return applications.sort((a, b) => a.orderIndex - b.orderIndex);
+    const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
+    const candidates = await this.prisma.db.orm.public.Candidate.select(
+      "id",
+      "name",
+      "email",
+      "phone",
+      "resumeUrl",
+      "resumeFileName",
+      "resumeFileSize",
+      "resumeMimeType",
+    ).all();
+    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+
+    const populated = applications.map((app) => {
+      const candidate = candidateMap.get(app.candidateId);
+      return {
+        ...app,
+        candidate,
+        candidateName: candidate?.name || "Unknown",
+        candidateEmail: candidate?.email || "",
+        candidatePhone: candidate?.phone || null,
+        resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
+        resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+        resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
+        resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+      };
+    });
+
+    return populated.sort((a, b) => a.orderIndex - b.orderIndex);
   }
 
   async findAll(organizationId?: string) {
@@ -143,21 +170,24 @@ export class ApplicationsService {
       return [];
     }
 
-    const jobs = await this.prisma.db.orm.public.Job.select("id")
+    const jobs = await this.prisma.db.orm.public.Job.select(
+      "id",
+      "title",
+      "department",
+      "location",
+    )
       .where((j) => j.organizationId.eq(organizationId))
       .all();
-    const jobIds = new Set(jobs.map((j) => j.id));
 
-    if (jobIds.size === 0) {
+    const jobMap = new Map(jobs.map((j) => [j.id, j]));
+    if (jobMap.size === 0) {
       return [];
     }
 
     const allApps = await this.prisma.db.orm.public.Application.select(
       "id",
+      "candidateId",
       "jobId",
-      "candidateName",
-      "candidateEmail",
-      "candidatePhone",
       "stage",
       "resumeUrl",
       "resumeFileName",
@@ -169,16 +199,46 @@ export class ApplicationsService {
       "updatedAt",
     ).all();
 
-    return allApps.filter((a) => !a.jobId || jobIds.has(a.jobId));
+    const orgApps = allApps.filter((a) => jobMap.has(a.jobId));
+    if (orgApps.length === 0) {
+      return [];
+    }
+
+    const candidates = await this.prisma.db.orm.public.Candidate.select(
+      "id",
+      "name",
+      "email",
+      "phone",
+      "resumeUrl",
+      "resumeFileName",
+      "resumeFileSize",
+      "resumeMimeType",
+    ).all();
+    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+
+    return orgApps.map((app) => {
+      const candidate = candidateMap.get(app.candidateId);
+      const job = jobMap.get(app.jobId);
+      return {
+        ...app,
+        job,
+        candidate,
+        candidateName: candidate?.name || "Unknown",
+        candidateEmail: candidate?.email || "",
+        candidatePhone: candidate?.phone || null,
+        resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
+        resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+        resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
+        resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+      };
+    });
   }
 
   async findOne(id: string) {
     const app = await this.prisma.db.orm.public.Application.select(
       "id",
+      "candidateId",
       "jobId",
-      "candidateName",
-      "candidateEmail",
-      "candidatePhone",
       "stage",
       "resumeUrl",
       "resumeFileName",
@@ -196,43 +256,66 @@ export class ApplicationsService {
       throw new NotFoundException(`Application with ID ${id} not found`);
     }
 
-    let job = null;
-    if (app.jobId) {
-      job = await this.prisma.db.orm.public.Job.select(
-        "id",
-        "title",
-        "department",
-        "location",
-      )
-        .where((j) => j.id.eq(app.jobId as string))
-        .first();
-    }
+    const job = await this.prisma.db.orm.public.Job.select(
+      "id",
+      "title",
+      "department",
+      "location",
+      "organizationId",
+    )
+      .where((j) => j.id.eq(app.jobId))
+      .first();
+
+    const candidate = await this.prisma.db.orm.public.Candidate.select(
+      "id",
+      "name",
+      "email",
+      "phone",
+      "notes",
+      "resumeUrl",
+      "resumeFileName",
+      "resumeFileSize",
+      "resumeMimeType",
+      "createdAt",
+    )
+      .where((c) => c.id.eq(app.candidateId))
+      .first();
 
     return {
       ...app,
-      job,
+      job: job || null,
+      candidate: candidate || null,
+      candidateName: candidate?.name || "Unknown",
+      candidateEmail: candidate?.email || "",
+      candidatePhone: candidate?.phone || null,
+      resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
+      resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+      resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
+      resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
     };
   }
 
   async create(dto: CreateApplicationDto, file?: Express.Multer.File) {
-    if (dto.jobId) {
-      const job = await this.prisma.db.orm.public.Job.select("id", "title", "status")
-        .where((j) => j.id.eq(dto.jobId as string))
-        .first();
+    if (!dto.jobId) {
+      throw new BadRequestException("Job ID is required to create an application.");
+    }
 
-      if (!job) {
-        throw new NotFoundException(`Job with ID ${dto.jobId} not found`);
-      }
+    const job = await this.prisma.db.orm.public.Job.select("id", "title", "status", "organizationId")
+      .where((j) => j.id.eq(dto.jobId))
+      .first();
 
-      if (job.status !== "PUBLISHED") {
-        throw new BadRequestException("This job is not currently accepting applications.");
-      }
+    if (!job) {
+      throw new NotFoundException(`Job with ID ${dto.jobId} not found`);
+    }
+
+    if (job.status !== "PUBLISHED") {
+      throw new BadRequestException("This job is not currently accepting applications.");
     }
 
     // 1. Upload CV to MinIO S3 Object Storage if file is provided
     let uploadResult: { url: string; originalName: string; size: number; mimeType: string } = {
       url: "",
-      originalName: "Candidate Profile",
+      originalName: "Candidate Resume",
       size: 0,
       mimeType: "application/pdf",
     };
@@ -242,88 +325,117 @@ export class ApplicationsService {
     } else if (dto.resumeUrl) {
       uploadResult = {
         url: dto.resumeUrl,
-        originalName: dto.resumeFileName || "Candidate Profile",
+        originalName: dto.resumeFileName || "Candidate Resume",
         size: 0,
         mimeType: "application/pdf",
       };
     }
 
-    // 2. Determine highest orderIndex in APPLIED stage for the target job
-    let maxOrder = 0;
-    if (dto.jobId) {
-      const existingInStage = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "orderIndex",
-      )
-        .where((a) => a.jobId.eq(dto.jobId as string))
-        .all();
+    // 2. Resolve or create Candidate
+    let candidateId = dto.candidateId;
 
-      maxOrder = existingInStage.reduce(
-        (max, item) => Math.max(max, item.orderIndex),
-        -1,
-      );
+    if (!candidateId) {
+      if (!dto.candidateEmail || !dto.candidateName) {
+        throw new BadRequestException("Either candidateId or both candidateName and candidateEmail are required.");
+      }
+
+      const email = dto.candidateEmail.trim().toLowerCase();
+      const orgId = job.organizationId;
+      if (!orgId) {
+        throw new BadRequestException("Target job does not belong to a valid organization.");
+      }
+
+      const existingCandidate = await this.prisma.db.orm.public.Candidate.select("id")
+        .where((c) => c.organizationId.eq(orgId))
+        .where((c) => c.email.eq(email))
+        .first();
+
+      if (existingCandidate) {
+        candidateId = existingCandidate.id;
+      } else {
+        const newCandidate = await this.prisma.db.orm.public.Candidate.create({
+          organizationId: orgId,
+          name: dto.candidateName.trim(),
+          email,
+          phone: dto.candidatePhone?.trim() || null,
+          notes: dto.notes || null,
+          resumeUrl: uploadResult.url || null,
+          resumeFileName: uploadResult.originalName || null,
+          resumeFileSize: uploadResult.size || null,
+          resumeMimeType: uploadResult.mimeType || "application/pdf",
+        });
+        candidateId = newCandidate.id;
+      }
     }
 
-    // 3. Save Application record in PostgreSQL via Prisma
-    const created = await this.prisma.db.orm.public.Application.upsert({
-      create: {
-        jobId: dto.jobId ?? null,
-        candidateName: dto.candidateName,
-        candidateEmail: dto.candidateEmail,
-        candidatePhone: dto.candidatePhone ?? null,
-        stage: "APPLIED",
-        resumeUrl: uploadResult.url,
-        resumeFileName: uploadResult.originalName,
-        resumeFileSize: uploadResult.size,
-        resumeMimeType: uploadResult.mimeType,
-        notes: dto.notes ?? null,
-        orderIndex: maxOrder + 1,
-      },
-      update: {},
-      conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
+    // 3. Enforce: One application per job per candidate
+    const existingApplication = await this.prisma.db.orm.public.Application.select("id")
+      .where((a) => a.candidateId.eq(candidateId as string))
+      .where((a) => a.jobId.eq(dto.jobId))
+      .first();
+
+    if (existingApplication) {
+      throw new ConflictException("Candidate has already applied to this job.");
+    }
+
+    // 4. Determine highest orderIndex in APPLIED stage for the target job
+    const existingInStage = await this.prisma.db.orm.public.Application.select(
+      "id",
+      "orderIndex",
+    )
+      .where((a) => a.jobId.eq(dto.jobId))
+      .all();
+
+    const maxOrder = existingInStage.reduce(
+      (max, item) => Math.max(max, item.orderIndex),
+      -1,
+    );
+
+    // 5. Save Application record
+    const created = await this.prisma.db.orm.public.Application.create({
+      candidateId: candidateId as string,
+      jobId: dto.jobId,
+      stage: "APPLIED",
+      resumeUrl: uploadResult.url || null,
+      resumeFileName: uploadResult.originalName || null,
+      resumeFileSize: uploadResult.size || null,
+      resumeMimeType: uploadResult.mimeType || "application/pdf",
+      notes: dto.notes || null,
+      orderIndex: maxOrder + 1,
     });
 
-    return created;
+    return this.findOne(created.id);
   }
 
   async updateStage(id: string, dto: UpdateStageDto) {
     await this.findOne(id);
 
-    const updated = await this.prisma.db.orm.public.Application.where(
+    await this.prisma.db.orm.public.Application.where(
       (a) => a.id.eq(id),
     ).update({
       stage: dto.stage,
       ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
     });
 
-    return updated;
+    return this.findOne(id);
   }
 
   async updateCandidate(id: string, dto: UpdateCandidateDto) {
     const existing = await this.findOne(id);
 
-    const updatePayload: Record<string, any> = {};
-    if (dto.candidateName !== undefined) updatePayload.candidateName = dto.candidateName;
-    if (dto.candidateEmail !== undefined) updatePayload.candidateEmail = dto.candidateEmail;
-    if (dto.candidatePhone !== undefined) updatePayload.candidatePhone = dto.candidatePhone;
-    if (dto.notes !== undefined) updatePayload.notes = dto.notes;
-    if (dto.resumeUrl !== undefined) updatePayload.resumeUrl = dto.resumeUrl;
-    if (dto.resumeFileName !== undefined) updatePayload.resumeFileName = dto.resumeFileName;
+    // Update candidate profile directly
+    if (existing.candidateId) {
+      const candidateUpdate: Record<string, any> = {};
+      if (dto.candidateName !== undefined) candidateUpdate.name = dto.candidateName;
+      if (dto.candidateEmail !== undefined) candidateUpdate.email = dto.candidateEmail.toLowerCase();
+      if (dto.candidatePhone !== undefined) candidateUpdate.phone = dto.candidatePhone;
+      if (dto.notes !== undefined) candidateUpdate.notes = dto.notes;
+      if (dto.resumeUrl !== undefined) candidateUpdate.resumeUrl = dto.resumeUrl;
+      if (dto.resumeFileName !== undefined) candidateUpdate.resumeFileName = dto.resumeFileName;
 
-    // Update target application
-    await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).update(updatePayload);
-
-    // Synchronize candidate contact info across all records with previous candidate email
-    if (dto.candidateName || dto.candidatePhone !== undefined || dto.candidateEmail) {
-      const syncPayload: Record<string, any> = {};
-      if (dto.candidateName) syncPayload.candidateName = dto.candidateName;
-      if (dto.candidatePhone !== undefined) syncPayload.candidatePhone = dto.candidatePhone;
-      if (dto.candidateEmail) syncPayload.candidateEmail = dto.candidateEmail;
-      if (dto.notes !== undefined) syncPayload.notes = dto.notes;
-
-      await this.prisma.db.orm.public.Application.where(
-        (a) => a.candidateEmail.eq(existing.candidateEmail),
-      ).update(syncPayload);
+      await this.prisma.db.orm.public.Candidate.where(
+        (c) => c.id.eq(existing.candidateId),
+      ).update(candidateUpdate);
     }
 
     return this.findOne(id);
@@ -388,11 +500,10 @@ export class ApplicationsService {
     };
 
     currentDocs.push(newDoc);
-
     const updatedNotes = packDocsIntoNotes(existing.notes, currentDocs);
 
     await this.prisma.db.orm.public.Application.where(
-      (a) => a.candidateEmail.eq(existing.candidateEmail),
+      (a) => a.id.eq(id),
     ).update({
       resumeUrl: currentDocs[0].url,
       resumeFileName: currentDocs[0].name,
@@ -432,7 +543,7 @@ export class ApplicationsService {
 
     if (updatedDocs.length > 0) {
       await this.prisma.db.orm.public.Application.where(
-        (a) => a.candidateEmail.eq(existing.candidateEmail),
+        (a) => a.id.eq(id),
       ).update({
         resumeUrl: updatedDocs[0].url,
         resumeFileName: updatedDocs[0].name,
@@ -442,10 +553,10 @@ export class ApplicationsService {
       });
     } else {
       await this.prisma.db.orm.public.Application.where(
-        (a) => a.candidateEmail.eq(existing.candidateEmail),
+        (a) => a.id.eq(id),
       ).update({
-        resumeUrl: "",
-        resumeFileName: "",
+        resumeUrl: null,
+        resumeFileName: null,
         resumeFileSize: null,
         resumeMimeType: null,
         notes: updatedNotes,
@@ -456,31 +567,8 @@ export class ApplicationsService {
   }
 
   async remove(id: string) {
-    const app = await this.findOne(id);
-
-    // Check if candidate has other records
-    const allCandidateRecords = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "jobId",
-      "candidateEmail",
-    )
-      .where((a) => a.candidateEmail.eq(app.candidateEmail))
-      .all();
-
-    const otherRecords = allCandidateRecords.filter((r) => r.id !== id);
-
-    if (otherRecords.length > 0) {
-      // Other applications or talent pool records exist, delete this application record
-      await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).delete();
-    } else {
-      // This is the candidate's only record in database.
-      // Detach from the job so the application is deleted from the job/applications list,
-      // but the candidate is preserved in the Talent Pool.
-      await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).update({
-        jobId: null,
-      });
-    }
-
+    await this.findOne(id);
+    await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).delete();
     return { success: true, message: `Application ${id} deleted successfully` };
   }
 }

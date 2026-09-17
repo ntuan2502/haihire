@@ -15,6 +15,8 @@ interface ApplyToJobModalProps {
     email: string;
     phone?: string;
     notes?: string;
+    resumeUrl?: string | null;
+    resumeFileName?: string | null;
     rawApp?: Application;
   } | null;
   jobs: Job[];
@@ -40,8 +42,9 @@ export function ApplyToJobModal({
     existingApplications
       .filter(
         (a) =>
-          a.jobId &&
-          a.candidateEmail.toLowerCase() === candidate.email.toLowerCase(),
+          a.candidateId === candidate.id ||
+          (a.candidateEmail &&
+            a.candidateEmail.toLowerCase() === candidate.email.toLowerCase()),
       )
       .map((a) => a.jobId),
   );
@@ -51,6 +54,7 @@ export function ApplyToJobModal({
       setSubmittingJobId(job.id);
       const formData = new FormData();
       formData.append("jobId", String(job.id));
+      formData.append("candidateId", candidate.id);
       formData.append("candidateName", candidate.name);
       formData.append("candidateEmail", candidate.email);
       if (candidate.phone) {
@@ -60,12 +64,13 @@ export function ApplyToJobModal({
         formData.append("notes", candidate.notes);
       }
 
-      // If existing resumeUrl exists in candidate profile, pass resume info
-      if (candidate.rawApp?.resumeUrl) {
-        // We can pass existing resume information
-        formData.append("resumeUrl", candidate.rawApp.resumeUrl);
-        if (candidate.rawApp.resumeFileName) {
-          formData.append("resumeFileName", candidate.rawApp.resumeFileName);
+      const effectiveResumeUrl = candidate.resumeUrl || candidate.rawApp?.resumeUrl;
+      const effectiveResumeFileName = candidate.resumeFileName || candidate.rawApp?.resumeFileName;
+
+      if (effectiveResumeUrl) {
+        formData.append("resumeUrl", effectiveResumeUrl);
+        if (effectiveResumeFileName) {
+          formData.append("resumeFileName", effectiveResumeFileName);
         }
       }
 

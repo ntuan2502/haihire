@@ -322,11 +322,11 @@ export const vi: TranslationSchema = {
     activePipeline: "Đang hoạt động",
     newApplicants: "Mới",
     experience: {
-      junior: "Mới tốt nghiệp / Junior",
-      mid: "Chuyên viên / Mid",
-      senior: "Cấp cao / Senior",
-      lead: "Trưởng nhóm / Lead",
-      executive: "Cấp điều hành / Executive",
+      junior: "Mới tốt nghiệp",
+      mid: "Chuyên viên",
+      senior: "Cấp cao",
+      lead: "Trưởng nhóm",
+      executive: "Cấp điều hành",
     },
     workplace: {
       remote: "Từ xa",

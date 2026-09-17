@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8c293eb06ca4e23905ad7fd63baa782693f029ecd5f2adc7c9e828d7d6b0b613'>;
+  StorageHashBase<'1cbf6618dff2e0e637444dbc11d0f6c8e4bb94fbffdc4853e9bd68bda5bf1f79'>;
 export type ExecutionHash =
   ExecutionHashBase<'e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2'>;
 export type ProfileHash =
@@ -263,7 +263,7 @@ export type FieldOutputTypes = {
       readonly postalCode: CodecTypes['pg/text@1']['output'] | null;
       readonly experienceLevel: CodecTypes['pg/text@1']['output'] | null;
       readonly workplace: CodecTypes['pg/text@1']['output'] | null;
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly description: CodecTypes['pg/text@1']['output'];
       readonly requirements: CodecTypes['pg/text@1']['output'] | null;
       readonly salaryRange: CodecTypes['pg/text@1']['output'] | null;
@@ -373,7 +373,7 @@ export type FieldInputTypes = {
       readonly postalCode: CodecTypes['pg/text@1']['input'] | null;
       readonly experienceLevel: CodecTypes['pg/text@1']['input'] | null;
       readonly workplace: CodecTypes['pg/text@1']['input'] | null;
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly description: CodecTypes['pg/text@1']['input'];
       readonly requirements: CodecTypes['pg/text@1']['input'] | null;
       readonly salaryRange: CodecTypes['pg/text@1']['input'] | null;
@@ -489,7 +489,7 @@ export type StorageColumnTypes = {
       readonly salaryRange: CodecTypes['pg/text@1']['output'] | null;
       readonly status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
       readonly title: CodecTypes['pg/text@1']['output'];
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly workplace: CodecTypes['pg/text@1']['output'] | null;
     };
@@ -599,7 +599,7 @@ export type StorageColumnInputTypes = {
       readonly salaryRange: CodecTypes['pg/text@1']['input'] | null;
       readonly status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
       readonly title: CodecTypes['pg/text@1']['input'];
-      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP' | 'REMOTE';
+      readonly type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly workplace: CodecTypes['pg/text@1']['input'] | null;
     };
@@ -1455,13 +1455,7 @@ type ContractBase = Omit<
             };
             readonly JobType: {
               readonly kind: 'valueSet';
-              readonly values: readonly [
-                'FULL_TIME',
-                'PART_TIME',
-                'CONTRACT',
-                'INTERNSHIP',
-                'REMOTE',
-              ];
+              readonly values: readonly ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP'];
             };
             readonly Role: {
               readonly kind: 'valueSet';
@@ -2286,7 +2280,6 @@ type ContractBase = Omit<
               { readonly name: 'PART_TIME'; readonly value: 'PART_TIME' },
               { readonly name: 'CONTRACT'; readonly value: 'CONTRACT' },
               { readonly name: 'INTERNSHIP'; readonly value: 'INTERNSHIP' },
-              { readonly name: 'REMOTE'; readonly value: 'REMOTE' },
             ];
           };
           readonly JobStatus: {

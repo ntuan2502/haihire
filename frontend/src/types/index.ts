@@ -4,8 +4,7 @@ export type JobType =
   | "FULL_TIME"
   | "PART_TIME"
   | "CONTRACT"
-  | "INTERNSHIP"
-  | "REMOTE";
+  | "INTERNSHIP";
 
 export type JobStatus = "DRAFT" | "PUBLISHED" | "CLOSED" | "ARCHIVED";
 

@@ -5,7 +5,6 @@ export enum JobType {
   PART_TIME = "PART_TIME",
   CONTRACT = "CONTRACT",
   INTERNSHIP = "INTERNSHIP",
-  REMOTE = "REMOTE",
 }
 
 export enum JobStatus {

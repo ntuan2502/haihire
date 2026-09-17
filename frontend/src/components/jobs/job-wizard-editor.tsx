@@ -259,7 +259,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         PART_TIME: "Part-time",
         CONTRACT: "Contract",
         INTERNSHIP: "Internship",
-        REMOTE: "Full-time",
       };
       if (initialJob.type) {
         setEmploymentType(typeMap[initialJob.type] || "Full-time");

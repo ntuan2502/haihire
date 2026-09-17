@@ -109,10 +109,6 @@
               {
                 "name": "INTERNSHIP",
                 "value": "INTERNSHIP"
-              },
-              {
-                "name": "REMOTE",
-                "value": "REMOTE"
               }
             ]
           },
@@ -2054,8 +2050,8 @@
                   "prefix": "job_status_check"
                 },
                 {
-                  "expression": "\"type\" IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE')",
-                  "name": "job_type_check_5d86cbf7",
+                  "expression": "\"type\" IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP')",
+                  "name": "job_type_check_11718726",
                   "prefix": "job_type_check"
                 }
               ],
@@ -2527,8 +2523,7 @@
                 "FULL_TIME",
                 "PART_TIME",
                 "CONTRACT",
-                "INTERNSHIP",
-                "REMOTE"
+                "INTERNSHIP"
               ]
             },
             "Role": {
@@ -2544,7 +2539,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "8c293eb06ca4e23905ad7fd63baa782693f029ecd5f2adc7c9e828d7d6b0b613"
+    "storageHash": "1cbf6618dff2e0e637444dbc11d0f6c8e4bb94fbffdc4853e9bd68bda5bf1f79"
   },
   "execution": {
     "executionHash": "e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2",

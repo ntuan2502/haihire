@@ -9,7 +9,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import {
   useJobs,
-  useAllApplications,
+  useCandidates,
   useCreateJobMutation,
   useDeleteJobMutation,
 } from "@/hooks/use-queries";
@@ -23,7 +23,7 @@ function JobsPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: applications = [] } = useAllApplications();
+  const { data: candidates = [] } = useCandidates(user?.organizationId);
   const createJobMutation = useCreateJobMutation();
   const deleteJobMutation = useDeleteJobMutation();
 
@@ -64,7 +64,7 @@ function JobsPageContent() {
         activeTab="jobs"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Content */}
@@ -81,7 +81,6 @@ function JobsPageContent() {
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <JobList
               jobs={jobs}
-              applications={applications}
               loading={jobsLoading}
               onViewCandidates={(jobId: string) => {
                 setSelectedJobId(jobId);

@@ -9,7 +9,7 @@ import { useAuth } from "@/context/auth-context";
 import {
   useJob,
   useJobs,
-  useAllApplications,
+  useCandidates,
   useUpdateJobMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -54,7 +54,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const { data: jobs = [] } = useJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: allApplications = [] } = useAllApplications();
+  const { data: candidates = [] } = useCandidates(user?.organizationId);
   const updateJobMutation = useUpdateJobMutation();
 
   // Active tab based on pathname
@@ -105,7 +105,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
           activeTab="jobs"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={allApplications.length}
+          candidatesCount={candidates.length}
         />
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
@@ -145,7 +145,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
           activeTab="jobs"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={allApplications.length}
+          candidatesCount={candidates.length}
         />
       </div>
 

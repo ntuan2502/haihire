@@ -12,6 +12,7 @@ import type { Job, Application, Candidate, ApplicationStage, Organization, User,
 export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
+  application: (id?: string | null) => ["applications", "detail", id] as const,
   allApplications: (orgId?: string | null) => ["applications", "all", { orgId }] as const,
   candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,
   candidate: (id?: string | null) => ["candidates", id] as const,
@@ -161,6 +162,17 @@ export function useJobApplications(jobId: string | null) {
       return applicationsApi.getByJob(jobId);
     },
     enabled: jobId !== null && jobId !== undefined && jobId !== "",
+  });
+}
+
+export function useApplication(id: string | null | undefined) {
+  return useQuery<Application>({
+    queryKey: queryKeys.application(id),
+    queryFn: () => {
+      if (!id) throw new Error("Application ID is required");
+      return applicationsApi.getById(id);
+    },
+    enabled: Boolean(id),
   });
 }
 

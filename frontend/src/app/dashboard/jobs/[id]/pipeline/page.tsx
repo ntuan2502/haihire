@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   useJob,
-  useAllApplications,
+  useJobApplications,
   useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
@@ -76,8 +76,8 @@ function JobPipelinePageContent() {
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: allApplications = [], isLoading: appsLoading } =
-    useAllApplications();
+  const { data: jobApplications = [], isLoading: appsLoading } =
+    useJobApplications(jobId);
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -168,11 +168,7 @@ function JobPipelinePageContent() {
   const [candidateNotesList, setCandidateNotesList] = useState<string[]>([]);
   const [candidateNoteInput, setCandidateNoteInput] = useState("");
 
-  // Filter applications belonging to this job
-  const jobApplications = useMemo(() => {
-    if (!jobId) return [];
-    return allApplications.filter((a) => String(a.jobId) === String(jobId));
-  }, [allApplications, jobId]);
+
 
   // Stage counts for this job
   const stageCounts = useMemo(() => {
@@ -278,7 +274,7 @@ function JobPipelinePageContent() {
     if (!selectedCandidate) return [];
     const seenUrls = new Set<string>();
     const allDocs: CandidateDocument[] = [];
-    const relatedApps = allApplications.filter(
+    const relatedApps = jobApplications.filter(
       (a) =>
         a.candidateEmail &&
         a.candidateEmail === selectedCandidate.candidateEmail,
@@ -303,7 +299,7 @@ function JobPipelinePageContent() {
       }
     }
     return allDocs;
-  }, [selectedCandidate, allApplications]);
+  }, [selectedCandidate, jobApplications]);
 
   // Sync initial notes list
   useEffect(() => {
@@ -1202,7 +1198,7 @@ function JobPipelinePageContent() {
           isOpen={scheduleModalOpen}
           onClose={() => setScheduleModalOpen(false)}
           jobs={[job]}
-          applications={allApplications}
+          applications={jobApplications}
           selectedJobId={job.id}
           selectedApplicationId={selectedCandidate?.id}
         />

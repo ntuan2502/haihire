@@ -41,7 +41,7 @@ interface JobListProps {
 
 export function JobList({
   jobs,
-  applications = [],
+  applications: _applications = [],
   onViewCandidates: _onViewCandidates,
   _onOpenCreateJob,
 }: JobListProps & { _onOpenCreateJob?: () => void }) {
@@ -133,29 +133,17 @@ export function JobList({
 
   // Stage count helper for a job
   const getJobStageCounts = (jobId: string) => {
-    const jobApps = applications.filter((a) => a.jobId === jobId);
-    const byStage: Record<ApplicationStage, number> = {
-      APPLIED: 0,
-      SCREENING: 0,
-      INTERVIEW: 0,
-      OFFER: 0,
-      HIRED: 0,
-      REJECTED: 0,
-    };
-    for (const a of jobApps) {
-      if (byStage[a.stage] !== undefined) {
-        byStage[a.stage]++;
-      }
-    }
+    const job = jobs.find((j) => j.id === jobId);
+    const byStage = (job?.applicationsByStage || {}) as Record<string, number>;
     return {
-      new: byStage.APPLIED,
-      screening: byStage.SCREENING,
-      interview: byStage.INTERVIEW,
-      offer: byStage.OFFER,
-      hired: byStage.HIRED,
-      rejected: byStage.REJECTED,
-      byStage,
-      total: jobApps.length,
+      new: byStage.APPLIED || 0,
+      screening: byStage.SCREENING || 0,
+      interview: byStage.INTERVIEW || 0,
+      offer: byStage.OFFER || 0,
+      hired: byStage.HIRED || 0,
+      rejected: byStage.REJECTED || 0,
+      byStage: byStage as Record<ApplicationStage, number>,
+      total: job?.applicationsCount || 0,
     };
   };
 

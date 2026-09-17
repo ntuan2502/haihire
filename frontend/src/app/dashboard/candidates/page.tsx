@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
 import {
   useJobs,
-  useAllApplications,
   useCandidates,
+  useCandidate,
   useUploadCandidateDocumentMutation,
   useDeleteCandidateDocumentMutation,
   useDeleteDocumentMutation,
@@ -81,8 +81,6 @@ function CandidatesPageContent() {
   );
   const { data: candidates = [], isLoading: candidatesLoading } =
     useCandidates(user?.organizationId);
-  const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications(user?.organizationId);
   const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
   const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
   const deleteAppDocMutation = useDeleteDocumentMutation();
@@ -94,6 +92,7 @@ function CandidatesPageContent() {
   // Selected Candidate for Right Slide-over Sidebar Drawer
   const [selectedCandidate, setSelectedCandidate] =
     useState<CandidateItem | null>(null);
+  const { data: selectedCandidateFull } = useCandidate(selectedCandidate?.id);
   const [applyToJobModalCandidate, setApplyToJobModalCandidate] =
     useState<CandidateItem | null>(null);
   const [scheduleInterviewApp, setScheduleInterviewApp] =
@@ -133,7 +132,13 @@ function CandidatesPageContent() {
 
   const drawerCandidateDocuments = useMemo(() => {
     if (!selectedCandidate) return [];
-    const directDocs = parseCandidateDocuments(selectedCandidate.notes, {
+    if (
+      selectedCandidateFull?.allDocuments &&
+      selectedCandidateFull.allDocuments.length > 0
+    ) {
+      return selectedCandidateFull.allDocuments;
+    }
+    return parseCandidateDocuments(selectedCandidate.notes, {
       id: selectedCandidate.id,
       resumeUrl: selectedCandidate.resumeUrl || "",
       resumeFileName: selectedCandidate.resumeFileName || "Resume.pdf",
@@ -141,41 +146,7 @@ function CandidatesPageContent() {
       resumeMimeType: selectedCandidate.resumeMimeType,
       createdAt: selectedCandidate.createdAt,
     });
-    const allDocs = [...directDocs];
-    const seenUrls = new Set(allDocs.map((d) => d.url).filter(Boolean));
-
-    // Also include CVs and documents from all applications of this candidate
-    const candidateApps = applications.filter(
-      (a) =>
-        a.candidateId === selectedCandidate.id ||
-        (a.candidateEmail &&
-          a.candidateEmail.toLowerCase() ===
-            selectedCandidate.email.toLowerCase()),
-    );
-
-    for (const app of candidateApps) {
-      const appDocs = parseCandidateDocuments(app.notes, {
-        id: app.id,
-        resumeUrl: app.resumeUrl || "",
-        resumeFileName: app.resumeFileName || "Application_Resume.pdf",
-        resumeFileSize: app.resumeFileSize,
-        resumeMimeType: app.resumeMimeType,
-        createdAt: app.createdAt,
-      });
-      for (const doc of appDocs) {
-        if (doc.url && !seenUrls.has(doc.url)) {
-          seenUrls.add(doc.url);
-          allDocs.push({
-            ...doc,
-            sourceApplicationId: app.id,
-            jobTitle: app.job?.title,
-          });
-        }
-      }
-    }
-
-    return allDocs;
-  }, [selectedCandidate, applications]);
+  }, [selectedCandidate, selectedCandidateFull]);
 
   const filteredDrawerDocuments = useMemo(() => {
     if (!drawerDocFilter || drawerDocFilter === "All")
@@ -305,7 +276,7 @@ function CandidatesPageContent() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(20);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const loading = jobsLoading || candidatesLoading || appsLoading;
+  const loading = jobsLoading || candidatesLoading;
 
   // Real candidates from Candidate database
   const candidateRows: CandidateItem[] = useMemo(() => {
@@ -384,14 +355,12 @@ function CandidatesPageContent() {
 
   const selectedCandidateApps = useMemo(() => {
     if (!selectedCandidate) return [];
-    return applications.filter(
-      (a) =>
-        a.candidateId === selectedCandidate.id ||
-        (a.candidateEmail &&
-          a.candidateEmail.toLowerCase() ===
-            selectedCandidate.email.toLowerCase()),
+    return (
+      (selectedCandidateFull?.applications ||
+        selectedCandidate.candidate?.applications ||
+        []) as Application[]
     );
-  }, [selectedCandidate, applications]);
+  }, [selectedCandidate, selectedCandidateFull]);
 
   const filteredDrawerApps = useMemo(() => {
     if (drawerStageFilter === "ALL") return selectedCandidateApps;
@@ -1407,7 +1376,7 @@ function CandidatesPageContent() {
         onClose={() => setApplyToJobModalCandidate(null)}
         candidate={applyToJobModalCandidate}
         jobs={jobs}
-        existingApplications={applications}
+        existingApplications={selectedCandidateApps}
       />
 
       {/* Schedule Interview Modal */}
@@ -1416,7 +1385,7 @@ function CandidatesPageContent() {
           isOpen={!!scheduleInterviewApp}
           onClose={() => setScheduleInterviewApp(null)}
           jobs={jobs}
-          applications={applications}
+          applications={selectedCandidateApps}
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
         />

@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
+import { fixUtf8String } from "../applications/applications.service";
 
 @Injectable()
 export class JobsService {
@@ -158,6 +159,32 @@ export class JobsService {
     ).all();
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
+    // Fetch interviews for each application
+    const appIds = new Set(applications.map((a) => a.id));
+    const allInterviews = await this.prisma.db.orm.public.Interview.all();
+    const jobInterviews = allInterviews.filter((i) => appIds.has(i.applicationId));
+    const interviewsByApp = new Map<string, any[]>();
+    for (const intv of jobInterviews) {
+      const list = interviewsByApp.get(intv.applicationId) || [];
+      let parsedScorecard: any = null;
+      if (intv.scorecard) {
+        try {
+          parsedScorecard = JSON.parse(intv.scorecard);
+        } catch {
+          parsedScorecard = null;
+        }
+      }
+      list.push({
+        ...intv,
+        type: fixUtf8String(intv.type),
+        linkOrLocation: fixUtf8String(intv.linkOrLocation),
+        interviewer: fixUtf8String(intv.interviewer),
+        scorecard: parsedScorecard,
+        notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      });
+      interviewsByApp.set(intv.applicationId, list);
+    }
+
     const populatedApps = applications.map((a) => {
       const candidate = candidateMap.get(a.candidateId);
       return {
@@ -168,6 +195,7 @@ export class JobsService {
         candidatePhone: candidate?.phone || null,
         resumeUrl: a.resumeUrl || candidate?.resumeUrl || "",
         resumeFileName: a.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+        interviews: interviewsByApp.get(a.id) || [],
       };
     });
 

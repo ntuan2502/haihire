@@ -8,7 +8,8 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useAllApplications,
+  useApplication,
+  useCandidates,
   useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
@@ -67,11 +68,17 @@ function ApplicationDetailPageContent() {
   const { t } = useI18n();
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
+  const isAppIdValid = isValidUuid(appIdStr);
+  const { data: app, isLoading: appLoading } = useApplication(
+    isAppIdValid ? appIdStr : null,
+  );
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications();
+  const { data: candidates = [], isLoading: candidatesLoading } = useCandidates(
+    user?.organizationId,
+  );
+  const loading = appLoading || jobsLoading || candidatesLoading;
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -114,41 +121,19 @@ function ApplicationDetailPageContent() {
     }
   };
 
-  const loading = jobsLoading || appsLoading;
-
-  const isAppIdValid = isValidUuid(appIdStr);
-  const app = isAppIdValid
-    ? applications.find((a) => String(a.id) === String(appIdStr))
-    : undefined;
   const job = jobs.find((j) => j.id === app?.jobId);
 
   const candidateDocuments = useMemo(() => {
     if (!app) return [];
-    const seenUrls = new Set<string>();
-    const allDocs: CandidateDocument[] = [];
-    const relatedApps = applications.filter(
-      (a) => a.candidateEmail && a.candidateEmail === app.candidateEmail,
-    );
-    const appsToScan = relatedApps.length > 0 ? relatedApps : [app];
-
-    for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.notes, {
-        id: a.id,
-        resumeUrl: a.resumeUrl,
-        resumeFileName: a.resumeFileName,
-        resumeFileSize: a.resumeFileSize,
-        resumeMimeType: a.resumeMimeType,
-        createdAt: a.createdAt,
-      });
-      for (const d of docs) {
-        if (d.url && !seenUrls.has(d.url)) {
-          seenUrls.add(d.url);
-          allDocs.push(d);
-        }
-      }
-    }
-    return allDocs;
-  }, [app, applications]);
+    return parseCandidateDocuments(app.notes, {
+      id: app.id,
+      resumeUrl: app.resumeUrl,
+      resumeFileName: app.resumeFileName,
+      resumeFileSize: app.resumeFileSize,
+      resumeMimeType: app.resumeMimeType,
+      createdAt: app.createdAt,
+    });
+  }, [app]);
 
   useEffect(() => {
     if (app?.notes) {
@@ -256,7 +241,7 @@ function ApplicationDetailPageContent() {
           activeTab="applications"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
@@ -272,7 +257,7 @@ function ApplicationDetailPageContent() {
           activeTab="applications"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={applications.length}
+          candidatesCount={candidates.length}
         />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-16 text-center space-y-4">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 mb-1 border border-rose-200 dark:border-rose-900 shadow-xs">
@@ -318,7 +303,7 @@ function ApplicationDetailPageContent() {
         activeTab="applications"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Container */}
@@ -832,7 +817,7 @@ function ApplicationDetailPageContent() {
           isOpen={scheduleModalOpen}
           onClose={() => setScheduleModalOpen(false)}
           jobs={jobs}
-          applications={applications}
+          applications={app ? [app] : []}
           selectedJobId={app.jobId || undefined}
           selectedApplicationId={app.id}
         />

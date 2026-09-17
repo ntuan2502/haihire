@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
-import { useJobs, useAllApplications } from "@/hooks/use-queries";
+import { useJobs, useAllApplications, useCandidates } from "@/hooks/use-queries";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
 
 function ApplicationsPageContent() {
@@ -15,6 +15,7 @@ function ApplicationsPageContent() {
   );
   const { data: rawApplications = [], isLoading: appsLoading } =
     useAllApplications();
+  const { data: candidates = [] } = useCandidates(user?.organizationId);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -23,7 +24,7 @@ function ApplicationsPageContent() {
         activeTab="applications"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={rawApplications.length}
+        candidatesCount={candidates.length}
       />
 
       {/* Main Content */}

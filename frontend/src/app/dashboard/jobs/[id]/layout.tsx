@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense, type ReactNode } from "react";
+import { useMemo, Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
@@ -28,7 +28,6 @@ import {
   Settings,
   MoreHorizontal,
   ExternalLink,
-  X,
   ChevronDown,
   Check,
 } from "lucide-react";
@@ -57,8 +56,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const { data: job, isLoading: jobLoading } = useJob(jobId);
   const { data: allApplications = [] } = useAllApplications();
   const updateJobMutation = useUpdateJobMutation();
-
-  const [jdModalOpen, setJdModalOpen] = useState(false);
 
   // Active tab based on pathname
   const activeNavTab = useMemo(() => {
@@ -115,16 +112,16 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
             <Briefcase className="h-6 w-6" />
           </div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
-            Job Not Found
+            {t("careers.jobNotFound")}
           </h2>
           <p className="text-xs text-slate-400 max-w-sm">
-            The job you are looking for does not exist or may have been removed.
+            {t("careers.jobNotFoundDesc")}
           </p>
           <Button
             onClick={() => router.push("/dashboard/jobs")}
             className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs cursor-pointer"
           >
-            Back to Jobs
+            {t("jobs.allJobs")}
           </Button>
         </div>
       </div>
@@ -222,17 +219,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setJdModalOpen(true)}
-              className="h-7 px-2.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-              title={t("jobs.viewJdQuick")}
-            >
-              <FileText className="h-3 w-3 text-slate-500" />
-              <span className="hidden sm:inline">{t("jobs.jdDetails")}</span>
-            </Button>
-
             <a
               href={getJobPublicUrl(job)}
               target="_blank"
@@ -338,101 +324,6 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {children}
       </div>
-
-      {/* Quick JD & Requirements Modal */}
-      {jdModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/50">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
-                  <Briefcase className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                    {job.title}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                    <span>{job.department}</span>
-                    <span>•</span>
-                    <span>{jobTypeLabel}</span>
-                    <span>•</span>
-                    <span>{job.location}</span>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setJdModalOpen(false)}
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Content body */}
-            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-sm text-slate-700 dark:text-slate-200">
-              {/* Description */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <Briefcase className="h-3.5 w-3.5 text-blue-500" />
-                  {t("careers.jobDescription")}
-                </h4>
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 whitespace-pre-line leading-relaxed text-xs sm:text-sm">
-                  {job.description || t("jobs.wizard.noDescEntered")}
-                </div>
-              </div>
-
-              {/* Requirements */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-indigo-500" />
-                  {t("careers.requirements")}
-                </h4>
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/70 dark:border-slate-800 whitespace-pre-line leading-relaxed text-xs sm:text-sm">
-                  {job.requirements || t("jobs.wizard.noReqEntered")}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/50">
-              <a
-                href={getJobPublicUrl(job)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {t("jobs.viewPublicPage")}
-              </a>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setJdModalOpen(false);
-                    router.push(`/dashboard/jobs/${job.id}/settings`);
-                  }}
-                  className="h-8 text-xs font-semibold cursor-pointer"
-                >
-                  <Settings className="h-3.5 w-3.5 mr-1" />
-                  {t("jobs.editInSettings")}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setJdModalOpen(false)}
-                  className="h-8 text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 cursor-pointer"
-                >
-                  {t("common.close")}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

@@ -126,15 +126,25 @@ function CandidateDetailPageContent() {
   // Find all applications belonging to this candidate
   const candidateApps = useMemo(() => {
     if (!candidate) return [];
-    if (candidate.applications && candidate.applications.length > 0) {
-      return candidate.applications;
-    }
-    return applications.filter(
-      (a) =>
-        a.candidateId === candidate.id ||
-        (a.candidateEmail &&
-          a.candidateEmail.toLowerCase() === candidate.email.toLowerCase()),
-    );
+    const baseApps =
+      candidate.applications && candidate.applications.length > 0
+        ? candidate.applications
+        : applications.filter(
+            (a) =>
+              a.candidateId === candidate.id ||
+              (a.candidateEmail &&
+                a.candidateEmail.toLowerCase() === candidate.email.toLowerCase()),
+          );
+
+    // Enrich applications with cached applications data (which may already have interviews, rich job info, etc.)
+    const appMap = new Map(applications.map((a) => [a.id, a]));
+    return baseApps.map((base) => {
+      const full = appMap.get(base.id);
+      const interviews = (base as any).interviews?.length
+        ? (base as any).interviews
+        : full?.interviews || [];
+      return full ? { ...base, ...full, interviews } : { ...base, interviews };
+    });
   }, [candidate, applications]);
 
   const filteredCandidateApps = useMemo(() => {

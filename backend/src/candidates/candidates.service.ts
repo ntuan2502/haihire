@@ -206,12 +206,39 @@ export class CandidatesService {
     ).all();
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
 
+    // Fetch interviews for each application
+    const appIds = new Set(applications.map((a) => a.id));
+    const allInterviews = await this.prisma.db.orm.public.Interview.all();
+    const candidateInterviews = allInterviews.filter((i) => appIds.has(i.applicationId));
+    const interviewsByApp = new Map<string, any[]>();
+    for (const intv of candidateInterviews) {
+      const list = interviewsByApp.get(intv.applicationId) || [];
+      let parsedScorecard: any = null;
+      if (intv.scorecard) {
+        try {
+          parsedScorecard = JSON.parse(intv.scorecard);
+        } catch {
+          parsedScorecard = null;
+        }
+      }
+      list.push({
+        ...intv,
+        type: fixUtf8String(intv.type),
+        linkOrLocation: fixUtf8String(intv.linkOrLocation),
+        interviewer: fixUtf8String(intv.interviewer),
+        scorecard: parsedScorecard,
+        notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      });
+      interviewsByApp.set(intv.applicationId, list);
+    }
+
     const populatedApps = applications.map((app) => ({
       ...app,
       job: jobMap.get(app.jobId) || null,
       candidateName: candidate.name,
       candidateEmail: candidate.email,
       candidatePhone: candidate.phone,
+      interviews: interviewsByApp.get(app.id) || [],
     }));
 
     // Aggregate all documents: candidate's documents + all documents from applications

@@ -9,9 +9,11 @@ describe("EventsService - SSE Streaming", () => {
   });
 
   it("should stream events targeted directly to a specific user", async () => {
-    const received: any[] = [];
+    const received: Array<{ type?: string; targetUserId?: string; organizationId?: string; role?: string }> = [];
     const sub = service.subscribe("usr-target").subscribe((msg) => {
-      received.push(msg.data);
+      if (msg.data && typeof msg.data === "object") {
+        received.push(msg.data as { type?: string; targetUserId?: string; organizationId?: string; role?: string });
+      }
     });
 
     service.emit({
@@ -34,9 +36,11 @@ describe("EventsService - SSE Streaming", () => {
   });
 
   it("should stream org broadcast events to listeners", async () => {
-    const received: any[] = [];
+    const received: Array<{ type?: string; targetUserId?: string; organizationId?: string; role?: string }> = [];
     const sub = service.subscribe("usr-admin").subscribe((msg) => {
-      received.push(msg.data);
+      if (msg.data && typeof msg.data === "object") {
+        received.push(msg.data as { type?: string; targetUserId?: string; organizationId?: string; role?: string });
+      }
     });
 
     service.emit({

@@ -1,9 +1,9 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import type { OnModuleInit } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import * as Minio from "minio";
 import { randomUUID } from "node:crypto";
 import { extname } from "node:path";
+import { env } from "../config/env";
 
 export interface UploadResult {
   url: string;
@@ -20,24 +20,16 @@ export class MinioService implements OnModuleInit {
   private bucketName: string;
   private publicUrl: string;
 
-  constructor(
-    @Inject(ConfigService)
-    private readonly configService: ConfigService,
-  ) {
-    const endPoint = this.configService.get<string>("MINIO_ENDPOINT", "localhost");
-    const port = Number(this.configService.get<number>("MINIO_PORT", 9000));
-    const useSSL = this.configService.get<string>("MINIO_USE_SSL", "false") === "true";
-    const accessKey = this.configService.get<string>("MINIO_ACCESS_KEY", "minioadmin");
-    const secretKey = this.configService.get<string>("MINIO_SECRET_KEY", "minioadmin");
-    this.bucketName = this.configService.get<string>("MINIO_BUCKET_NAME", "ats-resumes");
-    this.publicUrl = this.configService.get<string>("MINIO_PUBLIC_URL", "http://localhost:9000");
+  constructor() {
+    this.bucketName = env.MINIO_BUCKET_NAME;
+    this.publicUrl = env.MINIO_PUBLIC_URL;
 
     this.client = new Minio.Client({
-      endPoint,
-      port,
-      useSSL,
-      accessKey,
-      secretKey,
+      endPoint: env.MINIO_ENDPOINT,
+      port: env.MINIO_PORT,
+      useSSL: env.MINIO_USE_SSL,
+      accessKey: env.MINIO_ACCESS_KEY,
+      secretKey: env.MINIO_SECRET_KEY,
     });
   }
 
@@ -68,8 +60,9 @@ export class MinioService implements OnModuleInit {
         await this.client.setBucketPolicy(this.bucketName, JSON.stringify(policy));
       }
       this.logger.log(`MinIO successfully connected to bucket: ${this.bucketName}`);
-    } catch (error: any) {
-      this.logger.warn(`MinIO initialization notice: ${error.message}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`MinIO initialization notice: ${msg}`);
     }
   }
 
@@ -101,7 +94,7 @@ export class MinioService implements OnModuleInit {
   async deleteFile(fileName: string): Promise<void> {
     try {
       await this.client.removeObject(this.bucketName, fileName);
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error(`Failed to delete file '${fileName}' from MinIO`, error);
     }
   }

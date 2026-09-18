@@ -1,10 +1,9 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import crypto from "node:crypto";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { fixUtf8String } from "../applications/applications.service";
@@ -12,6 +11,27 @@ import { fixUtf8String } from "../applications/applications.service";
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
 import { buildDynamicEmailContext } from "../email/variable-registry";
+
+export type InterviewType =
+  | "HR_SCREENING"
+  | "TECHNICAL"
+  | "CULTURE_FIT"
+  | "FINAL_ROUND"
+  | "ASSESSMENT";
+
+export type InterviewFormat = "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
+
+export interface InterviewUpdatePayload {
+  date?: string;
+  time?: string;
+  type?: InterviewType;
+  format?: InterviewFormat;
+  linkOrLocation?: string;
+  interviewer?: string;
+  round?: number;
+  notes?: string | null;
+  scorecard?: string | null;
+}
 
 @Injectable()
 export class InterviewsService {
@@ -26,63 +46,130 @@ export class InterviewsService {
     jobId?: string;
     applicationId?: string;
   }) {
-    let interviews = await this.prisma.db.orm.public.Interview.all();
+    type InterviewRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Interview.all>>[number];
+    type AppRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Application.all>>[number];
+    type CandidateRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Candidate.all>>[number];
+    type JobRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Job.all>>[number];
+
+    let interviews: InterviewRecord[] = [];
+    const appsMap = new Map<string, AppRecord>();
 
     if (options?.applicationId) {
-      interviews = interviews.filter((i) => i.applicationId === options.applicationId);
+      interviews = await this.prisma.db.orm.public.Interview
+        .where((i) => i.applicationId.eq(options.applicationId!))
+        .all();
+    } else if (options?.jobId) {
+      const targetApps = await this.prisma.db.orm.public.Application.select(
+        "id",
+        "candidateId",
+        "jobId",
+        "stage",
+        "matchScore",
+        "notes",
+      )
+        .where((a) => a.jobId.eq(options.jobId!))
+        .all();
+
+      if (targetApps.length === 0) {
+        return [];
+      }
+      for (const a of targetApps) {
+        appsMap.set(a.id, a as unknown as AppRecord);
+      }
+      const appIds = targetApps.map((a) => a.id);
+      interviews = await this.prisma.db.orm.public.Interview
+        .where((i) => i.applicationId.in(appIds))
+        .all();
+    } else if (options?.organizationId) {
+      const orgCandidates = await this.prisma.db.orm.public.Candidate.select("id")
+        .where((c) => c.organizationId.eq(options.organizationId!))
+        .all();
+
+      if (orgCandidates.length === 0) {
+        return [];
+      }
+      const candidateIds = orgCandidates.map((c) => c.id);
+
+      const targetApps = await this.prisma.db.orm.public.Application.select(
+        "id",
+        "candidateId",
+        "jobId",
+        "stage",
+        "matchScore",
+        "notes",
+      )
+        .where((a) => a.candidateId.in(candidateIds))
+        .all();
+
+      if (targetApps.length === 0) {
+        return [];
+      }
+      for (const a of targetApps) {
+        appsMap.set(a.id, a as unknown as AppRecord);
+      }
+      const appIds = targetApps.map((a) => a.id);
+      interviews = await this.prisma.db.orm.public.Interview
+        .where((i) => i.applicationId.in(appIds))
+        .all();
+    } else {
+      interviews = await this.prisma.db.orm.public.Interview.all();
     }
 
     if (interviews.length === 0) {
       return [];
     }
 
-    const appIds = new Set(interviews.map((i) => i.applicationId));
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "candidateId",
-      "jobId",
-      "stage",
-      "matchScore",
-      "notes",
-    ).all();
-
-    const appsMap = new Map<string, (typeof allApps)[0]>();
-    for (const a of allApps) {
-      if (appIds.has(a.id)) {
-        appsMap.set(a.id, a);
+    const neededAppIds = [...new Set(interviews.map((i) => i.applicationId))].filter(
+      (id) => !appsMap.has(id),
+    );
+    if (neededAppIds.length > 0) {
+      const fetchedApps = await this.prisma.db.orm.public.Application.select(
+        "id",
+        "candidateId",
+        "jobId",
+        "stage",
+        "matchScore",
+        "notes",
+      )
+        .where((a) => a.id.in(neededAppIds))
+        .all();
+      for (const a of fetchedApps) {
+        appsMap.set(a.id, a as unknown as AppRecord);
       }
     }
 
-    const candidateIds = new Set(Array.from(appsMap.values()).map((a) => a.candidateId));
-    const allCandidates = await this.prisma.db.orm.public.Candidate.select(
-      "id",
-      "name",
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "organizationId",
-    ).all();
-
-    const candidatesMap = new Map<string, (typeof allCandidates)[0]>();
-    for (const c of allCandidates) {
-      if (candidateIds.has(c.id)) {
-        candidatesMap.set(c.id, c);
+    const candidateIds = [...new Set(Array.from(appsMap.values()).map((a) => a.candidateId))];
+    const candidatesMap = new Map<string, CandidateRecord>();
+    if (candidateIds.length > 0) {
+      const candidates = await this.prisma.db.orm.public.Candidate.select(
+        "id",
+        "name",
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "organizationId",
+      )
+        .where((c) => c.id.in(candidateIds))
+        .all();
+      for (const c of candidates) {
+        candidatesMap.set(c.id, c as unknown as CandidateRecord);
       }
     }
 
-    const jobIds = new Set(Array.from(appsMap.values()).map((a) => a.jobId));
-    const allJobs = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "organizationId",
-    ).all();
-
-    const jobsMap = new Map<string, (typeof allJobs)[0]>();
-    for (const j of allJobs) {
-      if (jobIds.has(j.id)) {
-        jobsMap.set(j.id, j);
+    const jobIds = [...new Set(Array.from(appsMap.values()).map((a) => a.jobId))];
+    const jobsMap = new Map<string, JobRecord>();
+    if (jobIds.length > 0) {
+      const jobs = await this.prisma.db.orm.public.Job.select(
+        "id",
+        "title",
+        "department",
+        "organizationId",
+      )
+        .where((j) => j.id.in(jobIds))
+        .all();
+      for (const j of jobs) {
+        jobsMap.set(j.id, j as unknown as JobRecord);
       }
     }
 
@@ -92,10 +179,10 @@ export class InterviewsService {
         const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
         const job = app ? jobsMap.get(app.jobId) : undefined;
 
-        let parsedScorecard: any = null;
+        let parsedScorecard: Record<string, unknown> | null = null;
         if (intv.scorecard) {
           try {
-            parsedScorecard = JSON.parse(intv.scorecard);
+            parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
           } catch {
             parsedScorecard = null;
           }
@@ -137,6 +224,11 @@ export class InterviewsService {
           return false;
         }
         return true;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
+        const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
+        return dateA - dateB;
       });
 
     return enriched;
@@ -156,10 +248,10 @@ export class InterviewsService {
       ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
       : null;
 
-    let parsedScorecard: any = null;
+    let parsedScorecard: Record<string, unknown> | null = null;
     if (intv.scorecard) {
       try {
-        parsedScorecard = JSON.parse(intv.scorecard);
+        parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
       } catch {
         parsedScorecard = null;
       }
@@ -199,8 +291,8 @@ export class InterviewsService {
       applicationId: dto.applicationId,
       date: dto.date,
       time: dto.time,
-      type: dto.type as any,
-      format: dto.format || "MEET",
+      type: dto.type as InterviewType,
+      format: (dto.format as InterviewFormat) || "MEET",
       linkOrLocation: dto.linkOrLocation || "",
       interviewer: dto.interviewer,
       round: dto.round || 1,
@@ -265,8 +357,8 @@ export class InterviewsService {
                   },
                   job: {
                     title: job?.title || "Vị trí tuyển dụng",
-                    department: (job as any)?.department,
-                    location: (job as any)?.location,
+                    department: job?.department || "",
+                    location: job?.location || "",
                   },
                   organization: { name: "ATS Recruitment" },
                   interview: {
@@ -298,11 +390,11 @@ export class InterviewsService {
       throw new NotFoundException(`Interview with ID ${id} not found`);
     }
 
-    const updateData: any = {};
+    const updateData: InterviewUpdatePayload = {};
     if (dto.date !== undefined) updateData.date = dto.date;
     if (dto.time !== undefined) updateData.time = dto.time;
-    if (dto.type !== undefined) updateData.type = dto.type as any;
-    if (dto.format !== undefined) updateData.format = dto.format;
+    if (dto.type !== undefined) updateData.type = dto.type as InterviewType;
+    if (dto.format !== undefined) updateData.format = dto.format as InterviewFormat;
     if (dto.linkOrLocation !== undefined) updateData.linkOrLocation = dto.linkOrLocation;
     if (dto.interviewer !== undefined) updateData.interviewer = dto.interviewer;
     if (dto.round !== undefined) updateData.round = dto.round;

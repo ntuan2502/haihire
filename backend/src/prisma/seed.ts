@@ -1,8 +1,8 @@
-import "dotenv/config";
 import crypto from "node:crypto";
+import { env } from "../config/env";
 import bcrypt from "bcryptjs";
 import { db } from "./db.ts";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants.ts";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
@@ -444,7 +444,7 @@ class InterviewSlotManager {
       "TECHNICAL",
       "CULTURE_FIT",
       "FINAL_ROUND",
-    ];
+    ] as const;
     const type = roundTypes[Math.min(round - 1, roundTypes.length - 1)];
 
     const formats = ["MEET", "ZOOM", "TEAMS", "OFFICE"] as const;
@@ -488,12 +488,8 @@ class InterviewSlotManager {
 let pendingSeed: Promise<void> | undefined;
 
 export async function runSeed(): Promise<void> {
-  const dbUrl =
-    process.env.DATABASE_URL ||
-    "postgresql://ats_user:ats_password@localhost:5432/ats_db?schema=public";
-
   try {
-    await db.connect({ url: dbUrl });
+    await db.connect({ url: env.DATABASE_URL });
   } catch {
     // already connected or composer client
   }
@@ -699,9 +695,9 @@ export async function runSeed(): Promise<void> {
         title: baseConfig.title,
         department: baseConfig.department,
         location,
-        workplace: workplace as any,
+        workplace: workplace as "ON_SITE" | "HYBRID" | "REMOTE",
         type,
-        experienceLevel: experienceLevel as any,
+        experienceLevel: experienceLevel as "ENTRY_LEVEL" | "MID_LEVEL" | "SENIOR_LEVEL" | "LEAD" | "EXECUTIVE",
         salaryRange,
         description: baseConfig.description,
         requirements: baseConfig.requirements,
@@ -775,7 +771,7 @@ export async function runSeed(): Promise<void> {
     name: string;
     firstName: string;
     lastName: string;
-    gender: any;
+    gender: "MALE" | "FEMALE" | "OTHER";
     dateOfBirth: Date;
     email: string;
     phone: string;
@@ -807,8 +803,8 @@ export async function runSeed(): Promise<void> {
     applicationId: string;
     date: string;
     time: string;
-    type: any;
-    format: any;
+    type: "HR_SCREENING" | "TECHNICAL" | "CULTURE_FIT" | "FINAL_ROUND" | "ASSESSMENT";
+    format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
     linkOrLocation: string;
     interviewer: string;
     round: number;
@@ -827,7 +823,7 @@ export async function runSeed(): Promise<void> {
       "Mason", "Logan", "Benjamin", "Henry",
     ];
 
-    let gender = "MALE";
+    let gender: "MALE" | "FEMALE" | "OTHER" = "MALE";
     if (femaleHints.some((h) => name.includes(h))) {
       gender = "FEMALE";
     } else if (maleHints.some((h) => name.includes(h))) {

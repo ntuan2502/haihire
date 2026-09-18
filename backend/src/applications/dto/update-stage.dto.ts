@@ -1,14 +1,8 @@
 import { Type } from "class-transformer";
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional } from "class-validator";
+import { ApplicationStage } from "@ats/types";
 
-export enum ApplicationStage {
-  APPLIED = "APPLIED",
-  SCREENING = "SCREENING",
-  INTERVIEW = "INTERVIEW",
-  OFFER = "OFFER",
-  HIRED = "HIRED",
-  REJECTED = "REJECTED",
-}
+export { ApplicationStage };
 
 export class UpdateStageDto {
   @IsEnum(ApplicationStage)

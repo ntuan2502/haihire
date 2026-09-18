@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Inject,
   NotFoundException,
@@ -37,9 +36,18 @@ export class CandidatesController {
   findAll(
     @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
   ) {
     const orgId = organizationId || req?.user?.organizationId || undefined;
-    return this.candidatesService.findAll(orgId);
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.candidatesService.findAll(orgId, {
+      page: pageNum,
+      limit: limitNum,
+      search,
+    });
   }
 
   @Get(":id")

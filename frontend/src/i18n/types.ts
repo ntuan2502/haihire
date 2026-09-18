@@ -47,6 +47,10 @@ export interface TranslationSchema {
     preview: string;
     download: string;
     you: string;
+    expand: string;
+    collapse: string;
+    fullscreen: string;
+    exitFullscreen: string;
   };
   nav: {
     dashboard: string;

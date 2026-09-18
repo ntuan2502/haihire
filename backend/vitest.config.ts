@@ -1,0 +1,9 @@
+import { defineConfig } from "vitest/config";
+// Load and validate environment variables with Zod (Single Source of Truth)
+import "./src/config/env.ts";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+  },
+});

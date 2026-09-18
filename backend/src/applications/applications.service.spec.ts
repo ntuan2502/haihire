@@ -5,12 +5,54 @@ import { ApplicationStage } from "./dto/update-stage.dto";
 
 describe("ApplicationsService - Multi-Tenant Candidate & Application Management", () => {
   let service: ApplicationsService;
-  let mockPrismaService: any;
-  let mockMinioService: any;
+  let mockPrismaService: unknown;
+  let mockMinioService: unknown;
 
-  let mockJobs: any[] = [];
-  let mockCandidates: any[] = [];
-  let mockApps: any[] = [];
+  interface MockJob {
+    id: string;
+    title: string;
+    organizationId: string;
+    department?: string;
+    location?: string;
+    status?: string;
+  }
+
+  interface MockCandidate {
+    id: string;
+    organizationId: string;
+    name: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    phone: string;
+    notes?: string | null;
+    resumeUrl?: string | null;
+    resumeFileName?: string | null;
+    resumeFileSize?: number | null;
+    resumeMimeType?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  interface MockApp {
+    id: string;
+    candidateId: string;
+    jobId: string;
+    stage: string;
+    orderIndex?: number;
+    matchScore?: number | null;
+    notes?: string | null;
+    resumeUrl?: string | null;
+    resumeFileName?: string | null;
+    resumeFileSize?: number | null;
+    resumeMimeType?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  let mockJobs: MockJob[] = [];
+  let mockCandidates: MockCandidate[] = [];
+  let mockApps: MockApp[] = [];
 
   beforeEach(() => {
     mockJobs = [
@@ -144,6 +186,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                   all: vi.fn().mockImplementation(async () => {
                     return mockJobs.filter((j) => {
                       const mockRecord = {
+                        id: {
+                          eq: (target: string) => j.id === target,
+                          in: (arr: string[]) => arr.includes(j.id),
+                        },
                         organizationId: { eq: (target: string) => j.organizationId === target },
                       };
                       return predicateFn(mockRecord);
@@ -170,7 +216,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                   all: vi.fn().mockImplementation(async () => {
                     return mockCandidates.filter((c) => {
                       const mockRecord = {
-                        id: { eq: (target: string) => c.id === target },
+                        id: {
+                          eq: (target: string) => c.id === target,
+                          in: (arr: string[]) => arr.includes(c.id),
+                        },
                         organizationId: { eq: (target: string) => c.organizationId === target },
                         email: { eq: (target: string) => c.email === target },
                       };
@@ -215,9 +264,18 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                   all: vi.fn().mockImplementation(async () => {
                     return mockApps.filter((a) => {
                       const mockRecord = {
-                        id: { eq: (target: string) => a.id === target },
-                        jobId: { eq: (target: string) => a.jobId === target },
-                        candidateId: { eq: (target: string) => a.candidateId === target },
+                        id: {
+                          eq: (target: string) => a.id === target,
+                          in: (arr: string[]) => arr.includes(a.id),
+                        },
+                        jobId: {
+                          eq: (target: string) => a.jobId === target,
+                          in: (arr: string[]) => arr.includes(a.jobId),
+                        },
+                        candidateId: {
+                          eq: (target: string) => a.candidateId === target,
+                          in: (arr: string[]) => arr.includes(a.candidateId),
+                        },
                       };
                       return predicateFn(mockRecord);
                     });
@@ -292,10 +350,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     };
 
     service = new ApplicationsService(
-      mockPrismaService as any,
-      mockMinioService as any,
-      mockActivitiesService as any,
-      mockEmailService as any,
+      mockPrismaService as never,
+      mockMinioService as never,
+      mockActivitiesService as never,
+      mockEmailService as never,
     );
   });
 

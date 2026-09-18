@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -8,10 +7,10 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 
 @Injectable()
 export class AuthService {
@@ -247,7 +246,7 @@ export class AuthService {
         .where((o) => o.id.eq(user.organizationId as string))
         .first();
 
-      if (organization && (organization as any).ownerId === user.id) {
+      if (organization && organization.ownerId === user.id) {
         isOwner = true;
       }
     }

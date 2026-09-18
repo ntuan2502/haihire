@@ -1,8 +1,13 @@
 packages:
   - "backend"
   - "frontend"
+  - "packages/*"
 allowBuilds:
   esbuild: true
   msgpackr-extract: true
   unrs-resolver: true
   workerd: true
+minimumReleaseAgeExclude:
+  - "@prisma/*"
+overrides:
+  effect: "4.0.0-rc.111"

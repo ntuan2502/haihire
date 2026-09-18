@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { fixUtf8String } from "../applications/applications.service";
@@ -18,7 +18,24 @@ export class JobsService {
     organizationId?: string;
     organizationSlug?: string;
   }) {
-    const jobs = await this.prisma.db.orm.public.Job.select(
+    let targetOrgId = filter?.organizationId;
+    let targetOrg: { id: string; name: string; slug: string } | null = null;
+
+    if (filter?.organizationSlug) {
+      targetOrg = await this.prisma.db.orm.public.Organization.select("id", "name", "slug")
+        .where((o) => o.slug.eq(filter.organizationSlug as string))
+        .first();
+      if (!targetOrg) {
+        return [];
+      }
+      targetOrgId = targetOrg.id;
+    } else if (targetOrgId) {
+      targetOrg = await this.prisma.db.orm.public.Organization.select("id", "name", "slug")
+        .where((o) => o.id.eq(targetOrgId as string))
+        .first();
+    }
+
+    const jobsQuery = this.prisma.db.orm.public.Job.select(
       "id",
       "title",
       "department",
@@ -35,21 +52,54 @@ export class JobsService {
       "createdById",
       "createdAt",
       "updatedAt",
-    ).all();
+    );
 
-    // Fetch applications to calculate count per job
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "jobId",
-      "stage",
-    ).all();
+    let jobs = targetOrgId
+      ? await jobsQuery.where((j) => j.organizationId.eq(targetOrgId!)).all()
+      : await jobsQuery.all();
+
+    if (filter?.status) {
+      jobs = jobs.filter((j) => j.status === filter.status);
+    }
+    if (filter?.department) {
+      jobs = jobs.filter(
+        (j) => j.department.toLowerCase() === filter.department?.toLowerCase(),
+      );
+    }
+    if (filter?.search) {
+      const s = filter.search.toLowerCase();
+      jobs = jobs.filter(
+        (j) =>
+          j.title.toLowerCase().includes(s) ||
+          j.department.toLowerCase().includes(s) ||
+          j.location.toLowerCase().includes(s),
+      );
+    }
+
+    if (jobs.length === 0) {
+      return [];
+    }
+
+    const jobIds = [...new Set(jobs.map((j) => j.id))];
+    const jobIdSet = new Set(jobIds);
+
+    // Fetch applications only relevant to these jobs
+    const allApps = jobIds.length > 0
+      ? await this.prisma.db.orm.public.Application.select(
+          "id",
+          "jobId",
+          "stage",
+        )
+          .where((a) => a.jobId.in(jobIds))
+          .all()
+      : [];
 
     const appCountMap = new Map<
       string,
       { total: number; byStage: Record<string, number> }
     >();
     for (const app of allApps) {
-      if (!app.jobId) continue;
+      if (!app.jobId || !jobIdSet.has(app.jobId)) continue;
       if (!appCountMap.has(app.jobId)) {
         appCountMap.set(app.jobId, { total: 0, byStage: {} });
       }
@@ -58,52 +108,26 @@ export class JobsService {
       item.byStage[app.stage] = (item.byStage[app.stage] || 0) + 1;
     }
 
-    const allOrgs = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-    ).all();
-    const orgMap = new Map(allOrgs.map((o) => [o.id, o]));
+    const orgMap = new Map<string, { id: string; name: string; slug: string }>();
+    if (targetOrg) {
+      orgMap.set(targetOrg.id, targetOrg);
+    } else {
+      const allOrgs = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+      ).all();
+      for (const o of allOrgs) {
+        orgMap.set(o.id, o);
+      }
+    }
 
-    let result = jobs.map((job) => ({
+    return jobs.map((job) => ({
       ...job,
       organization: job.organizationId ? orgMap.get(job.organizationId) ?? null : null,
       applicationsCount: appCountMap.get(job.id)?.total ?? 0,
       applicationsByStage: appCountMap.get(job.id)?.byStage ?? {},
     }));
-
-    // Filter by Organization ID or Organization Slug if specified
-    if (filter?.organizationSlug) {
-      const org = await this.prisma.db.orm.public.Organization.select("id")
-        .where((o) => o.slug.eq(filter.organizationSlug as string))
-        .first();
-      if (org) {
-        result = result.filter((j) => j.organizationId === org.id);
-      } else {
-        return [];
-      }
-    } else if (filter?.organizationId !== undefined) {
-      result = result.filter((j) => j.organizationId === filter.organizationId);
-    }
-    if (filter?.status) {
-      result = result.filter((j) => j.status === filter.status);
-    }
-    if (filter?.department) {
-      result = result.filter(
-        (j) => j.department.toLowerCase() === filter.department?.toLowerCase(),
-      );
-    }
-    if (filter?.search) {
-      const s = filter.search.toLowerCase();
-      result = result.filter(
-        (j) =>
-          j.title.toLowerCase().includes(s) ||
-          j.department.toLowerCase().includes(s) ||
-          j.location.toLowerCase().includes(s),
-      );
-    }
-
-    return result;
   }
 
   async findOne(id: string) {
@@ -149,29 +173,34 @@ export class JobsService {
       .where((a) => a.jobId.eq(id))
       .all();
 
-    const candidates = await this.prisma.db.orm.public.Candidate.select(
-      "id",
-      "name",
-      "email",
-      "phone",
-      "resumeUrl",
-      "resumeFileName",
-    ).all();
+    const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
+    const candidates = candidateIds.length > 0
+      ? await this.prisma.db.orm.public.Candidate.select(
+          "id",
+          "name",
+          "email",
+          "phone",
+          "resumeUrl",
+          "resumeFileName",
+        )
+          .where((c) => c.id.in(candidateIds))
+          .all()
+      : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     // Fetch interviews for each application
-    const appIds = new Set(applications.map((a) => a.id));
-    const allInterviews = this.prisma.db.orm.public.Interview?.all
-      ? await this.prisma.db.orm.public.Interview.all()
-      : [];
-    const jobInterviews = allInterviews.filter((i: any) => appIds.has(i.applicationId));
-    const interviewsByApp = new Map<string, any[]>();
+    const appIds = [...new Set(applications.map((a) => a.id))];
+    const jobInterviews =
+      appIds.length > 0 && Boolean(this.prisma.db.orm.public.Interview)
+        ? await this.prisma.db.orm.public.Interview.where((i) => i.applicationId.in(appIds)).all()
+        : [];
+    const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of jobInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: any = null;
+      let parsedScorecard: Record<string, unknown> | null = null;
       if (intv.scorecard) {
         try {
-          parsedScorecard = JSON.parse(intv.scorecard);
+          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
         } catch {
           parsedScorecard = null;
         }

@@ -107,6 +107,7 @@ model Organization {
   emailSettings  EmailSetting?
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
+  documents      CandidateDocument[]
   createdAt   DateTime             @default(now())
   updatedAt   temporal.updatedAt()
 }
@@ -136,6 +137,8 @@ model OrganizationMember {
   role           Role         @default(MEMBER)
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([organizationId, userId])
 }
 
 model InviteLink {
@@ -174,6 +177,8 @@ model Job {
   applications    Application[]
   createdAt       DateTime      @default(now())
   updatedAt       temporal.updatedAt()
+
+  @@index([organizationId, status])
 }
 
 model Candidate {
@@ -195,6 +200,7 @@ model Candidate {
   applications   Application[]
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
+  documents      CandidateDocument[]
   createdAt      DateTime      @default(now())
   updatedAt      temporal.updatedAt()
 
@@ -204,9 +210,9 @@ model Candidate {
 model Application {
   id             String           @id @default(uuid())
   candidateId    String
-  candidate      Candidate        @relation(fields: [candidateId], references: [id])
+  candidate      Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobId          String
-  job            Job              @relation(fields: [jobId], references: [id])
+  job            Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
   stage          ApplicationStage @default(APPLIED)
   matchScore     Int?
   resumeUrl      String?
@@ -222,12 +228,14 @@ model Application {
   updatedAt      temporal.updatedAt()
 
   @@unique([candidateId, jobId])
+  @@index([jobId, stage])
+  @@index([candidateId])
 }
 
 model Interview {
   id             String      @id @default(uuid())
   applicationId  String
-  application    Application @relation(fields: [applicationId], references: [id])
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   date           String
   time           String
   type           InterviewType   @default(TECHNICAL)
@@ -239,6 +247,8 @@ model Interview {
   notes          String?
   createdAt      DateTime    @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([applicationId])
 }
 
 model EmailTemplate {
@@ -296,6 +306,8 @@ model EmailLog {
   sentAt         DateTime            @default(now())
   createdAt      DateTime            @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([organizationId, createdAt])
 }
 
 model ActivityLog {
@@ -303,9 +315,9 @@ model ActivityLog {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   candidateId    String
-  candidate      Candidate    @relation(fields: [candidateId], references: [id])
+  candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
-  application    Application? @relation(fields: [applicationId], references: [id])
+  application    Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   type           ActivityType
   title          String
   description    String
@@ -315,6 +327,27 @@ model ActivityLog {
   metadata       String?
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([organizationId, createdAt])
+  @@index([candidateId])
+}
+
+model CandidateDocument {
+  id             String       @id @default(uuid())
+  candidateId    String
+  candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  url            String
+  size           Int?
+  mimeType       String?      @default("application/pdf")
+  type           String?      @default("Resume")
+  createdAt      DateTime     @default(now())
+  updatedAt      temporal.updatedAt()
+
+  @@index([candidateId])
+  @@index([organizationId])
 }
 
 

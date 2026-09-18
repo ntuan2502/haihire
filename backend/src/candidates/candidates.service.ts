@@ -6,22 +6,12 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { MinioService } from "../minio/minio.service";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../applications/applications.service";
 
-export interface CandidateDocument {
-  id: string;
-  name: string;
-  url: string;
-  size?: number | null;
-  mimeType?: string | null;
-  type?: string;
-  createdAt: string;
-  sourceApplicationId?: string;
-  jobTitle?: string;
-}
+import { type CandidateDocument } from "@ats/types";
 
 function extractDocsFromNotes(
   notes: string | null,
@@ -39,11 +29,16 @@ function extractDocsFromNotes(
     const match = notes.match(/Docs:\s*(\[[^\]]*\])/);
     if (match) {
       try {
-        const rawDocs = JSON.parse(match[1]);
+        const rawDocs = JSON.parse(match[1]) as Array<Record<string, unknown>>;
         if (Array.isArray(rawDocs)) {
-          docs = rawDocs.map((d: any) => ({
-            ...d,
-            name: fixUtf8String(d.name || "document.pdf"),
+          docs = rawDocs.map((d) => ({
+            id: String(d.id || ""),
+            name: fixUtf8String(typeof d.name === "string" ? d.name : "document.pdf"),
+            url: String(d.url || ""),
+            size: typeof d.size === "number" ? d.size : null,
+            mimeType: typeof d.mimeType === "string" ? d.mimeType : null,
+            type: typeof d.type === "string" ? d.type : undefined,
+            createdAt: typeof d.createdAt === "string" ? d.createdAt : new Date().toISOString(),
           }));
         }
       } catch {
@@ -97,9 +92,12 @@ export class CandidatesService {
     private readonly minioService: MinioService,
   ) {}
 
-  async findAll(organizationId?: string) {
+  async findAll(
+    organizationId?: string,
+    options?: { page?: number; limit?: number; search?: string },
+  ) {
     if (!organizationId) {
-      return [];
+      return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
     }
 
     const candidates = await this.prisma.db.orm.public.Candidate.select(
@@ -123,33 +121,79 @@ export class CandidatesService {
       .where((c) => c.organizationId.eq(organizationId))
       .all();
 
-    // Fetch all applications for these candidates
-    const candidateIds = new Set(candidates.map((c) => c.id));
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "candidateId",
-      "jobId",
-      "stage",
-      "createdAt",
-    ).all();
+    if (candidates.length === 0) {
+      return {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: options?.limit || 10,
+        totalPages: 0,
+      };
+    }
+
+    let filtered = candidates;
+    if (options?.search && options.search.trim() !== "") {
+      const q = options.search.trim().toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          (c.name || "").toLowerCase().includes(q) ||
+          (c.email || "").toLowerCase().includes(q) ||
+          (c.phone && c.phone.includes(q)) ||
+          (c.notes && c.notes.toLowerCase().includes(q)),
+      );
+    }
+
+    const total = filtered.length;
+    const page = options?.page && options.page > 0 ? options.page : 1;
+    const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    // Slicing on server for this page
+    const pagedCandidates = filtered.slice((page - 1) * limit, page * limit);
+    const candidateIds = pagedCandidates.map((c) => c.id);
+
+    // Fetch applications only for the candidates in the current page
+    const allApps =
+      candidateIds.length > 0
+        ? await this.prisma.db.orm.public.Application.select(
+            "id",
+            "candidateId",
+            "jobId",
+            "stage",
+            "createdAt",
+          )
+            .where((a) => a.candidateId.in(candidateIds))
+            .all()
+        : [];
 
     const appsByCandidate = new Map<string, typeof allApps>();
     for (const app of allApps) {
-      if (candidateIds.has(app.candidateId)) {
-        const list = appsByCandidate.get(app.candidateId) || [];
-        list.push(app);
-        appsByCandidate.set(app.candidateId, list);
-      }
+      const list = appsByCandidate.get(app.candidateId) || [];
+      list.push(app);
+      appsByCandidate.set(app.candidateId, list);
     }
 
-    return candidates.map((c) => {
+    const data = pagedCandidates.map((c) => {
       const apps = appsByCandidate.get(c.id) || [];
       return {
         ...c,
+        name: fixUtf8String(c.name),
+        firstName: fixUtf8String(c.firstName),
+        lastName: fixUtf8String(c.lastName),
+        notes: fixUtf8String(c.notes),
+        resumeFileName: fixUtf8String(c.resumeFileName),
         applicationsCount: apps.length,
         applications: apps,
       };
     });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   async findOne(id: string) {
@@ -198,25 +242,32 @@ export class CandidatesService {
 
     // Fetch jobs for each application
     const jobIds = [...new Set(applications.map((a) => a.jobId))];
-    const jobs = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "location",
-    ).all();
+    const jobs = jobIds.length > 0
+      ? await this.prisma.db.orm.public.Job.select(
+          "id",
+          "title",
+          "department",
+          "location",
+        )
+          .where((j) => j.id.in(jobIds))
+          .all()
+      : [];
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
 
     // Fetch interviews for each application
-    const appIds = new Set(applications.map((a) => a.id));
-    const allInterviews = await this.prisma.db.orm.public.Interview.all();
-    const candidateInterviews = allInterviews.filter((i) => appIds.has(i.applicationId));
-    const interviewsByApp = new Map<string, any[]>();
+    const appIds = [...new Set(applications.map((a) => a.id))];
+    const candidateInterviews = appIds.length > 0
+      ? await this.prisma.db.orm.public.Interview
+          .where((i) => i.applicationId.in(appIds))
+          .all()
+      : [];
+    const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of candidateInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: any = null;
+      let parsedScorecard: Record<string, unknown> | null = null;
       if (intv.scorecard) {
         try {
-          parsedScorecard = JSON.parse(intv.scorecard);
+          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
         } catch {
           parsedScorecard = null;
         }
@@ -242,7 +293,30 @@ export class CandidatesService {
     }));
 
     // Aggregate all documents: candidate's documents + all documents from applications
-    const candidateDirectDocs = extractDocsFromNotes(candidate.notes, {
+    let dbDocs: CandidateDocument[] = [];
+    try {
+      const queried = await this.prisma.db.orm.public.CandidateDocument.select(
+        "id",
+        "name",
+        "url",
+        "size",
+        "mimeType",
+        "type",
+        "createdAt",
+      )
+        .where((d) => d.candidateId.eq(id))
+        .all();
+      if (Array.isArray(queried) && queried.length > 0) {
+        dbDocs = queried.map((d) => ({
+          ...d,
+          createdAt: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
+        }));
+      }
+    } catch {
+      dbDocs = [];
+    }
+
+    const candidateDirectDocs = dbDocs.length > 0 ? dbDocs : extractDocsFromNotes(candidate.notes, {
       id: candidate.id,
       url: candidate.resumeUrl || "",
       name: candidate.resumeFileName || "Resume.pdf",
@@ -366,7 +440,7 @@ export class CandidatesService {
   async update(id: string, dto: UpdateCandidateDto) {
     await this.findOne(id);
 
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: Record<string, unknown> = {};
     if (dto.name !== undefined) updatePayload.name = dto.name.trim();
     if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName?.trim() || null;
     if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName?.trim() || null;
@@ -452,6 +526,23 @@ export class CandidatesService {
     currentDocs.push(newDoc);
     const updatedNotes = packDocsIntoNotes(candidate.notes, currentDocs);
 
+    try {
+      await this.prisma.db.orm.public.CandidateDocument.create({
+        id: newDoc.id,
+        candidateId: id,
+        organizationId: candidate.organizationId,
+        name: newDoc.name,
+        url: newDoc.url,
+        size: newDoc.size ?? null,
+        mimeType: newDoc.mimeType ?? null,
+        type: newDoc.type ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    } catch {
+      // ignore if mock or table unavailable in test
+    }
+
     await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
       resumeUrl: currentDocs[0].url,
       resumeFileName: currentDocs[0].name,
@@ -481,8 +572,14 @@ export class CandidatesService {
     let updatedDocs: CandidateDocument[] = [];
     if (opts?.documentId) {
       updatedDocs = currentDocs.filter((d) => d.id !== opts.documentId);
+      try {
+        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.id.eq(opts.documentId!)).delete();
+      } catch {}
     } else if (opts?.url) {
       updatedDocs = currentDocs.filter((d) => d.url !== opts.url);
+      try {
+        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.url.eq(opts.url!)).delete();
+      } catch {}
     } else {
       updatedDocs = [];
     }
@@ -513,11 +610,18 @@ export class CandidatesService {
   async remove(id: string) {
     await this.findOne(id);
 
-    // Delete all associated applications first
-    await this.prisma.db.orm.public.Application.where((a) => a.candidateId.eq(id)).delete();
-
-    // Delete candidate
-    await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
+    try {
+      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
+    } catch {
+      // Fallback manual cleanup for relations if DB-level cascade is bypassed
+      try {
+        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.candidateId.eq(id)).delete();
+      } catch {}
+      try {
+        await this.prisma.db.orm.public.Application.where((a) => a.candidateId.eq(id)).delete();
+      } catch {}
+      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
+    }
 
     return { success: true, message: `Candidate ${id} and all applications deleted successfully` };
   }

@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
+import { env } from "../config/env";
 
 @Injectable()
 export class EncryptionService {
@@ -7,9 +8,7 @@ export class EncryptionService {
   private readonly key: Buffer;
 
   constructor() {
-    // Derive a fixed 32-byte key from environment secret or secure fallback
-    const rawSecret = process.env.ENCRYPTION_SECRET || process.env.JWT_SECRET || "ats-platform-secure-fallback-encryption-key-2026";
-    this.key = crypto.scryptSync(rawSecret, "ats-salt-vector", 32);
+    this.key = crypto.scryptSync(env.ENCRYPTION_SECRET, "ats-salt-vector", 32);
   }
 
   encrypt(plainText?: string | null): string | null {

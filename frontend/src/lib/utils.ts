@@ -1,4 +1,5 @@
 import type { Application, Candidate, CandidateDocument, Gender } from "@/types";
+export { cn } from "cn";
 
 /**
  * Format a date into consistent string formats (e.g. "08/27/2026", "8/27/2026", "Aug 27, 2026")

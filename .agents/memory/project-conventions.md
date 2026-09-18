@@ -1,65 +1,77 @@
 ---
 type: project
 created: 2026-05-25
-updated: 2026-09-17T11:22
+updated: 2026-09-18T20:53
 ---
 
 # Project Conventions
 
 ## Documentation & Memory Language (MANDATORY)
 - **All memory files (`.agents/memory/*`) must be written in English only.** Never write memory files in Vietnamese or any other language.
+- **Comments in code, `.env`, and `.env.example` must be written in English only.** Vietnamese is reserved exclusively for conversational dialogue with the user.
+
+## Pure TypeScript & Scripting Conventions (MANDATORY)
+- **100% TypeScript Repository**: No manually written `.js`, `.mjs`, or `.cjs` files are allowed anywhere in the workspace.
+- **Scripts**: Any utility or maintenance scripts (e.g., `scripts/*.ts`) must be authored in TypeScript and executed via native Node 22+ execution (`node scripts/<script>.ts`) or `tsx`.
+- **Package.json Scripts**: Ensure script runners point to `.ts` files rather than `.mjs` files.
+
+## Environment Variable & Configuration Conventions
+- **Single Source of Truth**: All environment variables must be declared and validated using Zod in centralized schema files:
+  - Backend: `backend/src/config/env.ts`
+  - Frontend: `frontend/src/lib/env.ts`
+- **Zero Fallback Policy**: Never provide fallback defaults for secrets, ports, database URLs, or required configuration keys.
+- **Fail-Fast Startup**: The process must crash immediately (`process.exit(1)`) with a clean list of missing/invalid variables if `.env` does not conform to the schema.
+- **Consumer Files**: Never call `process.env` directly in feature modules, services, or test configs. Always import the validated, type-safe `env` object.
+- **Synchronization Verification**: Maintain 100% key parity between `.env` and `.env.example` across all packages. Verify parity via `pnpm run check:env`.
+
+## Full-Stack Pagination Conventions
+- **Zero Client-side Array Slicing**: Endpoints providing list views must execute true server-side pagination with database-level `skip` and `take`.
+- **No Backward-Compatibility Hacks**: Do not fall back to returning the full dataset when pagination parameters are omitted. Both frontend and backend must strictly adhere to `PaginationParams` (`page`, `limit`, `search`) and `PaginatedResult<T>`.
+- **Total Count Metadata**: Always return `{ data: T[], total: number, page: number, limit: number, totalPages: number }` to power client pagination controls.
 
 ## Git Workflow
 - Always create a new dedicated branch for major code changes.
-- Branch name format should follow: `feature/[task-slug]` or `fix/[bug-slug]`.
+- Branch name format should follow: `feature/[task-slug]` or `fix/[bug-slug]` or `refactor/[task-slug]`.
 - When committing, ALWAYS use `git add .` (do NOT add individual files separately). Run `git add .` as a separate command first, then `git commit -m "..."` as a separate command. Never chain them together.
 - **Commit message format: Conventional Commits with scope** → `type(scope): description`.
   - Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`, `perf`.
-  - Scope is mandatory. Use the affected module/area, e.g. `i18n`, `navigation`, `jobs`, `ui`, `auth`, `api`.
-  - Examples: `feat(i18n): add missing Vietnamese keys`, `refactor(jobs): remove legacy popup`, `fix(auth): handle token expiry`.
+  - Scope is mandatory. Use the affected module/area, e.g. `config`, `i18n`, `jobs`, `ui`, `auth`, `api`, `core`.
   - Message is in English, lowercase, no period at the end.
 - Local commit only, do not `git push` unless explicitly requested.
 
 ## Supported AI platforms (AG Kit)
 - AG Kit **only supports Gemini CLI and Google Antigravity**.
 - Do not claim compatibility with Claude Code, Cursor, Copilot, Windsurf, or other assistants unless the user explicitly expands scope.
-- Copy on the website, docs, FAQ, README, and marketing should describe AG Kit as a toolkit for Gemini CLI / Antigravity-style agent setups.
 
 ## Brand Identity & Logos
 - Whenever reference images or mockups contain **Reqcore** (or other placeholder logos/names), ALWAYS replace with **ATS** (or "A" monogram / ATS logo) across all UI components, logos, and copy.
 
 ## Validation & Testing Conventions
 - If only frontend UI is modified, only run frontend lint and build (`pnpm --filter frontend run build ; pnpm --filter frontend run lint`) without running backend tests or full test suites.
-- Always use `;` (not `&&`) for chaining commands in PowerShell.
+- Always execute commands individually or use `;` (not `&&`) in Windows PowerShell.
 - Always use `pnpm` or `pnpx` (NEVER use `npx`).
 
 ## Database & Seed Conventions
 - **NEVER run database seed (`pnpm run seed` or scripts that wipe data) automatically.** Always ask for explicit user confirmation before running seed, as it deletes all existing data in the database.
+- **Cascade Deletion**: Schema relationships must define `onDelete: Cascade` in `contract.prisma` for child records (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) to guarantee relational data integrity.
 
 ## Internationalization (i18n) & Text Conventions (MANDATORY)
 - **Zero hardcoded text**: No raw user-facing strings or placeholders may be initialized directly in source code. All text must be retrieved through the i18n translation system (`useI18n()` / `t()`).
-- Applies 100% across all `.tsx` and `.ts` files on the frontend (including UI components, pages, hooks, forms, modals, tooltips, dialogs, toast/alert messages, and error states).
-- Thoroughly check and translate **placeholders** (`<Input placeholder={t(...)}>`, `<Textarea placeholder={t(...)}>`, `<SelectValue placeholder={t(...)}>`), field labels, headings, empty states, and auxiliary descriptions.
+- Applies 100% across all `.tsx` and `.ts` files on the frontend.
 - Standard workflow when adding new strings:
   1. Declare the key and type in `frontend/src/i18n/types.ts`.
   2. Add the Vietnamese translation in `frontend/src/i18n/locales/vi.ts`.
   3. Add the English translation in `frontend/src/i18n/locales/en.ts`.
-  4. Access via `t("key.path")` in the component or page. Direct text hardcoding is strictly forbidden.
+  4. Access via `t("key.path")` in the component or page.
 
 ## Component Organization & Directory Conventions (MANDATORY)
-- **Shadcn Isolation (`frontend/src/components/ui/`)**:
-  - Reserved strictly for pristine Shadcn primitives added via `pnpx shadcn add`.
-  - Never add custom, domain, or proprietary components into `components/ui/`.
-- **ATS Shared Components (`frontend/src/components/shared/`)**:
-  - All proprietary shared components, wrappers, custom selects, spinners, badges, and controls must reside in `frontend/src/components/shared/`.
-  - If a Shadcn primitive requires deep customization, wrap or extend it inside `components/shared/` instead of directly modifying the pristine registry file in `components/ui/`.
-- **Layout Components (`frontend/src/components/layout/`)**:
-  - Application shell and navigation components (`navbar.tsx`, headers, footers, sidebars).
-- **Application Context Providers (`frontend/src/components/providers/`)**:
-  - App-level providers (`query-provider.tsx`, `theme-provider.tsx`).
-- **Zero Loose Root Components**:
-  - Never place loose `.tsx` files directly at `frontend/src/components/` root. Every component belongs in `ui/`, `shared/`, `layout/`, `providers/`, or a domain feature folder.
-- **Dropdown & Select Conventions**:
-  - Zero native HTML `<select>` elements. Use `CustomSelect` (`@/components/shared/custom-select`) or styled Base-UI/Shadcn primitives with `rounded-xl` trigger, rotating chevron, and `rounded-2xl backdrop-blur-xl` popup.
+- **Shadcn Isolation (`frontend/src/components/ui/`)**: Reserved strictly for pristine Shadcn primitives added via `pnpx shadcn add`.
+- **ATS Shared Components (`frontend/src/components/shared/`)**: Proprietary shared components, custom selects, spinners, badges.
+- **Layout Components (`frontend/src/components/layout/`)**: Application shell and navigation.
+- **Application Context Providers (`frontend/src/components/providers/`)**: App-level state providers.
+- **Zero Loose Root Components**: Never place loose `.tsx` files directly at `frontend/src/components/` root.
 
-
+## Strict Typing & Zero `any` Policy (MANDATORY)
+- **Zero `any` in application code**: The use of `any` is strictly prohibited across backend, frontend, and shared packages.
+- Always define clear types, interfaces, DTOs, or schema types.
+- Utilize `@ats/types` as the canonical source for domain models.

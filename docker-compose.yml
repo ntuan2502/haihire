@@ -57,6 +57,23 @@ services:
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-ats-resumes}
     entrypoint: >
       /bin/sh -c " echo 'Waiting for MinIO to be ready...'; /usr/bin/mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD}; echo 'Creating default bucket: ' $${MINIO_BUCKET_NAME}; /usr/bin/mc mb myminio/$${MINIO_BUCKET_NAME} --ignore-existing; echo 'Setting public download policy on bucket: ' $${MINIO_BUCKET_NAME}; /usr/bin/mc anonymous set download myminio/$${MINIO_BUCKET_NAME}; echo 'MinIO initialization complete.'; exit 0; "
+
+  # Redis (Cache & Asynchronous Queue)
+  redis:
+    image: redis:7-alpine
+    container_name: ats-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ats-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   # # NestJS Backend Service
   # backend:
   #   build:
@@ -116,6 +133,8 @@ volumes:
   postgres_data:
     driver: local
   minio_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

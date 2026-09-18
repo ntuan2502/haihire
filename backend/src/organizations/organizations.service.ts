@@ -8,7 +8,7 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import crypto from "node:crypto";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { EventsService } from "../events/events.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
@@ -937,7 +937,7 @@ export class OrganizationsService implements OnModuleInit {
         expiresAt,
         maxUses,
         usesCount: 0,
-        status: "ACTIVE" as any,
+        status: "ACTIVE",
         createdById: user.id,
       },
       update: {},
@@ -1075,7 +1075,7 @@ export class OrganizationsService implements OnModuleInit {
     await this.prisma.db.orm.public.InviteLink.where((l) =>
       l.id.eq(linkId),
     ).update({
-      status: "REVOKED" as any,
+      status: "REVOKED",
     });
 
     return { success: true, message: "Invite link revoked successfully" };
@@ -1240,14 +1240,14 @@ export class OrganizationsService implements OnModuleInit {
 
     // Increment uses count
     const nextUses = link.usesCount + 1;
-    const nextStatus =
-      link.maxUses !== null && nextUses >= link.maxUses ? ("EXPIRED" as any) : link.status;
+    const nextStatus: "ACTIVE" | "EXPIRED" | "REVOKED" =
+      link.maxUses !== null && nextUses >= link.maxUses ? "EXPIRED" : link.status;
 
     await this.prisma.db.orm.public.InviteLink.where((l) =>
       l.id.eq(link.id),
     ).update({
       usesCount: nextUses,
-      status: nextStatus as any,
+      status: nextStatus,
     });
 
     const org = await this.prisma.db.orm.public.Organization.select(

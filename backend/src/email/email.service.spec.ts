@@ -4,8 +4,8 @@ import { EncryptionService } from "../common/encryption.service";
 
 describe("EmailService", () => {
   let service: EmailService;
-  let mockPrismaService: any;
-  let mockActivitiesService: any;
+  let mockPrismaService: unknown;
+  let mockActivitiesService: { createActivity: ReturnType<typeof vi.fn> };
   let encryptionService: EncryptionService;
 
   beforeEach(() => {
@@ -14,9 +14,9 @@ describe("EmailService", () => {
       createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
     };
 
-    const inMemoryTemplates: any[] = [];
-    const inMemorySettings: any[] = [];
-    const inMemoryLogs: any[] = [];
+    const inMemoryTemplates: Array<Record<string, unknown>> = [];
+    const inMemorySettings: Array<Record<string, unknown>> = [];
+    const inMemoryLogs: Array<Record<string, unknown>> = [];
 
     mockPrismaService = {
       db: {
@@ -94,7 +94,11 @@ describe("EmailService", () => {
       },
     };
 
-    service = new EmailService(mockPrismaService, mockActivitiesService, encryptionService);
+    service = new EmailService(
+      mockPrismaService as never,
+      mockActivitiesService as never,
+      encryptionService,
+    );
   });
 
   describe("Variable Interpolation", () => {
@@ -121,8 +125,8 @@ describe("EmailService", () => {
     it("should seed default templates if none exist for organization", async () => {
       const templates = await service.getTemplates("org-test");
       expect(templates.length).toBe(DEFAULT_TEMPLATES.length);
-      expect(templates.some((t: any) => t.type === "APPLICATION_CONFIRMATION")).toBe(true);
-      expect(templates.some((t: any) => t.type === "INTERVIEW_INVITATION")).toBe(true);
+      expect(templates.some((t) => t.type === "APPLICATION_CONFIRMATION")).toBe(true);
+      expect(templates.some((t) => t.type === "INTERVIEW_INVITATION")).toBe(true);
     });
   });
 
@@ -146,10 +150,17 @@ describe("EmailService", () => {
         { id: "user-1", name: "Recruiter Alice" },
       );
 
-      expect(result.status).toBe("SIMULATED");
-      expect(result.recipientEmail).toBe("candidate@example.com");
-      expect(result.subject).toBe("Thư mời phỏng vấn Product Manager");
-      expect(result.body).toContain("Tran Van B");
+      const sentLog = result as {
+        status: string;
+        recipientEmail: string;
+        subject: string;
+        body: string;
+      };
+
+      expect(sentLog.status).toBe("SIMULATED");
+      expect(sentLog.recipientEmail).toBe("candidate@example.com");
+      expect(sentLog.subject).toBe("Thư mời phỏng vấn Product Manager");
+      expect(sentLog.body).toContain("Tran Van B");
 
       // Verify activity logged
       expect(mockActivitiesService.createActivity).toHaveBeenCalledWith(
@@ -172,13 +183,13 @@ describe("EmailService", () => {
       });
 
       // Public view returned to client must be masked
-      expect(updated.smtpPass).toBe("••••••••••••••••");
-      expect(updated.resendApiKey).toBe("••••••••••••••••");
+      expect(updated?.smtpPass).toBe("••••••••••••••••");
+      expect(updated?.resendApiKey).toBe("••••••••••••••••");
 
       // Internal dispatch settings should be decrypted
       const raw = await service.getRawSettings("org-test");
-      expect(raw.smtpPass).toBe("SuperSecretPassword123");
-      expect(raw.resendApiKey).toBe("re_secret_key_456");
+      expect(raw?.smtpPass).toBe("SuperSecretPassword123");
+      expect(raw?.resendApiKey).toBe("re_secret_key_456");
     });
   });
 
@@ -200,7 +211,7 @@ describe("EmailService", () => {
       const paged = await service.getLogs("org-test", {
         page: 1,
         limit: 2,
-      }) as any;
+      });
 
       expect(paged.total).toBe(3);
       expect(paged.page).toBe(1);
@@ -209,4 +220,45 @@ describe("EmailService", () => {
       expect(paged.data.length).toBe(2);
     });
   });
+
+  describe("BullMQ Queue and EmailProcessor", () => {
+    it("should enqueue email when emailQueue is provided", async () => {
+      const mockQueue = {
+        add: vi.fn().mockResolvedValue({ id: "job-123" }),
+      };
+
+      const queuedService = new EmailService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        encryptionService,
+        mockQueue as never,
+      );
+
+      const result = await queuedService.sendEmail(
+        {
+          to: "queued@example.com",
+          recipientName: "Queued Recipient",
+          subject: "Asynchronous notification",
+          body: "Hello async",
+        },
+        "org-test",
+      );
+
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        "send-email",
+        expect.objectContaining({
+          organizationId: "org-test",
+        }),
+        expect.objectContaining({
+          attempts: 3,
+        }),
+      );
+      expect(result).toEqual({
+        id: "job-123",
+        status: "QUEUED",
+        message: "Email queued for delivery",
+      });
+    });
+  });
 });
+

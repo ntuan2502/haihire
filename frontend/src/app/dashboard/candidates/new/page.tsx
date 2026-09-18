@@ -15,7 +15,6 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useCandidates,
   useCreateCandidateMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,6 @@ function AddCandidatePageContent() {
   }, [authLoading, canEdit, router]);
 
   const { data: jobs = [] } = useJobs(user?.organizationId);
-  const { data: candidates = [] } = useCandidates(user?.organizationId);
   const createCandidateMutation = useCreateCandidateMutation();
 
   // Form State
@@ -164,7 +162,6 @@ function AddCandidatePageContent() {
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={candidates.length}
       />
 
       {/* Main Content Form */}

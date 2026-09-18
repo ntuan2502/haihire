@@ -250,10 +250,13 @@ export function CandidateTimeline({
                       <div className="rounded-lg bg-slate-50 dark:bg-slate-950/60 p-3 border border-slate-200/70 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-2 font-mono">
                         <div className="flex items-center gap-2 text-[11px] font-sans text-slate-500">
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                          <span>Đã chuyển thành công qua SMTP / In-App Provider</span>
+                          <span>{t("timeline.deliveredViaProvider")}</span>
                         </div>
                         <p className="text-xs text-slate-800 dark:text-slate-200">
-                          Kính gửi Ứng viên, Cảm ơn bạn đã tham gia phỏng vấn... Lịch hẹn đã được lưu vào hệ thống.
+                          {((event.metadata?.body as string) ||
+                            (event.metadata?.subject as string) ||
+                            event.description ||
+                            t("timeline.noEmailPreview"))}
                         </p>
                       </div>
                     </div>

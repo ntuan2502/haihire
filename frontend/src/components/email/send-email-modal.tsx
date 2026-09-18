@@ -19,7 +19,7 @@ import {
   TEMPLATE_VARIABLES,
   interpolateTemplate,
 } from "@/lib/email-templates";
-import { useI18n } from "@/i18n";
+import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -52,13 +52,16 @@ export function SendEmailModal({
   isOpen,
   onClose,
   candidate,
-  jobTitle = "Vị trí tuyển dụng",
-  organizationName = "Công ty Tuyển dụng",
+  jobTitle,
+  organizationName,
   defaultTemplateType = "APPLICATION_CONFIRMATION",
   interviewDetails,
   onSendSuccess,
 }: SendEmailModalProps) {
   const { t } = useI18n();
+
+  const effectiveJobTitle = jobTitle || t("email.defaultJobTitle");
+  const effectiveOrgName = organizationName || t("email.defaultOrgName");
 
   const { data: remoteTemplates } = useEmailTemplates();
   const sendEmailMutation = useSendEmailMutation();
@@ -75,18 +78,18 @@ export function SendEmailModal({
   // Variables map for interpolation
   const variablesMap = useMemo(() => {
     return {
-      candidate_name: candidate?.name || "Ứng viên",
+      candidate_name: candidate?.name || t("email.defaultCandidateName"),
       candidate_email: candidate?.email || "candidate@example.com",
-      job_title: jobTitle,
-      company_name: organizationName,
+      job_title: effectiveJobTitle,
+      company_name: effectiveOrgName,
       interview_date: interviewDetails?.date || "22/09/2026",
       interview_time: interviewDetails?.time || "14:30",
       interview_format: interviewDetails?.format || "Google Meet",
       meeting_link: interviewDetails?.linkOrLocation || "https://meet.google.com/xyz-abcd-efg",
-      interviewer_name: interviewDetails?.interviewer || "Hội đồng Phỏng vấn",
-      sender_name: "Phòng Tuyển dụng & Nhân sự",
+      interviewer_name: interviewDetails?.interviewer || t("email.defaultInterviewerName"),
+      sender_name: t("email.defaultSenderName"),
     };
-  }, [candidate, jobTitle, organizationName, interviewDetails]);
+  }, [candidate, effectiveJobTitle, effectiveOrgName, interviewDetails, t]);
 
   // Sync template when selected type changes or modal opens
   useEffect(() => {
@@ -196,23 +199,23 @@ export function SendEmailModal({
               options={[
                 {
                   value: "APPLICATION_CONFIRMATION",
-                  label: "✉️ Xác nhận nộp hồ sơ (Application Confirmation)",
+                  label: "✉️ " + t("email.optApplicationConfirmation"),
                 },
                 {
                   value: "INTERVIEW_INVITATION",
-                  label: "📅 Thư mời phỏng vấn (Interview Invitation)",
+                  label: "📅 " + t("email.optInterviewInvitation"),
                 },
                 {
                   value: "REJECTION",
-                  label: "🤝 Thư từ chối kết quả (Rejection Letter)",
+                  label: "🤝 " + t("email.optRejection"),
                 },
                 {
                   value: "OFFER",
-                  label: "🏆 Thư mời nhận việc (Job Offer)",
+                  label: "🏆 " + t("email.optOffer"),
                 },
                 {
                   value: "CUSTOM",
-                  label: "✏️ Soạn thảo email tùy chỉnh",
+                  label: "✏️ " + t("email.optCustom"),
                 },
               ]}
               className="w-full"
@@ -244,7 +247,7 @@ export function SendEmailModal({
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Nhập tiêu đề email..."
+              placeholder={t("email.subjectPlaceholder")}
               className="h-9 text-xs"
             />
           </div>
@@ -262,7 +265,7 @@ export function SendEmailModal({
                 }`}
               >
                 <Edit3 className="h-3 w-3" />
-                <span>Soạn thảo</span>
+                <span>{t("email.tabCompose")}</span>
               </button>
               <button
                 type="button"
@@ -281,7 +284,7 @@ export function SendEmailModal({
             {!isPreviewMode && (
               <span className="text-[11px] text-slate-400 flex items-center gap-1">
                 <Sparkles className="h-3 w-3 text-amber-500" />
-                <span>HTML & Biến tự động</span>
+                <span>{t("email.htmlAndVariables")}</span>
               </span>
             )}
           </div>
@@ -295,7 +298,7 @@ export function SendEmailModal({
                 onChange={(e) => setBody(e.target.value)}
                 rows={10}
                 className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-white font-mono leading-relaxed focus:outline-hidden focus:ring-2 focus:ring-blue-500 shadow-2xs"
-                placeholder="Nhập nội dung thư..."
+                placeholder={t("email.bodyPlaceholder")}
               />
 
               {/* Variable Insertion Pills */}
@@ -311,7 +314,7 @@ export function SendEmailModal({
                       type="button"
                       onClick={() => handleInsertVariable(v.key)}
                       className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-2xs"
-                      title={v.label}
+                      title={t(v.labelKey as TranslationKey) || v.label}
                     >
                       {v.key}
                     </button>
@@ -324,11 +327,11 @@ export function SendEmailModal({
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-xs space-y-4">
               <div className="border-b border-slate-100 dark:border-slate-800 pb-3 text-xs space-y-1 text-slate-500">
                 <div>
-                  <strong className="text-slate-700 dark:text-slate-300">Tiêu đề:</strong>{" "}
+                  <strong className="text-slate-700 dark:text-slate-300">{t("email.thSubject")}:</strong>{" "}
                   {subject}
                 </div>
                 <div>
-                  <strong className="text-slate-700 dark:text-slate-300">Người nhận:</strong>{" "}
+                  <strong className="text-slate-700 dark:text-slate-300">{t("email.thRecipient")}:</strong>{" "}
                   {candidate.name} &lt;{candidate.email}&gt;
                 </div>
               </div>

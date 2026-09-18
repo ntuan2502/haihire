@@ -70,17 +70,24 @@ export interface ActivityEvent {
   metadata?: Record<string, unknown>;
 }
 
-export const TEMPLATE_VARIABLES = [
-  { key: "{{candidate_name}}", label: "Tên ứng viên", example: "Nguyễn Văn An" },
-  { key: "{{candidate_email}}", label: "Email ứng viên", example: "an.nguyen@example.com" },
-  { key: "{{job_title}}", label: "Vị trí ứng tuyển", example: "Senior Frontend Engineer" },
-  { key: "{{company_name}}", label: "Tên công ty", example: "Nexus Corp" },
-  { key: "{{interview_date}}", label: "Ngày phỏng vấn", example: "22/09/2026" },
-  { key: "{{interview_time}}", label: "Giờ phỏng vấn", example: "14:30" },
-  { key: "{{interview_format}}", label: "Hình thức", example: "Google Meet" },
-  { key: "{{meeting_link}}", label: "Link họp / Địa điểm", example: "https://meet.google.com/xyz-abcd-efg" },
-  { key: "{{interviewer_name}}", label: "Người phỏng vấn", example: "Trần Minh Tech Lead" },
-  { key: "{{sender_name}}", label: "Người gửi", example: "Phòng Nhân sự" },
+export interface TemplateVariableItem {
+  key: string;
+  labelKey: string;
+  label: string;
+  example: string;
+}
+
+export const TEMPLATE_VARIABLES: readonly TemplateVariableItem[] = [
+  { key: "{{candidate_name}}", labelKey: "email.varCandidateName", label: "Candidate Name", example: "Nguyễn Văn An" },
+  { key: "{{candidate_email}}", labelKey: "email.varCandidateEmail", label: "Candidate Email", example: "an.nguyen@example.com" },
+  { key: "{{job_title}}", labelKey: "email.varJobTitle", label: "Job Position", example: "Senior Frontend Engineer" },
+  { key: "{{company_name}}", labelKey: "email.varCompanyName", label: "Company Name", example: "Nexus Corp" },
+  { key: "{{interview_date}}", labelKey: "email.varInterviewDate", label: "Interview Date", example: "22/09/2026" },
+  { key: "{{interview_time}}", labelKey: "email.varInterviewTime", label: "Interview Time", example: "14:30" },
+  { key: "{{interview_format}}", labelKey: "email.varInterviewFormat", label: "Interview Format", example: "Google Meet" },
+  { key: "{{meeting_link}}", labelKey: "email.varMeetingLink", label: "Meeting Link / Location", example: "https://meet.google.com/xyz-abcd-efg" },
+  { key: "{{interviewer_name}}", labelKey: "email.varInterviewerName", label: "Interviewer Name", example: "Trần Minh Tech Lead" },
+  { key: "{{sender_name}}", labelKey: "email.varSenderName", label: "Sender Name", example: "Recruiting Team" },
 ];
 
 export const DEFAULT_EMAIL_TEMPLATES: Record<EmailTemplateType, EmailTemplate> = {

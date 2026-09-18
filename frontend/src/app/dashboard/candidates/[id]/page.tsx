@@ -931,7 +931,7 @@ function CandidateDetailPageContent() {
             email: candidateEmail,
             phone: candidatePhone,
           }}
-          jobTitle={candidateApps[0]?.job?.title || "Vị trí tuyển dụng"}
+          jobTitle={candidateApps[0]?.job?.title}
           organizationName={candidateApps[0]?.job?.department ? `${candidateApps[0]?.job?.department} Department` : "Nexus ATS"}
         />
       )}

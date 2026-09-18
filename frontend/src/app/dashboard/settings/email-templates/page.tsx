@@ -34,7 +34,7 @@ import {
   TEMPLATE_VARIABLES,
   interpolateTemplate,
 } from "@/lib/email-templates";
-import { useI18n } from "@/i18n";
+import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -133,7 +133,7 @@ export default function EmailTemplatesSettingsPage() {
   // Sample variable values for live preview
   const sampleVariables = useMemo(() => {
     return {
-      candidate_name: "Nguyễn Văn An",
+      candidate_name: t("email.sampleCandidateName"),
       candidate_email: "an.nguyen@example.com",
       job_title: "Senior Frontend Engineer",
       company_name: "Nexus Corporation",
@@ -141,10 +141,10 @@ export default function EmailTemplatesSettingsPage() {
       interview_time: "14:30",
       interview_format: "Google Meet",
       meeting_link: "https://meet.google.com/xyz-abcd-efg",
-      interviewer_name: "Trần Minh (Tech Lead)",
-      sender_name: emailSettings.fromName || "Đội ngũ Tuyển dụng",
+      interviewer_name: t("email.sampleInterviewerName"),
+      sender_name: emailSettings.fromName || t("email.defaultSenderName"),
     };
-  }, [emailSettings.fromName]);
+  }, [emailSettings.fromName, t]);
 
   const previewSubject = useMemo(() => {
     return interpolateTemplate(activeTemplate.subject, sampleVariables);
@@ -200,7 +200,7 @@ export default function EmailTemplatesSettingsPage() {
       setTemplateToast(t("email.templateSavedSuccess"));
       setTimeout(() => setTemplateToast(null), 3000);
     } catch {
-      setTemplateToast("Lỗi khi lưu mẫu email!");
+      setTemplateToast(t("email.templateSaveError"));
       setTimeout(() => setTemplateToast(null), 3000);
     }
   };
@@ -217,10 +217,10 @@ export default function EmailTemplatesSettingsPage() {
   const handleSaveSettings = async () => {
     try {
       await updateSettingsMutation.mutateAsync(emailSettings);
-      setSettingsSavedMessage("Đã lưu cấu hình gửi thư thành công!");
+      setSettingsSavedMessage(t("email.settingsSavedSuccess"));
       setTimeout(() => setSettingsSavedMessage(null), 3000);
     } catch {
-      setSettingsSavedMessage("Lỗi khi lưu cấu hình!");
+      setSettingsSavedMessage(t("email.settingsSaveError"));
       setTimeout(() => setSettingsSavedMessage(null), 3000);
     }
   };
@@ -232,7 +232,7 @@ export default function EmailTemplatesSettingsPage() {
       setTestSuccessMessage(t("email.testSentSuccess"));
       setTimeout(() => setTestSuccessMessage(null), 4000);
     } catch {
-      setTestSuccessMessage("Lỗi khi gửi email thử nghiệm!");
+      setTestSuccessMessage(t("email.testSentError"));
       setTimeout(() => setTestSuccessMessage(null), 4000);
     }
   };
@@ -354,7 +354,7 @@ export default function EmailTemplatesSettingsPage() {
                           : "bg-slate-100 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-700"
                       }`}
                     >
-                      {tpl.enabled ? "Đang bật" : "Tắt"}
+                      {tpl.enabled ? t("email.statusEnabled") : t("email.statusDisabled")}
                     </span>
                   </div>
 
@@ -469,7 +469,7 @@ export default function EmailTemplatesSettingsPage() {
                       type="button"
                       onClick={() => handleInsertVariable(v.key)}
                       className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer shadow-2xs"
-                      title={v.label}
+                      title={t(v.labelKey as TranslationKey) || v.label}
                     >
                       {v.key}
                     </button>
@@ -551,19 +551,19 @@ export default function EmailTemplatesSettingsPage() {
                   <div className="h-2 w-2 rounded-full bg-amber-400" />
                   <div className="h-2 w-2 rounded-full bg-emerald-400" />
                   <span className="text-[10px] text-slate-400 font-mono ml-2 truncate">
-                    Hộp thư đến - Xem trước
+                    {t("email.inboxPreview")}
                   </span>
                 </div>
 
                 {/* Email Meta Details */}
                 <div className="p-3 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 text-[11px] space-y-1 text-slate-600 dark:text-slate-400">
                   <div className="truncate">
-                    <strong className="text-slate-800 dark:text-slate-200">Từ:</strong>{" "}
+                    <strong className="text-slate-800 dark:text-slate-200">{t("email.fromLabel")}:</strong>{" "}
                     {emailSettings.fromName} &lt;{emailSettings.fromEmail}&gt;
                   </div>
                   <div className="truncate">
-                    <strong className="text-slate-800 dark:text-slate-200">Đến:</strong>{" "}
-                    Nguyễn Văn An &lt;an.nguyen@example.com&gt;
+                    <strong className="text-slate-800 dark:text-slate-200">{t("email.toLabel")}:</strong>{" "}
+                    {t("email.sampleCandidateName")} &lt;an.nguyen@example.com&gt;
                   </div>
                   <div className="pt-1 text-xs font-bold text-slate-900 dark:text-white">
                     {previewSubject}
@@ -608,13 +608,13 @@ export default function EmailTemplatesSettingsPage() {
                   id: "SIMULATED",
                   title: t("email.providerSimulated"),
                   desc: t("email.providerSimulatedDesc"),
-                  badge: "Khuyên dùng Dev / Test",
+                  badge: t("email.badgeDevTest"),
                 },
                 {
                   id: "SMTP",
                   title: t("email.providerSmtp"),
                   desc: t("email.providerSmtpDesc"),
-                  badge: "Doanh nghiệp",
+                  badge: t("email.badgeEnterprise"),
                 },
                 {
                   id: "RESEND",
@@ -663,7 +663,7 @@ export default function EmailTemplatesSettingsPage() {
           {/* Provider Credentials Form */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
             <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-              Thông tin Người gửi & Máy chủ
+              {t("email.senderServerInfo")}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -718,7 +718,7 @@ export default function EmailTemplatesSettingsPage() {
                           smtpHost: e.target.value,
                         }))
                       }
-                      placeholder="smtp.gmail.com hoặc smtp.office365.com"
+                      placeholder={t("email.smtpHostPlaceholder")}
                       className="h-9 text-xs"
                     />
                   </div>
@@ -811,7 +811,7 @@ export default function EmailTemplatesSettingsPage() {
                 </label>
                 <Input
                   type="password"
-                  placeholder="re_xxxxxxxxxxxx hoặc SG.xxxxxxxxxxxx"
+                  placeholder={t("email.apiKeyPlaceholder")}
                   className="h-9 text-xs font-mono"
                 />
               </div>
@@ -823,7 +823,7 @@ export default function EmailTemplatesSettingsPage() {
                 onClick={handleSaveSettings}
                 className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer"
               >
-                Lưu cấu hình dịch vụ
+                {t("email.saveSettingsBtn")}
               </Button>
             </div>
           </div>

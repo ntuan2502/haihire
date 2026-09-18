@@ -1,33 +1,57 @@
 import { z } from "zod";
 
-const frontendEnvSchema = z.object({
-  // Server-side communication with NestJS Backend
-  INTERNAL_API_URL: z
-    .string()
-    .min(1, "INTERNAL_API_URL is required in frontend/.env for Server-Side API communication"),
+const isServer = typeof window === "undefined";
 
-  // Browser Client-side API route (default empty to use Next.js proxy rewrites)
+// Client-side environment schema (variables prefixed with NEXT_PUBLIC_)
+const clientEnvSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().default(""),
-
-  // MinIO documents proxy or direct URL
   NEXT_PUBLIC_MINIO_URL: z.string().default("/ats-resumes"),
 });
 
-export type FrontendEnv = z.infer<typeof frontendEnvSchema>;
+// Server-only environment schema (accessible only on Node.js / SSR)
+const serverEnvSchema = z.object({
+  INTERNAL_API_URL: z
+    .string()
+    .min(1, "INTERNAL_API_URL is required in frontend/.env for Server-Side API communication"),
+});
 
-const parsed = frontendEnvSchema.safeParse({
-  INTERNAL_API_URL: process.env.INTERNAL_API_URL,
+export interface FrontendEnv {
+  INTERNAL_API_URL: string;
+  NEXT_PUBLIC_API_URL: string;
+  NEXT_PUBLIC_MINIO_URL: string;
+}
+
+// Validate client variables (safe for both browser and server)
+const parsedClient = clientEnvSchema.safeParse({
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_MINIO_URL: process.env.NEXT_PUBLIC_MINIO_URL,
 });
 
-if (!parsed.success) {
-  console.error("\n===========================================================");
-  console.error("❌ CRITICAL CONFIGURATION ERROR: Invalid Frontend Environment!");
-  console.error("===========================================================");
-  console.error(parsed.error.format());
-  console.error("===========================================================\n");
-  throw new Error("Invalid / missing frontend environment configuration. Check frontend/.env");
+if (!parsedClient.success) {
+  console.error("❌ Invalid Client Environment:", parsedClient.error.format());
+  throw new Error("Invalid client environment configuration.");
 }
 
-export const env: FrontendEnv = parsed.data;
+// Validate server-only variables strictly when executing on the server
+let internalApiUrl = "";
+if (isServer) {
+  const parsedServer = serverEnvSchema.safeParse({
+    INTERNAL_API_URL: process.env.INTERNAL_API_URL,
+  });
+
+  if (!parsedServer.success) {
+    console.error("\n===========================================================");
+    console.error("❌ CRITICAL CONFIGURATION ERROR: Missing Server-Side Environment!");
+    console.error("===========================================================");
+    console.error(parsedServer.error.format());
+    console.error("===========================================================\n");
+    throw new Error("Missing INTERNAL_API_URL in frontend/.env for server-side communication.");
+  }
+  internalApiUrl = parsedServer.data.INTERNAL_API_URL;
+}
+
+export const env: FrontendEnv = {
+  INTERNAL_API_URL: internalApiUrl,
+  NEXT_PUBLIC_API_URL: parsedClient.data.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_MINIO_URL: parsedClient.data.NEXT_PUBLIC_MINIO_URL,
+};

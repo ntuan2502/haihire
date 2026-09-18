@@ -162,7 +162,6 @@ function AddCandidatePageContent() {
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={candidates.length}
       />
 
       {/* Main Content Form */}

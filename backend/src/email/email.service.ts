@@ -355,6 +355,12 @@ export class EmailService {
     }
 
     const logs = await query.all();
-    return logs.sort((a: any, b: any) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+    return logs
+      .map((l: any) => ({
+        ...l,
+        candidateName: l.recipientName || l.candidateName || "Ứng viên",
+        candidateEmail: l.recipientEmail || l.candidateEmail || "",
+      }))
+      .sort((a: any, b: any) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
   }
 }

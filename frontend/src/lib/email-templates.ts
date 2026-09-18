@@ -36,8 +36,10 @@ export interface EmailLog {
   id: string;
   organizationId?: string;
   candidateId?: string;
-  candidateName: string;
-  candidateEmail: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  recipientName?: string;
+  recipientEmail?: string;
   templateType: EmailTemplateType;
   subject: string;
   body: string;

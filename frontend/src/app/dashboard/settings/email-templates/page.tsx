@@ -227,10 +227,17 @@ export default function EmailTemplatesSettingsPage() {
   // Filtered logs
   const filteredLogs = useMemo(() => {
     return logs.filter((l) => {
+      const name = (l.candidateName || l.recipientName || "").toLowerCase();
+      const email = (l.candidateEmail || l.recipientEmail || "").toLowerCase();
+      const subject = (l.subject || "").toLowerCase();
+      const search = (logSearch || "").toLowerCase();
+
       const matchSearch =
-        l.candidateName.toLowerCase().includes(logSearch.toLowerCase()) ||
-        l.candidateEmail.toLowerCase().includes(logSearch.toLowerCase()) ||
-        l.subject.toLowerCase().includes(logSearch.toLowerCase());
+        !search ||
+        name.includes(search) ||
+        email.includes(search) ||
+        subject.includes(search);
+
       const matchStatus =
         logStatusFilter === "ALL" || l.status === logStatusFilter;
       return matchSearch && matchStatus;
@@ -943,10 +950,10 @@ export default function EmailTemplatesSettingsPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="font-bold text-slate-900 dark:text-white">
-                              {log.candidateName}
+                              {log.candidateName || log.recipientName || "—"}
                             </div>
                             <div className="text-[11px] text-slate-400">
-                              {log.candidateEmail}
+                              {log.candidateEmail || log.recipientEmail || "—"}
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -1025,7 +1032,8 @@ export default function EmailTemplatesSettingsPage() {
                 <div>
                   <span className="text-[11px] text-slate-400">{t("email.logDetailTo")}:</span>
                   <div className="font-semibold text-slate-800 dark:text-slate-200">
-                    {viewingLog.candidateName} &lt;{viewingLog.candidateEmail}&gt;
+                    {viewingLog.candidateName || viewingLog.recipientName || "—"}{" "}
+                    &lt;{viewingLog.candidateEmail || viewingLog.recipientEmail || ""}&gt;
                   </div>
                 </div>
                 <div>

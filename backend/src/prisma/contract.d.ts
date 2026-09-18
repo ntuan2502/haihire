@@ -30,9 +30,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'6922c7eed1414eddc6ee0159e9ec088ce8792af3b361a4da9acce801df5e4699'>;
+  StorageHashBase<'bab6f663880e08dab741ed66896c068a5a0d271d69343750365f5add85cc1c79'>;
 export type ExecutionHash =
-  ExecutionHashBase<'e1df3ca795348546dffd920799aecdc8155c92f00cbe5a3fa07c5387356eb0d2'>;
+  ExecutionHashBase<'26c10a287fff62819607d97de00f8f7999d731935cd2dcc567dcdc40ca380f02'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -194,6 +194,28 @@ type DefaultLiteralValue<CodecId extends string, Encoded> = CodecId extends keyo
 
 export type FieldOutputTypes = {
   readonly public: {
+    readonly ActivityLog: {
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly candidateId: CodecTypes['pg/text@1']['output'];
+      readonly applicationId: CodecTypes['pg/text@1']['output'] | null;
+      readonly type:
+        | 'APPLIED'
+        | 'STAGE_CHANGED'
+        | 'EMAIL_SENT'
+        | 'INTERVIEW_SCHEDULED'
+        | 'INTERVIEW_UPDATED'
+        | 'SCORECARD_SUBMITTED'
+        | 'NOTE_ADDED';
+      readonly title: CodecTypes['pg/text@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly actorId: CodecTypes['pg/text@1']['output'] | null;
+      readonly actorName: CodecTypes['pg/text@1']['output'];
+      readonly actorRole: CodecTypes['pg/text@1']['output'] | null;
+      readonly metadata: CodecTypes['pg/text@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
     readonly Application: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly candidateId: CodecTypes['pg/text@1']['output'];
@@ -224,6 +246,55 @@ export type FieldOutputTypes = {
       readonly resumeFileName: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['output'] | null;
       readonly resumeMimeType: CodecTypes['pg/text@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
+    readonly EmailLog: {
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly candidateId: CodecTypes['pg/text@1']['output'] | null;
+      readonly applicationId: CodecTypes['pg/text@1']['output'] | null;
+      readonly senderId: CodecTypes['pg/text@1']['output'] | null;
+      readonly senderName: CodecTypes['pg/text@1']['output'];
+      readonly senderEmail: CodecTypes['pg/text@1']['output'];
+      readonly recipientEmail: CodecTypes['pg/text@1']['output'];
+      readonly recipientName: CodecTypes['pg/text@1']['output'];
+      readonly templateType:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly subject: CodecTypes['pg/text@1']['output'];
+      readonly body: CodecTypes['pg/text@1']['output'];
+      readonly status: 'SENT' | 'SIMULATED' | 'FAILED';
+      readonly errorMessage: CodecTypes['pg/text@1']['output'] | null;
+      readonly sentAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
+    readonly EmailSetting: {
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly provider: CodecTypes['pg/text@1']['output'];
+      readonly fromName: CodecTypes['pg/text@1']['output'];
+      readonly fromEmail: CodecTypes['pg/text@1']['output'];
+      readonly smtpHost: CodecTypes['pg/text@1']['output'] | null;
+      readonly smtpPort: CodecTypes['pg/int4@1']['output'] | null;
+      readonly smtpUser: CodecTypes['pg/text@1']['output'] | null;
+      readonly smtpPass: CodecTypes['pg/text@1']['output'] | null;
+      readonly smtpSecure: CodecTypes['pg/bool@1']['output'];
+      readonly resendApiKey: CodecTypes['pg/text@1']['output'] | null;
+      readonly sendgridApiKey: CodecTypes['pg/text@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
+    readonly EmailTemplate: {
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly type:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly subject: CodecTypes['pg/text@1']['output'];
+      readonly body: CodecTypes['pg/text@1']['output'];
+      readonly enabled: CodecTypes['pg/bool@1']['output'];
+      readonly variables: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
     };
@@ -305,6 +376,28 @@ export type FieldOutputTypes = {
 };
 export type FieldInputTypes = {
   readonly public: {
+    readonly ActivityLog: {
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly candidateId: CodecTypes['pg/text@1']['input'];
+      readonly applicationId: CodecTypes['pg/text@1']['input'] | null;
+      readonly type:
+        | 'APPLIED'
+        | 'STAGE_CHANGED'
+        | 'EMAIL_SENT'
+        | 'INTERVIEW_SCHEDULED'
+        | 'INTERVIEW_UPDATED'
+        | 'SCORECARD_SUBMITTED'
+        | 'NOTE_ADDED';
+      readonly title: CodecTypes['pg/text@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly actorId: CodecTypes['pg/text@1']['input'] | null;
+      readonly actorName: CodecTypes['pg/text@1']['input'];
+      readonly actorRole: CodecTypes['pg/text@1']['input'] | null;
+      readonly metadata: CodecTypes['pg/text@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
     readonly Application: {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly candidateId: CodecTypes['pg/text@1']['input'];
@@ -335,6 +428,55 @@ export type FieldInputTypes = {
       readonly resumeFileName: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['input'] | null;
       readonly resumeMimeType: CodecTypes['pg/text@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
+    readonly EmailLog: {
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly candidateId: CodecTypes['pg/text@1']['input'] | null;
+      readonly applicationId: CodecTypes['pg/text@1']['input'] | null;
+      readonly senderId: CodecTypes['pg/text@1']['input'] | null;
+      readonly senderName: CodecTypes['pg/text@1']['input'];
+      readonly senderEmail: CodecTypes['pg/text@1']['input'];
+      readonly recipientEmail: CodecTypes['pg/text@1']['input'];
+      readonly recipientName: CodecTypes['pg/text@1']['input'];
+      readonly templateType:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly subject: CodecTypes['pg/text@1']['input'];
+      readonly body: CodecTypes['pg/text@1']['input'];
+      readonly status: 'SENT' | 'SIMULATED' | 'FAILED';
+      readonly errorMessage: CodecTypes['pg/text@1']['input'] | null;
+      readonly sentAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
+    readonly EmailSetting: {
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly provider: CodecTypes['pg/text@1']['input'];
+      readonly fromName: CodecTypes['pg/text@1']['input'];
+      readonly fromEmail: CodecTypes['pg/text@1']['input'];
+      readonly smtpHost: CodecTypes['pg/text@1']['input'] | null;
+      readonly smtpPort: CodecTypes['pg/int4@1']['input'] | null;
+      readonly smtpUser: CodecTypes['pg/text@1']['input'] | null;
+      readonly smtpPass: CodecTypes['pg/text@1']['input'] | null;
+      readonly smtpSecure: CodecTypes['pg/bool@1']['input'];
+      readonly resendApiKey: CodecTypes['pg/text@1']['input'] | null;
+      readonly sendgridApiKey: CodecTypes['pg/text@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
+    readonly EmailTemplate: {
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly type:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly subject: CodecTypes['pg/text@1']['input'];
+      readonly body: CodecTypes['pg/text@1']['input'];
+      readonly enabled: CodecTypes['pg/bool@1']['input'];
+      readonly variables: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
     };
@@ -416,6 +558,28 @@ export type FieldInputTypes = {
 };
 export type StorageColumnTypes = {
   readonly public: {
+    readonly activityLog: {
+      readonly actorId: CodecTypes['pg/text@1']['output'] | null;
+      readonly actorName: CodecTypes['pg/text@1']['output'];
+      readonly actorRole: CodecTypes['pg/text@1']['output'] | null;
+      readonly applicationId: CodecTypes['pg/text@1']['output'] | null;
+      readonly candidateId: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly metadata: CodecTypes['pg/text@1']['output'] | null;
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly title: CodecTypes['pg/text@1']['output'];
+      readonly type:
+        | 'APPLIED'
+        | 'STAGE_CHANGED'
+        | 'EMAIL_SENT'
+        | 'INTERVIEW_SCHEDULED'
+        | 'INTERVIEW_UPDATED'
+        | 'SCORECARD_SUBMITTED'
+        | 'NOTE_ADDED';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
     readonly application: {
       readonly candidateId: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
@@ -448,6 +612,55 @@ export type StorageColumnTypes = {
       readonly resumeMimeType: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
+    readonly emailLog: {
+      readonly applicationId: CodecTypes['pg/text@1']['output'] | null;
+      readonly body: CodecTypes['pg/text@1']['output'];
+      readonly candidateId: CodecTypes['pg/text@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly errorMessage: CodecTypes['pg/text@1']['output'] | null;
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly recipientEmail: CodecTypes['pg/text@1']['output'];
+      readonly recipientName: CodecTypes['pg/text@1']['output'];
+      readonly senderEmail: CodecTypes['pg/text@1']['output'];
+      readonly senderId: CodecTypes['pg/text@1']['output'] | null;
+      readonly senderName: CodecTypes['pg/text@1']['output'];
+      readonly sentAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly status: 'SENT' | 'SIMULATED' | 'FAILED';
+      readonly subject: CodecTypes['pg/text@1']['output'];
+      readonly templateType:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
+    readonly emailSetting: {
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly fromEmail: CodecTypes['pg/text@1']['output'];
+      readonly fromName: CodecTypes['pg/text@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly provider: CodecTypes['pg/text@1']['output'];
+      readonly resendApiKey: CodecTypes['pg/text@1']['output'] | null;
+      readonly sendgridApiKey: CodecTypes['pg/text@1']['output'] | null;
+      readonly smtpHost: CodecTypes['pg/text@1']['output'] | null;
+      readonly smtpPass: CodecTypes['pg/text@1']['output'] | null;
+      readonly smtpPort: CodecTypes['pg/int4@1']['output'] | null;
+      readonly smtpSecure: CodecTypes['pg/bool@1']['output'];
+      readonly smtpUser: CodecTypes['pg/text@1']['output'] | null;
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+    };
+    readonly emailTemplate: {
+      readonly body: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly enabled: CodecTypes['pg/bool@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly subject: CodecTypes['pg/text@1']['output'];
+      readonly type:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['output'];
+      readonly variables: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly interview: {
       readonly applicationId: CodecTypes['pg/text@1']['output'];
@@ -527,6 +740,28 @@ export type StorageColumnTypes = {
 };
 export type StorageColumnInputTypes = {
   readonly public: {
+    readonly activityLog: {
+      readonly actorId: CodecTypes['pg/text@1']['input'] | null;
+      readonly actorName: CodecTypes['pg/text@1']['input'];
+      readonly actorRole: CodecTypes['pg/text@1']['input'] | null;
+      readonly applicationId: CodecTypes['pg/text@1']['input'] | null;
+      readonly candidateId: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly metadata: CodecTypes['pg/text@1']['input'] | null;
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly title: CodecTypes['pg/text@1']['input'];
+      readonly type:
+        | 'APPLIED'
+        | 'STAGE_CHANGED'
+        | 'EMAIL_SENT'
+        | 'INTERVIEW_SCHEDULED'
+        | 'INTERVIEW_UPDATED'
+        | 'SCORECARD_SUBMITTED'
+        | 'NOTE_ADDED';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
     readonly application: {
       readonly candidateId: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
@@ -559,6 +794,55 @@ export type StorageColumnInputTypes = {
       readonly resumeMimeType: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
+    readonly emailLog: {
+      readonly applicationId: CodecTypes['pg/text@1']['input'] | null;
+      readonly body: CodecTypes['pg/text@1']['input'];
+      readonly candidateId: CodecTypes['pg/text@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly errorMessage: CodecTypes['pg/text@1']['input'] | null;
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly recipientEmail: CodecTypes['pg/text@1']['input'];
+      readonly recipientName: CodecTypes['pg/text@1']['input'];
+      readonly senderEmail: CodecTypes['pg/text@1']['input'];
+      readonly senderId: CodecTypes['pg/text@1']['input'] | null;
+      readonly senderName: CodecTypes['pg/text@1']['input'];
+      readonly sentAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly status: 'SENT' | 'SIMULATED' | 'FAILED';
+      readonly subject: CodecTypes['pg/text@1']['input'];
+      readonly templateType:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
+    readonly emailSetting: {
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly fromEmail: CodecTypes['pg/text@1']['input'];
+      readonly fromName: CodecTypes['pg/text@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly provider: CodecTypes['pg/text@1']['input'];
+      readonly resendApiKey: CodecTypes['pg/text@1']['input'] | null;
+      readonly sendgridApiKey: CodecTypes['pg/text@1']['input'] | null;
+      readonly smtpHost: CodecTypes['pg/text@1']['input'] | null;
+      readonly smtpPass: CodecTypes['pg/text@1']['input'] | null;
+      readonly smtpPort: CodecTypes['pg/int4@1']['input'] | null;
+      readonly smtpSecure: CodecTypes['pg/bool@1']['input'];
+      readonly smtpUser: CodecTypes['pg/text@1']['input'] | null;
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+    };
+    readonly emailTemplate: {
+      readonly body: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly enabled: CodecTypes['pg/bool@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly subject: CodecTypes['pg/text@1']['input'];
+      readonly type:
+        'APPLICATION_CONFIRMATION' | 'INTERVIEW_INVITATION' | 'REJECTION' | 'OFFER' | 'CUSTOM';
+      readonly updatedAt: CodecTypes['pg/timestamptz@1']['input'];
+      readonly variables: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly interview: {
       readonly applicationId: CodecTypes['pg/text@1']['input'];
@@ -654,6 +938,136 @@ type ContractBase = Omit<
         readonly kind: 'postgres-schema';
         readonly entries: {
           readonly table: {
+            readonly activityLog: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly organizationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly candidateId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly applicationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly type: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly title: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly description: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly actorId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly actorName: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly actorRole: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly metadata: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'activityLog_organizationId_idx_2e17ef41';
+                  readonly prefix: 'activityLog_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'activityLog_candidateId_idx_462b5869';
+                  readonly prefix: 'activityLog_candidateId_idx';
+                  readonly columns: readonly ['candidateId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'activityLog_applicationId_idx_8158f91a';
+                  readonly prefix: 'activityLog_applicationId_idx';
+                  readonly columns: readonly ['applicationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'activityLog';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'activityLog';
+                    readonly columns: readonly ['candidateId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'candidate';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'activityLog';
+                    readonly columns: readonly ['applicationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'application';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly application: {
               columns: {
                 readonly id: {
@@ -881,6 +1295,356 @@ type ContractBase = Omit<
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'candidate';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly emailLog: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly organizationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly candidateId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly applicationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly senderId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly senderName: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly senderEmail: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly recipientEmail: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly recipientName: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly templateType: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'CUSTOM'>;
+                  };
+                };
+                readonly subject: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly body: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly status: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'SENT'>;
+                  };
+                };
+                readonly errorMessage: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly sentAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'emailLog_organizationId_idx_2e17ef41';
+                  readonly prefix: 'emailLog_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'emailLog_candidateId_idx_462b5869';
+                  readonly prefix: 'emailLog_candidateId_idx';
+                  readonly columns: readonly ['candidateId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'emailLog_applicationId_idx_8158f91a';
+                  readonly prefix: 'emailLog_applicationId_idx';
+                  readonly columns: readonly ['applicationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'emailLog';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'emailLog';
+                    readonly columns: readonly ['candidateId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'candidate';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'emailLog';
+                    readonly columns: readonly ['applicationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'application';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly emailSetting: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly organizationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly provider: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'SIMULATED'>;
+                  };
+                };
+                readonly fromName: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'Recruitment Team'>;
+                  };
+                };
+                readonly fromEmail: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'careers@workspace.com'>;
+                  };
+                };
+                readonly smtpHost: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly smtpPort: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly smtpUser: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly smtpPass: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly smtpSecure: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                };
+                readonly resendApiKey: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly sendgridApiKey: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['organizationId'] }];
+              indexes: readonly [];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'emailSetting';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly emailTemplate: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly organizationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly type: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly name: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly subject: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly body: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly enabled: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                };
+                readonly variables: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['organizationId', 'type'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'emailTemplate_organizationId_idx_2e17ef41';
+                  readonly prefix: 'emailTemplate_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'emailTemplate';
                     readonly columns: readonly ['organizationId'];
                   };
                   readonly target: {
@@ -1446,6 +2210,18 @@ type ContractBase = Omit<
             };
           };
           readonly valueSet: {
+            readonly ActivityType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'APPLIED',
+                'STAGE_CHANGED',
+                'EMAIL_SENT',
+                'INTERVIEW_SCHEDULED',
+                'INTERVIEW_UPDATED',
+                'SCORECARD_SUBMITTED',
+                'NOTE_ADDED',
+              ];
+            };
             readonly ApplicationStage: {
               readonly kind: 'valueSet';
               readonly values: readonly [
@@ -1455,6 +2231,20 @@ type ContractBase = Omit<
                 'OFFER',
                 'HIRED',
                 'REJECTED',
+              ];
+            };
+            readonly EmailDeliveryStatus: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['SENT', 'SIMULATED', 'FAILED'];
+            };
+            readonly EmailTemplateType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'APPLICATION_CONFIRMATION',
+                'INTERVIEW_INVITATION',
+                'REJECTION',
+                'OFFER',
+                'CUSTOM',
               ];
             };
             readonly ExperienceLevel: {
@@ -1536,11 +2326,134 @@ type ContractBase = Omit<
       readonly model: 'Application';
     };
     readonly interview: { readonly namespace: 'public' & NamespaceId; readonly model: 'Interview' };
+    readonly emailTemplate: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'EmailTemplate';
+    };
+    readonly emailSetting: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'EmailSetting';
+    };
+    readonly emailLog: { readonly namespace: 'public' & NamespaceId; readonly model: 'EmailLog' };
+    readonly activityLog: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'ActivityLog';
+    };
   };
   readonly domain: {
     readonly namespaces: {
       readonly public: {
         readonly models: {
+          readonly ActivityLog: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly candidateId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly applicationId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly type: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly title: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly description: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly actorId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly actorName: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly actorRole: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly metadata: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+            };
+            readonly relations: {
+              readonly application: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Application';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['applicationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly candidate: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Candidate';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['candidateId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'activityLog';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly candidateId: { readonly column: 'candidateId' };
+                readonly applicationId: { readonly column: 'applicationId' };
+                readonly type: { readonly column: 'type' };
+                readonly title: { readonly column: 'title' };
+                readonly description: { readonly column: 'description' };
+                readonly actorId: { readonly column: 'actorId' };
+                readonly actorName: { readonly column: 'actorName' };
+                readonly actorRole: { readonly column: 'actorRole' };
+                readonly metadata: { readonly column: 'metadata' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
           readonly Application: {
             readonly fields: {
               readonly id: {
@@ -1597,6 +2510,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly activityLogs: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'ActivityLog';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['applicationId'];
+                };
+              };
               readonly candidate: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -1606,6 +2530,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['candidateId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly emailLogs: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'EmailLog';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['applicationId'];
                 };
               };
               readonly interviews: {
@@ -1716,10 +2651,32 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly activityLogs: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'ActivityLog';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['candidateId'];
+                };
+              };
               readonly applications: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'Application';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['candidateId'];
+                };
+              };
+              readonly emailLogs: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'EmailLog';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -1757,6 +2714,302 @@ type ContractBase = Omit<
                 readonly resumeFileName: { readonly column: 'resumeFileName' };
                 readonly resumeFileSize: { readonly column: 'resumeFileSize' };
                 readonly resumeMimeType: { readonly column: 'resumeMimeType' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly EmailLog: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly candidateId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly applicationId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly senderId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly senderName: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly senderEmail: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly recipientEmail: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly recipientName: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly templateType: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly subject: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly body: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly errorMessage: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly sentAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+            };
+            readonly relations: {
+              readonly application: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Application';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['applicationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly candidate: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Candidate';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['candidateId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'emailLog';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly candidateId: { readonly column: 'candidateId' };
+                readonly applicationId: { readonly column: 'applicationId' };
+                readonly senderId: { readonly column: 'senderId' };
+                readonly senderName: { readonly column: 'senderName' };
+                readonly senderEmail: { readonly column: 'senderEmail' };
+                readonly recipientEmail: { readonly column: 'recipientEmail' };
+                readonly recipientName: { readonly column: 'recipientName' };
+                readonly templateType: { readonly column: 'templateType' };
+                readonly subject: { readonly column: 'subject' };
+                readonly body: { readonly column: 'body' };
+                readonly status: { readonly column: 'status' };
+                readonly errorMessage: { readonly column: 'errorMessage' };
+                readonly sentAt: { readonly column: 'sentAt' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly EmailSetting: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly provider: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly fromName: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly fromEmail: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly smtpHost: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly smtpPort: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly smtpUser: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly smtpPass: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly smtpSecure: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly resendApiKey: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly sendgridApiKey: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+            };
+            readonly relations: {
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'emailSetting';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly provider: { readonly column: 'provider' };
+                readonly fromName: { readonly column: 'fromName' };
+                readonly fromEmail: { readonly column: 'fromEmail' };
+                readonly smtpHost: { readonly column: 'smtpHost' };
+                readonly smtpPort: { readonly column: 'smtpPort' };
+                readonly smtpUser: { readonly column: 'smtpUser' };
+                readonly smtpPass: { readonly column: 'smtpPass' };
+                readonly smtpSecure: { readonly column: 'smtpSecure' };
+                readonly resendApiKey: { readonly column: 'resendApiKey' };
+                readonly sendgridApiKey: { readonly column: 'sendgridApiKey' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly EmailTemplate: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly type: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly subject: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly body: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly enabled: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly variables: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/timestamptz@1' };
+              };
+            };
+            readonly relations: {
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'emailTemplate';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly type: { readonly column: 'type' };
+                readonly name: { readonly column: 'name' };
+                readonly subject: { readonly column: 'subject' };
+                readonly body: { readonly column: 'body' };
+                readonly enabled: { readonly column: 'enabled' };
+                readonly variables: { readonly column: 'variables' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
@@ -2086,10 +3339,54 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly activityLogs: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'ActivityLog';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['organizationId'];
+                };
+              };
               readonly candidates: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'Candidate';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['organizationId'];
+                };
+              };
+              readonly emailLogs: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'EmailLog';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['organizationId'];
+                };
+              };
+              readonly emailSettings: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'EmailSetting';
+                };
+                readonly cardinality: '1:1';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['organizationId'];
+                };
+              };
+              readonly emailTemplates: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'EmailTemplate';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -2399,6 +3696,39 @@ type ContractBase = Omit<
               { readonly name: 'REVOKED'; readonly value: 'REVOKED' },
             ];
           };
+          readonly EmailTemplateType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              {
+                readonly name: 'APPLICATION_CONFIRMATION';
+                readonly value: 'APPLICATION_CONFIRMATION';
+              },
+              { readonly name: 'INTERVIEW_INVITATION'; readonly value: 'INTERVIEW_INVITATION' },
+              { readonly name: 'REJECTION'; readonly value: 'REJECTION' },
+              { readonly name: 'OFFER'; readonly value: 'OFFER' },
+              { readonly name: 'CUSTOM'; readonly value: 'CUSTOM' },
+            ];
+          };
+          readonly EmailDeliveryStatus: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'SENT'; readonly value: 'SENT' },
+              { readonly name: 'SIMULATED'; readonly value: 'SIMULATED' },
+              { readonly name: 'FAILED'; readonly value: 'FAILED' },
+            ];
+          };
+          readonly ActivityType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'APPLIED'; readonly value: 'APPLIED' },
+              { readonly name: 'STAGE_CHANGED'; readonly value: 'STAGE_CHANGED' },
+              { readonly name: 'EMAIL_SENT'; readonly value: 'EMAIL_SENT' },
+              { readonly name: 'INTERVIEW_SCHEDULED'; readonly value: 'INTERVIEW_SCHEDULED' },
+              { readonly name: 'INTERVIEW_UPDATED'; readonly value: 'INTERVIEW_UPDATED' },
+              { readonly name: 'SCORECARD_SUBMITTED'; readonly value: 'SCORECARD_SUBMITTED' },
+              { readonly name: 'NOTE_ADDED'; readonly value: 'NOTE_ADDED' },
+            ];
+          };
         };
       };
     };
@@ -2429,6 +3759,23 @@ type ContractBase = Omit<
         {
           readonly ref: {
             readonly namespace: 'public';
+            readonly table: 'activityLog';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'activityLog';
+            readonly column: 'updatedAt';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
             readonly table: 'application';
             readonly column: 'id';
           };
@@ -2455,6 +3802,57 @@ type ContractBase = Omit<
           readonly ref: {
             readonly namespace: 'public';
             readonly table: 'candidate';
+            readonly column: 'updatedAt';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'emailLog';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'emailLog';
+            readonly column: 'updatedAt';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'emailSetting';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'emailSetting';
+            readonly column: 'updatedAt';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'emailTemplate';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'emailTemplate';
             readonly column: 'updatedAt';
           };
           readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };

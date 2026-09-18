@@ -57,6 +57,8 @@ import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import { SendEmailModal } from "@/components/email/send-email-modal";
+import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 
 function CandidateDetailPageContent() {
   const params = useParams();
@@ -108,6 +110,7 @@ function CandidateDetailPageContent() {
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
   const [docToDelete, setDocToDelete] = useState<CandidateDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
 
   const loading = candidateLoading || jobsLoading;
@@ -393,6 +396,15 @@ function CandidateDetailPageContent() {
           {/* Action Buttons (Admins only) */}
           {canEdit && (
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsSendEmailOpen(true)}
+                className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                <span>{t("email.sendEmailAction")}</span>
+              </Button>
               <button
                 type="button"
                 onClick={() =>
@@ -841,6 +853,15 @@ function CandidateDetailPageContent() {
             </div>
           )}
         </div>
+
+        {/* Card 5: Activity & Email Timeline */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <CandidateTimeline
+            candidateId={candidate?.id || candidateIdStr}
+            candidateName={candidateName}
+            candidateEmail={candidateEmail}
+          />
+        </div>
       </main>
 
       {/* Apply to Job Modal */}
@@ -896,6 +917,22 @@ function CandidateDetailPageContent() {
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
           editingInterview={editingInterview}
+        />
+      )}
+
+      {/* Send Email Modal */}
+      {candidate && (
+        <SendEmailModal
+          isOpen={isSendEmailOpen}
+          onClose={() => setIsSendEmailOpen(false)}
+          candidate={{
+            id: candidate.id,
+            name: candidateName,
+            email: candidateEmail,
+            phone: candidatePhone,
+          }}
+          jobTitle={candidateApps[0]?.job?.title || "Vị trí tuyển dụng"}
+          organizationName={candidateApps[0]?.job?.department ? `${candidateApps[0]?.job?.department} Department` : "Nexus ATS"}
         />
       )}
     </div>

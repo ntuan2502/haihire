@@ -281,7 +281,22 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       },
     };
 
-    service = new ApplicationsService(mockPrismaService as any, mockMinioService as any);
+    const mockActivitiesService = {
+      createActivity: vi.fn().mockResolvedValue({}),
+      findByCandidate: vi.fn().mockResolvedValue([]),
+    };
+
+    const mockEmailService = {
+      getTemplateByType: vi.fn().mockResolvedValue(null),
+      sendEmail: vi.fn().mockResolvedValue({}),
+    };
+
+    service = new ApplicationsService(
+      mockPrismaService as any,
+      mockMinioService as any,
+      mockActivitiesService as any,
+      mockEmailService as any,
+    );
   });
 
   describe("Multi-Tenant Isolation", () => {

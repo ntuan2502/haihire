@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi, applicationsApi, organizationsApi, candidatesApi, interviewsApi } from "@/lib/api";
+import { jobsApi, applicationsApi, organizationsApi, candidatesApi, interviewsApi, emailApi, activitiesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Job, Application, Candidate, ApplicationStage, Organization, User, InviteLink, Interview, CreateInterviewInput, UpdateInterviewInput } from "@/types";
+import type { EmailTemplate, EmailSettings, EmailLog, ActivityEvent } from "@/lib/email-templates";
 
 // ==========================================
 // QUERY KEYS
@@ -22,6 +23,11 @@ export const queryKeys = {
   myOrgs: () => ["organization", "my-all"] as const,
   orgMembers: () => ["organization", "members"] as const,
   inviteLinks: () => ["organization", "invite-links"] as const,
+  emailTemplates: (orgId?: string | null) => ["email", "templates", { orgId }] as const,
+  emailSettings: (orgId?: string | null) => ["email", "settings", { orgId }] as const,
+  emailLogs: (params?: { orgId?: string | null; candidateId?: string | null }) => ["email", "logs", params] as const,
+  candidateActivities: (candidateId?: string | null, orgId?: string | null) => ["activities", "candidate", candidateId, { orgId }] as const,
+  applicationActivities: (applicationId?: string | null, orgId?: string | null) => ["activities", "application", applicationId, { orgId }] as const,
 };
 
 // ==========================================
@@ -581,6 +587,165 @@ export function useDeleteInterviewMutation() {
     },
   });
 }
+
+// ==========================================
+// EMAIL HOOKS
+// ==========================================
+export function useEmailTemplates(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<EmailTemplate[]>({
+    queryKey: queryKeys.emailTemplates(effectiveOrgId),
+    queryFn: () => {
+      if (!effectiveOrgId) return [];
+      return emailApi.getTemplates(effectiveOrgId);
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
+export function useUpdateEmailTemplateMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: ({
+      type,
+      data,
+    }: {
+      type: string;
+      data: { subject?: string; body?: string; enabled?: boolean };
+    }) => emailApi.updateTemplate(type, data, user?.organizationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+    },
+  });
+}
+
+export function useEmailSettings(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<EmailSettings>({
+    queryKey: queryKeys.emailSettings(effectiveOrgId),
+    queryFn: () => {
+      if (!effectiveOrgId) throw new Error("No organization ID");
+      return emailApi.getSettings(effectiveOrgId);
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
+export function useUpdateEmailSettingsMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: (data: Partial<EmailSettings>) =>
+      emailApi.updateSettings(data, user?.organizationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "settings"] });
+    },
+  });
+}
+
+export function useSendTestEmailMutation() {
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: (to: string) => emailApi.sendTestEmail(to, user?.organizationId),
+  });
+}
+
+export function useEmailLogs(params?: {
+  organizationId?: string | null;
+  candidateId?: string | null;
+}) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+
+  return useQuery<EmailLog[]>({
+    queryKey: queryKeys.emailLogs({
+      orgId: effectiveOrgId,
+      candidateId: params?.candidateId,
+    }),
+    queryFn: () => {
+      if (!effectiveOrgId) return [];
+      return emailApi.getLogs(effectiveOrgId, params?.candidateId || undefined);
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
+export function useSendEmailMutation() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: (data: {
+      to: string;
+      recipientName: string;
+      subject: string;
+      body: string;
+      templateType?: string;
+      candidateId?: string;
+      applicationId?: string;
+      variables?: Record<string, string>;
+    }) => emailApi.sendEmail(data, user?.organizationId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["email", "logs"] });
+      if (variables?.candidateId) {
+        queryClient.invalidateQueries({
+          queryKey: ["activities", "candidate", variables.candidateId],
+        });
+      }
+    },
+  });
+}
+
+// ==========================================
+// CANDIDATE & APPLICATION ACTIVITIES HOOKS
+// ==========================================
+export function useCandidateActivities(
+  candidateId?: string | null,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<ActivityEvent[]>({
+    queryKey: queryKeys.candidateActivities(candidateId, effectiveOrgId),
+    queryFn: () => {
+      if (!candidateId) return [];
+      return activitiesApi.getByCandidate(candidateId, effectiveOrgId);
+    },
+    enabled: Boolean(candidateId),
+  });
+}
+
+export function useApplicationActivities(
+  applicationId?: string | null,
+  organizationId?: string | null,
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<ActivityEvent[]>({
+    queryKey: queryKeys.applicationActivities(applicationId, effectiveOrgId),
+    queryFn: () => {
+      if (!applicationId) return [];
+      return activitiesApi.getByApplication(applicationId, effectiveOrgId);
+    },
+    enabled: Boolean(applicationId),
+  });
+}
+
 
 
 

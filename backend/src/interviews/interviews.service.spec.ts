@@ -159,7 +159,21 @@ describe("InterviewsService", () => {
       },
     };
 
-    service = new InterviewsService(mockPrismaService);
+    const mockActivitiesService = {
+      createActivity: vi.fn().mockResolvedValue({}),
+      findByCandidate: vi.fn().mockResolvedValue([]),
+    };
+
+    const mockEmailService = {
+      getTemplateByType: vi.fn().mockResolvedValue(null),
+      sendEmail: vi.fn().mockResolvedValue({}),
+    };
+
+    service = new InterviewsService(
+      mockPrismaService,
+      mockActivitiesService as any,
+      mockEmailService as any,
+    );
   });
 
   it("should return all interviews enriched with application, candidate, and job info", async () => {

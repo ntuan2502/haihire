@@ -22,6 +22,7 @@ import {
   FileText,
   Link as LinkIcon,
   Layers,
+  Mail,
 } from "lucide-react";
 import {
   useCreateInterviewMutation,
@@ -76,6 +77,7 @@ export function ScheduleInterviewModal({
   const [linkOrLocation, setLinkOrLocation] = useState<string>("");
   const [interviewerName, setInterviewerName] = useState<string>("");
   const [interviewNotes, setInterviewNotes] = useState<string>("");
+  const [sendEmailInvite, setSendEmailInvite] = useState<boolean>(true);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Filter candidates for selected job
@@ -486,6 +488,24 @@ export function ScheduleInterviewModal({
                 onChange={(e) => setInterviewNotes(e.target.value)}
                 className="h-10 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
               />
+            </div>
+
+            {/* Send Email Invitation Checkbox */}
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <input
+                type="checkbox"
+                id="sendEmailInviteCheckbox"
+                checked={sendEmailInvite}
+                onChange={(e) => setSendEmailInvite(e.target.checked)}
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
+              />
+              <label
+                htmlFor="sendEmailInviteCheckbox"
+                className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer flex items-center gap-1.5"
+              >
+                <Mail className="h-3.5 w-3.5 text-blue-500" />
+                <span>{t("email.sendEmailInviteCheckbox")}</span>
+              </label>
             </div>
           </div>
 

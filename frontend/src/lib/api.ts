@@ -14,26 +14,20 @@ import type {
   PaginatedResult,
 } from "../types";
 import type { EmailSettings, EmailLog, ActivityEvent } from "./email-templates";
+import { env } from "./env";
 
 export const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
     // In browser, if an external non-localhost URL is explicitly provided, use it.
     // Otherwise, always use relative "/api" so requests proxy through Next.js rewrites.
-    // This allows devices on LAN (phone, tablet, laptop) or localhost to work without CORS or Private Network Access blocks.
-    const customUrl = process.env.NEXT_PUBLIC_API_URL;
+    const customUrl = env.NEXT_PUBLIC_API_URL;
     if (customUrl && !customUrl.includes("localhost") && !customUrl.includes("127.0.0.1")) {
       return customUrl;
     }
     return "/api";
   }
-  // Server-side (SSR / Server Actions) can communicate directly with backend
-  return (
-    process.env.INTERNAL_API_URL ||
-    (process.env.NEXT_PUBLIC_API_URL &&
-      !process.env.NEXT_PUBLIC_API_URL.startsWith("/") &&
-      process.env.NEXT_PUBLIC_API_URL) ||
-    "http://127.0.0.1:3001"
-  );
+  // Server-side (SSR / Server Actions) communicates directly with backend via validated internal URL
+  return env.INTERNAL_API_URL;
 };
 
 export const getDocumentUrl = (url: string) => {

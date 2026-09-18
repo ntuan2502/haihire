@@ -1,5 +1,5 @@
-import "dotenv/config";
 import crypto from "node:crypto";
+import { env } from "../config/env";
 import bcrypt from "bcryptjs";
 import { db } from "./db.ts";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
@@ -488,12 +488,8 @@ class InterviewSlotManager {
 let pendingSeed: Promise<void> | undefined;
 
 export async function runSeed(): Promise<void> {
-  const dbUrl =
-    process.env.DATABASE_URL ||
-    "postgresql://ats_user:ats_password@localhost:5432/ats_db?schema=public";
-
   try {
-    await db.connect({ url: dbUrl });
+    await db.connect({ url: env.DATABASE_URL });
   } catch {
     // already connected or composer client
   }

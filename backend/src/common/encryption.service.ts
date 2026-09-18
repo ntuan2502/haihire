@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
+import { env } from "../config/env";
 
 @Injectable()
 export class EncryptionService {
@@ -7,11 +8,7 @@ export class EncryptionService {
   private readonly key: Buffer;
 
   constructor() {
-    const rawSecret = process.env.ENCRYPTION_SECRET || process.env.JWT_SECRET;
-    if (!rawSecret) {
-      throw new Error("ENCRYPTION_SECRET or JWT_SECRET must be configured in environment");
-    }
-    this.key = crypto.scryptSync(rawSecret, "ats-salt-vector", 32);
+    this.key = crypto.scryptSync(env.ENCRYPTION_SECRET, "ats-salt-vector", 32);
   }
 
   encrypt(plainText?: string | null): string | null {

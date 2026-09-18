@@ -1,17 +1,14 @@
-import "dotenv/config";
 import "reflect-metadata";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { validateEnvironment } from "./common/env.validator";
+import { env } from "./config/env";
 
 async function bootstrap() {
-  validateEnvironment();
-
   const app = await NestFactory.create(AppModule);
 
   // Strict CORS whitelist from FRONTEND_URL
-  const allowedOrigins = (process.env.FRONTEND_URL ?? "")
+  const allowedOrigins = env.FRONTEND_URL
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
@@ -31,13 +28,8 @@ async function bootstrap() {
     }),
   );
 
-  const rawPort = (process.env.PORT ?? "").trim();
-  const parsedPort = rawPort.length > 0 ? Number(rawPort) : Number.NaN;
-  const port =
-    Number.isFinite(parsedPort) && parsedPort >= 0 && parsedPort <= 65535 ? parsedPort : 3001;
-
-  await app.listen(port, "0.0.0.0");
-  console.log(`ATS Backend running at http://0.0.0.0:${port}`);
+  await app.listen(env.PORT, "0.0.0.0");
+  console.log(`ATS Backend running at http://0.0.0.0:${env.PORT}`);
 }
 
 bootstrap().catch((error) => {

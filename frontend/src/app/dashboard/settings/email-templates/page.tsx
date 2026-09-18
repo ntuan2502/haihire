@@ -32,7 +32,6 @@ import {
   DEFAULT_EMAIL_TEMPLATES,
   DEFAULT_EMAIL_SETTINGS,
   TEMPLATE_VARIABLES,
-  MOCK_EMAIL_LOGS,
   interpolateTemplate,
 } from "@/lib/email-templates";
 import { useI18n } from "@/i18n";
@@ -77,28 +76,9 @@ export default function EmailTemplatesSettingsPage() {
     status: logStatusFilter !== "ALL" ? logStatusFilter : undefined,
   });
 
-  const { logs, totalLogs, totalPages } = useMemo(() => {
-    if (!remoteLogsResponse) {
-      return { logs: MOCK_EMAIL_LOGS, totalLogs: MOCK_EMAIL_LOGS.length, totalPages: 1 };
-    }
-    if (Array.isArray(remoteLogsResponse)) {
-      return {
-        logs: remoteLogsResponse.length > 0 ? remoteLogsResponse : MOCK_EMAIL_LOGS,
-        totalLogs: remoteLogsResponse.length > 0 ? remoteLogsResponse.length : MOCK_EMAIL_LOGS.length,
-        totalPages: 1,
-      };
-    }
-    return {
-      logs:
-        remoteLogsResponse.data && remoteLogsResponse.data.length > 0
-          ? remoteLogsResponse.data
-          : remoteLogsResponse.total === 0
-          ? []
-          : MOCK_EMAIL_LOGS,
-      totalLogs: remoteLogsResponse.total ?? 0,
-      totalPages: remoteLogsResponse.totalPages || 1,
-    };
-  }, [remoteLogsResponse]);
+  const logs = remoteLogsResponse?.data || [];
+  const totalLogs = remoteLogsResponse?.total || 0;
+  const totalPages = remoteLogsResponse?.totalPages || 1;
 
   useEffect(() => {
     setLogPage(1);
@@ -259,32 +239,8 @@ export default function EmailTemplatesSettingsPage() {
 
   const isSendingTest = sendTestMutation.isPending;
 
-  // Filtered logs
-  const filteredLogs = useMemo(() => {
-    if (
-      remoteLogsResponse &&
-      !Array.isArray(remoteLogsResponse) &&
-      "totalPages" in remoteLogsResponse
-    ) {
-      return logs;
-    }
-    return logs.filter((l) => {
-      const name = (l.candidateName || l.recipientName || "").toLowerCase();
-      const email = (l.candidateEmail || l.recipientEmail || "").toLowerCase();
-      const subject = (l.subject || "").toLowerCase();
-      const search = (logSearch || "").toLowerCase();
-
-      const matchSearch =
-        !search ||
-        name.includes(search) ||
-        email.includes(search) ||
-        subject.includes(search);
-
-      const matchStatus =
-        logStatusFilter === "ALL" || l.status === logStatusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [logs, logSearch, logStatusFilter, remoteLogsResponse]);
+  // Logs are filtered and paginated server-side
+  const filteredLogs = logs;
 
   const templateIcons: Record<EmailTemplateType, ElementType> = {
     APPLICATION_CONFIRMATION: FileText,

@@ -33,8 +33,18 @@ export const queryKeys = {
     search?: string;
     status?: string;
   }) => ["email", "logs", params] as const,
-  candidateActivities: (candidateId?: string | null, orgId?: string | null) => ["activities", "candidate", candidateId, { orgId }] as const,
-  applicationActivities: (applicationId?: string | null, orgId?: string | null) => ["activities", "application", applicationId, { orgId }] as const,
+  candidateActivities: (
+    candidateId?: string | null,
+    orgId?: string | null,
+    page?: number,
+    limit?: number,
+  ) => ["activities", "candidate", candidateId, { orgId, page, limit }] as const,
+  applicationActivities: (
+    applicationId?: string | null,
+    orgId?: string | null,
+    page?: number,
+    limit?: number,
+  ) => ["activities", "application", applicationId, { orgId, page, limit }] as const,
 };
 
 // ==========================================
@@ -687,7 +697,7 @@ export function useEmailLogs(params?: {
   const effectiveOrgId =
     params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
 
-  return useQuery<PaginatedLogsResult | EmailLog[]>({
+  return useQuery<PaginatedLogsResult>({
     queryKey: queryKeys.emailLogs({
       orgId: effectiveOrgId,
       candidateId: params?.candidateId,
@@ -696,8 +706,10 @@ export function useEmailLogs(params?: {
       search: params?.search,
       status: params?.status,
     }),
-    queryFn: () => {
-      if (!effectiveOrgId) return [];
+    queryFn: async () => {
+      if (!effectiveOrgId) {
+        return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+      }
       return emailApi.getLogs({
         organizationId: effectiveOrgId,
         candidateId: params?.candidateId || undefined,
@@ -740,19 +752,42 @@ export function useSendEmailMutation() {
 // ==========================================
 // CANDIDATE & APPLICATION ACTIVITIES HOOKS
 // ==========================================
+export interface PaginatedActivitiesResult {
+  data: ActivityEvent[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export function useCandidateActivities(
   candidateId?: string | null,
-  organizationId?: string | null,
+  params?: {
+    organizationId?: string | null;
+    page?: number;
+    limit?: number;
+  },
 ) {
   const { user } = useAuth();
   const effectiveOrgId =
-    organizationId !== undefined ? organizationId : user?.organizationId;
+    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
 
-  return useQuery<ActivityEvent[]>({
-    queryKey: queryKeys.candidateActivities(candidateId, effectiveOrgId),
-    queryFn: () => {
-      if (!candidateId) return [];
-      return activitiesApi.getByCandidate(candidateId, effectiveOrgId);
+  return useQuery<PaginatedActivitiesResult>({
+    queryKey: queryKeys.candidateActivities(
+      candidateId,
+      effectiveOrgId,
+      params?.page,
+      params?.limit,
+    ),
+    queryFn: async () => {
+      if (!candidateId) {
+        return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+      }
+      return activitiesApi.getByCandidate(candidateId, {
+        organizationId: effectiveOrgId,
+        page: params?.page,
+        limit: params?.limit,
+      });
     },
     enabled: Boolean(candidateId),
   });
@@ -760,17 +795,32 @@ export function useCandidateActivities(
 
 export function useApplicationActivities(
   applicationId?: string | null,
-  organizationId?: string | null,
+  params?: {
+    organizationId?: string | null;
+    page?: number;
+    limit?: number;
+  },
 ) {
   const { user } = useAuth();
   const effectiveOrgId =
-    organizationId !== undefined ? organizationId : user?.organizationId;
+    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
 
-  return useQuery<ActivityEvent[]>({
-    queryKey: queryKeys.applicationActivities(applicationId, effectiveOrgId),
-    queryFn: () => {
-      if (!applicationId) return [];
-      return activitiesApi.getByApplication(applicationId, effectiveOrgId);
+  return useQuery<PaginatedActivitiesResult>({
+    queryKey: queryKeys.applicationActivities(
+      applicationId,
+      effectiveOrgId,
+      params?.page,
+      params?.limit,
+    ),
+    queryFn: async () => {
+      if (!applicationId) {
+        return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+      }
+      return activitiesApi.getByApplication(applicationId, {
+        organizationId: effectiveOrgId,
+        page: params?.page,
+        limit: params?.limit,
+      });
     },
     enabled: Boolean(applicationId),
   });

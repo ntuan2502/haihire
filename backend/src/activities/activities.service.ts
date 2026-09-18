@@ -63,16 +63,13 @@ export class ActivitiesService {
       }))
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    if (pagination?.page !== undefined || pagination?.limit !== undefined) {
-      const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
-      const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
-      const total = sorted.length;
-      const totalPages = Math.ceil(total / limit) || 1;
-      const data = sorted.slice((page - 1) * limit, page * limit);
-      return { data, total, page, limit, totalPages };
-    }
+    const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
+    const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
+    const total = sorted.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const data = sorted.slice((page - 1) * limit, page * limit);
 
-    return sorted;
+    return { data, total, page, limit, totalPages };
   }
 
   async findByApplication(
@@ -95,16 +92,13 @@ export class ActivitiesService {
       }))
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    if (pagination?.page !== undefined || pagination?.limit !== undefined) {
-      const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
-      const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
-      const total = sorted.length;
-      const totalPages = Math.ceil(total / limit) || 1;
-      const data = sorted.slice((page - 1) * limit, page * limit);
-      return { data, total, page, limit, totalPages };
-    }
+    const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
+    const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
+    const total = sorted.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const data = sorted.slice((page - 1) * limit, page * limit);
 
-    return sorted;
+    return { data, total, page, limit, totalPages };
   }
 
   private safeParse(json: string) {

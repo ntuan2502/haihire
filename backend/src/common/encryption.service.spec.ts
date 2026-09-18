@@ -36,9 +36,11 @@ describe("EncryptionService", () => {
     expect(service.decrypt("")).toBeNull();
   });
 
-  it("should return legacy unencrypted text as-is for backward compatibility", () => {
-    const legacyPlain = "legacy-plain-password-123";
-    expect(service.decrypt(legacyPlain)).toBe(legacyPlain);
+  it("should throw error on invalid ciphertext format without legacy fallback", () => {
+    const invalidCipher = "unencrypted-password-123";
+    expect(() => service.decrypt(invalidCipher)).toThrow(
+      "Invalid encrypted payload format",
+    );
   });
 
   it("should mask secrets with bullet characters", () => {

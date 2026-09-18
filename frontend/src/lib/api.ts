@@ -12,7 +12,7 @@ import type {
   CreateInterviewInput,
   UpdateInterviewInput,
 } from "../types";
-import type { EmailSettings } from "./email-templates";
+import type { EmailSettings, EmailLog, ActivityEvent } from "./email-templates";
 
 export const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
@@ -465,58 +465,78 @@ export const emailApi = {
     return response.data;
   },
 
-  getLogs: async (
-    paramsOrOrgId?:
-      | {
-          organizationId?: string | null;
-          candidateId?: string;
-          page?: number;
-          limit?: number;
-          search?: string;
-          status?: string;
-        }
-      | string
-      | null,
-    candidateId?: string,
-  ) => {
-    const params =
-      typeof paramsOrOrgId === "object" && paramsOrOrgId !== null
-        ? paramsOrOrgId
-        : {
-            organizationId: paramsOrOrgId || undefined,
-            candidateId: candidateId || undefined,
-          };
-
-    const response = await api.get("/email/logs", {
+  getLogs: async (params?: {
+    organizationId?: string | null;
+    candidateId?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => {
+    const response = await api.get<{
+      data: EmailLog[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>("/email/logs", {
       params: {
-        organizationId: params.organizationId || undefined,
-        candidateId: params.candidateId || undefined,
-        page: params.page,
-        limit: params.limit,
-        search: params.search,
-        status: params.status,
+        organizationId: params?.organizationId || undefined,
+        candidateId: params?.candidateId || undefined,
+        page: params?.page,
+        limit: params?.limit,
+        search: params?.search,
+        status: params?.status,
       },
     });
     return response.data;
   },
 
   getVariables: async () => {
-    const response = await api.get("/email/variables");
+    const response = await api.get<
+      Array<{ key: string; label: string; category: string; exampleValue: string }>
+    >("/email/variables");
     return response.data;
   },
 };
 
 export const activitiesApi = {
-  getByCandidate: async (candidateId: string, organizationId?: string | null) => {
-    const response = await api.get(`/activities/candidate/${candidateId}`, {
-      params: { organizationId: organizationId || undefined },
+  getByCandidate: async (
+    candidateId: string,
+    params?: { organizationId?: string | null; page?: number; limit?: number },
+  ) => {
+    const response = await api.get<{
+      data: ActivityEvent[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/activities/candidate/${candidateId}`, {
+      params: {
+        organizationId: params?.organizationId || undefined,
+        page: params?.page,
+        limit: params?.limit,
+      },
     });
     return response.data;
   },
 
-  getByApplication: async (applicationId: string, organizationId?: string | null) => {
-    const response = await api.get(`/activities/application/${applicationId}`, {
-      params: { organizationId: organizationId || undefined },
+  getByApplication: async (
+    applicationId: string,
+    params?: { organizationId?: string | null; page?: number; limit?: number },
+  ) => {
+    const response = await api.get<{
+      data: ActivityEvent[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/activities/application/${applicationId}`, {
+      params: {
+        organizationId: params?.organizationId || undefined,
+        page: params?.page,
+        limit: params?.limit,
+      },
     });
     return response.data;
   },

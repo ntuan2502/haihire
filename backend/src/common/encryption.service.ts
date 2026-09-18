@@ -34,29 +34,22 @@ export class EncryptionService {
       return null;
     }
 
-    // Check if cipherText follows the iv:authTag:encrypted format
     const parts = cipherText.split(":");
     if (parts.length !== 3) {
-      // Return plain text directly for backward compatibility with unencrypted entries
-      return cipherText;
+      throw new Error("Invalid encrypted payload format. Expected 'iv:authTag:ciphertext'");
     }
 
-    try {
-      const [ivHex, authTagHex, encryptedHex] = parts;
-      const iv = Buffer.from(ivHex, "hex");
-      const authTag = Buffer.from(authTagHex, "hex");
+    const [ivHex, authTagHex, encryptedHex] = parts;
+    const iv = Buffer.from(ivHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
 
-      const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
-      decipher.setAuthTag(authTag);
+    const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
+    decipher.setAuthTag(authTag);
 
-      let decrypted = decipher.update(encryptedHex, "hex", "utf8");
-      decrypted += decipher.final("utf8");
+    let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+    decrypted += decipher.final("utf8");
 
-      return decrypted;
-    } catch {
-      // If decryption fails (e.g. key changed or legacy value), return fallback or null
-      return cipherText;
-    }
+    return decrypted;
   }
 
   mask(secret?: string | null): string | null {

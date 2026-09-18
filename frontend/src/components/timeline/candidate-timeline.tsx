@@ -14,10 +14,7 @@ import {
   ChevronUp,
   CheckCircle2,
 } from "lucide-react";
-import {
-  type ActivityEvent,
-  MOCK_TIMELINE_EVENTS,
-} from "@/lib/email-templates";
+import { type ActivityEvent } from "@/lib/email-templates";
 import { useI18n } from "@/i18n";
 import { Button } from "@/components/ui/button";
 
@@ -47,12 +44,12 @@ export function CandidateTimeline({
   const [filter, setFilter] = useState<"ALL" | "EMAIL" | "INTERVIEW" | "STAGE">("ALL");
   const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(new Set());
 
-  // Use real backend activities, or initial events, or mock events
+  // Use real backend activities, or initial events
   const events = useMemo(() => {
-    if (remoteActivities && remoteActivities.length > 0) {
-      return remoteActivities;
+    if (remoteActivities?.data && remoteActivities.data.length > 0) {
+      return remoteActivities.data;
     }
-    return initialEvents || MOCK_TIMELINE_EVENTS;
+    return initialEvents || [];
   }, [remoteActivities, initialEvents]);
 
   const filteredEvents = useMemo(() => {

@@ -401,13 +401,12 @@ export class EmailService {
     );
   }
 
-  async getLogs(organizationId: string, options?: GetLogsOptions | string) {
+  async getLogs(organizationId: string, options?: GetLogsOptions) {
     if (!organizationId) {
       return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
     }
 
-    const opts: GetLogsOptions =
-      typeof options === "string" ? { candidateId: options } : options || {};
+    const opts = options || {};
 
     let query = (this.prisma.db.orm.public as any).EmailLog
       .where((l: any) => l.organizationId.eq(organizationId));
@@ -445,11 +444,6 @@ export class EmailService {
     const totalPages = Math.ceil(total / limit) || 1;
 
     const data = mapped.slice((page - 1) * limit, page * limit);
-
-    // If neither page nor limit was explicitly passed and no search/status, return array for backward compatibility
-    if (opts.page === undefined && opts.limit === undefined && !opts.search && !opts.status) {
-      return mapped;
-    }
 
     return {
       data,

@@ -19,3 +19,8 @@ updated: 2026-09-17
 
 ## TypeScript Only (No JavaScript Files)
 - **Zero `.js` files**: Never create `.js` files anywhere in the project (including scripts, utilities, configs, tools). Always use TypeScript (`.ts` or `.tsx`) exclusively.
+
+## Strict Typing & Zero `any` (MANDATORY)
+- **Strictly Forbidden to use `any`**: Never use `any` in TypeScript code (including function parameters, return types, variables, generics, or component props).
+- **Explicit declarations required**: Always declare explicit types, interfaces, or utility types (`Partial`, `Pick`, `Omit`, `Record`), or use `unknown` with type guards/narrowing where data structure is uncertain.
+- **Shared Types**: Always import and reuse shared domain models from `@ats/types` (`packages/types`) across both frontend and backend.

@@ -62,4 +62,10 @@ updated: 2026-09-17T11:22
 - **Dropdown & Select Conventions**:
   - Zero native HTML `<select>` elements. Use `CustomSelect` (`@/components/shared/custom-select`) or styled Base-UI/Shadcn primitives with `rounded-xl` trigger, rotating chevron, and `rounded-2xl backdrop-blur-xl` popup.
 
+## Strict Typing & Zero `any` Policy (MANDATORY)
+- **Zero `any` in application code**: The use of `any` is strictly prohibited across backend, frontend, and shared packages.
+- Always define clear types, interfaces, DTOs, or schema types.
+- For dynamic data, use `unknown` combined with type narrowing, type predicates, or runtime validation rather than bypassing type safety with `any`.
+- Utilize `@ats/types` as the canonical source for domain models.
+
 

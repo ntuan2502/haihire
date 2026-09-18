@@ -11,12 +11,14 @@
 - [project] Component Architecture: 5-layer modular structure (ui, shared, layout, providers, features) with zero loose root files → tech-decisions.md
 - [project] React Import Convention: Always use named imports `{ useState, ReactNode } from "react"`, no `React.x` except inside `components/ui/` → tech-decisions.md
 - [project] Shadcn `cn` Standard: Use official `"cn"` package directly (`from "cn"`), no `clsx` or `tailwind-merge` → tech-decisions.md
+- [project] Strict Typing: Zero `any` policy across frontend, backend, and shared packages → project-conventions.md
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
 - [user] Zero hardcoded text: strictly enforce translation keys across all `.tsx` and `.ts` files → user-preferences.md
 - [user] Named imports for React: never use `import React` or `React.x` (preserve `components/ui/` untouched) → user-preferences.md
 - [user] TypeScript Only: Never create `.js` files, always use `.ts` or `.tsx` exclusively → user-preferences.md
+- [user] Strict Typing: Strictly forbidden to use `any`; always declare explicit types or interfaces → user-preferences.md
 
 ## Feedback
 - [feedback] 2026-09-17: Memory documentation must be in English → feedback-history.md

@@ -92,9 +92,12 @@ export class CandidatesService {
     private readonly minioService: MinioService,
   ) {}
 
-  async findAll(organizationId?: string) {
+  async findAll(
+    organizationId?: string,
+    options?: { page?: number; limit?: number; search?: string },
+  ) {
     if (!organizationId) {
-      return [];
+      return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
     }
 
     const candidates = await this.prisma.db.orm.public.Candidate.select(
@@ -119,20 +122,49 @@ export class CandidatesService {
       .all();
 
     if (candidates.length === 0) {
-      return [];
+      return {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: options?.limit || 10,
+        totalPages: 0,
+      };
     }
 
-    // Fetch all applications for these candidates
-    const candidateIds = candidates.map((c) => c.id);
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "candidateId",
-      "jobId",
-      "stage",
-      "createdAt",
-    )
-      .where((a) => a.candidateId.in(candidateIds))
-      .all();
+    let filtered = candidates;
+    if (options?.search && options.search.trim() !== "") {
+      const q = options.search.trim().toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          (c.name || "").toLowerCase().includes(q) ||
+          (c.email || "").toLowerCase().includes(q) ||
+          (c.phone && c.phone.includes(q)) ||
+          (c.notes && c.notes.toLowerCase().includes(q)),
+      );
+    }
+
+    const total = filtered.length;
+    const page = options?.page && options.page > 0 ? options.page : 1;
+    const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    // Slicing on server for this page
+    const pagedCandidates = filtered.slice((page - 1) * limit, page * limit);
+    const candidateIds = pagedCandidates.map((c) => c.id);
+
+    // Fetch applications only for the candidates in the current page
+    const allApps =
+      candidateIds.length > 0
+        ? await this.prisma.db.orm.public.Application.select(
+            "id",
+            "candidateId",
+            "jobId",
+            "stage",
+            "createdAt",
+          )
+            .where((a) => a.candidateId.in(candidateIds))
+            .all()
+        : [];
 
     const appsByCandidate = new Map<string, typeof allApps>();
     for (const app of allApps) {
@@ -141,14 +173,27 @@ export class CandidatesService {
       appsByCandidate.set(app.candidateId, list);
     }
 
-    return candidates.map((c) => {
+    const data = pagedCandidates.map((c) => {
       const apps = appsByCandidate.get(c.id) || [];
       return {
         ...c,
+        name: fixUtf8String(c.name),
+        firstName: fixUtf8String(c.firstName),
+        lastName: fixUtf8String(c.lastName),
+        notes: fixUtf8String(c.notes),
+        resumeFileName: fixUtf8String(c.resumeFileName),
         applicationsCount: apps.length,
         applications: apps,
       };
     });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   async findOne(id: string) {
@@ -565,16 +610,18 @@ export class CandidatesService {
   async remove(id: string) {
     await this.findOne(id);
 
-    // Delete all associated applications first
-    await this.prisma.db.orm.public.Application.where((a) => a.candidateId.eq(id)).delete();
-
-    // Delete candidate documents first
     try {
-      await this.prisma.db.orm.public.CandidateDocument.where((d) => d.candidateId.eq(id)).delete();
-    } catch {}
-
-    // Delete candidate
-    await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
+      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
+    } catch {
+      // Fallback manual cleanup for relations if DB-level cascade is bypassed
+      try {
+        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.candidateId.eq(id)).delete();
+      } catch {}
+      try {
+        await this.prisma.db.orm.public.Application.where((a) => a.candidateId.eq(id)).delete();
+      } catch {}
+      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
+    }
 
     return { success: true, message: `Candidate ${id} and all applications deleted successfully` };
   }

@@ -52,10 +52,23 @@ function CandidatesPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: candidates = [], isLoading: candidatesLoading } =
-    useCandidates(user?.organizationId);
-
+  // Pagination & Search State
+  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [search, setSearch] = useState("");
+
+  const { data: pagedResult, isLoading: candidatesLoading } =
+    useCandidates(user?.organizationId, {
+      page: currentPage,
+      limit: rowsPerPage,
+      search: search.trim() || undefined,
+    });
+
+  const candidates = useMemo(() => pagedResult?.data || [], [pagedResult?.data]);
+  const totalCount = pagedResult?.total || 0;
+  const totalPages = Math.max(1, pagedResult?.totalPages || 1);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const loading = jobsLoading || candidatesLoading;
 
   // Selected Candidate for Right Slide-over Sidebar Drawer
   const [selectedCandidate, setSelectedCandidate] =
@@ -111,13 +124,7 @@ function CandidatesPageContent() {
   const [sortField, setSortField] = useState<SortField>("added");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  // Pagination State
-  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-
-  const loading = jobsLoading || candidatesLoading;
-
-  // Real candidates from Candidate database
+  // Real candidates from Candidate database (Server-paginated)
   const candidateRows: CandidateItem[] = useMemo(() => {
     return candidates.map((cand) => ({
       id: cand.id,
@@ -136,52 +143,32 @@ function CandidatesPageContent() {
     }));
   }, [candidates]);
 
-  // Filter & Sort
-  const filteredCandidates = useMemo(() => {
-    return candidateRows
-      .filter((cand) => {
-        if (!search.trim()) return true;
-        const q = search.toLowerCase().trim();
-        return (
-          cand.name.toLowerCase().includes(q) ||
-          cand.email.toLowerCase().includes(q) ||
-          cand.phone.toLowerCase().includes(q) ||
-          cand.notes.toLowerCase().includes(q)
-        );
-      })
-      .sort((a, b) => {
-        let diff = 0;
-        switch (sortField) {
-          case "name":
-            diff = a.name.localeCompare(b.name);
-            break;
-          case "email":
-            diff = a.email.localeCompare(b.email);
-            break;
-          case "phone":
-            diff = a.phone.localeCompare(b.phone);
-            break;
-          case "applications":
-            diff = a.applicationsCount - b.applicationsCount;
-            break;
-          case "added":
-          default:
-            diff =
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            break;
-        }
-        return sortDirection === "asc" ? diff : -diff;
-      });
-  }, [candidateRows, search, sortField, sortDirection]);
-
-  // Pagination Slice
-  const totalCount = filteredCandidates.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedCandidates = filteredCandidates.slice(
-    startIndex,
-    startIndex + rowsPerPage,
-  );
+  // Sorter for current page items
+  const paginatedCandidates = useMemo(() => {
+    return [...candidateRows].sort((a, b) => {
+      let diff = 0;
+      switch (sortField) {
+        case "name":
+          diff = a.name.localeCompare(b.name);
+          break;
+        case "email":
+          diff = a.email.localeCompare(b.email);
+          break;
+        case "phone":
+          diff = a.phone.localeCompare(b.phone);
+          break;
+        case "applications":
+          diff = a.applicationsCount - b.applicationsCount;
+          break;
+        case "added":
+        default:
+          diff =
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+      }
+      return sortDirection === "asc" ? diff : -diff;
+    });
+  }, [candidateRows, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -210,7 +197,7 @@ function CandidatesPageContent() {
         activeTab="candidates"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={candidates.length}
+        candidatesCount={totalCount}
       />
 
       {/* Main Content */}

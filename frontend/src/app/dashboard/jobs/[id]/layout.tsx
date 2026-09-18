@@ -55,7 +55,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const { data: jobs = [] } = useJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
-  const { data: candidates = [] } = useCandidates(user?.organizationId);
+  const { data: candidatesData } = useCandidates(user?.organizationId);
   const updateJobMutation = useUpdateJobMutation();
 
   // Active tab based on pathname
@@ -139,7 +139,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
           activeTab="jobs"
           onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
           jobsCount={jobs.length}
-          candidatesCount={candidates.length}
+          candidatesCount={candidatesData?.total || 0}
         />
       </div>
 

@@ -13,12 +13,20 @@ import { OrganizationsModule } from "./organizations/organizations.module";
 import { ActivitiesModule } from "./activities/activities.module";
 import { EmailModule } from "./email/email.module";
 import { UsersModule } from "./users/users.module";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PrismaService } from "./prisma/prisma.service";
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -43,6 +51,12 @@ import { PrismaService } from "./prisma/prisma.service";
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [PrismaService],
+  providers: [
+    PrismaService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -8,7 +8,6 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useCandidates,
   useCandidate,
   useUploadCandidateDocumentMutation,
   useDeleteCandidateMutation,
@@ -72,7 +71,6 @@ function CandidateDetailPageContent() {
   const { data: candidate, isLoading: candidateLoading } = useCandidate(
     isCandidateIdValid ? candidateIdStr : null,
   );
-  const { data: candidates = [] } = useCandidates(user?.organizationId);
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );

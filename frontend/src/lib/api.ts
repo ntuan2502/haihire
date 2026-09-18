@@ -11,6 +11,7 @@ import type {
   Interview,
   CreateInterviewInput,
   UpdateInterviewInput,
+  PaginatedResult,
 } from "../types";
 import type { EmailSettings, EmailLog, ActivityEvent } from "./email-templates";
 
@@ -188,9 +189,14 @@ export const applicationsApi = {
 };
 
 export const candidatesApi = {
-  getAll: async (organizationId?: string): Promise<Candidate[]> => {
-    const response = await api.get<Candidate[]>("/candidates", {
-      params: organizationId ? { organizationId } : undefined,
+  getAll: async (params?: {
+    organizationId?: string | null;
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResult<Candidate>> => {
+    const response = await api.get<PaginatedResult<Candidate>>("/candidates", {
+      params,
     });
     return response.data;
   },

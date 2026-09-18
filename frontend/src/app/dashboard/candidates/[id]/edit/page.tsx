@@ -8,7 +8,6 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
-  useCandidates,
   useCandidate,
   useUpdateCandidateDetailsMutation,
 } from "@/hooks/use-queries";
@@ -39,7 +38,6 @@ function EditCandidatePageContent() {
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: jobs = [] } = useJobs(user?.organizationId);
-  const { data: candidates = [] } = useCandidates(user?.organizationId);
   const { data: candidate, isLoading: candidateLoading } = useCandidate(rawId);
   const updateCandidateDetailsMutation = useUpdateCandidateDetailsMutation();
 

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi, applicationsApi, organizationsApi, candidatesApi, interviewsApi, emailApi, activitiesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Job, Application, Candidate, ApplicationStage, Organization, User, InviteLink, Interview, CreateInterviewInput, UpdateInterviewInput } from "@/types";
+import type { Job, Application, Candidate, ApplicationStage, Organization, User, InviteLink, Interview, CreateInterviewInput, UpdateInterviewInput, PaginatedResult } from "@/types";
 import type { EmailTemplate, EmailSettings, EmailLog, ActivityEvent } from "@/lib/email-templates";
 
 // ==========================================
@@ -296,16 +296,37 @@ export function useDeleteDocumentMutation() {
 // ==========================================
 // CANDIDATES HOOKS
 // ==========================================
-export function useCandidates(organizationId?: string | null) {
+export function useCandidates(
+  organizationId?: string | null,
+  options?: { page?: number; limit?: number; search?: string },
+) {
   const { user } = useAuth();
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
 
-  return useQuery<Candidate[]>({
-    queryKey: queryKeys.candidates(effectiveOrgId),
+  return useQuery<PaginatedResult<Candidate>>({
+    queryKey: [
+      ...queryKeys.candidates(effectiveOrgId),
+      options?.page,
+      options?.limit,
+      options?.search,
+    ],
     queryFn: () => {
-      if (!effectiveOrgId) return [];
-      return candidatesApi.getAll(effectiveOrgId);
+      if (!effectiveOrgId) {
+        return {
+          data: [],
+          total: 0,
+          page: 1,
+          limit: options?.limit || 10,
+          totalPages: 0,
+        };
+      }
+      return candidatesApi.getAll({
+        organizationId: effectiveOrgId,
+        page: options?.page,
+        limit: options?.limit,
+        search: options?.search,
+      });
     },
     enabled: Boolean(effectiveOrgId),
   });

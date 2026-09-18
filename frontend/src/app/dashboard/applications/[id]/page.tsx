@@ -9,7 +9,6 @@ import { useAuth } from "@/context/auth-context";
 import {
   useJobs,
   useApplication,
-  useCandidates,
   useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
@@ -76,10 +75,7 @@ function ApplicationDetailPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: candidates = [], isLoading: candidatesLoading } = useCandidates(
-    user?.organizationId,
-  );
-  const loading = appLoading || jobsLoading || candidatesLoading;
+  const loading = appLoading || jobsLoading;
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();

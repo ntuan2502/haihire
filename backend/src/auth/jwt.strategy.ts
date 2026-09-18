@@ -18,13 +18,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
   ) {
+    const jwtSecret =
+      configService.get<string>("JWT_SECRET") || process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("JWT_SECRET must be configured in environment");
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey:
-        configService.get<string>("JWT_SECRET") ||
-        process.env.JWT_SECRET ||
-        "ats-super-secret-jwt-key-2026",
+      secretOrKey: jwtSecret,
     });
   }
 

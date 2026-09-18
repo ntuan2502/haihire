@@ -15,7 +15,7 @@ function ApplicationsPageContent() {
   );
   const { data: rawApplications = [], isLoading: appsLoading } =
     useAllApplications();
-  const { data: candidates = [] } = useCandidates(user?.organizationId);
+  const { data: candidatesData } = useCandidates(user?.organizationId);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -24,7 +24,7 @@ function ApplicationsPageContent() {
         activeTab="applications"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={candidates.length}
+        candidatesCount={candidatesData?.total || 0}
       />
 
       {/* Main Content */}

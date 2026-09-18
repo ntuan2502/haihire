@@ -23,7 +23,7 @@ function JobsPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useJobs(
     user?.organizationId,
   );
-  const { data: candidates = [] } = useCandidates(user?.organizationId);
+  const { data: candidatesData } = useCandidates(user?.organizationId);
   const createJobMutation = useCreateJobMutation();
   const deleteJobMutation = useDeleteJobMutation();
 
@@ -64,7 +64,7 @@ function JobsPageContent() {
         activeTab="jobs"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={candidates.length}
+        candidatesCount={candidatesData?.total || 0}
       />
 
       {/* Main Content */}

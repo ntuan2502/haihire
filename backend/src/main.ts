@@ -3,13 +3,21 @@ import "reflect-metadata";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+import { validateEnvironment } from "./common/env.validator";
 
 async function bootstrap() {
+  validateEnvironment();
+
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for Next.js frontend (allow localhost and local network devices)
+  // Strict CORS whitelist from FRONTEND_URL
+  const allowedOrigins = (process.env.FRONTEND_URL ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
   });

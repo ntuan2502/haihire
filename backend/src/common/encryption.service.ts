@@ -7,8 +7,10 @@ export class EncryptionService {
   private readonly key: Buffer;
 
   constructor() {
-    // Derive a fixed 32-byte key from environment secret or secure fallback
-    const rawSecret = process.env.ENCRYPTION_SECRET || process.env.JWT_SECRET || "ats-platform-secure-fallback-encryption-key-2026";
+    const rawSecret = process.env.ENCRYPTION_SECRET || process.env.JWT_SECRET;
+    if (!rawSecret) {
+      throw new Error("ENCRYPTION_SECRET or JWT_SECRET must be configured in environment");
+    }
     this.key = crypto.scryptSync(rawSecret, "ats-salt-vector", 32);
   }
 

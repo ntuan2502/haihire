@@ -1,32 +1,13 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
-export enum JobType {
-  FULL_TIME = "FULL_TIME",
-  PART_TIME = "PART_TIME",
-  CONTRACT = "CONTRACT",
-  INTERNSHIP = "INTERNSHIP",
-}
+import {
+  JobType,
+  JobStatus,
+  WorkplaceType,
+  ExperienceLevel,
+} from "@ats/types";
 
-export enum JobStatus {
-  DRAFT = "DRAFT",
-  PUBLISHED = "PUBLISHED",
-  CLOSED = "CLOSED",
-  ARCHIVED = "ARCHIVED",
-}
-
-export enum WorkplaceType {
-  ON_SITE = "ON_SITE",
-  HYBRID = "HYBRID",
-  REMOTE = "REMOTE",
-}
-
-export enum ExperienceLevel {
-  ENTRY_LEVEL = "ENTRY_LEVEL",
-  MID_LEVEL = "MID_LEVEL",
-  SENIOR_LEVEL = "SENIOR_LEVEL",
-  LEAD = "LEAD",
-  EXECUTIVE = "EXECUTIVE",
-}
+export { JobType, JobStatus, WorkplaceType, ExperienceLevel };
 
 export class CreateJobDto {
   @IsString()

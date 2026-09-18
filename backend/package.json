@@ -26,6 +26,7 @@
     "postinstall": "prisma skills sync || exit 0"
   },
   "dependencies": {
+    "@ats/types": "workspace:*",
     "@nestjs/bullmq": "^12.0.0",
     "@nestjs/common": "^11.1.17",
     "@nestjs/config": "^4.0.4",

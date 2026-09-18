@@ -10,6 +10,9 @@ importers:
 
   backend:
     dependencies:
+      '@ats/types':
+        specifier: workspace:*
+        version: link:../packages/types
       '@nestjs/bullmq':
         specifier: ^12.0.0
         version: 12.0.0(@nestjs/common@11.2.3(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@11.2.3)(bullmq@6.3.6(ioredis@6.0.0(supports-color@7.2.0))(pg@8.22.0)(redis@6.2.1))
@@ -7615,6 +7618,14 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  '@effect/platform-bun@4.0.0-rc.111(effect@4.0.0-rc.112)':
+    dependencies:
+      '@effect/platform-node-shared': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      effect: 4.0.0-rc.112
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@effect/platform-node-shared@4.0.0-rc.111(effect@4.0.0-rc.111)':
     dependencies:
       '@types/ws': 8.18.1
@@ -7633,10 +7644,30 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  '@effect/platform-node-shared@4.0.0-rc.112(effect@4.0.0-rc.112)':
+    dependencies:
+      '@types/ws': 8.18.1
+      effect: 4.0.0-rc.112
+      ws: 8.21.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@effect/platform-node@4.0.0-rc.111(effect@4.0.0-rc.111)(redis@6.2.1)':
     dependencies:
       '@effect/platform-node-shared': 4.0.0-rc.112(effect@4.0.0-rc.111)
       effect: 4.0.0-rc.111
+      mime: 4.1.0
+      redis: 6.2.1
+      undici: 8.10.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@effect/platform-node@4.0.0-rc.111(effect@4.0.0-rc.112)(redis@6.2.1)':
+    dependencies:
+      '@effect/platform-node-shared': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      effect: 4.0.0-rc.112
       mime: 4.1.0
       redis: 6.2.1
       undici: 8.10.0

@@ -1,33 +1,73 @@
-export type Role = "ADMIN" | "MEMBER";
+export const Role = {
+  ADMIN: "ADMIN",
+  MEMBER: "MEMBER",
+} as const;
+export type Role = (typeof Role)[keyof typeof Role];
 
-export type JobType =
-  | "FULL_TIME"
-  | "PART_TIME"
-  | "CONTRACT"
-  | "INTERNSHIP";
+export const JobType = {
+  FULL_TIME: "FULL_TIME",
+  PART_TIME: "PART_TIME",
+  CONTRACT: "CONTRACT",
+  INTERNSHIP: "INTERNSHIP",
+} as const;
+export type JobType = (typeof JobType)[keyof typeof JobType];
 
-export type JobStatus = "DRAFT" | "PUBLISHED" | "CLOSED" | "ARCHIVED";
+export const JobStatus = {
+  DRAFT: "DRAFT",
+  PUBLISHED: "PUBLISHED",
+  CLOSED: "CLOSED",
+  ARCHIVED: "ARCHIVED",
+} as const;
+export type JobStatus = (typeof JobStatus)[keyof typeof JobStatus];
 
-export type WorkplaceType = "ON_SITE" | "HYBRID" | "REMOTE";
+export const WorkplaceType = {
+  ON_SITE: "ON_SITE",
+  HYBRID: "HYBRID",
+  REMOTE: "REMOTE",
+} as const;
+export type WorkplaceType = (typeof WorkplaceType)[keyof typeof WorkplaceType];
 
-export type ExperienceLevel =
-  | "ENTRY_LEVEL"
-  | "MID_LEVEL"
-  | "SENIOR_LEVEL"
-  | "LEAD"
-  | "EXECUTIVE";
+export const ExperienceLevel = {
+  ENTRY_LEVEL: "ENTRY_LEVEL",
+  MID_LEVEL: "MID_LEVEL",
+  SENIOR_LEVEL: "SENIOR_LEVEL",
+  LEAD: "LEAD",
+  EXECUTIVE: "EXECUTIVE",
+} as const;
+export type ExperienceLevel = (typeof ExperienceLevel)[keyof typeof ExperienceLevel];
 
-export type Gender = "MALE" | "FEMALE" | "OTHER";
+export const Gender = {
+  MALE: "MALE",
+  FEMALE: "FEMALE",
+  OTHER: "OTHER",
+} as const;
+export type Gender = (typeof Gender)[keyof typeof Gender];
 
-export type InviteStatus = "ACTIVE" | "EXPIRED" | "REVOKED";
+export const InviteStatus = {
+  ACTIVE: "ACTIVE",
+  EXPIRED: "EXPIRED",
+  REVOKED: "REVOKED",
+} as const;
+export type InviteStatus = (typeof InviteStatus)[keyof typeof InviteStatus];
 
-export type ApplicationStage =
-  | "APPLIED"
-  | "SCREENING"
-  | "INTERVIEW"
-  | "OFFER"
-  | "HIRED"
-  | "REJECTED";
+export const ApplicationStage = {
+  APPLIED: "APPLIED",
+  SCREENING: "SCREENING",
+  INTERVIEW: "INTERVIEW",
+  OFFER: "OFFER",
+  HIRED: "HIRED",
+  REJECTED: "REJECTED",
+} as const;
+export type ApplicationStage = (typeof ApplicationStage)[keyof typeof ApplicationStage];
+
+export const APPLICATION_STAGES = [
+  ApplicationStage.APPLIED,
+  ApplicationStage.SCREENING,
+  ApplicationStage.INTERVIEW,
+  ApplicationStage.OFFER,
+  ApplicationStage.HIRED,
+  ApplicationStage.REJECTED,
+] as const;
 
 export interface Organization {
   id: string;

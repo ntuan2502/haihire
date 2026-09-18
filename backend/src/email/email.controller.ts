@@ -14,6 +14,7 @@ import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { EmailService } from "./email.service";
+import { AVAILABLE_VARIABLES } from "./variable-registry";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
@@ -25,6 +26,11 @@ export class EmailController {
     @Inject(EmailService)
     private readonly emailService: EmailService,
   ) {}
+
+  @Get("variables")
+  getVariables() {
+    return AVAILABLE_VARIABLES;
+  }
 
   @Get("templates")
   getTemplates(
@@ -100,9 +106,19 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
     @Query("candidateId") candidateId?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("status") status?: string,
   ) {
     const orgId = organizationId || req.user.organizationId;
-    if (!orgId) return [];
-    return this.emailService.getLogs(orgId, candidateId);
+    if (!orgId) return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+    return this.emailService.getLogs(orgId, {
+      candidateId,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      search,
+      status,
+    });
   }
 }

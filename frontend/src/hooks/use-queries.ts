@@ -25,7 +25,14 @@ export const queryKeys = {
   inviteLinks: () => ["organization", "invite-links"] as const,
   emailTemplates: (orgId?: string | null) => ["email", "templates", { orgId }] as const,
   emailSettings: (orgId?: string | null) => ["email", "settings", { orgId }] as const,
-  emailLogs: (params?: { orgId?: string | null; candidateId?: string | null }) => ["email", "logs", params] as const,
+  emailLogs: (params?: {
+    orgId?: string | null;
+    candidateId?: string | null;
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => ["email", "logs", params] as const,
   candidateActivities: (candidateId?: string | null, orgId?: string | null) => ["activities", "candidate", candidateId, { orgId }] as const,
   applicationActivities: (applicationId?: string | null, orgId?: string | null) => ["activities", "application", applicationId, { orgId }] as const,
 };
@@ -660,22 +667,45 @@ export function useSendTestEmailMutation() {
   });
 }
 
+export interface PaginatedLogsResult {
+  data: EmailLog[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export function useEmailLogs(params?: {
   organizationId?: string | null;
   candidateId?: string | null;
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
     params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
 
-  return useQuery<EmailLog[]>({
+  return useQuery<PaginatedLogsResult | EmailLog[]>({
     queryKey: queryKeys.emailLogs({
       orgId: effectiveOrgId,
       candidateId: params?.candidateId,
+      page: params?.page,
+      limit: params?.limit,
+      search: params?.search,
+      status: params?.status,
     }),
     queryFn: () => {
       if (!effectiveOrgId) return [];
-      return emailApi.getLogs(effectiveOrgId, params?.candidateId || undefined);
+      return emailApi.getLogs({
+        organizationId: effectiveOrgId,
+        candidateId: params?.candidateId || undefined,
+        page: params?.page,
+        limit: params?.limit,
+        search: params?.search,
+        status: params?.status,
+      });
     },
     enabled: Boolean(effectiveOrgId),
   });

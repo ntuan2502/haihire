@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import { ActivitiesService } from "../activities/activities.service";
+import { EncryptionService } from "../common/encryption.service";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
@@ -100,9 +101,17 @@ export const DEFAULT_TEMPLATES: TemplateDefinition[] = [
 ];
 
 export function interpolate(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
-    return vars[key] !== undefined ? vars[key] : `{{${key}}}`;
+  return template.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, key) => {
+    return vars[key] !== undefined ? String(vars[key]) : `{{${key}}}`;
   });
+}
+
+export interface GetLogsOptions {
+  candidateId?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
 }
 
 @Injectable()
@@ -112,6 +121,8 @@ export class EmailService {
     private readonly prisma: PrismaService,
     @Inject(ActivitiesService)
     private readonly activitiesService: ActivitiesService,
+    @Inject(EncryptionService)
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   async getTemplates(organizationId: string) {
@@ -229,11 +240,41 @@ export class EmailService {
       });
     }
 
-    return settings;
+    return {
+      ...settings,
+      smtpPass: this.encryptionService.mask(settings.smtpPass),
+      resendApiKey: this.encryptionService.mask(settings.resendApiKey),
+      sendgridApiKey: this.encryptionService.mask(settings.sendgridApiKey),
+    };
+  }
+
+  async getRawSettings(organizationId: string) {
+    if (!organizationId) {
+      return null;
+    }
+
+    const settings = await (this.prisma.db.orm.public as any).EmailSetting
+      .where((s: any) => s.organizationId.eq(organizationId))
+      .first();
+
+    if (!settings) {
+      return this.getSettings(organizationId);
+    }
+
+    return {
+      ...settings,
+      smtpPass: this.encryptionService.decrypt(settings.smtpPass),
+      resendApiKey: this.encryptionService.decrypt(settings.resendApiKey),
+      sendgridApiKey: this.encryptionService.decrypt(settings.sendgridApiKey),
+    };
   }
 
   async updateSettings(organizationId: string, dto: UpdateEmailSettingDto) {
-    const current = await this.getSettings(organizationId);
+    const rawCurrent = await (this.prisma.db.orm.public as any).EmailSetting
+      .where((s: any) => s.organizationId.eq(organizationId))
+      .first();
+
+    const currentId = rawCurrent?.id || (await this.getSettings(organizationId))?.id;
 
     const updateData: any = {
       updatedAt: new Date(),
@@ -244,18 +285,36 @@ export class EmailService {
     if (dto.smtpHost !== undefined) updateData.smtpHost = dto.smtpHost;
     if (dto.smtpPort !== undefined) updateData.smtpPort = dto.smtpPort;
     if (dto.smtpUser !== undefined) updateData.smtpUser = dto.smtpUser;
-    if (dto.smtpPass !== undefined) updateData.smtpPass = dto.smtpPass;
     if (dto.smtpSecure !== undefined) updateData.smtpSecure = dto.smtpSecure;
-    if (dto.resendApiKey !== undefined) updateData.resendApiKey = dto.resendApiKey;
-    if (dto.sendgridApiKey !== undefined) updateData.sendgridApiKey = dto.sendgridApiKey;
+
+    // Credentials handling with AES-256-GCM encryption
+    if (dto.smtpPass !== undefined) {
+      if (dto.smtpPass && !dto.smtpPass.startsWith("•")) {
+        updateData.smtpPass = this.encryptionService.encrypt(dto.smtpPass);
+      } else if (!dto.smtpPass) {
+        updateData.smtpPass = null;
+      }
+    }
+    if (dto.resendApiKey !== undefined) {
+      if (dto.resendApiKey && !dto.resendApiKey.startsWith("•")) {
+        updateData.resendApiKey = this.encryptionService.encrypt(dto.resendApiKey);
+      } else if (!dto.resendApiKey) {
+        updateData.resendApiKey = null;
+      }
+    }
+    if (dto.sendgridApiKey !== undefined) {
+      if (dto.sendgridApiKey && !dto.sendgridApiKey.startsWith("•")) {
+        updateData.sendgridApiKey = this.encryptionService.encrypt(dto.sendgridApiKey);
+      } else if (!dto.sendgridApiKey) {
+        updateData.sendgridApiKey = null;
+      }
+    }
 
     await (this.prisma.db.orm.public as any).EmailSetting
-      .where((s: any) => s.id.eq(current.id))
+      .where((s: any) => s.id.eq(currentId))
       .update(updateData);
 
-    return (this.prisma.db.orm.public as any).EmailSetting
-      .where((s: any) => s.id.eq(current.id))
-      .first();
+    return this.getSettings(organizationId);
   }
 
   async sendEmail(
@@ -263,7 +322,7 @@ export class EmailService {
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },
   ) {
-    const settings = await this.getSettings(organizationId);
+    const settings = await this.getRawSettings(organizationId);
 
     const variables = dto.variables || {};
     const renderedSubject = interpolate(dto.subject, variables);
@@ -319,7 +378,7 @@ export class EmailService {
   }
 
   async sendTestEmail(dto: SendTestEmailDto, organizationId: string, senderUser?: { id?: string; name?: string }) {
-    const settings = await this.getSettings(organizationId);
+    const settings = await this.getRawSettings(organizationId);
     return this.sendEmail(
       {
         to: dto.to,
@@ -342,25 +401,62 @@ export class EmailService {
     );
   }
 
-  async getLogs(organizationId: string, candidateId?: string) {
+  async getLogs(organizationId: string, options?: GetLogsOptions | string) {
     if (!organizationId) {
-      return [];
+      return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
     }
+
+    const opts: GetLogsOptions =
+      typeof options === "string" ? { candidateId: options } : options || {};
 
     let query = (this.prisma.db.orm.public as any).EmailLog
       .where((l: any) => l.organizationId.eq(organizationId));
 
-    if (candidateId) {
-      query = query.where((l: any) => l.candidateId.eq(candidateId));
+    if (opts.candidateId) {
+      query = query.where((l: any) => l.candidateId.eq(opts.candidateId));
     }
 
     const logs = await query.all();
-    return logs
+    let mapped = logs
       .map((l: any) => ({
         ...l,
         candidateName: l.recipientName || l.candidateName || "Ứng viên",
         candidateEmail: l.recipientEmail || l.candidateEmail || "",
       }))
       .sort((a: any, b: any) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+
+    if (opts.status && opts.status !== "ALL") {
+      mapped = mapped.filter((l: any) => l.status === opts.status);
+    }
+
+    if (opts.search && opts.search.trim() !== "") {
+      const s = opts.search.trim().toLowerCase();
+      mapped = mapped.filter(
+        (l: any) =>
+          (l.candidateName || "").toLowerCase().includes(s) ||
+          (l.candidateEmail || "").toLowerCase().includes(s) ||
+          (l.subject || "").toLowerCase().includes(s),
+      );
+    }
+
+    const total = mapped.length;
+    const page = opts.page && opts.page > 0 ? opts.page : 1;
+    const limit = opts.limit && opts.limit > 0 ? opts.limit : 20;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    const data = mapped.slice((page - 1) * limit, page * limit);
+
+    // If neither page nor limit was explicitly passed and no search/status, return array for backward compatibility
+    if (opts.page === undefined && opts.limit === undefined && !opts.search && !opts.status) {
+      return mapped;
+    }
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 }

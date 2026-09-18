@@ -11,6 +11,7 @@ import { fixUtf8String } from "../applications/applications.service";
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
+import { buildDynamicEmailContext } from "../email/variable-registry";
 
 @Injectable()
 export class InterviewsService {
@@ -256,15 +257,27 @@ export class InterviewsService {
                 templateType: "INTERVIEW_INVITATION",
                 candidateId: candidate.id,
                 applicationId: app.id,
-                variables: {
-                  candidate_name: candidate.name,
-                  job_title: job?.title || "Vị trí tuyển dụng",
-                  company_name: "ATS Recruitment",
-                  interview_date: dto.date,
-                  interview_time: dto.time,
-                  interview_format: dto.format || "Google Meet",
-                  interview_link: dto.linkOrLocation || "https://meet.google.com",
-                },
+                variables: buildDynamicEmailContext({
+                  candidate: {
+                    name: candidate.name,
+                    email: candidate.email,
+                    phone: candidate.phone,
+                  },
+                  job: {
+                    title: job?.title || "Vị trí tuyển dụng",
+                    department: (job as any)?.department,
+                    location: (job as any)?.location,
+                  },
+                  organization: { name: "ATS Recruitment" },
+                  interview: {
+                    date: dto.date,
+                    time: dto.time,
+                    format: dto.format || "Google Meet",
+                    linkOrLocation: dto.linkOrLocation || "https://meet.google.com",
+                    interviewer: dto.interviewer,
+                  },
+                  sender: { name: dto.interviewer },
+                }),
               },
               orgId,
               { name: dto.interviewer },

@@ -25,9 +25,14 @@ export class ActivitiesController {
     @Param("candidateId") candidateId: string,
     @Request() req: { user?: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
   ) {
     const orgId = organizationId || req?.user?.organizationId || undefined;
-    return this.activitiesService.findByCandidate(candidateId, orgId);
+    return this.activitiesService.findByCandidate(candidateId, orgId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @Get("application/:applicationId")
@@ -35,9 +40,14 @@ export class ActivitiesController {
     @Param("applicationId") applicationId: string,
     @Request() req: { user?: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
   ) {
     const orgId = organizationId || req?.user?.organizationId || undefined;
-    return this.activitiesService.findByApplication(applicationId, orgId);
+    return this.activitiesService.findByApplication(applicationId, orgId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @Post()

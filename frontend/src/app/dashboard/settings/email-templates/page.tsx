@@ -20,6 +20,8 @@ import {
   Calendar,
   UserCheck,
   Award,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   type EmailTemplateType,
@@ -61,7 +63,46 @@ export default function EmailTemplatesSettingsPage() {
   const updateSettingsMutation = useUpdateEmailSettingsMutation();
   const sendTestMutation = useSendTestEmailMutation();
 
-  const { data: remoteLogs } = useEmailLogs();
+  // Outbox / logs pagination & filtering state
+  const [logPage, setLogPage] = useState(1);
+  const [logLimit] = useState(10);
+  const [logSearch, setLogSearch] = useState("");
+  const [logStatusFilter, setLogStatusFilter] = useState<string>("ALL");
+  const [viewingLog, setViewingLog] = useState<EmailLog | null>(null);
+
+  const { data: remoteLogsResponse } = useEmailLogs({
+    page: logPage,
+    limit: logLimit,
+    search: logSearch.trim() || undefined,
+    status: logStatusFilter !== "ALL" ? logStatusFilter : undefined,
+  });
+
+  const { logs, totalLogs, totalPages } = useMemo(() => {
+    if (!remoteLogsResponse) {
+      return { logs: MOCK_EMAIL_LOGS, totalLogs: MOCK_EMAIL_LOGS.length, totalPages: 1 };
+    }
+    if (Array.isArray(remoteLogsResponse)) {
+      return {
+        logs: remoteLogsResponse.length > 0 ? remoteLogsResponse : MOCK_EMAIL_LOGS,
+        totalLogs: remoteLogsResponse.length > 0 ? remoteLogsResponse.length : MOCK_EMAIL_LOGS.length,
+        totalPages: 1,
+      };
+    }
+    return {
+      logs:
+        remoteLogsResponse.data && remoteLogsResponse.data.length > 0
+          ? remoteLogsResponse.data
+          : remoteLogsResponse.total === 0
+          ? []
+          : MOCK_EMAIL_LOGS,
+      totalLogs: remoteLogsResponse.total ?? 0,
+      totalPages: remoteLogsResponse.totalPages || 1,
+    };
+  }, [remoteLogsResponse]);
+
+  useEffect(() => {
+    setLogPage(1);
+  }, [logSearch, logStatusFilter]);
 
   // Templates state
   const [templates, setTemplates] = useState<Record<EmailTemplateType, EmailTemplate>>(
@@ -105,12 +146,6 @@ export default function EmailTemplatesSettingsPage() {
       setEmailSettings(remoteSettings);
     }
   }, [remoteSettings]);
-
-  // Outbox / logs state
-  const logs = (remoteLogs && remoteLogs.length > 0 ? remoteLogs : MOCK_EMAIL_LOGS) as EmailLog[];
-  const [logSearch, setLogSearch] = useState("");
-  const [logStatusFilter, setLogStatusFilter] = useState<string>("ALL");
-  const [viewingLog, setViewingLog] = useState<EmailLog | null>(null);
 
   const activeTemplate = templates[selectedType];
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -226,6 +261,13 @@ export default function EmailTemplatesSettingsPage() {
 
   // Filtered logs
   const filteredLogs = useMemo(() => {
+    if (
+      remoteLogsResponse &&
+      !Array.isArray(remoteLogsResponse) &&
+      "totalPages" in remoteLogsResponse
+    ) {
+      return logs;
+    }
     return logs.filter((l) => {
       const name = (l.candidateName || l.recipientName || "").toLowerCase();
       const email = (l.candidateEmail || l.recipientEmail || "").toLowerCase();
@@ -242,7 +284,7 @@ export default function EmailTemplatesSettingsPage() {
         logStatusFilter === "ALL" || l.status === logStatusFilter;
       return matchSearch && matchStatus;
     });
-  }, [logs, logSearch, logStatusFilter]);
+  }, [logs, logSearch, logStatusFilter, remoteLogsResponse]);
 
   const templateIcons: Record<EmailTemplateType, ElementType> = {
     APPLICATION_CONFIRMATION: FileText,
@@ -1000,6 +1042,48 @@ export default function EmailTemplatesSettingsPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Outbox Pagination Bar */}
+            {totalLogs > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-xs">
+                <div className="text-slate-500 dark:text-slate-400 text-[11px]">
+                  <span>{t("email.showingLogs")} </span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">
+                    {Math.min((logPage - 1) * logLimit + 1, totalLogs)} - {Math.min(logPage * logLimit, totalLogs)}
+                  </span>
+                  <span> {t("email.of")} </span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">{totalLogs}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogPage((p) => Math.max(1, p - 1))}
+                    disabled={logPage <= 1}
+                    className="h-7 px-2.5 text-[11px] font-medium rounded-lg cursor-pointer inline-flex items-center gap-1"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <span>{t("email.prevPage")}</span>
+                  </Button>
+
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 px-1">
+                    {t("email.page")} {logPage} / {totalPages}
+                  </span>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={logPage >= totalPages}
+                    className="h-7 px-2.5 text-[11px] font-medium rounded-lg cursor-pointer inline-flex items-center gap-1"
+                  >
+                    <span>{t("email.nextPage")}</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

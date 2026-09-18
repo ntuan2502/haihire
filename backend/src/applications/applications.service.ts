@@ -101,6 +101,7 @@ export function packDocsIntoNotes(
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
+import { buildDynamicEmailContext } from "../email/variable-registry";
 
 @Injectable()
 export class ApplicationsService {
@@ -531,11 +532,19 @@ export class ApplicationsService {
                 templateType: "APPLICATION_CONFIRMATION",
                 candidateId: result.candidate.id,
                 applicationId: result.id,
-                variables: {
-                  candidate_name: result.candidate.name,
-                  job_title: job.title,
-                  company_name: "ATS Recruitment",
-                },
+                variables: buildDynamicEmailContext({
+                  candidate: {
+                    name: result.candidate.name,
+                    email: result.candidate.email,
+                    phone: result.candidate.phone,
+                  },
+                  job: {
+                    title: job.title,
+                    department: (job as any).department,
+                    location: (job as any).location,
+                  },
+                  organization: { name: "ATS Recruitment" },
+                }),
               },
               orgId,
             );
@@ -594,11 +603,19 @@ export class ApplicationsService {
                 templateType: "REJECTION",
                 candidateId: updated.candidate.id,
                 applicationId: updated.id,
-                variables: {
-                  candidate_name: updated.candidate.name,
-                  job_title: updated.job?.title || "Vị trí tuyển dụng",
-                  company_name: "ATS Recruitment",
-                },
+                variables: buildDynamicEmailContext({
+                  candidate: {
+                    name: updated.candidate.name,
+                    email: updated.candidate.email,
+                    phone: updated.candidate.phone,
+                  },
+                  job: {
+                    title: updated.job?.title || "Vị trí tuyển dụng",
+                    department: (updated.job as any)?.department,
+                    location: (updated.job as any)?.location,
+                  },
+                  organization: { name: "ATS Recruitment" },
+                }),
               },
               orgId,
             );

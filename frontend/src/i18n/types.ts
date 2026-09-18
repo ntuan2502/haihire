@@ -1258,6 +1258,11 @@ export interface TranslationSchema {
     thActions: string;
     viewDetails: string;
     noLogsFound: string;
+    showingLogs: string;
+    page: string;
+    of: string;
+    prevPage: string;
+    nextPage: string;
     modalTitle: string;
     selectTemplate: string;
     customEmail: string;

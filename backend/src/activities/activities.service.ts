@@ -43,7 +43,11 @@ export class ActivitiesService {
     });
   }
 
-  async findByCandidate(candidateId: string, organizationId?: string) {
+  async findByCandidate(
+    candidateId: string,
+    organizationId?: string,
+    pagination?: { page?: number; limit?: number },
+  ) {
     let query = (this.prisma.db.orm.public as any).ActivityLog
       .where((a: any) => a.candidateId.eq(candidateId));
 
@@ -52,15 +56,30 @@ export class ActivitiesService {
     }
 
     const activities = await query.all();
-    return activities
+    const sorted = activities
       .map((item: any) => ({
         ...item,
         metadata: item.metadata ? this.safeParse(item.metadata) : null,
       }))
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    if (pagination?.page !== undefined || pagination?.limit !== undefined) {
+      const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
+      const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
+      const total = sorted.length;
+      const totalPages = Math.ceil(total / limit) || 1;
+      const data = sorted.slice((page - 1) * limit, page * limit);
+      return { data, total, page, limit, totalPages };
+    }
+
+    return sorted;
   }
 
-  async findByApplication(applicationId: string, organizationId?: string) {
+  async findByApplication(
+    applicationId: string,
+    organizationId?: string,
+    pagination?: { page?: number; limit?: number },
+  ) {
     let query = (this.prisma.db.orm.public as any).ActivityLog
       .where((a: any) => a.applicationId.eq(applicationId));
 
@@ -69,12 +88,23 @@ export class ActivitiesService {
     }
 
     const activities = await query.all();
-    return activities
+    const sorted = activities
       .map((item: any) => ({
         ...item,
         metadata: item.metadata ? this.safeParse(item.metadata) : null,
       }))
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    if (pagination?.page !== undefined || pagination?.limit !== undefined) {
+      const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
+      const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
+      const total = sorted.length;
+      const totalPages = Math.ceil(total / limit) || 1;
+      const data = sorted.slice((page - 1) * limit, page * limit);
+      return { data, total, page, limit, totalPages };
+    }
+
+    return sorted;
   }
 
   private safeParse(json: string) {

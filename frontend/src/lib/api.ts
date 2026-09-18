@@ -465,13 +465,43 @@ export const emailApi = {
     return response.data;
   },
 
-  getLogs: async (organizationId?: string | null, candidateId?: string) => {
+  getLogs: async (
+    paramsOrOrgId?:
+      | {
+          organizationId?: string | null;
+          candidateId?: string;
+          page?: number;
+          limit?: number;
+          search?: string;
+          status?: string;
+        }
+      | string
+      | null,
+    candidateId?: string,
+  ) => {
+    const params =
+      typeof paramsOrOrgId === "object" && paramsOrOrgId !== null
+        ? paramsOrOrgId
+        : {
+            organizationId: paramsOrOrgId || undefined,
+            candidateId: candidateId || undefined,
+          };
+
     const response = await api.get("/email/logs", {
       params: {
-        organizationId: organizationId || undefined,
-        candidateId: candidateId || undefined,
+        organizationId: params.organizationId || undefined,
+        candidateId: params.candidateId || undefined,
+        page: params.page,
+        limit: params.limit,
+        search: params.search,
+        status: params.status,
       },
     });
+    return response.data;
+  },
+
+  getVariables: async () => {
+    const response = await api.get("/email/variables");
     return response.data;
   },
 };

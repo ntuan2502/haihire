@@ -1,12 +1,15 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { EmailService, interpolate, DEFAULT_TEMPLATES } from "./email.service";
+import { EncryptionService } from "../common/encryption.service";
 
 describe("EmailService", () => {
   let service: EmailService;
   let mockPrismaService: any;
   let mockActivitiesService: any;
+  let encryptionService: EncryptionService;
 
   beforeEach(() => {
+    encryptionService = new EncryptionService();
     mockActivitiesService = {
       createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
     };
@@ -91,7 +94,7 @@ describe("EmailService", () => {
       },
     };
 
-    service = new EmailService(mockPrismaService, mockActivitiesService);
+    service = new EmailService(mockPrismaService, mockActivitiesService, encryptionService);
   });
 
   describe("Variable Interpolation", () => {
@@ -156,6 +159,54 @@ describe("EmailService", () => {
           type: "EMAIL_SENT",
         }),
       );
+    });
+  });
+
+  describe("Credentials Encryption and Masking", () => {
+    it("should encrypt credentials when saving settings and return masked values", async () => {
+      const updated = await service.updateSettings("org-test", {
+        smtpHost: "smtp.example.com",
+        smtpUser: "test@example.com",
+        smtpPass: "SuperSecretPassword123",
+        resendApiKey: "re_secret_key_456",
+      });
+
+      // Public view returned to client must be masked
+      expect(updated.smtpPass).toBe("••••••••••••••••");
+      expect(updated.resendApiKey).toBe("••••••••••••••••");
+
+      // Internal dispatch settings should be decrypted
+      const raw = await service.getRawSettings("org-test");
+      expect(raw.smtpPass).toBe("SuperSecretPassword123");
+      expect(raw.resendApiKey).toBe("re_secret_key_456");
+    });
+  });
+
+  describe("Outbox Logs Pagination and Filtering", () => {
+    it("should paginate logs correctly", async () => {
+      // Create 3 logs
+      for (let i = 1; i <= 3; i++) {
+        await service.sendEmail(
+          {
+            to: `candidate${i}@example.com`,
+            recipientName: `Candidate ${i}`,
+            subject: `Subject ${i}`,
+            body: `Body ${i}`,
+          },
+          "org-test",
+        );
+      }
+
+      const paged = await service.getLogs("org-test", {
+        page: 1,
+        limit: 2,
+      }) as any;
+
+      expect(paged.total).toBe(3);
+      expect(paged.page).toBe(1);
+      expect(paged.limit).toBe(2);
+      expect(paged.totalPages).toBe(2);
+      expect(paged.data.length).toBe(2);
     });
   });
 });

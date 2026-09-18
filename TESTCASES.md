@@ -2,8 +2,8 @@
 
 > **Tài liệu phân loại và theo dõi trạng thái kiểm định thực tế của hệ thống ATS.**  
 > **Phiên bản:** 1.0.0-beta  
-> **Cập nhật lần cuối:** 04/09/2026  
-> **Tổng số Test Cases:** 65  
+> **Cập nhật lần cuối:** 18/09/2026  
+> **Tổng số Test Cases:** 89  
 
 ---
 
@@ -27,8 +27,8 @@
 | **6. Resume Storage & Preview** | 6 | 3 | 2 | 1 (Xem Iframe PDF modal) |
 | **7. LAN & Network Access** | 6 | 4 | 2 | 0 |
 | **8. Interviews & Scorecards** | 7 | 4 | 2 | 1 (Xem Calendar Month/Week) |
-| **9. Email & Activity Tracking** | 13 | 6 | 5 | 2 (Xem Desktop/Mobile Preview) |
-| **TỔNG CỘNG** | **85** | **47 (55%)** | **24 (28%)** | **14 (17%)** |
+| **9. Email & Activity Tracking** | 17 | 10 | 5 | 2 (Xem Desktop/Mobile Preview) |
+| **TỔNG CỘNG** | **89** | **51 (57%)** | **24 (27%)** | **14 (16%)** |
 
 ---
 
@@ -175,15 +175,19 @@
 | **EMAIL-09** | Tự động gửi mail từ chối khi REJECTED | `applications.service.ts` hook | Đổi stage sang `REJECTED` tự động gửi thư `REJECTION` | 🔵 **Build Verified** |
 | **EMAIL-10** | Tự động gửi mail mời phỏng vấn | `interviews.service.ts` hook | Đặt lịch phỏng vấn có checkbox gửi mail tự động gửi `INTERVIEW_INVITATION` | 🔵 **Build Verified** |
 | **EMAIL-11** | Xem trước giao diện Desktop & Mobile | UI Device Preview Switcher | Render trực tiếp email preview trong khung mô phỏng thiết bị | 🟡 **Pending Manual Check** |
+| **EMAIL-12** | Mã hóa AES-256-GCM mật khẩu & API key | `encryption.service.spec.ts` | Mã hóa SMTP pass / API key trước khi lưu DB, mask `••••••••` ra frontend | 🟢 **Automated Passed** |
+| **EMAIL-13** | Variable Registry & Dot-notation | `variable-registry.spec.ts` + API | Hỗ trợ tokens phẳng & lồng nhau (`candidate.name`, `job.title`), API `/email/variables` | 🟢 **Automated Passed** |
+| **EMAIL-14** | Phân trang Outbox & Lọc Server-side | `email.service.spec.ts` + UI | Phân trang nhật ký gửi thư `page`, `limit`, tìm kiếm người nhận và lọc trạng thái | 🟢 **Automated Passed** |
 | **ACT-01** | Ghi log dòng thời gian hoạt động | `activities.service.ts` + DB | Lưu sự kiện `ActivityLog` (`APPLIED`, `STAGE_CHANGED`, `EMAIL_SENT`, v.v.) | 🔵 **Build Verified** |
 | **ACT-02** | Xem dòng thời gian `CandidateTimeline` | UI Timeline component | Hiển thị timeline dọc có bộ lọc (Tất cả, Email, Phỏng vấn, Trạng thái) | 🟡 **Pending Manual Check** |
+| **ACT-03** | Phân trang dòng thời gian ứng viên | `activities.service.ts` + API | Hỗ trợ `page`, `limit` khi truy vấn timeline ứng viên | 🟢 **Automated Passed** |
 
 ---
 
 ## 🛠️ Lệnh chạy kiểm thử tự động để đối chứng
 
 ```bash
-# 1. Chạy 58 bài Unit & Integration Tests tự động của Backend
+# 1. Chạy 68 bài Unit & Integration Tests tự động của Backend
 pnpm --filter backend test
 
 # 2. Kiểm tra Static Analysis & TypeScript Type Check

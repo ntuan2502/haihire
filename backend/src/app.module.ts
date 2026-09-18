@@ -13,6 +13,9 @@ import { PrismaService } from "./prisma.service";
 import { UsersController } from "./users.controller";
 import { UsersService } from "./users.service";
 
+import { ActivitiesModule } from "./activities/activities.module";
+import { EmailModule } from "./email/email.module";
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -24,6 +27,8 @@ import { UsersService } from "./users.service";
     ApplicationsModule,
     CandidatesModule,
     InterviewsModule,
+    ActivitiesModule,
+    EmailModule,
   ],
   controllers: [AppController, UsersController],
   providers: [PrismaService, UsersService],

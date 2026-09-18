@@ -62,6 +62,7 @@ function InterviewsPageContent() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<Application | undefined>(undefined);
   const [scheduleDate, setScheduleDate] = useState<string | undefined>(undefined);
+  const [selectedInterviewForEdit, setSelectedInterviewForEdit] = useState<ScheduledInterviewInfo | undefined>(undefined);
 
   // Scorecard modal state
   const [scorecardModalOpen, setScorecardModalOpen] = useState(false);
@@ -87,10 +88,15 @@ function InterviewsPageContent() {
     });
   }, [applications]);
 
-  // Open Schedule Modal prefilled
-  const handleOpenScheduleModal = (prefilledApp?: Application, dateStr?: string) => {
+  // Open Schedule Modal (for new schedule or editing existing interview)
+  const handleOpenScheduleModal = (
+    prefilledApp?: Application,
+    dateStr?: string,
+    interviewToEdit?: ScheduledInterviewInfo,
+  ) => {
     setSelectedAppForSchedule(prefilledApp);
     setScheduleDate(dateStr);
+    setSelectedInterviewForEdit(interviewToEdit);
     setScheduleModalOpen(true);
   };
 
@@ -454,7 +460,7 @@ function InterviewsPageContent() {
             applications={filteredAndSortedList}
             jobs={jobs}
             onScheduleDate={(dateStr) => handleOpenScheduleModal(undefined, dateStr)}
-            onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date)}
+            onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date, intv)}
             onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
             canEdit={canEdit}
           />
@@ -704,7 +710,7 @@ function InterviewsPageContent() {
                       {canEdit && (
                         <Button
                           size="sm"
-                          onClick={() => handleOpenScheduleModal(app)}
+                          onClick={() => handleOpenScheduleModal(app, undefined, currentInterview)}
                           variant="outline"
                           className="h-7.5 px-3 rounded-xl text-xs font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-800 transition-colors"
                         >
@@ -897,7 +903,7 @@ function InterviewsPageContent() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleOpenScheduleModal(app)}
+                                  onClick={() => handleOpenScheduleModal(app, undefined, currentInterview)}
                                   className="h-6 px-2 rounded-md text-[10px] font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 transition-colors"
                                 >
                                   {allInterviews.length > 0 ? t("interviews.editSchedule") : t("interviews.scheduleNow")}
@@ -1008,12 +1014,14 @@ function InterviewsPageContent() {
           setScheduleModalOpen(false);
           setSelectedAppForSchedule(undefined);
           setScheduleDate(undefined);
+          setSelectedInterviewForEdit(undefined);
         }}
         jobs={jobs}
         applications={applications}
         selectedJobId={selectedAppForSchedule?.jobId || undefined}
         selectedApplicationId={selectedAppForSchedule?.id || undefined}
         initialDate={scheduleDate}
+        editingInterview={selectedInterviewForEdit}
       />
 
       {/* Post-Interview Scorecard Modal */}

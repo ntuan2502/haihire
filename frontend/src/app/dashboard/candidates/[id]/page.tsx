@@ -51,11 +51,14 @@ import { CandidateInterviewsList } from "@/components/interviews/candidate-inter
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import {
   getInterviewsFromApplication,
+  type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import { SendEmailModal } from "@/components/email/send-email-modal";
+import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 
 function CandidateDetailPageContent() {
   const params = useParams();
@@ -86,6 +89,8 @@ function CandidateDetailPageContent() {
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [scheduleInterviewApp, setScheduleInterviewApp] =
     useState<Application | null>(null);
+  const [editingInterview, setEditingInterview] =
+    useState<ScheduledInterviewInfo | null>(null);
 
   const handleCancelInterview = async (targetApp: Application, interviewId?: string) => {
     try {
@@ -105,6 +110,7 @@ function CandidateDetailPageContent() {
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
   const [docToDelete, setDocToDelete] = useState<CandidateDocument | null>(null);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
   const docInputRef = useRef<HTMLInputElement>(null);
 
   const loading = candidateLoading || jobsLoading;
@@ -390,6 +396,15 @@ function CandidateDetailPageContent() {
           {/* Action Buttons (Admins only) */}
           {canEdit && (
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsSendEmailOpen(true)}
+                className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                <span>{t("email.sendEmailAction")}</span>
+              </Button>
               <button
                 type="button"
                 onClick={() =>
@@ -611,11 +626,13 @@ function CandidateDetailPageContent() {
                             {canEdit && allInterviews.length === 0 && (
                               <button
                                 type="button"
-                                onClick={() => setScheduleInterviewApp(app)}
-                                className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                                title={t("interviews.scheduleInterview")}
+                                onClick={() => {
+                                  setScheduleInterviewApp(app);
+                                  setEditingInterview(null);
+                                }}
+                                className="h-7 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                               >
-                                <Calendar className="h-3 w-3 inline mr-1" />
+                                <Calendar className="h-3 w-3" />
                                 <span>{t("interviews.scheduleInterview")}</span>
                               </button>
                             )}
@@ -625,7 +642,10 @@ function CandidateDetailPageContent() {
                         <CandidateInterviewsList
                           application={app}
                           notes={app.notes}
-                          onSchedule={() => setScheduleInterviewApp(app)}
+                          onSchedule={(intv) => {
+                            setScheduleInterviewApp(app);
+                            setEditingInterview(intv || null);
+                          }}
                           onCancelInterview={() => handleCancelInterview(app)}
                           canEdit={canEdit}
                           showSectionHeader={false}
@@ -833,6 +853,15 @@ function CandidateDetailPageContent() {
             </div>
           )}
         </div>
+
+        {/* Card 5: Activity & Email Timeline */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <CandidateTimeline
+            candidateId={candidate?.id || candidateIdStr}
+            candidateName={candidateName}
+            candidateEmail={candidateEmail}
+          />
+        </div>
       </main>
 
       {/* Apply to Job Modal */}
@@ -879,11 +908,31 @@ function CandidateDetailPageContent() {
       {scheduleInterviewApp && (
         <ScheduleInterviewModal
           isOpen={!!scheduleInterviewApp}
-          onClose={() => setScheduleInterviewApp(null)}
+          onClose={() => {
+            setScheduleInterviewApp(null);
+            setEditingInterview(null);
+          }}
           jobs={jobs}
           applications={candidateApps}
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
+          editingInterview={editingInterview}
+        />
+      )}
+
+      {/* Send Email Modal */}
+      {candidate && (
+        <SendEmailModal
+          isOpen={isSendEmailOpen}
+          onClose={() => setIsSendEmailOpen(false)}
+          candidate={{
+            id: candidate.id,
+            name: candidateName,
+            email: candidateEmail,
+            phone: candidatePhone,
+          }}
+          jobTitle={candidateApps[0]?.job?.title}
+          organizationName={candidateApps[0]?.job?.department ? `${candidateApps[0]?.job?.department} Department` : "Nexus ATS"}
         />
       )}
     </div>

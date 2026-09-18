@@ -28,7 +28,6 @@ import {
   ArrowRight,
   ChevronDown,
   SlidersHorizontal,
-  History,
   FileCheck,
   ArrowLeftRight,
 } from "lucide-react";
@@ -38,6 +37,9 @@ import { ApplicationDocumentsSection } from "@/components/applications/applicati
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
+import type { ScheduledInterviewInfo } from "@/lib/interviews";
+import { SendEmailModal } from "@/components/email/send-email-modal";
+import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 
 import {
   OverviewSectionsPopover,
@@ -90,6 +92,8 @@ function ApplicationDetailPageContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [editingInterview, setEditingInterview] = useState<ScheduledInterviewInfo | null>(null);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
 
   // Overview sections visibility dropdown state
   const [overviewSections, setOverviewSections] =
@@ -402,7 +406,16 @@ function ApplicationDetailPageContent() {
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setIsSendEmailOpen(true)}
+              className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              <span>{t("email.sendEmailAction")}</span>
+            </Button>
             <button
               type="button"
               className="h-8 w-8 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center shadow-xs cursor-pointer"
@@ -527,7 +540,10 @@ function ApplicationDetailPageContent() {
                 <CandidateInterviewsList
                   application={app}
                   notes={app?.notes}
-                  onSchedule={() => setScheduleModalOpen(true)}
+                  onSchedule={(intv) => {
+                    setEditingInterview(intv || null);
+                    setScheduleModalOpen(true);
+                  }}
                   onCancelInterview={handleCancelInterview}
                   canEdit={canEdit}
                   title={t("applications.sections.interviews")}
@@ -666,7 +682,10 @@ function ApplicationDetailPageContent() {
             <CandidateInterviewsList
               application={app}
               notes={app?.notes}
-              onSchedule={() => setScheduleModalOpen(true)}
+              onSchedule={(intv) => {
+                setEditingInterview(intv || null);
+                setScheduleModalOpen(true);
+              }}
               onCancelInterview={handleCancelInterview}
               canEdit={canEdit}
               showSectionHeader={true}
@@ -767,15 +786,12 @@ function ApplicationDetailPageContent() {
           )}
 
           {activeTab === "timeline" && (
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-2">
-              <History className="h-8 w-8 text-slate-400 mx-auto" />
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t("applications.timelineTitle")}
-              </h4>
-              <p className="text-[11px] text-slate-400">
-                {t("applications.appliedOn")} {appliedDate}
-              </p>
-            </div>
+            <CandidateTimeline
+              candidateId={app?.candidateId}
+              applicationId={app?.id}
+              candidateName={candidateName}
+              candidateEmail={candidateEmail}
+            />
           )}
         </div>
       </main>
@@ -805,11 +821,31 @@ function ApplicationDetailPageContent() {
       {app && (
         <ScheduleInterviewModal
           isOpen={scheduleModalOpen}
-          onClose={() => setScheduleModalOpen(false)}
+          onClose={() => {
+            setScheduleModalOpen(false);
+            setEditingInterview(null);
+          }}
           jobs={jobs}
           applications={app ? [app] : []}
           selectedJobId={app.jobId || undefined}
           selectedApplicationId={app.id}
+          editingInterview={editingInterview}
+        />
+      )}
+
+      {/* Send Email Modal */}
+      {app && (
+        <SendEmailModal
+          isOpen={isSendEmailOpen}
+          onClose={() => setIsSendEmailOpen(false)}
+          candidate={{
+            id: app.candidateId,
+            name: candidateName,
+            email: candidateEmail,
+            phone: candidatePhone,
+          }}
+          jobTitle={jobTitle}
+          organizationName={job?.department ? `${job.department} Department` : "Nexus ATS"}
         />
       )}
     </div>

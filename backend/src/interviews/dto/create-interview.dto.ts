@@ -47,4 +47,7 @@ export class CreateInterviewDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsOptional()
+  sendInvitationEmail?: boolean;
 }

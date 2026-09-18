@@ -69,6 +69,30 @@ enum InviteStatus {
   REVOKED
 }
 
+enum EmailTemplateType {
+  APPLICATION_CONFIRMATION
+  INTERVIEW_INVITATION
+  REJECTION
+  OFFER
+  CUSTOM
+}
+
+enum EmailDeliveryStatus {
+  SENT
+  SIMULATED
+  FAILED
+}
+
+enum ActivityType {
+  APPLIED
+  STAGE_CHANGED
+  EMAIL_SENT
+  INTERVIEW_SCHEDULED
+  INTERVIEW_UPDATED
+  SCORECARD_SUBMITTED
+  NOTE_ADDED
+}
+
 model Organization {
   id          String               @id @default(uuid())
   name        String
@@ -79,6 +103,10 @@ model Organization {
   candidates  Candidate[]
   inviteLinks InviteLink[]
   members     OrganizationMember[]
+  emailTemplates EmailTemplate[]
+  emailSettings  EmailSetting?
+  emailLogs      EmailLog[]
+  activityLogs   ActivityLog[]
   createdAt   DateTime             @default(now())
   updatedAt   temporal.updatedAt()
 }
@@ -165,6 +193,8 @@ model Candidate {
   resumeFileSize Int?
   resumeMimeType String?       @default("application/pdf")
   applications   Application[]
+  emailLogs      EmailLog[]
+  activityLogs   ActivityLog[]
   createdAt      DateTime      @default(now())
   updatedAt      temporal.updatedAt()
 
@@ -186,6 +216,8 @@ model Application {
   notes          String?
   orderIndex     Int              @default(0)
   interviews     Interview[]
+  emailLogs      EmailLog[]
+  activityLogs   ActivityLog[]
   createdAt      DateTime         @default(now())
   updatedAt      temporal.updatedAt()
 
@@ -206,6 +238,82 @@ model Interview {
   scorecard      String?
   notes          String?
   createdAt      DateTime    @default(now())
+  updatedAt      temporal.updatedAt()
+}
+
+model EmailTemplate {
+  id             String            @id @default(uuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  type           EmailTemplateType
+  name           String
+  subject        String
+  body           String
+  enabled        Boolean           @default(true)
+  variables      String?
+  createdAt      DateTime          @default(now())
+  updatedAt      temporal.updatedAt()
+
+  @@unique([organizationId, type])
+}
+
+model EmailSetting {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  provider       String       @default("SIMULATED")
+  fromName       String       @default("Recruitment Team")
+  fromEmail      String       @default("careers@workspace.com")
+  smtpHost       String?
+  smtpPort       Int?
+  smtpUser       String?
+  smtpPass       String?
+  smtpSecure     Boolean      @default(true)
+  resendApiKey   String?
+  sendgridApiKey String?
+  createdAt      DateTime     @default(now())
+  updatedAt      temporal.updatedAt()
+}
+
+model EmailLog {
+  id             String              @id @default(uuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  candidateId    String?
+  candidate      Candidate?          @relation(fields: [candidateId], references: [id])
+  applicationId  String?
+  application    Application?        @relation(fields: [applicationId], references: [id])
+  senderId       String?
+  senderName     String
+  senderEmail    String
+  recipientEmail String
+  recipientName  String
+  templateType   EmailTemplateType   @default(CUSTOM)
+  subject        String
+  body           String
+  status         EmailDeliveryStatus @default(SENT)
+  errorMessage   String?
+  sentAt         DateTime            @default(now())
+  createdAt      DateTime            @default(now())
+  updatedAt      temporal.updatedAt()
+}
+
+model ActivityLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  candidateId    String
+  candidate      Candidate    @relation(fields: [candidateId], references: [id])
+  applicationId  String?
+  application    Application? @relation(fields: [applicationId], references: [id])
+  type           ActivityType
+  title          String
+  description    String
+  actorId        String?
+  actorName      String
+  actorRole      String?
+  metadata       String?
+  createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
 }
 

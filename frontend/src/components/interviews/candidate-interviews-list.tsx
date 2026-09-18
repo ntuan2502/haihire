@@ -14,6 +14,7 @@ import { useMemo } from "react";
 import {
   getInterviewsFromApplication,
   getInterviewTypeLabel,
+  type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
 import type { Interview } from "@/types";
@@ -25,7 +26,7 @@ export interface CandidateInterviewsListProps {
   } | null;
   interviews?: Interview[] | null;
   notes?: string | null;
-  onSchedule?: () => void;
+  onSchedule?: (interview?: ScheduledInterviewInfo) => void;
   onCancelInterview?: () => void;
   canEdit?: boolean;
   title?: string;
@@ -77,7 +78,7 @@ export function CandidateInterviewsList({
             {canEdit && onSchedule && (
               <Button
                 size="sm"
-                onClick={onSchedule}
+                onClick={() => onSchedule?.()}
                 className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
                 <Calendar className="h-3.5 w-3.5" />
@@ -97,7 +98,7 @@ export function CandidateInterviewsList({
           {canEdit && onSchedule && (
             <Button
               size="sm"
-              onClick={onSchedule}
+              onClick={() => onSchedule?.()}
               className="mt-2 h-8 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Calendar className="h-3.5 w-3.5" />
@@ -125,7 +126,7 @@ export function CandidateInterviewsList({
           {canEdit && onSchedule && (
             <Button
               size="sm"
-              onClick={onSchedule}
+              onClick={() => onSchedule?.()}
               className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Calendar className="h-3.5 w-3.5" />
@@ -330,7 +331,7 @@ export function CandidateInterviewsList({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={onSchedule}
+                    onClick={() => onSchedule(scheduled)}
                     className="text-xs font-semibold cursor-pointer"
                   >
                     {idx === 0 ? t("interviews.editScheduleBtn") : t("interviews.updateBtn")}

@@ -9,9 +9,17 @@ import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { fixUtf8String } from "../applications/applications.service";
 
+import { ActivitiesService } from "../activities/activities.service";
+import { EmailService } from "../email/email.service";
+import { buildDynamicEmailContext } from "../email/variable-registry";
+
 @Injectable()
 export class InterviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activitiesService: ActivitiesService,
+    private readonly emailService: EmailService,
+  ) {}
 
   async findAll(options?: {
     organizationId?: string;
@@ -206,7 +214,82 @@ export class InterviewsService {
       });
     }
 
-    return this.findOne(id);
+    const createdInterview = await this.findOne(id);
+
+    // Record activity log & optionally send interview invitation email
+    const candidate = app.candidateId
+      ? await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(app.candidateId)).first()
+      : null;
+    const job = app.jobId
+      ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
+      : null;
+    const orgId = candidate?.organizationId || job?.organizationId;
+
+    if (candidate && orgId) {
+      await this.activitiesService.createActivity({
+        organizationId: orgId,
+        candidateId: candidate.id,
+        applicationId: app.id,
+        type: "INTERVIEW_SCHEDULED",
+        title: `Đã lên lịch phỏng vấn (${dto.type})`,
+        description: `Buổi phỏng vấn vòng ${dto.round || 1} vào ${dto.time} ngày ${dto.date} với ${dto.interviewer}`,
+        actorName: dto.interviewer,
+        actorRole: "INTERVIEWER",
+        metadata: {
+          interviewId: id,
+          date: dto.date,
+          time: dto.time,
+          format: dto.format || "MEET",
+          type: dto.type,
+        },
+      });
+
+      if (dto.sendInvitationEmail && candidate.email) {
+        try {
+          const template = await this.emailService.getTemplateByType(orgId, "INTERVIEW_INVITATION");
+          if (template && template.enabled) {
+            await this.emailService.sendEmail(
+              {
+                to: candidate.email,
+                recipientName: candidate.name,
+                subject: template.subject,
+                body: template.body,
+                templateType: "INTERVIEW_INVITATION",
+                candidateId: candidate.id,
+                applicationId: app.id,
+                variables: buildDynamicEmailContext({
+                  candidate: {
+                    name: candidate.name,
+                    email: candidate.email,
+                    phone: candidate.phone,
+                  },
+                  job: {
+                    title: job?.title || "Vị trí tuyển dụng",
+                    department: (job as any)?.department,
+                    location: (job as any)?.location,
+                  },
+                  organization: { name: "ATS Recruitment" },
+                  interview: {
+                    date: dto.date,
+                    time: dto.time,
+                    format: dto.format || "Google Meet",
+                    linkOrLocation: dto.linkOrLocation || "https://meet.google.com",
+                    interviewer: dto.interviewer,
+                  },
+                  sender: { name: dto.interviewer },
+                }),
+              },
+              orgId,
+              { name: dto.interviewer },
+            );
+          }
+        } catch (emailErr) {
+          console.warn("Failed to send auto interview invitation email:", emailErr);
+        }
+      }
+    }
+
+    return createdInterview;
   }
 
   async update(id: string, dto: UpdateInterviewDto) {
@@ -229,7 +312,27 @@ export class InterviewsService {
     }
 
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).update(updateData);
-    return this.findOne(id);
+    const updated = await this.findOne(id);
+
+    const candidate = updated.application?.candidate;
+    if (candidate && candidate.organizationId) {
+      await this.activitiesService.createActivity({
+        organizationId: candidate.organizationId,
+        candidateId: candidate.id,
+        applicationId: updated.applicationId,
+        type: "INTERVIEW_UPDATED",
+        title: `Đã cập nhật lịch phỏng vấn (${updated.type})`,
+        description: `Cập nhật thông tin: ${updated.time} ngày ${updated.date}`,
+        actorName: updated.interviewer,
+        actorRole: "INTERVIEWER",
+        metadata: {
+          interviewId: id,
+          changes: Object.keys(updateData),
+        },
+      });
+    }
+
+    return updated;
   }
 
   async remove(id: string) {

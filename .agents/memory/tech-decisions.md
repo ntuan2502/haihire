@@ -15,6 +15,17 @@ updated: 2026-08-27
   - **Configuration**: Connection URL and ORM config live in `prisma.config.ts` via `definePrismaConfig` and `@prisma/orm-postgres/config`.
   - **Database Lifecycle**: Use `prisma db init`, `prisma db update`, `prisma db migrate` instead of legacy `prisma migrate dev`.
   - **Client Access**: Access models via namespace `db.orm.public.<Model>`.
+  - **Standalone Scripts & ESM DB Connection (CRITICAL)**: Because of Node.js ESM import hoisting, `db.ts` must never be statically imported if `dotenv.config()` is called in the same file. Always load environment variables first, then dynamically import `db`:
+    ```ts
+    import dotenv from "dotenv";
+    dotenv.config({ path: "path/to/.env" });
+    const { db, connectDatabase } = await import("./prisma/db");
+    await connectDatabase();
+    ```
+  - **Postgres DDL Execution (No Extra Packages Needed)**:
+    When running new DDL migrations against the local database, execute via the running Docker container `ats-postgres` with `psql`:
+    `Get-Content backend/src/prisma/<script>.sql | docker exec -i ats-postgres psql -U ats_user -d ats_db`
+    Note: Table names in Postgres are lowercase/camelCase (`organization`, `candidate`, `application`, etc.), so foreign key references must match the exact case.
 - **Shadcn UI Installation Convention**:
   - **Official CLI**: Always initialize and add Shadcn components directly from the official Shadcn CLI (`pnpx shadcn@latest init`, `pnpx shadcn@latest add <component>`).
   - **No Manual Components**: Never manually write/create Shadcn UI primitive files; always pull them directly from the official registry.

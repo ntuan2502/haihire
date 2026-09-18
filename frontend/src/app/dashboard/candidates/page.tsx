@@ -63,6 +63,7 @@ import { ScheduleInterviewModal } from "@/components/interviews/schedule-intervi
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import {
   getInterviewsFromApplication,
+  type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
@@ -95,6 +96,8 @@ function CandidatesPageContent() {
     useState<CandidateItem | null>(null);
   const [scheduleInterviewApp, setScheduleInterviewApp] =
     useState<Application | null>(null);
+  const [editingInterview, setEditingInterview] =
+    useState<ScheduledInterviewInfo | null>(null);
   const [drawerTab, setDrawerTab] = useState<"applications" | "documents">(
     "applications",
   );
@@ -1102,11 +1105,13 @@ function CandidatesPageContent() {
                                     {canEdit && allInterviews.length === 0 && (
                                       <button
                                         type="button"
-                                        onClick={() => setScheduleInterviewApp(app)}
-                                        className="h-7 px-2 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                                        title={t("interviews.scheduleInterview")}
+                                        onClick={() => {
+                                          setScheduleInterviewApp(app);
+                                          setEditingInterview(null);
+                                        }}
+                                        className="h-7 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                                       >
-                                        <Calendar className="h-3 w-3 inline mr-1" />
+                                        <Calendar className="h-3 w-3" />
                                         <span>{t("interviews.scheduleInterview")}</span>
                                       </button>
                                     )}
@@ -1116,7 +1121,10 @@ function CandidatesPageContent() {
                                 <CandidateInterviewsList
                                   application={app}
                                   notes={app.notes}
-                                  onSchedule={() => setScheduleInterviewApp(app)}
+                                  onSchedule={(intv) => {
+                                    setScheduleInterviewApp(app);
+                                    setEditingInterview(intv || null);
+                                  }}
                                   onCancelInterview={() => handleCancelInterview(app)}
                                   canEdit={canEdit}
                                   showSectionHeader={false}
@@ -1372,11 +1380,15 @@ function CandidatesPageContent() {
       {scheduleInterviewApp && (
         <ScheduleInterviewModal
           isOpen={!!scheduleInterviewApp}
-          onClose={() => setScheduleInterviewApp(null)}
+          onClose={() => {
+            setScheduleInterviewApp(null);
+            setEditingInterview(null);
+          }}
           jobs={jobs}
           applications={selectedCandidateApps}
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
+          editingInterview={editingInterview}
         />
       )}
 

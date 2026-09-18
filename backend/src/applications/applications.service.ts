@@ -99,6 +99,10 @@ export function packDocsIntoNotes(
   return `${cleanNotes} | ${docsSegment}`;
 }
 
+import { ActivitiesService } from "../activities/activities.service";
+import { EmailService } from "../email/email.service";
+import { buildDynamicEmailContext } from "../email/variable-registry";
+
 @Injectable()
 export class ApplicationsService {
   constructor(
@@ -106,6 +110,10 @@ export class ApplicationsService {
     private readonly prisma: PrismaService,
     @Inject(MinioService)
     private readonly minioService: MinioService,
+    @Inject(ActivitiesService)
+    private readonly activitiesService: ActivitiesService,
+    @Inject(EmailService)
+    private readonly emailService: EmailService,
   ) {}
 
   async findByJob(jobId: string) {
@@ -490,11 +498,69 @@ export class ApplicationsService {
       orderIndex: maxOrder + 1,
     });
 
-    return this.findOne(created.id);
+    const result = await this.findOne(created.id);
+
+    // Record activity log & send confirmation email
+    const orgId = job.organizationId;
+    if (orgId && result.candidate) {
+      await this.activitiesService.createActivity({
+        organizationId: orgId,
+        candidateId: result.candidate.id,
+        applicationId: result.id,
+        type: "APPLIED",
+        title: "Đã nộp đơn ứng tuyển",
+        description: `Ứng tuyển vị trí ${job.title}`,
+        actorName: result.candidate.name,
+        actorRole: "CANDIDATE",
+        metadata: {
+          jobId: job.id,
+          jobTitle: job.title,
+          resumeFileName: result.resumeFileName,
+        },
+      });
+
+      if (result.candidate.email) {
+        try {
+          const template = await this.emailService.getTemplateByType(orgId, "APPLICATION_CONFIRMATION");
+          if (template && template.enabled) {
+            await this.emailService.sendEmail(
+              {
+                to: result.candidate.email,
+                recipientName: result.candidate.name,
+                subject: template.subject,
+                body: template.body,
+                templateType: "APPLICATION_CONFIRMATION",
+                candidateId: result.candidate.id,
+                applicationId: result.id,
+                variables: buildDynamicEmailContext({
+                  candidate: {
+                    name: result.candidate.name,
+                    email: result.candidate.email,
+                    phone: result.candidate.phone,
+                  },
+                  job: {
+                    title: job.title,
+                    department: (job as any).department,
+                    location: (job as any).location,
+                  },
+                  organization: { name: "ATS Recruitment" },
+                }),
+              },
+              orgId,
+            );
+          }
+        } catch (emailErr) {
+          console.warn("Failed to send confirmation email:", emailErr);
+        }
+      }
+    }
+
+    return result;
   }
 
   async updateStage(id: string, dto: UpdateStageDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+    const oldStage = existing.stage;
 
     await this.prisma.db.orm.public.Application.where(
       (a) => a.id.eq(id),
@@ -503,7 +569,64 @@ export class ApplicationsService {
       ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
     });
 
-    return this.findOne(id);
+    const updated = await this.findOne(id);
+
+    // Record activity log
+    const orgId = updated.job?.organizationId || (updated.candidate as any)?.organizationId;
+    if (orgId && updated.candidate && oldStage !== dto.stage) {
+      await this.activitiesService.createActivity({
+        organizationId: orgId,
+        candidateId: updated.candidate.id,
+        applicationId: updated.id,
+        type: "STAGE_CHANGED",
+        title: `Chuyển trạng thái: ${oldStage} → ${dto.stage}`,
+        description: `Cập nhật giai đoạn ứng tuyển cho vị trí ${updated.job?.title || ""}`,
+        actorName: "HR Team",
+        actorRole: "ADMIN",
+        metadata: {
+          fromStage: oldStage,
+          toStage: dto.stage,
+        },
+      });
+
+      // If rejected and rejection template enabled, send rejection email
+      if (dto.stage === "REJECTED" && updated.candidate.email) {
+        try {
+          const template = await this.emailService.getTemplateByType(orgId, "REJECTION");
+          if (template && template.enabled) {
+            await this.emailService.sendEmail(
+              {
+                to: updated.candidate.email,
+                recipientName: updated.candidate.name,
+                subject: template.subject,
+                body: template.body,
+                templateType: "REJECTION",
+                candidateId: updated.candidate.id,
+                applicationId: updated.id,
+                variables: buildDynamicEmailContext({
+                  candidate: {
+                    name: updated.candidate.name,
+                    email: updated.candidate.email,
+                    phone: updated.candidate.phone,
+                  },
+                  job: {
+                    title: updated.job?.title || "Vị trí tuyển dụng",
+                    department: (updated.job as any)?.department,
+                    location: (updated.job as any)?.location,
+                  },
+                  organization: { name: "ATS Recruitment" },
+                }),
+              },
+              orgId,
+            );
+          }
+        } catch (emailErr) {
+          console.warn("Failed to send rejection email:", emailErr);
+        }
+      }
+    }
+
+    return updated;
   }
 
   async updateCandidate(id: string, dto: UpdateCandidateDto) {

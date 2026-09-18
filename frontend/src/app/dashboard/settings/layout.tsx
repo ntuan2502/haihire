@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   User as UserIcon,
   Lock,
+  Mail,
 } from "lucide-react";
 import { cn } from "cn";
 import { useI18n } from "@/i18n";
@@ -62,6 +63,13 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Career Page",
     sublabel: "Branded public page",
     icon: AppWindow,
+  },
+  {
+    id: "email-templates",
+    href: "/dashboard/settings/email-templates",
+    label: "Email Templates",
+    sublabel: "Templates & SMTP",
+    icon: Mail,
   },
   {
     id: "members",
@@ -139,6 +147,7 @@ export default function SettingsLayout({
     "privacy-retention": { label: t("settings.tabs.privacyRetention"), sub: t("settings.tabs.privacyRetentionSub") },
     sso: { label: t("settings.tabs.sso"), sub: t("settings.tabs.ssoSub") },
     account: { label: t("settings.tabs.account"), sub: t("settings.tabs.accountSub") },
+    "email-templates": { label: t("settings.tabs.emailTemplates"), sub: t("settings.tabs.emailTemplatesSub") },
   };
 
   return (

@@ -3,7 +3,10 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 import { PrismaService } from "../prisma.service";
 import { ActivitiesService } from "../activities/activities.service";
 import { EncryptionService } from "../common/encryption.service";
@@ -123,6 +126,9 @@ export class EmailService {
     private readonly activitiesService: ActivitiesService,
     @Inject(EncryptionService)
     private readonly encryptionService: EncryptionService,
+    @Optional()
+    @InjectQueue("email-queue")
+    private readonly emailQueue?: Queue,
   ) {}
 
   async getTemplates(organizationId: string) {
@@ -318,6 +324,46 @@ export class EmailService {
   }
 
   async sendEmail(
+    dto: SendEmailDto,
+    organizationId: string,
+    senderUser?: { id?: string; name?: string; email?: string },
+  ) {
+    if (this.emailQueue) {
+      try {
+        const job = await this.emailQueue.add(
+          "send-email",
+          { dto, organizationId, senderUser },
+          {
+            attempts: 3,
+            backoff: {
+              type: "exponential",
+              delay: 1000,
+            },
+            removeOnComplete: true,
+          },
+        );
+        return {
+          id: job.id,
+          status: "QUEUED",
+          message: "Email queued for delivery",
+        };
+      } catch (queueErr) {
+        // Fallback gracefully to synchronous delivery if queue dispatch fails
+        return this.executeSendEmail(dto, organizationId, senderUser);
+      }
+    }
+    return this.executeSendEmail(dto, organizationId, senderUser);
+  }
+
+  async queueEmail(
+    dto: SendEmailDto,
+    organizationId: string,
+    senderUser?: { id?: string; name?: string; email?: string },
+  ) {
+    return this.sendEmail(dto, organizationId, senderUser);
+  }
+
+  async executeSendEmail(
     dto: SendEmailDto,
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },

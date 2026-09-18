@@ -87,10 +87,22 @@ describe("JobsService - Multi-Tenant Job Management", () => {
                   return mockJobs.map((j) => ({ ...j }));
                 }),
                 where: vi.fn().mockImplementation((predicateFn) => ({
+                  all: vi.fn().mockImplementation(async () => {
+                    return mockJobs
+                      .filter((j) => {
+                        const mockRecord = {
+                          id: { eq: (target: string) => j.id === target },
+                          organizationId: { eq: (target: string) => j.organizationId === target },
+                        };
+                        return predicateFn(mockRecord);
+                      })
+                      .map((j) => ({ ...j }));
+                  }),
                   first: vi.fn().mockImplementation(async () => {
                     const match = mockJobs.find((j) => {
                       const mockRecord = {
                         id: { eq: (target: string) => j.id === target },
+                        organizationId: { eq: (target: string) => j.organizationId === target },
                       };
                       return predicateFn(mockRecord);
                     });

@@ -209,4 +209,45 @@ describe("EmailService", () => {
       expect(paged.data.length).toBe(2);
     });
   });
+
+  describe("BullMQ Queue and EmailProcessor", () => {
+    it("should enqueue email when emailQueue is provided", async () => {
+      const mockQueue: any = {
+        add: vi.fn().mockResolvedValue({ id: "job-123" }),
+      };
+
+      const queuedService = new EmailService(
+        mockPrismaService,
+        mockActivitiesService,
+        encryptionService,
+        mockQueue,
+      );
+
+      const result = await queuedService.sendEmail(
+        {
+          to: "queued@example.com",
+          recipientName: "Queued Recipient",
+          subject: "Asynchronous notification",
+          body: "Hello async",
+        },
+        "org-test",
+      );
+
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        "send-email",
+        expect.objectContaining({
+          organizationId: "org-test",
+        }),
+        expect.objectContaining({
+          attempts: 3,
+        }),
+      );
+      expect(result).toEqual({
+        id: "job-123",
+        status: "QUEUED",
+        message: "Email queued for delivery",
+      });
+    });
+  });
 });
+

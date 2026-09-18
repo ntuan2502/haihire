@@ -13,14 +13,8 @@ import {
   useJobs,
   useCandidates,
   useCandidate,
-  useUploadCandidateDocumentMutation,
-  useDeleteCandidateDocumentMutation,
-  useDeleteDocumentMutation,
-  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
-import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { DeleteDocumentModal } from "@/components/candidates/delete-document-modal";
 import {
   Search,
   Users,
@@ -28,7 +22,6 @@ import {
   SlidersHorizontal,
   Columns3,
   Maximize2,
-  UploadCloud,
   ChevronDown,
   Mail,
   Phone,
@@ -36,37 +29,17 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
-  X,
-  ExternalLink,
-  Calendar,
-  Clock,
-  Briefcase,
-  FileText,
-  Edit2,
-  Loader2,
-  Eye,
-  Download,
-  Trash2,
-  ArrowLeft,
-  MessageSquare,
+  UploadCloud,
 } from "lucide-react";
 
 import {
   formatDate,
-  parseCandidateNotes,
-  parseCandidateDocuments,
-  fixUtf8String,
-  getGenderLabel,
   type CandidateItem,
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
-import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
-import {
-  getInterviewsFromApplication,
-  type ScheduledInterviewInfo,
-} from "@/lib/interviews";
-import type { CandidateDocument, Application } from "@/types";
-import { StageBadge } from "@/components/shared/stage-badge";
+import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
+import type { Application } from "@/types";
+import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
 
 type SortField = "name" | "email" | "phone" | "applications" | "added";
@@ -81,10 +54,6 @@ function CandidatesPageContent() {
   );
   const { data: candidates = [], isLoading: candidatesLoading } =
     useCandidates(user?.organizationId);
-  const uploadCandidateDocMutation = useUploadCandidateDocumentMutation();
-  const deleteCandidateDocMutation = useDeleteCandidateDocumentMutation();
-  const deleteAppDocMutation = useDeleteDocumentMutation();
-  const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [search, setSearch] = useState("");
 
@@ -98,130 +67,8 @@ function CandidatesPageContent() {
     useState<Application | null>(null);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
-  const [drawerTab, setDrawerTab] = useState<"applications" | "documents">(
-    "applications",
-  );
-  const [drawerDocFilter, setDrawerDocFilter] = useState("Resume");
-  const [drawerStageFilter, setDrawerStageFilter] = useState("ALL");
-  const [isUploadingDrawerDoc, setIsUploadingDrawerDoc] = useState(false);
-  const [drawerPreviewDoc, setDrawerPreviewDoc] =
-    useState<CandidateDocument | null>(null);
-  const [drawerDocToDelete, setDrawerDocToDelete] =
-    useState<CandidateDocument | null>(null);
-  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
-  const drawerDocInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCancelInterview = async (targetApp: Application, interviewId?: string) => {
-    try {
-      const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
-      if (targetId) {
-        await deleteInterviewMutation.mutateAsync(targetId);
-      }
-    } catch (err) {
-      console.error("Failed to cancel interview in drawer:", err);
-    }
-  };
 
-  const drawerCandidateDocuments = useMemo(() => {
-    if (!selectedCandidate) return [];
-    if (
-      selectedCandidateFull?.allDocuments &&
-      selectedCandidateFull.allDocuments.length > 0
-    ) {
-      return selectedCandidateFull.allDocuments;
-    }
-    return parseCandidateDocuments(selectedCandidate.notes, {
-      id: selectedCandidate.id,
-      resumeUrl: selectedCandidate.resumeUrl || "",
-      resumeFileName: selectedCandidate.resumeFileName || "Resume.pdf",
-      resumeFileSize: selectedCandidate.resumeFileSize,
-      resumeMimeType: selectedCandidate.resumeMimeType,
-      createdAt: selectedCandidate.createdAt,
-    });
-  }, [selectedCandidate, selectedCandidateFull]);
-
-  const filteredDrawerDocuments = useMemo(() => {
-    if (!drawerDocFilter || drawerDocFilter === "All")
-      return drawerCandidateDocuments;
-    return drawerCandidateDocuments.filter(
-      (d) =>
-        (d.type || "Resume").toLowerCase() === drawerDocFilter.toLowerCase(),
-    );
-  }, [drawerCandidateDocuments, drawerDocFilter]);
-
-  const handleDownloadDoc = async (
-    url: string,
-    filename?: string,
-    appId?: string,
-  ) => {
-    const rawFileName = filename || "document.pdf";
-    const downloadFileName = fixUtf8String(rawFileName);
-    const queryParams = new URLSearchParams();
-    if (url) queryParams.set("url", url);
-    if (downloadFileName) queryParams.set("name", downloadFileName);
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
-    const apiUrl = getApiBaseUrl();
-
-    try {
-      const targetUrl = appId
-        ? `${apiUrl}/applications/${appId}/documents/download${queryString}`
-        : getDocumentUrl(url);
-
-      const response = await fetch(targetUrl);
-      if (!response.ok) throw new Error("Download request failed");
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch {
-      const fallbackUrl = appId
-        ? `${apiUrl}/applications/${appId}/documents/download${queryString}`
-        : getDocumentUrl(url);
-      const a = document.createElement("a");
-      a.href = fallbackUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-  };
-
-  const handleConfirmDeleteDrawerDoc = async () => {
-    if (!selectedCandidate || !drawerDocToDelete) return;
-    try {
-      setIsDeletingDoc(true);
-      if (drawerDocToDelete.sourceApplicationId) {
-        await deleteAppDocMutation.mutateAsync({
-          id: drawerDocToDelete.sourceApplicationId,
-          documentId: drawerDocToDelete.id,
-          url: drawerDocToDelete.url,
-        });
-      } else {
-        await deleteCandidateDocMutation.mutateAsync({
-          id: selectedCandidate.id,
-          documentId: drawerDocToDelete.id,
-          url: drawerDocToDelete.url,
-        });
-      }
-      if (
-        drawerPreviewDoc?.id === drawerDocToDelete.id ||
-        drawerPreviewDoc?.url === drawerDocToDelete.url
-      ) {
-        setDrawerPreviewDoc(null);
-      }
-      setDrawerDocToDelete(null);
-    } catch (err) {
-      console.error("Failed to delete document in drawer:", err);
-    } finally {
-      setIsDeletingDoc(false);
-    }
-  };
 
   // Column Visibility Toggle State & Ref
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
@@ -354,35 +201,7 @@ function CandidatesPageContent() {
     );
   }, [selectedCandidate, selectedCandidateFull]);
 
-  const filteredDrawerApps = useMemo(() => {
-    if (drawerStageFilter === "ALL") return selectedCandidateApps;
-    return selectedCandidateApps.filter((a) => a.stage === drawerStageFilter);
-  }, [selectedCandidateApps, drawerStageFilter]);
 
-  const selectedCandidateDetails = useMemo(() => {
-    if (!selectedCandidate) {
-      return {
-        gender: "—",
-        dob: "—",
-        firstName: "—",
-        lastName: "—",
-        displayName: "—",
-        effectiveName: "—",
-        customNotes: "",
-      };
-    }
-    const cand = selectedCandidate.candidate;
-    const parsed = parseCandidateNotes(selectedCandidate.notes, selectedCandidate.name);
-    return {
-      gender: getGenderLabel(cand?.gender || parsed.gender, t),
-      dob: cand?.dateOfBirth ? formatDate(cand.dateOfBirth) : parsed.dob,
-      firstName: cand?.firstName || parsed.firstName,
-      lastName: cand?.lastName || parsed.lastName,
-      displayName: selectedCandidate.name || parsed.displayName,
-      effectiveName: selectedCandidate.name || parsed.effectiveName,
-      customNotes: selectedCandidate.notes || parsed.customNotes,
-    };
-  }, [selectedCandidate, t]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -806,566 +625,18 @@ function CandidatesPageContent() {
         )}
       </main>
 
-      {/* Slide-over Sidebar Drawer: Candidate Detail (Screenshot 1) */}
-      {selectedCandidate && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
-          <div
-            onClick={() => setSelectedCandidate(null)}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
-          />
-
-          {/* Slide-over Panel */}
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-2xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
-              <div className="p-6 space-y-5 flex-1">
-                {/* Drawer Top Bar */}
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    {t("candidates.candidateDetail")}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/candidates/${selectedCandidate.id}/edit`,
-                        )
-                      }
-                      className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                      title="Edit candidate"
-                    >
-                      <Edit2 className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{t("common.edit")}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/candidates/${selectedCandidate.id}`,
-                        )
-                      }
-                      className="h-8 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                      title="Open full page"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{t("candidates.openFullPage")}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCandidate(null)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Candidate Name & Contact Header */}
-                <div className="space-y-1">
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    {selectedCandidate.name}
-                  </h2>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3.5 w-3.5 text-slate-400" />
-                      {selectedCandidate.email}
-                    </span>
-                    {selectedCandidate.phone && (
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3.5 w-3.5 text-slate-400" />
-                        {selectedCandidate.phone}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Card 1: Details */}
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {t("common.details")}
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-y-3.5 gap-x-4 text-xs">
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">
-                        {t("candidates.firstName")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
-                        {selectedCandidateDetails.firstName || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">
-                        {t("candidates.lastName")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
-                        {selectedCandidateDetails.lastName || "—"}
-                      </span>
-                    </div>
-
-                    <div className="col-span-2">
-                      <span className="text-slate-400 text-[11px] block">
-                        {t("candidates.displayName")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
-                        {selectedCandidateDetails.displayName || selectedCandidate.name || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">
-                        {t("candidates.email")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
-                        {selectedCandidate.email}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">
-                        {t("candidates.phone")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
-                        {selectedCandidate.phone || "—"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">
-                        {t("candidates.gender")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
-                        {selectedCandidateDetails.gender}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">
-                        {t("candidates.dateOfBirth")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
-                        {selectedCandidateDetails.dob}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {t("common.created")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
-                        {formatDate(selectedCandidate.createdAt, "short")}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {t("common.updated")}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-white block mt-0.5">
-                        {formatDate(
-                          selectedCandidate.updatedAt ||
-                            selectedCandidate.createdAt,
-                          "short",
-                        )}
-                      </span>
-                    </div>
-
-                    {/* Notes */}
-                    <div className="col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
-                        <MessageSquare className="h-3 w-3" />
-                        {t("candidates.notes")}
-                      </span>
-                      <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
-                        {selectedCandidateDetails.customNotes || selectedCandidate.notes || "—"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 2: Properties */}
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {t("common.properties")}
-                  </h3>
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>{t("candidates.addProperty")}</span>
-                  </button>
-                </div>
-
-                {/* Card 3: Tabs */}
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-                  {/* Tabs Header */}
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-6 text-xs font-bold -mb-px">
-                      <button
-                        type="button"
-                        onClick={() => setDrawerTab("applications")}
-                        className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
-                          drawerTab === "applications"
-                            ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                            : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
-                        }`}
-                      >
-                        {t("candidates.applicationsTab")} ({selectedCandidateApps.length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDrawerTab("documents")}
-                        className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
-                          drawerTab === "documents"
-                            ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
-                            : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
-                        }`}
-                      >
-                        {t("candidates.documentsTab")} ({drawerCandidateDocuments.length})
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Tab Body */}
-                  {drawerTab === "applications" && (
-                    <div className="space-y-3">
-                      {/* Applications Action Row */}
-                      <div className="flex items-center justify-between gap-2">
-                        <CustomSelect
-                          value={drawerStageFilter}
-                          onChange={(v) => setDrawerStageFilter(v)}
-                          options={[
-                            { value: "ALL", label: t("candidates.allStages") },
-                            { value: "APPLIED", label: t("pipeline.stages.applied") },
-                            { value: "SCREENING", label: t("pipeline.stages.screening") },
-                            { value: "INTERVIEW", label: t("pipeline.stages.interview") },
-                            { value: "OFFER", label: t("pipeline.stages.offer") },
-                            { value: "HIRED", label: t("pipeline.stages.hired") },
-                            { value: "REJECTED", label: t("pipeline.stages.rejected") },
-                          ]}
-                          size="sm"
-                          triggerClassName="h-7 w-28 text-[11px] font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
-                        />
-
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => setApplyToJobModalCandidate(selectedCandidate)}
-                            className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1 cursor-pointer transition-colors"
-                          >
-                            <Plus className="h-3 w-3" />
-                            <span>{t("candidates.applyToJob")}</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {filteredDrawerApps.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-1.5">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-                            <Briefcase className="h-4 w-4" />
-                          </div>
-                          <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {selectedCandidateApps.length === 0
-                              ? t("candidates.noApplicationsYet")
-                              : t("candidates.noApplicationsMatchingStage")}
-                          </h4>
-                          <p className="text-[11px] text-slate-400">
-                            {selectedCandidateApps.length === 0
-                              ? t("candidates.applyCandidateHint")
-                              : t("candidates.trySelectingDifferentStage")}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {filteredDrawerApps.map((app) => {
-                            const job = jobs.find((j) => j.id === app.jobId);
-                            const allInterviews = getInterviewsFromApplication(app);
-                            return (
-                              <div
-                                key={app.id}
-                                className="py-4 space-y-3 text-xs"
-                              >
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="space-y-0.5 min-w-0">
-                                    <h4 className="font-bold text-slate-900 dark:text-white truncate">
-                                      {job?.title || "Position"}
-                                    </h4>
-                                    <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                                      Stage: {app.stage} • Applied{" "}
-                                      {formatDate(app.createdAt, "short")}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <StageBadge stage={app.stage} />
-                                    {canEdit && allInterviews.length === 0 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setScheduleInterviewApp(app);
-                                          setEditingInterview(null);
-                                        }}
-                                        className="h-7 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                                      >
-                                        <Calendar className="h-3 w-3" />
-                                        <span>{t("interviews.scheduleInterview")}</span>
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <CandidateInterviewsList
-                                  application={app}
-                                  notes={app.notes}
-                                  onSchedule={(intv) => {
-                                    setScheduleInterviewApp(app);
-                                    setEditingInterview(intv || null);
-                                  }}
-                                  onCancelInterview={() => handleCancelInterview(app)}
-                                  canEdit={canEdit}
-                                  showSectionHeader={false}
-                                  hideIfEmpty={allInterviews.length === 0}
-                                />
-
-                                {app.notes && (
-                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 p-2.5 rounded-xl flex items-start gap-2">
-                                    <MessageSquare className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
-                                    <span className="line-clamp-2">{app.notes}</span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Documents Tab matching Screenshot 1, 2, 3 */}
-                  {drawerTab === "documents" && (
-                    <div className="space-y-3">
-                      {drawerPreviewDoc ? (
-                        /* Preview Mode matching Screenshot 2 */
-                        <div className="space-y-3">
-                          {/* Back button & Download */}
-                          <div className="flex items-center justify-between gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setDrawerPreviewDoc(null)}
-                              className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
-                            >
-                              <ArrowLeft className="h-3.5 w-3.5" />
-                              <span>{t("candidates.backToDocuments")}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleDownloadDoc(
-                                  drawerPreviewDoc.url,
-                                  drawerPreviewDoc.name,
-                                  drawerPreviewDoc.sourceApplicationId,
-                                )
-                              }
-                              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title={t("common.download")}
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-
-                          {/* Document Title */}
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                            <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span className="truncate">
-                              {drawerPreviewDoc.name}
-                            </span>
-                          </div>
-
-                          {/* Embedded Document Viewer matching Screenshot 2 */}
-                          <div className="w-full h-[500px] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-inner">
-                            <iframe
-                              src={getDocumentUrl(drawerPreviewDoc.url)}
-                              className="w-full h-full border-0"
-                              title={drawerPreviewDoc.name}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        /* Normal Documents View */
-                        <div className="space-y-3">
-                          {/* Document Toolbar */}
-                          <div className="flex items-center justify-between gap-2">
-                            <CustomSelect
-                              value={drawerDocFilter}
-                              onChange={(v) => setDrawerDocFilter(v)}
-                              options={[
-                                { value: "All", label: t("common.all") },
-                                { value: "Resume", label: t("candidates.resume") },
-                                { value: "Cover Letter", label: t("candidates.coverLetter") },
-                                { value: "Other", label: t("common.other") },
-                              ]}
-                              size="sm"
-                              triggerClassName="h-7 w-28 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
-                            />
-
-                            {canEdit && (
-                              <div>
-                                <button
-                                  type="button"
-                                  disabled={isUploadingDrawerDoc}
-                                  onClick={() => drawerDocInputRef.current?.click()}
-                                  className="h-7 px-2.5 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                                >
-                                  {isUploadingDrawerDoc ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <UploadCloud className="h-3 w-3 text-slate-500" />
-                                  )}
-                                  <span>{t("candidates.uploadDoc")}</span>
-                                </button>
-                                <input
-                                  ref={drawerDocInputRef}
-                                  type="file"
-                                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                                  className="hidden"
-                                  onChange={async (e) => {
-                                    if (
-                                      e.target.files &&
-                                      e.target.files[0] &&
-                                      selectedCandidate
-                                    ) {
-                                      const file = e.target.files[0];
-                                      try {
-                                        setIsUploadingDrawerDoc(true);
-                                        await uploadCandidateDocMutation.mutateAsync({
-                                          id: selectedCandidate.id,
-                                          file,
-                                          type: drawerDocFilter,
-                                        });
-                                      } catch (err) {
-                                        console.error(
-                                          "Failed to upload document in drawer:",
-                                          err,
-                                        );
-                                      } finally {
-                                        setIsUploadingDrawerDoc(false);
-                                        if (drawerDocInputRef.current)
-                                          drawerDocInputRef.current.value = "";
-                                      }
-                                    }
-                                  }}
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Document Cards List */}
-                          {filteredDrawerDocuments.length > 0 ? (
-                            <div className="space-y-2.5">
-                              {filteredDrawerDocuments.map((doc) => (
-                                <div
-                                  key={doc.id || doc.url}
-                                  className="p-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-xs flex items-center justify-between gap-3"
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    {/* Red Document Icon matching Screenshot 1 */}
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 border border-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50">
-                                      <FileText className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0 space-y-0.5">
-                                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                                        {doc.name}
-                                      </h4>
-                                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 flex-wrap">
-                                        <span>{doc.type || t("candidates.resume")}</span>
-                                        <span>•</span>
-                                        <span>
-                                          {formatDate(doc.createdAt, "short")}
-                                        </span>
-                                        <span>•</span>
-                                        <button
-                                          type="button"
-                                          onClick={() => setDrawerPreviewDoc(doc)}
-                                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline cursor-pointer"
-                                        >
-                                          {t("candidates.clickToPreview")}
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* 3 action buttons: View, Download, Delete */}
-                                  <div className="flex items-center gap-0.5 shrink-0 text-slate-400">
-                                    <button
-                                      type="button"
-                                      onClick={() => setDrawerPreviewDoc(doc)}
-                                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                      title={t("common.preview")}
-                                    >
-                                      <Eye className="h-3.5 w-3.5" />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleDownloadDoc(
-                                          doc.url,
-                                          doc.name,
-                                          doc.sourceApplicationId,
-                                        )
-                                      }
-                                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                      title={t("common.download")}
-                                    >
-                                      <Download className="h-3.5 w-3.5" />
-                                    </button>
-
-                                    {canEdit && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setDrawerDocToDelete(doc)}
-                                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                                        title={t("common.delete")}
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            /* Empty state matching Screenshot 2 */
-                            <div
-                              onClick={() => drawerDocInputRef.current?.click()}
-                              className="rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center space-y-1.5 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-                            >
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 mb-0.5">
-                                <FileText className="h-4 w-4" />
-                              </div>
-                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {t("candidates.noDocuments")}
-                              </h4>
-                              <p className="text-[10px] text-slate-400 max-w-xs">
-                                {t("candidates.uploadDocHint")}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Slide-over Sidebar Drawer */}
+      <CandidateDrawer
+        candidate={selectedCandidate}
+        onClose={() => setSelectedCandidate(null)}
+        jobs={jobs}
+        canEdit={canEdit}
+        onApplyToJob={(candidate) => setApplyToJobModalCandidate(candidate)}
+        onScheduleInterview={(app, interview) => {
+          setScheduleInterviewApp(app);
+          setEditingInterview(interview || null);
+        }}
+      />
 
       {/* Apply to Job Modal */}
       <ApplyToJobModal
@@ -1393,13 +664,7 @@ function CandidatesPageContent() {
       )}
 
 
-      {/* Delete Document Confirmation Modal matching Screenshot 3 */}
-      <DeleteDocumentModal
-        isOpen={!!drawerDocToDelete}
-        onClose={() => setDrawerDocToDelete(null)}
-        onConfirm={handleConfirmDeleteDrawerDoc}
-        isLoading={isDeletingDoc}
-      />
+
     </div>
   );
 }

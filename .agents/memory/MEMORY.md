@@ -10,6 +10,7 @@
 - [project] Internationalization (i18n): 100% text, placeholders, labels must use translations (`t()`), never hardcoded → project-conventions.md
 - [project] Component Architecture: 5-layer modular structure (ui, shared, layout, providers, features) with zero loose root files → tech-decisions.md
 - [project] React Import Convention: Always use named imports `{ useState, ReactNode } from "react"`, no `React.x` except inside `components/ui/` → tech-decisions.md
+- [project] Shadcn `cn` Standard: Use official `"cn"` package directly (`from "cn"`), no `clsx` or `tailwind-merge` → tech-decisions.md
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md

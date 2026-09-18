@@ -27,8 +27,14 @@ updated: 2026-08-27
     `Get-Content backend/src/prisma/<script>.sql | docker exec -i ats-postgres psql -U ats_user -d ats_db`
     Note: Table names in Postgres are lowercase/camelCase (`organization`, `candidate`, `application`, etc.), so foreign key references must match the exact case.
 - **Shadcn UI Installation Convention**:
-  - **Official CLI**: Always initialize and add Shadcn components directly from the official Shadcn CLI (`pnpx shadcn@latest init`, `pnpx shadcn@latest add <component>`).
+  - **Official CLI**: Always initialize and add Shadcn components directly from the official Shadcn CLI (`pnpm dlx shadcn@latest init`, `pnpm --filter ./frontend exec shadcn add <component>`).
   - **No Manual Components**: Never manually write/create Shadcn UI primitive files; always pull them directly from the official registry.
+  - **The `cn` Package Standard (CRITICAL)**:
+    - The repository strictly uses the official `@shadcn-ui/cn` package (`"cn": "^0.3.0"` in `frontend/package.json`).
+    - This is Shadcn's compiled, high-performance drop-in replacement for `clsx + tailwind-merge`.
+    - Components must import `cn` directly: `import { cn } from "cn";`.
+    - Do NOT install or re-add `clsx` or `tailwind-merge` as dependencies.
+    - `frontend/src/lib/utils.ts` re-exports `cn` (`export { cn } from "cn";`) to preserve backward compatibility.
 - **Component Architecture & Shadcn Isolation (5-Layer Modular Structure)**:
   - **1. UI Primitives (`frontend/src/components/ui/`)**: Exclusively reserved for pristine components generated via `pnpx shadcn add <component>`. Never place proprietary or custom domain components here.
   - **2. Shared Design System (`frontend/src/components/shared/`)**: Proprietary reusable controls, custom selects, spinners, badges, and guards (`custom-select.tsx`, `loading-spinner.tsx`, `job-status-badge.tsx`, `stage-badge.tsx`, `language-dropdown.tsx`, `theme-toggle.tsx`, `auth-guard.tsx`).

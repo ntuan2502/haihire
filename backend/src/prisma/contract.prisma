@@ -107,6 +107,7 @@ model Organization {
   emailSettings  EmailSetting?
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
+  documents      CandidateDocument[]
   createdAt   DateTime             @default(now())
   updatedAt   temporal.updatedAt()
 }
@@ -195,6 +196,7 @@ model Candidate {
   applications   Application[]
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
+  documents      CandidateDocument[]
   createdAt      DateTime      @default(now())
   updatedAt      temporal.updatedAt()
 
@@ -313,6 +315,21 @@ model ActivityLog {
   actorName      String
   actorRole      String?
   metadata       String?
+  createdAt      DateTime     @default(now())
+  updatedAt      temporal.updatedAt()
+}
+
+model CandidateDocument {
+  id             String       @id @default(uuid())
+  candidateId    String
+  candidate      Candidate    @relation(fields: [candidateId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  url            String
+  size           Int?
+  mimeType       String?      @default("application/pdf")
+  type           String?      @default("Resume")
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
 }

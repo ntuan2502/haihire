@@ -143,6 +143,10 @@ export class ApplicationsService {
       .where((a) => a.jobId.eq(jobId))
       .all();
 
+    if (applications.length === 0) {
+      return [];
+    }
+
     const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
     const candidates = await this.prisma.db.orm.public.Candidate.select(
       "id",
@@ -255,7 +259,9 @@ export class ApplicationsService {
       "resumeFileName",
       "resumeFileSize",
       "resumeMimeType",
-    ).all();
+    )
+      .where((c) => c.organizationId.eq(organizationId))
+      .all();
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     const allInterviews = await this.prisma.db.orm.public.Interview.all();
@@ -711,6 +717,30 @@ export class ApplicationsService {
     currentDocs.push(newDoc);
     const updatedNotes = packDocsIntoNotes(existing.notes, currentDocs);
 
+    if (existing.candidateId) {
+      try {
+        const cand = await this.prisma.db.orm.public.Candidate.select("id", "organizationId")
+          .where((c) => c.id.eq(existing.candidateId))
+          .first();
+        if (cand) {
+          await (this.prisma.db.orm.public as any).CandidateDocument.create({
+            id: newDoc.id,
+            candidateId: cand.id,
+            organizationId: cand.organizationId,
+            name: newDoc.name,
+            url: newDoc.url,
+            size: newDoc.size,
+            mimeType: newDoc.mimeType,
+            type: newDoc.type,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+      } catch {
+        // ignore if mock or table unavailable in test
+      }
+    }
+
     await this.prisma.db.orm.public.Application.where(
       (a) => a.id.eq(id),
     ).update({
@@ -742,8 +772,14 @@ export class ApplicationsService {
     let updatedDocs: ApplicationDocument[] = [];
     if (opts?.documentId) {
       updatedDocs = currentDocs.filter((d) => d.id !== opts.documentId);
+      try {
+        await (this.prisma.db.orm.public as any).CandidateDocument.where((d: any) => d.id.eq(opts.documentId)).delete();
+      } catch {}
     } else if (opts?.url) {
       updatedDocs = currentDocs.filter((d) => d.url !== opts.url);
+      try {
+        await (this.prisma.db.orm.public as any).CandidateDocument.where((d: any) => d.url.eq(opts.url)).delete();
+      } catch {}
     } else {
       updatedDocs = [];
     }

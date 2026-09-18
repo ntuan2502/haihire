@@ -16,6 +16,10 @@
       "model": "Candidate",
       "namespace": "public"
     },
+    "candidateDocument": {
+      "model": "CandidateDocument",
+      "namespace": "public"
+    },
     "emailLog": {
       "model": "EmailLog",
       "namespace": "public"
@@ -908,6 +912,21 @@
                   "namespace": "public"
                 }
               },
+              "documents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "candidateId"
+                  ]
+                },
+                "to": {
+                  "model": "CandidateDocument",
+                  "namespace": "public"
+                }
+              },
               "emailLogs": {
                 "cardinality": "1:N",
                 "on": {
@@ -992,6 +1011,148 @@
               },
               "namespaceId": "public",
               "table": "candidate"
+            }
+          },
+          "CandidateDocument": {
+            "fields": {
+              "candidateId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "mimeType": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "size": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "type": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz@1",
+                  "kind": "scalar"
+                }
+              },
+              "url": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "candidate": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "candidateId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Candidate",
+                  "namespace": "public"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "candidateId": {
+                  "column": "candidateId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "mimeType": {
+                  "column": "mimeType"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "size": {
+                  "column": "size"
+                },
+                "type": {
+                  "column": "type"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "url": {
+                  "column": "url"
+                }
+              },
+              "namespaceId": "public",
+              "table": "candidateDocument"
             }
           },
           "EmailLog": {
@@ -2183,6 +2344,21 @@
                   "namespace": "public"
                 }
               },
+              "documents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "CandidateDocument",
+                  "namespace": "public"
+                }
+              },
               "emailLogs": {
                 "cardinality": "1:N",
                 "on": {
@@ -3075,6 +3251,130 @@
                   ]
                 }
               ]
+            },
+            "candidateDocument": {
+              "columns": {
+                "candidateId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "mimeType": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "application/pdf"
+                  },
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "size": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "type": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "Resume"
+                  },
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "url": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "candidateId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "candidateDocument"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "candidate"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "candidateDocument"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "candidateId"
+                  ],
+                  "name": "candidateDocument_candidateId_idx_462b5869",
+                  "prefix": "candidateDocument_candidateId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "candidateDocument_organizationId_idx_2e17ef41",
+                  "prefix": "candidateDocument_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
             },
             "emailLog": {
               "checks": [
@@ -4436,10 +4736,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "bab6f663880e08dab741ed66896c068a5a0d271d69343750365f5add85cc1c79"
+    "storageHash": "f69bec2338c33b11d3acc10628c932009ad07ebcafb2a8fef4f6324d278e9bbd"
   },
   "execution": {
-    "executionHash": "26c10a287fff62819607d97de00f8f7999d731935cd2dcc567dcdc40ca380f02",
+    "executionHash": "f4e91aa539e65215ecbb1b710d2f31fd1df38dc67cde61560b82ac358a39cbac",
     "mutations": {
       "defaults": [
         {
@@ -4518,6 +4818,32 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "candidate"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "candidateDocument"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "candidateDocument"
           }
         },
         {

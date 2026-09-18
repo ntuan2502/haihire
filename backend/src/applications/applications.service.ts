@@ -10,16 +10,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-
-export interface ApplicationDocument {
-  id: string;
-  name: string;
-  url: string;
-  size?: number | null;
-  mimeType?: string | null;
-  type?: string;
-  createdAt: string;
-}
+import { type CandidateDocument } from "@ats/types";
 
 export function fixUtf8String(str?: string | null): string {
   if (!str) return "";
@@ -44,8 +35,8 @@ export function extractDocsFromNotes(
     mimeType?: string | null;
     createdAt?: string | Date;
   },
-): ApplicationDocument[] {
-  let docs: ApplicationDocument[] = [];
+): CandidateDocument[] {
+  let docs: CandidateDocument[] = [];
   if (notes) {
     const match = notes.match(/Docs:\s*(\[[^\]]*\])/);
     if (match) {
@@ -92,7 +83,7 @@ export function extractDocsFromNotes(
 
 export function packDocsIntoNotes(
   existingNotes: string | null,
-  docs: ApplicationDocument[],
+  docs: CandidateDocument[],
 ): string {
   const cleanNotes = (existingNotes || "")
     .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
@@ -733,7 +724,7 @@ export class ApplicationsService {
       createdAt: existing.createdAt,
     });
 
-    const newDoc: ApplicationDocument = {
+    const newDoc: CandidateDocument = {
       id: `doc-${Date.now()}`,
       name: uploadResult.originalName,
       url: uploadResult.url,
@@ -798,7 +789,7 @@ export class ApplicationsService {
       createdAt: existing.createdAt,
     });
 
-    let updatedDocs: ApplicationDocument[] = [];
+    let updatedDocs: CandidateDocument[] = [];
     if (opts?.documentId) {
       updatedDocs = currentDocs.filter((d) => d.id !== opts.documentId);
       try {

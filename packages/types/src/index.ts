@@ -135,7 +135,7 @@ export interface CandidateDocument {
   url: string;
   size?: number | null;
   mimeType?: string | null;
-  type?: string;
+  type?: string | null;
   createdAt: string;
   sourceApplicationId?: string;
   jobTitle?: string;

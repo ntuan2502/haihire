@@ -11,17 +11,7 @@ import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../applications/applications.service";
 
-export interface CandidateDocument {
-  id: string;
-  name: string;
-  url: string;
-  size?: number | null;
-  mimeType?: string | null;
-  type?: string | null;
-  createdAt: string;
-  sourceApplicationId?: string;
-  jobTitle?: string;
-}
+import { type CandidateDocument } from "@ats/types";
 
 function extractDocsFromNotes(
   notes: string | null,

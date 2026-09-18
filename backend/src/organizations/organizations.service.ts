@@ -8,7 +8,7 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import crypto from "node:crypto";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { EventsService } from "../events/events.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";

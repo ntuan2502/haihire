@@ -2,7 +2,7 @@ import "dotenv/config";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { db } from "./db.ts";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants.ts";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 

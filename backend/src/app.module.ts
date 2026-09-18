@@ -13,7 +13,8 @@ import { OrganizationsModule } from "./organizations/organizations.module";
 import { ActivitiesModule } from "./activities/activities.module";
 import { EmailModule } from "./email/email.module";
 import { UsersModule } from "./users/users.module";
-import { PrismaService } from "./prisma.service";
+import { PrismaModule } from "./prisma/prisma.module";
+import { PrismaService } from "./prisma/prisma.service";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PrismaService } from "./prisma.service";
       }),
       inject: [ConfigService],
     }),
+    PrismaModule,
     MinioModule,
     AuthModule,
     EventsModule,

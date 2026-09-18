@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AuthService } from "./auth.service";
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 
 describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   let authService: AuthService;

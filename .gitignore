@@ -38,3 +38,4 @@ Thumbs.db
 
 # Internal Audit & Sensitive Docs
 ARCHITECTURE_AUDIT.md
+*.tsbuildinfo

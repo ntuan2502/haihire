@@ -2,9 +2,8 @@ import { Injectable } from "@nestjs/common";
 import type { OnModuleInit } from "@nestjs/common";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import { connectDatabase, db } from "./prisma/db";
-
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants/auth.constants";
+import { connectDatabase, db } from "./db";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
 
 @Injectable()
 export class PrismaService implements OnModuleInit {

@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { ActivitiesService } from "../activities/activities.service";
 import { EncryptionService } from "../common/encryption.service";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";

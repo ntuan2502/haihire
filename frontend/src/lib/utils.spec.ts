@@ -3,8 +3,11 @@ import {
   cn,
   formatDate,
   formatFileSize,
+  formatRelativeTime,
   getInitials,
   getCandidateDisplayName,
+  normalizeDateForInput,
+  fixUtf8String,
 } from "./utils";
 
 describe("Frontend utils", () => {
@@ -83,6 +86,54 @@ describe("Frontend utils", () => {
     it("returns dash if null or empty", () => {
       expect(getCandidateDisplayName(null)).toBe("—");
       expect(getCandidateDisplayName({})).toBe("—");
+    });
+  });
+
+  describe("formatRelativeTime", () => {
+    it("returns dash for null or undefined", () => {
+      expect(formatRelativeTime(null)).toBe("—");
+      expect(formatRelativeTime(undefined)).toBe("—");
+    });
+
+    it("returns Just now for current timestamp", () => {
+      expect(formatRelativeTime(new Date())).toBe("Just now");
+    });
+
+    it("returns minutes ago for dates within the hour", () => {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+      expect(formatRelativeTime(fiveMinAgo)).toBe("5m ago");
+    });
+
+    it("returns hours ago for dates within the day", () => {
+      const threeHoursAgo = new Date(Date.now() - 3 * 3600 * 1000);
+      expect(formatRelativeTime(threeHoursAgo)).toBe("3h ago");
+    });
+  });
+
+  describe("normalizeDateForInput", () => {
+    it("handles empty or dash inputs", () => {
+      expect(normalizeDateForInput(null)).toBe("");
+      expect(normalizeDateForInput("—")).toBe("");
+      expect(normalizeDateForInput("")).toBe("");
+    });
+
+    it("returns already formatted YYYY-MM-DD", () => {
+      expect(normalizeDateForInput("2026-08-27")).toBe("2026-08-27");
+    });
+
+    it("normalizes MM/DD/YYYY format", () => {
+      expect(normalizeDateForInput("08/27/2026")).toBe("2026-08-27");
+    });
+  });
+
+  describe("fixUtf8String", () => {
+    it("handles null or empty strings", () => {
+      expect(fixUtf8String(null)).toBe("");
+      expect(fixUtf8String("")).toBe("");
+    });
+
+    it("preserves already clean UTF-8 text", () => {
+      expect(fixUtf8String("Nguyễn Văn A")).toBe("Nguyễn Văn A");
     });
   });
 });

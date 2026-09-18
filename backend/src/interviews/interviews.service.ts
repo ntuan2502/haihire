@@ -26,62 +26,124 @@ export class InterviewsService {
     jobId?: string;
     applicationId?: string;
   }) {
-    let interviews = await this.prisma.db.orm.public.Interview.all();
+    let interviews: any[] = [];
+    const appsMap = new Map<string, any>();
 
     if (options?.applicationId) {
-      interviews = interviews.filter((i) => i.applicationId === options.applicationId);
+      interviews = await this.prisma.db.orm.public.Interview
+        .where((i) => i.applicationId.eq(options.applicationId!))
+        .all();
+    } else if (options?.jobId) {
+      const targetApps = await this.prisma.db.orm.public.Application.select(
+        "id",
+        "candidateId",
+        "jobId",
+        "stage",
+        "matchScore",
+        "notes",
+      )
+        .where((a) => a.jobId.eq(options.jobId!))
+        .all();
+
+      if (targetApps.length === 0) {
+        return [];
+      }
+      for (const a of targetApps) {
+        appsMap.set(a.id, a);
+      }
+      const appIds = targetApps.map((a) => a.id);
+      interviews = await this.prisma.db.orm.public.Interview
+        .where((i) => i.applicationId.in(appIds))
+        .all();
+    } else if (options?.organizationId) {
+      const orgCandidates = await this.prisma.db.orm.public.Candidate.select("id")
+        .where((c) => c.organizationId.eq(options.organizationId!))
+        .all();
+
+      if (orgCandidates.length === 0) {
+        return [];
+      }
+      const candidateIds = orgCandidates.map((c) => c.id);
+
+      const targetApps = await this.prisma.db.orm.public.Application.select(
+        "id",
+        "candidateId",
+        "jobId",
+        "stage",
+        "matchScore",
+        "notes",
+      )
+        .where((a) => a.candidateId.in(candidateIds))
+        .all();
+
+      if (targetApps.length === 0) {
+        return [];
+      }
+      for (const a of targetApps) {
+        appsMap.set(a.id, a);
+      }
+      const appIds = targetApps.map((a) => a.id);
+      interviews = await this.prisma.db.orm.public.Interview
+        .where((i) => i.applicationId.in(appIds))
+        .all();
+    } else {
+      interviews = await this.prisma.db.orm.public.Interview.all();
     }
 
     if (interviews.length === 0) {
       return [];
     }
 
-    const appIds = new Set(interviews.map((i) => i.applicationId));
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "candidateId",
-      "jobId",
-      "stage",
-      "matchScore",
-      "notes",
-    ).all();
-
-    const appsMap = new Map<string, (typeof allApps)[0]>();
-    for (const a of allApps) {
-      if (appIds.has(a.id)) {
+    const neededAppIds = [...new Set(interviews.map((i) => i.applicationId))].filter(
+      (id) => !appsMap.has(id),
+    );
+    if (neededAppIds.length > 0) {
+      const fetchedApps = await this.prisma.db.orm.public.Application.select(
+        "id",
+        "candidateId",
+        "jobId",
+        "stage",
+        "matchScore",
+        "notes",
+      )
+        .where((a) => a.id.in(neededAppIds))
+        .all();
+      for (const a of fetchedApps) {
         appsMap.set(a.id, a);
       }
     }
 
-    const candidateIds = new Set(Array.from(appsMap.values()).map((a) => a.candidateId));
-    const allCandidates = await this.prisma.db.orm.public.Candidate.select(
-      "id",
-      "name",
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "organizationId",
-    ).all();
-
-    const candidatesMap = new Map<string, (typeof allCandidates)[0]>();
-    for (const c of allCandidates) {
-      if (candidateIds.has(c.id)) {
+    const candidateIds = [...new Set(Array.from(appsMap.values()).map((a) => a.candidateId))];
+    const candidatesMap = new Map<string, any>();
+    if (candidateIds.length > 0) {
+      const candidates = await this.prisma.db.orm.public.Candidate.select(
+        "id",
+        "name",
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "organizationId",
+      )
+        .where((c) => c.id.in(candidateIds))
+        .all();
+      for (const c of candidates) {
         candidatesMap.set(c.id, c);
       }
     }
 
-    const jobIds = new Set(Array.from(appsMap.values()).map((a) => a.jobId));
-    const allJobs = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "organizationId",
-    ).all();
-
-    const jobsMap = new Map<string, (typeof allJobs)[0]>();
-    for (const j of allJobs) {
-      if (jobIds.has(j.id)) {
+    const jobIds = [...new Set(Array.from(appsMap.values()).map((a) => a.jobId))];
+    const jobsMap = new Map<string, any>();
+    if (jobIds.length > 0) {
+      const jobs = await this.prisma.db.orm.public.Job.select(
+        "id",
+        "title",
+        "department",
+        "organizationId",
+      )
+        .where((j) => j.id.in(jobIds))
+        .all();
+      for (const j of jobs) {
         jobsMap.set(j.id, j);
       }
     }

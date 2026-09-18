@@ -49,6 +49,10 @@ export const vi: TranslationSchema = {
     preview: "Xem trước",
     download: "Tải xuống",
     you: "bạn",
+    expand: "Mở rộng",
+    collapse: "Thu gọn",
+    fullscreen: "Toàn màn hình",
+    exitFullscreen: "Thoát toàn màn hình",
   },
   nav: {
     dashboard: "Tổng quan",

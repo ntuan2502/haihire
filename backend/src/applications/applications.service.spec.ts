@@ -144,6 +144,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                   all: vi.fn().mockImplementation(async () => {
                     return mockJobs.filter((j) => {
                       const mockRecord = {
+                        id: {
+                          eq: (target: string) => j.id === target,
+                          in: (arr: string[]) => arr.includes(j.id),
+                        },
                         organizationId: { eq: (target: string) => j.organizationId === target },
                       };
                       return predicateFn(mockRecord);
@@ -170,7 +174,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                   all: vi.fn().mockImplementation(async () => {
                     return mockCandidates.filter((c) => {
                       const mockRecord = {
-                        id: { eq: (target: string) => c.id === target },
+                        id: {
+                          eq: (target: string) => c.id === target,
+                          in: (arr: string[]) => arr.includes(c.id),
+                        },
                         organizationId: { eq: (target: string) => c.organizationId === target },
                         email: { eq: (target: string) => c.email === target },
                       };
@@ -215,9 +222,18 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                   all: vi.fn().mockImplementation(async () => {
                     return mockApps.filter((a) => {
                       const mockRecord = {
-                        id: { eq: (target: string) => a.id === target },
-                        jobId: { eq: (target: string) => a.jobId === target },
-                        candidateId: { eq: (target: string) => a.candidateId === target },
+                        id: {
+                          eq: (target: string) => a.id === target,
+                          in: (arr: string[]) => arr.includes(a.id),
+                        },
+                        jobId: {
+                          eq: (target: string) => a.jobId === target,
+                          in: (arr: string[]) => arr.includes(a.jobId),
+                        },
+                        candidateId: {
+                          eq: (target: string) => a.candidateId === target,
+                          in: (arr: string[]) => arr.includes(a.candidateId),
+                        },
                       };
                       return predicateFn(mockRecord);
                     });

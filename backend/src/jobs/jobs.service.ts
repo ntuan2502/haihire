@@ -80,21 +80,26 @@ export class JobsService {
       return [];
     }
 
-    const jobIds = new Set(jobs.map((j) => j.id));
+    const jobIds = [...new Set(jobs.map((j) => j.id))];
+    const jobIdSet = new Set(jobIds);
 
     // Fetch applications only relevant to these jobs
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "jobId",
-      "stage",
-    ).all();
+    const allApps = jobIds.length > 0
+      ? await this.prisma.db.orm.public.Application.select(
+          "id",
+          "jobId",
+          "stage",
+        )
+          .where((a) => a.jobId.in(jobIds))
+          .all()
+      : [];
 
     const appCountMap = new Map<
       string,
       { total: number; byStage: Record<string, number> }
     >();
     for (const app of allApps) {
-      if (!app.jobId || !jobIds.has(app.jobId)) continue;
+      if (!app.jobId || !jobIdSet.has(app.jobId)) continue;
       if (!appCountMap.has(app.jobId)) {
         appCountMap.set(app.jobId, { total: 0, byStage: {} });
       }
@@ -168,22 +173,27 @@ export class JobsService {
       .where((a) => a.jobId.eq(id))
       .all();
 
-    const candidates = await this.prisma.db.orm.public.Candidate.select(
-      "id",
-      "name",
-      "email",
-      "phone",
-      "resumeUrl",
-      "resumeFileName",
-    ).all();
+    const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
+    const candidates = candidateIds.length > 0
+      ? await this.prisma.db.orm.public.Candidate.select(
+          "id",
+          "name",
+          "email",
+          "phone",
+          "resumeUrl",
+          "resumeFileName",
+        )
+          .where((c) => c.id.in(candidateIds))
+          .all()
+      : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     // Fetch interviews for each application
-    const appIds = new Set(applications.map((a) => a.id));
-    const allInterviews = this.prisma.db.orm.public.Interview?.all
-      ? await this.prisma.db.orm.public.Interview.all()
-      : [];
-    const jobInterviews = allInterviews.filter((i: any) => appIds.has(i.applicationId));
+    const appIds = [...new Set(applications.map((a) => a.id))];
+    const jobInterviews =
+      appIds.length > 0 && typeof (this.prisma.db.orm.public.Interview as any)?.where === "function"
+        ? await this.prisma.db.orm.public.Interview.where((i: any) => i.applicationId.in(appIds)).all()
+        : [];
     const interviewsByApp = new Map<string, any[]>();
     for (const intv of jobInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];

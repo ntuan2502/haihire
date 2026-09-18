@@ -17,33 +17,24 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   Calendar,
   CalendarDays,
-  Star,
   Clock,
-  Video,
-  MapPin,
   Search,
   Plus,
-  ExternalLink,
   ChevronRight,
   ChevronLeft,
-  ChevronDown,
-  Users,
-  Briefcase,
-  User,
   LayoutGrid,
   List,
-  History,
   ArrowUpDown,
+  Users,
   X,
 } from "lucide-react";
-import { getInitials, getCandidateDisplayName } from "@/lib/utils";
 import {
   getLatestInterviewFromApplication,
-  getInterviewsFromApplication,
-  getInterviewTypeLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
+import { InterviewsGridView } from "@/components/interviews/interviews-grid-view";
+import { InterviewsTableView } from "@/components/interviews/interviews-table-view";
 import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
 import { useI18n } from "@/i18n";
 import type { Application } from "@/types";
@@ -465,474 +456,29 @@ function InterviewsPageContent() {
             canEdit={canEdit}
           />
         ) : viewMode === "grid" ? (
-          /* ========================================================= */
-          /*                       GRID VIEW                           */
-          /* ========================================================= */
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
-              {paginatedList.map((app) => {
-                const job = jobs.find((j) => String(j.id) === String(app.jobId));
-                const allInterviews = getInterviewsFromApplication(app);
-                const currentInterview = allInterviews[0];
-                const previousInterviews = allInterviews.slice(1);
-                const displayName = getCandidateDisplayName(app);
-                const initials = getInitials(displayName);
-                const isExpanded = expandedCards[app.id] ?? false;
-
-                return (
-                  <div
-                    key={app.id}
-                    className="group rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs hover:shadow-md hover:border-blue-300/80 dark:hover:border-blue-900/80 transition-all flex flex-col justify-between space-y-4"
-                  >
-                    {/* Top: Header, Job, Schedule */}
-                    <div className="space-y-3.5">
-                      {/* Candidate Header */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
-                            {initials}
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              {displayName}
-                            </h3>
-                            <p className="text-xs text-slate-400 truncate">{app.candidateEmail}</p>
-                          </div>
-                        </div>
-
-                        {allInterviews.length > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200/80 dark:border-emerald-900/60 shrink-0 whitespace-nowrap">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            <span>{allInterviews.length > 1 ? t("interviews.roundsBadge", { count: allInterviews.length }) : t("interviews.hasScheduleBadge")}</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[11px] font-bold border border-amber-200/80 dark:border-amber-900/60 shrink-0 whitespace-nowrap">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            <span>{t("interviews.awaitingScheduleBadge")}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Job Position Line */}
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                        <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                          {job?.title || t("interviews.defaultJob")}
-                        </span>
-                        <span className="text-slate-300 dark:text-slate-600">•</span>
-                        <span className="text-[11px] text-slate-400 shrink-0">
-                          {job?.department || t("interviews.defaultDepartment")}
-                        </span>
-                      </div>
-
-                      {/* Primary Interview Box */}
-                      {currentInterview ? (
-                        <div className="rounded-xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-800 p-3.5 space-y-2.5">
-                          {/* Time & Round Badge */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
-                              <Calendar className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                              <span className="whitespace-nowrap">{currentInterview.date}</span>
-                              <span className="text-slate-300 dark:text-slate-600">•</span>
-                              <span className="text-blue-600 dark:text-blue-400 whitespace-nowrap">{currentInterview.time}</span>
-                            </div>
-                            {currentInterview.round ? (
-                              <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
-                                {t("interviews.roundInterview", { round: currentInterview.round })}
-                              </span>
-                            ) : allInterviews.length > 1 ? (
-                              <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-800/60 shrink-0 whitespace-nowrap">
-                                {t("interviews.latestBadge")}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          {/* Interview Type Badge: Own row so it never squishes date/time */}
-                          <div>
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-slate-200/80 dark:border-slate-700 shadow-2xs max-w-full truncate">
-                              {getInterviewTypeLabel(currentInterview.type, t)}
-                            </span>
-                          </div>
-
-                          {/* Meta: Interviewer & Format */}
-                          <div className="space-y-1.5 text-xs">
-                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              <span className="text-[11px] text-slate-400">{t("interviews.interviewerLabel")}</span>
-                              <strong className="text-slate-800 dark:text-slate-200 text-xs truncate">
-                                {currentInterview.interviewer}
-                              </strong>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                              {currentInterview.format === "OFFICE" ? (
-                                <>
-                                  <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                                  <span className="text-rose-600 dark:text-rose-400 font-semibold text-[11px]">
-                                    {t("interviews.atOffice")}
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Video className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
-                                    {t("interviews.onlineFormat", { format: currentInterview.format })}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Meeting Link or Location */}
-                          {currentInterview.linkOrLocation && (
-                            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                              {currentInterview.linkOrLocation.startsWith("http") ? (
-                                <a
-                                  href={currentInterview.linkOrLocation}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline"
-                                >
-                                  <Video className="h-3.5 w-3.5" />
-                                  <span>{t("interviews.joinOnlineMeeting")}</span>
-                                  <ExternalLink className="h-3 w-3 ml-0.5" />
-                                </a>
-                              ) : (
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                  {t("interviews.locationLabel", { location: currentInterview.linkOrLocation })}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Scorecard Display or Rating Button */}
-                          {currentInterview.scorecard ? (
-                            <div
-                              onClick={() => handleOpenScorecard(app, currentInterview)}
-                              className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs cursor-pointer hover:opacity-85 transition-opacity"
-                              title={t("interviews.scorecardTooltip")}
-                            >
-                              <div className="flex items-center gap-1 font-bold text-amber-700 dark:text-amber-400">
-                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                <span>{currentInterview.scorecard.overallRating} / 5</span>
-                                <span className="text-[10px] font-normal text-slate-400 ml-0.5 hidden sm:inline">
-                                  {t("interviews.ratedStatus")}
-                                </span>
-                              </div>
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
-                                {currentInterview.scorecard.recommendation}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenScorecard(app, currentInterview)}
-                                className="w-full py-1.5 px-3 rounded-xl bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold border border-amber-200/70 dark:border-amber-800/60 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                              >
-                                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                <span>{t("interviews.scorecardAction")}</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 p-3.5 space-y-1">
-                          <p className="font-bold text-xs text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-amber-600" />
-                            {t("interviews.kpiReady")}
-                          </p>
-                          <p className="text-[11px] text-amber-700/80 dark:text-amber-400">
-                            {t("interviews.readyForInterviewDesc")}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Previous Rounds Collapsible */}
-                      {previousInterviews.length > 0 && (
-                        <div className="space-y-2">
-                          <button
-                            type="button"
-                            onClick={() => toggleCardHistory(app.id)}
-                            className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer border border-slate-200/60 dark:border-slate-800"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <History className="h-3.5 w-3.5 text-slate-400" />
-                              <span>{t("interviews.previousRoundsCount", { count: previousInterviews.length })}</span>
-                            </div>
-                            <ChevronDown
-                              className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
-                                isExpanded ? "rotate-180" : ""
-                              }`}
-                            />
-                          </button>
-
-                          {isExpanded && (
-                            <div className="space-y-2 p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 divide-y divide-slate-100 dark:divide-slate-800">
-                              {previousInterviews.map((prev, pIdx) => (
-                                <div
-                                  key={`${prev.date}-${prev.time}-${pIdx}`}
-                                  className={`text-[11px] space-y-1 ${pIdx > 0 ? "pt-2" : ""}`}
-                                >
-                                  <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-medium gap-2">
-                                    <span className="whitespace-nowrap">{prev.date} ({prev.time})</span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700 font-bold shrink-0 truncate max-w-[140px]">
-                                      {prev.round ? t("interviews.roundInterview", { round: prev.round }) : getInterviewTypeLabel(prev.type, t)}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center justify-between text-[10px] text-slate-400">
-                                    <span>{t("interviews.pvPrefix", { interviewer: prev.interviewer })}</span>
-                                    <span>{prev.format === "OFFICE" ? t("interviews.atOffice") : t("interviews.onlineMeeting")}</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions Row - Anchored to bottom with mt-auto */}
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (job) {
-                            router.push(`/dashboard/jobs/${job.id}/pipeline?stage=INTERVIEW`);
-                          }
-                        }}
-                        className="text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
-                      >
-                        <span>{t("interviews.scorecardBoard")}</span>
-                        <ChevronRight className="h-3 w-3" />
-                      </button>
-
-                      {canEdit && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenScheduleModal(app, undefined, currentInterview)}
-                          variant="outline"
-                          className="h-7.5 px-3 rounded-xl text-xs font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-800 transition-colors"
-                        >
-                          {allInterviews.length > 0 ? t("interviews.updateSchedule") : t("interviews.scheduleNow")}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <InterviewsGridView
+            applications={paginatedList}
+            jobs={jobs}
+            expandedCards={expandedCards}
+            onToggleCardHistory={toggleCardHistory}
+            onOpenScheduleModal={handleOpenScheduleModal}
+            onOpenScorecard={handleOpenScorecard}
+            onNavigateToPipeline={(jobId) =>
+              router.push(`/dashboard/jobs/${jobId}/pipeline?stage=INTERVIEW`)
+            }
+            canEdit={canEdit}
+          />
         ) : (
-          /* ========================================================= */
-          /*                       TABLE VIEW                          */
-          /* ========================================================= */
-          <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] font-bold">
-                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.candidate")}</th>
-                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.job")}</th>
-                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.schedule")}</th>
-                    <th className="py-3 px-3.5">{t("interviews.tableHeaders.interviewer")}</th>
-                    <th className="py-3 px-3 text-center">{t("interviews.tableHeaders.rounds")}</th>
-                    <th className="py-3 px-3 text-center">{t("interviews.tableHeaders.status")}</th>
-                    <th className="py-3 px-3 text-center">{t("interviews.tableHeaders.rating")}</th>
-                    <th className="py-3 px-3.5 text-right">{t("interviews.tableHeaders.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {paginatedList.map((app) => {
-                    const job = jobs.find((j) => String(j.id) === String(app.jobId));
-                    const allInterviews = getInterviewsFromApplication(app);
-                    const currentInterview = allInterviews[0];
-                    const displayName = getCandidateDisplayName(app);
-                    const initials = getInitials(displayName);
-
-                    return (
-                      <tr
-                        key={app.id}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                      >
-                        {/* Candidate */}
-                        <td className="py-3 px-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-2xs">
-                              {initials}
-                            </div>
-                            <div className="min-w-0 max-w-[140px] xl:max-w-[180px]">
-                              <p className="font-bold text-slate-900 dark:text-white truncate">
-                                {displayName}
-                              </p>
-                              <p className="text-[11px] text-slate-400 truncate">
-                                {app.candidateEmail}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Job */}
-                        <td className="py-3 px-3.5">
-                          <div className="max-w-[140px] xl:max-w-[180px]">
-                            <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                              {job?.title || t("interviews.defaultJob")}
-                            </p>
-                            <p className="text-[11px] text-slate-400 truncate">
-                              {job?.department || t("interviews.defaultDepartment")}
-                            </p>
-                          </div>
-                        </td>
-
-                        {/* Next Interview: Stacked in 3 clean lines */}
-                        <td className="py-3 px-3.5">
-                          {currentInterview ? (
-                            <div className="space-y-1 whitespace-nowrap">
-                              {/* Dòng 1: Ngày giờ */}
-                              <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs">
-                                <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
-                                <span>{t("interviews.atTime", { date: currentInterview.date, time: currentInterview.time })}</span>
-                              </div>
-                              {/* Dòng 2: Loại vòng phỏng vấn */}
-                              <div>
-                                <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
-                                  {getInterviewTypeLabel(currentInterview.type, t)}
-                                </span>
-                              </div>
-                              {/* Dòng 3: Cắt trực tuyến / văn phòng xuống dòng */}
-                              <div>
-                                {currentInterview.format === "OFFICE" ? (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50">
-                                    <MapPin className="h-2.5 w-2.5" />
-                                    <span>{t("interviews.atOffice")}</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50">
-                                    <Video className="h-2.5 w-2.5" />
-                                    <span>{t("interviews.onlineMeeting")}</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 italic text-[11px] whitespace-nowrap">{t("interviews.notScheduledYet")}</span>
-                          )}
-                        </td>
-
-                        {/* Interviewer */}
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          {currentInterview ? (
-                            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium max-w-[140px] xl:max-w-[170px] truncate">
-                              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              <span className="truncate">{currentInterview.interviewer}</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-
-                        {/* Rounds */}
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
-                          {allInterviews.length > 0 ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
-                              {t("interviews.roundsCount", { count: allInterviews.length })}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
-                          {allInterviews.length > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-900/60">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              <span>{t("interviews.hasScheduleBadge")}</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-900/60">
-                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                              <span>{t("interviews.awaitingScheduleBadge")}</span>
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Scorecard Evaluation */}
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
-                          {currentInterview?.scorecard ? (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenScorecard(app, currentInterview)}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
-                              title={t("interviews.scorecardTooltip")}
-                            >
-                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                              <span>{currentInterview.scorecard.overallRating} ⭐</span>
-                            </button>
-                          ) : currentInterview ? (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenScorecard(app, currentInterview)}
-                              className="text-[10px] text-amber-700 dark:text-amber-400 font-bold hover:underline cursor-pointer"
-                            >
-                              {t("interviews.rateNow")}
-                            </button>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-
-                        {/* Actions: Họp & Sửa lịch xếp 2 dòng, Chevron bên cạnh */}
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center justify-end gap-1.5">
-                            <div className="flex flex-col items-end gap-1">
-                              {currentInterview?.linkOrLocation?.startsWith("http") && (
-                                <a
-                                  href={currentInterview.linkOrLocation}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="h-6 px-2 rounded-md border border-blue-200 dark:border-blue-800 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 inline-flex items-center gap-1 transition-colors"
-                                  title={t("interviews.joinOnlineMeeting")}
-                                >
-                                  <Video className="h-2.5 w-2.5" />
-                                  <span>{t("interviews.joinMeetingShort")}</span>
-                                </a>
-                              )}
-
-                              {canEdit && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenScheduleModal(app, undefined, currentInterview)}
-                                  className="h-6 px-2 rounded-md text-[10px] font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 transition-colors"
-                                >
-                                  {allInterviews.length > 0 ? t("interviews.editSchedule") : t("interviews.scheduleNow")}
-                                </Button>
-                              )}
-                            </div>
-
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                if (job) {
-                                  router.push(`/dashboard/jobs/${job.id}/pipeline?stage=INTERVIEW`);
-                                }
-                              }}
-                              className="h-7 w-6 p-0 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
-                              title={t("interviews.pipelineReviewTooltip")}
-                            >
-                              <ChevronRight className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <InterviewsTableView
+            applications={paginatedList}
+            jobs={jobs}
+            onOpenScheduleModal={handleOpenScheduleModal}
+            onOpenScorecard={handleOpenScorecard}
+            onNavigateToPipeline={(jobId) =>
+              router.push(`/dashboard/jobs/${jobId}/pipeline?stage=INTERVIEW`)
+            }
+            canEdit={canEdit}
+          />
         )}
 
         {/* Pagination Bar (Only for Grid and Table modes) */}

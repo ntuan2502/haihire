@@ -49,6 +49,10 @@ export const en: TranslationSchema = {
     preview: "Preview",
     download: "Download",
     you: "you",
+    expand: "Expand",
+    collapse: "Collapse",
+    fullscreen: "Fullscreen",
+    exitFullscreen: "Exit Fullscreen",
   },
   nav: {
     dashboard: "Dashboard",

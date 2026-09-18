@@ -30,7 +30,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'f69bec2338c33b11d3acc10628c932009ad07ebcafb2a8fef4f6324d278e9bbd'>;
+  StorageHashBase<'5e517fdf9a9c5d1a34abd3bfe6ce7eb0248dc5e1faeb36fe0636a673787b310e'>;
 export type ExecutionHash =
   ExecutionHashBase<'f4e91aa539e65215ecbb1b710d2f31fd1df38dc67cde61560b82ac358a39cbac'>;
 export type ProfileHash =
@@ -1059,15 +1059,21 @@ type ContractBase = Omit<
               uniques: readonly [];
               indexes: readonly [
                 {
-                  readonly name: 'activityLog_organizationId_idx_2e17ef41';
-                  readonly prefix: 'activityLog_organizationId_idx';
-                  readonly columns: readonly ['organizationId'];
+                  readonly name: 'activityLog_organizationId_createdAt_idx_c52d1cc3';
+                  readonly prefix: 'activityLog_organizationId_createdAt_idx';
+                  readonly columns: readonly ['organizationId', 'createdAt'];
                   readonly unique: false;
                 },
                 {
                   readonly name: 'activityLog_candidateId_idx_462b5869';
                   readonly prefix: 'activityLog_candidateId_idx';
                   readonly columns: readonly ['candidateId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'activityLog_organizationId_idx_2e17ef41';
+                  readonly prefix: 'activityLog_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
                   readonly unique: false;
                 },
                 {
@@ -1200,6 +1206,12 @@ type ContractBase = Omit<
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [{ readonly columns: readonly ['candidateId', 'jobId'] }];
               indexes: readonly [
+                {
+                  readonly name: 'application_jobId_stage_idx_e669f3f8';
+                  readonly prefix: 'application_jobId_stage_idx';
+                  readonly columns: readonly ['jobId', 'stage'];
+                  readonly unique: false;
+                },
                 {
                   readonly name: 'application_candidateId_idx_462b5869';
                   readonly prefix: 'application_candidateId_idx';
@@ -1559,6 +1571,12 @@ type ContractBase = Omit<
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
               indexes: readonly [
+                {
+                  readonly name: 'emailLog_organizationId_createdAt_idx_c52d1cc3';
+                  readonly prefix: 'emailLog_organizationId_createdAt_idx';
+                  readonly columns: readonly ['organizationId', 'createdAt'];
+                  readonly unique: false;
+                },
                 {
                   readonly name: 'emailLog_organizationId_idx_2e17ef41';
                   readonly prefix: 'emailLog_organizationId_idx';
@@ -2124,6 +2142,12 @@ type ContractBase = Omit<
               uniques: readonly [];
               indexes: readonly [
                 {
+                  readonly name: 'job_organizationId_status_idx_21af5e82';
+                  readonly prefix: 'job_organizationId_status_idx';
+                  readonly columns: readonly ['organizationId', 'status'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'job_createdById_idx_8bf640ed';
                   readonly prefix: 'job_createdById_idx';
                   readonly columns: readonly ['createdById'];
@@ -2243,6 +2267,12 @@ type ContractBase = Omit<
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
               indexes: readonly [
+                {
+                  readonly name: 'organizationMember_organizationId_userId_idx_28366c8d';
+                  readonly prefix: 'organizationMember_organizationId_userId_idx';
+                  readonly columns: readonly ['organizationId', 'userId'];
+                  readonly unique: false;
+                },
                 {
                   readonly name: 'organizationMember_organizationId_idx_2e17ef41';
                   readonly prefix: 'organizationMember_organizationId_idx';

@@ -137,6 +137,8 @@ model OrganizationMember {
   role           Role         @default(MEMBER)
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([organizationId, userId])
 }
 
 model InviteLink {
@@ -175,6 +177,8 @@ model Job {
   applications    Application[]
   createdAt       DateTime      @default(now())
   updatedAt       temporal.updatedAt()
+
+  @@index([organizationId, status])
 }
 
 model Candidate {
@@ -224,6 +228,8 @@ model Application {
   updatedAt      temporal.updatedAt()
 
   @@unique([candidateId, jobId])
+  @@index([jobId, stage])
+  @@index([candidateId])
 }
 
 model Interview {
@@ -241,6 +247,8 @@ model Interview {
   notes          String?
   createdAt      DateTime    @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([applicationId])
 }
 
 model EmailTemplate {
@@ -298,6 +306,8 @@ model EmailLog {
   sentAt         DateTime            @default(now())
   createdAt      DateTime            @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([organizationId, createdAt])
 }
 
 model ActivityLog {
@@ -317,6 +327,9 @@ model ActivityLog {
   metadata       String?
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([organizationId, createdAt])
+  @@index([candidateId])
 }
 
 model CandidateDocument {
@@ -332,6 +345,9 @@ model CandidateDocument {
   type           String?      @default("Resume")
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@index([candidateId])
+  @@index([organizationId])
 }
 
 

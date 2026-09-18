@@ -61,6 +61,38 @@ describe("InterviewsService", () => {
       },
     ];
 
+    const createSelectBuilder = (dataList: any[]) => () => {
+      const builder = {
+        where: vi.fn().mockImplementation((predicateFn) => ({
+          all: vi.fn().mockImplementation(async () => {
+            return dataList.filter((item) => {
+              const mockRecord = {
+                id: {
+                  eq: (t: string) => item.id === t,
+                  in: (arr: string[]) => arr.includes(item.id),
+                },
+                organizationId: {
+                  eq: (t: string) => item.organizationId === t,
+                  in: (arr: string[]) => arr.includes(item.organizationId),
+                },
+                candidateId: {
+                  eq: (t: string) => item.candidateId === t,
+                  in: (arr: string[]) => arr.includes(item.candidateId),
+                },
+                jobId: {
+                  eq: (t: string) => item.jobId === t,
+                  in: (arr: string[]) => arr.includes(item.jobId),
+                },
+              };
+              return predicateFn(mockRecord);
+            }).map((x) => ({ ...x }));
+          }),
+        })),
+        all: vi.fn().mockImplementation(async () => dataList.map((x) => ({ ...x }))),
+      };
+      return builder;
+    };
+
     mockPrismaService = {
       db: {
         orm: {
@@ -68,6 +100,21 @@ describe("InterviewsService", () => {
             Interview: {
               all: vi.fn().mockImplementation(async () => mockInterviews.map((i) => ({ ...i }))),
               where: vi.fn().mockImplementation((predicateFn) => ({
+                all: vi.fn().mockImplementation(async () => {
+                  return mockInterviews.filter((i) => {
+                    const mockRecord = {
+                      id: {
+                        eq: (t: string) => i.id === t,
+                        in: (arr: string[]) => arr.includes(i.id),
+                      },
+                      applicationId: {
+                        eq: (t: string) => i.applicationId === t,
+                        in: (arr: string[]) => arr.includes(i.applicationId),
+                      },
+                    };
+                    return predicateFn(mockRecord);
+                  }).map((x) => ({ ...x }));
+                }),
                 first: vi.fn().mockImplementation(async () => {
                   const match = mockInterviews.find((i) => {
                     const mockRecord = { id: { eq: (target: string) => i.id === target } };
@@ -102,9 +149,7 @@ describe("InterviewsService", () => {
               }),
             },
             Application: {
-              select: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockImplementation(async () => mockApps.map((a) => ({ ...a }))),
-              })),
+              select: vi.fn().mockImplementation(createSelectBuilder(mockApps)),
               where: vi.fn().mockImplementation((predicateFn) => ({
                 first: vi.fn().mockImplementation(async () => {
                   const match = mockApps.find((a) => {
@@ -127,9 +172,7 @@ describe("InterviewsService", () => {
               })),
             },
             Candidate: {
-              select: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockImplementation(async () => mockCandidates.map((c) => ({ ...c }))),
-              })),
+              select: vi.fn().mockImplementation(createSelectBuilder(mockCandidates)),
               where: vi.fn().mockImplementation((predicateFn) => ({
                 first: vi.fn().mockImplementation(async () => {
                   const match = mockCandidates.find((c) => {
@@ -141,9 +184,7 @@ describe("InterviewsService", () => {
               })),
             },
             Job: {
-              select: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockImplementation(async () => mockJobs.map((j) => ({ ...j }))),
-              })),
+              select: vi.fn().mockImplementation(createSelectBuilder(mockJobs)),
               where: vi.fn().mockImplementation((predicateFn) => ({
                 first: vi.fn().mockImplementation(async () => {
                   const match = mockJobs.find((j) => {

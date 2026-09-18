@@ -128,22 +128,22 @@ export class CandidatesService {
     }
 
     // Fetch all applications for these candidates
-    const candidateIds = new Set(candidates.map((c) => c.id));
+    const candidateIds = candidates.map((c) => c.id);
     const allApps = await this.prisma.db.orm.public.Application.select(
       "id",
       "candidateId",
       "jobId",
       "stage",
       "createdAt",
-    ).all();
+    )
+      .where((a) => a.candidateId.in(candidateIds))
+      .all();
 
     const appsByCandidate = new Map<string, typeof allApps>();
     for (const app of allApps) {
-      if (candidateIds.has(app.candidateId)) {
-        const list = appsByCandidate.get(app.candidateId) || [];
-        list.push(app);
-        appsByCandidate.set(app.candidateId, list);
-      }
+      const list = appsByCandidate.get(app.candidateId) || [];
+      list.push(app);
+      appsByCandidate.set(app.candidateId, list);
     }
 
     return candidates.map((c) => {
@@ -202,18 +202,25 @@ export class CandidatesService {
 
     // Fetch jobs for each application
     const jobIds = [...new Set(applications.map((a) => a.jobId))];
-    const jobs = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "location",
-    ).all();
+    const jobs = jobIds.length > 0
+      ? await this.prisma.db.orm.public.Job.select(
+          "id",
+          "title",
+          "department",
+          "location",
+        )
+          .where((j) => j.id.in(jobIds))
+          .all()
+      : [];
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
 
     // Fetch interviews for each application
-    const appIds = new Set(applications.map((a) => a.id));
-    const allInterviews = await this.prisma.db.orm.public.Interview.all();
-    const candidateInterviews = allInterviews.filter((i) => appIds.has(i.applicationId));
+    const appIds = [...new Set(applications.map((a) => a.id))];
+    const candidateInterviews = appIds.length > 0
+      ? await this.prisma.db.orm.public.Interview
+          .where((i) => i.applicationId.in(appIds))
+          .all()
+      : [];
     const interviewsByApp = new Map<string, any[]>();
     for (const intv of candidateInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];

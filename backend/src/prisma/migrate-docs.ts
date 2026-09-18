@@ -25,7 +25,7 @@ async function migrate() {
 
   for (const candidate of candidates) {
     const existingDocs = await db.orm.public.CandidateDocument.select("id")
-      .where((d: any) => d.candidateId.eq(candidate.id))
+      .where((d) => d.candidateId.eq(candidate.id))
       .all();
 
     if (existingDocs.length > 0) {
@@ -48,19 +48,20 @@ async function migrate() {
       const match = candidate.notes.match(/Docs:\s*(\[[^\]]*\])/);
       if (match) {
         try {
-          const parsed = JSON.parse(match[1]);
+          const parsed = JSON.parse(match[1]) as Array<Record<string, unknown>>;
           if (Array.isArray(parsed)) {
             for (const d of parsed) {
-              if (d.url && d.url.trim() !== "") {
+              const url = typeof d.url === "string" ? d.url : "";
+              if (url.trim() !== "") {
                 docsToInsert.push({
-                  id: d.id || randomUUID(),
+                  id: typeof d.id === "string" ? d.id : randomUUID(),
                   candidateId: candidate.id,
                   organizationId: candidate.organizationId,
-                  name: d.name || "document.pdf",
-                  url: d.url,
-                  size: d.size ?? null,
-                  mimeType: d.mimeType || "application/pdf",
-                  type: d.type || "Resume",
+                  name: typeof d.name === "string" ? d.name : "document.pdf",
+                  url,
+                  size: typeof d.size === "number" ? d.size : null,
+                  mimeType: typeof d.mimeType === "string" ? d.mimeType : "application/pdf",
+                  type: typeof d.type === "string" ? d.type : "Resume",
                 });
               }
             }
@@ -87,7 +88,7 @@ async function migrate() {
 
     // Insert documents into candidateDocument table
     for (const doc of docsToInsert) {
-      await (db.orm.public as any).CandidateDocument.create({
+      await db.orm.public.CandidateDocument.create({
         id: doc.id,
         candidateId: doc.candidateId,
         organizationId: doc.organizationId,

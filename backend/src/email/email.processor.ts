@@ -2,9 +2,10 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { Injectable, Logger } from "@nestjs/common";
 import { EmailService } from "./email.service";
+import type { SendEmailDto } from "./dto/send-email.dto";
 
 export interface SendEmailJobData {
-  dto: any;
+  dto: SendEmailDto;
   organizationId: string;
   senderUser?: { id?: string; name?: string };
 }
@@ -18,7 +19,7 @@ export class EmailProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<SendEmailJobData>): Promise<any> {
+  async process(job: Job<SendEmailJobData>): Promise<unknown> {
     this.logger.log(`Processing email job ${job.id} for ${job.data?.dto?.to}`);
     try {
       return await this.emailService.executeSendEmail(

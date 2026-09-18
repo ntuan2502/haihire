@@ -3,8 +3,8 @@ import { ActivitiesService } from "./activities.service";
 
 describe("ActivitiesService", () => {
   let service: ActivitiesService;
-  let mockPrismaService: any;
-  const inMemoryActivities: any[] = [];
+  let mockPrismaService: unknown;
+  const inMemoryActivities: Array<Record<string, unknown>> = [];
 
   beforeEach(() => {
     inMemoryActivities.length = 0;
@@ -49,7 +49,7 @@ describe("ActivitiesService", () => {
       },
     };
 
-    service = new ActivitiesService(mockPrismaService);
+    service = new ActivitiesService(mockPrismaService as never);
   });
 
   it("should create activity log and store JSON metadata", async () => {

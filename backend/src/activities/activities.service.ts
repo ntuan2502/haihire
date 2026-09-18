@@ -1,18 +1,27 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma.service";
 import crypto from "node:crypto";
+
+export type ActivityType =
+  | "APPLIED"
+  | "STAGE_CHANGED"
+  | "EMAIL_SENT"
+  | "INTERVIEW_SCHEDULED"
+  | "INTERVIEW_UPDATED"
+  | "SCORECARD_SUBMITTED"
+  | "NOTE_ADDED";
 
 export interface CreateActivityDto {
   organizationId: string;
   candidateId: string;
   applicationId?: string | null;
-  type: string;
+  type: ActivityType;
   title: string;
   description: string;
   actorId?: string | null;
   actorName: string;
   actorRole?: string | null;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 @Injectable()
@@ -26,7 +35,7 @@ export class ActivitiesService {
     const id = crypto.randomUUID();
     const metadataStr = dto.metadata ? JSON.stringify(dto.metadata) : null;
 
-    return (this.prisma.db.orm.public as any).ActivityLog.create({
+    return this.prisma.db.orm.public.ActivityLog.create({
       id,
       organizationId: dto.organizationId,
       candidateId: dto.candidateId,
@@ -48,20 +57,20 @@ export class ActivitiesService {
     organizationId?: string,
     pagination?: { page?: number; limit?: number },
   ) {
-    let query = (this.prisma.db.orm.public as any).ActivityLog
-      .where((a: any) => a.candidateId.eq(candidateId));
+    let query = this.prisma.db.orm.public.ActivityLog
+      .where((a) => a.candidateId.eq(candidateId));
 
     if (organizationId) {
-      query = query.where((a: any) => a.organizationId.eq(organizationId));
+      query = query.where((a) => a.organizationId.eq(organizationId));
     }
 
     const activities = await query.all();
     const sorted = activities
-      .map((item: any) => ({
+      .map((item) => ({
         ...item,
         metadata: item.metadata ? this.safeParse(item.metadata) : null,
       }))
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
     const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
@@ -77,20 +86,20 @@ export class ActivitiesService {
     organizationId?: string,
     pagination?: { page?: number; limit?: number },
   ) {
-    let query = (this.prisma.db.orm.public as any).ActivityLog
-      .where((a: any) => a.applicationId.eq(applicationId));
+    let query = this.prisma.db.orm.public.ActivityLog
+      .where((a) => a.applicationId.eq(applicationId));
 
     if (organizationId) {
-      query = query.where((a: any) => a.organizationId.eq(organizationId));
+      query = query.where((a) => a.organizationId.eq(organizationId));
     }
 
     const activities = await query.all();
     const sorted = activities
-      .map((item: any) => ({
+      .map((item) => ({
         ...item,
         metadata: item.metadata ? this.safeParse(item.metadata) : null,
       }))
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
     const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;

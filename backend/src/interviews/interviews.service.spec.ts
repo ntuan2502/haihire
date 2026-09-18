@@ -4,11 +4,53 @@ import { InterviewsService } from "./interviews.service";
 
 describe("InterviewsService", () => {
   let service: InterviewsService;
-  let mockPrismaService: any;
-  let mockInterviews: any[];
-  let mockApps: any[];
-  let mockCandidates: any[];
-  let mockJobs: any[];
+  let mockPrismaService: unknown;
+  interface MockInterview {
+    id: string;
+    applicationId: string;
+    date: string;
+    time: string;
+    type: string;
+    format: string;
+    linkOrLocation: string;
+    interviewer: string;
+    round: number;
+    scorecard: string | null;
+    notes: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+  interface MockApp {
+    id: string;
+    candidateId: string;
+    jobId: string;
+    stage: string;
+    matchScore: number;
+    notes: string | null;
+  }
+
+  interface MockCandidate {
+    id: string;
+    organizationId: string;
+    name: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  }
+
+  interface MockJob {
+    id: string;
+    title: string;
+    department: string;
+    organizationId: string;
+  }
+
+  let mockInterviews: MockInterview[];
+  let mockApps: MockApp[];
+  let mockCandidates: MockCandidate[];
+  let mockJobs: MockJob[];
 
   beforeEach(() => {
     mockInterviews = [
@@ -61,34 +103,38 @@ describe("InterviewsService", () => {
       },
     ];
 
-    const createSelectBuilder = (dataList: any[]) => () => {
+    const createSelectBuilder = <T extends object>(dataList: T[]) => () => {
       const builder = {
         where: vi.fn().mockImplementation((predicateFn) => ({
           all: vi.fn().mockImplementation(async () => {
             return dataList.filter((item) => {
+              const rec = item as Record<string, string>;
               const mockRecord = {
                 id: {
-                  eq: (t: string) => item.id === t,
-                  in: (arr: string[]) => arr.includes(item.id),
+                  eq: (t: string) => rec.id === t,
+                  in: (arr: string[]) => arr.includes(rec.id),
                 },
                 organizationId: {
-                  eq: (t: string) => item.organizationId === t,
-                  in: (arr: string[]) => arr.includes(item.organizationId),
+                  eq: (t: string) => rec.organizationId === t,
+                  in: (arr: string[]) => arr.includes(rec.organizationId),
                 },
                 candidateId: {
-                  eq: (t: string) => item.candidateId === t,
-                  in: (arr: string[]) => arr.includes(item.candidateId),
+                  eq: (t: string) => rec.candidateId === t,
+                  in: (arr: string[]) => arr.includes(rec.candidateId),
                 },
                 jobId: {
-                  eq: (t: string) => item.jobId === t,
-                  in: (arr: string[]) => arr.includes(item.jobId),
+                  eq: (t: string) => rec.jobId === t,
+                  in: (arr: string[]) => arr.includes(rec.jobId),
+                },
+                applicationId: {
+                  eq: (t: string) => rec.applicationId === t,
+                  in: (arr: string[]) => arr.includes(rec.applicationId),
                 },
               };
               return predicateFn(mockRecord);
-            }).map((x) => ({ ...x }));
+            });
           }),
         })),
-        all: vi.fn().mockImplementation(async () => dataList.map((x) => ({ ...x }))),
       };
       return builder;
     };
@@ -211,9 +257,9 @@ describe("InterviewsService", () => {
     };
 
     service = new InterviewsService(
-      mockPrismaService,
-      mockActivitiesService as any,
-      mockEmailService as any,
+      mockPrismaService as never,
+      mockActivitiesService as never,
+      mockEmailService as never,
     );
   });
 

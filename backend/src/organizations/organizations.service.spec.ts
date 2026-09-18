@@ -4,11 +4,47 @@ import { BadRequestException, ConflictException, NotFoundException } from "@nest
 
 describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   let service: OrganizationsService;
-  let mockPrismaService: any;
+  let mockPrismaService: unknown;
 
-  let mockOrgs: any[] = [];
-  let mockUsers: any[] = [];
-  let mockLinks: any[] = [];
+  interface MockOrg {
+    id: string;
+    name: string;
+    slug: string;
+    ownerId?: string;
+    createdAt?: Date;
+    [key: string]: unknown;
+  }
+  interface MockUser {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    organizationId: string | null;
+    [key: string]: unknown;
+  }
+  interface MockLink {
+    id: string;
+    token: string;
+    organizationId: string;
+    role: string;
+    expiresAt: Date | null;
+    maxUses: number | null;
+    usesCount: number;
+    status: string;
+    createdById: string;
+    createdAt?: Date;
+  }
+  interface MockMember {
+    id: string;
+    organizationId: string;
+    userId: string;
+    role: string;
+    createdAt: Date;
+  }
+
+  let mockOrgs: MockOrg[] = [];
+  let mockUsers: MockUser[] = [];
+  let mockLinks: MockLink[] = [];
 
   beforeEach(() => {
     mockOrgs = [
@@ -47,7 +83,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
     mockLinks = [];
 
-    let mockMembers: any[] = [
+    let mockMembers: MockMember[] = [
       {
         id: "mem-2",
         organizationId: "org-1",
@@ -85,7 +121,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
                     if (!match) return null;
                     if (fields.length > 0) {
-                      const proj: Record<string, any> = {};
+                      const proj: Record<string, unknown> = {};
                       for (const f of fields) proj[f] = match[f];
                       return proj;
                     }
@@ -123,7 +159,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                     });
                     if (!match) return null;
                     if (fields.length > 0) {
-                      const proj: Record<string, any> = {};
+                      const proj: Record<string, unknown> = {};
                       for (const f of fields) proj[f] = match[f];
                       return proj;
                     }
@@ -280,7 +316,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       },
     };
 
-    service = new OrganizationsService(mockPrismaService);
+    service = new OrganizationsService(mockPrismaService as never);
   });
 
   describe("Organization Core", () => {
@@ -294,7 +330,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.organization.slug).toBe("stark-industries");
 
       const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user.organizationId).toBe(result.organization.id);
+      expect(user?.organizationId).toBe(result.organization.id);
     });
 
     it("2. Should throw ConflictException when creating organization with existing slug", async () => {
@@ -314,7 +350,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
       expect(result.organization.name).toBe("Acme Corp");
       const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user.organizationId).toBe("org-1");
+      expect(user?.organizationId).toBe("org-1");
     });
 
     it("4. Should throw NotFoundException when invite link is invalid", async () => {
@@ -368,7 +404,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.organization.name).toBe("Acme Corp");
 
       const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user.organizationId).toBe("org-1");
+      expect(user?.organizationId).toBe("org-1");
     });
   });
 
@@ -422,7 +458,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(joinResult.success).toBe(true);
 
       const user = mockUsers.find((u) => u.id === "usr-1");
-      expect(user.organizationId).toBe("org-1");
+      expect(user?.organizationId).toBe("org-1");
     });
 
     it("12. Should REJECT when user is already a member of the organization", async () => {
@@ -445,7 +481,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.role).toBe("ADMIN");
 
       const usr3 = mockUsers.find((u) => u.id === "usr-3");
-      expect(usr3.role).toBe("ADMIN");
+      expect(usr3?.role).toBe("ADMIN");
     });
 
     it("14. Should REJECT updating organization owner's role", async () => {
@@ -461,8 +497,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(result.success).toBe(true);
 
       const usr3 = mockUsers.find((u) => u.id === "usr-3");
-      expect(usr3.organizationId).toBeNull();
-      expect(usr3.role).toBe("MEMBER");
+      expect(usr3?.organizationId).toBeNull();
+      expect(usr3?.role).toBe("MEMBER");
     });
 
     it("16. Should REJECT removing organization owner or self", async () => {
@@ -506,7 +542,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(joinRes.success).toBe(true);
 
       const usr1 = mockUsers.find((u) => u.id === "usr-1");
-      expect(usr1.organizationId).toBe("org-2");
+      expect(usr1?.organizationId).toBe("org-2");
 
       // 5. getMyOrgs for usr-1 must include BOTH org-1 and org-2
       let orgs = await service.getMyOrgs("usr-1");
@@ -516,7 +552,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       // 6. usr-1 switches back to org-1
       const switchRes = await service.switchOrg("usr-1", "org-1");
       expect(switchRes.success).toBe(true);
-      expect(usr1.organizationId).toBe("org-1");
+      expect(usr1?.organizationId).toBe("org-1");
 
       // 7. Critical: org-2 must NOT disappear from getMyOrgs!
       orgs = await service.getMyOrgs("usr-1");
@@ -526,7 +562,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       // 8. usr-1 can switch back to org-2 seamlessly
       const switchBack = await service.switchOrg("usr-1", "org-2");
       expect(switchBack.success).toBe(true);
-      expect(usr1.organizationId).toBe("org-2");
+      expect(usr1?.organizationId).toBe("org-2");
     });
   });
 });

@@ -5,10 +5,33 @@ import { JobStatus, JobType } from "./dto/create-job.dto";
 
 describe("JobsService - Multi-Tenant Job Management", () => {
   let service: JobsService;
-  let mockPrismaService: any;
+  let mockPrismaService: unknown;
 
-  let mockJobs: any[] = [];
-  let mockApps: any[] = [];
+  interface MockJob {
+    id: string;
+    title: string;
+    department: string;
+    location: string;
+    type: string;
+    description: string;
+    requirements: string;
+    salaryRange: string;
+    status: string;
+    organizationId: string;
+    createdById?: string | null;
+    createdAt: Date;
+    updatedAt?: Date;
+  }
+
+  interface MockApp {
+    id: string;
+    jobId: string;
+    candidateId?: string;
+    stage: string;
+  }
+
+  let mockJobs: MockJob[] = [];
+  let mockApps: MockApp[] = [];
 
   beforeEach(() => {
     mockJobs = [
@@ -198,7 +221,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       },
     };
 
-    service = new JobsService(mockPrismaService as any);
+    service = new JobsService(mockPrismaService as never);
   });
 
   describe("Multi-Tenant Isolation", () => {

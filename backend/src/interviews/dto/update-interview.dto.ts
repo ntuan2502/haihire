@@ -38,7 +38,7 @@ export class UpdateInterviewDto {
   round?: number;
 
   @IsOptional()
-  scorecard?: any;
+  scorecard?: Record<string, unknown> | string;
 
   @IsString()
   @IsOptional()

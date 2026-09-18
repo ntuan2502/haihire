@@ -61,7 +61,7 @@ export class ApplicationsController {
   create(
     @Body() dto: CreateApplicationDto,
     @UploadedFile() file: Express.Multer.File,
-    @Request() req?: any,
+    @Request() req?: { user?: { id?: string; role?: string; organizationId?: string | null } },
   ) {
     if (req?.user?.role === "MEMBER") {
       throw new ForbiddenException(

@@ -5,12 +5,54 @@ import { ApplicationStage } from "./dto/update-stage.dto";
 
 describe("ApplicationsService - Multi-Tenant Candidate & Application Management", () => {
   let service: ApplicationsService;
-  let mockPrismaService: any;
-  let mockMinioService: any;
+  let mockPrismaService: unknown;
+  let mockMinioService: unknown;
 
-  let mockJobs: any[] = [];
-  let mockCandidates: any[] = [];
-  let mockApps: any[] = [];
+  interface MockJob {
+    id: string;
+    title: string;
+    organizationId: string;
+    department?: string;
+    location?: string;
+    status?: string;
+  }
+
+  interface MockCandidate {
+    id: string;
+    organizationId: string;
+    name: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    phone: string;
+    notes?: string | null;
+    resumeUrl?: string | null;
+    resumeFileName?: string | null;
+    resumeFileSize?: number | null;
+    resumeMimeType?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  interface MockApp {
+    id: string;
+    candidateId: string;
+    jobId: string;
+    stage: string;
+    orderIndex?: number;
+    matchScore?: number | null;
+    notes?: string | null;
+    resumeUrl?: string | null;
+    resumeFileName?: string | null;
+    resumeFileSize?: number | null;
+    resumeMimeType?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  let mockJobs: MockJob[] = [];
+  let mockCandidates: MockCandidate[] = [];
+  let mockApps: MockApp[] = [];
 
   beforeEach(() => {
     mockJobs = [
@@ -308,10 +350,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     };
 
     service = new ApplicationsService(
-      mockPrismaService as any,
-      mockMinioService as any,
-      mockActivitiesService as any,
-      mockEmailService as any,
+      mockPrismaService as never,
+      mockMinioService as never,
+      mockActivitiesService as never,
+      mockEmailService as never,
     );
   });
 

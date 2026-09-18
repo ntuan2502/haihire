@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -247,7 +246,7 @@ export class AuthService {
         .where((o) => o.id.eq(user.organizationId as string))
         .first();
 
-      if (organization && (organization as any).ownerId === user.id) {
+      if (organization && organization.ownerId === user.id) {
         isOwner = true;
       }
     }

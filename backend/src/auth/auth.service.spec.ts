@@ -6,8 +6,8 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../constants/auth.constants";
 
 describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   let authService: AuthService;
-  let mockPrismaService: any;
-  let mockJwtService: any;
+  let mockPrismaService: unknown;
+  let mockJwtService: { sign: ReturnType<typeof vi.fn> };
 
   const validPassword = DEMO_PASSWORD;
   const hashedPassword = bcrypt.hashSync(validPassword, 10);
@@ -58,9 +58,10 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
                     if (!match) return null;
 
                     if (fields.length > 0) {
-                      const projected: Record<string, any> = {};
+                      const projected: Record<string, unknown> = {};
+                      const matchRecord = match as Record<string, unknown>;
                       for (const field of fields) {
-                        projected[field] = (match as any)[field];
+                        projected[field] = matchRecord[field];
                       }
                       return projected;
                     }
@@ -100,7 +101,10 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       sign: vi.fn().mockReturnValue("mocked-jwt-access-token-tun-io-vn"),
     };
 
-    authService = new AuthService(mockPrismaService, mockJwtService);
+    authService = new AuthService(
+      mockPrismaService as never,
+      mockJwtService as never,
+    );
   });
 
   it("1. Should successfully login Admin and return ADMIN role with isOwner=true", async () => {

@@ -218,7 +218,7 @@ export interface CreateCandidateInput {
   email: string;
   phone?: string;
   notes?: string;
-  resume?: any;
+  resume?: unknown;
   organizationId?: string;
 }
 
@@ -267,5 +267,5 @@ export interface CreateApplicationInput {
   candidateEmail?: string;
   candidatePhone?: string;
   notes?: string;
-  resume?: any;
+  resume?: unknown;
 }

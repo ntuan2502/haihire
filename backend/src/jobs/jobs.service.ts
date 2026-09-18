@@ -191,16 +191,16 @@ export class JobsService {
     // Fetch interviews for each application
     const appIds = [...new Set(applications.map((a) => a.id))];
     const jobInterviews =
-      appIds.length > 0 && typeof (this.prisma.db.orm.public.Interview as any)?.where === "function"
-        ? await this.prisma.db.orm.public.Interview.where((i: any) => i.applicationId.in(appIds)).all()
+      appIds.length > 0 && Boolean(this.prisma.db.orm.public.Interview)
+        ? await this.prisma.db.orm.public.Interview.where((i) => i.applicationId.in(appIds)).all()
         : [];
-    const interviewsByApp = new Map<string, any[]>();
+    const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of jobInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: any = null;
+      let parsedScorecard: Record<string, unknown> | null = null;
       if (intv.scorecard) {
         try {
-          parsedScorecard = JSON.parse(intv.scorecard);
+          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
         } catch {
           parsedScorecard = null;
         }

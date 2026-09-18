@@ -63,8 +63,9 @@ export class PrismaService implements OnModuleInit {
           `Initialized default demo accounts: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN - Org Admin), ${DEMO_ACCOUNTS.MEMBER.email} (MEMBER - No Org)`,
         );
       }
-    } catch (error: any) {
-      console.warn("Database connection pending or initializing...", error?.message ?? error);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.warn("Database connection pending or initializing...", msg);
     }
   }
 }

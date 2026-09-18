@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
   ]),
   {
     rules: {
+      "@typescript-eslint/no-explicit-any": "error",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/preserve-manual-memoization": "off",
       "@typescript-eslint/no-unused-vars": [

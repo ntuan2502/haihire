@@ -17,7 +17,7 @@ export interface CandidateDocument {
   url: string;
   size?: number | null;
   mimeType?: string | null;
-  type?: string;
+  type?: string | null;
   createdAt: string;
   sourceApplicationId?: string;
   jobTitle?: string;
@@ -39,11 +39,16 @@ function extractDocsFromNotes(
     const match = notes.match(/Docs:\s*(\[[^\]]*\])/);
     if (match) {
       try {
-        const rawDocs = JSON.parse(match[1]);
+        const rawDocs = JSON.parse(match[1]) as Array<Record<string, unknown>>;
         if (Array.isArray(rawDocs)) {
-          docs = rawDocs.map((d: any) => ({
-            ...d,
-            name: fixUtf8String(d.name || "document.pdf"),
+          docs = rawDocs.map((d) => ({
+            id: String(d.id || ""),
+            name: fixUtf8String(typeof d.name === "string" ? d.name : "document.pdf"),
+            url: String(d.url || ""),
+            size: typeof d.size === "number" ? d.size : null,
+            mimeType: typeof d.mimeType === "string" ? d.mimeType : null,
+            type: typeof d.type === "string" ? d.type : undefined,
+            createdAt: typeof d.createdAt === "string" ? d.createdAt : new Date().toISOString(),
           }));
         }
       } catch {
@@ -221,13 +226,13 @@ export class CandidatesService {
           .where((i) => i.applicationId.in(appIds))
           .all()
       : [];
-    const interviewsByApp = new Map<string, any[]>();
+    const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of candidateInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: any = null;
+      let parsedScorecard: Record<string, unknown> | null = null;
       if (intv.scorecard) {
         try {
-          parsedScorecard = JSON.parse(intv.scorecard);
+          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
         } catch {
           parsedScorecard = null;
         }
@@ -255,7 +260,7 @@ export class CandidatesService {
     // Aggregate all documents: candidate's documents + all documents from applications
     let dbDocs: CandidateDocument[] = [];
     try {
-      const queried = await (this.prisma.db.orm.public as any).CandidateDocument.select(
+      const queried = await this.prisma.db.orm.public.CandidateDocument.select(
         "id",
         "name",
         "url",
@@ -264,10 +269,10 @@ export class CandidatesService {
         "type",
         "createdAt",
       )
-        .where((d: any) => d.candidateId.eq(id))
+        .where((d) => d.candidateId.eq(id))
         .all();
       if (Array.isArray(queried) && queried.length > 0) {
-        dbDocs = queried.map((d: any) => ({
+        dbDocs = queried.map((d) => ({
           ...d,
           createdAt: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
         }));
@@ -400,7 +405,7 @@ export class CandidatesService {
   async update(id: string, dto: UpdateCandidateDto) {
     await this.findOne(id);
 
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: Record<string, unknown> = {};
     if (dto.name !== undefined) updatePayload.name = dto.name.trim();
     if (dto.firstName !== undefined) updatePayload.firstName = dto.firstName?.trim() || null;
     if (dto.lastName !== undefined) updatePayload.lastName = dto.lastName?.trim() || null;
@@ -487,15 +492,15 @@ export class CandidatesService {
     const updatedNotes = packDocsIntoNotes(candidate.notes, currentDocs);
 
     try {
-      await (this.prisma.db.orm.public as any).CandidateDocument.create({
+      await this.prisma.db.orm.public.CandidateDocument.create({
         id: newDoc.id,
         candidateId: id,
         organizationId: candidate.organizationId,
         name: newDoc.name,
         url: newDoc.url,
-        size: newDoc.size,
-        mimeType: newDoc.mimeType,
-        type: newDoc.type,
+        size: newDoc.size ?? null,
+        mimeType: newDoc.mimeType ?? null,
+        type: newDoc.type ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -533,12 +538,12 @@ export class CandidatesService {
     if (opts?.documentId) {
       updatedDocs = currentDocs.filter((d) => d.id !== opts.documentId);
       try {
-        await (this.prisma.db.orm.public as any).CandidateDocument.where((d: any) => d.id.eq(opts.documentId)).delete();
+        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.id.eq(opts.documentId!)).delete();
       } catch {}
     } else if (opts?.url) {
       updatedDocs = currentDocs.filter((d) => d.url !== opts.url);
       try {
-        await (this.prisma.db.orm.public as any).CandidateDocument.where((d: any) => d.url.eq(opts.url)).delete();
+        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.url.eq(opts.url!)).delete();
       } catch {}
     } else {
       updatedDocs = [];
@@ -575,7 +580,7 @@ export class CandidatesService {
 
     // Delete candidate documents first
     try {
-      await (this.prisma.db.orm.public as any).CandidateDocument.where((d: any) => d.candidateId.eq(id)).delete();
+      await this.prisma.db.orm.public.CandidateDocument.where((d) => d.candidateId.eq(id)).delete();
     } catch {}
 
     // Delete candidate

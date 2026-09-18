@@ -68,8 +68,9 @@ export class MinioService implements OnModuleInit {
         await this.client.setBucketPolicy(this.bucketName, JSON.stringify(policy));
       }
       this.logger.log(`MinIO successfully connected to bucket: ${this.bucketName}`);
-    } catch (error: any) {
-      this.logger.warn(`MinIO initialization notice: ${error.message}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`MinIO initialization notice: ${msg}`);
     }
   }
 
@@ -101,7 +102,7 @@ export class MinioService implements OnModuleInit {
   async deleteFile(fileName: string): Promise<void> {
     try {
       await this.client.removeObject(this.bucketName, fileName);
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error(`Failed to delete file '${fileName}' from MinIO`, error);
     }
   }

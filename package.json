@@ -14,6 +14,6 @@
     "seed": "pnpm --filter ./backend run seed",
     "contract:emit": "pnpm --filter ./backend run contract:emit",
     "check:i18n": "pnpm --filter ./frontend run check:i18n",
-    "check:env": "node scripts/check-env.mjs"
+    "check:env": "node --no-warnings scripts/check-env.ts"
   }
 }

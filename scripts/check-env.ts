@@ -1,12 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 
-function parseEnvKeys(filePath) {
+interface EnvCheckTarget {
+  name: string;
+  exampleFile: string;
+  targetFile: string;
+}
+
+function parseEnvKeys(filePath: string): Set<string> | null {
   if (!fs.existsSync(filePath)) {
     return null;
   }
   const content = fs.readFileSync(filePath, "utf-8");
-  const keys = new Set();
+  const keys = new Set<string>();
   for (const rawLine of content.split("\n")) {
     const line = rawLine.trim();
     if (!line || line.startsWith("#")) continue;
@@ -18,7 +24,7 @@ function parseEnvKeys(filePath) {
   return keys;
 }
 
-const checks = [
+const checks: EnvCheckTarget[] = [
   {
     name: "Backend Environment",
     exampleFile: "backend/.env.example",
@@ -51,7 +57,9 @@ for (const check of checks) {
   }
 
   if (!targetKeys) {
-    console.warn(`⚠️ Warning: ${check.targetFile} does not exist yet. Please copy from ${check.exampleFile}`);
+    console.warn(
+      `⚠️ Warning: ${check.targetFile} does not exist yet. Please copy from ${check.exampleFile}`,
+    );
     hasError = true;
     continue;
   }
@@ -60,7 +68,9 @@ for (const check of checks) {
   const extraInTarget = [...targetKeys].filter((k) => !exampleKeys.has(k));
 
   if (missingInTarget.length > 0) {
-    console.error(`❌ [${check.name}] Missing keys in ${check.targetFile} compared to ${check.exampleFile}:`);
+    console.error(
+      `❌ [${check.name}] Missing keys in ${check.targetFile} compared to ${check.exampleFile}:`,
+    );
     for (const key of missingInTarget) {
       console.error(`   - ${key}`);
     }
@@ -68,14 +78,18 @@ for (const check of checks) {
   }
 
   if (extraInTarget.length > 0) {
-    console.warn(`⚠️ [${check.name}] Extra keys in ${check.targetFile} not documented in ${check.exampleFile}:`);
+    console.warn(
+      `⚠️ [${check.name}] Extra keys in ${check.targetFile} not documented in ${check.exampleFile}:`,
+    );
     for (const key of extraInTarget) {
       console.warn(`   + ${key}`);
     }
   }
 
   if (missingInTarget.length === 0 && extraInTarget.length === 0) {
-    console.log(`✅ [${check.name}] 100% in sync (${exampleKeys.size}/${exampleKeys.size} keys match)`);
+    console.log(
+      `✅ [${check.name}] 100% in sync (${exampleKeys.size}/${exampleKeys.size} keys match)`,
+    );
   }
 }
 

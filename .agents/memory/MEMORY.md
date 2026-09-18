@@ -19,6 +19,7 @@
 - [user] Named imports for React: never use `import React` or `React.x` (preserve `components/ui/` untouched) → user-preferences.md
 - [user] TypeScript Only: Never create `.js` files, always use `.ts` or `.tsx` exclusively → user-preferences.md
 - [user] Strict Typing: Strictly forbidden to use `any`; always declare explicit types or interfaces → user-preferences.md
+- [user] Shell Execution: Never chain commands with `&&` in Windows PowerShell; execute each command individually → user-preferences.md
 
 ## Feedback
 - [feedback] 2026-09-17: Memory documentation must be in English → feedback-history.md

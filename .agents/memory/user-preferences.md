@@ -24,3 +24,6 @@ updated: 2026-09-17
 - **Strictly Forbidden to use `any`**: Never use `any` in TypeScript code (including function parameters, return types, variables, generics, or component props).
 - **Explicit declarations required**: Always declare explicit types, interfaces, or utility types (`Partial`, `Pick`, `Omit`, `Record`), or use `unknown` with type guards/narrowing where data structure is uncertain.
 - **Shared Types**: Always import and reuse shared domain models from `@ats/types` (`packages/types`) across both frontend and backend.
+
+## Shell & Command Execution (Windows PowerShell)
+- **Never use `&&` chaining**: Windows PowerShell does not support or reliably handle `&&` in all environments. Always execute shell commands individually (single command per execution) or use standard PowerShell constructs. Never chain commands with `&&`.

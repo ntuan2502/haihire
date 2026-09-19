@@ -7,7 +7,7 @@ import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
-  useJobs,
+  useAllJobs,
   useApplication,
   useUpdateCandidateMutation,
   useUpdateStageMutation,
@@ -72,7 +72,7 @@ function ApplicationDetailPageContent() {
   const { data: app, isLoading: appLoading } = useApplication(
     isAppIdValid ? appIdStr : null,
   );
-  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
   const loading = appLoading || jobsLoading;

@@ -228,26 +228,38 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     it("should return only jobs belonging to org-1 when filtered by org-1", async () => {
       const results = await service.findAll({ organizationId: "org-1" });
 
-      expect(results.length).toBe(2);
-      expect(results.every((j) => j.organizationId === "org-1")).toBe(true);
-      expect(results.some((j) => j.title.includes("Competitor Org"))).toBe(false);
+      expect(results.total).toBe(2);
+      expect(results.data.length).toBe(2);
+      expect(results.data.every((j) => j.organizationId === "org-1")).toBe(true);
+      expect(results.data.some((j) => j.title.includes("Competitor Org"))).toBe(false);
     });
 
     it("should return only jobs belonging to org-2 when filtered by org-2", async () => {
       const results = await service.findAll({ organizationId: "org-2" });
 
-      expect(results.length).toBe(1);
-      expect(results[0].title).toBe("Marketing Lead (Competitor Org)");
-      expect(results[0].organizationId).toBe("org-2");
+      expect(results.total).toBe(1);
+      expect(results.data.length).toBe(1);
+      expect(results.data[0].title).toBe("Marketing Lead (Competitor Org)");
+      expect(results.data[0].organizationId).toBe("org-2");
     });
 
     it("should compute application metrics correctly per job", async () => {
       const results = await service.findAll({ organizationId: "org-1" });
-      const job1 = results.find((j) => j.id === "job-1");
+      const job1 = results.data.find((j) => j.id === "job-1");
 
       expect(job1?.applicationsCount).toBe(2);
       expect(job1?.applicationsByStage.APPLIED).toBe(1);
       expect(job1?.applicationsByStage.INTERVIEW).toBe(1);
+    });
+
+    it("should paginate jobs correctly", async () => {
+      const paged = await service.findAll({ organizationId: "org-1", page: 1, limit: 1 });
+
+      expect(paged.total).toBe(2);
+      expect(paged.page).toBe(1);
+      expect(paged.limit).toBe(1);
+      expect(paged.totalPages).toBe(2);
+      expect(paged.data.length).toBe(1);
     });
   });
 
@@ -257,15 +269,17 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         organizationId: "org-1",
         status: "PUBLISHED",
       });
-      expect(published.length).toBe(1);
-      expect(published[0].id).toBe("job-1");
+      expect(published.total).toBe(1);
+      expect(published.data.length).toBe(1);
+      expect(published.data[0].id).toBe("job-1");
 
       const drafts = await service.findAll({
         organizationId: "org-1",
         status: "DRAFT",
       });
-      expect(drafts.length).toBe(1);
-      expect(drafts[0].id).toBe("job-2");
+      expect(drafts.total).toBe(1);
+      expect(drafts.data.length).toBe(1);
+      expect(drafts.data[0].id).toBe("job-2");
     });
 
     it("should search jobs by keyword", async () => {
@@ -273,8 +287,9 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         organizationId: "org-1",
         search: "Full-Stack",
       });
-      expect(searchResults.length).toBe(1);
-      expect(searchResults[0].title).toBe("Senior Full-Stack Engineer");
+      expect(searchResults.total).toBe(1);
+      expect(searchResults.data.length).toBe(1);
+      expect(searchResults.data[0].title).toBe("Senior Full-Stack Engineer");
     });
   });
 

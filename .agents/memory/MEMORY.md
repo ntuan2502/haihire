@@ -20,7 +20,7 @@
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
-- [user] Comments in .env / .env.example / code must be English only; Vietnamese is strictly for chat → user-preferences.md
+- [user] Vietnamese for chat and artifacts (implementation_plan.md, walkthrough.md); English for code, comments, env → user-preferences.md
 - [user] Pure TypeScript Only: Never create `.js`, `.mjs`, or `.cjs` files, always use `.ts` or `.tsx` exclusively → user-preferences.md
 - [user] Centralized Environment Configuration: Zero fallbacks, fail-fast Zod validation, key sync via check:env → user-preferences.md
 - [user] Full-Stack Pagination: Server-side pagination mandatory, no backward-compatibility hacks or client slicing → user-preferences.md
@@ -28,8 +28,10 @@
 - [user] Named imports for React: never use `import React` or `React.x` (preserve `components/ui/` untouched) → user-preferences.md
 - [user] Strict Typing: Strictly forbidden to use `any`; always declare explicit types or interfaces → user-preferences.md
 - [user] Shell Execution: Never chain commands with `&&` in Windows PowerShell; execute each command individually → user-preferences.md
+- [user] Senior Engineering Mindset: Zero "instant-noodle" patches, root-cause analysis first, fail fast & loudly → user-preferences.md
 
 ## Feedback
+- [feedback] 2026-09-19: Senior / Principal Engineering Mindset (No Quick-and-Dirty Patches) → feedback-history.md
 - [feedback] 2026-09-18: Pure TypeScript Mandate (Zero .mjs / .cjs / .js files, use .ts only) → feedback-history.md
 - [feedback] 2026-09-18: Centralized Environment Validation & No Fallbacks (English comments only) → feedback-history.md
 - [feedback] 2026-09-18: Full-Stack Pagination & Database Cascade Integrity → feedback-history.md

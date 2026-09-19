@@ -8,9 +8,9 @@ import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CustomSelect } from "@/components/shared/custom-select";
+import { Pagination } from "@/components/shared/pagination";
 import {
-  useJobs,
+  useAllJobs,
   useCandidates,
   useCandidate,
 } from "@/hooks/use-queries";
@@ -27,8 +27,6 @@ import {
   Phone,
   ArrowUpDown,
   ArrowDown,
-  ChevronLeft,
-  ChevronRight,
   UploadCloud,
 } from "lucide-react";
 
@@ -49,7 +47,7 @@ function CandidatesPageContent() {
   const router = useRouter();
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
-  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
   // Pagination & Search State
@@ -67,7 +65,6 @@ function CandidatesPageContent() {
   const candidates = useMemo(() => pagedResult?.data || [], [pagedResult?.data]);
   const totalCount = pagedResult?.total || 0;
   const totalPages = Math.max(1, pagedResult?.totalPages || 1);
-  const startIndex = (currentPage - 1) * rowsPerPage;
   const loading = jobsLoading || candidatesLoading;
 
   // Selected Candidate for Right Slide-over Sidebar Drawer
@@ -550,64 +547,21 @@ function CandidatesPageContent() {
               </table>
             </div>
 
-            {/* Pagination & Rows Footer matching Screenshot */}
-            <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 bg-slate-50/30 dark:bg-slate-950/30">
-              {/* Left: Showing X-Y of Z and Rows selector */}
-              <div className="flex items-center gap-3">
-                <span>
-                  {t("common.showing")} {totalCount > 0 ? startIndex + 1 : 0}-
-                  {Math.min(startIndex + rowsPerPage, totalCount)} {t("common.of")}{" "}
-                  {totalCount} {t("candidates.candidateName").toLowerCase()}
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <span>{t("common.rows")}</span>
-                  <CustomSelect
-                    value={String(rowsPerPage)}
-                    onChange={(val) => {
-                      setRowsPerPage(Number(val));
-                      setCurrentPage(1);
-                    }}
-                    options={[
-                      { value: "10", label: "10" },
-                      { value: "20", label: "20" },
-                      { value: "50", label: "50" },
-                      { value: "100", label: "100" },
-                    ]}
-                    size="sm"
-                    direction="up"
-                    triggerClassName="h-7 px-2 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg min-w-[60px]"
-                  />
-                </div>
-              </div>
-
-              {/* Right: Page X of Y and Next/Prev buttons */}
-              <div className="flex items-center gap-2">
-                <span>
-                  {t("common.page")} {currentPage} {t("common.of")} {totalPages}
-                </span>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="p-1 rounded-lg border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer shadow-xs"
-                    title="Previous page"
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={currentPage >= totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="p-1 rounded-lg border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 cursor-pointer shadow-xs"
-                    title="Next page"
-                  >
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
+            {/* Pagination & Rows Footer */}
+            <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalCount}
+                pageSize={rowsPerPage}
+                pageSizeOptions={[10, 20, 50, 100]}
+                onPageChange={(p) => setCurrentPage(p)}
+                onPageSizeChange={(size) => {
+                  setRowsPerPage(size);
+                  setCurrentPage(1);
+                }}
+                itemLabel={t("candidates.candidateName").toLowerCase()}
+              />
             </div>
           </div>
         )}

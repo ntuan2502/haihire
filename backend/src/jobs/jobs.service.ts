@@ -17,7 +17,12 @@ export class JobsService {
     search?: string;
     organizationId?: string;
     organizationSlug?: string;
+    page?: number;
+    limit?: number;
   }) {
+    const page = filter?.page && filter.page > 0 ? filter.page : 1;
+    const limit = filter?.limit && filter.limit > 0 ? filter.limit : 20;
+
     let targetOrgId = filter?.organizationId;
     let targetOrg: { id: string; name: string; slug: string } | null = null;
 
@@ -26,7 +31,7 @@ export class JobsService {
         .where((o) => o.slug.eq(filter.organizationSlug as string))
         .first();
       if (!targetOrg) {
-        return [];
+        return { data: [], total: 0, page, limit, totalPages: 0 };
       }
       targetOrgId = targetOrg.id;
     } else if (targetOrgId) {
@@ -77,13 +82,17 @@ export class JobsService {
     }
 
     if (jobs.length === 0) {
-      return [];
+      return { data: [], total: 0, page, limit, totalPages: 0 };
     }
 
-    const jobIds = [...new Set(jobs.map((j) => j.id))];
+    const total = jobs.length;
+    const totalPages = Math.ceil(total / limit);
+    const pagedJobs = jobs.slice((page - 1) * limit, page * limit);
+
+    const jobIds = [...new Set(pagedJobs.map((j) => j.id))];
     const jobIdSet = new Set(jobIds);
 
-    // Fetch applications only relevant to these jobs
+    // Fetch applications only relevant to these paged jobs
     const allApps = jobIds.length > 0
       ? await this.prisma.db.orm.public.Application.select(
           "id",
@@ -122,12 +131,18 @@ export class JobsService {
       }
     }
 
-    return jobs.map((job) => ({
-      ...job,
-      organization: job.organizationId ? orgMap.get(job.organizationId) ?? null : null,
-      applicationsCount: appCountMap.get(job.id)?.total ?? 0,
-      applicationsByStage: appCountMap.get(job.id)?.byStage ?? {},
-    }));
+    return {
+      data: pagedJobs.map((job) => ({
+        ...job,
+        organization: job.organizationId ? orgMap.get(job.organizationId) ?? null : null,
+        applicationsCount: appCountMap.get(job.id)?.total ?? 0,
+        applicationsByStage: appCountMap.get(job.id)?.byStage ?? {},
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   async findOne(id: string) {

@@ -60,7 +60,7 @@ export class InterviewsService {
     type CandidateRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Candidate.all>>[number];
     type JobRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Job.all>>[number];
 
-    const defaultLimit = options?.limit && options.limit > 0 ? options.limit : 15;
+    const defaultLimit = options?.limit && options.limit > 0 ? options.limit : 20;
     const defaultPage = options?.page && options.page > 0 ? options.page : 1;
 
     let interviews: InterviewRecord[] = [];
@@ -145,16 +145,6 @@ export class InterviewsService {
       interviews = await this.prisma.db.orm.public.Interview.all();
     }
 
-    if (interviews.length === 0) {
-      return {
-        data: [],
-        total: 0,
-        page: defaultPage,
-        limit: defaultLimit,
-        totalPages: 0,
-      };
-    }
-
     const neededAppIds = [...new Set(interviews.map((i) => i.applicationId))].filter(
       (id) => !appsMap.has(id),
     );
@@ -209,12 +199,20 @@ export class InterviewsService {
       }
     }
 
-    const enriched = interviews
-      .map((intv) => {
-        const app = appsMap.get(intv.applicationId);
-        const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
-        const job = app ? jobsMap.get(app.jobId) : undefined;
+    // Group interviews by applicationId so each candidate appears once with all interview rounds
+    const interviewsByApp = new Map<string, typeof interviews>();
+    for (const intv of interviews) {
+      const list = interviewsByApp.get(intv.applicationId) || [];
+      list.push(intv);
+      interviewsByApp.set(intv.applicationId, list);
+    }
 
+    const scheduledItems = Array.from(interviewsByApp.entries()).map(([appId, appInterviews]) => {
+      const app = appsMap.get(appId);
+      const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
+      const job = app ? jobsMap.get(app.jobId) : undefined;
+
+      const formattedInterviews = appInterviews.map((intv) => {
         let parsedScorecard: Record<string, unknown> | null = null;
         if (intv.scorecard) {
           try {
@@ -223,7 +221,6 @@ export class InterviewsService {
             parsedScorecard = null;
           }
         }
-
         return {
           id: intv.id,
           applicationId: intv.applicationId,
@@ -238,39 +235,60 @@ export class InterviewsService {
           notes: intv.notes ? fixUtf8String(intv.notes) : null,
           createdAt: intv.createdAt,
           updatedAt: intv.updatedAt,
-          application: app
-            ? {
-                ...app,
-                candidate: candidate ? { ...candidate, name: fixUtf8String(candidate.name) } : undefined,
-                job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
-                candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
-                candidateEmail: candidate?.email || "",
-                candidatePhone: candidate?.phone || null,
-                interviews: [
-                  {
-                    id: intv.id,
-                    date: intv.date,
-                    time: intv.time,
-                    type: fixUtf8String(intv.type),
-                    format: intv.format,
-                    linkOrLocation: fixUtf8String(intv.linkOrLocation),
-                    interviewer: fixUtf8String(intv.interviewer),
-                    round: intv.round,
-                    scorecard: parsedScorecard,
-                    notes: intv.notes ? fixUtf8String(intv.notes) : null,
-                  },
-                ],
-              }
-            : undefined,
-          candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
-          candidateEmail: candidate?.email,
-          jobTitle: job ? fixUtf8String(job.title) : undefined,
-          jobId: app?.jobId,
-          organizationId: candidate?.organizationId || job?.organizationId,
         };
       });
 
-    const scheduledAppIds = new Set(interviews.map((i) => i.applicationId));
+      // Sort rounds descending (most recent first)
+      formattedInterviews.sort((a, b) => {
+        const dtA = `${a.date} ${a.time || "00:00"}`;
+        const dtB = `${b.date} ${b.time || "00:00"}`;
+        return dtB.localeCompare(dtA);
+      });
+
+      const today = new Date().toISOString().split("T")[0];
+      const upcoming = formattedInterviews
+        .filter((i) => i.date >= today)
+        .sort((a, b) => {
+          const dtA = `${a.date} ${a.time || "00:00"}`;
+          const dtB = `${b.date} ${b.time || "00:00"}`;
+          return dtA.localeCompare(dtB);
+        })[0];
+      const primary = upcoming || formattedInterviews[0];
+
+      return {
+        id: primary.id,
+        applicationId: appId,
+        date: primary.date,
+        time: primary.time,
+        type: primary.type,
+        format: primary.format,
+        linkOrLocation: primary.linkOrLocation,
+        interviewer: primary.interviewer,
+        round: primary.round,
+        scorecard: primary.scorecard,
+        notes: primary.notes,
+        createdAt: primary.createdAt,
+        updatedAt: primary.updatedAt,
+        application: app
+          ? {
+              ...app,
+              candidate: candidate ? { ...candidate, name: fixUtf8String(candidate.name) } : undefined,
+              job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
+              candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
+              candidateEmail: candidate?.email || "",
+              candidatePhone: candidate?.phone || null,
+              interviews: formattedInterviews,
+            }
+          : undefined,
+        candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
+        candidateEmail: candidate?.email,
+        jobTitle: job ? fixUtf8String(job.title) : undefined,
+        jobId: app?.jobId,
+        organizationId: candidate?.organizationId || job?.organizationId,
+      };
+    });
+
+    const scheduledAppIds = new Set(interviewsByApp.keys());
     const awaitingApps = Array.from(appsMap.values()).filter(
       (a) => a.stage === "INTERVIEW" && !scheduledAppIds.has(a.id),
     );
@@ -309,7 +327,7 @@ export class InterviewsService {
       };
     });
 
-    const allItems = [...enriched, ...awaitingItems]
+    const allItems = [...scheduledItems, ...awaitingItems]
       .filter((item) => {
         if (options?.organizationId && item.organizationId !== options.organizationId) {
           return false;

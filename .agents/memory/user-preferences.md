@@ -9,8 +9,9 @@ updated: 2026-09-18
 ## Memory Language (MANDATORY)
 - **Memory files must always be written in English**: All records in `.agents/memory/` must be written exclusively in English. Never use Vietnamese in memory files.
 
-## Communication Language vs Code / Env Comments
-- **Vietnamese is strictly for chatting with the user**: All code comments, docstrings, variable names, and comments inside `.env` and `.env.example` files must be written exclusively in English.
+## Communication Language vs Code / Env Comments (MANDATORY)
+- **Vietnamese for all user-facing communication & artifacts**: Chat responses, user-facing artifacts including `implementation_plan.md` and `walkthrough.md`, must be written in Vietnamese so the user can easily read and review them.
+- **English exclusively for code & configuration**: All code, code comments, docstrings, variable/function/class names, commit messages, and comments inside `.env` and `.env.example` files must be written exclusively in English.
 
 ## Internationalization (i18n)
 - **Zero hardcoded text**: All UI text, placeholders, labels, select values, tooltips, success/error messages must always be managed through the i18n system (`useI18n()` / `t(...)`). Never initialize or hardcode text directly in `.tsx` / `.ts` files.
@@ -42,3 +43,9 @@ updated: 2026-09-18
 
 ## Shell & Command Execution (Windows PowerShell)
 - **Never use `&&` chaining**: Windows PowerShell does not support or reliably handle `&&` in all environments. Always execute shell commands individually (single command per execution) or use standard PowerShell constructs. Never chain commands with `&&`.
+
+## Engineering Mindset: Senior / Principal Quality (Zero "Quick-and-Dirty" / "Instant-Noodle" Patches)
+- **Root-Cause Analysis First**: Never patch symptoms on the surface (e.g., masking duplicate keys with index fallbacks, swallowing errors with try/catch, or hiding backend contract issues with client-side deduplication). Always trace the problem to its architectural root cause and fix it at the true source.
+- **Fail Fast & Loudly**: Do not mask contract violations or data corruption with superficial defensive code (e.g., `key={item.id || index}`). Let framework mechanisms (like React reconciliation and TypeScript checks) surface inconsistencies immediately during development so that data integrity issues can be addressed cleanly.
+- **Deep Domain & Invariant Comprehension**: Approach every problem with a Principal Engineer mindset. Understand the data model, domain entities (e.g., Application vs Interview vs Candidate), and system invariants before touching code. Prioritize clean architecture and long-term maintainability over superficial, hasty workarounds.
+

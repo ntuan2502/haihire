@@ -4,7 +4,9 @@ created: 2026-07-18
 updated: 2026-09-18
 ---
 
-# Feedback History
+## 2026-09-19: Senior / Principal Engineering Mindset (No Quick-and-Dirty Patches)
+- **Feedback**: Adopt the mindset and depth of a Senior/Principal Engineer. Avoid superficial "instant-noodle" patches that mask underlying architectural problems.
+- **Actionable Rule**: Always perform root-cause analysis and fix problems at their architectural source. Never mask symptoms (such as using index fallbacks to suppress React duplicate-key warnings, swallowing errors, or masking backend data model issues with client-side deduplication). Embrace framework warnings (fail fast and loudly) to ensure data integrity and long-term maintainability.
 
 ## 2026-09-18: Pure TypeScript Mandate (Zero .mjs / .cjs / .js Files)
 - **Feedback**: Do not generate `.mjs` or `.js` files; use `.ts` exclusively. The project is strictly TypeScript and will not accept manually authored JavaScript files.

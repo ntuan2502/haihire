@@ -7,7 +7,7 @@ import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
-  useJobs,
+  useAllJobs,
   useCandidate,
   useUpdateCandidateDetailsMutation,
 } from "@/hooks/use-queries";
@@ -37,7 +37,7 @@ function EditCandidatePageContent() {
 
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
-  const { data: jobs = [] } = useJobs(user?.organizationId);
+  const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const { data: candidate, isLoading: candidateLoading } = useCandidate(rawId);
   const updateCandidateDetailsMutation = useUpdateCandidateDetailsMutation();
 

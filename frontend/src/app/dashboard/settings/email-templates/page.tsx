@@ -20,8 +20,6 @@ import {
   Calendar,
   UserCheck,
   Award,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import {
   type EmailTemplateType,
@@ -38,6 +36,7 @@ import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
+import { Pagination } from "@/components/shared/pagination";
 
 import {
   useEmailTemplates,
@@ -64,7 +63,7 @@ export default function EmailTemplatesSettingsPage() {
 
   // Outbox / logs pagination & filtering state
   const [logPage, setLogPage] = useState(1);
-  const [logLimit] = useState(10);
+  const [logLimit, setLogLimit] = useState(20);
   const [logSearch, setLogSearch] = useState("");
   const [logStatusFilter, setLogStatusFilter] = useState<string>("ALL");
   const [viewingLog, setViewingLog] = useState<EmailLog | null>(null);
@@ -1001,43 +1000,20 @@ export default function EmailTemplatesSettingsPage() {
 
             {/* Outbox Pagination Bar */}
             {totalLogs > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-xs">
-                <div className="text-slate-500 dark:text-slate-400 text-[11px]">
-                  <span>{t("email.showingLogs")} </span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-200">
-                    {Math.min((logPage - 1) * logLimit + 1, totalLogs)} - {Math.min(logPage * logLimit, totalLogs)}
-                  </span>
-                  <span> {t("email.of")} </span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-200">{totalLogs}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLogPage((p) => Math.max(1, p - 1))}
-                    disabled={logPage <= 1}
-                    className="h-7 px-2.5 text-[11px] font-medium rounded-lg cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                    <span>{t("email.prevPage")}</span>
-                  </Button>
-
-                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 px-1">
-                    {t("email.page")} {logPage} / {totalPages}
-                  </span>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLogPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={logPage >= totalPages}
-                    className="h-7 px-2.5 text-[11px] font-medium rounded-lg cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <span>{t("email.nextPage")}</span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+              <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <Pagination
+                  currentPage={logPage}
+                  totalPages={totalPages}
+                  totalItems={totalLogs}
+                  pageSize={logLimit}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                  onPageChange={(p) => setLogPage(p)}
+                  onPageSizeChange={(size) => {
+                    setLogLimit(size);
+                    setLogPage(1);
+                  }}
+                  itemLabel={t("email.logsTab").toLowerCase()}
+                />
               </div>
             )}
           </div>

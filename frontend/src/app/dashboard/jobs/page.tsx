@@ -19,15 +19,22 @@ function JobsPageContent() {
   const router = useRouter();
   const { user } = useAuth();
 
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+
   // TanStack Query Hooks
-  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+  const { data: jobsData, isLoading: jobsLoading } = useJobs(
     user?.organizationId,
+    { page: currentPage, limit: rowsPerPage },
   );
+  const jobs = jobsData?.data ?? [];
+  const total = jobsData?.total ?? 0;
+  const totalPages = jobsData?.totalPages ?? 1;
+
   const { data: candidatesData } = useCandidates(user?.organizationId);
   const createJobMutation = useCreateJobMutation();
   const deleteJobMutation = useDeleteJobMutation();
-
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
@@ -63,7 +70,7 @@ function JobsPageContent() {
       <Navbar
         activeTab="jobs"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
-        jobsCount={jobs.length}
+        jobsCount={total}
         candidatesCount={candidatesData?.total || 0}
       />
 
@@ -71,7 +78,7 @@ function JobsPageContent() {
       <main className="flex-1">
         {jobsLoading ? (
           <LoadingSpinner />
-        ) : jobs.length === 0 ? (
+        ) : total === 0 && currentPage === 1 ? (
           <StartRecruiting
             onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
             onCreateTestJob={handleCreateTestJob}
@@ -81,6 +88,15 @@ function JobsPageContent() {
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <JobList
               jobs={jobs}
+              total={total}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={rowsPerPage}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPageSizeChange={(size) => {
+                setRowsPerPage(size);
+                setCurrentPage(1);
+              }}
               loading={jobsLoading}
               onViewCandidates={(jobId: string) => {
                 setSelectedJobId(jobId);

@@ -8,8 +8,6 @@ import {
   ArrowLeftRight,
   Maximize2,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   ArrowDown,
   ArrowUpDown,
   Mail,
@@ -31,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { SlideOver } from "@/components/shared/slide-over";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { CustomSelect } from "@/components/shared/custom-select";
+import { Pagination } from "@/components/shared/pagination";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
@@ -800,70 +798,26 @@ export function ApplicationsDataTable({
           </div>
 
           {/* Pagination & Rows Footer */}
-          <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 bg-slate-50/30 dark:bg-slate-950/30">
-            <div className="flex items-center gap-3">
-              <span>
-                {t("common.showing")} {totalCount > 0 ? startIndex + 1 : 0}-
-                {Math.min(startIndex + rowsPerPage, totalCount)} {t("common.of")} {totalCount}{" "}
-                {t("nav.applications").toLowerCase()}
-              </span>
-
-              <div className="flex items-center gap-1.5">
-                <span>{t("common.rows")}</span>
-                <CustomSelect
-                  value={String(rowsPerPage)}
-                  onChange={(val) => {
-                    if (onLimitChange) {
-                      onLimitChange(Number(val));
-                    } else {
-                      setLocalRowsPerPage(Number(val));
-                      setLocalCurrentPage(1);
-                    }
-                  }}
-                  options={[
-                    { value: "10", label: "10" },
-                    { value: "20", label: "20" },
-                    { value: "50", label: "50" },
-                    { value: "100", label: "100" },
-                  ]}
-                  size="sm"
-                  direction="up"
-                  triggerClassName="h-7 px-2 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg min-w-[60px]"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="mr-1">
-                {t("common.page")} {currentPage} {t("common.of")} {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  const prevP = Math.max(1, currentPage - 1);
-                  if (onPageChange) onPageChange(prevP);
-                  else setLocalCurrentPage(prevP);
-                }}
-                disabled={currentPage === 1}
-                className="h-7 w-7 rounded-lg border border-slate-200/90 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                title="Previous page"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const nextP = Math.min(totalPages, currentPage + 1);
-                  if (onPageChange) onPageChange(nextP);
-                  else setLocalCurrentPage(nextP);
-                }}
-                disabled={currentPage === totalPages}
-                className="h-7 w-7 rounded-lg border border-slate-200/90 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                title="Next page"
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
+          <div className="py-3 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              pageSize={rowsPerPage}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPageChange={(p) => {
+                if (onPageChange) onPageChange(p);
+                else setLocalCurrentPage(p);
+              }}
+              onPageSizeChange={(size) => {
+                if (onLimitChange) onLimitChange(size);
+                else {
+                  setLocalRowsPerPage(size);
+                  setLocalCurrentPage(1);
+                }
+              }}
+              itemLabel={t("nav.applications").toLowerCase()}
+            />
           </div>
         </div>
       )}

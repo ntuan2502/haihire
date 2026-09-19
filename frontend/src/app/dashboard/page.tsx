@@ -8,7 +8,7 @@ import { Navbar, type NavTab } from "@/components/layout";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
 import {
-  useJobs,
+  useAllJobs,
   useAllApplications,
   useCreateJobMutation,
 } from "@/hooks/use-queries";
@@ -67,7 +67,7 @@ function DashboardContent() {
   const pipelineStages = usePipelineStages();
 
   // TanStack Query - Real data from Database
-  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
   const { data: applications = [], isLoading: appsLoading } =

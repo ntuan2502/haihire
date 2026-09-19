@@ -51,16 +51,66 @@ export const queryKeys = {
 // ==========================================
 // JOBS HOOKS
 // ==========================================
-export function useJobs(organizationId?: string | null) {
+export function useJobs(
+  organizationId?: string | null,
+  options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    department?: string;
+    organizationSlug?: string | null;
+  },
+) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<PaginatedResult<Job>>({
+    queryKey: [
+      ...queryKeys.jobs(effectiveOrgId),
+      options?.page,
+      options?.limit,
+      options?.search,
+      options?.status,
+      options?.department,
+      options?.organizationSlug,
+    ],
+    queryFn: async () => {
+      if (!effectiveOrgId && !options?.organizationSlug) {
+        return {
+          data: [],
+          total: 0,
+          page: 1,
+          limit: options?.limit || 15,
+          totalPages: 0,
+        };
+      }
+      return jobsApi.getAll({
+        organizationId: effectiveOrgId,
+        organizationSlug: options?.organizationSlug,
+        page: options?.page,
+        limit: options?.limit,
+        search: options?.search,
+        status: options?.status,
+        department: options?.department,
+      });
+    },
+    enabled: Boolean(effectiveOrgId || options?.organizationSlug),
+  });
+}
+
+export function useAllJobs(organizationId?: string | null) {
   const { user } = useAuth();
   const effectiveOrgId =
     organizationId !== undefined ? organizationId : user?.organizationId;
 
   return useQuery<Job[]>({
-    queryKey: queryKeys.jobs(effectiveOrgId),
-    queryFn: () => {
+    queryKey: ["jobs", "all", effectiveOrgId],
+    queryFn: async () => {
       if (!effectiveOrgId) return [];
-      return jobsApi.getAll({ organizationId: effectiveOrgId });
+      const res = await jobsApi.getAll({ organizationId: effectiveOrgId, limit: 1000 });
+      return res.data;
     },
     enabled: Boolean(effectiveOrgId),
   });
@@ -91,16 +141,20 @@ export function usePublicOrg(slug: string | null) {
 export function useAllPublicJobs() {
   return useQuery<Job[]>({
     queryKey: ["jobs", "public-all-published"],
-    queryFn: () => jobsApi.getAll({ status: "PUBLISHED" }),
+    queryFn: async () => {
+      const res = await jobsApi.getAll({ status: "PUBLISHED", limit: 1000 });
+      return res.data;
+    },
   });
 }
 
 export function usePublicJobs(orgSlug: string | null) {
   return useQuery<Job[]>({
     queryKey: ["jobs", "public-list", orgSlug],
-    queryFn: () => {
+    queryFn: async () => {
       if (!orgSlug) return [];
-      return jobsApi.getAll({ organizationSlug: orgSlug, status: "PUBLISHED" });
+      const res = await jobsApi.getAll({ organizationSlug: orgSlug, status: "PUBLISHED", limit: 1000 });
+      return res.data;
     },
     enabled: Boolean(orgSlug),
   });

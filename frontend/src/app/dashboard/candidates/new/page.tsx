@@ -14,7 +14,7 @@ import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
-  useJobs,
+  useAllJobs,
   useCreateCandidateMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,7 @@ function AddCandidatePageContent() {
     }
   }, [authLoading, canEdit, router]);
 
-  const { data: jobs = [] } = useJobs(user?.organizationId);
+  const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const createCandidateMutation = useCreateCandidateMutation();
 
   // Form State

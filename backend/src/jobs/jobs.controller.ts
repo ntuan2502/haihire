@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
@@ -26,18 +27,24 @@ export class JobsController {
 
   @Get()
   findAll(
+    @Request() req: { user?: { organizationId?: string | null } },
     @Query("status") status?: string,
     @Query("department") department?: string,
     @Query("search") search?: string,
     @Query("organizationId") organizationId?: string,
     @Query("organizationSlug") organizationSlug?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
   ) {
+    const orgId = organizationId || req?.user?.organizationId || undefined;
     return this.jobsService.findAll({
       status,
       department,
       search,
-      organizationId: organizationId || undefined,
+      organizationId: orgId,
       organizationSlug: organizationSlug || undefined,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
     });
   }
 

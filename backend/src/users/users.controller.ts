@@ -1,4 +1,4 @@
-import { Controller, Get, Inject } from "@nestjs/common";
+import { Controller, Get, Inject, Query } from "@nestjs/common";
 import { UsersService } from "./users.service";
 
 @Controller("users")
@@ -6,7 +6,10 @@ export class UsersController {
   constructor(@Inject(UsersService) private readonly usersService: UsersService) {}
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query("page") page?: string, @Query("limit") limit?: string) {
+    return this.usersService.findAll({
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 }

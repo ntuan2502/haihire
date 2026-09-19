@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import {
   useJob,
-  useJobs,
+  useAllJobs,
   useJobApplications,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
@@ -18,7 +18,7 @@ function JobTablePageContent() {
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
   const { user } = useAuth();
-  const { data: jobs = [] } = useJobs(user?.organizationId);
+  const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
   const { data: jobApplications = [], isLoading: appsLoading } =
     useJobApplications(jobId);

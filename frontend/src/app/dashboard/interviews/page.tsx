@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
@@ -9,8 +9,9 @@ import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
+import { Pagination } from "@/components/shared/pagination";
 import {
-  useJobs,
+  useAllJobs,
   useAllApplications,
   useInterviews,
 } from "@/hooks/use-queries";
@@ -21,8 +22,6 @@ import {
   Clock,
   Search,
   Plus,
-  ChevronRight,
-  ChevronLeft,
   LayoutGrid,
   List,
   ArrowUpDown,
@@ -65,10 +64,9 @@ function InterviewsPageContent() {
   const [sortBy, setSortBy] = useState<SortOption>("upcoming");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [pageSize, setPageSize] = useState(20);
 
-  const pageSize = viewMode === "grid" ? 12 : 15;
-
-  const { data: jobs = [], isLoading: jobsLoading } = useJobs(user?.organizationId);
+  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(user?.organizationId);
   const { data: allApplications = [] } = useAllApplications(user?.organizationId);
 
   // Paginated interviews query from server API
@@ -101,7 +99,6 @@ function InterviewsPageContent() {
 
   const totalItems = interviewsData?.total ?? 0;
   const totalPages = interviewsData?.totalPages ?? 1;
-  const currentPageClamped = Math.min(currentPage, totalPages);
 
   const paginatedList = useMemo(() => {
     return (interviewsData?.data || [])
@@ -453,72 +450,20 @@ function InterviewsPageContent() {
 
         {/* Pagination Bar (Only for Grid and Table modes) */}
         {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-500 dark:text-slate-400">
-            <div>
-              {t("interviews.showingPagination", {
-                start: (currentPageClamped - 1) * pageSize + 1,
-                end: Math.min(currentPageClamped * pageSize, totalItems),
-                total: totalItems,
-              })}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={currentPageClamped <= 1}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="h-8 px-2.5 text-xs rounded-xl cursor-pointer disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
-                  <span>{t("interviews.previous")}</span>
-                </Button>
-
-                {/* Page Number Pills (Show window around current page) */}
-                <div className="flex items-center gap-1 mx-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(
-                      (p) =>
-                        p === 1 ||
-                        p === totalPages ||
-                        (p >= currentPageClamped - 1 && p <= currentPageClamped + 1),
-                    )
-                    .map((p, idx, arr) => {
-                      const prev = arr[idx - 1];
-                      return (
-                        <Fragment key={p}>
-                          {prev && p - prev > 1 && (
-                            <span className="px-1 text-slate-400">...</span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setCurrentPage(p)}
-                            className={`h-8 min-w-[32px] px-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                              currentPageClamped === p
-                                ? "bg-blue-600 text-white shadow-xs"
-                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        </Fragment>
-                      );
-                    })}
-                </div>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={currentPageClamped >= totalPages}
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-8 px-2.5 text-xs rounded-xl cursor-pointer disabled:opacity-40"
-                >
-                  <span>{t("interviews.next")}</span>
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </div>
-            )}
+          <div className="pt-2">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+              itemLabel={t("nav.interviews").toLowerCase()}
+            />
           </div>
         )}
       </main>

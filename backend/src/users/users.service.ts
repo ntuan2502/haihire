@@ -11,28 +11,47 @@ export interface StarterUser {
   createdAt: Date;
 }
 
+export interface PaginatedUsersResult {
+  data: StarterUser[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 @Injectable()
 export class UsersService {
-  async findAll(limit = 10): Promise<StarterUser[]> {
+  async findAll(options?: { page?: number; limit?: number }): Promise<PaginatedUsersResult> {
     await seed();
-    const users = await db.orm.public.User.select(
+    const page = options?.page && options.page > 0 ? options.page : 1;
+    const limit = options?.limit && options.limit > 0 ? options.limit : 20;
+
+    const allUsers = await db.orm.public.User.select(
       "id",
       "email",
       "name",
       "role",
       "avatarUrl",
       "createdAt",
-    )
-      .take(limit)
-      .all();
+    ).all();
 
-    return users.map((user) => ({
-      id: String(user.id),
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      avatarUrl: user.avatarUrl ?? null,
-      createdAt: user.createdAt,
-    }));
+    const total = allUsers.length;
+    const totalPages = Math.ceil(total / limit);
+    const pagedUsers = allUsers.slice((page - 1) * limit, page * limit);
+
+    return {
+      data: pagedUsers.map((user) => ({
+        id: String(user.id),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatarUrl: user.avatarUrl ?? null,
+        createdAt: user.createdAt,
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
-import { useJobs, useApplications, useCandidates } from "@/hooks/use-queries";
+import { useAllJobs, useApplications, useCandidates } from "@/hooks/use-queries";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
 
 function ApplicationsPageContent() {
@@ -15,7 +15,7 @@ function ApplicationsPageContent() {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [search, setSearch] = useState("");
 
-  const { data: jobs = [], isLoading: jobsLoading } = useJobs(
+  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
   const { data: applicationsData, isLoading: appsLoading } = useApplications({

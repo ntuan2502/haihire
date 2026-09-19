@@ -97,7 +97,7 @@ export class CandidatesService {
     options?: { page?: number; limit?: number; search?: string },
   ) {
     if (!organizationId) {
-      return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
+      return { data: [], total: 0, page: 1, limit: options?.limit || 20, totalPages: 0 };
     }
 
     const candidates = await this.prisma.db.orm.public.Candidate.select(
@@ -145,7 +145,7 @@ export class CandidatesService {
 
     const total = filtered.length;
     const page = options?.page && options.page > 0 ? options.page : 1;
-    const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+    const limit = options?.limit && options.limit > 0 ? options.limit : 20;
     const totalPages = Math.ceil(total / limit) || 1;
 
     // Slicing on server for this page

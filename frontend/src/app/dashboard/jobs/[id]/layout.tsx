@@ -8,7 +8,7 @@ import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import {
   useJob,
-  useJobs,
+  useAllJobs,
   useCandidates,
   useUpdateJobMutation,
 } from "@/hooks/use-queries";
@@ -53,7 +53,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
   const { user } = useAuth();
   const { t } = useI18n();
-  const { data: jobs = [] } = useJobs(user?.organizationId);
+  const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
   const { data: candidatesData } = useCandidates(user?.organizationId);
   const updateJobMutation = useUpdateJobMutation();

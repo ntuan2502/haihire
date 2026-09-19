@@ -55,8 +55,10 @@ export const jobsApi = {
     search?: string;
     organizationId?: string | null;
     organizationSlug?: string | null;
-  }): Promise<Job[]> => {
-    const response = await api.get<Job[]>("/jobs", { params });
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResult<Job>> => {
+    const response = await api.get<PaginatedResult<Job>>("/jobs", { params });
     return response.data;
   },
 

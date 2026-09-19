@@ -23,6 +23,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
+import { Pagination } from "@/components/shared/pagination";
 import type { Job, Application, ApplicationStage } from "@/types";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
@@ -34,6 +35,12 @@ type ViewMode = "grid" | "list" | "table";
 
 interface JobListProps {
   jobs: Job[];
+  total?: number;
+  currentPage?: number;
+  totalPages?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   applications?: Application[];
   loading: boolean;
   onViewCandidates: (jobId: string) => void;
@@ -43,6 +50,12 @@ interface JobListProps {
 
 export function JobList({
   jobs,
+  total,
+  currentPage = 1,
+  totalPages = 1,
+  pageSize = 20,
+  onPageChange,
+  onPageSizeChange,
   applications: _applications = [],
   onViewCandidates: _onViewCandidates,
   _onOpenCreateJob,
@@ -648,13 +661,21 @@ export function JobList({
     </>
   )}
 
-      {/* Total Job Count Footer */}
-      <div className="pt-2 text-xs text-slate-400">
-        {t("jobs.totalJobsCount", {
-          count: filteredJobs.length,
-          plural: filteredJobs.length > 1 ? "s" : "",
-        })}
-      </div>
+      {/* Pagination Footer */}
+      {filteredJobs.length > 0 && (
+        <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={total !== undefined ? total : filteredJobs.length}
+            pageSize={pageSize}
+            pageSizeOptions={[10, 20, 50, 100]}
+            onPageChange={(p) => onPageChange?.(p)}
+            onPageSizeChange={(size) => onPageSizeChange?.(size)}
+            itemLabel={t("nav.jobs").toLowerCase()}
+          />
+        </div>
+      )}
 
       {/* Filter Sidebar Drawer (Screenshot 2) */}
       <SlideOver

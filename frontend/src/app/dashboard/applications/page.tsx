@@ -17,8 +17,7 @@ function ApplicationsPageContent() {
     page: currentPage,
     limit: rowsPerPage,
     search,
-    searchInput,
-    setSearchInput,
+    setSearch,
     setPage: setCurrentPage,
     setLimit: setRowsPerPage,
   } = useTableParams();
@@ -54,10 +53,10 @@ function ApplicationsPageContent() {
           totalPages={applicationsData?.totalPages ?? 1}
           currentPage={currentPage}
           rowsPerPage={rowsPerPage}
-          search={searchInput}
+          search={search}
           onPageChange={setCurrentPage}
           onLimitChange={setRowsPerPage}
-          onSearchChange={setSearchInput}
+          onSearchChange={setSearch}
         />
       </main>
     </div>

@@ -7,9 +7,9 @@ import { Navbar } from "@/components/layout";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
+import { SearchInput } from "@/components/shared/search-input";
 import { useTableParams } from "@/hooks/use-table-params";
 import {
   useAllJobs,
@@ -21,13 +21,11 @@ import {
   Calendar,
   CalendarDays,
   Clock,
-  Search,
   Plus,
   LayoutGrid,
   List,
   ArrowUpDown,
   Users,
-  X,
 } from "lucide-react";
 import {
   type ScheduledInterviewInfo,
@@ -62,8 +60,7 @@ function InterviewsPageContent() {
     page: currentPage,
     limit: pageSize,
     search: searchQuery,
-    searchInput,
-    setSearchInput,
+    setSearch,
     setPage: setCurrentPage,
     setLimit: setPageSize,
     setParam,
@@ -333,25 +330,12 @@ function InterviewsPageContent() {
           {/* Row 2: Search, Filter & Sort Strip */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <Input
-                type="text"
-                placeholder={t("interviews.searchPlaceholder")}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9 pr-8 h-9.5 rounded-xl text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800"
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  onClick={() => setSearchInput("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
+            <SearchInput
+              placeholder={t("interviews.searchPlaceholder")}
+              value={searchQuery}
+              onChange={setSearch}
+              inputClassName="h-9.5"
+            />
 
             {/* Job Filter Dropdown */}
             <div className="sm:w-64">
@@ -389,7 +373,7 @@ function InterviewsPageContent() {
         </div>
 
         {/* Content Section */}
-        {jobsLoading || appsLoading ? (
+        {(jobsLoading || appsLoading) && !interviewsData ? (
           <div className="py-20 flex justify-center">
             <LoadingSpinner />
           </div>

@@ -27,8 +27,7 @@ function JobsPageContent() {
     page: currentPage,
     limit: rowsPerPage,
     search,
-    searchInput,
-    setSearchInput,
+    setSearch,
     setPage: setCurrentPage,
     setLimit: setRowsPerPage,
     setParam,
@@ -96,7 +95,7 @@ function JobsPageContent() {
 
       {/* Main Content */}
       <main className="flex-1">
-        {jobsLoading ? (
+        {jobsLoading && !jobsData ? (
           <LoadingSpinner />
         ) : total === 0 && currentPage === 1 && !search ? (
           <StartRecruiting
@@ -114,8 +113,8 @@ function JobsPageContent() {
               pageSize={rowsPerPage}
               onPageChange={setCurrentPage}
               onPageSizeChange={setRowsPerPage}
-              search={searchInput}
-              onSearchChange={setSearchInput}
+              search={search}
+              onSearchChange={setSearch}
               viewMode={viewMode}
               onViewModeChange={(mode) => setParam("viewMode", mode, false)}
               loading={jobsLoading}

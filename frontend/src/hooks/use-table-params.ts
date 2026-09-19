@@ -11,7 +11,7 @@ export interface UseTableParamsOptions {
 
 export function useTableParams(options?: UseTableParamsOptions) {
   const defaultLimit = options?.defaultLimit ?? DEFAULT_PAGE_SIZE;
-  const debounceMs = options?.debounceMs ?? 300;
+  const debounceMs = options?.debounceMs ?? 250;
 
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -51,16 +51,42 @@ export function useTableParams(options?: UseTableParamsOptions) {
     () => searchParams.get("search") || "",
   );
 
-  // Keep in-memory ref and local state in sync when searchParams change externally (F5, back/forward)
+  // Sync in-memory ref and local state when URL changes externally (F5, back/forward)
+  const syncFromUrl = useCallback(
+    (sourceParams: URLSearchParams) => {
+      const fresh = new URLSearchParams(sourceParams.toString());
+      currentParamsRef.current = fresh;
+      setLocalPage(getUrlPage(fresh));
+      setLocalLimit(getUrlLimit(fresh));
+      const urlSearch = fresh.get("search") || "";
+      setSearchParam(urlSearch);
+
+      // Preserve typing draft (NEVER delete trailing spaces or active edits while user is typing)
+      setSearchInput((prevInput) => {
+        if (prevInput === urlSearch || prevInput.trim() === urlSearch) {
+          return prevInput;
+        }
+        return urlSearch;
+      });
+    },
+    [getUrlPage, getUrlLimit],
+  );
+
+  // Sync when Next.js searchParams change (initial mount, router navigation)
   useEffect(() => {
-    const fresh = new URLSearchParams(searchParams.toString());
-    currentParamsRef.current = fresh;
-    setLocalPage(getUrlPage(fresh));
-    setLocalLimit(getUrlLimit(fresh));
-    const urlSearch = fresh.get("search") || "";
-    setSearchParam(urlSearch);
-    setSearchInput(urlSearch);
-  }, [searchParams, getUrlPage, getUrlLimit]);
+    syncFromUrl(new URLSearchParams(searchParams.toString()));
+  }, [searchParams, syncFromUrl]);
+
+  // Sync on browser Back/Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== "undefined") {
+        syncFromUrl(new URLSearchParams(window.location.search));
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [syncFromUrl]);
 
   // Core URL update function
   const updateUrl = useCallback(
@@ -89,23 +115,33 @@ export function useTableParams(options?: UseTableParamsOptions) {
       const queryString = current.toString();
       const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
-      startTransition(() => {
-        router.replace(targetUrl, { scroll: false });
-      });
+      // Use window.history.replaceState for shallow URL updates without triggering
+      // Next.js App Router RSC server fetches or Suspense fallback unmounts that cause
+      // inputs to lose focus while typing.
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, "", targetUrl);
+      } else {
+        startTransition(() => {
+          router.replace(targetUrl, { scroll: false });
+        });
+      }
     },
     [pathname, router, defaultLimit],
   );
 
-  // Debounce search input to URL
+  // Debounce search input to URL & query param state
   useEffect(() => {
-    if (searchInput === searchParam) return;
+    // If the trimmed input already matches the active query, don't trigger URL update
+    if (searchInput.trim() === searchParam) return;
 
+    // Instant reset if user clears the input, otherwise debounce
+    const delay = searchInput === "" ? 0 : debounceMs;
     const timer = setTimeout(() => {
       const trimmed = searchInput.trim();
       setSearchParam(trimmed);
       setLocalPage(1);
-      updateUrl({ search: trimmed }, true);
-    }, debounceMs);
+      updateUrl({ search: trimmed || null }, true);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, [searchInput, searchParam, debounceMs, updateUrl]);
@@ -156,6 +192,17 @@ export function useTableParams(options?: UseTableParamsOptions) {
     [updateUrl],
   );
 
+  const setSearch = useCallback(
+    (newSearch: string) => {
+      const trimmed = newSearch.trim();
+      setSearchParam(trimmed);
+      setSearchInput(newSearch);
+      setLocalPage(1);
+      updateUrl({ search: trimmed || null }, true);
+    },
+    [updateUrl],
+  );
+
   const getParam = useCallback(
     (key: string, defaultValue = ""): string => {
       return currentParamsRef.current.get(key) ?? defaultValue;
@@ -169,6 +216,7 @@ export function useTableParams(options?: UseTableParamsOptions) {
     search: searchParam,
     searchInput,
     setSearchInput,
+    setSearch,
     setPage,
     setLimit,
     setParam,

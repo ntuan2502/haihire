@@ -6,9 +6,9 @@ import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { useAuth } from "@/context/auth-context";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
+import { SearchInput } from "@/components/shared/search-input";
 import { useTableParams } from "@/hooks/use-table-params";
 import {
   useAllJobs,
@@ -17,7 +17,6 @@ import {
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
-  Search,
   Users,
   Plus,
   SlidersHorizontal,
@@ -57,8 +56,7 @@ function CandidatesPageContent() {
     page: currentPage,
     limit: rowsPerPage,
     search,
-    searchInput,
-    setSearchInput,
+    setSearch,
     setPage: setCurrentPage,
     setLimit: setRowsPerPage,
   } = useTableParams();
@@ -210,15 +208,11 @@ function CandidatesPageContent() {
         {/* Candidates Toolbar matching Screenshot */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-0 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            <Input
-              placeholder={t("candidates.searchCandidates")}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full"
-            />
-          </div>
+          <SearchInput
+            placeholder={t("candidates.searchCandidates")}
+            value={search}
+            onChange={setSearch}
+          />
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -341,7 +335,7 @@ function CandidatesPageContent() {
         </div>
 
         {/* Content Area */}
-        {loading ? (
+        {loading && !pagedResult ? (
           <LoadingSpinner />
         ) : candidateRows.length === 0 ? (
           /* Empty State */

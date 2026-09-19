@@ -3,7 +3,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Search,
   SlidersHorizontal,
   ArrowLeftRight,
   Maximize2,
@@ -25,11 +24,11 @@ import {
   MessageSquare,
   FileCheck,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { SlideOver } from "@/components/shared/slide-over";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Pagination } from "@/components/shared/pagination";
+import { SearchInput } from "@/components/shared/search-input";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
@@ -437,22 +436,18 @@ export function ApplicationsDataTable({
       {/* Applications Toolbar matching Screenshot */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Search Box */}
-        <div className="relative flex-1 min-w-0 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <Input
-            placeholder={t("applications.searchApplications")}
-            value={search}
-            onChange={(e) => {
-              if (onSearchChange) {
-                onSearchChange(e.target.value);
-              } else {
-                setLocalSearch(e.target.value);
-                setLocalCurrentPage(1);
-              }
-            }}
-            className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full"
-          />
-        </div>
+        <SearchInput
+          placeholder={t("applications.searchApplications")}
+          value={search}
+          onChange={(val) => {
+            if (onSearchChange) {
+              onSearchChange(val);
+            } else {
+              setLocalSearch(val);
+              setLocalCurrentPage(1);
+            }
+          }}
+        />
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">

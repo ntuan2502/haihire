@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { jobsApi, applicationsApi, organizationsApi, candidatesApi, interviewsApi, emailApi, activitiesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Job, Application, Candidate, ApplicationStage, Organization, User, InviteLink, Interview, CreateInterviewInput, UpdateInterviewInput, PaginatedResult } from "@/types";
@@ -97,6 +97,7 @@ export function useJobs(
       });
     },
     enabled: Boolean(effectiveOrgId || options?.organizationSlug),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -258,6 +259,7 @@ export function useApplications(params?: {
       });
     },
     enabled: Boolean(effectiveOrgId),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -429,6 +431,7 @@ export function useCandidates(
       });
     },
     enabled: Boolean(effectiveOrgId),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -698,6 +701,8 @@ export function useInterviews(params?: {
         sortBy: params?.sortBy,
       });
     },
+    enabled: Boolean(effectiveOrgId),
+    placeholderData: keepPreviousData,
   });
 }
 

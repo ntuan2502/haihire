@@ -19,11 +19,11 @@ import {
   Share2,
   Check,
 } from "lucide-react";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
+import { SearchInput } from "@/components/shared/search-input";
 import type { Job, Application, ApplicationStage } from "@/types";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
@@ -198,15 +198,11 @@ export function JobList({
       {/* Top Control Bar matching screenshot */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Left: Search input */}
-        <div className="relative flex-1 min-w-0 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <Input
-            placeholder={t("jobs.searchJobs")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full"
-          />
-        </div>
+        <SearchInput
+          placeholder={t("jobs.searchJobs")}
+          value={search}
+          onChange={setSearch}
+        />
 
         {/* Right: Views dropdown, 3 View toggles & Filters button */}
         <div className="flex items-center gap-2">

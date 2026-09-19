@@ -12,6 +12,7 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import {
   useJobs,
   useAllApplications,
+  useInterviews,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
@@ -29,7 +30,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  getLatestInterviewFromApplication,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
@@ -46,9 +46,6 @@ function InterviewsPageContent() {
   const router = useRouter();
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
-
-  const { data: jobs = [], isLoading: jobsLoading } = useJobs(user?.organizationId);
-  const { data: applications = [], isLoading: appsLoading } = useAllApplications(user?.organizationId);
 
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<Application | undefined>(undefined);
@@ -71,13 +68,53 @@ function InterviewsPageContent() {
 
   const pageSize = viewMode === "grid" ? 12 : 15;
 
-  // Candidates currently in INTERVIEW stage or having a scheduled interview
-  const interviewApplications = useMemo(() => {
-    return applications.filter((app) => {
-      const hasScheduled = getLatestInterviewFromApplication(app) !== null;
-      return app.stage === "INTERVIEW" || hasScheduled;
-    });
-  }, [applications]);
+  const { data: jobs = [], isLoading: jobsLoading } = useJobs(user?.organizationId);
+  const { data: allApplications = [] } = useAllApplications(user?.organizationId);
+
+  // Paginated interviews query from server API
+  const { data: interviewsData, isLoading: appsLoading } = useInterviews({
+    organizationId: user?.organizationId,
+    page: currentPage,
+    limit: pageSize,
+    search: searchQuery.trim() || undefined,
+    jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
+    tab: activeTab,
+    sortBy,
+  });
+
+  // Efficient KPI queries
+  const { data: upcomingData } = useInterviews({
+    organizationId: user?.organizationId,
+    tab: "UPCOMING",
+    limit: 1,
+  });
+  const { data: awaitingData } = useInterviews({
+    organizationId: user?.organizationId,
+    tab: "AWAITING",
+    limit: 1,
+  });
+  const { data: allData } = useInterviews({
+    organizationId: user?.organizationId,
+    tab: "ALL",
+    limit: 1,
+  });
+
+  const totalItems = interviewsData?.total ?? 0;
+  const totalPages = interviewsData?.totalPages ?? 1;
+  const currentPageClamped = Math.min(currentPage, totalPages);
+
+  const paginatedList = useMemo(() => {
+    return (interviewsData?.data || [])
+      .map((intv) => intv.application as Application)
+      .filter(Boolean);
+  }, [interviewsData]);
+
+  const filteredAndSortedList = paginatedList;
+
+  // KPIs
+  const scheduledCount = upcomingData?.total ?? 0;
+  const awaitingCount = awaitingData?.total ?? 0;
+  const totalCandidateCount = allData?.total ?? 0;
 
   // Open Schedule Modal (for new schedule or editing existing interview)
   const handleOpenScheduleModal = (
@@ -106,73 +143,6 @@ function InterviewsPageContent() {
     }));
   };
 
-  // Filtered & Sorted list
-  const filteredAndSortedList = useMemo(() => {
-    const list = interviewApplications.filter((app) => {
-      // Job filter
-      if (selectedJobFilter !== "ALL" && String(app.jobId) !== String(selectedJobFilter)) {
-        return false;
-      }
-
-      // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const nameMatch = app.candidateName.toLowerCase().includes(q);
-        const emailMatch = app.candidateEmail.toLowerCase().includes(q);
-        if (!nameMatch && !emailMatch) return false;
-      }
-
-      // Tab filter
-      const scheduled = getLatestInterviewFromApplication(app);
-      if (activeTab === "UPCOMING") {
-        return scheduled !== null;
-      }
-      if (activeTab === "AWAITING") {
-        return scheduled === null && app.stage === "INTERVIEW";
-      }
-
-      return true;
-    });
-
-    // Sorting
-    list.sort((a, b) => {
-      if (sortBy === "name") {
-        return a.candidateName.localeCompare(b.candidateName);
-      }
-      if (sortBy === "newest") {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-
-      // Default: "upcoming"
-      const scheduledA = getLatestInterviewFromApplication(a);
-      const scheduledB = getLatestInterviewFromApplication(b);
-
-      if (scheduledA && !scheduledB) return -1;
-      if (!scheduledA && scheduledB) return 1;
-      if (scheduledA && scheduledB) {
-        const dtA = `${scheduledA.date} ${scheduledA.time}`;
-        const dtB = `${scheduledB.date} ${scheduledB.time}`;
-        return dtA.localeCompare(dtB);
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-
-    return list;
-  }, [interviewApplications, selectedJobFilter, searchQuery, activeTab, sortBy]);
-
-  // Pagination calculation
-  const totalItems = filteredAndSortedList.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const currentPageClamped = Math.min(currentPage, totalPages);
-  const paginatedList = useMemo(() => {
-    const start = (currentPageClamped - 1) * pageSize;
-    return filteredAndSortedList.slice(start, start + pageSize);
-  }, [filteredAndSortedList, currentPageClamped, pageSize]);
-
-  // KPIs
-  const scheduledCount = interviewApplications.filter((a) => getLatestInterviewFromApplication(a) !== null).length;
-  const awaitingCount = interviewApplications.filter((a) => a.stage === "INTERVIEW" && getLatestInterviewFromApplication(a) === null).length;
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       {/* Navbar */}
@@ -180,7 +150,7 @@ function InterviewsPageContent() {
         activeTab="interviews"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={applications.length}
+        candidatesCount={allApplications.length}
       />
 
       {/* Main Content */}
@@ -193,7 +163,7 @@ function InterviewsPageContent() {
                 {t("interviews.title")}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60">
-                {t("interviews.candidatesCount", { count: interviewApplications.length })}
+                {t("interviews.candidatesCount", { count: totalCandidateCount })}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -244,8 +214,8 @@ function InterviewsPageContent() {
             <div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiTotalCandidates")}</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{interviewApplications.length}</span>
-                <span className="text-[11px] font-semibold text-slate-400">{t("interviews.candidatesCount", { count: interviewApplications.length })}</span>
+                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{totalCandidateCount}</span>
+                <span className="text-[11px] font-semibold text-slate-400">{t("interviews.candidatesCount", { count: totalCandidateCount })}</span>
               </div>
             </div>
             <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200/80 dark:border-slate-700">
@@ -272,7 +242,7 @@ function InterviewsPageContent() {
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                {t("interviews.tabAll", { count: interviewApplications.length })}
+                {t("interviews.tabAll", { count: totalCandidateCount })}
               </button>
               <button
                 type="button"
@@ -307,7 +277,7 @@ function InterviewsPageContent() {
             {/* Right Controls: Item Count + View Mode Switcher */}
             <div className="flex items-center gap-2.5 self-end sm:self-auto">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">
-                {t("interviews.candidatesCount", { count: filteredAndSortedList.length })}
+                {t("interviews.candidatesCount", { count: totalItems })}
               </span>
               <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
                 <button
@@ -563,7 +533,7 @@ function InterviewsPageContent() {
           setSelectedInterviewForEdit(undefined);
         }}
         jobs={jobs}
-        applications={applications}
+        applications={allApplications}
         selectedJobId={selectedAppForSchedule?.jobId || undefined}
         selectedApplicationId={selectedAppForSchedule?.id || undefined}
         initialDate={scheduleDate}

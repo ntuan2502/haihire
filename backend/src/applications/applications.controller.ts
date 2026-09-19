@@ -37,9 +37,22 @@ export class ApplicationsController {
   findAll(
     @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("jobId") jobId?: string,
+    @Query("stage") stage?: string,
   ) {
     const orgId = organizationId || req?.user?.organizationId || undefined;
-    return this.applicationsService.findAll(orgId);
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.applicationsService.findAll(orgId, {
+      page: pageNum,
+      limit: limitNum,
+      search,
+      jobId,
+      stage,
+    });
   }
 
   @Get("job/:jobId")

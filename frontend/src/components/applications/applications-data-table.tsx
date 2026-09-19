@@ -28,6 +28,7 @@ import {
   FileCheck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SlideOver } from "@/components/shared/slide-over";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -77,6 +78,14 @@ interface ApplicationsDataTableProps {
   loading?: boolean;
   fixedJobId?: string;
   onViewInPipeline?: (appId: string, stage: ApplicationStage) => void;
+  totalCount?: number;
+  totalPages?: number;
+  currentPage?: number;
+  rowsPerPage?: number;
+  search?: string;
+  onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
+  onSearchChange?: (search: string) => void;
 }
 
 export function ApplicationsDataTable({
@@ -85,6 +94,14 @@ export function ApplicationsDataTable({
   loading = false,
   fixedJobId,
   onViewInPipeline,
+  totalCount: propTotalCount,
+  totalPages: propTotalPages,
+  currentPage: propCurrentPage,
+  rowsPerPage: propRowsPerPage,
+  search: propSearch,
+  onPageChange,
+  onLimitChange,
+  onSearchChange,
 }: ApplicationsDataTableProps) {
   const router = useRouter();
   const { t } = useI18n();
@@ -94,7 +111,16 @@ export function ApplicationsDataTable({
   const updateCandidateMutation = useUpdateCandidateMutation();
   const deleteInterviewMutation = useDeleteInterviewMutation();
 
-  const [search, setSearch] = useState("");
+  const isServerPaginated = Boolean(onPageChange);
+  const [localSearch, setLocalSearch] = useState("");
+  const search = isServerPaginated && propSearch !== undefined ? propSearch : localSearch;
+
+  const [localRowsPerPage, setLocalRowsPerPage] = useState<number>(20);
+  const rowsPerPage = isServerPaginated && propRowsPerPage !== undefined ? propRowsPerPage : localRowsPerPage;
+
+  const [localCurrentPage, setLocalCurrentPage] = useState<number>(1);
+  const currentPage = isServerPaginated && propCurrentPage !== undefined ? propCurrentPage : localCurrentPage;
+
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [deleteModalApp, setDeleteModalApp] = useState<Application | null>(null);
   const [drawerTab, setDrawerTab] = useState<string>("overview");
@@ -213,10 +239,6 @@ export function ApplicationsDataTable({
   const [sortField, setSortField] = useState<SortField>("applied");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  // Pagination State
-  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-
   // Job Map for Fast Lookup
   const jobMap = useMemo(() => {
     const map = new Map<string, Job>();
@@ -233,8 +255,9 @@ export function ApplicationsDataTable({
     );
   }, [initialApplications, fixedJobId]);
 
-  // Filter & Sort
+  // Filter & Sort (Client-side when not server paginated)
   const filteredApps = useMemo(() => {
+    if (isServerPaginated) return baseApplications;
     return baseApplications
       .filter((app) => {
         // Search query
@@ -277,16 +300,21 @@ export function ApplicationsDataTable({
         }
         return sortDirection === "asc" ? diff : -diff;
       });
-  }, [baseApplications, search, jobMap, sortField, sortDirection]);
+  }, [isServerPaginated, baseApplications, search, jobMap, sortField, sortDirection]);
 
   // Pagination Slice
-  const totalCount = filteredApps.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
+  const totalCount =
+    isServerPaginated && propTotalCount !== undefined
+      ? propTotalCount
+      : filteredApps.length;
+  const totalPages =
+    isServerPaginated && propTotalPages !== undefined
+      ? propTotalPages
+      : Math.max(1, Math.ceil(totalCount / rowsPerPage));
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedApps = filteredApps.slice(
-    startIndex,
-    startIndex + rowsPerPage,
-  );
+  const paginatedApps = isServerPaginated
+    ? baseApplications
+    : filteredApps.slice(startIndex, startIndex + rowsPerPage);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -417,8 +445,12 @@ export function ApplicationsDataTable({
             placeholder={t("applications.searchApplications")}
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
+              if (onSearchChange) {
+                onSearchChange(e.target.value);
+              } else {
+                setLocalSearch(e.target.value);
+                setLocalCurrentPage(1);
+              }
             }}
             className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full"
           />
@@ -781,8 +813,12 @@ export function ApplicationsDataTable({
                 <CustomSelect
                   value={String(rowsPerPage)}
                   onChange={(val) => {
-                    setRowsPerPage(Number(val));
-                    setCurrentPage(1);
+                    if (onLimitChange) {
+                      onLimitChange(Number(val));
+                    } else {
+                      setLocalRowsPerPage(Number(val));
+                      setLocalCurrentPage(1);
+                    }
                   }}
                   options={[
                     { value: "10", label: "10" },
@@ -791,6 +827,7 @@ export function ApplicationsDataTable({
                     { value: "100", label: "100" },
                   ]}
                   size="sm"
+                  direction="up"
                   triggerClassName="h-7 px-2 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg min-w-[60px]"
                 />
               </div>
@@ -802,7 +839,11 @@ export function ApplicationsDataTable({
               </span>
               <button
                 type="button"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => {
+                  const prevP = Math.max(1, currentPage - 1);
+                  if (onPageChange) onPageChange(prevP);
+                  else setLocalCurrentPage(prevP);
+                }}
                 disabled={currentPage === 1}
                 className="h-7 w-7 rounded-lg border border-slate-200/90 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 title="Previous page"
@@ -811,7 +852,11 @@ export function ApplicationsDataTable({
               </button>
               <button
                 type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => {
+                  const nextP = Math.min(totalPages, currentPage + 1);
+                  if (onPageChange) onPageChange(nextP);
+                  else setLocalCurrentPage(nextP);
+                }}
                 disabled={currentPage === totalPages}
                 className="h-7 w-7 rounded-lg border border-slate-200/90 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 title="Next page"
@@ -824,16 +869,14 @@ export function ApplicationsDataTable({
       )}
 
       {/* Quick Drawer Slide-over */}
-      {selectedApp && currentApp && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div
-            className="absolute inset-0 bg-slate-900/30 backdrop-blur-xs transition-opacity"
-            onClick={() => setSelectedApp(null)}
-          />
-
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <aside className="w-screen max-w-2xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200/80 dark:border-slate-800 flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-200">
-              {/* Drawer Top Navigation Bar */}
+      <SlideOver
+        isOpen={Boolean(selectedApp && currentApp)}
+        onClose={() => setSelectedApp(null)}
+        maxWidth="max-w-2xl"
+      >
+        {selectedApp && currentApp && (
+          <>
+            {/* Drawer Top Navigation Bar */}
               <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
                 <button
                   type="button"
@@ -1378,10 +1421,9 @@ export function ApplicationsDataTable({
                   )}
                 </div>
               </div>
-            </aside>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </SlideOver>
 
       {/* Document Preview Modal */}
       <DocumentPreviewModal

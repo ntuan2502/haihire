@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { SlideOver } from "@/components/shared/slide-over";
 import {
   X,
   ExternalLink,
@@ -227,17 +229,13 @@ export function CandidateDrawer({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 overflow-hidden">
-        {/* Backdrop */}
-        <div
-          onClick={onClose}
-          className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
-        />
-
-        {/* Slide-over Panel */}
-        <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-          <div className="w-screen max-w-2xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between overflow-y-auto">
-            <div className="p-6 space-y-5 flex-1">
+      <SlideOver
+        isOpen={!!candidate}
+        onClose={onClose}
+        maxWidth="max-w-2xl"
+        panelClassName="justify-between overflow-y-auto"
+      >
+        <div className="p-6 space-y-5 flex-1">
               {/* Drawer Top Bar */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -490,6 +488,13 @@ export function CandidateDrawer({
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                   <StageBadge stage={app.stage} />
+                                  <Link
+                                    href={`/dashboard/applications/${app.id}`}
+                                    className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                                    title={t("applications.viewApplication")}
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </Link>
                                   {canEdit && allInterviews.length === 0 && (
                                     <button
                                       type="button"
@@ -723,9 +728,7 @@ export function CandidateDrawer({
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+      </SlideOver>
 
       <DeleteDocumentModal
         isOpen={!!drawerDocToDelete}

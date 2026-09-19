@@ -31,12 +31,24 @@ export class InterviewsController {
     @Query("organizationId") organizationId?: string,
     @Query("jobId") jobId?: string,
     @Query("applicationId") applicationId?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("tab") tab?: string,
+    @Query("sortBy") sortBy?: string,
   ) {
     const orgId = organizationId || req?.user?.organizationId || undefined;
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
     return this.interviewsService.findAll({
       organizationId: orgId,
       jobId,
       applicationId,
+      page: pageNum,
+      limit: limitNum,
+      search,
+      tab,
+      sortBy,
     });
   }
 

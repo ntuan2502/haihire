@@ -265,10 +265,11 @@ describe("InterviewsService", () => {
 
   it("should return all interviews enriched with application, candidate, and job info", async () => {
     const list = await service.findAll({ organizationId: "org-1" });
-    expect(list).toHaveLength(1);
-    expect(list[0].id).toBe("intv-1");
-    expect(list[0].candidateName).toBe("Alice Johnson");
-    expect(list[0].jobTitle).toBe("Frontend Developer");
+    expect(list.data).toHaveLength(1);
+    expect(list.total).toBe(1);
+    expect(list.data[0].id).toBe("intv-1");
+    expect(list.data[0].candidateName).toBe("Alice Johnson");
+    expect(list.data[0].jobTitle).toBe("Frontend Developer");
   });
 
   it("should find an interview by id", async () => {

@@ -211,9 +211,27 @@ export class ApplicationsService {
     return populated.sort((a, b) => a.orderIndex - b.orderIndex);
   }
 
-  async findAll(organizationId?: string) {
+  async findAll(
+    organizationId?: string,
+    options?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      jobId?: string;
+      stage?: string;
+    },
+  ) {
+    const defaultLimit = options?.limit && options.limit > 0 ? options.limit : 20;
+    const defaultPage = options?.page && options.page > 0 ? options.page : 1;
+
     if (!organizationId) {
-      return [];
+      return {
+        data: [],
+        total: 0,
+        page: defaultPage,
+        limit: defaultLimit,
+        totalPages: 0,
+      };
     }
 
     const jobs = await this.prisma.db.orm.public.Job.select(
@@ -227,11 +245,30 @@ export class ApplicationsService {
 
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
     if (jobMap.size === 0) {
-      return [];
+      return {
+        data: [],
+        total: 0,
+        page: defaultPage,
+        limit: defaultLimit,
+        totalPages: 0,
+      };
     }
 
-    const jobIds = jobs.map((j) => j.id);
-    const orgApps = await this.prisma.db.orm.public.Application.select(
+    let jobIds = jobs.map((j) => j.id);
+    if (options?.jobId) {
+      jobIds = jobIds.filter((id) => id === options.jobId);
+      if (jobIds.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page: defaultPage,
+          limit: defaultLimit,
+          totalPages: 0,
+        };
+      }
+    }
+
+    let orgApps = await this.prisma.db.orm.public.Application.select(
       "id",
       "candidateId",
       "jobId",
@@ -249,8 +286,18 @@ export class ApplicationsService {
       .where((a) => a.jobId.in(jobIds))
       .all();
 
+    if (options?.stage) {
+      orgApps = orgApps.filter((a) => a.stage === options.stage);
+    }
+
     if (orgApps.length === 0) {
-      return [];
+      return {
+        data: [],
+        total: 0,
+        page: defaultPage,
+        limit: defaultLimit,
+        totalPages: 0,
+      };
     }
 
     const candidates = await this.prisma.db.orm.public.Candidate.select(
@@ -299,7 +346,7 @@ export class ApplicationsService {
       interviewsByApp.set(intv.applicationId, list);
     }
 
-    return orgApps.map((app) => {
+    let populated = orgApps.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
       const job = jobMap.get(app.jobId);
       return {
@@ -316,6 +363,31 @@ export class ApplicationsService {
         interviews: interviewsByApp.get(app.id) || [],
       };
     });
+
+    if (options?.search && options.search.trim() !== "") {
+      const q = options.search.trim().toLowerCase();
+      populated = populated.filter(
+        (app) =>
+          app.candidateName.toLowerCase().includes(q) ||
+          app.candidateEmail.toLowerCase().includes(q) ||
+          (app.candidatePhone && app.candidatePhone.toLowerCase().includes(q)) ||
+          (app.job?.title && app.job.title.toLowerCase().includes(q)),
+      );
+    }
+
+    const total = populated.length;
+    const page = defaultPage;
+    const limit = defaultLimit;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const data = populated.slice((page - 1) * limit, page * limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   async findOne(id: string) {

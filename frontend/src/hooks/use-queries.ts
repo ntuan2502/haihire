@@ -15,9 +15,10 @@ export const queryKeys = {
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
   application: (id?: string | null) => ["applications", "detail", id] as const,
   allApplications: (orgId?: string | null) => ["applications", "all", { orgId }] as const,
+  paginatedApplications: (params?: Record<string, unknown>) => ["applications", "paginated", params] as const,
   candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,
   candidate: (id?: string | null) => ["candidates", id] as const,
-  interviews: (params?: { orgId?: string | null; jobId?: string | null; applicationId?: string | null }) => ["interviews", params] as const,
+  interviews: (params?: Record<string, unknown>) => ["interviews", params] as const,
   interview: (id?: string | null) => ["interviews", "detail", id] as const,
   myOrg: () => ["organization", "my"] as const,
   myOrgs: () => ["organization", "my-all"] as const,
@@ -162,6 +163,50 @@ export function useDeleteJobMutation() {
 // ==========================================
 // APPLICATIONS HOOKS
 // ==========================================
+export function useApplications(params?: {
+  organizationId?: string | null;
+  page?: number;
+  limit?: number;
+  search?: string;
+  jobId?: string;
+  stage?: string;
+}) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+
+  return useQuery<PaginatedResult<Application>>({
+    queryKey: queryKeys.paginatedApplications({
+      orgId: effectiveOrgId,
+      page: params?.page,
+      limit: params?.limit,
+      search: params?.search,
+      jobId: params?.jobId,
+      stage: params?.stage,
+    }),
+    queryFn: () => {
+      if (!effectiveOrgId) {
+        return {
+          data: [],
+          total: 0,
+          page: params?.page || 1,
+          limit: params?.limit || 20,
+          totalPages: 0,
+        };
+      }
+      return applicationsApi.getAll({
+        organizationId: effectiveOrgId,
+        page: params?.page,
+        limit: params?.limit,
+        search: params?.search,
+        jobId: params?.jobId,
+        stage: params?.stage,
+      });
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
 export function useAllApplications(organizationId?: string | null) {
   const { user } = useAuth();
   const effectiveOrgId =
@@ -169,9 +214,10 @@ export function useAllApplications(organizationId?: string | null) {
 
   return useQuery<Application[]>({
     queryKey: queryKeys.allApplications(effectiveOrgId),
-    queryFn: () => {
+    queryFn: async () => {
       if (!effectiveOrgId) return [];
-      return applicationsApi.getAll({ organizationId: effectiveOrgId });
+      const res = await applicationsApi.getAll({ organizationId: effectiveOrgId, limit: 1000 });
+      return res.data;
     },
     enabled: Boolean(effectiveOrgId),
   });
@@ -556,22 +602,46 @@ export function useInterviews(params?: {
   organizationId?: string | null;
   jobId?: string | null;
   applicationId?: string | null;
+  page?: number;
+  limit?: number;
+  search?: string;
+  tab?: string;
+  sortBy?: string;
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
     params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
 
-  return useQuery<Interview[]>({
+  return useQuery<PaginatedResult<Interview>>({
     queryKey: queryKeys.interviews({
       orgId: effectiveOrgId,
       jobId: params?.jobId,
       applicationId: params?.applicationId,
+      page: params?.page,
+      limit: params?.limit,
+      search: params?.search,
+      tab: params?.tab,
+      sortBy: params?.sortBy,
     }),
     queryFn: () => {
+      if (!effectiveOrgId) {
+        return {
+          data: [],
+          total: 0,
+          page: params?.page || 1,
+          limit: params?.limit || 15,
+          totalPages: 0,
+        };
+      }
       return interviewsApi.getAll({
         organizationId: effectiveOrgId || undefined,
         jobId: params?.jobId || undefined,
         applicationId: params?.applicationId || undefined,
+        page: params?.page,
+        limit: params?.limit,
+        search: params?.search,
+        tab: params?.tab,
+        sortBy: params?.sortBy,
       });
     },
   });

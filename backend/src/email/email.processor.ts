@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { EmailService } from "./email.service";
 import type { SendEmailDto } from "./dto/send-email.dto";
 
@@ -15,7 +15,7 @@ export interface SendEmailJobData {
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
 
-  constructor(private readonly emailService: EmailService) {
+  constructor(@Inject(EmailService) private readonly emailService: EmailService) {
     super();
   }
 

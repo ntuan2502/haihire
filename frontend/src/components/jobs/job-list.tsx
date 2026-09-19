@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
 import type { Job, Application, ApplicationStage } from "@/types";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
@@ -656,19 +657,14 @@ export function JobList({
       </div>
 
       {/* Filter Sidebar Drawer (Screenshot 2) */}
-      {isFilterOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
-          <div
-            onClick={() => setIsFilterOpen(false)}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
-          />
-
-          {/* Slide-over Container */}
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-sm bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between">
-              {/* Header */}
-              <div className="p-6 border-b border-slate-200/80 dark:border-slate-800 flex items-start justify-between">
+      <SlideOver
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        maxWidth="max-w-sm"
+        panelClassName="justify-between"
+      >
+        {/* Header */}
+        <div className="p-6 border-b border-slate-200/80 dark:border-slate-800 flex items-start justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     {t("jobs.filterJobs")}
@@ -862,11 +858,8 @@ export function JobList({
                     {t("jobs.done")}
                   </Button>
                 </div>
-              </div>
-            </div>
-          </div>
         </div>
-      )}
+      </SlideOver>
     </div>
   );
 }

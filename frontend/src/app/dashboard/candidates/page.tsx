@@ -575,6 +575,7 @@ function CandidatesPageContent() {
                       { value: "100", label: "100" },
                     ]}
                     size="sm"
+                    direction="up"
                     triggerClassName="h-7 px-2 text-xs font-normal bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-lg min-w-[60px]"
                   />
                 </div>

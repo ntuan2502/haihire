@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -36,8 +37,11 @@ export interface InterviewUpdatePayload {
 @Injectable()
 export class InterviewsService {
   constructor(
+    @Inject(PrismaService)
     private readonly prisma: PrismaService,
+    @Inject(ActivitiesService)
     private readonly activitiesService: ActivitiesService,
+    @Inject(EmailService)
     private readonly emailService: EmailService,
   ) {}
 
@@ -45,11 +49,19 @@ export class InterviewsService {
     organizationId?: string;
     jobId?: string;
     applicationId?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    tab?: string;
+    sortBy?: string;
   }) {
     type InterviewRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Interview.all>>[number];
     type AppRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Application.all>>[number];
     type CandidateRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Candidate.all>>[number];
     type JobRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Job.all>>[number];
+
+    const defaultLimit = options?.limit && options.limit > 0 ? options.limit : 15;
+    const defaultPage = options?.page && options.page > 0 ? options.page : 1;
 
     let interviews: InterviewRecord[] = [];
     const appsMap = new Map<string, AppRecord>();
@@ -71,7 +83,13 @@ export class InterviewsService {
         .all();
 
       if (targetApps.length === 0) {
-        return [];
+        return {
+          data: [],
+          total: 0,
+          page: defaultPage,
+          limit: defaultLimit,
+          totalPages: 0,
+        };
       }
       for (const a of targetApps) {
         appsMap.set(a.id, a as unknown as AppRecord);
@@ -86,7 +104,13 @@ export class InterviewsService {
         .all();
 
       if (orgCandidates.length === 0) {
-        return [];
+        return {
+          data: [],
+          total: 0,
+          page: defaultPage,
+          limit: defaultLimit,
+          totalPages: 0,
+        };
       }
       const candidateIds = orgCandidates.map((c) => c.id);
 
@@ -102,7 +126,13 @@ export class InterviewsService {
         .all();
 
       if (targetApps.length === 0) {
-        return [];
+        return {
+          data: [],
+          total: 0,
+          page: defaultPage,
+          limit: defaultLimit,
+          totalPages: 0,
+        };
       }
       for (const a of targetApps) {
         appsMap.set(a.id, a as unknown as AppRecord);
@@ -116,7 +146,13 @@ export class InterviewsService {
     }
 
     if (interviews.length === 0) {
-      return [];
+      return {
+        data: [],
+        total: 0,
+        page: defaultPage,
+        limit: defaultLimit,
+        totalPages: 0,
+      };
     }
 
     const neededAppIds = [...new Set(interviews.map((i) => i.applicationId))].filter(
@@ -207,6 +243,23 @@ export class InterviewsService {
                 ...app,
                 candidate: candidate ? { ...candidate, name: fixUtf8String(candidate.name) } : undefined,
                 job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
+                candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
+                candidateEmail: candidate?.email || "",
+                candidatePhone: candidate?.phone || null,
+                interviews: [
+                  {
+                    id: intv.id,
+                    date: intv.date,
+                    time: intv.time,
+                    type: fixUtf8String(intv.type),
+                    format: intv.format,
+                    linkOrLocation: fixUtf8String(intv.linkOrLocation),
+                    interviewer: fixUtf8String(intv.interviewer),
+                    round: intv.round,
+                    scorecard: parsedScorecard,
+                    notes: intv.notes ? fixUtf8String(intv.notes) : null,
+                  },
+                ],
               }
             : undefined,
           candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
@@ -215,7 +268,48 @@ export class InterviewsService {
           jobId: app?.jobId,
           organizationId: candidate?.organizationId || job?.organizationId,
         };
-      })
+      });
+
+    const scheduledAppIds = new Set(interviews.map((i) => i.applicationId));
+    const awaitingApps = Array.from(appsMap.values()).filter(
+      (a) => a.stage === "INTERVIEW" && !scheduledAppIds.has(a.id),
+    );
+
+    const awaitingItems = (options?.tab !== "UPCOMING" ? awaitingApps : []).map((app) => {
+      const candidate = candidatesMap.get(app.candidateId);
+      const job = jobsMap.get(app.jobId);
+      return {
+        id: `awaiting-${app.id}`,
+        applicationId: app.id,
+        date: "",
+        time: "",
+        type: "HR_SCREENING",
+        format: "MEET" as const,
+        linkOrLocation: "",
+        interviewer: "",
+        round: 1,
+        scorecard: null,
+        notes: null,
+        createdAt: app.createdAt || new Date().toISOString(),
+        updatedAt: app.updatedAt || new Date().toISOString(),
+        application: {
+          ...app,
+          candidate: candidate ? { ...candidate, name: fixUtf8String(candidate.name) } : undefined,
+          job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
+          candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
+          candidateEmail: candidate?.email || "",
+          candidatePhone: candidate?.phone || null,
+          interviews: [],
+        },
+        candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
+        candidateEmail: candidate?.email,
+        jobTitle: job ? fixUtf8String(job.title) : undefined,
+        jobId: app.jobId,
+        organizationId: candidate?.organizationId || job?.organizationId,
+      };
+    });
+
+    const allItems = [...enriched, ...awaitingItems]
       .filter((item) => {
         if (options?.organizationId && item.organizationId !== options.organizationId) {
           return false;
@@ -223,15 +317,54 @@ export class InterviewsService {
         if (options?.jobId && item.jobId !== options.jobId) {
           return false;
         }
+        if (options?.search && options.search.trim() !== "") {
+          const q = options.search.trim().toLowerCase();
+          const matches =
+            item.candidateName.toLowerCase().includes(q) ||
+            (item.candidateEmail && item.candidateEmail.toLowerCase().includes(q)) ||
+            (item.jobTitle && item.jobTitle.toLowerCase().includes(q)) ||
+            item.interviewer.toLowerCase().includes(q) ||
+            item.linkOrLocation.toLowerCase().includes(q);
+          if (!matches) return false;
+        }
+        if (options?.tab === "UPCOMING") {
+          if (!item.date) return false;
+        }
+        if (options?.tab === "AWAITING") {
+          if (item.date) return false;
+        }
         return true;
       })
       .sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
-        const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
-        return dateA - dateB;
+        if (options?.sortBy === "name") {
+          return a.candidateName.localeCompare(b.candidateName);
+        }
+        if (options?.sortBy === "newest") {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        if (a.date && !b.date) return -1;
+        if (!a.date && b.date) return 1;
+        if (a.date && b.date) {
+          const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
+          const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
+          return dateA - dateB;
+        }
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
 
-    return enriched;
+    const total = allItems.length;
+    const page = defaultPage;
+    const limit = defaultLimit;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const data = allItems.slice((page - 1) * limit, page * limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   async findOne(id: string) {

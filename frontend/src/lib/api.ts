@@ -87,11 +87,15 @@ export const jobsApi = {
 };
 
 export const applicationsApi = {
-  getAll: async (filter?: { organizationId?: string }): Promise<Application[]> => {
-    const params = new URLSearchParams();
-    if (filter?.organizationId) params.append("organizationId", filter.organizationId);
-    const queryString = params.toString() ? `?${params.toString()}` : "";
-    const response = await api.get<Application[]>(`/applications${queryString}`);
+  getAll: async (params?: {
+    organizationId?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    jobId?: string;
+    stage?: string;
+  }): Promise<PaginatedResult<Application>> => {
+    const response = await api.get<PaginatedResult<Application>>("/applications", { params });
     return response.data;
   },
 
@@ -263,8 +267,13 @@ export const interviewsApi = {
     organizationId?: string;
     jobId?: string;
     applicationId?: string;
-  }): Promise<Interview[]> => {
-    const response = await api.get<Interview[]>("/interviews", { params });
+    page?: number;
+    limit?: number;
+    search?: string;
+    tab?: string;
+    sortBy?: string;
+  }): Promise<PaginatedResult<Interview>> => {
+    const response = await api.get<PaginatedResult<Interview>>("/interviews", { params });
     return response.data;
   },
 

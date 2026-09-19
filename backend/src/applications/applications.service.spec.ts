@@ -178,7 +178,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         orm: {
           public: {
             Job: {
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
+              select: vi.fn().mockImplementation((..._fields: string[]) => ({
                 all: vi.fn().mockImplementation(async () => {
                   return mockJobs.map((j) => ({ ...j }));
                 }),
@@ -256,7 +256,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
               })),
             },
             Application: {
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
+              select: vi.fn().mockImplementation((..._fields: string[]) => ({
                 all: vi.fn().mockImplementation(async () => {
                   return mockApps.map((a) => ({ ...a }));
                 }),
@@ -361,28 +361,32 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it("should return ONLY applications belonging to org-1", async () => {
       const results = await service.findAll("org-1");
 
-      expect(results.length).toBe(2);
-      expect(results.some((a) => a.candidateName === "Alice Nguyen")).toBe(true);
-      expect(results.some((a) => a.candidateName === "Bob Tran")).toBe(true);
+      expect(results.total).toBe(2);
+      expect(results.data.length).toBe(2);
+      expect(results.data.some((a) => a.candidateName === "Alice Nguyen")).toBe(true);
+      expect(results.data.some((a) => a.candidateName === "Bob Tran")).toBe(true);
       // Strictly verify org-2 candidate is NEVER present
-      expect(results.some((a) => a.candidateName === "Charlie Competitor Candidate")).toBe(false);
+      expect(results.data.some((a) => a.candidateName === "Charlie Competitor Candidate")).toBe(false);
     });
 
     it("should return ONLY applications belonging to org-2", async () => {
       const results = await service.findAll("org-2");
 
-      expect(results.length).toBe(1);
-      expect(results[0].candidateName).toBe("Charlie Competitor Candidate");
+      expect(results.total).toBe(1);
+      expect(results.data.length).toBe(1);
+      expect(results.data[0].candidateName).toBe("Charlie Competitor Candidate");
     });
 
     it("should return empty array if organizationId is not provided", async () => {
       const results = await service.findAll(undefined);
-      expect(results).toEqual([]);
+      expect(results.data).toEqual([]);
+      expect(results.total).toBe(0);
     });
 
     it("should return empty array if organization has no jobs", async () => {
       const results = await service.findAll("non-existent-org");
-      expect(results).toEqual([]);
+      expect(results.data).toEqual([]);
+      expect(results.total).toBe(0);
     });
   });
 

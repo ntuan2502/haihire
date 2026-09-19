@@ -41,6 +41,10 @@ interface JobListProps {
   pageSize?: number;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
+  search?: string;
+  onSearchChange?: (search: string) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
   applications?: Application[];
   loading: boolean;
   onViewCandidates: (jobId: string) => void;
@@ -56,6 +60,10 @@ export function JobList({
   pageSize = 20,
   onPageChange,
   onPageSizeChange,
+  search: propSearch,
+  onSearchChange,
+  viewMode: propViewMode,
+  onViewModeChange,
   applications: _applications = [],
   onViewCandidates: _onViewCandidates,
   _onOpenCreateJob,
@@ -64,9 +72,27 @@ export function JobList({
   const { t, locale } = useI18n();
   const pipelineStages = usePipelineStages();
 
-  // Toolbar & View state
-  const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  // Toolbar & View state (controlled or local)
+  const [localSearch, setLocalSearch] = useState("");
+  const search = onSearchChange && propSearch !== undefined ? propSearch : localSearch;
+  const setSearch = (val: string) => {
+    if (onSearchChange) {
+      onSearchChange(val);
+    } else {
+      setLocalSearch(val);
+    }
+  };
+
+  const [localViewMode, setLocalViewMode] = useState<ViewMode>("grid");
+  const viewMode = onViewModeChange && propViewMode !== undefined ? propViewMode : localViewMode;
+  const setViewMode = (mode: ViewMode) => {
+    if (onViewModeChange) {
+      onViewModeChange(mode);
+    } else {
+      setLocalViewMode(mode);
+    }
+  };
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
 

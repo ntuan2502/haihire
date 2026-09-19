@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
@@ -9,6 +9,7 @@ import { useAuth } from "@/context/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
+import { useTableParams } from "@/hooks/use-table-params";
 import {
   useAllJobs,
   useCandidates,
@@ -50,10 +51,17 @@ function CandidatesPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
-  // Pagination & Search State
-  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [search, setSearch] = useState("");
+
+  // Synchronized URL Query State for Pagination & Search
+  const {
+    page: currentPage,
+    limit: rowsPerPage,
+    search,
+    searchInput,
+    setSearchInput,
+    setPage: setCurrentPage,
+    setLimit: setRowsPerPage,
+  } = useTableParams();
 
   const { data: pagedResult, isLoading: candidatesLoading } =
     useCandidates(user?.organizationId, {
@@ -206,11 +214,8 @@ function CandidatesPageContent() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <Input
               placeholder={t("candidates.searchCandidates")}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="h-9 pl-9 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full"
             />
           </div>
@@ -555,11 +560,8 @@ function CandidatesPageContent() {
                 totalItems={totalCount}
                 pageSize={rowsPerPage}
                 pageSizeOptions={[10, 20, 50, 100]}
-                onPageChange={(p) => setCurrentPage(p)}
-                onPageSizeChange={(size) => {
-                  setRowsPerPage(size);
-                  setCurrentPage(1);
-                }}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setRowsPerPage}
                 itemLabel={t("candidates.candidateName").toLowerCase()}
               />
             </div>
@@ -614,7 +616,9 @@ function CandidatesPageContent() {
 export default function CandidatesPage() {
   return (
     <AuthGuard>
-      <CandidatesPageContent />
+      <Suspense fallback={<LoadingSpinner fullScreen />}>
+        <CandidatesPageContent />
+      </Suspense>
     </AuthGuard>
   );
 }

@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import { useAllJobs, useApplications, useCandidates } from "@/hooks/use-queries";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
+import { useTableParams } from "@/hooks/use-table-params";
+import { LoadingSpinner } from "@/components/shared/loading-spinner";
 
 function ApplicationsPageContent() {
   const router = useRouter();
   const { user } = useAuth();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
-  const [search, setSearch] = useState("");
+  const {
+    page: currentPage,
+    limit: rowsPerPage,
+    search,
+    searchInput,
+    setSearchInput,
+    setPage: setCurrentPage,
+    setLimit: setRowsPerPage,
+  } = useTableParams();
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
@@ -46,16 +54,10 @@ function ApplicationsPageContent() {
           totalPages={applicationsData?.totalPages ?? 1}
           currentPage={currentPage}
           rowsPerPage={rowsPerPage}
-          search={search}
+          search={searchInput}
           onPageChange={setCurrentPage}
-          onLimitChange={(limit) => {
-            setRowsPerPage(limit);
-            setCurrentPage(1);
-          }}
-          onSearchChange={(q) => {
-            setSearch(q);
-            setCurrentPage(1);
-          }}
+          onLimitChange={setRowsPerPage}
+          onSearchChange={setSearchInput}
         />
       </main>
     </div>
@@ -65,7 +67,9 @@ function ApplicationsPageContent() {
 export default function ApplicationsPage() {
   return (
     <AuthGuard>
-      <ApplicationsPageContent />
+      <Suspense fallback={<LoadingSpinner fullScreen />}>
+        <ApplicationsPageContent />
+      </Suspense>
     </AuthGuard>
   );
 }

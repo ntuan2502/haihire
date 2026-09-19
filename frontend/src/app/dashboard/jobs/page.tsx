@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { JobList } from "@/components/jobs/job-list";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
+import { useTableParams } from "@/hooks/use-table-params";
 import {
   useJobs,
   useCandidates,
@@ -20,13 +21,32 @@ function JobsPageContent() {
   const { user } = useAuth();
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
 
-  // TanStack Query Hooks
+  // Synchronized URL Query State for Pagination, Search & ViewMode
+  const {
+    page: currentPage,
+    limit: rowsPerPage,
+    search,
+    searchInput,
+    setSearchInput,
+    setPage: setCurrentPage,
+    setLimit: setRowsPerPage,
+    setParam,
+    getParam,
+  } = useTableParams();
+
+  const rawViewMode = getParam("viewMode", "grid");
+  const viewMode: "grid" | "list" | "table" =
+    rawViewMode === "list" || rawViewMode === "table" ? rawViewMode : "grid";
+
+  // TanStack Query Hooks with Server-Side Pagination & Search
   const { data: jobsData, isLoading: jobsLoading } = useJobs(
     user?.organizationId,
-    { page: currentPage, limit: rowsPerPage },
+    {
+      page: currentPage,
+      limit: rowsPerPage,
+      search: search.trim() || undefined,
+    },
   );
   const jobs = jobsData?.data ?? [];
   const total = jobsData?.total ?? 0;
@@ -78,7 +98,7 @@ function JobsPageContent() {
       <main className="flex-1">
         {jobsLoading ? (
           <LoadingSpinner />
-        ) : total === 0 && currentPage === 1 ? (
+        ) : total === 0 && currentPage === 1 && !search ? (
           <StartRecruiting
             onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
             onCreateTestJob={handleCreateTestJob}
@@ -92,11 +112,12 @@ function JobsPageContent() {
               currentPage={currentPage}
               totalPages={totalPages}
               pageSize={rowsPerPage}
-              onPageChange={(p) => setCurrentPage(p)}
-              onPageSizeChange={(size) => {
-                setRowsPerPage(size);
-                setCurrentPage(1);
-              }}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setRowsPerPage}
+              search={searchInput}
+              onSearchChange={setSearchInput}
+              viewMode={viewMode}
+              onViewModeChange={(mode) => setParam("viewMode", mode, false)}
               loading={jobsLoading}
               onViewCandidates={(jobId: string) => {
                 setSelectedJobId(jobId);
@@ -115,7 +136,9 @@ function JobsPageContent() {
 export default function JobsPage() {
   return (
     <AuthGuard>
-      <JobsPageContent />
+      <Suspense fallback={<LoadingSpinner fullScreen />}>
+        <JobsPageContent />
+      </Suspense>
     </AuthGuard>
   );
 }

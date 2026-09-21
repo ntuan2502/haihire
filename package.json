@@ -18,5 +18,8 @@
     "contract:emit": "pnpm --filter ./backend run contract:emit",
     "check:i18n": "pnpm --filter ./frontend run check:i18n",
     "check:env": "node --no-warnings packages/shared/scripts/check-env.ts"
+  },
+  "devDependencies": {
+    "wait-on": "^9.1.0"
   }
 }

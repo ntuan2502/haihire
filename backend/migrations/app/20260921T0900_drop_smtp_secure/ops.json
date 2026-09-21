@@ -1,0 +1,44 @@
+[
+  {
+    "id": "dropColumn.EmailSetting.smtpSecure",
+    "label": "Drop column \"smtpSecure\" from \"EmailSetting\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "smtpSecure",
+        "table": "EmailSetting"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"smtpSecure\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "EmailSetting",
+          "smtpSecure"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"smtpSecure\"",
+        "sql": "ALTER TABLE \"public\".\"EmailSetting\" DROP COLUMN \"smtpSecure\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"smtpSecure\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "EmailSetting",
+          "smtpSecure"
+        ]
+      }
+    ]
+  }
+]

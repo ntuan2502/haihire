@@ -90,14 +90,14 @@ export default function EmailTemplatesSettingsPage() {
   const [selectedType, setSelectedType] =
     useState<EmailTemplateType>("APPLICATION_CONFIRMATION");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
-  const [templateToast, setTemplateToast] = useState<string | null>(null);
+  const [templateToast, setTemplateToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Email provider / SMTP settings state
   const [emailSettings, setEmailSettings] =
     useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS);
   const [testEmailAddress, setTestEmailAddress] = useState("");
-  const [testSuccessMessage, setTestSuccessMessage] = useState<string | null>(null);
-  const [settingsSavedMessage, setSettingsSavedMessage] = useState<string | null>(null);
+  const [testToast, setTestToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [settingsToast, setSettingsToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Sync remote templates when fetched
   useEffect(() => {
@@ -108,9 +108,9 @@ export default function EmailTemplatesSettingsPage() {
           if (next[t.type]) {
             next[t.type] = {
               ...next[t.type],
-              subject: t.subject,
-              body: t.body,
-              enabled: t.enabled,
+              subject: t.subject ?? next[t.type].subject,
+              body: t.body ?? next[t.type].body,
+              enabled: t.enabled ?? next[t.type].enabled,
             };
           }
         }
@@ -119,14 +119,24 @@ export default function EmailTemplatesSettingsPage() {
     }
   }, [remoteTemplates]);
 
-  // Sync remote settings when fetched
+  // Sync remote settings when fetched with null-safety
   useEffect(() => {
     if (remoteSettings) {
-      setEmailSettings(remoteSettings);
+      setEmailSettings({
+        provider: remoteSettings.provider || "SIMULATED",
+        fromName: remoteSettings.fromName ?? "Recruitment Team",
+        fromEmail: remoteSettings.fromEmail ?? "careers@workspace.com",
+        smtpHost: remoteSettings.smtpHost ?? "",
+        smtpPort: remoteSettings.smtpPort ?? 587,
+        smtpUser: remoteSettings.smtpUser ?? "",
+        smtpPass: remoteSettings.smtpPass ?? "",
+        resendApiKey: remoteSettings.resendApiKey ?? "",
+        sendgridApiKey: remoteSettings.sendgridApiKey ?? "",
+      });
     }
   }, [remoteSettings]);
 
-  const activeTemplate = templates[selectedType];
+  const activeTemplate = templates[selectedType] || DEFAULT_EMAIL_TEMPLATES[selectedType];
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Sample variable values for live preview
@@ -160,7 +170,7 @@ export default function EmailTemplatesSettingsPage() {
         ...prev,
         [selectedType]: {
           ...prev[selectedType],
-          body: prev[selectedType].body + " " + varKey,
+          body: (prev[selectedType]?.body || "") + " " + varKey,
         },
       }));
       return;
@@ -169,7 +179,7 @@ export default function EmailTemplatesSettingsPage() {
     const textarea = bodyTextareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const currentBody = activeTemplate.body;
+    const currentBody = activeTemplate.body || "";
     const nextBody = currentBody.substring(0, start) + varKey + currentBody.substring(end);
 
     setTemplates((prev) => ({
@@ -187,20 +197,23 @@ export default function EmailTemplatesSettingsPage() {
   };
 
   const handleSaveTemplate = async () => {
+    if (!activeTemplate) return;
     try {
       await updateTemplateMutation.mutateAsync({
         type: selectedType,
         data: {
-          subject: activeTemplate.subject,
-          body: activeTemplate.body,
-          enabled: activeTemplate.enabled,
+          subject: (activeTemplate.subject || "").trim(),
+          body: activeTemplate.body || "",
+          enabled: Boolean(activeTemplate.enabled),
         },
       });
-      setTemplateToast(t("email.templateSavedSuccess"));
+      setTemplateToast({ type: "success", text: t("email.templateSavedSuccess") });
       setTimeout(() => setTemplateToast(null), 3000);
-    } catch {
-      setTemplateToast(t("email.templateSaveError"));
-      setTimeout(() => setTemplateToast(null), 3000);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr.response?.data?.message || t("email.templateSaveError");
+      setTemplateToast({ type: "error", text: msg });
+      setTimeout(() => setTemplateToast(null), 4000);
     }
   };
 
@@ -209,30 +222,47 @@ export default function EmailTemplatesSettingsPage() {
       ...prev,
       [selectedType]: { ...DEFAULT_EMAIL_TEMPLATES[selectedType] },
     }));
-    setTemplateToast(t("email.templateResetSuccess"));
+    setTemplateToast({ type: "success", text: t("email.templateResetSuccess") });
     setTimeout(() => setTemplateToast(null), 3000);
   };
 
   const handleSaveSettings = async () => {
     try {
-      await updateSettingsMutation.mutateAsync(emailSettings);
-      setSettingsSavedMessage(t("email.settingsSavedSuccess"));
-      setTimeout(() => setSettingsSavedMessage(null), 3000);
-    } catch {
-      setSettingsSavedMessage(t("email.settingsSaveError"));
-      setTimeout(() => setSettingsSavedMessage(null), 3000);
+      const payload: Partial<EmailSettings> = {
+        provider: emailSettings.provider,
+        fromName: (emailSettings.fromName || "").trim(),
+        fromEmail: (emailSettings.fromEmail || "").trim(),
+        smtpHost: emailSettings.smtpHost ? emailSettings.smtpHost.trim() : undefined,
+        smtpPort: emailSettings.smtpPort ? Number(emailSettings.smtpPort) : undefined,
+        smtpUser: emailSettings.smtpUser ? emailSettings.smtpUser.trim() : undefined,
+        smtpPass: emailSettings.smtpPass ? emailSettings.smtpPass : undefined,
+        resendApiKey: emailSettings.resendApiKey ? emailSettings.resendApiKey.trim() : undefined,
+        sendgridApiKey: emailSettings.sendgridApiKey ? emailSettings.sendgridApiKey.trim() : undefined,
+      };
+
+      await updateSettingsMutation.mutateAsync(payload);
+      setSettingsToast({ type: "success", text: t("email.settingsSavedSuccess") });
+      setTimeout(() => setSettingsToast(null), 3000);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr.response?.data?.message || t("email.settingsSaveError");
+      setSettingsToast({ type: "error", text: msg });
+      setTimeout(() => setSettingsToast(null), 4000);
     }
   };
 
   const handleSendTest = async () => {
-    if (!testEmailAddress.trim()) return;
+    const to = testEmailAddress.trim();
+    if (!to) return;
     try {
-      await sendTestMutation.mutateAsync(testEmailAddress.trim());
-      setTestSuccessMessage(t("email.testSentSuccess"));
-      setTimeout(() => setTestSuccessMessage(null), 4000);
-    } catch {
-      setTestSuccessMessage(t("email.testSentError"));
-      setTimeout(() => setTestSuccessMessage(null), 4000);
+      await sendTestMutation.mutateAsync(to);
+      setTestToast({ type: "success", text: t("email.testSentSuccess") });
+      setTimeout(() => setTestToast(null), 4000);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr.response?.data?.message || t("email.testSentError");
+      setTestToast({ type: "error", text: msg });
+      setTimeout(() => setTestToast(null), 4000);
     }
   };
 
@@ -372,9 +402,19 @@ export default function EmailTemplatesSettingsPage() {
 
           {/* Feedback Toast */}
           {templateToast && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span>{templateToast}</span>
+            <div
+              className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150 ${
+                templateToast.type === "success"
+                  ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
+                  : "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300"
+              }`}
+            >
+              {templateToast.type === "success" ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+              )}
+              <span>{templateToast.text}</span>
             </div>
           )}
 
@@ -394,7 +434,7 @@ export default function EmailTemplatesSettingsPage() {
                 </div>
                 <input
                   type="checkbox"
-                  checked={activeTemplate.enabled}
+                  checked={Boolean(activeTemplate?.enabled)}
                   onChange={(e) =>
                     setTemplates((prev) => ({
                       ...prev,
@@ -414,7 +454,7 @@ export default function EmailTemplatesSettingsPage() {
                   {t("email.subject")}
                 </label>
                 <Input
-                  value={activeTemplate.subject}
+                  value={activeTemplate?.subject ?? ""}
                   onChange={(e) =>
                     setTemplates((prev) => ({
                       ...prev,
@@ -440,7 +480,7 @@ export default function EmailTemplatesSettingsPage() {
                 </div>
                 <textarea
                   ref={bodyTextareaRef}
-                  value={activeTemplate.body}
+                  value={activeTemplate?.body ?? ""}
                   onChange={(e) =>
                     setTemplates((prev) => ({
                       ...prev,
@@ -483,6 +523,7 @@ export default function EmailTemplatesSettingsPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleResetDefault}
+                  disabled={updateTemplateMutation.isPending}
                   className="text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
@@ -493,10 +534,15 @@ export default function EmailTemplatesSettingsPage() {
                   type="button"
                   size="sm"
                   onClick={handleSaveTemplate}
+                  disabled={updateTemplateMutation.isPending}
                   className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Save className="h-3.5 w-3.5" />
-                  <span>{t("email.saveTemplate")}</span>
+                  <span>
+                    {updateTemplateMutation.isPending
+                      ? t("common.saving")
+                      : t("email.saveTemplate")}
+                  </span>
                 </Button>
               </div>
             </div>
@@ -583,10 +629,20 @@ export default function EmailTemplatesSettingsPage() {
       {/* TAB 2: EMAIL PROVIDER & SMTP SETTINGS */}
       {activeTab === "settings" && (
         <div className="space-y-6">
-          {settingsSavedMessage && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span>{settingsSavedMessage}</span>
+          {settingsToast && (
+            <div
+              className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150 ${
+                settingsToast.type === "success"
+                  ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
+                  : "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300"
+              }`}
+            >
+              {settingsToast.type === "success" ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+              )}
+              <span>{settingsToast.text}</span>
             </div>
           )}
 
@@ -657,11 +713,9 @@ export default function EmailTemplatesSettingsPage() {
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Provider Credentials Form */}
-          <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            {/* Sender Server Info */}
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800">
               {t("email.senderServerInfo")}
             </h3>
 
@@ -671,7 +725,7 @@ export default function EmailTemplatesSettingsPage() {
                   {t("email.senderName")}
                 </label>
                 <Input
-                  value={emailSettings.fromName}
+                  value={emailSettings.fromName ?? ""}
                   onChange={(e) =>
                     setEmailSettings((prev) => ({
                       ...prev,
@@ -688,7 +742,7 @@ export default function EmailTemplatesSettingsPage() {
                   {t("email.senderEmail")}
                 </label>
                 <Input
-                  value={emailSettings.fromEmail}
+                  value={emailSettings.fromEmail ?? ""}
                   onChange={(e) =>
                     setEmailSettings((prev) => ({
                       ...prev,
@@ -710,7 +764,7 @@ export default function EmailTemplatesSettingsPage() {
                       {t("email.smtpHost")}
                     </label>
                     <Input
-                      value={emailSettings.smtpHost}
+                      value={emailSettings.smtpHost ?? ""}
                       onChange={(e) =>
                         setEmailSettings((prev) => ({
                           ...prev,
@@ -728,7 +782,7 @@ export default function EmailTemplatesSettingsPage() {
                     </label>
                     <Input
                       type="number"
-                      value={emailSettings.smtpPort}
+                      value={emailSettings.smtpPort ?? 587}
                       onChange={(e) =>
                         setEmailSettings((prev) => ({
                           ...prev,
@@ -747,7 +801,7 @@ export default function EmailTemplatesSettingsPage() {
                       {t("email.smtpUsername")}
                     </label>
                     <Input
-                      value={emailSettings.smtpUser}
+                      value={emailSettings.smtpUser ?? ""}
                       onChange={(e) =>
                         setEmailSettings((prev) => ({
                           ...prev,
@@ -765,7 +819,7 @@ export default function EmailTemplatesSettingsPage() {
                     </label>
                     <Input
                       type="password"
-                      value={emailSettings.smtpPass}
+                      value={emailSettings.smtpPass ?? ""}
                       onChange={(e) =>
                         setEmailSettings((prev) => ({
                           ...prev,
@@ -778,39 +832,46 @@ export default function EmailTemplatesSettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="checkbox"
-                    id="smtpSecure"
-                    checked={emailSettings.smtpSecure}
-                    onChange={(e) =>
-                      setEmailSettings((prev) => ({
-                        ...prev,
-                        smtpSecure: e.target.checked,
-                      }))
-                    }
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
-                  />
-                  <label
-                    htmlFor="smtpSecure"
-                    className="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
-                  >
-                    {t("email.smtpSecure")} (TLS/SSL)
-                  </label>
-                </div>
               </div>
             )}
 
-            {/* Specific fields for Resend or SendGrid */}
-            {(emailSettings.provider === "RESEND" ||
-              emailSettings.provider === "SENDGRID") && (
+            {/* Specific fields for Resend */}
+            {emailSettings.provider === "RESEND" && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-                  {t("email.apiKey")} ({emailSettings.provider})
+                  {t("email.apiKey")} (Resend)
                 </label>
                 <Input
                   type="password"
-                  placeholder={t("email.apiKeyPlaceholder")}
+                  value={emailSettings.resendApiKey ?? ""}
+                  onChange={(e) =>
+                    setEmailSettings((prev) => ({
+                      ...prev,
+                      resendApiKey: e.target.value,
+                    }))
+                  }
+                  placeholder="re_••••••••••••••••••••••••"
+                  className="h-9 text-xs font-mono"
+                />
+              </div>
+            )}
+
+            {/* Specific fields for SendGrid */}
+            {emailSettings.provider === "SENDGRID" && (
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                  {t("email.apiKey")} (SendGrid)
+                </label>
+                <Input
+                  type="password"
+                  value={emailSettings.sendgridApiKey ?? ""}
+                  onChange={(e) =>
+                    setEmailSettings((prev) => ({
+                      ...prev,
+                      sendgridApiKey: e.target.value,
+                    }))
+                  }
+                  placeholder="SG.••••••••••••••••••••••••"
                   className="h-9 text-xs font-mono"
                 />
               </div>
@@ -820,9 +881,15 @@ export default function EmailTemplatesSettingsPage() {
               <Button
                 type="button"
                 onClick={handleSaveSettings}
-                className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer"
+                disabled={updateSettingsMutation.isPending}
+                className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
-                {t("email.saveSettingsBtn")}
+                <Save className="h-3.5 w-3.5" />
+                <span>
+                  {updateSettingsMutation.isPending
+                    ? t("common.saving")
+                    : t("email.saveSettingsBtn")}
+                </span>
               </Button>
             </div>
           </div>
@@ -838,10 +905,20 @@ export default function EmailTemplatesSettingsPage() {
               </p>
             </div>
 
-            {testSuccessMessage && (
-              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>{testSuccessMessage}</span>
+            {testToast && (
+              <div
+                className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150 ${
+                  testToast.type === "success"
+                    ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
+                    : "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300"
+                }`}
+              >
+                {testToast.type === "success" ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                )}
+                <span>{testToast.text}</span>
               </div>
             )}
 

@@ -27,7 +27,6 @@ export interface EmailSettings {
   smtpPort?: number;
   smtpUser?: string;
   smtpPass?: string;
-  smtpSecure?: boolean;
   resendApiKey?: string;
   sendgridApiKey?: string;
 }
@@ -197,11 +196,10 @@ export const DEFAULT_EMAIL_SETTINGS: EmailSettings = {
   provider: "SIMULATED",
   fromName: "ATS Recruitment Team",
   fromEmail: "careers@workspace.com",
-  smtpHost: "smtp.example.com",
+  smtpHost: "",
   smtpPort: 587,
-  smtpUser: "user@example.com",
+  smtpUser: "",
   smtpPass: "",
-  smtpSecure: true,
   resendApiKey: "",
   sendgridApiKey: "",
 };

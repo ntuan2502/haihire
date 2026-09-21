@@ -321,7 +321,6 @@ export class EmailService {
       smtpPort?: number | null;
       smtpUser?: string | null;
       smtpPass?: string | null;
-      smtpSecure?: boolean;
       resendApiKey?: string | null;
       sendgridApiKey?: string | null;
     }
@@ -333,7 +332,6 @@ export class EmailService {
     if (dto.smtpHost !== undefined) updateData.smtpHost = dto.smtpHost;
     if (dto.smtpPort !== undefined) updateData.smtpPort = dto.smtpPort;
     if (dto.smtpUser !== undefined) updateData.smtpUser = dto.smtpUser;
-    if (dto.smtpSecure !== undefined) updateData.smtpSecure = dto.smtpSecure;
 
     // Credentials handling with AES-256-GCM encryption
     if (dto.smtpPass !== undefined) {
@@ -427,7 +425,6 @@ export class EmailService {
       smtpPort: settings?.smtpPort,
       smtpUser: settings?.smtpUser,
       smtpPass: settings?.smtpPass,
-      smtpSecure: settings?.smtpSecure,
       resendApiKey: settings?.resendApiKey,
       sendgridApiKey: settings?.sendgridApiKey,
     });
@@ -569,7 +566,6 @@ export class EmailService {
       smtpPort: env.SYSTEM_EMAIL_SMTP_PORT,
       smtpUser: env.SYSTEM_EMAIL_SMTP_USER || null,
       smtpPass: this.encryptionService.mask(env.SYSTEM_EMAIL_SMTP_PASS || null),
-      smtpSecure: env.SYSTEM_EMAIL_SMTP_SECURE,
       resendApiKey: this.encryptionService.mask(env.SYSTEM_EMAIL_RESEND_API_KEY || null),
       sendgridApiKey: this.encryptionService.mask(env.SYSTEM_EMAIL_SENDGRID_API_KEY || null),
     };
@@ -584,7 +580,6 @@ export class EmailService {
       smtpPort: env.SYSTEM_EMAIL_SMTP_PORT,
       smtpUser: env.SYSTEM_EMAIL_SMTP_USER || null,
       smtpPass: env.SYSTEM_EMAIL_SMTP_PASS || null,
-      smtpSecure: env.SYSTEM_EMAIL_SMTP_SECURE,
       resendApiKey: env.SYSTEM_EMAIL_RESEND_API_KEY || null,
       sendgridApiKey: env.SYSTEM_EMAIL_SENDGRID_API_KEY || null,
     };

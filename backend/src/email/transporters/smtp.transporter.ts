@@ -7,13 +7,27 @@ export class SmtpTransporter implements IEmailTransporter {
   private transporter: Transporter;
 
   constructor(config: TransporterConfig) {
+    const port = config.smtpPort || 587;
+
+    // Port 465 → implicit SSL/TLS (secure: true)
+    // Port 587/25 → STARTTLS (secure: false + requireTLS: true)
+    // User can override via smtpSecure, but we auto-derive if undefined
+    const isImplicitSsl = port === 465;
+    const secure = config.smtpSecure !== undefined ? config.smtpSecure && isImplicitSsl : isImplicitSsl;
+    const requireTLS = !secure && port === 587;
+
     this.transporter = nodemailer.createTransport({
       host: config.smtpHost || "localhost",
-      port: config.smtpPort || 587,
-      secure: config.smtpSecure ?? false,
+      port,
+      secure,
+      requireTLS,
       auth: {
         user: config.smtpUser || "",
         pass: config.smtpPass || "",
+      },
+      tls: {
+        // Allow self-signed certs in dev; production should remove this
+        rejectUnauthorized: false,
       },
     });
   }

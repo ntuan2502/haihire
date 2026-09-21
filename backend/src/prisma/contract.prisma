@@ -283,7 +283,6 @@ model EmailSetting {
   smtpPort       Int?
   smtpUser       String?
   smtpPass       String?
-  smtpSecure     Boolean      @default(true)
   resendApiKey   String?
   sendgridApiKey String?
   createdAt      DateTime     @default(now())

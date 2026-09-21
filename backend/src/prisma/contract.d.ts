@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'87a407d419bf51e30358af773efd868a72ae367fe09133c0c5909c808540bf52'>;
+  StorageHashBase<'42054e8c4b0f71517a63230f595080753f3aae773134d3f454999ecac182f27c'>;
 export type ExecutionHash =
   ExecutionHashBase<'0e50d3ac55cd1bb8d6595db6bbf3a1ef491fae96f6eff9e2ae842a7955555f0b'>;
 export type ProfileHash =
@@ -340,7 +340,6 @@ export type FieldOutputTypes = {
       readonly smtpPort: CodecTypes['pg/int4@1']['output'] | null;
       readonly smtpUser: CodecTypes['pg/text@1']['output'] | null;
       readonly smtpPass: CodecTypes['pg/text@1']['output'] | null;
-      readonly smtpSecure: CodecTypes['pg/bool@1']['output'];
       readonly resendApiKey: CodecTypes['pg/text@1']['output'] | null;
       readonly sendgridApiKey: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -535,7 +534,6 @@ export type FieldInputTypes = {
       readonly smtpPort: CodecTypes['pg/int4@1']['input'] | null;
       readonly smtpUser: CodecTypes['pg/text@1']['input'] | null;
       readonly smtpPass: CodecTypes['pg/text@1']['input'] | null;
-      readonly smtpSecure: CodecTypes['pg/bool@1']['input'];
       readonly resendApiKey: CodecTypes['pg/text@1']['input'] | null;
       readonly sendgridApiKey: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -732,7 +730,6 @@ export type StorageColumnTypes = {
       readonly smtpHost: CodecTypes['pg/text@1']['output'] | null;
       readonly smtpPass: CodecTypes['pg/text@1']['output'] | null;
       readonly smtpPort: CodecTypes['pg/int4@1']['output'] | null;
-      readonly smtpSecure: CodecTypes['pg/bool@1']['output'];
       readonly smtpUser: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
@@ -927,7 +924,6 @@ export type StorageColumnInputTypes = {
       readonly smtpHost: CodecTypes['pg/text@1']['input'] | null;
       readonly smtpPass: CodecTypes['pg/text@1']['input'] | null;
       readonly smtpPort: CodecTypes['pg/int4@1']['input'] | null;
-      readonly smtpSecure: CodecTypes['pg/bool@1']['input'];
       readonly smtpUser: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
@@ -1203,7 +1199,6 @@ export namespace Models {
     smtpPort: CodecTypes['pg/int4@1']['output'] | null;
     smtpUser: CodecTypes['pg/text@1']['output'] | null;
     smtpPass: CodecTypes['pg/text@1']['output'] | null;
-    smtpSecure: CodecTypes['pg/bool@1']['output'];
     resendApiKey: CodecTypes['pg/text@1']['output'] | null;
     sendgridApiKey: CodecTypes['pg/text@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -2037,15 +2032,6 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
-                };
-                readonly smtpSecure: {
-                  readonly nativeType: 'bool';
-                  readonly codecId: 'pg/bool@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
-                  };
                 };
                 readonly resendApiKey: {
                   readonly nativeType: 'text';
@@ -3569,10 +3555,6 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly smtpSecure: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
-              };
               readonly resendApiKey: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3623,7 +3605,6 @@ type ContractBase = Omit<
                 readonly smtpPort: { readonly column: 'smtpPort' };
                 readonly smtpUser: { readonly column: 'smtpUser' };
                 readonly smtpPass: { readonly column: 'smtpPass' };
-                readonly smtpSecure: { readonly column: 'smtpSecure' };
                 readonly resendApiKey: { readonly column: 'resendApiKey' };
                 readonly sendgridApiKey: { readonly column: 'sendgridApiKey' };
                 readonly createdAt: { readonly column: 'createdAt' };

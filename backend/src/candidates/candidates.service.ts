@@ -412,8 +412,8 @@ export class CandidatesService {
     if (!firstName && !lastName && dto.name) {
       const parts = dto.name.trim().split(/\s+/);
       if (parts.length > 1) {
-        firstName = parts[0];
-        lastName = parts.slice(1).join(" ");
+        firstName = parts[parts.length - 1];
+        lastName = parts.slice(0, -1).join(" ");
       } else {
         firstName = parts[0] || null;
       }

@@ -228,7 +228,7 @@ function InterviewsPageContent() {
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiTotalCandidates")}</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{totalCandidateCount}</span>
-                <span className="text-[11px] font-semibold text-slate-400">{t("interviews.candidatesCount", { count: totalCandidateCount })}</span>
+                <span className="text-[11px] font-semibold text-slate-400">{t("interviews.candidatesUnit")}</span>
               </div>
             </div>
             <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200/80 dark:border-slate-700">

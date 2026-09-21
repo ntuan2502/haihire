@@ -802,6 +802,7 @@ export const vi: TranslationSchema = {
     rateNow: "+ Chấm điểm",
     pageSubtitle: "Quản lý lịch hẹn phỏng vấn, liên kết phòng họp trực tuyến và điều phối quy trình tuyển dụng.",
     candidatesCount: "{count} ứng viên",
+    candidatesUnit: "ứng viên",
     scheduleNew: "Lên lịch phỏng vấn mới",
     kpiScheduled: "Đã lên lịch hẹn",
     kpiReady: "Sẵn sàng phỏng vấn",

@@ -802,6 +802,7 @@ export const en: TranslationSchema = {
     rateNow: "+ Rate",
     pageSubtitle: "Manage interview appointments, virtual meeting rooms, and coordinate the hiring pipeline.",
     candidatesCount: "{count} candidates",
+    candidatesUnit: "candidates",
     scheduleNew: "Schedule New Interview",
     kpiScheduled: "Scheduled",
     kpiReady: "Ready to Interview",

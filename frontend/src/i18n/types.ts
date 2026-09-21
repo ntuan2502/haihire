@@ -800,6 +800,7 @@ export interface TranslationSchema {
     rateNow: string;
     pageSubtitle: string;
     candidatesCount: string;
+    candidatesUnit: string;
     scheduleNew: string;
     kpiScheduled: string;
     kpiReady: string;

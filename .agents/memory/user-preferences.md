@@ -21,8 +21,10 @@ updated: 2026-09-18
 - **Forbidden in application code**: Do NOT use default `import React from "react"`, wildcard `import * as React from "react"`, or namespace syntax like `React.useState`, `React.ReactNode`, etc.
 - **Strict Exception**: The `frontend/src/components/ui/` directory is exclusively reserved for pristine Shadcn CLI primitives and must NEVER be modified.
 
-## Pure TypeScript Only (No JavaScript Files, No .mjs / .cjs)
-- **Zero manually created `.js`, `.mjs`, or `.cjs` files**: The project is 100% TypeScript. Never create `.js`, `.mjs`, or `.cjs` files anywhere in the project (including scripts, utilities, configs, tools). Always use TypeScript (`.ts` or `.tsx`) exclusively, executed via Node's native TypeScript support (Node 22+) or `tsx`.
+## Pure TypeScript Mandate & Format Conversion (No Plain JavaScript Files)
+- **Zero manually created plain JavaScript files (`.js`, `.mjs`, `.cjs`)**: The project is 100% TypeScript.
+- **First-Class TypeScript Formats**: All TypeScript formats (`.ts`, `.tsx`, `.mts`, `.cts`) are first-class citizens and fully standard. `.mts` (Module TypeScript) and `.cts` (CommonJS TypeScript) are completely valid and type-checked.
+- **Automatic Format Conversion**: If any tool, script, or scaffolding creates a file that does not use a TypeScript-supported format (e.g., plain `.js`, `.mjs`, `.cjs`), convert it to its equivalent TypeScript counterpart (`.ts`, `.tsx`, or `.mts`/`.cts`) to ensure full type-checking and project consistency.
 
 ## Centralized Environment Validation (Zero Fallback / Single Source of Truth)
 - **No ad-hoc environment checking in individual files**: Never scatter `if (!process.env.XYZ) throw ...` or `process.env.XYZ || "default"` across random service files or configs.

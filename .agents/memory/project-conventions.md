@@ -11,9 +11,10 @@ updated: 2026-09-18T20:53
 - **Comments in code, `.env`, and `.env.example` must be written in English only.** Vietnamese is reserved exclusively for conversational dialogue with the user.
 
 ## Pure TypeScript & Scripting Conventions (MANDATORY)
-- **100% TypeScript Repository**: No manually written `.js`, `.mjs`, or `.cjs` files are allowed anywhere in the workspace.
+- **100% TypeScript Repository**: No manually written plain `.js`, `.mjs`, or `.cjs` files are allowed. All code must be in TypeScript (`.ts`, `.tsx`, `.mts`, `.cts`).
+- **TypeScript-Supported Formats**: `.mts` and `.cts` are recognized first-class TypeScript modules and are completely valid alongside `.ts` and `.tsx`.
+- **Automatic Format Conversion**: If any external tool, generator, or scaffolding creates files in plain JavaScript formats without TypeScript support, convert them to their corresponding TypeScript equivalent (`.ts` / `.tsx` / `.mts` / `.cts`).
 - **Scripts**: Any utility or maintenance scripts (e.g., `scripts/*.ts`) must be authored in TypeScript and executed via native Node 22+ execution (`node scripts/<script>.ts`) or `tsx`.
-- **Package.json Scripts**: Ensure script runners point to `.ts` files rather than `.mjs` files.
 
 ## Environment Variable & Configuration Conventions
 - **Single Source of Truth**: All environment variables must be declared and validated using Zod in centralized schema files:

@@ -3,7 +3,7 @@
 ## Project
 - [project] All memory files must be written in English only → project-conventions.md
 - [project] Comments in code, .env, and .env.example must be English only (Vietnamese strictly for user chat) → project-conventions.md
-- [project] Pure TypeScript mandate: zero manually created `.js`, `.mjs`, or `.cjs` files across entire repository → project-conventions.md
+- [project] Pure TypeScript mandate: all files must use TypeScript formats (.ts, .tsx, .mts, .cts); convert non-TS files to TS equivalents → project-conventions.md
 - [project] Centralized Zod-based environment schemas: zero fallbacks, fail-fast startup → project-conventions.md
 - [project] Full-stack server-side pagination with zero backward-compatibility hacks → project-conventions.md
 - [project] Database-level `onDelete: Cascade` in Prisma contract → tech-decisions.md
@@ -22,7 +22,7 @@
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
 - [user] Vietnamese for chat and artifacts (implementation_plan.md, walkthrough.md); English for code, comments, env → user-preferences.md
-- [user] Pure TypeScript Only: Never create `.js`, `.mjs`, or `.cjs` files, always use `.ts` or `.tsx` exclusively → user-preferences.md
+- [user] Pure TypeScript: All files must be TypeScript (.ts, .tsx, .mts, .cts); convert generated non-TS files to TS equivalents → user-preferences.md
 - [user] Centralized Environment Configuration: Zero fallbacks, fail-fast Zod validation, key sync via check:env → user-preferences.md
 - [user] Full-Stack Pagination: Server-side pagination mandatory, no backward-compatibility hacks or client slicing → user-preferences.md
 - [user] Zero hardcoded text: strictly enforce translation keys across all `.tsx` and `.ts` files → user-preferences.md

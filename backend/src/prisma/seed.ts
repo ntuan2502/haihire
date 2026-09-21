@@ -510,6 +510,26 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
+  await db.orm.public.EmailLog.all().then((logs) =>
+    Promise.all(logs.map((l) => db.orm.public.EmailLog.where((x) => x.id.eq(l.id)).delete())),
+  );
+
+  await db.orm.public.EmailSetting.all().then((sets) =>
+    Promise.all(sets.map((s) => db.orm.public.EmailSetting.where((x) => x.id.eq(s.id)).delete())),
+  );
+
+  await db.orm.public.EmailTemplate.all().then((tmpls) =>
+    Promise.all(tmpls.map((t) => db.orm.public.EmailTemplate.where((x) => x.id.eq(t.id)).delete())),
+  );
+
+  await db.orm.public.ActivityLog.all().then((acts) =>
+    Promise.all(acts.map((a) => db.orm.public.ActivityLog.where((x) => x.id.eq(a.id)).delete())),
+  );
+
+  await db.orm.public.CandidateDocument.all().then((docs) =>
+    Promise.all(docs.map((d) => db.orm.public.CandidateDocument.where((x) => x.id.eq(d.id)).delete())),
+  );
+
   await db.orm.public.Interview.all().then((intvs) =>
     Promise.all(intvs.map((i) => db.orm.public.Interview.where((x) => x.id.eq(i.id)).delete())),
   );

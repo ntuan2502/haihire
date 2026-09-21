@@ -170,6 +170,8 @@ export class EmailService {
     return templates.map((t) => ({
       ...t,
       variables: t.variables ? (JSON.parse(t.variables) as string[]) : [],
+      createdAt: new Date(toTimestamp(t.createdAt)),
+      updatedAt: new Date(toTimestamp(t.updatedAt)),
     }));
   }
 
@@ -185,12 +187,12 @@ export class EmailService {
         body: def.body,
         enabled: true,
         variables: JSON.stringify(def.variables),
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       created.push({
         ...item,
         variables: def.variables,
+        createdAt: new Date(toTimestamp(item.createdAt)),
+        updatedAt: new Date(toTimestamp(item.updatedAt)),
       });
     }
     return created;
@@ -221,13 +223,10 @@ export class EmailService {
     }
 
     const updateData: {
-      updatedAt: Date;
       subject?: string;
       body?: string;
       enabled?: boolean;
-    } = {
-      updatedAt: new Date(),
-    };
+    } = {};
     if (dto.subject !== undefined) updateData.subject = dto.subject;
     if (dto.body !== undefined) updateData.body = dto.body;
     if (dto.enabled !== undefined) updateData.enabled = dto.enabled;
@@ -243,6 +242,8 @@ export class EmailService {
     return {
       ...updated,
       variables: updated?.variables ? (JSON.parse(updated.variables) as string[]) : [],
+      createdAt: updated?.createdAt ? new Date(toTimestamp(updated.createdAt)) : new Date(),
+      updatedAt: updated?.updatedAt ? new Date(toTimestamp(updated.updatedAt)) : new Date(),
     };
   }
 
@@ -269,8 +270,6 @@ export class EmailService {
         smtpSecure: true,
         resendApiKey: null,
         sendgridApiKey: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
     }
 
@@ -315,7 +314,6 @@ export class EmailService {
     }
 
     interface EmailSettingUpdatePayload {
-      updatedAt: Date;
       provider?: string;
       fromName?: string;
       fromEmail?: string;
@@ -328,9 +326,7 @@ export class EmailService {
       sendgridApiKey?: string | null;
     }
 
-    const updateData: EmailSettingUpdatePayload = {
-      updatedAt: new Date(),
-    };
+    const updateData: EmailSettingUpdatePayload = {};
     if (dto.provider !== undefined) updateData.provider = dto.provider;
     if (dto.fromName !== undefined) updateData.fromName = dto.fromName;
     if (dto.fromEmail !== undefined) updateData.fromEmail = dto.fromEmail;
@@ -460,9 +456,6 @@ export class EmailService {
       body: renderedBody,
       status: sendResult.status,
       errorMessage: sendResult.error || null,
-      sentAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
     // Record candidate activity timeline event
@@ -656,9 +649,6 @@ export class EmailService {
       body: renderedBody,
       status: sendResult.status,
       errorMessage: sendResult.error || null,
-      sentAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
     return {

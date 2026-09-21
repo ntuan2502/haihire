@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { EmailService, interpolate, DEFAULT_TEMPLATES } from "./email.service";
 import { EmailTransporterFactory } from "./transporters/transporter.factory";
 import { EncryptionService } from "../common/encryption.service";
+import { env } from "../config/env";
 
 describe("EmailService", () => {
   let service: EmailService;
@@ -271,9 +272,9 @@ describe("EmailService", () => {
     it("should retrieve masked system email configuration from env", () => {
       const config = service.getSystemEmailConfig();
       expect(config).toBeDefined();
-      expect(config.provider).toBe("SIMULATED");
-      expect(config.fromName).toBe("HaiHire Platform");
-      expect(config.fromEmail).toBe("noreply@haihire.internal");
+      expect(config.provider).toBe(env.SYSTEM_EMAIL_PROVIDER);
+      expect(config.fromName).toBe(env.SYSTEM_EMAIL_FROM_NAME || "HaiHire Platform");
+      expect(config.fromEmail).toBe(env.SYSTEM_EMAIL_FROM_EMAIL || "noreply@haihire.internal");
     });
 
     it("should send system email with simulated provider", async () => {
@@ -290,7 +291,7 @@ describe("EmailService", () => {
         throw new Error("Expected direct send result");
       }
       expect(result.success).toBe(true);
-      expect(result.status).toBe("SIMULATED");
+      expect(result.status).toBe(env.SYSTEM_EMAIL_PROVIDER === "SIMULATED" ? "SIMULATED" : "SENT");
       expect(result.to).toBe("user@example.com");
       expect(result.from).toContain("HaiHire Platform");
       expect(result.subject).toBe("Welcome to HaiHire");
@@ -305,7 +306,7 @@ describe("EmailService", () => {
         throw new Error("Expected direct send result");
       }
       expect(result.success).toBe(true);
-      expect(result.status).toBe("SIMULATED");
+      expect(result.status).toBe(env.SYSTEM_EMAIL_PROVIDER === "SIMULATED" ? "SIMULATED" : "SENT");
       expect(result.to).toBe("admin@example.com");
       expect(result.subject).toContain("[System Test]");
     });

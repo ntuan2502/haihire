@@ -6,7 +6,7 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
-function toInstant(d: Date): unknown {
+function toInstant(d: Date): Temporal.Instant {
   return Temporal.Instant.fromEpochMilliseconds(d.getTime());
 }
 
@@ -708,6 +708,7 @@ export async function runSeed(): Promise<void> {
         status,
         organizationId: adminOrgId,
         createdById: adminUserId,
+        createdAt: toInstant(jobCreatedAt),
       },
       update: {},
       conflictOn: { id: jobId },
@@ -775,7 +776,7 @@ export async function runSeed(): Promise<void> {
     firstName: string;
     lastName: string;
     gender: "MALE" | "FEMALE" | "OTHER";
-    dateOfBirth: Date;
+    dateOfBirth: Temporal.Instant;
     email: string;
     phone: string;
     notes: string;
@@ -783,7 +784,7 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
-    createdAt: Date;
+    createdAt: Temporal.Instant;
   }> = [];
 
   const applicationsToInsert: Array<{
@@ -798,7 +799,7 @@ export async function runSeed(): Promise<void> {
     resumeMimeType: string;
     notes: string;
     orderIndex: number;
-    createdAt: Date;
+    createdAt: Temporal.Instant;
   }> = [];
 
   const interviewsToInsert: Array<{

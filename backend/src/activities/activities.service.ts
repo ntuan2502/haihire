@@ -48,8 +48,6 @@ export class ActivitiesService {
       actorName: dto.actorName,
       actorRole: dto.actorRole || null,
       metadata: metadataStr,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
   }
 

@@ -13,6 +13,7 @@ import { EventsService } from "../events/events.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
+import { toTimestamp } from "../common/date.util";
 
 export interface InviteLinkRecord {
   id: string;
@@ -197,7 +198,7 @@ export class OrganizationsService implements OnModuleInit {
 
     if (
       inviteLink.expiresAt &&
-      new Date(inviteLink.expiresAt) < new Date()
+      toTimestamp(inviteLink.expiresAt) < Date.now()
     ) {
       throw new BadRequestException("This invite link has expired.");
     }
@@ -905,7 +906,7 @@ export class OrganizationsService implements OnModuleInit {
 
     const expiresAt =
       expiresInDays !== null
-        ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+        ? Temporal.Instant.fromEpochMilliseconds(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
         : null;
 
     // Calculate max uses
@@ -944,7 +945,7 @@ export class OrganizationsService implements OnModuleInit {
       organizationName: org.name,
       organizationSlug: org.slug,
       role: linkRole,
-      expiresAt: expiresAt ? expiresAt.toISOString() : null,
+      expiresAt: expiresAt ? expiresAt.toString() : null,
       maxUses,
       usesCount: 0,
       createdById: user.id,
@@ -1007,11 +1008,10 @@ export class OrganizationsService implements OnModuleInit {
       .all();
     const userMap = new Map(users.map((u) => [u.id, u.name]));
 
-    const now = new Date();
     return links.map((link) => {
       let status = link.status;
       if (status === "ACTIVE") {
-        if (link.expiresAt && new Date(link.expiresAt) < now) {
+        if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
           status = "EXPIRED";
         } else if (link.maxUses !== null && link.usesCount >= link.maxUses) {
           status = "EXPIRED";
@@ -1025,13 +1025,13 @@ export class OrganizationsService implements OnModuleInit {
         organizationName: org?.name || "Organization",
         organizationSlug: org?.slug || "org",
         role: link.role,
-        expiresAt: link.expiresAt ? new Date(link.expiresAt).toISOString() : null,
+        expiresAt: link.expiresAt ? new Date(toTimestamp(link.expiresAt)).toISOString() : null,
         maxUses: link.maxUses,
         usesCount: link.usesCount,
         createdById: link.createdById,
         createdByName: (link.createdById && userMap.get(link.createdById)) || "Admin",
         status,
-        createdAt: new Date(link.createdAt).toISOString(),
+        createdAt: new Date(toTimestamp(link.createdAt)).toISOString(),
       };
     });
   }
@@ -1104,7 +1104,7 @@ export class OrganizationsService implements OnModuleInit {
       };
     }
 
-    if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
+    if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
       return {
         valid: false,
         message: "This invitation link has expired",
@@ -1148,7 +1148,7 @@ export class OrganizationsService implements OnModuleInit {
         slug: org?.slug || "org",
       },
       createdByName,
-      expiresAt: link.expiresAt ? new Date(link.expiresAt).toISOString() : null,
+      expiresAt: link.expiresAt ? new Date(toTimestamp(link.expiresAt)).toISOString() : null,
     };
   }
 
@@ -1174,7 +1174,7 @@ export class OrganizationsService implements OnModuleInit {
       throw new BadRequestException("This invitation link has been revoked");
     }
 
-    if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
+    if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
       throw new BadRequestException("This invitation link has expired");
     }
 

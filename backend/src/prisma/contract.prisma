@@ -83,6 +83,11 @@ enum EmailDeliveryStatus {
   FAILED
 }
 
+enum EmailScope {
+  SYSTEM
+  ORGANIZATION
+}
+
 enum ActivityType {
   APPLIED
   STAGE_CHANGED
@@ -287,8 +292,9 @@ model EmailSetting {
 
 model EmailLog {
   id             String              @id @default(uuid())
-  organizationId String
-  organization   Organization        @relation(fields: [organizationId], references: [id])
+  scope          EmailScope          @default(ORGANIZATION)
+  organizationId String?
+  organization   Organization?       @relation(fields: [organizationId], references: [id])
   candidateId    String?
   candidate      Candidate?          @relation(fields: [candidateId], references: [id])
   applicationId  String?
@@ -308,6 +314,7 @@ model EmailLog {
   updatedAt      temporal.updatedAt()
 
   @@index([organizationId, createdAt])
+  @@index([scope, createdAt])
 }
 
 model ActivityLog {

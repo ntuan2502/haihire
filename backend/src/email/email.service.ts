@@ -12,6 +12,9 @@ import { EncryptionService } from "../common/encryption.service";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
+import { SendSystemEmailDto, SendSystemTestEmailDto } from "./dto/send-system-email.dto";
+import { EmailTransporterFactory } from "./transporters/transporter.factory";
+import { env } from "../config/env";
 import crypto from "node:crypto";
 
 export type EmailTemplateType =
@@ -416,25 +419,46 @@ export class EmailService {
     const renderedSubject = interpolate(dto.subject, variables);
     const renderedBody = interpolate(dto.body, variables);
 
-    const provider = settings?.provider || "SIMULATED";
-    const status: "SENT" | "SIMULATED" | "FAILED" = provider === "SIMULATED" ? "SIMULATED" : "SENT";
+    const fromName = senderUser?.name || settings?.fromName || "Recruitment Team";
+    const fromEmail = settings?.fromEmail || senderUser?.email || "careers@workspace.com";
+
+    const transporter = EmailTransporterFactory.create({
+      provider: settings?.provider || "SIMULATED",
+      fromName,
+      fromEmail,
+      smtpHost: settings?.smtpHost,
+      smtpPort: settings?.smtpPort,
+      smtpUser: settings?.smtpUser,
+      smtpPass: settings?.smtpPass,
+      smtpSecure: settings?.smtpSecure,
+      resendApiKey: settings?.resendApiKey,
+      sendgridApiKey: settings?.sendgridApiKey,
+    });
+
+    const sendResult = await transporter.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: dto.to,
+      subject: renderedSubject,
+      html: renderedBody,
+    });
 
     const logId = crypto.randomUUID();
     const log = await this.prisma.db.orm.public.EmailLog.create({
       id: logId,
+      scope: "ORGANIZATION",
       organizationId,
       candidateId: dto.candidateId || null,
       applicationId: dto.applicationId || null,
       senderId: senderUser?.id || null,
-      senderName: senderUser?.name || settings?.fromName || "Recruitment Team",
-      senderEmail: settings?.fromEmail || senderUser?.email || "careers@workspace.com",
+      senderName: fromName,
+      senderEmail: fromEmail,
       recipientEmail: dto.to,
       recipientName: dto.recipientName,
       templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
       subject: renderedSubject,
       body: renderedBody,
-      status,
-      errorMessage: null,
+      status: sendResult.status,
+      errorMessage: sendResult.error || null,
       sentAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -448,7 +472,7 @@ export class EmailService {
         applicationId: dto.applicationId || null,
         type: "EMAIL_SENT",
         title: `Đã gửi email: ${renderedSubject}`,
-        description: `Gửi thư tới ${dto.recipientName} (${dto.to}) - Trạng thái: ${status}`,
+        description: `Gửi thư tới ${dto.recipientName} (${dto.to}) - Trạng thái: ${sendResult.status}`,
         actorId: senderUser?.id || null,
         actorName: senderUser?.name || settings?.fromName || "Hệ thống Tuyển dụng",
         actorRole: "ADMIN",
@@ -456,7 +480,7 @@ export class EmailService {
           emailLogId: logId,
           templateType: dto.templateType || "CUSTOM",
           subject: renderedSubject,
-          status,
+          status: sendResult.status,
           recipientEmail: dto.to,
         },
       });
@@ -522,6 +546,176 @@ export class EmailService {
         (l) =>
           (l.candidateName || "").toLowerCase().includes(s) ||
           (l.candidateEmail || "").toLowerCase().includes(s) ||
+          (l.subject || "").toLowerCase().includes(s),
+      );
+    }
+
+    const total = mapped.length;
+    const page = opts.page && opts.page > 0 ? opts.page : 1;
+    const limit = opts.limit && opts.limit > 0 ? opts.limit : 20;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    const data = mapped.slice((page - 1) * limit, page * limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  getSystemEmailConfig() {
+    return {
+      provider: env.SYSTEM_EMAIL_PROVIDER,
+      fromName: env.SYSTEM_EMAIL_FROM_NAME,
+      fromEmail: env.SYSTEM_EMAIL_FROM_EMAIL,
+      smtpHost: env.SYSTEM_EMAIL_SMTP_HOST || null,
+      smtpPort: env.SYSTEM_EMAIL_SMTP_PORT,
+      smtpUser: env.SYSTEM_EMAIL_SMTP_USER || null,
+      smtpPass: this.encryptionService.mask(env.SYSTEM_EMAIL_SMTP_PASS || null),
+      smtpSecure: env.SYSTEM_EMAIL_SMTP_SECURE,
+      resendApiKey: this.encryptionService.mask(env.SYSTEM_EMAIL_RESEND_API_KEY || null),
+      sendgridApiKey: this.encryptionService.mask(env.SYSTEM_EMAIL_SENDGRID_API_KEY || null),
+    };
+  }
+
+  getRawSystemEmailConfig() {
+    return {
+      provider: env.SYSTEM_EMAIL_PROVIDER,
+      fromName: env.SYSTEM_EMAIL_FROM_NAME,
+      fromEmail: env.SYSTEM_EMAIL_FROM_EMAIL,
+      smtpHost: env.SYSTEM_EMAIL_SMTP_HOST || null,
+      smtpPort: env.SYSTEM_EMAIL_SMTP_PORT,
+      smtpUser: env.SYSTEM_EMAIL_SMTP_USER || null,
+      smtpPass: env.SYSTEM_EMAIL_SMTP_PASS || null,
+      smtpSecure: env.SYSTEM_EMAIL_SMTP_SECURE,
+      resendApiKey: env.SYSTEM_EMAIL_RESEND_API_KEY || null,
+      sendgridApiKey: env.SYSTEM_EMAIL_SENDGRID_API_KEY || null,
+    };
+  }
+
+  async sendSystemEmail(dto: SendSystemEmailDto) {
+    if (this.emailQueue) {
+      try {
+        const job = await this.emailQueue.add(
+          "send-system-email",
+          { dto },
+          {
+            attempts: 3,
+            backoff: {
+              type: "exponential",
+              delay: 1000,
+            },
+            removeOnComplete: true,
+          },
+        );
+        return {
+          id: job.id,
+          status: "QUEUED",
+          message: "System email queued for delivery",
+        };
+      } catch (_queueErr) {
+        return this.executeSendSystemEmail(dto);
+      }
+    }
+    return this.executeSendSystemEmail(dto);
+  }
+
+  async executeSendSystemEmail(dto: SendSystemEmailDto) {
+    const config = this.getRawSystemEmailConfig();
+    const variables = dto.variables || {};
+    const renderedSubject = interpolate(dto.subject, variables);
+    const renderedBody = interpolate(dto.body, variables);
+
+    const transporter = EmailTransporterFactory.create(config);
+
+    const sendResult = await transporter.send({
+      from: `${config.fromName} <${config.fromEmail}>`,
+      to: dto.to,
+      subject: renderedSubject,
+      html: renderedBody,
+    });
+
+    const logId = crypto.randomUUID();
+    const log = await this.prisma.db.orm.public.EmailLog.create({
+      id: logId,
+      scope: "SYSTEM",
+      organizationId: dto.organizationId || null,
+      candidateId: null,
+      applicationId: null,
+      senderId: null,
+      senderName: config.fromName,
+      senderEmail: config.fromEmail,
+      recipientEmail: dto.to,
+      recipientName: dto.recipientName || dto.to,
+      templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
+      subject: renderedSubject,
+      body: renderedBody,
+      status: sendResult.status,
+      errorMessage: sendResult.error || null,
+      sentAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return {
+      success: sendResult.success,
+      status: sendResult.status,
+      provider: config.provider,
+      to: dto.to,
+      from: `${config.fromName} <${config.fromEmail}>`,
+      subject: renderedSubject,
+      logId: log?.id || null,
+      error: sendResult.error,
+    };
+  }
+
+  async sendSystemTestEmail(dto: SendSystemTestEmailDto) {
+    const config = this.getSystemEmailConfig();
+    return this.sendSystemEmail({
+      to: dto.to,
+      recipientName: "System Administrator",
+      subject: `[System Test] Kiểm tra kết nối gửi Email Hệ thống - ${config.fromName}`,
+      body: `<div style="font-family: sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
+  <h2 style="color: #0284c7;">Kiểm tra cấu hình System Email thành công! 🚀</h2>
+  <p>Email này được gửi từ cấp độ toàn hệ thống (System Level) để xác thực cấu hình môi trường .env.</p>
+  <p><strong>Cấu hình hiện tại (.env):</strong></p>
+  <ul>
+    <li><strong>Provider:</strong> ${config.provider}</li>
+    <li><strong>From Name:</strong> ${config.fromName}</li>
+    <li><strong>From Email:</strong> ${config.fromEmail}</li>
+  </ul>
+</div>`,
+    });
+  }
+
+  async getSystemLogs(options?: GetLogsOptions) {
+    const opts = options || {};
+
+    let query = this.prisma.db.orm.public.EmailLog
+      .where((l) => l.scope.eq("SYSTEM"));
+
+    const logs = await query.all();
+    let mapped = logs
+      .map((l) => ({
+        ...l,
+        recipientName: l.recipientName || "Recipient",
+        recipientEmail: l.recipientEmail || "",
+      }))
+      .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+
+    if (opts.status && opts.status !== "ALL") {
+      mapped = mapped.filter((l) => l.status === opts.status);
+    }
+
+    if (opts.search && opts.search.trim() !== "") {
+      const s = opts.search.trim().toLowerCase();
+      mapped = mapped.filter(
+        (l) =>
+          (l.recipientName || "").toLowerCase().includes(s) ||
+          (l.recipientEmail || "").toLowerCase().includes(s) ||
           (l.subject || "").toLowerCase().includes(s),
       );
     }

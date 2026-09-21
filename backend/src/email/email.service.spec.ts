@@ -286,6 +286,9 @@ describe("EmailService", () => {
         organizationId: "org-1",
       });
 
+      if (!("success" in result)) {
+        throw new Error("Expected direct send result");
+      }
       expect(result.success).toBe(true);
       expect(result.status).toBe("SIMULATED");
       expect(result.to).toBe("user@example.com");
@@ -298,6 +301,9 @@ describe("EmailService", () => {
         to: "admin@example.com",
       });
 
+      if (!("success" in result)) {
+        throw new Error("Expected direct send result");
+      }
       expect(result.success).toBe(true);
       expect(result.status).toBe("SIMULATED");
       expect(result.to).toBe("admin@example.com");

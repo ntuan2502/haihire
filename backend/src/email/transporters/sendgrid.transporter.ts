@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import { EmailSendPayload, EmailSendResult, IEmailTransporter, TransporterConfig } from "./transporter.interface";
+import type { EmailSendPayload, EmailSendResult, IEmailTransporter, TransporterConfig } from "./transporter.interface";
 
 export class SendGridTransporter implements IEmailTransporter {
   private readonly logger = new Logger(SendGridTransporter.name);

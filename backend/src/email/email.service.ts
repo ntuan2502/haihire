@@ -694,7 +694,7 @@ export class EmailService {
   async getSystemLogs(options?: GetLogsOptions) {
     const opts = options || {};
 
-    let query = this.prisma.db.orm.public.EmailLog
+    const query = this.prisma.db.orm.public.EmailLog
       .where((l) => l.scope.eq("SYSTEM"));
 
     const logs = await query.all();

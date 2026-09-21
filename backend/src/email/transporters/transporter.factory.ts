@@ -1,4 +1,4 @@
-import { IEmailTransporter, TransporterConfig } from "./transporter.interface";
+import type { IEmailTransporter, TransporterConfig } from "./transporter.interface";
 import { SimulatedTransporter } from "./simulated.transporter";
 import { SmtpTransporter } from "./smtp.transporter";
 import { ResendTransporter } from "./resend.transporter";

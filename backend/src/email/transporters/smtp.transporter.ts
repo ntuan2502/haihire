@@ -1,10 +1,10 @@
 import { Logger } from "@nestjs/common";
-import nodemailer from "nodemailer";
-import { EmailSendPayload, EmailSendResult, IEmailTransporter, TransporterConfig } from "./transporter.interface";
+import nodemailer, { type Transporter } from "nodemailer";
+import type { EmailSendPayload, EmailSendResult, IEmailTransporter, TransporterConfig } from "./transporter.interface";
 
 export class SmtpTransporter implements IEmailTransporter {
   private readonly logger = new Logger(SmtpTransporter.name);
-  private transporter: nodemailer.Transporter;
+  private transporter: Transporter;
 
   constructor(config: TransporterConfig) {
     this.transporter = nodemailer.createTransport({

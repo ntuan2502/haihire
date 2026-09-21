@@ -457,10 +457,10 @@ export default function MembersSettingsPage() {
                 <Link2 className="h-5 w-5" />
               </div>
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                No active invite links
+                {t("members.noActiveInviteLinks")}
               </p>
               <p className="text-[11px] text-slate-400 dark:text-slate-500 max-w-sm mx-auto">
-                Generate expiring or single-use invite links with specific roles to invite your team.
+                {t("members.noActiveInviteLinksDesc")}
               </p>
             </div>
           )}
@@ -504,7 +504,7 @@ export default function MembersSettingsPage() {
 
                           {isInactive && (
                             <span className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                              Inactive
+                              {t("common.inactive")}
                             </span>
                           )}
                         </div>
@@ -512,7 +512,7 @@ export default function MembersSettingsPage() {
                         <p className="text-[11px] text-slate-400 dark:text-slate-500">
                           {link.usesCount}/{link.maxUses !== null ? link.maxUses : "∞"} {t("candidates.columns.applications").toLowerCase()}
                           {" • "}{t("members.expiresInLabel")} {daysRemaining}
-                          {" • "}by {link.createdByName || "Admin"}
+                          {" • "}{t("common.created")}: {link.createdByName || "Admin"}
                         </p>
                       </div>
                     </div>

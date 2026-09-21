@@ -562,7 +562,7 @@ export default function EmailTemplatesSettingsPage() {
                   </div>
                   <div className="truncate">
                     <strong className="text-slate-800 dark:text-slate-200">{t("email.toLabel")}:</strong>{" "}
-                    {t("email.sampleCandidateName")} &lt;an.nguyen@example.com&gt;
+                    {t("email.sampleCandidateName")} &lt;{t("email.sampleCandidateEmail")}&gt;
                   </div>
                   <div className="pt-1 text-xs font-bold text-slate-900 dark:text-white">
                     {previewSubject}
@@ -1012,7 +1012,7 @@ export default function EmailTemplatesSettingsPage() {
                     setLogLimit(size);
                     setLogPage(1);
                   }}
-                  itemLabel={t("email.logsTab").toLowerCase()}
+                  itemLabel={t("email.tabLogs").toLowerCase()}
                 />
               </div>
             )}

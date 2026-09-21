@@ -286,7 +286,7 @@ export function JobList({
             {t("jobs.noJobsFound")}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
-            Try adjusting your search query or filters to find what you&apos;re looking for.
+            {t("jobs.noJobsDesc")}
           </p>
           <Button
             onClick={() => {

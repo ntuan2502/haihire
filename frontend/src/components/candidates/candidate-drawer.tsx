@@ -483,7 +483,7 @@ export function CandidateDrawer({
                                     {job?.title || "Position"}
                                   </h4>
                                   <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                                    Stage: {app.stage} • Applied {formatDate(app.createdAt, "short")}
+                                    {t("common.status")}: {app.stage} • {t("applications.appliedBadge")} {formatDate(app.createdAt, "short")}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">

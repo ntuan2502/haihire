@@ -51,7 +51,7 @@ export function CareersHeader({
             </div>
             <div className="min-w-0">
               <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
-                <span>Careers Portal</span>
+                <span>{t("careers.companyPage")}</span>
               </div>
               <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">
                 {orgName}

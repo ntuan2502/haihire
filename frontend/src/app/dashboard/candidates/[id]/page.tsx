@@ -780,7 +780,7 @@ function CandidateDetailPageContent() {
                                   onClick={() => setPreviewDoc(doc)}
                                   className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline cursor-pointer"
                                 >
-                                  Click to preview
+                                  {t("candidates.clickToPreview")}
                                 </button>
                               </div>
                             </div>
@@ -792,7 +792,7 @@ function CandidateDetailPageContent() {
                               type="button"
                               onClick={() => setPreviewDoc(doc)}
                               className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="View preview"
+                              title={t("common.preview")}
                             >
                               <Eye className="h-4 w-4" />
                             </button>
@@ -807,7 +807,7 @@ function CandidateDetailPageContent() {
                                 )
                               }
                               className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="Download document"
+                              title={t("common.download")}
                             >
                               <Download className="h-4 w-4" />
                             </button>
@@ -817,7 +817,7 @@ function CandidateDetailPageContent() {
                                 type="button"
                                 onClick={() => setDocToDelete(doc)}
                                 className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                                title="Delete document"
+                                title={t("common.delete")}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -836,10 +836,10 @@ function CandidateDetailPageContent() {
                         <FileText className="h-5 w-5" />
                       </div>
                       <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        No documents yet.
+                        {t("candidates.noDocuments")}
                       </h4>
                       <p className="text-[11px] text-slate-400 max-w-sm">
-                        Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).
+                        {t("candidates.uploadDocHint")}
                       </p>
                     </div>
                   )}

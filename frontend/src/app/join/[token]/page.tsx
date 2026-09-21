@@ -314,7 +314,7 @@ export default function JoinOrganizationPage() {
 
       {/* Footer */}
       <footer className="text-center py-4 text-[11px] text-slate-400">
-        © {new Date().getFullYear()} ATS. All rights reserved.
+        © {new Date().getFullYear()} ATS. {t("careers.allRightsReserved")}
       </footer>
     </div>
   );

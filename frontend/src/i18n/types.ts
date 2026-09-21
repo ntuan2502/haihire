@@ -255,6 +255,7 @@ export interface TranslationSchema {
     editJob: string;
     deleteJob: string;
     noJobsFound: string;
+    noJobsDesc: string;
     searchJobs: string;
     departmentAll: string;
     statusAll: string;
@@ -662,6 +663,7 @@ export interface TranslationSchema {
     backToTable: string;
     backToApplications: string;
     openFullPage: string;
+    viewApplication: string;
     scheduleInterview: string;
     noAiAnalysis: string;
     runAnalysis: string;
@@ -972,6 +974,8 @@ export interface TranslationSchema {
     expiresNever: string;
     uses1: string;
     usesUnlimited: string;
+    noActiveInviteLinks: string;
+    noActiveInviteLinksDesc: string;
   };
   onboarding: {
     selectOrgTitle: string;
@@ -1306,6 +1310,7 @@ export interface TranslationSchema {
     defaultInterviewerName: string;
     defaultSenderName: string;
     sampleCandidateName: string;
+    sampleCandidateEmail: string;
     sampleInterviewerName: string;
     optApplicationConfirmation: string;
     optInterviewInvitation: string;

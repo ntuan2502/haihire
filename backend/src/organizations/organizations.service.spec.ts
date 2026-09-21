@@ -210,7 +210,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                 mockMembers.push(newMem);
                 return newMem;
               }),
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
+              select: vi.fn().mockImplementation((..._fields: string[]) => ({
                 where: vi.fn().mockImplementation((predicateFn) => ({
                   first: vi.fn().mockImplementation(async () => {
                     const match = mockMembers.find((m) => {
@@ -271,7 +271,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                 mockLinks.push({ ...create, createdAt: new Date(), updatedAt: new Date() });
                 return create;
               }),
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
+              select: vi.fn().mockImplementation((..._fields: string[]) => ({
                 where: vi.fn().mockImplementation((predicateFn) => ({
                   first: vi.fn().mockImplementation(async () => {
                     const match = mockLinks.find((l) => {

@@ -12,6 +12,7 @@
 - [project] AG Kit only supports Gemini CLI and Google Antigravity (not other AI coding tools) → project-conventions.md
 - [project] Component metadata uses SemVer while toolkit releases use CalVer → tech-decisions.md
 - [project] Prisma 8 Contract-first architecture, scaffolding, and CLI conventions → tech-decisions.md
+- [project] Modern package ecosystem baseline (Next 16, React 19, Prisma 8 / Composer 0.20 orm syntax) → tech-decisions.md
 - [project] Internationalization (i18n): 100% text, placeholders, labels must use translations (`t()`), never hardcoded → project-conventions.md
 - [project] Component Architecture: 5-layer modular structure (ui, shared, layout, providers, features) with zero loose root files → tech-decisions.md
 - [project] React Import Convention: Always use named imports `{ useState, ReactNode } from "react"`, no `React.x` except inside `components/ui/` → tech-decisions.md

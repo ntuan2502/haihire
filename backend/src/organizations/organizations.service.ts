@@ -225,13 +225,6 @@ export class OrganizationsService implements OnModuleInit {
       throw new NotFoundException("Organization not found.");
     }
 
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
-
     const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
 
     // Check if user already has an active membership in this organization

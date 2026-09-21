@@ -105,7 +105,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         orm: {
           public: {
             Job: {
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
+              select: vi.fn().mockImplementation((..._fields: string[]) => ({
                 all: vi.fn().mockImplementation(async () => {
                   return mockJobs.map((j) => ({ ...j }));
                 }),

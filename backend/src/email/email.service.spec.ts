@@ -78,7 +78,7 @@ describe("EmailService", () => {
               }),
             },
             EmailLog: {
-              where: vi.fn().mockImplementation((predicateFn) => ({
+              where: vi.fn().mockImplementation((_predicateFn) => ({
                 where: vi.fn().mockImplementation(() => ({
                   all: vi.fn().mockResolvedValue(inMemoryLogs),
                 })),

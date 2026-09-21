@@ -21,11 +21,20 @@ updated: 2026-09-18
   - **Shared Contract**: Standardize on `PaginationParams` (`page`, `limit`, `search`) and `PaginatedResult<T>` exported from `@ats/types`.
   - **UI Integration**: Frontend pagination controls (rows per page, current page, search query) bind directly to query parameters and receive metadata `{ data, total, page, limit, totalPages }` directly from the backend.
 
-- **Prisma 8 Architecture & Conventions**:
+- **Modern Package Ecosystem & Syntax Standards (2026 Baseline)**:
+  - **Frontend**: Next.js 16.3.5 (Turbopack), React / React DOM 19.3.0, TanStack Query v5.103+, Base UI v1.8+, Shadcn CLI v4.21+.
+  - **Backend**: Vitest 5.0.1, BullMQ 6.3.8+, Dotenv 18.0+, Node 26+ types, ESLint 10.11+.
+  - **Token & Process Efficiency**: Keep code concise and direct; verify root cause before editing; avoid redundant rebuilds or repetitive status loops.
+
+- **Prisma 8 & Composer Architecture Conventions**:
   - **Scaffolding**: Always scaffold using `pnpx create-prisma@latest create <dir> --template <template> --provider postgres --package-manager pnpm`.
   - **Schema/Contract**: Schema lives in `src/prisma/contract.prisma` with `// use prisma-next` header. Do NOT use obsolete `datasource` blocks inside schema or `@updatedAt` (use `temporal.updatedAt()` instead).
   - **Cascade Integrity**: Always specify `onDelete: Cascade` on dependent child relations (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) to guarantee atomic cascade deletion at the database level.
-  - **Contract Compilation**: Always run `pnpm run contract:emit` after modifying `contract.prisma` to generate `contract.json` and `contract.d.ts`.
+  - **Contract Compilation**: Always run `pnpm run contract:emit` after modifying `contract.prisma` or upgrading Prisma to synchronize `contract.json`, `contract.d.ts`, and runtime codecs.
+  - **Composer Imports (CRITICAL - 0.20.0+ Modern Syntax)**:
+    - Never import from deprecated `@prisma/composer-prisma-cloud/prisma-next`.
+    - Always import ORM bindings from `"@prisma/composer-prisma-cloud/orm"`.
+    - Use `postgres(...)` (never obsolete `pnPostgres`) and `dataContract(...)` (never obsolete `pnContract`).
   - **Configuration**: Connection URL and ORM config live in `prisma.config.ts` using validated `env.DATABASE_URL`.
   - **Database Lifecycle**: Use `prisma db init`, `prisma db update`, `prisma db migrate` instead of legacy `prisma migrate dev`.
   - **Client Access**: Access models via namespace `db.orm.public.<Model>`.

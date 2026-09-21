@@ -1,14 +1,21 @@
 {
-  "name": "@ats/types",
+  "name": "@ats/shared",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
   "scripts": {
     "build": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^22.13.9",
     "typescript": "^5.9.3"
   }
 }

@@ -18,6 +18,7 @@ import { AVAILABLE_VARIABLES } from "./variable-registry";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
+import { SendSystemEmailDto, SendSystemTestEmailDto } from "./dto/send-system-email.dto";
 
 @Controller("email")
 @UseGuards(AuthGuard("jwt"), RolesGuard)
@@ -115,6 +116,40 @@ export class EmailController {
     if (!orgId) return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
     return this.emailService.getLogs(orgId, {
       candidateId,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      search,
+      status,
+    });
+  }
+
+  @Get("system/config")
+  @Roles("ADMIN")
+  getSystemConfig() {
+    return this.emailService.getSystemEmailConfig();
+  }
+
+  @Post("system/test")
+  @Roles("ADMIN")
+  sendSystemTestEmail(@Body() dto: SendSystemTestEmailDto) {
+    return this.emailService.sendSystemTestEmail(dto);
+  }
+
+  @Post("system/send")
+  @Roles("ADMIN")
+  sendSystemEmail(@Body() dto: SendSystemEmailDto) {
+    return this.emailService.sendSystemEmail(dto);
+  }
+
+  @Get("system/logs")
+  @Roles("ADMIN")
+  getSystemLogs(
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("status") status?: string,
+  ) {
+    return this.emailService.getSystemLogs({
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       search,

@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a1055371802eaca3f612a56e8c89a5a1fbb7484dcb293651c3ccdf2cec729fa0'>;
+  StorageHashBase<'87a407d419bf51e30358af773efd868a72ae367fe09133c0c5909c808540bf52'>;
 export type ExecutionHash =
   ExecutionHashBase<'0e50d3ac55cd1bb8d6595db6bbf3a1ef491fae96f6eff9e2ae842a7955555f0b'>;
 export type ProfileHash =
@@ -311,7 +311,8 @@ export type FieldOutputTypes = {
     };
     readonly EmailLog: {
       readonly id: CodecTypes['pg/text@1']['output'];
-      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly scope: 'SYSTEM' | 'ORGANIZATION';
+      readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
       readonly candidateId: CodecTypes['pg/text@1']['output'] | null;
       readonly applicationId: CodecTypes['pg/text@1']['output'] | null;
       readonly senderId: CodecTypes['pg/text@1']['output'] | null;
@@ -505,7 +506,8 @@ export type FieldInputTypes = {
     };
     readonly EmailLog: {
       readonly id: CodecTypes['pg/text@1']['input'];
-      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly scope: 'SYSTEM' | 'ORGANIZATION';
+      readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
       readonly candidateId: CodecTypes['pg/text@1']['input'] | null;
       readonly applicationId: CodecTypes['pg/text@1']['input'] | null;
       readonly senderId: CodecTypes['pg/text@1']['input'] | null;
@@ -704,9 +706,10 @@ export type StorageColumnTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly errorMessage: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/text@1']['output'];
-      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
       readonly recipientEmail: CodecTypes['pg/text@1']['output'];
       readonly recipientName: CodecTypes['pg/text@1']['output'];
+      readonly scope: 'SYSTEM' | 'ORGANIZATION';
       readonly senderEmail: CodecTypes['pg/text@1']['output'];
       readonly senderId: CodecTypes['pg/text@1']['output'] | null;
       readonly senderName: CodecTypes['pg/text@1']['output'];
@@ -898,9 +901,10 @@ export type StorageColumnInputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly errorMessage: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/text@1']['input'];
-      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
       readonly recipientEmail: CodecTypes['pg/text@1']['input'];
       readonly recipientName: CodecTypes['pg/text@1']['input'];
+      readonly scope: 'SYSTEM' | 'ORGANIZATION';
       readonly senderEmail: CodecTypes['pg/text@1']['input'];
       readonly senderId: CodecTypes['pg/text@1']['input'] | null;
       readonly senderName: CodecTypes['pg/text@1']['input'];
@@ -1209,7 +1213,8 @@ export namespace Models {
   };
   export type public_EmailLog = {
     id: CodecTypes['pg/text@1']['output'];
-    organizationId: CodecTypes['pg/text@1']['output'];
+    scope: 'SYSTEM' | 'ORGANIZATION';
+    organizationId: CodecTypes['pg/text@1']['output'] | null;
     candidateId: CodecTypes['pg/text@1']['output'] | null;
     applicationId: CodecTypes['pg/text@1']['output'] | null;
     senderId: CodecTypes['pg/text@1']['output'] | null;
@@ -1228,7 +1233,7 @@ export namespace Models {
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     application: public_Application | null;
     candidate: public_Candidate | null;
-    organization: public_Organization;
+    organization: public_Organization | null;
     readonly [RelationKeys]?: 'application' | 'candidate' | 'organization';
   };
   export type public_ActivityLog = {
@@ -1801,10 +1806,19 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
-                readonly organizationId: {
+                readonly scope: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'ORGANIZATION'>;
+                  };
+                };
+                readonly organizationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly candidateId: {
                   readonly nativeType: 'text';
@@ -1899,6 +1913,12 @@ type ContractBase = Omit<
                   readonly name: 'emailLog_organizationId_createdAt_idx_c52d1cc3';
                   readonly prefix: 'emailLog_organizationId_createdAt_idx';
                   readonly columns: readonly ['organizationId', 'createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'emailLog_scope_createdAt_idx_9f80888a';
+                  readonly prefix: 'emailLog_scope_createdAt_idx';
+                  readonly columns: readonly ['scope', 'createdAt'];
                   readonly unique: false;
                 },
                 {
@@ -2744,6 +2764,10 @@ type ContractBase = Omit<
               readonly kind: 'valueSet';
               readonly values: readonly ['SENT', 'SIMULATED', 'FAILED'];
             };
+            readonly EmailScope: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['SYSTEM', 'ORGANIZATION'];
+            };
             readonly EmailTemplateType: {
               readonly kind: 'valueSet';
               readonly values: readonly [
@@ -3366,8 +3390,12 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly organizationId: {
+              readonly scope: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly candidateId: {
@@ -3471,7 +3499,7 @@ type ContractBase = Omit<
                   readonly model: 'Organization';
                 };
                 readonly cardinality: 'N:1';
-                readonly nullable: false;
+                readonly nullable: true;
                 readonly on: {
                   readonly localFields: readonly ['organizationId'];
                   readonly targetFields: readonly ['id'];
@@ -3483,6 +3511,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly scope: { readonly column: 'scope' };
                 readonly organizationId: { readonly column: 'organizationId' };
                 readonly candidateId: { readonly column: 'candidateId' };
                 readonly applicationId: { readonly column: 'applicationId' };
@@ -4441,6 +4470,13 @@ type ContractBase = Omit<
               { readonly name: 'SENT'; readonly value: 'SENT' },
               { readonly name: 'SIMULATED'; readonly value: 'SIMULATED' },
               { readonly name: 'FAILED'; readonly value: 'FAILED' },
+            ];
+          };
+          readonly EmailScope: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'SYSTEM'; readonly value: 'SYSTEM' },
+              { readonly name: 'ORGANIZATION'; readonly value: 'ORGANIZATION' },
             ];
           };
           readonly ActivityType: {

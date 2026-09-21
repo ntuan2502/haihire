@@ -122,14 +122,29 @@ Hệ thống hiện tại đã hoàn thiện trọn vẹn quy trình tuyển d�
   - Lên lịch phỏng vấn (tích chọn gửi mail) $\rightarrow$ tự động gửi thư mời kèm link họp.
 - 🟢 **Soạn thư thủ công (Manual Send Email Modal)**: Gửi thư nhanh cho ứng viên từ trang chi tiết với bản xem trước động.
 - 🟢 **Nhật ký hộp thư đi (Email Outbox Logs)**: Phân trang, tìm kiếm theo người nhận, lọc trạng thái gửi (`SENT`, `SIMULATED`, `FAILED`) và thông điệp lỗi chi tiết.
+- 🟢 **Kiến trúc Email Hệ thống Thống nhất (System Email Architecture)**:
+  - Cấu hình cấp nền tảng thông qua cụm biến môi trường `SYSTEM_EMAIL_*` trong `.env` với kiểm định Zod fail-fast tại thời điểm khởi động.
+  - Tái sử dụng 100% Strategy Transporter Engine (`SIMULATED`, `SMTP`, `RESEND`, `SENDGRID`) và hàng đợi bất đồng bộ BullMQ với retry tự động.
+  - Thống nhất bảng nhật ký `EmailLog` đa năng với trường `scope` (`SYSTEM` vs `ORGANIZATION`), cho phép ghi log thư hệ thống độc lập.
 
 ### 8. Dòng thời gian hoạt động (Candidate Activity Timeline)
 - 🟢 **Nhật ký kiểm toán thống nhất (`ActivityLog`)**: Tự động ghi nhận mọi sự kiện phát sinh: ứng tuyển, chuyển stage, gửi email, lên lịch phỏng vấn, cập nhật kết quả đánh giá, thêm ghi chú.
 - 🟢 **Component `CandidateTimeline`**: Hiển thị dòng thời gian trực quan theo trục dọc, có bộ lọc theo từng nhóm sự kiện (Tất cả, Email, Phỏng vấn, Đổi trạng thái) và hỗ trợ phân trang dữ liệu.
 
-### 9. Hạ tầng, Đa ngôn ngữ & Khả năng kết nối
-- 🟢 **Song ngữ Việt - Anh (i18n)**: Toàn bộ nhãn, placeholder, tooltip được quản lý tập trung và kiểm định tự động qua lệnh `pnpm check:i18n`.
-- 🟢 **Vận hành trên mạng LAN**: Cho phép các máy tính/điện thoại khác trong cùng mạng nội bộ kết nối trực tiếp đến IP máy chủ mà không bị lỗi bảo mật CORS hoặc Private Network Access.
+### 9. Phân trang Toàn diện & Đồng bộ Trạng thái URL (Full-Stack Pagination & URL State Sync)
+- 🟢 **Phân trang máy chủ 100% (Server-Side Pagination)**: Loại bỏ hoàn toàn cắt mảng client-side. Mọi danh sách (Ứng viên, Hồ sơ, Tin tuyển dụng, Thành viên, Nhật ký email, Nhật ký hệ thống, Dòng thời gian) phân trang trực tiếp ở tầng database với `skip` & `take`, trả về metadata chuẩn `{ data, total, page, limit, totalPages }`.
+- 🟢 **Đồng bộ tham số qua URL (`useTableParams`)**: Mọi thao tác đổi trang, số hàng/trang (`limit`), tìm kiếm (`search`), bộ lọc (trạng thái, vòng tuyển dụng, phòng ban, sắp xếp) được đồng bộ 2 chiều trực tiếp lên URL search parameters. Người dùng có thể sao chép URL hoặc tải lại trang mà không bị mất bộ lọc.
+- 🟢 **Tối ưu trải nghiệm không giật khung hình (Zero Layout Jump)**:
+  - Tích hợp `placeholderData: keepPreviousData` của TanStack Query giữ nguyên bảng dữ liệu trong khi chờ tải trang mới.
+  - Component `SearchInput` cô lập state nội bộ với debounce thông minh, gõ phím mượt mà không kích hoạt re-render toàn bộ trang.
+
+### 10. Hạ tầng Kỹ thuật, Đa ngôn ngữ & Gói chia sẻ Monorepo
+- 🟢 **Kiến trúc Monorepo & Gói chia sẻ (`@ats/shared`)**: Tách biệt thư mục `packages/shared` xuất bản kiểu dữ liệu TypeScript, hằng số, DTOs và codec API dùng chung giữa Backend và Frontend, loại bỏ hoàn toàn sự sai lệch schema.
+- 🟢 **Cấu hình môi trường tập trung & Fail-Fast**: Toàn bộ biến môi trường của Backend và Frontend được định nghĩa qua Zod schema với chính sách không fallback ngầm; tiến trình tự dừng (exit 1) ngay khi boot nếu thiếu biến. Script `pnpm check:env` tự động bảo đảm 100% key parity giữa `.env` và `.env.example`.
+- 🟢 **Hàng đợi xử lý nền bất đồng bộ (BullMQ & Redis)**: Tích hợp module xử lý nền chịu lỗi với cơ chế tự động thử lại 3 lần (exponential backoff) và tự động fallback sang xử lý trực tiếp (synchronous) nếu Redis không sẵn sàng.
+- 🟢 **Tương thích chuẩn Node 26 & Temporal API**: Module `toTimestamp()` xử lý trơn tru kiểu dữ liệu `Temporal.Instant` của Prisma 8, triệt tiêu hoàn toàn các lỗi `valueOf()` khi sắp xếp theo ngày tháng.
+- 🟢 **Song ngữ Việt - Anh toàn diện (i18n)**: 100% chuỗi hiển thị, nhãn, placeholder được quản lý qua bộ từ khóa i18n và xác thực tự động bằng script `pnpm check:i18n`.
+- 🟢 **Vận hành trên mạng LAN**: Cho phép các thiết bị khác trong cùng mạng cục bộ kết nối qua IP mà không gặp rào cản CORS hay Private Network Access.
 
 ---
 
@@ -182,6 +197,14 @@ timeline
   - Viết lại thư từ chối với văn phong ấm áp, tôn trọng ứng viên.
   - Tùy chỉnh thư mời phỏng vấn hoặc thư gửi đề nghị (Offer) theo phong cách trang trọng hoặc hiện đại.
 - **Độ ưu tiên**: 🟢 Trung bình (P2)
+
+#### 4. Giao diện Quản trị Email Hệ thống cho Super Admin (Super Admin System Email UI)
+- **Mục tiêu**: Cho phép Quản trị viên Tối cao (Super Admin) kiểm soát cấu hình gửi thư nền tảng trực quan trên Web Dashboard.
+- **Tính năng**:
+  - Xem thông tin cấu hình hiện tại đang nạp từ file `.env` (ẩn mật khẩu/API key nhạy cảm).
+  - Gửi email thử nghiệm kiểm tra kết nối trực tiếp trên giao diện (`/email/system/test`).
+  - Hỗ trợ cơ chế Hybrid nâng cao: Cho phép Super Admin kích hoạt ghi đè (override) cấu hình email hệ thống qua giao diện (lưu mã hóa AES-256 vào Database) và khôi phục về mặc định `.env` chỉ với 1 cú click.
+- **Độ ưu tiên**: 🟡 Trung bình cao (P1)
 
 ---
 
@@ -301,6 +324,7 @@ Hiện tại hệ thống đang có 2 quyền `ADMIN` và `MEMBER`. Cần mở r
 | **AI Candidate Matching & Scoring** | AI & Automation | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Candidate Self-Scheduling (Tự đặt lịch)** | Interviews | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Slack / MS Teams Webhook Alert** | Integrations | Thấp | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
+| **Super Admin System Email UI (Quản trị thư hệ thống)** | Settings & Email | Thấp - Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Career Site Builder (Tùy biến trang tuyển dụng)** | Public Portal | Thấp - Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Phễu tuyển dụng & Time-to-Hire Analytics** | Analytics | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Chính sách dữ liệu GDPR / Nghị định 13** | Compliance | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |

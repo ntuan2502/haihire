@@ -3,11 +3,16 @@ import { Job } from "bullmq";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { EmailService } from "./email.service";
 import type { SendEmailDto } from "./dto/send-email.dto";
+import type { SendSystemEmailDto } from "./dto/send-system-email.dto";
 
 export interface SendEmailJobData {
   dto: SendEmailDto;
   organizationId: string;
   senderUser?: { id?: string; name?: string };
+}
+
+export interface SendSystemEmailJobData {
+  dto: SendSystemEmailDto;
 }
 
 @Processor("email-queue")
@@ -19,13 +24,18 @@ export class EmailProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<SendEmailJobData>): Promise<unknown> {
-    this.logger.log(`Processing email job ${job.id} for ${job.data?.dto?.to}`);
+  async process(job: Job<SendEmailJobData | SendSystemEmailJobData>): Promise<unknown> {
+    this.logger.log(`Processing email job '${job.name}' (ID: ${job.id})`);
     try {
+      if (job.name === "send-system-email") {
+        const data = job.data as SendSystemEmailJobData;
+        return await this.emailService.executeSendSystemEmail(data.dto);
+      }
+      const data = job.data as SendEmailJobData;
       return await this.emailService.executeSendEmail(
-        job.data.dto,
-        job.data.organizationId,
-        job.data.senderUser,
+        data.dto,
+        data.organizationId,
+        data.senderUser,
       );
     } catch (err) {
       this.logger.error(`Failed to process email job ${job.id}:`, err);

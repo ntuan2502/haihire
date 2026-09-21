@@ -230,7 +230,7 @@ export interface Application {
   interviews?: Interview[];
   createdAt: string;
   updatedAt: string;
-  job?: Partial<Job>;
+  job?: Pick<Job, "id" | "title" | "department" | "location" | "status" | "type">;
 }
 
 export interface CreateJobInput {
@@ -258,7 +258,9 @@ export interface CreateCandidateInput {
   email: string;
   phone?: string;
   notes?: string;
-  resume?: unknown;
+  resumeUrl?: string;
+  resumeFileName?: string;
+  resumeFile?: unknown;
   organizationId?: string;
 }
 
@@ -307,7 +309,9 @@ export interface CreateApplicationInput {
   candidateEmail?: string;
   candidatePhone?: string;
   notes?: string;
-  resume?: unknown;
+  resumeUrl?: string;
+  resumeFileName?: string;
+  resumeFile?: unknown;
 }
 
 export interface PaginationParams {

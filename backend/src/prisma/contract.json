@@ -140,6 +140,19 @@
               }
             ]
           },
+          "EmailScope": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "SYSTEM",
+                "value": "SYSTEM"
+              },
+              {
+                "name": "ORGANIZATION",
+                "value": "ORGANIZATION"
+              }
+            ]
+          },
           "EmailTemplateType": {
             "codecId": "pg/text@1",
             "members": [
@@ -1208,7 +1221,7 @@
                 }
               },
               "organizationId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -1226,6 +1239,19 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "scope": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "EmailScope",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "senderEmail": {
@@ -1332,7 +1358,7 @@
               },
               "organization": {
                 "cardinality": "N:1",
-                "nullable": false,
+                "nullable": true,
                 "on": {
                   "localFields": [
                     "organizationId"
@@ -1375,6 +1401,9 @@
                 },
                 "recipientName": {
                   "column": "recipientName"
+                },
+                "scope": {
+                  "column": "scope"
                 },
                 "senderEmail": {
                   "column": "senderEmail"
@@ -3424,6 +3453,11 @@
             "emailLog": {
               "checks": [
                 {
+                  "expression": "\"scope\" IN ('SYSTEM', 'ORGANIZATION')",
+                  "name": "emailLog_scope_check_6f463ed9",
+                  "prefix": "emailLog_scope_check"
+                },
+                {
                   "expression": "\"status\" IN ('SENT', 'SIMULATED', 'FAILED')",
                   "name": "emailLog_status_check_5d366a78",
                   "prefix": "emailLog_status_check"
@@ -3472,7 +3506,7 @@
                 "organizationId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "recipientEmail": {
                   "codecId": "pg/text@1",
@@ -3483,6 +3517,21 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "scope": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "ORGANIZATION"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "EmailScope",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "senderEmail": {
                   "codecId": "pg/text@1",
@@ -3631,6 +3680,15 @@
                   ],
                   "name": "emailLog_organizationId_idx_2e17ef41",
                   "prefix": "emailLog_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "scope",
+                    "createdAt"
+                  ],
+                  "name": "emailLog_scope_createdAt_idx_9f80888a",
+                  "prefix": "emailLog_scope_createdAt_idx",
                   "unique": false
                 }
               ],
@@ -4715,6 +4773,13 @@
                 "FAILED"
               ]
             },
+            "EmailScope": {
+              "kind": "valueSet",
+              "values": [
+                "SYSTEM",
+                "ORGANIZATION"
+              ]
+            },
             "EmailTemplateType": {
               "kind": "valueSet",
               "values": [
@@ -4809,7 +4874,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a1055371802eaca3f612a56e8c89a5a1fbb7484dcb293651c3ccdf2cec729fa0"
+    "storageHash": "87a407d419bf51e30358af773efd868a72ae367fe09133c0c5909c808540bf52"
   },
   "execution": {
     "executionHash": "0e50d3ac55cd1bb8d6595db6bbf3a1ef491fae96f6eff9e2ae842a7955555f0b",

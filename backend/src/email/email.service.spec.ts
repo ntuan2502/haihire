@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { EmailService, interpolate, DEFAULT_TEMPLATES } from "./email.service";
+import { EmailTransporterFactory } from "./transporters/transporter.factory";
 import { EncryptionService } from "../common/encryption.service";
 
 describe("EmailService", () => {
@@ -88,6 +89,11 @@ describe("EmailService", () => {
                 inMemoryLogs.push(data);
                 return data;
               }),
+            },
+            Organization: {
+              select: vi.fn().mockImplementation(() => ({
+                first: vi.fn().mockResolvedValue({ id: "org-1" }),
+              })),
             },
           },
         },
@@ -258,6 +264,102 @@ describe("EmailService", () => {
         status: "QUEUED",
         message: "Email queued for delivery",
       });
+    });
+  });
+
+  describe("System Email", () => {
+    it("should retrieve masked system email configuration from env", () => {
+      const config = service.getSystemEmailConfig();
+      expect(config).toBeDefined();
+      expect(config.provider).toBe("SIMULATED");
+      expect(config.fromName).toBe("ATS Platform");
+      expect(config.fromEmail).toBe("noreply@ats.internal");
+    });
+
+    it("should send system email with simulated provider", async () => {
+      const result = await service.sendSystemEmail({
+        to: "user@example.com",
+        recipientName: "New User",
+        subject: "Welcome to ATS",
+        body: "Hello and welcome to {{platform}}",
+        variables: { platform: "ATS Platform" },
+        organizationId: "org-1",
+      });
+
+      if (!("success" in result)) {
+        throw new Error("Expected direct send result");
+      }
+      expect(result.success).toBe(true);
+      expect(result.status).toBe("SIMULATED");
+      expect(result.to).toBe("user@example.com");
+      expect(result.from).toContain("ATS Platform");
+      expect(result.subject).toBe("Welcome to ATS");
+    });
+
+    it("should send system test email", async () => {
+      const result = await service.sendSystemTestEmail({
+        to: "admin@example.com",
+      });
+
+      if (!("success" in result)) {
+        throw new Error("Expected direct send result");
+      }
+      expect(result.success).toBe(true);
+      expect(result.status).toBe("SIMULATED");
+      expect(result.to).toBe("admin@example.com");
+      expect(result.subject).toContain("[System Test]");
+    });
+
+    it("should retrieve system logs with pagination", async () => {
+      const logs = await service.getSystemLogs();
+      expect(logs).toBeDefined();
+      expect(logs.data).toBeInstanceOf(Array);
+      expect(logs.page).toBe(1);
+      expect(logs.limit).toBe(20);
+    });
+  });
+
+  describe("EmailTransporterFactory", () => {
+    it("should instantiate SimulatedTransporter for SIMULATED provider", () => {
+      const transporter = EmailTransporterFactory.create({
+        provider: "SIMULATED",
+        fromName: "Test",
+        fromEmail: "test@example.com",
+      });
+      expect(transporter).toBeDefined();
+    });
+
+    it("should instantiate SmtpTransporter for SMTP provider", () => {
+      const transporter = EmailTransporterFactory.create({
+        provider: "SMTP",
+        fromName: "Test",
+        fromEmail: "test@example.com",
+        smtpHost: "smtp.example.com",
+        smtpPort: 587,
+        smtpUser: "user",
+        smtpPass: "pass",
+      });
+      expect(transporter).toBeDefined();
+    });
+
+    it("should instantiate ResendTransporter for RESEND provider", () => {
+      const transporter = EmailTransporterFactory.create({
+        provider: "RESEND",
+        fromName: "Test",
+        fromEmail: "test@example.com",
+        resendApiKey: "re_12345678",
+      });
+      expect(transporter).toBeDefined();
+    });
+
+    it("should instantiate SendGridTransporter for SENDGRID provider", () => {
+      const transporter = EmailTransporterFactory.create({
+        provider: "SENDGRID",
+        fromName: "Test",
+        fromEmail: "test@example.com",
+        sendgridApiKey: "SG.12345678",
+      });
+      expect(transporter).toBeDefined();
     });
   });
 });

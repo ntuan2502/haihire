@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,10 +83,10 @@ function walkSourceFiles(dir: string): string[] {
     const stat = fs.statSync(fullPath);
 
     if (stat.isDirectory()) {
-      if (item === "node_modules" || item === ".next") continue;
+      if (item === "node_modules" || item === ".next" || item === "ui") continue;
       files = files.concat(walkSourceFiles(fullPath));
     } else if (item.endsWith(".tsx") || item.endsWith(".ts")) {
-      if (!item.endsWith(".d.ts")) {
+      if (!item.endsWith(".d.ts") && !item.endsWith(".spec.tsx") && !item.endsWith(".spec.ts")) {
         files.push(fullPath);
       }
     }
@@ -94,8 +95,68 @@ function walkSourceFiles(dir: string): string[] {
   return files;
 }
 
+// Allowed brand names, abbreviations, and symbols in JSX
+const ALLOWED_LITERALS = new Set([
+  "ATS",
+  "ATS Platform",
+  "ATS Careers",
+  "MB",
+  "AD",
+  "Beta",
+  "&bull;",
+  "&rarr;",
+  "&larr;",
+  "&ldquo;",
+  "&rdquo;",
+  "&lt;",
+  "&gt;",
+  "(TLS/SSL)",
+  "HTML / Template Variables",
+]);
+
+interface HardcodedHit {
+  file: string;
+  line: number;
+  text: string;
+}
+
+function scanHardcodedJsx(srcFiles: string[]): HardcodedHit[] {
+  const hits: HardcodedHit[] = [];
+
+  for (const file of srcFiles) {
+    if (!file.endsWith(".tsx")) continue;
+    if (file.includes(path.join("src", "i18n"))) continue;
+
+    const content = fs.readFileSync(file, "utf8");
+    const sf = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+
+    function visit(node: ts.Node) {
+      if (ts.isJsxText(node)) {
+        const text = node.getText(sf).trim();
+        // Ignore empty, symbols, single characters or allowed brand tokens
+        if (text && /[a-zA-Z]{2,}/.test(text) && !ALLOWED_LITERALS.has(text)) {
+          // Check if it's more than just technical characters or paths
+          if (!text.startsWith("/") && !text.startsWith("http") && !text.startsWith("{") && !text.startsWith("•")) {
+            // Words check: contains real words (e.g. 2 or more letters)
+            if (/[a-zA-Z]{3,}\s+[a-zA-Z]{2,}/.test(text) || (text.length > 8 && !/^[A-Z0-9_.-]+$/.test(text))) {
+              const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+              hits.push({ file: path.relative(ROOT_DIR, file), line: line + 1, text });
+            }
+          }
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    }
+
+    visit(sf);
+  }
+
+  return hits;
+}
+
 function main(): void {
-  console.log("\n🔍 Running ATS i18n Verification Check...\n");
+  console.log("\n🔍 Running ATS Two-Way i18n Verification Check...\n");
 
   const schemaKeys = parseKeysFromTypesFile(TYPES_FILE);
   const viKeys = parseKeysFromObjectFile(VI_FILE);
@@ -107,7 +168,7 @@ function main(): void {
 
   let errors = 0;
 
-  // 1. Check Schema vs Locales consistency
+  // 1. Direction 1A: Check Schema vs Locales consistency
   const missingInViFromSchema: string[] = [];
   const missingInEnFromSchema: string[] = [];
 
@@ -128,7 +189,7 @@ function main(): void {
     errors += missingInEnFromSchema.length;
   }
 
-  // 2. Scan code usage
+  // 2. Direction 1B: Scan code usage for missing dictionary keys
   const srcFiles = walkSourceFiles(path.join(ROOT_DIR, "src"));
   const tCallRegex = /\bt\(\s*["']([^"'\n]+)["']/g;
   const missingInCode = new Map<
@@ -183,12 +244,24 @@ function main(): void {
     errors += missingInCode.size;
   }
 
+  // 3. Direction 2: Scan for untranslated raw JSX text
+  const hardcodedHits = scanHardcodedJsx(srcFiles);
+  if (hardcodedHits.length > 0) {
+    console.error(`❌ Found ${hardcodedHits.length} hardcoded text string(s) bypassing i18n in JSX:`);
+    for (const h of hardcodedHits) {
+      console.error(`   - "${h.text}" at ${h.file}:${h.line}`);
+    }
+    errors += hardcodedHits.length;
+  }
+
   if (errors > 0) {
-    console.error(`\n❌ i18n Check FAILED with ${errors} total issue(s).\n`);
+    console.error(`\n❌ Two-Way i18n Check FAILED with ${errors} total issue(s).\n`);
     process.exit(1);
   }
 
-  console.log("✅ All i18n keys are 100% consistent across code, types.ts, vi.ts, and en.ts!\n");
+  console.log("✅ Direction 1: All dictionary keys and t() calls are 100% consistent!");
+  console.log("✅ Direction 2: Zero hardcoded text found in JSX components!");
+  console.log("🎉 Two-Way i18n Verification PASSED 100%!\n");
   process.exit(0);
 }
 

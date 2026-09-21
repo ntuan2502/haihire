@@ -35,7 +35,4 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-
-# Internal Audit & Sensitive Docs
-ARCHITECTURE_AUDIT.md
 *.tsbuildinfo

@@ -8,6 +8,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { fixUtf8String } from "../applications/applications.service";
+import { toTimestamp } from "../common/date.util";
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
@@ -358,7 +359,7 @@ export class InterviewsService {
           return a.candidateName.localeCompare(b.candidateName);
         }
         if (options?.sortBy === "newest") {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
         }
         if (a.date && !b.date) return -1;
         if (!a.date && b.date) return 1;
@@ -367,7 +368,7 @@ export class InterviewsService {
           const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
           return dateA - dateB;
         }
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
       });
 
     const total = allItems.length;

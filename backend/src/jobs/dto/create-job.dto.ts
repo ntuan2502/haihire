@@ -5,7 +5,7 @@ import {
   JobStatus,
   WorkplaceType,
   ExperienceLevel,
-} from "@ats/types";
+} from "@ats/shared";
 
 export { JobType, JobStatus, WorkplaceType, ExperienceLevel };
 

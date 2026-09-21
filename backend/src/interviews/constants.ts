@@ -3,5 +3,5 @@ export {
   type InterviewType,
   INTERVIEW_FORMATS,
   type InterviewFormat,
-} from "@ats/types";
+} from "@ats/shared";
 

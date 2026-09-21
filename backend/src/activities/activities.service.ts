@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { toTimestamp } from "../common/date.util";
 import crypto from "node:crypto";
 
 export type ActivityType =
@@ -70,7 +71,7 @@ export class ActivitiesService {
         ...item,
         metadata: item.metadata ? this.safeParse(item.metadata) : null,
       }))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
 
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
     const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
@@ -99,7 +100,7 @@ export class ActivitiesService {
         ...item,
         metadata: item.metadata ? this.safeParse(item.metadata) : null,
       }))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
 
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
     const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;

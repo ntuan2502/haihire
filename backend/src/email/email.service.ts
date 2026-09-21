@@ -14,6 +14,7 @@ import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
 import { SendSystemEmailDto, SendSystemTestEmailDto } from "./dto/send-system-email.dto";
 import { EmailTransporterFactory } from "./transporters/transporter.factory";
+import { toTimestamp } from "../common/date.util";
 import { env } from "../config/env";
 import crypto from "node:crypto";
 
@@ -534,7 +535,7 @@ export class EmailService {
         candidateName: l.recipientName || "Ứng viên",
         candidateEmail: l.recipientEmail || "",
       }))
-      .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+      .sort((a, b) => toTimestamp(b.sentAt) - toTimestamp(a.sentAt));
 
     if (opts.status && opts.status !== "ALL") {
       mapped = mapped.filter((l) => l.status === opts.status);
@@ -704,7 +705,7 @@ export class EmailService {
         recipientName: l.recipientName || "Recipient",
         recipientEmail: l.recipientEmail || "",
       }))
-      .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+      .sort((a, b) => toTimestamp(b.sentAt) - toTimestamp(a.sentAt));
 
     if (opts.status && opts.status !== "ALL") {
       mapped = mapped.filter((l) => l.status === opts.status);

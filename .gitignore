@@ -37,5 +37,5 @@ Thumbs.db
 *.swo
 
 # Internal Audit & Sensitive Docs
-ARCHITECTURE_AUDIT.md
+docs/ARCHITECTURE_AUDIT.md
 *.tsbuildinfo

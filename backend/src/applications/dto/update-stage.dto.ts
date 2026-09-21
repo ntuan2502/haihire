@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional } from "class-validator";
-import { ApplicationStage } from "@ats/types";
+import { ApplicationStage } from "@ats/shared";
 
 export { ApplicationStage };
 

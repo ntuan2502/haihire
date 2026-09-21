@@ -11,5 +11,5 @@
     "types": ["node"],
     "typeRoots": ["./backend/node_modules/@types", "./node_modules/@types"]
   },
-  "include": ["scripts/**/*.ts"]
+  "include": ["packages/shared/scripts/**/*.ts", "packages/shared/src/**/*.ts"]
 }

@@ -1,10 +1,7 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Gender } from "@ats/shared";
 
-export enum Gender {
-  MALE = "MALE",
-  FEMALE = "FEMALE",
-  OTHER = "OTHER",
-}
+export { Gender };
 
 export class CreateCandidateDto {
   @IsString()

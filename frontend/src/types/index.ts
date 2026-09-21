@@ -1,5 +1,5 @@
 /**
  * Shared Domain Types
- * Re-exported from workspace package @ats/types
+ * Re-exported from workspace package @ats/shared
  */
-export * from "@ats/types";
+export * from "@ats/shared";

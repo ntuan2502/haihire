@@ -1,5 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 interface EnvCheckTarget {
   name: string;
@@ -8,16 +8,16 @@ interface EnvCheckTarget {
 }
 
 function parseEnvKeys(filePath: string): Set<string> | null {
-  if (!fs.existsSync(filePath)) {
+  if (!existsSync(filePath)) {
     return null;
   }
-  const content = fs.readFileSync(filePath, "utf-8");
+  const content = readFileSync(filePath, "utf-8");
   const keys = new Set<string>();
   for (const rawLine of content.split("\n")) {
     const line = rawLine.trim();
     if (!line || line.startsWith("#")) continue;
     const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/);
-    if (match) {
+    if (match && match[1]) {
       keys.add(match[1]);
     }
   }
@@ -44,8 +44,8 @@ console.log("=================================================");
 let hasError = false;
 
 for (const check of checks) {
-  const examplePath = path.resolve(process.cwd(), check.exampleFile);
-  const targetPath = path.resolve(process.cwd(), check.targetFile);
+  const examplePath = resolve(process.cwd(), check.exampleFile);
+  const targetPath = resolve(process.cwd(), check.targetFile);
 
   const exampleKeys = parseEnvKeys(examplePath);
   const targetKeys = parseEnvKeys(targetPath);
@@ -64,8 +64,8 @@ for (const check of checks) {
     continue;
   }
 
-  const missingInTarget = [...exampleKeys].filter((k) => !targetKeys.has(k));
-  const extraInTarget = [...targetKeys].filter((k) => !exampleKeys.has(k));
+  const missingInTarget = Array.from(exampleKeys).filter((k) => !targetKeys.has(k));
+  const extraInTarget = Array.from(targetKeys).filter((k) => !exampleKeys.has(k));
 
   if (missingInTarget.length > 0) {
     console.error(

@@ -5,3 +5,5 @@ export * from "./stage-badge";
 export * from "./language-dropdown";
 export * from "./theme-toggle";
 export * from "./auth-guard";
+export * from "./brand-logo";
+

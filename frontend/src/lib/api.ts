@@ -32,8 +32,8 @@ export const getApiBaseUrl = () => {
 
 export const getDocumentUrl = (url: string) => {
   if (!url) return "";
-  if (url.includes("/ats-resumes/")) {
-    const idx = url.indexOf("/ats-resumes/");
+  if (url.includes("/haihire-resumes/")) {
+    const idx = url.indexOf("/haihire-resumes/");
     return url.slice(idx);
   }
   if (url.startsWith("http://") || url.startsWith("https://")) return url;

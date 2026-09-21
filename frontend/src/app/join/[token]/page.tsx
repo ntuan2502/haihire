@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 
 interface PublicInviteData {
   valid: boolean;
@@ -145,7 +146,7 @@ export default function JoinOrganizationPage() {
             <Building2 className="h-4 w-4" />
           </div>
           <span className="text-sm font-bold text-slate-900 dark:text-white">
-            ATS
+            {BRAND_CONFIG.name}
           </span>
         </div>
       </header>
@@ -314,7 +315,7 @@ export default function JoinOrganizationPage() {
 
       {/* Footer */}
       <footer className="text-center py-4 text-[11px] text-slate-400">
-        © {new Date().getFullYear()} ATS. {t("careers.allRightsReserved")}
+        © {new Date().getFullYear()} {BRAND_CONFIG.name}. {t("careers.allRightsReserved")}
       </footer>
     </div>
   );

@@ -6,6 +6,10 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
+function toInstant(d: Date): unknown {
+  return Temporal.Instant.fromEpochMilliseconds(d.getTime());
+}
+
 const VIETNAMESE_FIRST_NAMES = [
   "Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng",
   "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý", "Đoàn", "Trịnh", "Lưu", "Mai",
@@ -464,7 +468,7 @@ class InterviewSlotManager {
     const linkOrLocation =
       format === "OFFICE"
         ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
-        : `https://meet.google.com/ats-demo-${candidateIdx}-${round}`;
+        : `https://meet.google.com/haihire-demo-${candidateIdx}-${round}`;
 
     return {
       date: slot.date,
@@ -704,7 +708,6 @@ export async function runSeed(): Promise<void> {
         status,
         organizationId: adminOrgId,
         createdById: adminUserId,
-        createdAt: jobCreatedAt,
       },
       update: {},
       conflictOn: { id: jobId },
@@ -850,7 +853,7 @@ export async function runSeed(): Promise<void> {
     jobDistributionStats[jobCount]++;
 
     const fileName = `CV_${candidate.name.replace(/\s+/g, "_")}.pdf`;
-    const resumeUrl = `/ats-resumes/${fileName}`;
+    const resumeUrl = `/haihire-resumes/${fileName}`;
     const resumeFileSize = Math.floor(500000 + Math.random() * 1500000); // 500KB - 2MB
     const candidateId = crypto.randomUUID();
 
@@ -870,7 +873,7 @@ export async function runSeed(): Promise<void> {
       firstName,
       lastName,
       gender,
-      dateOfBirth,
+      dateOfBirth: toInstant(dateOfBirth),
       email: candidate.email,
       phone: candidate.phone,
       notes: "Ứng viên tiềm năng trong Talent Pool.",
@@ -878,7 +881,7 @@ export async function runSeed(): Promise<void> {
       resumeFileName: fileName,
       resumeFileSize,
       resumeMimeType: "application/pdf",
-      createdAt: candidateCreatedAt,
+      createdAt: toInstant(candidateCreatedAt),
     });
 
     if (jobCount === 0) {
@@ -1006,7 +1009,7 @@ export async function runSeed(): Promise<void> {
           resumeMimeType: "application/pdf",
           notes,
           orderIndex,
-          createdAt: appCreatedAt,
+          createdAt: toInstant(appCreatedAt),
         });
       }
     }

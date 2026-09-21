@@ -8,7 +8,7 @@ export class EncryptionService {
   private readonly key: Buffer;
 
   constructor() {
-    this.key = crypto.scryptSync(env.ENCRYPTION_SECRET, "ats-salt-vector", 32);
+    this.key = crypto.scryptSync(env.ENCRYPTION_SECRET, "haihire-salt-vector", 32);
   }
 
   encrypt(plainText?: string | null): string | null {

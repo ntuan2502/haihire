@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 import {
   Building2,
   Share2,
@@ -110,11 +111,11 @@ export function CareersHeader({
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 p-0.5 shadow-sm group-hover:scale-105 transition-transform">
               <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-900">
-                <span className="font-black text-sm text-cyan-300">A</span>
+                <span className="font-black text-sm text-cyan-300">{BRAND_CONFIG.monogram}</span>
               </div>
             </div>
             <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
-              ATS Careers
+              {BRAND_CONFIG.careersTitle}
             </span>
           </Link>
 

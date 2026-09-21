@@ -305,7 +305,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
   }, [initialJob]);
 
   // LocalStorage Draft Management (mode === "create")
-  const DRAFT_STORAGE_KEY = "ats_job_wizard_draft";
+  const DRAFT_STORAGE_KEY = "haihire_job_wizard_draft";
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);

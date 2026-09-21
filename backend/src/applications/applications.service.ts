@@ -10,7 +10,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { type CandidateDocument } from "@ats/shared";
+import { type CandidateDocument } from "@haihire/shared";
 
 export function fixUtf8String(str?: string | null): string {
   if (!str) return "";

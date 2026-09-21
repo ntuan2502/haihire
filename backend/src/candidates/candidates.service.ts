@@ -11,7 +11,7 @@ import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../applications/applications.service";
 
-import { type CandidateDocument } from "@ats/shared";
+import { type CandidateDocument } from "@haihire/shared";
 
 function extractDocsFromNotes(
   notes: string | null,

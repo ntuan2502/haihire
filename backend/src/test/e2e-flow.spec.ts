@@ -290,7 +290,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
 
     const mockMinioService = {
       uploadFile: vi.fn().mockResolvedValue({
-        url: "http://localhost:9000/ats-resumes/resume.pdf",
+        url: "http://localhost:9000/haihire-resumes/resume.pdf",
         fileName: "resume.pdf",
         originalName: "resume.pdf",
         size: 1024,
@@ -353,7 +353,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
         name: "Nguyen Van A",
         email: "nguyenvana@example.com",
         phone: "+84901234567",
-        notes: "Docs:[{\"id\":\"doc-1\",\"name\":\"cv.pdf\",\"url\":\"http://localhost:9000/ats-resumes/cv.pdf\"}]",
+        notes: "Docs:[{\"id\":\"doc-1\",\"name\":\"cv.pdf\",\"url\":\"http://localhost:9000/haihire-resumes/cv.pdf\"}]",
       },
       undefined,
       "org-test-1",

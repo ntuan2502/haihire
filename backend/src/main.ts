@@ -29,7 +29,7 @@ async function bootstrap() {
   );
 
   await app.listen(env.PORT, "0.0.0.0");
-  console.log(`ATS Backend running at http://0.0.0.0:${env.PORT}`);
+  console.log(`HaiHire Backend running at http://0.0.0.0:${env.PORT}`);
 }
 
 bootstrap().catch((error) => {

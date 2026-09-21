@@ -30,6 +30,7 @@ import {
 import { cn } from "cn";
 import type { Organization } from "@/types";
 import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 
 function OnboardingContent() {
   const router = useRouter();
@@ -250,7 +251,7 @@ function OnboardingContent() {
             <Building2 className="h-4 w-4" />
           </div>
           <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
-            ATS
+            {BRAND_CONFIG.name}
           </span>
         </div>
       </header>

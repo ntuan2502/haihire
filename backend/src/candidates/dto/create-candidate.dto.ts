@@ -1,5 +1,5 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { Gender } from "@ats/shared";
+import { Gender } from "@haihire/shared";
 
 export { Gender };
 

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/constants/auth.constants";
 import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 
 function LoginForm() {
   const router = useRouter();
@@ -134,7 +135,7 @@ function LoginForm() {
           <ArrowLeft className="h-4 w-4" /> {t("common.back")}
         </Link>
         <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-          ATS
+          {BRAND_CONFIG.name}
         </span>
       </div>
 
@@ -349,11 +350,11 @@ export default function LoginPage() {
 
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
-              <span className="font-black text-xl tracking-tighter">A</span>
+              <span className="font-black text-xl tracking-tighter">{BRAND_CONFIG.monogram}</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xl tracking-tight">ATS</span>
+                <span className="font-bold text-xl tracking-tight">{BRAND_CONFIG.name}</span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-blue-500/30">
                   <Sparkles className="h-2.5 w-2.5" /> {t("auth.recruiterPortal")}
                 </span>

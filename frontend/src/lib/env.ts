@@ -5,7 +5,7 @@ const isServer = typeof window === "undefined";
 // Client-side environment schema (variables prefixed with NEXT_PUBLIC_)
 const clientEnvSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().default(""),
-  NEXT_PUBLIC_MINIO_URL: z.string().default("/ats-resumes"),
+  NEXT_PUBLIC_MINIO_URL: z.string().default("/haihire-resumes"),
 });
 
 // Server-only environment schema (accessible only on Node.js / SSR)

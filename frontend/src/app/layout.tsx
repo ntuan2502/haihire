@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider, QueryProvider } from "@/components/providers";
 import { AuthProvider } from "@/context/auth-context";
 import { I18nProvider } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 import "./globals.css";
 
 const inter = Inter({
@@ -13,9 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ATS - Modern Applicant Tracking System",
-  description:
-    "Next-Gen ATS with drag-and-drop hiring pipeline, MinIO CV storage, and live job board",
+  title: `${BRAND_CONFIG.name} - ${BRAND_CONFIG.tagline}`,
+  description: BRAND_CONFIG.description,
 };
 
 export default function RootLayout({

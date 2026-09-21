@@ -1,21 +1,23 @@
+name: haihire
+
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: ats-postgres
+    container_name: haihire-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-ats_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ats_password}
-      POSTGRES_DB: ${POSTGRES_DB:-ats_db}
+      POSTGRES_USER: ${POSTGRES_USER:-haihire_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-haihire_password}
+      POSTGRES_DB: ${POSTGRES_DB:-haihire_db}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - ats-network
+      - haihire-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ats_user} -d ${POSTGRES_DB:-ats_db}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-haihire_user} -d ${POSTGRES_DB:-haihire_db}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,7 +25,7 @@ services:
   # MinIO Object Storage (S3 Compatible)
   minio:
     image: minio/minio:latest
-    container_name: ats-minio
+    container_name: haihire-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -35,7 +37,7 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - ats-network
+      - haihire-network
     healthcheck:
       test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s
@@ -45,51 +47,52 @@ services:
   # MinIO Auto-Bucket Initialization Service (MinIO Client)
   minio-create-bucket:
     image: minio/mc:latest
-    container_name: ats-minio-init
+    container_name: haihire-minio-init
     depends_on:
       minio:
         condition: service_healthy
     networks:
-      - ats-network
+      - haihire-network
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-ats-resumes}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
     entrypoint: >
       /bin/sh -c " echo 'Waiting for MinIO to be ready...'; /usr/bin/mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD}; echo 'Creating default bucket: ' $${MINIO_BUCKET_NAME}; /usr/bin/mc mb myminio/$${MINIO_BUCKET_NAME} --ignore-existing; echo 'Setting public download policy on bucket: ' $${MINIO_BUCKET_NAME}; /usr/bin/mc anonymous set download myminio/$${MINIO_BUCKET_NAME}; echo 'MinIO initialization complete.'; exit 0; "
 
   # Redis (Cache & Asynchronous Queue)
   redis:
     image: redis:7-alpine
-    container_name: ats-redis
+    container_name: haihire-redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
-      - ats-network
+      - haihire-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 5s
       retries: 5
+
   # # NestJS Backend Service
   # backend:
   #   build:
   #     context: ./backend
   #     dockerfile: Dockerfile
-  #   container_name: ats-backend
+  #   container_name: haihire-backend
   #   restart: unless-stopped
   #   environment:
   #     PORT: ${BACKEND_PORT:-3001}
-  #     DATABASE_URL: postgresql://${POSTGRES_USER:-ats_user}:${POSTGRES_PASSWORD:-ats_password}@postgres:5432/${POSTGRES_DB:-ats_db}?schema=public
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
   #     MINIO_ENDPOINT: minio
   #     MINIO_PORT: 9000
   #     MINIO_USE_SSL: "false"
   #     MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
   #     MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-  #     MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-ats-resumes}
+  #     MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
   #     MINIO_PUBLIC_URL: http://localhost:9000
   #     FRONTEND_URL: http://localhost:3000
   #   ports:
@@ -105,19 +108,19 @@ services:
   #     minio-create-bucket:
   #       condition: service_completed_successfully
   #   networks:
-  #     - ats-network
-
+  #     - haihire-network
+  # 
   # # Next.js Frontend Service
   # frontend:
   #   build:
   #     context: ./frontend
   #     dockerfile: Dockerfile
-  #   container_name: ats-frontend
+  #   container_name: haihire-frontend
   #   restart: unless-stopped
   #   environment:
   #     PORT: 3000
   #     NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
-  #     NEXT_PUBLIC_MINIO_URL: http://localhost:${MINIO_PORT:-9000}/${MINIO_BUCKET_NAME:-ats-resumes}
+  #     NEXT_PUBLIC_MINIO_URL: http://localhost:${MINIO_PORT:-9000}/${MINIO_BUCKET_NAME:-haihire-resumes}
   #   ports:
   #     - "${FRONTEND_PORT:-3000}:3000"
   #   volumes:
@@ -127,16 +130,20 @@ services:
   #   depends_on:
   #     - backend
   #   networks:
-  #     - ats-network
+  #     - haihire-network
 
 volumes:
   postgres_data:
+    name: haihire_postgres_data
     driver: local
   minio_data:
+    name: haihire_minio_data
     driver: local
   redis_data:
+    name: haihire_redis_data
     driver: local
 
 networks:
-  ats-network:
+  haihire-network:
+    name: haihire_network
     driver: bridge

@@ -28,7 +28,7 @@ export class EventsController {
   ): Observable<MessageEvent> {
     const token =
       queryToken ||
-      req?.cookies?.["ats_token"] ||
+      req?.cookies?.["haihire_token"] ||
       (req?.headers?.authorization?.startsWith("Bearer ")
         ? req.headers.authorization.slice(7)
         : undefined);

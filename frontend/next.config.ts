@@ -82,8 +82,8 @@ const nextConfig: NextConfig = {
         destination: "http://127.0.0.1:3001/events/:path*",
       },
       {
-        source: "/ats-resumes/:path*",
-        destination: "http://127.0.0.1:9000/ats-resumes/:path*",
+        source: "/haihire-resumes/:path*",
+        destination: "http://127.0.0.1:9000/haihire-resumes/:path*",
       },
     ];
   },

@@ -127,7 +127,7 @@
 | **DOC-01** | Tải lên tài liệu CV (Upload) | `applications.service.spec.ts` | Ghi metadata file và liên kết vào hồ sơ ứng viên | 🟢 **Automated Passed** |
 | **DOC-02** | Xem trước tài liệu PDF trong Modal | Iframe Modal component | Mở modal preview PDF trực tiếp trong trình duyệt | 🟡 **Pending Manual Check** |
 | **DOC-03** | Tải về CV đúng tên file gốc UTF-8 | Hàm `fixUtf8String` | Chuẩn hóa chuỗi UTF-8 tiếng Việt cho header Content-Disposition | 🔵 **Build Verified** |
-| **DOC-04** | Xem tài liệu qua Next.js Proxy | Proxy rewrite test | Request `/ats-resumes/...` được chuyển tiếp server-side vào MinIO cổng 9000 | 🟢 **Automated Passed** |
+| **DOC-04** | Xem tài liệu qua Next.js Proxy | Proxy rewrite test | Request `/haihire-resumes/...` được chuyển tiếp server-side vào MinIO cổng 9000 | 🟢 **Automated Passed** |
 | **DOC-05** | Xóa tài liệu khỏi hồ sơ | `applications.service.spec.ts` | Gỡ tài liệu khỏi mảng documents và database | 🟢 **Automated Passed** |
 | **DOC-06** | Lưu trữ nhiều tài liệu cho 1 ứng viên | JSON metadata parser | Parse và quản lý nhiều document objects (CV, Cover Letter, Bằng cấp) | 🔵 **Build Verified** |
 

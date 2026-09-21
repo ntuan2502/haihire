@@ -5,6 +5,7 @@ import { Sparkles, ArrowRight, Check, Briefcase } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
+import { BrandLogo } from "@/components/shared";
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
@@ -19,16 +20,7 @@ export default function HomePage() {
       {/* Top Header / Navigation */}
       <header className="relative z-30 mx-auto flex h-20 max-w-7xl items-center justify-between px-6 sm:px-8">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-cyan-400 p-0.5 shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-[#040d24]">
-              <span className="font-black text-sm text-cyan-300">A</span>
-            </div>
-          </div>
-          <span className="text-xl font-bold tracking-tight text-white">
-            ATS
-          </span>
-        </Link>
+        <BrandLogo size="md" />
 
         {/* Center Nav Links */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">

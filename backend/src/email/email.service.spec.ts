@@ -272,17 +272,17 @@ describe("EmailService", () => {
       const config = service.getSystemEmailConfig();
       expect(config).toBeDefined();
       expect(config.provider).toBe("SIMULATED");
-      expect(config.fromName).toBe("ATS Platform");
-      expect(config.fromEmail).toBe("noreply@ats.internal");
+      expect(config.fromName).toBe("HaiHire Platform");
+      expect(config.fromEmail).toBe("noreply@haihire.internal");
     });
 
     it("should send system email with simulated provider", async () => {
       const result = await service.sendSystemEmail({
         to: "user@example.com",
         recipientName: "New User",
-        subject: "Welcome to ATS",
+        subject: "Welcome to HaiHire",
         body: "Hello and welcome to {{platform}}",
-        variables: { platform: "ATS Platform" },
+        variables: { platform: "HaiHire Platform" },
         organizationId: "org-1",
       });
 
@@ -292,8 +292,8 @@ describe("EmailService", () => {
       expect(result.success).toBe(true);
       expect(result.status).toBe("SIMULATED");
       expect(result.to).toBe("user@example.com");
-      expect(result.from).toContain("ATS Platform");
-      expect(result.subject).toBe("Welcome to ATS");
+      expect(result.from).toContain("HaiHire Platform");
+      expect(result.subject).toBe("Welcome to HaiHire");
     });
 
     it("should send system test email", async () => {

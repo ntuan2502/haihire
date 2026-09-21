@@ -5,7 +5,7 @@ import {
   JobStatus,
   WorkplaceType,
   ExperienceLevel,
-} from "@ats/shared";
+} from "@haihire/shared";
 
 export { JobType, JobStatus, WorkplaceType, ExperienceLevel };
 

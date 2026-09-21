@@ -45,7 +45,10 @@ updated: 2026-09-18T20:53
 - Do not claim compatibility with Claude Code, Cursor, Copilot, Windsurf, or other assistants unless the user explicitly expands scope.
 
 ## Brand Identity & Logos
-- Whenever reference images or mockups contain **Reqcore** (or other placeholder logos/names), ALWAYS replace with **ATS** (or "A" monogram / ATS logo) across all UI components, logos, and copy.
+- The official product brand name is **HaiHire** (monogram: **H**).
+- Always use the centralized `BRAND_CONFIG` from `@haihire/shared` for brand names, monograms, legal names, and careers portals to support straightforward white-labeling and on-premise deployments.
+- Reusable brand logo component lives in `frontend/src/components/shared/brand-logo.tsx` (`<BrandLogo />`).
+- Whenever reference images or mockups contain placeholder logos/names (like Reqcore or ATS), ALWAYS replace with **HaiHire** (or "H" monogram) across all UI components, logos, and copy.
 
 ## Validation & Testing Conventions
 - If only frontend UI is modified, only run frontend lint and build (`pnpm --filter frontend run build ; pnpm --filter frontend run lint`) without running backend tests or full test suites.

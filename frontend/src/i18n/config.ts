@@ -24,4 +24,4 @@ export const SUPPORTED_LOCALES: Record<SupportedLocale, LocaleInfo> = {
 
 export const DEFAULT_LOCALE: SupportedLocale = "en";
 export const LOCALE_COOKIE_KEY = "NEXT_LOCALE";
-export const LOCALE_STORAGE_KEY = "ats_locale";
+export const LOCALE_STORAGE_KEY = "haihire_locale";

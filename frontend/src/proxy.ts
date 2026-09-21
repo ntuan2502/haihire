@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const token = request.cookies.get("ats_token")?.value;
-  const hasOrg = request.cookies.get("ats_has_org")?.value === "true";
+  const token = request.cookies.get("haihire_token")?.value;
+  const hasOrg = request.cookies.get("haihire_has_org")?.value === "true";
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isDashboardPage = pathname.startsWith("/dashboard");

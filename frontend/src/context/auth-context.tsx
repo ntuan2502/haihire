@@ -31,20 +31,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = "ats_recruiter_token";
-const USER_KEY = "ats_recruiter_user";
+const TOKEN_KEY = "haihire_recruiter_token";
+const USER_KEY = "haihire_recruiter_user";
 
 function setAuthCookies(token: string, hasOrg: boolean) {
   if (typeof document === "undefined") return;
   const maxAge = 60 * 60 * 24 * 7; // 7 days
-  document.cookie = `ats_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-  document.cookie = `ats_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  document.cookie = `haihire_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  document.cookie = `haihire_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax`;
 }
 
 function clearAuthCookies() {
   if (typeof document === "undefined") return;
-  document.cookie = "ats_token=; path=/; max-age=0; SameSite=Lax";
-  document.cookie = "ats_has_org=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "haihire_token=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "haihire_has_org=; path=/; max-age=0; SameSite=Lax";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

@@ -39,6 +39,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
+import { BrandLogo } from "@/components/shared/brand-logo";
+import { BRAND_CONFIG } from "@haihire/shared";
 import { cn } from "cn";
 import { getInitials } from "@/lib/utils";
 import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
@@ -167,11 +169,9 @@ export function Navbar({
               href="/"
               className="flex items-center gap-2 mr-1 sm:mr-2 group"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-xs group-hover:scale-105 transition-transform">
-                <span className="font-black text-sm tracking-tighter">A</span>
-              </div>
+              <BrandLogo size="sm" variant="icon-only" />
               <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight hidden sm:inline">
-                {user?.organization?.name || "ATS"}
+                {user?.organization?.name || BRAND_CONFIG.name}
               </span>
             </Link>
 

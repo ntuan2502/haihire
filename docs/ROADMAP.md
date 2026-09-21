@@ -1,6 +1,6 @@
-# 🗺️ ATS Platform - Roadmap & Product Horizon
+# 🗺️ HaiHire - Roadmap & Product Horizon
 
-> **Tài liệu tổng quan lộ trình phát triển của hệ thống Quản lý Tuyển dụng (Applicant Tracking System - ATS).**  
+> **Tài liệu tổng quan lộ trình phát triển của hệ thống Tuyển dụng Hiện đại HaiHire (Applicant Tracking System).**  
 > **Phiên bản hiện tại:** `v1.0.0-beta`  
 > **Cập nhật:** Tháng 09/2026  
 > **Trạng thái:** Sẵn sàng vận hành thử nghiệm (Beta Production-Ready)
@@ -84,7 +84,7 @@ Hệ thống hiện tại đã hoàn thiện trọn vẹn quy trình tuyển d�
 - 🟢 **Tích hợp S3/MinIO**: Tải lên và quản lý tập tin CV, thư ngỏ, bằng cấp với độ an toàn cao.
 - 🟢 **Trình xem trước PDF tại chỗ (In-App PDF Modal Viewer)**: Mở và đọc nội dung CV trực tiếp trên trình duyệt mà không cần tải file về máy.
 - 🟢 **Xử lý tên file tiếng Việt UTF-8**: Tự động mã hóa chuẩn `Content-Disposition` giữ nguyên dấu tiếng Việt khi tải xuống.
-- 🟢 **Reverse Proxy an toàn**: Tuyến `/ats-resumes/*` được chuyển tiếp server-side, bảo vệ MinIO khỏi truy cập trực tiếp từ Internet công cộng.
+- 🟢 **Reverse Proxy an toàn**: Tuyến `/haihire-resumes/*` được chuyển tiếp server-side, bảo vệ MinIO khỏi truy cập trực tiếp từ Internet công cộng.
 
 ### 6. Lịch phỏng vấn & Đánh giá ứng viên (Interviews & Scorecards)
 - 🟢 **Đặt lịch phỏng vấn đa vòng**:

@@ -19,6 +19,7 @@ import {
 import type { TranslationSchema } from "./types";
 import { en } from "./locales/en";
 import { vi } from "./locales/vi";
+import { BRAND_CONFIG } from "@haihire/shared";
 
 const TRANSLATIONS: Record<SupportedLocale, TranslationSchema> = {
   en,
@@ -154,16 +155,20 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         return key;
       }
 
-      // Interpolate parameters: e.g. {name}
-      if (params) {
-        let text = val;
-        Object.entries(params).forEach(([paramKey, paramVal]) => {
-          text = text.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramVal));
-        });
-        return text;
-      }
+      // Inject default brand context + custom parameters
+      const mergedParams: Record<string, string | number> = {
+        brand: BRAND_CONFIG.name,
+        brandLegal: BRAND_CONFIG.legalName,
+        brandMonogram: BRAND_CONFIG.monogram,
+        domain: BRAND_CONFIG.domain,
+        ...params,
+      };
 
-      return val;
+      let text = val;
+      Object.entries(mergedParams).forEach(([paramKey, paramVal]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramVal));
+      });
+      return text;
     },
     [locale]
   );

@@ -22,6 +22,7 @@ import {
 import { slugify } from "@/lib/utils";
 import type { Job } from "@/types";
 import { useI18n } from "@/i18n";
+import { BRAND_CONFIG } from "@haihire/shared";
 
 export default function CareersDirectoryPage() {
   const { t } = useI18n();
@@ -49,7 +50,7 @@ export default function CareersDirectoryPage() {
       if (job.status !== "PUBLISHED") continue;
 
       const orgId = job.organization?.id || job.organizationId || "default";
-      const orgName = job.organization?.name || "ATS Organization";
+      const orgName = job.organization?.name || `${BRAND_CONFIG.name} Organization`;
       const orgSlug = job.organization?.slug || (job.organization?.name ? slugify(job.organization.name) : "company");
 
       if (!orgMap.has(orgSlug)) {

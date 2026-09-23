@@ -23,6 +23,7 @@ export function PipelineCandidateCard({
 
   return (
     <div
+      id={`candidate-card-${candidate.id}`}
       onClick={onSelect}
       className={`p-3.5 flex items-start gap-3 cursor-pointer transition-colors ${
         isSelected

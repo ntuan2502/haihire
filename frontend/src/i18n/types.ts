@@ -904,6 +904,7 @@ export interface TranslationSchema {
     defaultDepartment: string;
     scorecardTooltip: string;
     pipelineReviewTooltip: string;
+    viewCandidateInPipeline: string;
     roundInterview: string;
     pvPrefix: string;
     prevPeriod: string;

@@ -906,6 +906,7 @@ export const en: TranslationSchema = {
     defaultDepartment: "HR",
     scorecardTooltip: "View or update scorecard",
     pipelineReviewTooltip: "View pipeline evaluation",
+    viewCandidateInPipeline: "View candidate in Pipeline",
     roundInterview: "Round {round}",
     pvPrefix: "Intv: {interviewer}",
     prevPeriod: "Previous period",

@@ -18,6 +18,7 @@ import { useI18n } from "@/i18n";
 import {
   getInterviewsFromApplication,
   getInterviewTypeLabel,
+  getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
@@ -782,7 +783,7 @@ export function InterviewsCalendarView({
                     </span>
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 font-bold text-[10px] text-emerald-600 border">
-                    {selectedEvent.interview.scorecard.recommendation}
+                    {getRecommendationLabel(selectedEvent.interview.scorecard.recommendation, t)}
                   </span>
                 </div>
                 {selectedEvent.interview.scorecard.feedback && (

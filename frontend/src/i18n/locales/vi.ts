@@ -906,6 +906,7 @@ export const vi: TranslationSchema = {
     defaultDepartment: "HR",
     scorecardTooltip: "Xem hoặc cập nhật phiếu đánh giá",
     pipelineReviewTooltip: "Xem đánh giá pipeline",
+    viewCandidateInPipeline: "Xem hồ sơ ứng viên trong Pipeline",
     roundInterview: "Vòng {round}",
     pvPrefix: "PV: {interviewer}",
     prevPeriod: "Kỳ trước",

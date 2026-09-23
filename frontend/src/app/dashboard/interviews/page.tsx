@@ -410,9 +410,18 @@ function InterviewsPageContent() {
             jobs={jobs}
             onOpenScheduleModal={handleOpenScheduleModal}
             onOpenScorecard={handleOpenScorecard}
-            onNavigateToPipeline={(jobId) =>
-              router.push(`/dashboard/jobs/${jobId}/pipeline?stage=INTERVIEW`)
-            }
+            onNavigateToPipeline={(jobId, applicationId, stage) => {
+              const query = new URLSearchParams();
+              if (stage) {
+                query.set("stage", stage);
+              } else {
+                query.set("stage", "INTERVIEW");
+              }
+              if (applicationId) {
+                query.set("applicationId", applicationId);
+              }
+              router.push(`/dashboard/jobs/${jobId}/pipeline?${query.toString()}`);
+            }}
             canEdit={canEdit}
           />
         )}

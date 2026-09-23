@@ -14,6 +14,7 @@ import { useMemo } from "react";
 import {
   getInterviewsFromApplication,
   getInterviewTypeLabel,
+  getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
@@ -253,7 +254,7 @@ export function CandidateInterviewsList({
                     <span>{t("interviews.ratingResult", { score: scheduled.scorecard.overallRating })}</span>
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
-                    {t("interviews.recommendationLabel", { recommendation: scheduled.scorecard.recommendation })}
+                    {t("interviews.recommendationLabel", { recommendation: getRecommendationLabel(scheduled.scorecard.recommendation, t) })}
                   </span>
                 </div>
 

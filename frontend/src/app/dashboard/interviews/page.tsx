@@ -81,7 +81,7 @@ function InterviewsPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(user?.organizationId);
   const { data: allApplications = [] } = useAllApplications(user?.organizationId);
 
-  // Paginated interviews query from server API
+  // Paginated interviews query from server API (for Table view & Total KPIs)
   const { data: interviewsData, isLoading: appsLoading } = useInterviews({
     organizationId: user?.organizationId,
     page: currentPage,
@@ -90,6 +90,16 @@ function InterviewsPageContent() {
     jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
     tab: activeTab,
     sortBy,
+  });
+
+  // Full interviews query for Calendar view (all scheduled events, up to 1000 items)
+  const { data: calendarInterviewsData, isLoading: calendarLoading } = useInterviews({
+    organizationId: user?.organizationId,
+    limit: 1000,
+    search: searchQuery.trim() || undefined,
+    jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
+    tab: activeTab,
+    enabled: viewMode === "calendar",
   });
 
   // Efficient KPI queries
@@ -117,6 +127,12 @@ function InterviewsPageContent() {
       .map((intv) => intv.application as Application)
       .filter(Boolean);
   }, [interviewsData]);
+
+  const calendarApplications = useMemo(() => {
+    return (calendarInterviewsData?.data || [])
+      .map((intv) => intv.application as Application)
+      .filter(Boolean);
+  }, [calendarInterviewsData]);
 
   const filteredAndSortedList = paginatedList;
 
@@ -348,7 +364,22 @@ function InterviewsPageContent() {
         </div>
 
         {/* Content Section */}
-        {(jobsLoading || appsLoading) && !interviewsData ? (
+        {viewMode === "calendar" ? (
+          calendarLoading && !calendarInterviewsData ? (
+            <div className="py-20 flex justify-center">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <InterviewsCalendarView
+              applications={calendarApplications}
+              jobs={jobs}
+              onScheduleDate={(dateStr) => handleOpenScheduleModal(undefined, dateStr)}
+              onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date, intv)}
+              onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
+              canEdit={canEdit}
+            />
+          )
+        ) : (jobsLoading || appsLoading) && !interviewsData ? (
           <div className="py-20 flex justify-center">
             <LoadingSpinner />
           </div>
@@ -373,15 +404,6 @@ function InterviewsPageContent() {
               </Button>
             )}
           </div>
-        ) : viewMode === "calendar" ? (
-          <InterviewsCalendarView
-            applications={filteredAndSortedList}
-            jobs={jobs}
-            onScheduleDate={(dateStr) => handleOpenScheduleModal(undefined, dateStr)}
-            onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date, intv)}
-            onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
-            canEdit={canEdit}
-          />
         ) : (
           <InterviewsTableView
             applications={paginatedList}

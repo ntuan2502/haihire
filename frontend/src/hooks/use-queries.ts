@@ -664,6 +664,7 @@ export function useInterviews(params?: {
   search?: string;
   tab?: string;
   sortBy?: string;
+  enabled?: boolean;
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
@@ -701,7 +702,7 @@ export function useInterviews(params?: {
         sortBy: params?.sortBy,
       });
     },
-    enabled: Boolean(effectiveOrgId),
+    enabled: Boolean(effectiveOrgId) && (params?.enabled ?? true),
     placeholderData: keepPreviousData,
   });
 }

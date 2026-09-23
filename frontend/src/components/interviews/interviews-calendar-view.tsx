@@ -10,6 +10,7 @@ import {
   Plus,
   Star,
   ExternalLink,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
@@ -38,6 +39,14 @@ interface CalendarEventItem {
 
 type CalendarMode = "month" | "week";
 
+function formatLocalDate(year: number, monthIndex: number, day: number): string {
+  const d = new Date(year, monthIndex, day);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dt = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dt}`;
+}
+
 export function InterviewsCalendarView({
   applications,
   jobs,
@@ -50,6 +59,10 @@ export function InterviewsCalendarView({
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
+  const [openDayDetails, setOpenDayDetails] = useState<{
+    dateStr: string;
+    dayNumber: number;
+  } | null>(null);
 
   // Map of all interview events grouped by YYYY-MM-DD
   const eventsByDate = useMemo(() => {
@@ -81,9 +94,10 @@ export function InterviewsCalendarView({
     return map;
   }, [applications, jobs]);
 
-  // Today string YYYY-MM-DD
+  // Today string YYYY-MM-DD in local timezone
   const todayStr = useMemo(() => {
-    return new Date().toISOString().split("T")[0];
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   }, []);
 
   // Helpers for Month calculation
@@ -131,8 +145,7 @@ export function InterviewsCalendarView({
     const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
       const dayNum = prevMonthLastDay - i;
-      const d = new Date(currentYear, currentMonth - 1, dayNum);
-      const dateStr = d.toISOString().split("T")[0];
+      const dateStr = formatLocalDate(currentYear, currentMonth - 1, dayNum);
       days.push({
         dateStr,
         dayNumber: dayNum,
@@ -143,9 +156,7 @@ export function InterviewsCalendarView({
 
     // Current month days
     for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
-      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(
-        i,
-      ).padStart(2, "0")}`;
+      const dateStr = formatLocalDate(currentYear, currentMonth, i);
       days.push({
         dateStr,
         dayNumber: i,
@@ -157,8 +168,7 @@ export function InterviewsCalendarView({
     // Next month padding to fill out 35 or 42 cells
     const remaining = (7 - (days.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
-      const d = new Date(currentYear, currentMonth + 1, i);
-      const dateStr = d.toISOString().split("T")[0];
+      const dateStr = formatLocalDate(currentYear, currentMonth + 1, i);
       days.push({
         dateStr,
         dayNumber: i,
@@ -184,9 +194,7 @@ export function InterviewsCalendarView({
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-        d.getDate(),
-      ).padStart(2, "0")}`;
+      const dateStr = formatLocalDate(d.getFullYear(), d.getMonth(), d.getDate());
 
       days.push({
         dateStr,
@@ -220,6 +228,23 @@ export function InterviewsCalendarView({
     t("interviews.daysOfWeek.sat"),
     t("interviews.daysOfWeek.sun"),
   ], [t]);
+
+  const dayDetailsEvents = useMemo(() => {
+    if (!openDayDetails) return [];
+    return eventsByDate.get(openDayDetails.dateStr) || [];
+  }, [openDayDetails, eventsByDate]);
+
+  const dayDetailsTitle = useMemo(() => {
+    if (!openDayDetails) return "";
+    const [y, m, d] = openDayDetails.dateStr.split("-").map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    return dateObj.toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }, [openDayDetails, locale]);
 
   return (
     <div className="space-y-4">
@@ -308,11 +333,14 @@ export function InterviewsCalendarView({
             {monthDays.map((day, idx) => {
               const events = eventsByDate.get(day.dateStr) || [];
               const isWeekend = idx % 7 === 5 || idx % 7 === 6;
+              const maxDisplay = 4;
+              const visibleEvents = events.slice(0, maxDisplay);
+              const remainingCount = events.length - maxDisplay;
 
               return (
                 <div
                   key={`${day.dateStr}-${idx}`}
-                  className={`min-h-[110px] sm:min-h-[135px] p-2 flex flex-col justify-between transition-colors relative group ${
+                  className={`min-h-[125px] sm:min-h-[145px] p-1.5 sm:p-2 flex flex-col justify-start transition-colors relative group ${
                     day.isCurrentMonth
                       ? isWeekend
                         ? "bg-slate-50/30 dark:bg-slate-950/20"
@@ -321,7 +349,7 @@ export function InterviewsCalendarView({
                   } ${day.isToday ? "ring-2 ring-inset ring-blue-500/30 bg-blue-50/10" : ""}`}
                 >
                   {/* Top Bar inside cell: Date number & Add Button */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-1.5">
                     <span
                       className={`inline-flex items-center justify-center text-xs font-bold rounded-lg ${
                         day.isToday
@@ -339,16 +367,16 @@ export function InterviewsCalendarView({
                         type="button"
                         onClick={() => onScheduleDate(day.dateStr)}
                         className="opacity-0 group-hover:opacity-100 h-5 w-5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center transition-all cursor-pointer"
-                        title={`${t("interviews.scheduleInterview")} ${day.dateStr}`}
+                        title={`${t("interviews.scheduleNew")} ${day.dateStr}`}
                       >
                         <Plus className="h-3 w-3" />
                       </button>
                     )}
                   </div>
 
-                  {/* Event Blocks List */}
-                  <div className="space-y-1.5 my-1 flex-1 overflow-y-auto max-h-[85px] scrollbar-thin">
-                    {events.map((evt, eIdx) => {
+                  {/* 1-Line Event Strips (Outlook style, max 4) */}
+                  <div className="space-y-1 w-full flex-1">
+                    {visibleEvents.map((evt, eIdx) => {
                       const candidateName = getCandidateDisplayName(evt.application);
                       const hasScorecard = Boolean(evt.interview.scorecard);
 
@@ -356,47 +384,39 @@ export function InterviewsCalendarView({
                         <div
                           key={`${evt.application.id}-${eIdx}`}
                           onClick={() => setSelectedEvent(evt)}
-                          className={`p-1.5 rounded-xl border text-[11px] leading-tight cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.99] shadow-2xs ${
+                          className={`h-5 sm:h-[22px] px-1.5 rounded flex items-center gap-1.5 text-[11px] leading-none cursor-pointer transition-all hover:brightness-95 active:scale-[0.99] border-l-2 select-none truncate ${
                             hasScorecard
-                              ? "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100"
-                              : "bg-blue-50/90 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-950 dark:text-blue-100"
+                              ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-950 dark:text-emerald-200"
+                              : "bg-blue-50 dark:bg-blue-950/50 border-blue-500 text-blue-950 dark:text-blue-200"
                           }`}
+                          title={`${evt.interview.time || ""} ${candidateName} • ${evt.job?.title || ""}`}
                         >
-                          <div className="flex items-center justify-between gap-1 font-bold">
-                            <span className="flex items-center gap-1 truncate">
-                              <Clock className="h-2.5 w-2.5 shrink-0 opacity-70" />
-                              <span>{evt.interview.time || "10:00"}</span>
-                            </span>
-                            {evt.interview.format === "OFFICE" ? (
-                              <MapPin className="h-2.5 w-2.5 text-rose-500 shrink-0" />
-                            ) : (
-                              <Video className="h-2.5 w-2.5 text-emerald-500 shrink-0" />
-                            )}
-                          </div>
-
-                          <div className="font-extrabold truncate mt-0.5">{candidateName}</div>
-
-                          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                            <span className="truncate max-w-[70px]">
-                              {evt.job?.title || t("interviews.defaultJob")}
-                            </span>
-                            {hasScorecard && (
-                              <span className="inline-flex items-center text-amber-500 font-bold shrink-0">
-                                <Star className="h-2.5 w-2.5 fill-amber-400" />
-                                <span>{evt.interview.scorecard?.overallRating}</span>
-                              </span>
-                            )}
-                          </div>
+                          <span className="font-bold shrink-0 text-[10px] opacity-75 font-mono">
+                            {evt.interview.time || "10:00"}
+                          </span>
+                          <span className="font-semibold truncate">
+                            {candidateName}
+                          </span>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Bottom Counter if > 2 events */}
-                  {events.length > 2 && (
-                    <span className="text-[10px] font-bold text-slate-400 text-right block">
-                      {t("interviews.roundsBadge", { count: events.length })}
-                    </span>
+                  {/* Outlook-style +N more indicator */}
+                  {remainingCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDayDetails({
+                          dateStr: day.dateStr,
+                          dayNumber: day.dayNumber,
+                        });
+                      }}
+                      className="mt-1 text-center text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/60 py-0.5 rounded transition-colors cursor-pointer w-full"
+                    >
+                      +{remainingCount}
+                    </button>
                   )}
                 </div>
               );
@@ -444,7 +464,7 @@ export function InterviewsCalendarView({
                         variant="ghost"
                         onClick={() => onScheduleDate(day.dateStr)}
                         className="h-7 w-7 p-0 rounded-lg hover:bg-blue-50 text-blue-600 dark:text-blue-400 cursor-pointer"
-                        title={t("interviews.scheduleInterview")}
+                        title={t("interviews.scheduleNew")}
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </Button>
@@ -539,6 +559,114 @@ export function InterviewsCalendarView({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/*        OUTLOOK-STYLE DAY DETAILS POPOVER / MODAL          */}
+      {/* ========================================================= */}
+      {openDayDetails && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-2xs p-4 animate-in fade-in duration-150"
+          onClick={() => setOpenDayDetails(null)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xl space-y-3 font-sans"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white capitalize">
+                  {dayDetailsTitle}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {t("interviews.candidateInterviewsMultiple", { count: dayDetailsEvents.length })}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = openDayDetails.dateStr;
+                      setOpenDayDetails(null);
+                      onScheduleDate(d);
+                    }}
+                    className="h-8 px-2.5 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>{t("interviews.scheduleNew")}</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setOpenDayDetails(null)}
+                  className="h-8 w-8 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Event list */}
+            <div className="max-h-[360px] overflow-y-auto space-y-2 py-1 scrollbar-thin">
+              {dayDetailsEvents.length === 0 ? (
+                <p className="text-xs text-slate-400 italic text-center py-6">
+                  {t("interviews.noScheduleForDay")}
+                </p>
+              ) : (
+                dayDetailsEvents.map((evt, idx) => {
+                  const candidateName = getCandidateDisplayName(evt.application);
+                  const hasScorecard = Boolean(evt.interview.scorecard);
+
+                  return (
+                    <div
+                      key={`${evt.application.id}-${idx}`}
+                      onClick={() => {
+                        setOpenDayDetails(null);
+                        setSelectedEvent(evt);
+                      }}
+                      className={`p-3 rounded-2xl border text-xs cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-between gap-3 shadow-2xs ${
+                        hasScorecard
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/80 text-emerald-950 dark:text-emerald-100"
+                          : "bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/80 text-blue-950 dark:text-blue-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-extrabold text-blue-600 dark:text-blue-400 shrink-0 font-mono text-xs">
+                          {evt.interview.time || "10:00"}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="font-bold truncate text-slate-900 dark:text-white">
+                            {candidateName}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                            {evt.job?.title || t("interviews.defaultJob")}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {hasScorecard ? (
+                          <span className="inline-flex items-center gap-0.5 text-amber-500 font-bold text-xs">
+                            <Star className="h-3 w-3 fill-amber-400" />
+                            <span>{evt.interview.scorecard?.overallRating}</span>
+                          </span>
+                        ) : evt.interview.format === "OFFICE" ? (
+                          <MapPin className="h-3.5 w-3.5 text-rose-500" />
+                        ) : (
+                          <Video className="h-3.5 w-3.5 text-emerald-500" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       )}

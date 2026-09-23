@@ -44,7 +44,7 @@ function ApplicationsPageContent() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-4">
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
         <ApplicationsDataTable
           applications={applicationsData?.data || []}
           jobs={jobs}

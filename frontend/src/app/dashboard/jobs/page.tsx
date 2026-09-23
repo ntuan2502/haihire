@@ -104,7 +104,7 @@ function JobsPageContent() {
             onImportFromFile={() => router.push("/dashboard/jobs/new")}
           />
         ) : (
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
             <JobList
               jobs={jobs}
               total={total}

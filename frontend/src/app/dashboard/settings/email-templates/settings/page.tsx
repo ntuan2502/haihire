@@ -94,7 +94,7 @@ export default function EmailSettingsPage() {
   const isSendingTest = sendTestMutation.isPending;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       {settingsToast && (
         <div
           className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150 ${

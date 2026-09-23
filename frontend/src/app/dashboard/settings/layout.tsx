@@ -155,10 +155,10 @@ export default function SettingsLayout({
       <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col">
         <Navbar activeTab="settings" />
 
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-6">
+          <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* ================= LEFT SIDEBAR ================= */}
-            <aside className="md:col-span-4 lg:col-span-3 space-y-4">
+            <aside className="w-full md:w-60 lg:w-64 shrink-0 space-y-4">
               {/* Back to jobs link */}
               <Link
                 href="/dashboard/jobs"
@@ -239,7 +239,7 @@ export default function SettingsLayout({
             </aside>
 
             {/* ================= RIGHT CONTENT AREA ================= */}
-            <section className="md:col-span-8 lg:col-span-9 space-y-6">
+            <section className="flex-1 min-w-0 space-y-6">
               {children}
             </section>
           </div>

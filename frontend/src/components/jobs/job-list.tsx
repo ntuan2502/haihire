@@ -19,14 +19,13 @@ import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
 import { SearchInput } from "@/components/shared/search-input";
-import type { Job, Application, ApplicationStage } from "@/types";
+import type { Job, ApplicationStage } from "@/types";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import { getJobPublicUrl } from "@/lib/utils";
-import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
+import { getJobTypeLabel } from "@/lib/jobs";
 
-type ViewMode = "grid" | "list" | "table";
 
 interface JobListProps {
   jobs: Job[];
@@ -38,12 +37,7 @@ interface JobListProps {
   onPageSizeChange?: (pageSize: number) => void;
   search?: string;
   onSearchChange?: (search: string) => void;
-  viewMode?: ViewMode;
-  onViewModeChange?: (mode: ViewMode) => void;
-  applications?: Application[];
   loading: boolean;
-  onViewCandidates: (jobId: string) => void;
-  onOpenCreateJob: () => void;
   onDeleteJob: (jobId: string) => void;
 }
 
@@ -57,14 +51,9 @@ export function JobList({
   onPageSizeChange,
   search: propSearch,
   onSearchChange,
-  viewMode: propViewMode,
-  onViewModeChange,
-  applications: _applications = [],
-  onViewCandidates: _onViewCandidates,
-  _onOpenCreateJob,
-}: JobListProps & { _onOpenCreateJob?: () => void }) {
+}: JobListProps) {
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const pipelineStages = usePipelineStages();
 
   // Toolbar & View state (controlled or local)
@@ -78,15 +67,6 @@ export function JobList({
     }
   };
 
-  const [localViewMode, setLocalViewMode] = useState<ViewMode>("grid");
-  const viewMode = onViewModeChange && propViewMode !== undefined ? propViewMode : localViewMode;
-  const setViewMode = (mode: ViewMode) => {
-    if (onViewModeChange) {
-      onViewModeChange(mode);
-    } else {
-      setLocalViewMode(mode);
-    }
-  };
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [copiedJobId, setCopiedJobId] = useState<string | null>(null);

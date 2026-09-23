@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { Suspense } from "react";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { JobList } from "@/components/jobs/job-list";
@@ -20,9 +20,7 @@ function JobsPageContent() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-
-  // Synchronized URL Query State for Pagination, Search & ViewMode
+  // Synchronized URL Query State for Pagination & Search
   const {
     page: currentPage,
     limit: rowsPerPage,
@@ -30,13 +28,7 @@ function JobsPageContent() {
     setSearch,
     setPage: setCurrentPage,
     setLimit: setRowsPerPage,
-    setParam,
-    getParam,
   } = useTableParams();
-
-  const rawViewMode = getParam("viewMode", "grid");
-  const viewMode: "grid" | "list" | "table" =
-    rawViewMode === "list" || rawViewMode === "table" ? rawViewMode : "grid";
 
   // TanStack Query Hooks with Server-Side Pagination & Search
   const { data: jobsData, isLoading: jobsLoading } = useJobs(
@@ -58,7 +50,7 @@ function JobsPageContent() {
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
     try {
-      const testJob = await createJobMutation.mutateAsync({
+      await createJobMutation.mutateAsync({
         title: "Senior Full-Stack Engineer (Test Role)",
         department: "Engineering",
         location: "Remote / Hanoi",
@@ -69,7 +61,6 @@ function JobsPageContent() {
         status: "PUBLISHED",
         organizationId: user?.organizationId ?? null,
       });
-      setSelectedJobId(testJob.id);
     } catch (err) {
       console.error("Create test job error", err);
     }
@@ -77,10 +68,6 @@ function JobsPageContent() {
 
   const handleJobDeleted = (id: string) => {
     deleteJobMutation.mutate(id);
-    if (selectedJobId === id) {
-      const remaining = jobs.filter((j) => j.id !== id);
-      setSelectedJobId(remaining.length > 0 ? remaining[0].id : null);
-    }
   };
 
   return (
@@ -115,14 +102,7 @@ function JobsPageContent() {
               onPageSizeChange={setRowsPerPage}
               search={search}
               onSearchChange={setSearch}
-              viewMode={viewMode}
-              onViewModeChange={(mode) => setParam("viewMode", mode, false)}
               loading={jobsLoading}
-              onViewCandidates={(jobId: string) => {
-                setSelectedJobId(jobId);
-                router.push(`/dashboard/candidates?jobId=${jobId}`);
-              }}
-              onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
               onDeleteJob={handleJobDeleted}
             />
           </div>

@@ -22,7 +22,6 @@ import {
   CalendarDays,
   Clock,
   Plus,
-  LayoutGrid,
   List,
   ArrowUpDown,
   Users,
@@ -31,13 +30,12 @@ import {
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
-import { InterviewsGridView } from "@/components/interviews/interviews-grid-view";
 import { InterviewsTableView } from "@/components/interviews/interviews-table-view";
 import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
 import { useI18n } from "@/i18n";
 import type { Application } from "@/types";
 
-type ViewMode = "grid" | "table" | "calendar";
+type ViewMode = "table" | "calendar";
 type SortOption = "upcoming" | "newest" | "name";
 
 function InterviewsPageContent() {
@@ -72,15 +70,13 @@ function InterviewsPageContent() {
   const activeTab: "ALL" | "UPCOMING" | "AWAITING" =
     rawTab === "UPCOMING" || rawTab === "AWAITING" ? rawTab : "ALL";
 
-  const rawViewMode = getParam("viewMode", "grid");
+  const rawViewMode = getParam("viewMode", "table");
   const viewMode: ViewMode =
-    rawViewMode === "table" || rawViewMode === "calendar" ? rawViewMode : "grid";
+    rawViewMode === "calendar" ? "calendar" : "table";
 
   const rawSortBy = getParam("sortBy", "upcoming");
   const sortBy: SortOption =
     rawSortBy === "newest" || rawSortBy === "name" ? rawSortBy : "upcoming";
-
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(user?.organizationId);
   const { data: allApplications = [] } = useAllApplications(user?.organizationId);
@@ -148,14 +144,6 @@ function InterviewsPageContent() {
     setScorecardModalOpen(true);
   };
 
-  // Toggle card history expansion
-  const toggleCardHistory = (appId: string) => {
-    setExpandedCards((prev) => ({
-      ...prev,
-      [appId]: !prev[appId],
-    }));
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       {/* Navbar */}
@@ -171,7 +159,7 @@ function InterviewsPageContent() {
         {/* Header Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                 {t("interviews.title")}
               </h1>
@@ -187,7 +175,7 @@ function InterviewsPageContent() {
           {canEdit && (
             <Button
               onClick={() => handleOpenScheduleModal()}
-              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{t("interviews.scheduleNew")}</span>
@@ -239,7 +227,7 @@ function InterviewsPageContent() {
 
         {/* Filters, Tabs & View Controls */}
         <div className="space-y-3 pt-1">
-          {/* Row 1: Status Tabs & View Mode Switcher */}
+          {/* Row 1: Status Tabs & 2-Mode View Switcher */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Status Tabs */}
             <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 w-fit border border-slate-200/60 dark:border-slate-700/60">
@@ -278,7 +266,7 @@ function InterviewsPageContent() {
               </button>
             </div>
 
-            {/* Right Controls: Item Count + View Mode Switcher */}
+            {/* Right Controls: Item Count + 2 View Modes (Danh sách / Lịch biểu) */}
             <div className="flex items-center gap-2.5 self-end sm:self-auto">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">
                 {t("interviews.candidatesCount", { count: totalItems })}
@@ -286,21 +274,8 @@ function InterviewsPageContent() {
               <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
                 <button
                   type="button"
-                  onClick={() => setParam("viewMode", "grid", false)}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
-                    viewMode === "grid"
-                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                  title={t("interviews.gridTitle")}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">{t("interviews.grid")}</span>
-                </button>
-                <button
-                  type="button"
                   onClick={() => setParam("viewMode", "table", false)}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
                     viewMode === "table"
                       ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
@@ -308,12 +283,12 @@ function InterviewsPageContent() {
                   title={t("interviews.tableTitle")}
                 >
                   <List className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">{t("interviews.table")}</span>
+                  <span>{t("interviews.table")}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setParam("viewMode", "calendar", false)}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
                     viewMode === "calendar"
                       ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
@@ -321,7 +296,7 @@ function InterviewsPageContent() {
                   title={t("interviews.calendarTitle")}
                 >
                   <CalendarDays className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">{t("interviews.calendar")}</span>
+                  <span>{t("interviews.calendar")}</span>
                 </button>
               </div>
             </div>
@@ -407,19 +382,6 @@ function InterviewsPageContent() {
             onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
             canEdit={canEdit}
           />
-        ) : viewMode === "grid" ? (
-          <InterviewsGridView
-            applications={paginatedList}
-            jobs={jobs}
-            expandedCards={expandedCards}
-            onToggleCardHistory={toggleCardHistory}
-            onOpenScheduleModal={handleOpenScheduleModal}
-            onOpenScorecard={handleOpenScorecard}
-            onNavigateToPipeline={(jobId) =>
-              router.push(`/dashboard/jobs/${jobId}/pipeline?stage=INTERVIEW`)
-            }
-            canEdit={canEdit}
-          />
         ) : (
           <InterviewsTableView
             applications={paginatedList}
@@ -433,7 +395,7 @@ function InterviewsPageContent() {
           />
         )}
 
-        {/* Pagination Bar (Only for Grid and Table modes) */}
+        {/* Pagination Bar (Only for Table mode) */}
         {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
           <div className="pt-2">
             <Pagination

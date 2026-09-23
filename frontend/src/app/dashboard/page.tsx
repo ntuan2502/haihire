@@ -21,7 +21,6 @@ import {
   Activity,
   Clock,
   Calendar,
-  MessageSquare,
   ArrowRight,
   Video,
   MapPin,

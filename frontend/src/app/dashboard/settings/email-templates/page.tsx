@@ -84,7 +84,7 @@ export default function EmailTemplatesSettingsPage() {
       interview_date: "22/09/2026",
       interview_time: "14:30",
       interview_format: "Google Meet",
-      meeting_link: "https://meet.google.com/xyz-abcd-efg",
+      interview_link: "https://meet.google.com/xyz-abcd-efg",
       interviewer_name: t("email.sampleInterviewerName"),
       sender_name: senderName,
     };

@@ -1336,7 +1336,7 @@ export const en: TranslationSchema = {
     varInterviewDate: "Interview Date",
     varInterviewTime: "Interview Time",
     varInterviewFormat: "Interview Format",
-    varMeetingLink: "Meeting Link / Location",
+    varInterviewLink: "Interview Link / Location",
     varInterviewerName: "Interviewer Name",
     varSenderName: "Sender Name",
   },

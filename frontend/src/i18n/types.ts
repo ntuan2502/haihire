@@ -1334,7 +1334,7 @@ export interface TranslationSchema {
     varInterviewDate: string;
     varInterviewTime: string;
     varInterviewFormat: string;
-    varMeetingLink: string;
+    varInterviewLink: string;
     varInterviewerName: string;
     varSenderName: string;
   };

@@ -114,7 +114,6 @@ export function buildDynamicEmailContext(source: EmailContextSource): Record<str
     if (source.interview.format) context["interview_format"] = source.interview.format;
     if (source.interview.linkOrLocation) {
       context["interview_link"] = source.interview.linkOrLocation;
-      context["meeting_link"] = source.interview.linkOrLocation;
     }
     if (source.interview.interviewer) context["interviewer_name"] = source.interview.interviewer;
   }

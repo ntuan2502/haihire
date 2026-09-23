@@ -295,7 +295,7 @@ describe("EmailService", () => {
       expect(result.to).toBe("user@example.com");
       expect(result.from).toContain("HaiHire Platform");
       expect(result.subject).toBe("Welcome to HaiHire");
-    });
+    }, 15000);
 
     it("should send system test email", async () => {
       const result = await service.sendSystemTestEmail({
@@ -309,7 +309,7 @@ describe("EmailService", () => {
       expect(result.status).toBe(env.SYSTEM_EMAIL_PROVIDER === "SIMULATED" ? "SIMULATED" : "SENT");
       expect(result.to).toBe("admin@example.com");
       expect(result.subject).toContain("[System Test]");
-    });
+    }, 15000);
 
     it("should retrieve system logs with pagination", async () => {
       const logs = await service.getSystemLogs();

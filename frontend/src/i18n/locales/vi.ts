@@ -1336,7 +1336,7 @@ export const vi: TranslationSchema = {
     varInterviewDate: "Ngày phỏng vấn",
     varInterviewTime: "Giờ phỏng vấn",
     varInterviewFormat: "Hình thức phỏng vấn",
-    varMeetingLink: "Link họp / Địa điểm",
+    varInterviewLink: "Link phỏng vấn / Địa điểm",
     varInterviewerName: "Người phỏng vấn",
     varSenderName: "Người gửi",
   },

@@ -85,7 +85,7 @@ export function SendEmailModal({
       interview_date: interviewDetails?.date || "22/09/2026",
       interview_time: interviewDetails?.time || "14:30",
       interview_format: interviewDetails?.format || "Google Meet",
-      meeting_link: interviewDetails?.linkOrLocation || "https://meet.google.com/xyz-abcd-efg",
+      interview_link: interviewDetails?.linkOrLocation || "https://meet.google.com/xyz-abcd-efg",
       interviewer_name: interviewDetails?.interviewer || t("email.defaultInterviewerName"),
       sender_name: t("email.defaultSenderName"),
     };

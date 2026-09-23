@@ -6,4 +6,6 @@ export * from "./language-dropdown";
 export * from "./theme-toggle";
 export * from "./auth-guard";
 export * from "./brand-logo";
-
+export * from "./macos-modal";
+export * from "./device-preview-frame";
+export * from "./device-preview-selector";

@@ -1224,6 +1224,7 @@ export interface TranslationSchema {
     insertVariableHint: string;
     livePreview: string;
     previewDeviceDesktop: string;
+    previewDeviceTablet: string;
     previewDeviceMobile: string;
     resetDefault: string;
     saveTemplate: string;

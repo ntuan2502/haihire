@@ -1226,6 +1226,7 @@ export const en: TranslationSchema = {
     insertVariableHint: "Click any variable chip below to insert it at your current cursor position:",
     livePreview: "Live Preview",
     previewDeviceDesktop: "Desktop",
+    previewDeviceTablet: "Tablet",
     previewDeviceMobile: "Mobile",
     resetDefault: "Reset to Default",
     saveTemplate: "Save Changes",

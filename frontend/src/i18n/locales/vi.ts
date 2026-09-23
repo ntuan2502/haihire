@@ -1226,6 +1226,7 @@ export const vi: TranslationSchema = {
     insertVariableHint: "Nhấp vào biến bên dưới để tự động chèn vào vị trí con trỏ trong nội dung thư:",
     livePreview: "Xem trước giao diện thực tế",
     previewDeviceDesktop: "Máy tính",
+    previewDeviceTablet: "Máy tính bảng",
     previewDeviceMobile: "Điện thoại",
     resetDefault: "Khôi phục mặc định",
     saveTemplate: "Lưu thay đổi mẫu thư",

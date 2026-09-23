@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { CustomSelect } from "@/components/shared/custom-select";
+import { CustomSelect, MacOsModal, DevicePreviewFrame, DevicePreviewSelector } from "@/components/shared";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
@@ -21,9 +21,6 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
-  Monitor,
-  Tablet,
-  Smartphone,
   Briefcase,
   FileUp,
   MapPin,
@@ -49,7 +46,6 @@ import {
   Globe2,
   DollarSign,
   UploadCloud,
-  X,
 } from "lucide-react";
 import type { Job, JobType, JobStatus, WorkplaceType, ExperienceLevel } from "@/types";
 import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
@@ -2360,88 +2356,37 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         )}
 
         {/* ================= CANDIDATE PREVIEW MODAL ================= */}
-        {isPreviewModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-            <div className="w-full max-w-6xl bg-slate-100 dark:bg-slate-950 rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150">
-              {/* Modal Top Bar */}
-              <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
-                    <Eye className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>{t("jobs.wizard.previewModalTitle")}</span>
-                      <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
-                        {t("jobs.wizard.previewLiveBadge")}
-                      </span>
-                    </h3>
-                    <p className="text-[11px] text-slate-400 hidden sm:block">
-                      {t("jobs.wizard.previewSubtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Center: Device Switcher (Desktop / Tablet / Mobile) */}
-                <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200/80 dark:border-slate-700">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDevice("desktop")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${previewDevice === "desktop"
-                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                      }`}
-                  >
-                    <Monitor className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{t("jobs.wizard.desktop")}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDevice("tablet")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${previewDevice === "tablet"
-                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                      }`}
-                  >
-                    <Tablet className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{t("jobs.wizard.tablet")}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPreviewDevice("mobile")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${previewDevice === "mobile"
-                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                      }`}
-                  >
-                    <Smartphone className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{t("jobs.wizard.mobile")}</span>
-                  </button>
-                </div>
-
-                {/* Right: Close Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsPreviewModalOpen(false)}
-                  className="h-8 w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title={t("jobs.wizard.closePreview")}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Modal Body: Scrollable Canvas with responsive width container */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-100/90 dark:bg-slate-950/80">
-                <div
-                  className={cn(
-                    "mx-auto transition-all duration-200 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm p-6 sm:p-8 space-y-8",
-                    previewDevice === "desktop" && "max-w-5xl",
-                    previewDevice === "tablet" && "max-w-2xl border-2 border-slate-300 dark:border-slate-700 shadow-md",
-                    previewDevice === "mobile" && "max-w-sm border-2 border-slate-300 dark:border-slate-700 shadow-lg px-4 py-6"
-                  )}
-                >
+        <MacOsModal
+          isOpen={isPreviewModalOpen}
+          onClose={() => setIsPreviewModalOpen(false)}
+          title={t("jobs.wizard.previewModalTitle")}
+          badge={t("jobs.wizard.previewLiveBadge")}
+          maxWidth="max-w-6xl"
+          height="h-[90vh]"
+          headerRight={
+            <DevicePreviewSelector
+              device={previewDevice}
+              onChange={setPreviewDevice}
+            />
+          }
+        >
+          {({ isMaximized }) => (
+            <DevicePreviewFrame
+              device={previewDevice}
+              isMaximized={isMaximized}
+              url={`nexus.careers/jobs/${initialJob?.id || "engineering-lead"}`}
+            >
+              <div
+                key={`job-preview-content-${previewDevice}`}
+                className={cn(
+                  "w-full",
+                  previewDevice === "mobile"
+                    ? "p-4 space-y-5"
+                    : previewDevice === "tablet"
+                    ? "p-6 sm:p-8 space-y-6 max-w-3xl mx-auto"
+                    : "p-6 sm:p-10 space-y-8 w-full"
+                )}
+              >
                   {/* Top Branding / Department Tag (No Navbar, pure content) */}
                   <div className="space-y-3">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
@@ -2450,7 +2395,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     </div>
 
                     {/* Job Title */}
-                    <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                    <h1
+                      className={cn(
+                        "font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight",
+                        previewDevice === "mobile" ? "text-lg sm:text-xl" : "text-2xl sm:text-3xl"
+                      )}
+                    >
                       {jobTitle.trim() || t("jobs.wizard.untitledJobPreview")}
                     </h1>
 
@@ -2563,7 +2513,12 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
 
                         <div className="space-y-3.5">
                           {/* Họ và tên đệm / Tên */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div
+                            className={cn(
+                              "grid gap-3",
+                              previewDevice === "desktop" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
+                            )}
+                          >
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                 {t("careers.lastName")} <span className="text-rose-500">*</span>
@@ -2706,11 +2661,10 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                       </div>
                     </div>
                   </div>
-                </div>
               </div>
-            </div>
-          </div>
-        )}
+            </DevicePreviewFrame>
+          )}
+        </MacOsModal>
       </main>
 
       {/* Mobile Sticky Bottom Action Bar */}

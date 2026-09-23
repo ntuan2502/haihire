@@ -51,3 +51,9 @@ updated: 2026-09-18
 - **Fail Fast & Loudly**: Do not mask contract violations or data corruption with superficial defensive code (e.g., `key={item.id || index}`). Let framework mechanisms (like React reconciliation and TypeScript checks) surface inconsistencies immediately during development so that data integrity issues can be addressed cleanly.
 - **Deep Domain & Invariant Comprehension**: Approach every problem with a Principal Engineer mindset. Understand the data model, domain entities (e.g., Application vs Interview vs Candidate), and system invariants before touching code. Prioritize clean architecture and long-term maintainability over superficial, hasty workarounds.
 
+## Standardized Project Commands & package.json Consistency (MANDATORY)
+- **Check package.json First**: Always check `package.json` (root and subpackages) to see if a command or script already exists for the task.
+- **No Ad-Hoc Variations**: If a command exists, execute the existing script as defined rather than running one-off CLI commands with custom flags.
+- **Propose Standard Scripts**: If a necessary command (e.g., `typecheck`, `lint:frontend`, `lint:backend`) is missing, explain to the user why it is needed and propose adding it to `package.json` so the entire project maintains a clean, uniform command suite.
+
+

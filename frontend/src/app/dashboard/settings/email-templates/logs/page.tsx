@@ -43,8 +43,8 @@ export default function EmailLogsPage() {
   }, [logSearch, logStatusFilter]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-4 w-full min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             {t("email.outboxTitle")}
@@ -55,14 +55,14 @@ export default function EmailLogsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2">
-          <div className="relative w-64">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <Input
               value={logSearch}
               onChange={(e) => setLogSearch(e.target.value)}
               placeholder={t("email.searchRecipient")}
-              className="h-8 pl-8 text-xs"
+              className="h-8 pl-8 text-xs w-full"
             />
           </div>
 
@@ -75,16 +75,16 @@ export default function EmailLogsPage() {
               { value: "SIMULATED", label: t("email.statusSimulated") },
               { value: "FAILED", label: t("email.statusFailed") },
             ]}
-            className="w-36"
-            triggerClassName="h-8 text-xs"
+            className="w-full sm:w-36"
+            triggerClassName="h-8 text-xs w-full"
           />
         </div>
       </div>
 
       {/* Outbox Table */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+      <div className="w-full rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs min-w-0">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-xs min-w-[640px]">
             <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3">{t("email.thSentAt")}</th>

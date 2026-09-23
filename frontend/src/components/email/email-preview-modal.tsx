@@ -242,7 +242,7 @@ export function EmailPreviewModal({
                       {t("email.statusFailed")}
                     </div>
                     <div className="text-xs text-rose-600/90 dark:text-rose-300/90 leading-relaxed font-mono break-words break-all [overflow-wrap:anywhere] bg-rose-100/50 dark:bg-rose-900/30 p-2.5 rounded-lg border border-rose-200/60 dark:border-rose-800/60 max-h-40 overflow-y-auto">
-                      {errorMessage || t("email.deliveryFailedDesc") || "Không thể gửi thư hoặc bị máy chủ từ chối."}
+                      {errorMessage || t("email.deliveryFailedDesc")}
                     </div>
                   </div>
                 </div>

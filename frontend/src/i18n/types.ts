@@ -1248,6 +1248,9 @@ export interface TranslationSchema {
     smtpPassword: string;
     smtpSecure: string;
     apiKey: string;
+    resendApiKeyLabel: string;
+    sendgridApiKeyLabel: string;
+    deliveryFailedDesc: string;
     testEmailSection: string;
     testEmailDesc: string;
     testEmailPlaceholder: string;

@@ -4,6 +4,10 @@ created: 2026-07-18
 updated: 2026-09-18
 ---
 
+## 2026-09-23: Standardized Project Commands & package.json First
+- **Feedback**: Always check if a command already exists in `package.json` before running tasks. Do not arbitrarily append parameters or run varied ad-hoc commands. If a command or script is missing, explain its purpose and propose adding it to `package.json` to establish a unified, standard command suite across the entire project.
+- **Actionable Rule**: Check root and workspace `package.json` files first. Run existing scripts as configured. If a standard command is missing (e.g. `typecheck`, `lint:frontend`, `lint:backend`), propose it explicitly to the user before adding it to `package.json`.
+
 ## 2026-09-19: Senior / Principal Engineering Mindset (No Quick-and-Dirty Patches)
 - **Feedback**: Adopt the mindset and depth of a Senior/Principal Engineer. Avoid superficial "instant-noodle" patches that mask underlying architectural problems.
 - **Actionable Rule**: Always perform root-cause analysis and fix problems at their architectural source. Never mask symptoms (such as using index fallbacks to suppress React duplicate-key warnings, swallowing errors, or masking backend data model issues with client-side deduplication). Embrace framework warnings (fail fast and loudly) to ensure data integrity and long-term maintainability.

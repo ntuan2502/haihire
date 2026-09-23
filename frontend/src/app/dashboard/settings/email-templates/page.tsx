@@ -170,7 +170,7 @@ export default function EmailTemplatesSettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full min-w-0">
       {/* Template Selection Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {(
@@ -250,7 +250,7 @@ export default function EmailTemplatesSettingsPage() {
       )}
 
       {/* Full-width Template Form Editor */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
+      <div className="w-full rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5 min-w-0">
         {/* Editor Top Toolbar: Auto-send switch + Preview Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 gap-3">
           <div className="flex items-center gap-3">
@@ -362,26 +362,26 @@ export default function EmailTemplatesSettingsPage() {
         </div>
 
         {/* Actions Footer */}
-        <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+        <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleResetDefault}
             disabled={updateTemplateMutation.isPending}
-            className="text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5"
+            className="w-full sm:w-auto justify-center text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 h-9"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>{t("email.resetDefault")}</span>
           </Button>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setIsPreviewModalOpen(true)}
-              className="h-9 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer inline-flex items-center gap-1.5 rounded-xl shadow-2xs"
+              className="w-full sm:w-auto justify-center h-9 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer inline-flex items-center gap-1.5 rounded-xl shadow-2xs"
             >
               <Eye className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
               <span>{t("email.livePreview")}</span>
@@ -392,7 +392,7 @@ export default function EmailTemplatesSettingsPage() {
               size="sm"
               onClick={handleSaveTemplate}
               disabled={updateTemplateMutation.isPending}
-              className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+              className="w-full sm:w-auto justify-center h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
             >
               <Save className="h-3.5 w-3.5" />
               <span>

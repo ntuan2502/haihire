@@ -30,11 +30,14 @@
 - [user] Strict Typing: Strictly forbidden to use `any`; always declare explicit types or interfaces → user-preferences.md
 - [user] Shell Execution: Never chain commands with `&&` in Windows PowerShell; execute each command individually → user-preferences.md
 - [user] Senior Engineering Mindset: Zero "instant-noodle" patches, root-cause analysis first, fail fast & loudly → user-preferences.md
+- [user] Standardized Project Commands: Check package.json first, avoid ad-hoc commands, maintain unified script suite → user-preferences.md
 
 ## Feedback
+- [feedback] 2026-09-23: Standardized Project Commands & package.json First → feedback-history.md
 - [feedback] 2026-09-19: Senior / Principal Engineering Mindset (No Quick-and-Dirty Patches) → feedback-history.md
 - [feedback] 2026-09-18: Pure TypeScript Mandate (Zero .mjs / .cjs / .js files, use .ts only) → feedback-history.md
 - [feedback] 2026-09-18: Centralized Environment Validation & No Fallbacks (English comments only) → feedback-history.md
 - [feedback] 2026-09-18: Full-Stack Pagination & Database Cascade Integrity → feedback-history.md
 - [feedback] 2026-09-17: Memory documentation must be in English → feedback-history.md
 - [feedback] 2026-09-17: Strict i18n and placeholder completeness mandate → feedback-history.md
+

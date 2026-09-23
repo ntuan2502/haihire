@@ -43,7 +43,7 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 import { BRAND_CONFIG } from "@haihire/shared";
 import { cn } from "cn";
 import { getInitials } from "@/lib/utils";
-import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
+import { useI18n } from "@/i18n";
 
 export type NavTab =
   | "dashboard"
@@ -73,12 +73,10 @@ export function Navbar({
   const router = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated, logout, canEdit, isOwner, isAdmin } = useAuth();
-  const { locale, setLocale, t } = useI18n();
+  const { t } = useI18n();
   const { data: myOrgs = [] } = useMyOrgs();
   const switchOrgMutation = useSwitchOrgMutation();
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
-  const [isMobileOrgDropdownOpen, setIsMobileOrgDropdownOpen] = useState(false);
-  const [isMobileLangDropdownOpen, setIsMobileLangDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -573,10 +571,9 @@ export function Navbar({
               </button>
             </div>
 
-            {/* Bottom Actions: + New Job, Org Selector, Locale */}
-            <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-2.5 bg-slate-50/50 dark:bg-slate-900/30">
-              {/* + New Job Button (Admins only) */}
-              {canEdit && (
+            {/* Bottom Actions: + New Job (Admins only) */}
+            {canEdit && (
+              <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
                 <Button
                   onClick={() => {
                     handleCreateJobClick();
@@ -587,132 +584,8 @@ export function Navbar({
                   <Plus className="h-4 w-4 stroke-[2.5]" />
                   {t("nav.newJob")}
                 </Button>
-              )}
-
-              {/* Organization Selector */}
-              <div className="w-full rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
-                <div
-                  onClick={() => setIsMobileOrgDropdownOpen(!isMobileOrgDropdownOpen)}
-                  className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <span className="truncate">{user?.organization?.name || t("nav.noOrganization")}</span>
-                  <ChevronDown
-                    className={cn(
-                      "h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-200",
-                      isMobileOrgDropdownOpen && "rotate-180",
-                    )}
-                  />
-                </div>
-
-                {isMobileOrgDropdownOpen && (
-                  <div className="border-t border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-44 overflow-y-auto">
-                    {myOrgs.map((org) => {
-                      const isActive = org.id === user?.organizationId;
-                      return (
-                        <div
-                          key={org.id}
-                          onClick={async () => {
-                            if (!isActive) {
-                              try {
-                                await switchOrgMutation.mutateAsync(org.id);
-                                router.push("/dashboard");
-                              } catch (err) {
-                                console.error("Failed to switch workspace:", err);
-                              }
-                            }
-                            setIsMobileOrgDropdownOpen(false);
-                            setMobileMenuOpen(false);
-                          }}
-                          className={cn(
-                            "w-full px-3 py-2 flex items-center justify-between text-xs cursor-pointer",
-                            isActive
-                              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold"
-                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60",
-                          )}
-                        >
-                          <span className="truncate">{org.name}</span>
-                          {isActive && <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
-                        </div>
-                      );
-                    })}
-                    <div
-                      onClick={() => {
-                        setIsMobileOrgDropdownOpen(false);
-                        setMobileMenuOpen(false);
-                        router.push("/onboarding/create-org?mode=create");
-                      }}
-                      className="w-full px-3 py-2 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      <span>{t("nav.createOrganization")}</span>
-                    </div>
-                  </div>
-                )}
               </div>
-
-              {/* Locale Selector */}
-              <div className="w-full rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
-                <div
-                  onClick={() => setIsMobileLangDropdownOpen(!isMobileLangDropdownOpen)}
-                  className="flex w-full items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-slate-400" />
-                    <span>{t("nav.language")}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                    <span className="text-sm">{SUPPORTED_LOCALES[locale].flag}</span>
-                    <span>{SUPPORTED_LOCALES[locale].label}</span>
-                    <ChevronDown
-                      className={cn(
-                        "h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-200",
-                        isMobileLangDropdownOpen && "rotate-180"
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {isMobileLangDropdownOpen && (
-                  <div className="border-t border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {(Object.keys(SUPPORTED_LOCALES) as SupportedLocale[]).map((locKey) => {
-                      const isLocActive = locKey === locale;
-                      const loc = SUPPORTED_LOCALES[locKey];
-                      return (
-                        <div
-                          key={locKey}
-                          onClick={() => {
-                            setLocale(locKey);
-                            setIsMobileLangDropdownOpen(false);
-                            setMobileMenuOpen(false);
-                          }}
-                          className={cn(
-                            "w-full px-3 py-2 flex items-center justify-between text-xs cursor-pointer",
-                            isLocActive
-                              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold"
-                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{loc.flag}</span>
-                            <span>{loc.label}</span>
-                          </div>
-                          {isLocActive && <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Theme Selector (Mobile) */}
-              <div className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  <Sun className="h-4 w-4 text-slate-400" />
-                  <span>{t("nav.theme")}</span>
-                </div>
-                <ThemeToggle />
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}

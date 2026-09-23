@@ -267,7 +267,6 @@ export class EmailService {
         smtpPort: null,
         smtpUser: null,
         smtpPass: null,
-        smtpSecure: true,
         resendApiKey: null,
         sendgridApiKey: null,
       });

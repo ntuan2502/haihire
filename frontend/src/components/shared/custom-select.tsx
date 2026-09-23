@@ -182,9 +182,10 @@ export function CustomSelect<T extends string = string>({
         ...(coords.bottom !== undefined ? { bottom: `${coords.bottom}px` } : {}),
         left: `${coords.left}px`,
         minWidth: `${coords.minWidth}px`,
+        maxWidth: "calc(100vw - 16px)",
       }}
       className={cn(
-        "max-h-60 overflow-y-auto rounded-2xl p-1.5 z-[9999] animate-in fade-in zoom-in-95 duration-150 border shadow-2xl custom-scrollbar",
+        "max-h-60 overflow-y-auto overflow-x-hidden rounded-2xl p-1.5 z-[9999] animate-in fade-in zoom-in-95 duration-150 border shadow-2xl custom-scrollbar",
         isLanding
           ? "bg-[#0b152d]/95 backdrop-blur-xl border-white/15 text-white"
           : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-200",
@@ -208,7 +209,7 @@ export function CustomSelect<T extends string = string>({
               setIsOpen(false);
             }}
             className={cn(
-              "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer",
+              "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer min-w-0 max-w-full",
               option.disabled
                 ? "opacity-40 cursor-not-allowed pointer-events-none"
                 : "",
@@ -221,7 +222,7 @@ export function CustomSelect<T extends string = string>({
                 : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80"
             )}
           >
-            <div className="flex items-center gap-2 truncate">
+            <div className="flex items-center gap-2 truncate min-w-0 flex-1">
               {OptionIcon && (
                 <OptionIcon
                   className={cn(
@@ -232,7 +233,7 @@ export function CustomSelect<T extends string = string>({
                   )}
                 />
               )}
-              <span className="truncate">{option.label}</span>
+              <span className="truncate block">{option.label}</span>
             </div>
             {isSelected && (
               <Check
@@ -253,7 +254,7 @@ export function CustomSelect<T extends string = string>({
   return (
     <div
       ref={dropdownRef}
-      className={cn("relative inline-block text-left", className)}
+      className={cn("relative inline-block text-left min-w-0 max-w-full", className)}
       onPointerDown={(e) => e.stopPropagation()}
     >
       {/* Hidden input for form compatibility if name is provided */}
@@ -270,7 +271,7 @@ export function CustomSelect<T extends string = string>({
           toggleOpen();
         }}
         className={cn(
-          "w-full flex items-center justify-between gap-2 rounded-xl font-normal transition-all cursor-pointer outline-none select-none",
+          "w-full flex items-center justify-between gap-2 rounded-xl font-normal transition-all cursor-pointer outline-none select-none min-w-0 max-w-full",
           size === "sm"
             ? "px-2.5 py-1.5 text-xs"
             : "px-3 py-2 text-xs sm:text-sm",
@@ -283,11 +284,11 @@ export function CustomSelect<T extends string = string>({
           triggerClassName
         )}
       >
-        <div className="flex items-center gap-2 truncate min-w-0">
+        <div className="flex items-center gap-2 truncate min-w-0 flex-1">
           {SelectedIcon && (
             <SelectedIcon className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-400" />
           )}
-          <span className="truncate">
+          <span className="truncate block">
             {selectedOption ? selectedOption.label : placeholder || value}
           </span>
         </div>

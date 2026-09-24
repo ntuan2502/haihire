@@ -277,7 +277,21 @@ describe("EmailService", () => {
       expect(config.fromEmail).toBe(env.SYSTEM_EMAIL_FROM_EMAIL || "noreply@haihire.internal");
     });
 
+    const mockSimulatedConfig = {
+      provider: "SIMULATED" as const,
+      fromName: "HaiHire Platform",
+      fromEmail: "noreply@haihire.internal",
+      smtpHost: null,
+      smtpPort: 587,
+      smtpUser: null,
+      smtpPass: null,
+      resendApiKey: null,
+      sendgridApiKey: null,
+    };
+
     it("should send system email with simulated provider", async () => {
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+
       const result = await service.sendSystemEmail({
         to: "user@example.com",
         recipientName: "New User",
@@ -291,13 +305,16 @@ describe("EmailService", () => {
         throw new Error("Expected direct send result");
       }
       expect(result.success).toBe(true);
-      expect(result.status).toBe(env.SYSTEM_EMAIL_PROVIDER === "SIMULATED" ? "SIMULATED" : "SENT");
+      expect(result.status).toBe("SIMULATED");
       expect(result.to).toBe("user@example.com");
       expect(result.from).toContain("HaiHire Platform");
       expect(result.subject).toBe("Welcome to HaiHire");
-    }, 15000);
+    });
 
     it("should send system test email", async () => {
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+      vi.spyOn(service, "getSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+
       const result = await service.sendSystemTestEmail({
         to: "admin@example.com",
       });
@@ -306,10 +323,10 @@ describe("EmailService", () => {
         throw new Error("Expected direct send result");
       }
       expect(result.success).toBe(true);
-      expect(result.status).toBe(env.SYSTEM_EMAIL_PROVIDER === "SIMULATED" ? "SIMULATED" : "SENT");
+      expect(result.status).toBe("SIMULATED");
       expect(result.to).toBe("admin@example.com");
       expect(result.subject).toContain("[System Test]");
-    }, 15000);
+    });
 
     it("should retrieve system logs with pagination", async () => {
       const logs = await service.getSystemLogs();

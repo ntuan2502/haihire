@@ -8,12 +8,23 @@ export interface MacOsModalContext {
   isMaximized: boolean;
 }
 
+export type MacOsModalSize = "sm" | "md" | "lg" | "xl" | "full";
+
+export const MACOS_MODAL_SIZES: Record<MacOsModalSize, { maxWidth: string; height: string }> = {
+  sm: { maxWidth: "max-w-md", height: "h-auto max-h-[85vh]" },     // ~448px (Alert / Confirmation dialog)
+  md: { maxWidth: "max-w-2xl", height: "h-auto max-h-[85vh]" },   // ~672px (Standard dialog / Event lists)
+  lg: { maxWidth: "max-w-4xl", height: "h-[85vh]" },              // ~896px (Complex form / Scorecard / Schedule)
+  xl: { maxWidth: "max-w-6xl", height: "h-[90vh]" },              // ~1152px (Document Preview / Multi-column workspace)
+  full: { maxWidth: "max-w-[96vw]", height: "h-[94vh]" },         // Full viewport workspace
+};
+
 export interface MacOsModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: ReactNode;
   badge?: ReactNode;
   headerRight?: ReactNode | ((context: MacOsModalContext) => ReactNode);
+  size?: MacOsModalSize;
   maxWidth?: string;
   height?: string;
   className?: string;
@@ -27,14 +38,18 @@ export function MacOsModal({
   title,
   badge,
   headerRight,
-  maxWidth = "max-w-5xl",
-  height = "h-[88vh]",
+  size = "md",
+  maxWidth,
+  height,
   className,
   contentClassName,
   children,
 }: MacOsModalProps) {
   const { t } = useI18n();
   const [isMaximized, setIsMaximized] = useState(false);
+
+  const resolvedMaxWidth = maxWidth || MACOS_MODAL_SIZES[size]?.maxWidth || "max-w-2xl";
+  const resolvedHeight = height || MACOS_MODAL_SIZES[size]?.height || "h-auto max-h-[85vh]";
 
   // Close modal on Escape key press
   useEffect(() => {
@@ -74,7 +89,7 @@ export function MacOsModal({
           "bg-white dark:bg-[#1e1e1e] flex flex-col shadow-[0_30px_90px_rgba(0,0,0,0.35)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.7)] border border-black/10 dark:border-white/10 transition-[width,height,border-radius] duration-200 animate-in zoom-in-95 overflow-hidden",
           isMaximized
             ? "w-full h-full rounded-none"
-            : cn("w-full", maxWidth, height, "rounded-[16px]"),
+            : cn("w-full", resolvedMaxWidth, resolvedHeight, "rounded-[16px]"),
           className
         )}
         role="dialog"
@@ -82,9 +97,9 @@ export function MacOsModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* ================= macOS Authentic Titlebar (48px) ================= */}
-        <div className="h-12 px-4 sm:px-5 bg-[#f6f6f6]/95 dark:bg-[#282828]/95 backdrop-blur-xl border-b border-black/10 dark:border-white/10 flex items-center justify-between shrink-0 select-none relative">
+        <div className="h-12 px-4 sm:px-5 bg-[#f6f6f6]/95 dark:bg-[#282828]/95 backdrop-blur-xl border-b border-black/10 dark:border-white/10 grid grid-cols-[auto_1fr_auto] items-center shrink-0 select-none relative gap-2 sm:gap-4">
           {/* macOS Window Controls (Traffic Lights) */}
-          <div className="flex items-center gap-2 group/traffic z-10">
+          <div className="flex items-center gap-2 group/traffic shrink-0">
             {/* Close Button (Red) */}
             <button
               type="button"
@@ -154,12 +169,12 @@ export function MacOsModal({
           </div>
 
           {/* Center Window Title / Address Bar Capsule */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-20">
+          <div className="flex items-center justify-center min-w-0 px-1">
             {title && (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5 text-[12px] font-semibold text-slate-800 dark:text-slate-200 tracking-tight truncate shadow-2xs max-w-sm sm:max-w-md">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/5 text-[12px] font-semibold text-slate-800 dark:text-slate-200 tracking-tight shadow-2xs max-w-full">
                 <span className="truncate">{title}</span>
                 {badge && (
-                  <div className="hidden sm:inline-flex items-center shrink-0">
+                  <div className="inline-flex items-center shrink-0">
                     {badge}
                   </div>
                 )}
@@ -167,12 +182,14 @@ export function MacOsModal({
             )}
           </div>
 
-          {/* Right: Custom Slot (Segmented Control) */}
-          {headerRight && (
-            <div className="z-10">
-              {typeof headerRight === "function" ? headerRight({ isMaximized }) : headerRight}
-            </div>
-          )}
+          {/* Right: Custom Slot or Balance Placeholder */}
+          <div className="flex items-center justify-end shrink-0 min-w-[52px]">
+            {headerRight ? (
+              typeof headerRight === "function" ? headerRight({ isMaximized }) : headerRight
+            ) : (
+              <div className="w-[52px]" aria-hidden="true" />
+            )}
+          </div>
         </div>
 
         {/* Modal Body Container */}

@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
-  X,
-  Mail,
   Send,
   Eye,
   Edit3,
@@ -22,7 +20,7 @@ import {
 import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect } from "@/components/shared/custom-select";
+import { CustomSelect, MacOsModal } from "@/components/shared";
 
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
 
@@ -148,39 +146,29 @@ export function SendEmailModal({
   const isSending = sendEmailMutation.isPending;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/50">
-              <Mail className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                {t("email.modalTitle")}
-              </h2>
-              <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                  {candidate.name}
-                </span>
-                <span>•</span>
-                <span>{candidate.email}</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <MacOsModal
+      isOpen={isOpen}
+      onClose={isSending ? () => {} : onClose}
+      title={t("email.modalTitle")}
+      badge={
+        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+          {candidate.name}
+        </span>
+      }
+      size="lg"
+      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+    >
+      {/* Subheader Candidate info strip */}
+      <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-slate-900 dark:text-white">{candidate.name}</span>
+          <span className="text-slate-400">•</span>
+          <span className="text-slate-500 dark:text-slate-400">{candidate.email}</span>
         </div>
+      </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      {/* Modal Body */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {showSuccessToast && (
             <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -343,29 +331,28 @@ export function SendEmailModal({
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isSending}
-            className="text-xs font-semibold cursor-pointer"
-          >
-            {t("email.cancel")}
-          </Button>
+      {/* Modal Footer */}
+      <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] shrink-0">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isSending}
+          className="h-8 px-3.5 text-xs font-semibold rounded-lg cursor-pointer shadow-2xs"
+        >
+          {t("email.cancel")}
+        </Button>
 
-          <Button
-            type="button"
-            onClick={handleSend}
-            disabled={isSending || !subject.trim() || !body.trim()}
-            className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-2"
-          >
-            <Send className="h-3.5 w-3.5" />
-            <span>{isSending ? t("email.sendingBtn") : t("email.sendBtn")}</span>
-          </Button>
-        </div>
+        <Button
+          type="button"
+          onClick={handleSend}
+          disabled={isSending || !subject.trim() || !body.trim()}
+          className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
+        >
+          <Send className="h-3.5 w-3.5" />
+          <span>{isSending ? t("email.sendingBtn") : t("email.sendBtn")}</span>
+        </Button>
       </div>
-    </div>
+    </MacOsModal>
   );
 }

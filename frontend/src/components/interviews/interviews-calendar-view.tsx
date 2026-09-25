@@ -10,9 +10,9 @@ import {
   Plus,
   Star,
   ExternalLink,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MacOsModal } from "@/components/shared";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import {
@@ -565,146 +565,149 @@ export function InterviewsCalendarView({
       )}
 
       {/* ========================================================= */}
-      {/*        OUTLOOK-STYLE DAY DETAILS POPOVER / MODAL          */}
+      {/*        DAY DETAILS MODAL (macOS Window Style)             */}
       {/* ========================================================= */}
-      {openDayDetails && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-2xs p-4 animate-in fade-in duration-150"
-          onClick={() => setOpenDayDetails(null)}
-        >
-          <div
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xl space-y-3 font-sans"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div>
-                <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white capitalize">
-                  {dayDetailsTitle}
-                </h3>
-                <p className="text-xs text-slate-400">
-                  {t("interviews.candidateInterviewsMultiple", { count: dayDetailsEvents.length })}
-                </p>
-              </div>
+      <MacOsModal
+        isOpen={Boolean(openDayDetails)}
+        onClose={() => setOpenDayDetails(null)}
+        title={dayDetailsTitle}
+        badge={
+          dayDetailsEvents.length > 0 ? (
+            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+              {dayDetailsEvents.length}
+            </span>
+          ) : undefined
+        }
+        headerRight={
+          canEdit && openDayDetails ? (
+            <button
+              type="button"
+              onClick={() => {
+                const d = openDayDetails.dateStr;
+                setOpenDayDetails(null);
+                onScheduleDate(d);
+              }}
+              className="h-7 px-2.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+            >
+              <Plus className="h-3 w-3" />
+              <span>{t("interviews.scheduleNew")}</span>
+            </button>
+          ) : undefined
+        }
+        size="md"
+        contentClassName="p-4 sm:p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      >
+        <div className="flex flex-col min-h-0">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/60 dark:border-white/10">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {t("interviews.candidateInterviewsMultiple", { count: dayDetailsEvents.length })}
+            </span>
+            {openDayDetails && (
+              <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500">
+                {openDayDetails.dateStr}
+              </span>
+            )}
+          </div>
 
-              <div className="flex items-center gap-1">
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const d = openDayDetails.dateStr;
-                      setOpenDayDetails(null);
-                      onScheduleDate(d);
-                    }}
-                    className="h-8 px-2.5 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950 flex items-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>{t("interviews.scheduleNew")}</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setOpenDayDetails(null)}
-                  className="h-8 w-8 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center cursor-pointer transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Event list */}
-            <div className="max-h-[360px] overflow-y-auto space-y-2 py-1 scrollbar-thin">
-              {dayDetailsEvents.length === 0 ? (
-                <p className="text-xs text-slate-400 italic text-center py-6">
+          {/* Event list */}
+          <div className="max-h-[440px] overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
+            {dayDetailsEvents.length === 0 ? (
+              <div className="py-12 text-center flex flex-col items-center justify-center space-y-2">
+                <Clock className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                <p className="text-xs text-slate-400 italic">
                   {t("interviews.noScheduleForDay")}
                 </p>
-              ) : (
-                dayDetailsEvents.map((evt, idx) => {
-                  const candidateName = getCandidateDisplayName(evt.application);
-                  const hasScorecard = Boolean(evt.interview.scorecard);
+              </div>
+            ) : (
+              dayDetailsEvents.map((evt, idx) => {
+                const candidateName = getCandidateDisplayName(evt.application);
+                const hasScorecard = Boolean(evt.interview.scorecard);
 
-                  return (
-                    <div
-                      key={`${evt.application.id}-${idx}`}
-                      onClick={() => {
-                        setOpenDayDetails(null);
-                        setSelectedEvent(evt);
-                      }}
-                      className={`p-3 rounded-2xl border text-xs cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-between gap-3 shadow-2xs ${
-                        hasScorecard
-                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/80 text-emerald-950 dark:text-emerald-100"
-                          : "bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/80 text-blue-950 dark:text-blue-100"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="font-extrabold text-blue-600 dark:text-blue-400 shrink-0 font-mono text-xs">
-                          {evt.interview.time || "10:00"}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="font-bold truncate text-slate-900 dark:text-white">
-                            {candidateName}
-                          </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                            {evt.job?.title || t("interviews.defaultJob")}
-                          </div>
+                return (
+                  <div
+                    key={`${evt.application.id}-${idx}`}
+                    onClick={() => {
+                      setOpenDayDetails(null);
+                      setSelectedEvent(evt);
+                    }}
+                    className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs ${
+                      hasScorecard
+                        ? "bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100"
+                        : "bg-white hover:bg-slate-50/90 dark:bg-[#252525] dark:hover:bg-[#2c2c2c] border-slate-200/80 dark:border-white/10 hover:border-blue-300 dark:hover:border-blue-600 text-slate-900 dark:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <span className="font-bold text-blue-600 dark:text-blue-400 shrink-0 font-mono text-xs px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/60">
+                        {evt.interview.time || "10:00"}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sm truncate text-slate-900 dark:text-white">
+                          {candidateName}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                          {evt.job?.title || t("interviews.defaultJob")}
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {hasScorecard ? (
-                          <span className="inline-flex items-center gap-0.5 text-amber-500 font-bold text-xs">
-                            <Star className="h-3 w-3 fill-amber-400" />
-                            <span>{evt.interview.scorecard?.overallRating}</span>
-                          </span>
-                        ) : evt.interview.format === "OFFICE" ? (
-                          <MapPin className="h-3.5 w-3.5 text-rose-500" />
-                        ) : (
-                          <Video className="h-3.5 w-3.5 text-emerald-500" />
-                        )}
-                      </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
+
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      {hasScorecard ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                          <Star className="h-3.5 w-3.5 fill-amber-400" />
+                          <span>{evt.interview.scorecard?.overallRating}</span>
+                        </span>
+                      ) : evt.interview.format === "OFFICE" ? (
+                        <span className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/60 text-rose-500 flex items-center justify-center">
+                          <MapPin className="h-4 w-4" />
+                        </span>
+                      ) : (
+                        <span className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-500 flex items-center justify-center">
+                          <Video className="h-4 w-4" />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
-      )}
+      </MacOsModal>
 
       {/* ========================================================= */}
-      {/*        CLICKED EVENT DETAIL MODAL / DRAWER                */}
+      {/*        CLICKED EVENT DETAIL MODAL (macOS Window Style)    */}
       {/* ========================================================= */}
-      {selectedEvent && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedEvent(null)}
-        >
-          <div
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 font-sans"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
+      <MacOsModal
+        isOpen={Boolean(selectedEvent)}
+        onClose={() => setSelectedEvent(null)}
+        title={selectedEvent ? getCandidateDisplayName(selectedEvent.application) : ""}
+        badge={
+          selectedEvent?.interview.round ? (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              {t("interviews.round")} {selectedEvent.interview.round}
+            </span>
+          ) : undefined
+        }
+        size="md"
+        contentClassName="p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a] space-y-4"
+      >
+        {selectedEvent && (
+          <>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-white/10">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
                   {getInitials(getCandidateDisplayName(selectedEvent.application))}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                     {getCandidateDisplayName(selectedEvent.application)}
                   </h3>
-                  <p className="text-xs text-slate-400">{selectedEvent.application.candidateEmail}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{selectedEvent.application.candidateEmail}</p>
                 </div>
               </div>
-
-              {selectedEvent.interview.round && (
-                <span className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800">
-                  {t("interviews.round")} {selectedEvent.interview.round}
-                </span>
-              )}
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-2.5 text-xs">
+            <div className="p-4 rounded-xl bg-white dark:bg-[#252525] border border-slate-200/80 dark:border-white/10 space-y-2.5 text-xs shadow-2xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">{t("interviews.role")}:</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
@@ -748,7 +751,7 @@ export function InterviewsCalendarView({
               </div>
 
               {selectedEvent.interview.linkOrLocation && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
                   <span className="text-slate-400">{t("interviews.meetingUrlLabel")}:</span>
                   {selectedEvent.interview.linkOrLocation.startsWith("http") ? (
                     <a
@@ -772,7 +775,7 @@ export function InterviewsCalendarView({
 
             {/* Existing Scorecard Overview if present */}
             {selectedEvent.interview.scorecard && (
-              <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/80 space-y-1 text-xs">
+              <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 space-y-1 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1">
                     <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
@@ -782,7 +785,7 @@ export function InterviewsCalendarView({
                       })}
                     </span>
                   </span>
-                  <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 font-bold text-[10px] text-emerald-600 border">
+                  <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 font-bold text-[10px] text-emerald-600 border border-emerald-200 dark:border-emerald-800">
                     {getRecommendationLabel(selectedEvent.interview.scorecard.recommendation, t)}
                   </span>
                 </div>
@@ -837,9 +840,9 @@ export function InterviewsCalendarView({
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </MacOsModal>
     </div>
   );
 }

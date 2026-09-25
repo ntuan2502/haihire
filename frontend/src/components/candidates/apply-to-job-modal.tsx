@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, Building2, Check, Loader2 } from "lucide-react";
+import { Building2, Check, Loader2 } from "lucide-react";
 import { useCreateApplicationMutation } from "@/hooks/use-queries";
+import { MacOsModal } from "@/components/shared";
 import { useI18n } from "@/i18n";
 import { getJobTypeLabel } from "@/lib/jobs";
 import type { Job, Application } from "@/types";
@@ -89,92 +90,76 @@ export function ApplyToJobModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* Modal Card matching Screenshot */}
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 p-5 space-y-4 z-10 animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-sm">
-            <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <Building2 className="h-4 w-4" />
-            </div>
-            <span>{t("applications.applyToJobTitle")}</span>
+    <MacOsModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("applications.applyToJobTitle")}
+      size="md"
+      contentClassName="p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a] space-y-3"
+    >
+      {/* Job List */}
+      <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
+        {jobs.length === 0 ? (
+          <div className="text-center py-8 text-xs text-slate-400 italic">
+            {t("applications.noActiveJobs")}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        ) : (
+          jobs.map((job) => {
+            const isApplied = appliedJobIds.has(job.id);
+            const isSubmitting = submittingJobId === job.id;
+            const isSuccess = successJobId === job.id;
 
-        {/* Job List */}
-        <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
-          {jobs.length === 0 ? (
-            <div className="text-center py-6 text-xs text-slate-400">
-              {t("applications.noActiveJobs")}
-            </div>
-          ) : (
-            jobs.map((job) => {
-              const isApplied = appliedJobIds.has(job.id);
-              const isSubmitting = submittingJobId === job.id;
-              const isSuccess = successJobId === job.id;
+            const jobTypeLabel = getJobTypeLabel(job.type, t);
+            const jobTitle = `${job.title} (${jobTypeLabel})`;
 
-              const jobTypeLabel = getJobTypeLabel(job.type, t);
-
-              const jobTitle = `${job.title} (${jobTypeLabel})`;
-
-              return (
-                <div
-                  key={job.id}
-                  className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 flex items-center justify-between gap-3 transition-colors"
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+            return (
+              <div
+                key={job.id}
+                className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#252525] hover:border-blue-300 dark:hover:border-blue-600 flex items-center justify-between gap-3 transition-all shadow-2xs"
+              >
+                <div className="min-w-0 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Building2 className="h-3.5 w-3.5" />
+                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                       {jobTitle}
                     </h4>
-                    <p className="text-[11px] text-slate-400 truncate">
-                      {job.location || job.department || "Remote"}
-                    </p>
                   </div>
-
-                  <div>
-                    {isSuccess ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
-                        <Check className="h-3.5 w-3.5" />
-                        {t("applications.appliedBadge")}
-                      </span>
-                    ) : isApplied ? (
-                      <span className="text-xs font-semibold text-slate-400 px-2 py-1">
-                        {t("applications.appliedBadge")}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => handleApply(job)}
-                        className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-2.5 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
-                      >
-                        {isSubmitting && (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        )}
-                        <span>{t("applications.applyButton")}</span>
-                      </button>
-                    )}
-                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate pl-8">
+                    {job.location || job.department || "Remote"}
+                  </p>
                 </div>
-              );
-            })
-          )}
-        </div>
+
+                <div className="shrink-0">
+                  {isSuccess ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 px-2.5 py-1">
+                      <Check className="h-3.5 w-3.5" />
+                      {t("applications.appliedBadge")}
+                    </span>
+                  ) : isApplied ? (
+                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 px-2.5 py-1">
+                      {t("applications.appliedBadge")}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => handleApply(job)}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 px-3 py-1.5 rounded-lg border border-blue-200/60 dark:border-blue-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-2xs"
+                    >
+                      {isSubmitting && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      )}
+                      <span>{t("applications.applyButton")}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
-    </div>
+    </MacOsModal>
   );
 }

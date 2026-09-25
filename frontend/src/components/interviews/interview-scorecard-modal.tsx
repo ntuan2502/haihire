@@ -1,15 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MacOsModal } from "@/components/shared";
 import {
   Star,
   CheckCircle2,
@@ -19,7 +13,6 @@ import {
   ThumbsUp,
   ThumbsDown,
   HelpCircle,
-  Sparkles,
   Loader2,
   Check,
 } from "lucide-react";
@@ -176,26 +169,20 @@ export function InterviewScorecardModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto p-0 rounded-3xl gap-0 border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl font-sans">
-        {/* Modal Header */}
-        <DialogHeader className="p-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60">
-              <Sparkles className="h-5 w-5" />
-            </span>
-            <div>
-              <DialogTitle className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                {t("interviews.scorecardTitle")}
-              </DialogTitle>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {t("interviews.scorecardSubtitle")}
-              </p>
-            </div>
-          </div>
-
-          {/* Candidate & Interview Summary Strip */}
-          <div className="mt-4 p-3 rounded-2xl bg-white dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+    <MacOsModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("interviews.scorecardTitle")}
+      badge={
+        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+          {candidateName}
+        </span>
+      }
+      size="lg"
+      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+    >
+      {/* Candidate & Interview Summary Strip */}
+      <div className="p-4 sm:px-6 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center">
                 {candidateName.charAt(0)}
@@ -228,7 +215,6 @@ export function InterviewScorecardModal({
               )}
             </div>
           </div>
-        </DialogHeader>
 
         {/* Modal Body */}
         <div className="p-6 space-y-6">
@@ -409,12 +395,12 @@ export function InterviewScorecardModal({
         </div>
 
         {/* Modal Footer */}
-        <DialogFooter className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 flex flex-row items-center justify-between gap-2">
+        <div className="p-4 sm:px-6 border-t border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between gap-2 shrink-0">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer"
+            className="h-8 px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-2xs"
           >
             {t("common.close")}
           </Button>
@@ -423,7 +409,7 @@ export function InterviewScorecardModal({
             type="button"
             onClick={handleSave}
             disabled={updateCandidateMutation.isPending}
-            className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-2"
+            className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer inline-flex items-center gap-2"
           >
             {updateCandidateMutation.isPending ? (
               <>
@@ -437,8 +423,7 @@ export function InterviewScorecardModal({
               </>
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </MacOsModal>
   );
 }

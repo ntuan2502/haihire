@@ -109,7 +109,7 @@ export function MacOsModal({
             >
               <svg
                 viewBox="0 0 12 12"
-                className="w-2.5 h-2.5 text-[#400000] opacity-80 group-hover/traffic:opacity-100 transition-opacity"
+                className="w-2.5 h-2.5 text-[#400000] opacity-0 group-hover/traffic:opacity-100 transition-opacity duration-150"
               >
                 <path
                   d="M3.2 3.2L8.8 8.8M8.8 3.2L3.2 8.8"
@@ -129,7 +129,7 @@ export function MacOsModal({
             >
               <svg
                 viewBox="0 0 12 12"
-                className="w-2.5 h-2.5 text-[#523500] opacity-80 group-hover/traffic:opacity-100 transition-opacity"
+                className="w-2.5 h-2.5 text-[#523500] opacity-0 group-hover/traffic:opacity-100 transition-opacity duration-150"
               >
                 <path
                   d="M2.5 6h7"
@@ -149,7 +149,7 @@ export function MacOsModal({
             >
               <svg
                 viewBox="0 0 12 12"
-                className="w-2.5 h-2.5 text-[#003300] opacity-80 group-hover/traffic:opacity-100 transition-opacity"
+                className="w-2.5 h-2.5 text-[#003300] opacity-0 group-hover/traffic:opacity-100 transition-opacity duration-150"
               >
                 {isMaximized ? (
                   <>

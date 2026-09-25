@@ -9,3 +9,6 @@ export * from "./brand-logo";
 export * from "./macos-modal";
 export * from "./device-preview-frame";
 export * from "./device-preview-selector";
+export * from "./page-header";
+export * from "./metric-card";
+export * from "./segmented-tabs";

@@ -9,6 +9,7 @@ import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
 import { SearchInput } from "@/components/shared/search-input";
+import { SegmentedTabs } from "@/components/shared/segmented-tabs";
 import { useTableParams } from "@/hooks/use-table-params";
 import {
   useAllJobs,
@@ -16,18 +17,20 @@ import {
   useCandidate,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { SlideOver } from "@/components/shared/slide-over";
+import { CustomSelect } from "@/components/shared/custom-select";
+import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import {
   Users,
   Plus,
-  SlidersHorizontal,
   Columns3,
-  Maximize2,
-  ChevronDown,
   Mail,
   Phone,
   ArrowUpDown,
   ArrowDown,
-  UploadCloud,
+  SlidersHorizontal,
+  X,
+  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -86,25 +89,24 @@ function CandidatesPageContent() {
 
 
 
-  // Column Visibility Toggle State & Ref
+  // Filter Drawer State & Secondary Filter
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState<string>("ALL");
+
+  // Column Visibility Toggle State & Ref (Persisted in localStorage)
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
   const columnsRef = useRef<HTMLDivElement>(null);
-  const [visibleColumns, setVisibleColumns] = useState({
-    name: true,
-    email: true,
-    phone: true,
-    applications: true,
-    added: true,
-    quickNotes: true,
-  });
-
-  const toggleColumn = (key: keyof typeof visibleColumns) => {
-    if (key === "name") return; // locked
-    setVisibleColumns((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
+  const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
+    "haihire_candidates_columns_v1",
+    {
+      name: true,
+      email: true,
+      phone: true,
+      applications: true,
+      added: true,
+      quickNotes: true,
+    },
+  );
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -146,9 +148,74 @@ function CandidatesPageContent() {
     }));
   }, [candidates]);
 
+  const [candidateFilter, setCandidateFilter] = useState<string[]>([]);
+
+  const toggleCandidateFilter = (filterId: string) => {
+    setCandidateFilter((prev) =>
+      prev.includes(filterId)
+        ? prev.filter((x) => x !== filterId)
+        : [...prev, filterId],
+    );
+  };
+
+  const candidateCounts = useMemo(() => {
+    let withResume = 0;
+    let hasApplications = 0;
+    let unassigned = 0;
+    for (const c of candidateRows) {
+      const hasCv = Boolean(c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"));
+      if (hasCv) withResume++;
+      if (c.applicationsCount > 0) hasApplications++;
+      else unassigned++;
+    }
+    return {
+      all: totalCount,
+      withResume,
+      hasApplications,
+      unassigned,
+    };
+  }, [candidateRows, totalCount]);
+
+  const candidateTabs = useMemo(
+    () => [
+      { id: "ALL", label: t("common.all"), count: candidateCounts.all },
+      { id: "WITH_RESUME", label: t("candidates.withCv"), count: candidateCounts.withResume },
+      { id: "HAS_APPLICATIONS", label: t("candidates.hasApplications"), count: candidateCounts.hasApplications },
+      { id: "UNASSIGNED", label: t("candidates.unassigned"), count: candidateCounts.unassigned },
+    ],
+    [t, candidateCounts],
+  );
+
+  const filteredCandidateRows = useMemo(() => {
+    return candidateRows.filter((c) => {
+      if (candidateFilter.length > 0) {
+        const hasCv = Boolean(c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"));
+        const matchCv = candidateFilter.includes("WITH_RESUME") ? hasCv : false;
+        const matchActive = candidateFilter.includes("HAS_APPLICATIONS") ? c.applicationsCount > 0 : false;
+        const matchUnassigned = candidateFilter.includes("UNASSIGNED") ? c.applicationsCount === 0 : false;
+        if (!matchCv && !matchActive && !matchUnassigned) return false;
+      }
+      if (selectedJobId !== "ALL") {
+        const matched = c.candidate?.applications?.some((a) => a.jobId === selectedJobId);
+        if (!matched) return false;
+      }
+      return true;
+    });
+  }, [candidateRows, candidateFilter, selectedJobId]);
+
+  const secondaryFiltersCount = selectedJobId !== "ALL" ? 1 : 0;
+  const hasSecondaryFilters = secondaryFiltersCount > 0;
+
+  const handleResetFilters = () => {
+    setSelectedJobId("ALL");
+    setCandidateFilter([]);
+    setSortField("added");
+    setSortDirection("desc");
+  };
+
   // Sorter for current page items
   const paginatedCandidates = useMemo(() => {
-    return [...candidateRows].sort((a, b) => {
+    return [...filteredCandidateRows].sort((a, b) => {
       let diff = 0;
       switch (sortField) {
         case "name":
@@ -171,7 +238,7 @@ function CandidatesPageContent() {
       }
       return sortDirection === "asc" ? diff : -diff;
     });
-  }, [candidateRows, sortField, sortDirection]);
+  }, [filteredCandidateRows, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -205,32 +272,54 @@ function CandidatesPageContent() {
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
-        {/* Candidates Toolbar matching Screenshot */}
+        {/* Standard Header Row matching Jobs & Applications */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Search Box */}
-          <SearchInput
-            placeholder={t("candidates.searchCandidates")}
-            value={search}
-            onChange={setSearch}
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {t("candidates.title")}
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {totalCount}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {canEdit && (
+              <Button
+                size="sm"
+                onClick={() => router.push("/dashboard/candidates/new")}
+                className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>{t("candidates.addCandidate")}</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Modern Unified Responsive Toolbar */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Left: Quick Filter Tabs (Swipeable horizontally on mobile/tablet) */}
+          <SegmentedTabs
+            multiSelect
+            tabs={candidateTabs}
+            activeTabs={candidateFilter}
+            onToggleTab={toggleCandidateFilter}
+            onClearAll={() => setCandidateFilter([])}
           />
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Views Button */}
-            <div className="relative">
-              <button
-                type="button"
-                disabled
-                className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
-                title={`${t("common.views")} (${t("common.comingSoon")})`}
-              >
-                <span>{t("common.views")}</span>
-                <ChevronDown className="h-3 w-3 text-slate-400 opacity-70" />
-              </button>
+          {/* Right: Search Box + Columns Dropdown */}
+          <div className="flex items-center gap-2.5 w-full lg:w-auto">
+            <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+              <SearchInput
+                placeholder={t("candidates.searchCandidates")}
+                value={search}
+                onChange={setSearch}
+              />
             </div>
 
-            {/* Columns Dropdown matching Screenshot */}
-            <div className="relative" ref={columnsRef}>
+            {/* Columns Dropdown (Existing Working Feature) */}
+            <div className="relative shrink-0" ref={columnsRef}>
               <button
                 type="button"
                 onClick={() => setIsColumnsOpen((prev) => !prev)}
@@ -288,51 +377,49 @@ function CandidatesPageContent() {
               )}
             </div>
 
-            {/* Filters */}
+            {/* Filters Button */}
             <button
               type="button"
-              disabled
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
-              title={`${t("candidates.filters")} (${t("common.comingSoon")})`}
+              onClick={() => setIsFilterOpen(true)}
+              className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-              <span>{t("candidates.filters")}</span>
+              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+              <span>{t("common.filter")}</span>
+              {secondaryFiltersCount > 0 && (
+                <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                  {secondaryFiltersCount}
+                </span>
+              )}
             </button>
-
-            {/* Fullscreen icon */}
-            <button
-              type="button"
-              disabled
-              className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
-              title={`${t("candidates.fullscreen")} (${t("common.comingSoon")})`}
-            >
-              <Maximize2 className="h-3.5 w-3.5" />
-            </button>
-
-            {/* Import CSV */}
-            <button
-              type="button"
-              disabled
-              className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
-              title={`${t("candidates.importCsv")} (${t("common.comingSoon")})`}
-            >
-              <UploadCloud className="h-3.5 w-3.5 text-slate-400" />
-              <span>{t("candidates.importCsv")}</span>
-            </button>
-
-            {/* Add Candidate button (Admins only) */}
-            {canEdit && (
-              <Button
-                size="sm"
-                onClick={() => router.push("/dashboard/candidates/new")}
-                className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs gap-1.5 cursor-pointer"
-              >
-                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-                <span>{t("candidates.addCandidate")}</span>
-              </Button>
-            )}
           </div>
         </div>
+
+        {/* Active Filter Chips Bar (Shown when secondary filters are applied) */}
+        {hasSecondaryFilters && (
+          <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+            <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+            {selectedJobId !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
+                <span>{jobs.find((j) => j.id === selectedJobId)?.title || selectedJobId}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedJobId("ALL")}
+                  className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-medium cursor-pointer transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>{t("jobs.resetAll")}</span>
+            </button>
+          </div>
+        )}
 
         {/* Content Area */}
         {loading && !pagedResult ? (
@@ -603,6 +690,127 @@ function CandidatesPageContent() {
 
 
 
+      {/* Candidates Filter Drawer (SlideOver) matching Jobs UX */}
+      <SlideOver
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        title={t("candidates.filters")}
+        description={t("jobs.filterJobsDesc")}
+        width="max-w-md"
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
+            {/* 1. FILTER BY JOB */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("applications.filterByJob")}
+              </span>
+              <CustomSelect
+                value={selectedJobId}
+                onChange={(val) => setSelectedJobId(val)}
+                options={[
+                  { value: "ALL", label: t("applications.allJobs") },
+                  ...jobs.map((j) => ({ value: j.id, label: j.title })),
+                ]}
+                className="w-full"
+                triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+              />
+            </div>
+
+            {/* 2. PROFILE STATUS */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("jobs.statusUpper")}
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: "WITH_RESUME", label: t("candidates.withCv") },
+                  { id: "HAS_APPLICATIONS", label: t("candidates.hasApplications") },
+                  { id: "UNASSIGNED", label: t("candidates.unassigned") },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => toggleCandidateFilter(st.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                      candidateFilter.includes(st.id)
+                        ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
+                        : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. SORT BY */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("jobs.sortByUpper")}
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <CustomSelect
+                  value={sortField}
+                  onChange={(val) => setSortField(val as SortField)}
+                  options={[
+                    { value: "added", label: t("candidates.columns.added") },
+                    { value: "name", label: t("candidates.columns.name") },
+                    { value: "email", label: t("candidates.columns.email") },
+                    { value: "phone", label: t("candidates.columns.phone") },
+                    { value: "applications", label: t("candidates.columns.applications") },
+                  ]}
+                  className="w-full"
+                  triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                />
+
+                <CustomSelect
+                  value={sortDirection}
+                  onChange={(val) => setSortDirection(val as SortDirection)}
+                  options={[
+                    { value: "desc", label: t("jobs.descending") },
+                    { value: "asc", label: t("jobs.ascending") },
+                  ]}
+                  className="w-full"
+                  triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>{t("jobs.resetAll")}</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFilterOpen(false)}
+                className="h-8 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsFilterOpen(false)}
+                className="h-8 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                {t("jobs.done")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </SlideOver>
     </div>
   );
 }

@@ -26,6 +26,14 @@ import type { Application, Job } from "@/types";
 export interface InterviewsTableViewProps {
   applications: Application[];
   jobs: Job[];
+  visibleColumns?: {
+    candidate?: boolean;
+    job?: boolean;
+    schedule?: boolean;
+    interviewer?: boolean;
+    status?: boolean;
+    rating?: boolean;
+  };
   onOpenScheduleModal: (
     app: Application,
     dateStr?: string,
@@ -39,6 +47,7 @@ export interface InterviewsTableViewProps {
 export function InterviewsTableView({
   applications,
   jobs,
+  visibleColumns,
   onOpenScheduleModal,
   onOpenScorecard,
   onNavigateToPipeline,
@@ -46,6 +55,15 @@ export function InterviewsTableView({
 }: InterviewsTableViewProps) {
   const { t } = useI18n();
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
+  const visibleColumnCount =
+    1 +
+    (visibleColumns?.job !== false ? 1 : 0) +
+    (visibleColumns?.schedule !== false ? 1 : 0) +
+    (visibleColumns?.interviewer !== false ? 1 : 0) +
+    (visibleColumns?.status !== false ? 1 : 0) +
+    (visibleColumns?.rating !== false ? 1 : 0) +
+    1;
 
   const toggleRowHistory = (appId: string) => {
     setExpandedRows((prev) => ({
@@ -93,11 +111,21 @@ export function InterviewsTableView({
           <thead>
             <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] font-bold">
               <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.candidate")}</th>
-              <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.job")}</th>
-              <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.schedule")}</th>
-              <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.interviewer")}</th>
-              <th className="py-3.5 px-3 text-center">{t("interviews.tableHeaders.status")}</th>
-              <th className="py-3.5 px-3 text-center">{t("interviews.tableHeaders.rating")}</th>
+              {visibleColumns?.job !== false && (
+                <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.job")}</th>
+              )}
+              {visibleColumns?.schedule !== false && (
+                <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.schedule")}</th>
+              )}
+              {visibleColumns?.interviewer !== false && (
+                <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.interviewer")}</th>
+              )}
+              {visibleColumns?.status !== false && (
+                <th className="py-3.5 px-3 text-center">{t("interviews.tableHeaders.status")}</th>
+              )}
+              {visibleColumns?.rating !== false && (
+                <th className="py-3.5 px-3 text-center">{t("interviews.tableHeaders.rating")}</th>
+              )}
               <th className="py-3.5 px-4 text-right">{t("interviews.tableHeaders.actions")}</th>
             </tr>
           </thead>
@@ -140,159 +168,169 @@ export function InterviewsTableView({
                     </td>
 
                     {/* 2. Job Position */}
-                    <td className="py-3.5 px-4 align-middle">
-                      <div className="pr-2 min-w-0">
-                        <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 truncate">
-                          <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                          <span className="truncate">{job?.title || t("interviews.defaultJob")}</span>
+                    {visibleColumns?.job !== false && (
+                      <td className="py-3.5 px-4 align-middle">
+                        <div className="pr-2 min-w-0">
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                            <span className="truncate">{job?.title || t("interviews.defaultJob")}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 truncate pl-5">
+                            {job?.department || t("interviews.defaultDepartment")}
+                          </p>
                         </div>
-                        <p className="text-[11px] text-slate-400 truncate pl-5">
-                          {job?.department || t("interviews.defaultDepartment")}
-                        </p>
-                      </div>
-                    </td>
+                      </td>
+                    )}
 
                     {/* 3. Schedule & Format */}
-                    <td className="py-3.5 px-4 align-middle">
-                      <div className="pr-2 min-w-0">
-                        {currentInterview ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
-                              <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                              <span>
-                                {currentInterview.date} • {currentInterview.time}
-                              </span>
-                            </div>
-                            <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
-                              <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
-                                {getInterviewTypeLabel(currentInterview.type, t)}
-                              </span>
-
-                              {currentInterview.format === "OFFICE" ? (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50">
-                                  <MapPin className="h-2.5 w-2.5" />
-                                  <span>{t("interviews.atOffice")}</span>
+                    {visibleColumns?.schedule !== false && (
+                      <td className="py-3.5 px-4 align-middle">
+                        <div className="pr-2 min-w-0">
+                          {currentInterview ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
+                                <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <span>
+                                  {currentInterview.date} • {currentInterview.time}
                                 </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50">
-                                  <Video className="h-2.5 w-2.5" />
-                                  <span>{t("interviews.onlineMeeting")}</span>
+                              </div>
+                              <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
+                                <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
+                                  {getInterviewTypeLabel(currentInterview.type, t)}
                                 </span>
-                              )}
 
-                              {currentInterview.linkOrLocation?.startsWith("http") && (
-                                <a
-                                  href={currentInterview.linkOrLocation}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline bg-blue-50/70 dark:bg-blue-950/40"
-                                  title={t("interviews.joinOnlineMeeting")}
-                                >
-                                  <span>{t("interviews.joinMeetingShort")}</span>
-                                  <ExternalLink className="h-2.5 w-2.5" />
-                                </a>
-                              )}
+                                {currentInterview.format === "OFFICE" ? (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50">
+                                    <MapPin className="h-2.5 w-2.5" />
+                                    <span>{t("interviews.atOffice")}</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50">
+                                    <Video className="h-2.5 w-2.5" />
+                                    <span>{t("interviews.onlineMeeting")}</span>
+                                  </span>
+                                )}
+
+                                {currentInterview.linkOrLocation?.startsWith("http") && (
+                                  <a
+                                    href={currentInterview.linkOrLocation}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline bg-blue-50/70 dark:bg-blue-950/40"
+                                    title={t("interviews.joinOnlineMeeting")}
+                                  >
+                                    <span>{t("interviews.joinMeetingShort")}</span>
+                                    <ExternalLink className="h-2.5 w-2.5" />
+                                  </a>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium text-[11px] bg-amber-50/80 dark:bg-amber-950/30 px-2 py-1 rounded-lg border border-amber-200/60 dark:border-amber-900/40">
-                            <Clock className="h-3 w-3 shrink-0" />
-                            <span>{t("interviews.notScheduledYet")}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                          ) : (
+                            <div className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium text-[11px] bg-amber-50/80 dark:bg-amber-950/30 px-2 py-1 rounded-lg border border-amber-200/60 dark:border-amber-900/40">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              <span>{t("interviews.notScheduledYet")}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    )}
 
                     {/* 4. Interviewer */}
-                    <td className="py-3.5 px-4 align-middle">
-                      <div className="pr-2 min-w-0">
-                        {currentInterview ? (
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium truncate">
-                              <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              <span className="truncate">{currentInterview.interviewer}</span>
+                    {visibleColumns?.interviewer !== false && (
+                      <td className="py-3.5 px-4 align-middle">
+                        <div className="pr-2 min-w-0">
+                          {currentInterview ? (
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium truncate">
+                                <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{currentInterview.interviewer}</span>
+                              </div>
+                              {currentInterview.round && (
+                                <p className="text-[10px] text-slate-400 pl-5">
+                                  {t("interviews.roundInterview", { round: currentInterview.round })}
+                                </p>
+                              )}
                             </div>
-                            {currentInterview.round && (
-                              <p className="text-[10px] text-slate-400 pl-5">
-                                {t("interviews.roundInterview", { round: currentInterview.round })}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </div>
-                    </td>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </div>
+                      </td>
+                    )}
 
                     {/* 5. Status (Stacked 2 lines: Status badge above, Rounds badge below) */}
-                    <td className="py-3.5 px-3 text-center align-middle">
-                      <div className="flex flex-col items-center justify-center gap-1.5">
-                        {/* Line 1: Status */}
-                        {allInterviews.length > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-900/60 whitespace-nowrap">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                            <span>{t("interviews.hasScheduleBadge")}</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-900/60 whitespace-nowrap">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            <span>{t("interviews.awaitingScheduleBadge")}</span>
-                          </span>
-                        )}
+                    {visibleColumns?.status !== false && (
+                      <td className="py-3.5 px-3 text-center align-middle">
+                        <div className="flex flex-col items-center justify-center gap-1.5">
+                          {/* Line 1: Status */}
+                          {allInterviews.length > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-900/60 whitespace-nowrap">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              <span>{t("interviews.hasScheduleBadge")}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-900/60 whitespace-nowrap">
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                              <span>{t("interviews.awaitingScheduleBadge")}</span>
+                            </span>
+                          )}
 
-                        {/* Line 2: Rounds & History Toggle */}
-                        {allInterviews.length > 1 ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleRowHistory(app.id)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60 transition-colors cursor-pointer whitespace-nowrap"
-                            title={t("interviews.candidateInterviewsMultiple", { count: allInterviews.length })}
-                          >
-                            <span>{t("interviews.roundsCount", { count: allInterviews.length })}</span>
-                            <ChevronDown
-                              className={`h-3 w-3 transition-transform duration-200 ${
-                                isExpanded ? "rotate-180" : ""
-                              }`}
-                            />
-                          </button>
-                        ) : allInterviews.length === 1 ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold whitespace-nowrap">
-                            {t("interviews.roundsCount", { count: 1 })}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-[10px]">—</span>
-                        )}
-                      </div>
-                    </td>
+                          {/* Line 2: Rounds & History Toggle */}
+                          {allInterviews.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleRowHistory(app.id)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60 transition-colors cursor-pointer whitespace-nowrap"
+                              title={t("interviews.candidateInterviewsMultiple", { count: allInterviews.length })}
+                            >
+                              <span>{t("interviews.roundsCount", { count: allInterviews.length })}</span>
+                              <ChevronDown
+                                className={`h-3 w-3 transition-transform duration-200 ${
+                                  isExpanded ? "rotate-180" : ""
+                                }`}
+                              />
+                            </button>
+                          ) : allInterviews.length === 1 ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold whitespace-nowrap">
+                              {t("interviews.roundsCount", { count: 1 })}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[10px]">—</span>
+                          )}
+                        </div>
+                      </td>
+                    )}
 
                     {/* 6. Rating / Scorecard */}
-                    <td className="py-3.5 px-3 text-center align-middle">
-                      {currentInterview?.scorecard ? (
-                        <div className="flex flex-col items-center justify-center gap-1">
+                    {visibleColumns?.rating !== false && (
+                      <td className="py-3.5 px-3 text-center align-middle">
+                        {currentInterview?.scorecard ? (
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => onOpenScorecard(app, currentInterview)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
+                              title={t("interviews.scorecardTooltip")}
+                            >
+                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                              <span>{currentInterview.scorecard.overallRating} ⭐</span>
+                            </button>
+                            {getRecommendationBadge(currentInterview.scorecard.recommendation)}
+                          </div>
+                        ) : currentInterview ? (
                           <button
                             type="button"
                             onClick={() => onOpenScorecard(app, currentInterview)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
-                            title={t("interviews.scorecardTooltip")}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 font-bold border border-amber-200/70 dark:border-amber-900/60 cursor-pointer transition-colors"
                           >
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            <span>{currentInterview.scorecard.overallRating} ⭐</span>
+                            <Star className="h-2.5 w-2.5 text-amber-500" />
+                            <span>{t("interviews.rateNow")}</span>
                           </button>
-                          {getRecommendationBadge(currentInterview.scorecard.recommendation)}
-                        </div>
-                      ) : currentInterview ? (
-                        <button
-                          type="button"
-                          onClick={() => onOpenScorecard(app, currentInterview)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 font-bold border border-amber-200/70 dark:border-amber-900/60 cursor-pointer transition-colors"
-                        >
-                          <Star className="h-2.5 w-2.5 text-amber-500" />
-                          <span>{t("interviews.rateNow")}</span>
-                        </button>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+                    )}
 
                     {/* 7. Actions */}
                     <td className="py-3.5 px-4 text-right align-middle">
@@ -314,7 +352,7 @@ export function InterviewsTableView({
                   {/* Expandable History Drawer for previous rounds */}
                   {isExpanded && previousInterviews.length > 0 && (
                     <tr className="bg-slate-50/90 dark:bg-slate-800/40 border-t border-slate-200/60 dark:border-slate-800">
-                      <td colSpan={7} className="px-6 py-3.5">
+                      <td colSpan={visibleColumnCount} className="px-6 py-3.5">
                         <div className="space-y-2.5">
                           <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
                             <History className="h-3.5 w-3.5 text-blue-500" />

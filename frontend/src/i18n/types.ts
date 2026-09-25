@@ -245,6 +245,21 @@ export interface TranslationSchema {
   };
   jobs: {
     title: string;
+    tabAll: string;
+    tabPublished: string;
+    tabDraft: string;
+    tabClosed: string;
+    totalApplicantsCount: string;
+    pageSubtitle: string;
+    kpiPublished: string;
+    kpiPublishedDesc: string;
+    kpiDraft: string;
+    kpiDraftDesc: string;
+    kpiClosed: string;
+    kpiClosedDesc: string;
+    kpiTotalApplicants: string;
+    kpiApplicantsDesc: string;
+    createTestJobShort: string;
     jobTitle: string;
     department: string;
     location: string;
@@ -324,6 +339,13 @@ export interface TranslationSchema {
     done: string;
     activePipeline: string;
     newApplicants: string;
+    toggleColumns: string;
+    columns: {
+      title: string;
+      status: string;
+      pipeline: string;
+      applicants: string;
+    };
     experience: {
       junior: string;
       mid: string;
@@ -563,6 +585,9 @@ export interface TranslationSchema {
       quickNotes: string;
     };
     filters: string;
+    withCv: string;
+    hasApplications: string;
+    unassigned: string;
     fullscreen: string;
     importCsv: string;
     noCandidatesYet: string;
@@ -655,6 +680,12 @@ export interface TranslationSchema {
       applied: string;
     };
     filters: string;
+    scoreFilters: {
+      all: string;
+      excellent: string;
+      good: string;
+      review: string;
+    };
     compare: string;
     fullscreen: string;
     noApplicationsYet: string;
@@ -848,6 +879,15 @@ export interface TranslationSchema {
       status: string;
       rating: string;
       actions: string;
+    };
+    toggleColumns: string;
+    columns: {
+      candidate: string;
+      job: string;
+      schedule: string;
+      interviewer: string;
+      status: string;
+      rating: string;
     };
     atTime: string;
     notScheduledYet: string;

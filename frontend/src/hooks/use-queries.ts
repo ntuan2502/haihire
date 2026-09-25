@@ -59,6 +59,11 @@ export function useJobs(
     search?: string;
     status?: string;
     department?: string;
+    type?: string;
+    experienceLevel?: string;
+    workplace?: string;
+    sortBy?: string;
+    sortOrder?: string;
     organizationSlug?: string | null;
   },
 ) {
@@ -74,6 +79,11 @@ export function useJobs(
       options?.search,
       options?.status,
       options?.department,
+      options?.type,
+      options?.experienceLevel,
+      options?.workplace,
+      options?.sortBy,
+      options?.sortOrder,
       options?.organizationSlug,
     ],
     queryFn: async () => {
@@ -94,6 +104,11 @@ export function useJobs(
         search: options?.search,
         status: options?.status,
         department: options?.department,
+        type: options?.type,
+        experienceLevel: options?.experienceLevel,
+        workplace: options?.workplace,
+        sortBy: options?.sortBy,
+        sortOrder: options?.sortOrder,
       });
     },
     enabled: Boolean(effectiveOrgId || options?.organizationSlug),

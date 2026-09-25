@@ -288,7 +288,8 @@ export class ApplicationsService {
       .all();
 
     if (options?.stage) {
-      orgApps = orgApps.filter((a) => a.stage === options.stage);
+      const stages = options.stage.split(",").map((s) => s.trim().toUpperCase());
+      orgApps = orgApps.filter((a) => stages.includes(a.stage));
     }
 
     if (orgApps.length === 0) {

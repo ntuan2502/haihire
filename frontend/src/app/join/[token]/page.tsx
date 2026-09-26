@@ -12,13 +12,10 @@ import {
   UserPlus,
   AlertCircle,
   CheckCircle2,
-  Globe,
-  Moon,
-  Sun,
   Loader2,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useI18n } from "@/i18n";
+import { GatewayNavbar } from "@/components/layout";
 import { BRAND_CONFIG } from "@haihire/shared";
 
 interface PublicInviteData {
@@ -39,8 +36,7 @@ export default function JoinOrganizationPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated, updateUserOrg } = useAuth();
-  const { theme, setTheme } = useTheme();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
 
   const rawToken = params?.token;
   const token = Array.isArray(rawToken) ? rawToken[0] : (rawToken as string);
@@ -114,42 +110,9 @@ export default function JoinOrganizationPage() {
     }
   };
 
-  const isDark = theme === "dark";
-
   return (
-    <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col justify-between">
-      {/* Top Header */}
-      <header className="max-w-7xl mx-auto w-full px-6 py-4 flex items-center justify-between">
-        {/* Left: Language and theme indicator */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocale(locale === "vi" ? "en" : "vi")}
-            className="px-2 py-1 rounded-md text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1 cursor-pointer transition-colors"
-            title="Switch language"
-          >
-            <Globe className="h-3 w-3" />
-            <span className="uppercase">{locale}</span>
-          </button>
-        </div>
-
-        {/* Right: Brand Logo */}
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
-            <Building2 className="h-4 w-4" />
-          </div>
-          <span className="text-sm font-bold text-slate-900 dark:text-white">
-            {BRAND_CONFIG.name}
-          </span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col justify-between transition-colors">
+      <GatewayNavbar />
 
       {/* Main Content Card Area */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">

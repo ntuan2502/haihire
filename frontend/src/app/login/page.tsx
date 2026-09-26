@@ -24,6 +24,7 @@ import {
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/constants/auth.constants";
 import { useI18n } from "@/i18n";
 import { BRAND_CONFIG } from "@haihire/shared";
+import { GatewayNavbar } from "@/components/layout";
 
 function LoginForm() {
   const router = useRouter();
@@ -332,8 +333,10 @@ export default function LoginPage() {
   const { t } = useI18n();
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-slate-50 dark:bg-slate-950 font-sans">
-      {/* Left Column: Recruiter Branding & Value Proposition */}
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors">
+      <GatewayNavbar maxWidthClassName="w-full px-4 sm:px-8" />
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2">
+        {/* Left Column: Recruiter Branding & Value Proposition */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-white border-r border-slate-800">
         {/* Background Glow Accents */}
         <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none" />
@@ -418,5 +421,6 @@ export default function LoginPage() {
         </Suspense>
       </div>
     </div>
+  </div>
   );
 }

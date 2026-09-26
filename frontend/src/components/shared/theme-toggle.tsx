@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Moon, Sun, Laptop, ChevronDown, Check } from "lucide-react";
+import { Moon, Sun, Laptop, Check } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
@@ -75,16 +75,15 @@ export function ThemeToggle({
         <button
           type="button"
           disabled
+          aria-label={t("theme.toggleTheme")}
           className={cn(
-            "flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-semibold opacity-60 pointer-events-none select-none",
+            "flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold opacity-60 pointer-events-none select-none",
             isLanding
               ? "bg-slate-900/5 dark:bg-white/10 border border-slate-300/80 dark:border-white/10 text-slate-700 dark:text-cyan-200 shadow-sm"
               : "bg-slate-100 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200"
           )}
         >
-          <Sun className="h-3.5 w-3.5 text-amber-500" />
-          <span className="font-medium">{t("theme.light")}</span>
-          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+          <Sun className="h-4 w-4 text-amber-500" />
         </button>
       </div>
     );
@@ -107,25 +106,16 @@ export function ThemeToggle({
           setIsOpen((prev) => !prev);
         }}
         className={cn(
-          "flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none",
+          "flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none",
           isLanding
             ? "bg-slate-900/5 hover:bg-slate-900/10 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 text-slate-700 dark:text-cyan-200 shadow-sm"
             : "bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200"
         )}
         title={t("theme.toggleTheme")}
+        aria-label={t("theme.toggleTheme")}
         aria-expanded={isOpen}
       >
-        <CurrentIcon className={cn("h-3.5 w-3.5", currentOption.iconColor)} />
-        <span className={cn(isLanding ? "hidden sm:inline" : "inline font-medium")}>
-          {currentOption.label}
-        </span>
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 transition-transform duration-200 shrink-0",
-            isLanding ? "text-slate-500 dark:text-cyan-300/80" : "text-slate-400 dark:text-slate-400",
-            isOpen && "rotate-180"
-          )}
-        />
+        <CurrentIcon className={cn("h-4 w-4", currentOption.iconColor)} />
       </button>
 
       {isOpen && (

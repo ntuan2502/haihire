@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { useI18n, SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 import { cn } from "cn";
 
@@ -55,26 +55,18 @@ export function LanguageDropdown({
           setIsOpen((prev) => !prev);
         }}
         className={cn(
-          "flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none",
+          "flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none",
           isLanding
             ? "bg-slate-900/5 hover:bg-slate-900/10 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-300/80 dark:border-white/10 text-slate-700 dark:text-cyan-200 shadow-sm"
             : "bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200"
         )}
         title={t("nav.language") || "Switch language"}
+        aria-label={t("nav.language") || "Switch language"}
         aria-expanded={isOpen}
       >
-        <span className="text-sm leading-none">{current.flag}</span>
-        <span className={cn(isLanding ? "hidden sm:inline" : "inline font-medium")}>
-          {current.label}
+        <span className="text-base leading-none select-none" role="img" aria-label={current.label}>
+          {current.flag}
         </span>
-        {isLanding && <span className="sm:hidden uppercase">{current.shortLabel}</span>}
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 transition-transform duration-200 shrink-0",
-            isLanding ? "text-slate-500 dark:text-cyan-300/80" : "text-slate-400 dark:text-slate-400",
-            isOpen && "rotate-180"
-          )}
-        />
       </button>
 
       {isOpen && (

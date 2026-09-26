@@ -10,12 +10,10 @@ import {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { AuthGuard } from "@/components/shared/auth-guard";
 import { api } from "@/lib/api";
 import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
 import {
   Building2,
   Link2,
@@ -24,35 +22,26 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
-  Moon,
-  Sun,
-  Globe,
 } from "lucide-react";
 import { cn } from "cn";
 import type { Organization } from "@/types";
 import { useI18n } from "@/i18n";
-import { BRAND_CONFIG } from "@haihire/shared";
 import { getApiErrorMessage, type AppErrorSource } from "@/lib/api-error";
 
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, updateUserOrg, loading: authLoading } = useAuth();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
   const { data: myOrgs = [], isLoading: orgsLoading } = useMyOrgs();
   const switchOrgMutation = useSwitchOrgMutation();
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [displayHost, setDisplayHost] = useState("");
 
   useEffect(() => {
-    setMounted(true);
     if (typeof window !== "undefined") {
       setDisplayHost(window.location.host);
     }
   }, []);
-
-  const isDark = mounted ? (resolvedTheme || theme) === "dark" : false;
 
   // Derive initial mode: "select" | "create" | "join"
   const urlMode = searchParams.get("mode");
@@ -219,44 +208,7 @@ function OnboardingContent() {
   const hasExistingOrgs = displayOrgs.length > 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      {/* Top Header Bar */}
-      <header className="w-full max-w-7xl mx-auto px-4 py-4 sm:px-6 flex items-center justify-between">
-        {/* Left: Theme Switcher & Language */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Toggle Theme"
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLocale(locale === "vi" ? "en" : "vi")}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Switch language"
-          >
-            <Globe className="h-3.5 w-3.5" />
-            <span className="uppercase">{locale}</span>
-          </button>
-        </div>
-
-        {/* Right: Brand */}
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
-            <Building2 className="h-4 w-4" />
-          </div>
-          <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
-            {BRAND_CONFIG.name}
-          </span>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-        <div className="w-full max-w-md">
+    <div className="w-full max-w-md">
           {/* Alerts */}
           {error && (
             <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/50 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">
@@ -546,23 +498,19 @@ function OnboardingContent() {
             </div>
           )}
         </div>
-      </main>
-    </div>
   );
 }
 
 export default function OnboardingCreateOrgPage() {
   return (
-    <AuthGuard requireOrg={false}>
-      <Suspense
-        fallback={
-          <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-            <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
-          </div>
-        }
-      >
-        <OnboardingContent />
-      </Suspense>
-    </AuthGuard>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
+        </div>
+      }
+    >
+      <OnboardingContent />
+    </Suspense>
   );
 }

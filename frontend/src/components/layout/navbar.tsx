@@ -14,24 +14,17 @@ import {
   MessageSquare,
   Settings,
   ChevronDown,
-  Sparkles,
   Plus,
-  LogOut,
   ShieldCheck,
   Menu,
   X,
   Clock,
   Radio,
   Bot,
-  Check,
-  Sun,
-  Globe,
-  MessageSquareWarning,
   BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
-import { useMyOrgs, useSwitchOrgMutation } from "@/hooks/use-queries";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,9 +33,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { UserMenu } from "@/components/layout/user-menu";
 import { BRAND_CONFIG } from "@haihire/shared";
-import { cn } from "cn";
-import { getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 export type NavTab =
@@ -72,11 +64,8 @@ export function Navbar({
 }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, logout, canEdit, isOwner, isAdmin } = useAuth();
+  const { user, isAuthenticated, canEdit } = useAuth();
   const { t } = useI18n();
-  const { data: myOrgs = [] } = useMyOrgs();
-  const switchOrgMutation = useSwitchOrgMutation();
-  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -111,20 +100,19 @@ export function Navbar({
     id: NavTab;
     label: string;
     icon: ElementType;
-    implemented?: boolean;
   }[] = [
-    { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard, implemented: true },
-    { id: "jobs", label: t("nav.jobs"), icon: Briefcase, implemented: true },
-    { id: "candidates", label: t("nav.candidates"), icon: Users, implemented: true },
-    { id: "applications", label: t("nav.applications"), icon: FileText, implemented: true },
-    { id: "inbox", label: t("nav.inbox"), icon: Inbox, implemented: false },
-    { id: "interviews", label: t("nav.interviews"), icon: Calendar, implemented: true },
-    { id: "assistant", label: t("nav.assistant"), icon: MessageSquare, implemented: false },
-    { id: "settings", label: t("nav.settings"), icon: Settings, implemented: true },
+    { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+    { id: "jobs", label: t("nav.jobs"), icon: Briefcase },
+    { id: "candidates", label: t("nav.candidates"), icon: Users },
+    { id: "applications", label: t("nav.applications"), icon: FileText },
+    { id: "interviews", label: t("nav.interviews"), icon: Calendar },
+    { id: "settings", label: t("nav.settings"), icon: Settings },
   ];
 
   // Features inside "More" (all Coming Soon)
   const moreItems = [
+    { label: t("nav.inbox"), icon: Inbox },
+    { label: t("nav.assistant"), icon: MessageSquare },
     { label: t("nav.features.analyticsReports"), icon: BarChart3 },
     { label: t("nav.features.talentPools"), icon: Users },
     { label: t("nav.features.sourceTracking"), icon: Radio },
@@ -158,53 +146,51 @@ export function Navbar({
   return (
     <>
       {/* Top Navbar Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/95 transition-colors duration-200">
-        <div className="flex h-14 w-full items-center justify-between px-3 sm:px-6">
+      <header className="sticky top-0 z-40 w-full h-16 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/85 transition-colors duration-200 select-none">
+        <div className="flex h-16 w-full items-center justify-between px-3 sm:px-6">
           {/* Left: Logo & Desktop Navigation */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Logo */}
-            <Link
-              href="/"
-              className="flex items-center gap-2 mr-1 sm:mr-2 group"
-            >
-              <BrandLogo size="sm" variant="icon-only" />
-              <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight hidden sm:inline">
+            {/* Logo & Workspace */}
+            <div className="flex items-center gap-2.5 mr-1 sm:mr-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 focus:outline-hidden group"
+              >
+                <BrandLogo size="md" variant="icon-only" />
+              </Link>
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+              <span className="font-bold text-slate-900 dark:text-white text-sm tracking-tight hidden sm:inline max-w-[160px] truncate">
                 {user?.organization?.name || BRAND_CONFIG.name}
               </span>
-            </Link>
+            </div>
 
             {/* Desktop Navigation Items */}
             <nav className="hidden lg:flex items-center gap-0.5">
               {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentTab === item.id;
-                  const isImplemented = item.implemented !== false;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      disabled={!isImplemented}
-                      onClick={() => isImplemented && handleNavClick(item.id)}
-                      title={!isImplemented ? `${item.label} (Coming soon)` : undefined}
-                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${!isImplemented
-                          ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
-                          : isActive
-                            ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-bold cursor-pointer"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer"
-                        }`}
-                    >
-                      <Icon
-                        className={`h-3.5 w-3.5 ${!isImplemented
-                            ? "text-slate-400 opacity-60"
-                            : isActive
-                              ? "text-blue-600 dark:text-blue-400"
-                              : "text-slate-400"
-                          }`}
-                      />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
+                const Icon = item.icon;
+                const isActive = currentTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleNavClick(item.id)}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-slate-100 text-blue-600 dark:bg-slate-800 dark:text-blue-400 font-bold"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon
+                      className={`h-3.5 w-3.5 ${
+                        isActive
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-slate-400"
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
 
               {/* More dropdown */}
               <DropdownMenu>
@@ -239,21 +225,8 @@ export function Navbar({
             </nav>
           </div>
 
-          {/* Right: Upgrade, + New Job, Avatar, Theme, Mobile Hamburger */}
+          {/* Right: + New Job, UserMenu / Sign In, Mobile Hamburger */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Upgrade Button (Indigo pill with Sparkles) */}
-            <button
-              type="button"
-              disabled
-              className="flex items-center justify-center h-8 px-3.5 rounded-xl bg-indigo-600/60 text-white/80 shadow-xs cursor-not-allowed gap-1.5 opacity-60"
-              title={`${t("nav.upgrade")} (${t("common.comingSoon")})`}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span className="text-xs font-bold">
-                {t("nav.upgrade")}
-              </span>
-            </button>
-
             {/* + New Job Button (Desktop Only, Admins only) */}
             {canEdit && (
               <Button
@@ -266,186 +239,15 @@ export function Navbar({
               </Button>
             )}
 
-            {/* User Profile Avatar with Dropdown matching Screenshot */}
+            {/* Theme & Language Icon Buttons */}
+            <div className="hidden sm:flex items-center gap-1.5">
+              <ThemeToggle />
+              <LanguageDropdown />
+            </div>
+
+            {/* User Profile Avatar with shared UserMenu */}
             {isAuthenticated && user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className="flex items-center gap-1 rounded-full p-0.5 hover:ring-2 hover:ring-slate-200 dark:hover:ring-slate-800 transition-all cursor-pointer outline-none"
-                  aria-label="User Profile"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-xs">
-                    {getInitials(user.name)}
-                  </div>
-                  <ChevronDown className="h-3 w-3 text-slate-400 hidden sm:block" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-64 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl space-y-1 z-50 text-slate-800 dark:text-slate-200 overflow-visible"
-                >
-                  {/* 1. User Full Name & Email & Role Badge */}
-                  <div className="px-2 pt-1 pb-1">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <span className="font-bold text-xs text-slate-900 dark:text-white block truncate">
-                        {user.name}
-                      </span>
-                      {isOwner ? (
-                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 rounded-md border border-amber-200/60 dark:border-amber-800/60 shrink-0">
-                          {t("members.roleOwner")}
-                        </span>
-                      ) : isAdmin ? (
-                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 rounded-md border border-blue-200/60 dark:border-blue-800/60 shrink-0">
-                          {t("members.roleAdmin")}
-                        </span>
-                      ) : (
-                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 rounded-md border border-slate-200 dark:border-slate-700 shrink-0">
-                          {t("members.roleMember")}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 block truncate mt-0.5">
-                      {user.email}
-                    </span>
-                  </div>
-
-                  {/* 2. Organization Selector Box with Dropdown */}
-                  <div className="w-full my-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 overflow-hidden transition-all">
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsOrgDropdownOpen(!isOrgDropdownOpen);
-                      }}
-                      className="w-full p-2 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
-                    >
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
-                        {user.organization?.name || t("nav.noOrganization")}
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          "h-3 w-3 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-transform duration-200 shrink-0",
-                          isOrgDropdownOpen && "rotate-180",
-                        )}
-                      />
-                    </div>
-
-                    {/* Expanded Organization List */}
-                    {isOrgDropdownOpen && (
-                      <div className="border-t border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-48 overflow-y-auto">
-                        {myOrgs.length > 0 ? (
-                          myOrgs.map((org) => {
-                            const isActive = org.id === user.organizationId;
-                            return (
-                              <div
-                                key={org.id}
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (!isActive) {
-                                    try {
-                                      await switchOrgMutation.mutateAsync(org.id);
-                                      router.push("/dashboard");
-                                    } catch (err) {
-                                      console.error("Failed to switch workspace:", err);
-                                    }
-                                  }
-                                  setIsOrgDropdownOpen(false);
-                                }}
-                                className={cn(
-                                  "w-full px-2.5 py-1.5 flex items-center justify-between text-xs cursor-pointer transition-colors",
-                                  isActive
-                                    ? "bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold"
-                                    : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60",
-                                )}
-                              >
-                                <span className="truncate">{org.name}</span>
-                                {isActive && (
-                                  <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                                )}
-                              </div>
-                            );
-                          })
-                        ) : user.organization ? (
-                          <div className="w-full px-2.5 py-1.5 flex items-center justify-between text-xs bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold cursor-default">
-                            <span className="truncate">{user.organization.name}</span>
-                            <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                          </div>
-                        ) : null}
-
-                        {/* + Create organization item */}
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsOrgDropdownOpen(false);
-                            router.push("/onboarding/create-org?mode=create");
-                          }}
-                          className="w-full px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors"
-                        >
-                          <Plus className="h-3 w-3" />
-                          <span>{t("nav.createOrganization")}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 3. Theme Row */}
-                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <Sun className="h-4 w-4 text-slate-400" />
-                      <span>{t("nav.theme")}</span>
-                    </div>
-                    <ThemeToggle />
-                  </div>
-
-                  {/* 4. Language Row with shared LanguageDropdown */}
-                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <Globe className="h-4 w-4 text-slate-400" />
-                      <span>{t("nav.language")}</span>
-                    </div>
-                    <LanguageDropdown />
-                  </div>
-
-                  {/* Divider */}
-                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-
-                  {/* 5. Settings */}
-                  <div
-                    onClick={() => handleNavClick("settings")}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
-                  >
-                    <Settings className="h-4 w-4 text-slate-400" />
-                    <span>{t("nav.settings")}</span>
-                  </div>
-
-                  {/* 6. Updates & changelog */}
-                  <div
-                    onClick={() => { }}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
-                  >
-                    <Sparkles className="h-4 w-4 text-slate-400" />
-                    <span>{t("nav.updatesChangelog")}</span>
-                  </div>
-
-                  {/* 7. Report issue */}
-                  <div
-                    onClick={() => { }}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
-                  >
-                    <MessageSquareWarning className="h-4 w-4 text-slate-400" />
-                    <span>{t("nav.reportIssue")}</span>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-
-                  {/* 8. Sign out */}
-                  <div
-                    onClick={logout}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>{t("nav.signOut")}</span>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <UserMenu />
             ) : (
               <Link href="/login">
                 <Button
@@ -477,7 +279,7 @@ export function Navbar({
 
       {/* MOBILE TOP-DOWN DROPDOWN MENU */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-14 bottom-0 z-40 lg:hidden">
+        <div className="fixed inset-x-0 top-16 bottom-0 z-40 lg:hidden">
           {/* Backdrop Overlay */}
           <div
             onClick={() => setMobileMenuOpen(false)}
@@ -493,36 +295,27 @@ export function Navbar({
                 .map((item) => {
                   const Icon = item.icon;
                   const isActive = currentTab === item.id;
-                  const isImplemented = item.implemented !== false;
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      disabled={!isImplemented}
-                      onClick={() => isImplemented && handleMobileNavSelect(item.id)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left ${!isImplemented
-                          ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
-                          : isActive
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold cursor-pointer"
-                            : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer"
-                        }`}
+                      onClick={() => handleMobileNavSelect(item.id)}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${
+                        isActive
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
+                          : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <Icon
-                          className={`h-4 w-4 ${!isImplemented
-                              ? "text-slate-400 opacity-60"
-                              : isActive
-                                ? "text-blue-600 dark:text-blue-400"
-                                : "text-slate-500"
-                            }`}
+                          className={`h-4 w-4 ${
+                            isActive
+                              ? "text-blue-600 dark:text-blue-400"
+                              : "text-slate-500"
+                          }`}
                         />
                         <span>{item.label}</span>
                       </div>
-                      {!isImplemented && (
-                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-                          {t("common.soon")}
-                        </span>
-                      )}
                     </button>
                   );
                 })}
@@ -569,6 +362,19 @@ export function Navbar({
                 />
                 <span>{t("nav.settings")}</span>
               </button>
+              {/* Divider */}
+              <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
+
+              {/* Mobile Theme & Language Row */}
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {t("nav.theme")} / {t("nav.language")}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <ThemeToggle />
+                  <LanguageDropdown />
+                </div>
+              </div>
             </div>
 
             {/* Bottom Actions: + New Job (Admins only) */}

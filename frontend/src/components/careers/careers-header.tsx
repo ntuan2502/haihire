@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { BrandLogo } from "@/components/shared/brand-logo";
 import { useI18n } from "@/i18n";
-import { BRAND_CONFIG } from "@haihire/shared";
 import {
   Building2,
   Share2,
@@ -40,28 +40,28 @@ export function CareersHeader({
   // Case 1: Organization or Job Detail page (Identical Navbar)
   if (orgSlug && orgName) {
     return (
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-40 w-full h-16 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           {/* Left: Branding */}
           <Link
             href={`/careers/${orgSlug}`}
             className="flex items-center gap-3 min-w-0 group hover:opacity-90 transition-opacity"
           >
-            <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-sm group-hover:scale-105 transition-transform">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform">
               {orgName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
+              <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
                 <span>{t("careers.companyPage")}</span>
               </div>
-              <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">
+              <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight truncate">
                 {orgName}
               </div>
             </div>
           </Link>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Quick link back to the general careers directory */}
             <Link
               href="/careers"
@@ -95,7 +95,6 @@ export function CareersHeader({
             )}
 
             <ThemeToggle />
-
             <LanguageDropdown />
           </div>
         </div>
@@ -105,18 +104,11 @@ export function CareersHeader({
 
   // Case 2: General /careers directory
   return (
-    <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 w-full h-16 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 p-0.5 shadow-sm group-hover:scale-105 transition-transform">
-              <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-900">
-                <span className="font-black text-sm text-cyan-300">{BRAND_CONFIG.monogram}</span>
-              </div>
-            </div>
-            <span className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
-              {BRAND_CONFIG.careersTitle}
-            </span>
+            <BrandLogo size="md" />
           </Link>
 
           <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
@@ -125,9 +117,8 @@ export function CareersHeader({
           </span>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           <ThemeToggle />
-
           <LanguageDropdown />
 
           <Link
@@ -139,7 +130,7 @@ export function CareersHeader({
 
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs hover:scale-102 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs hover:scale-102 transition-all cursor-pointer"
           >
             <span>{t("careers.goToDashboard")}</span>
           </Link>

@@ -14,6 +14,8 @@ import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
 import { toTimestamp } from "../common/date.util";
+import { AppConflictException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 
 export interface InviteLinkRecord {
   id: string;
@@ -110,8 +112,10 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (existing) {
-      throw new ConflictException(
+      throw new AppConflictException(
+        APP_ERROR_CODES.ORG_SLUG_ALREADY_EXISTS,
         `Organization with slug '${normalizedSlug}' already exists. Please choose a different slug.`,
+        { slug: normalizedSlug },
       );
     }
 

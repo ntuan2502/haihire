@@ -3,6 +3,7 @@
 import {
   useState,
   useEffect,
+  useMemo,
   Suspense,
   type ChangeEvent,
   type FormEvent,
@@ -31,6 +32,7 @@ import { cn } from "cn";
 import type { Organization } from "@/types";
 import { useI18n } from "@/i18n";
 import { BRAND_CONFIG } from "@haihire/shared";
+import { getApiErrorMessage, type AppErrorSource } from "@/lib/api-error";
 
 function OnboardingContent() {
   const router = useRouter();
@@ -78,8 +80,14 @@ function OnboardingContent() {
 
   // Status & error state
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorSource, setErrorSource] = useState<AppErrorSource | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Derived reactive error message: re-evaluates automatically whenever `t` (language) changes!
+  const error = useMemo(() => {
+    if (!errorSource) return null;
+    return getApiErrorMessage(errorSource, t);
+  }, [errorSource, t]);
 
   // Auto-generate slug from organization name
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +103,7 @@ function OnboardingContent() {
         .replace(/-+/g, "-");
       setSlug(generated);
     }
-    setError(null);
+    setErrorSource(null);
   };
 
   const handleSlugChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +114,7 @@ function OnboardingContent() {
         .replace(/[^a-z0-9-]/g, "")
         .replace(/-+/g, "-"),
     );
-    setError(null);
+    setErrorSource(null);
   };
 
   // Handle Organization Selection from list
@@ -118,12 +126,12 @@ function OnboardingContent() {
 
     try {
       setSubmitting(true);
-      setError(null);
+      setErrorSource(null);
       await switchOrgMutation.mutateAsync(org.id);
       router.push("/dashboard");
     } catch (err) {
       console.error(err);
-      setError("Failed to switch workspace.");
+      setErrorSource(err);
     } finally {
       setSubmitting(false);
     }
@@ -133,17 +141,17 @@ function OnboardingContent() {
   const handleCreateOrg = async (e: FormEvent) => {
     e.preventDefault();
     if (!orgName.trim()) {
-      setError("Please enter your organization name.");
+      setErrorSource({ code: "ORG_NAME_REQUIRED" });
       return;
     }
     if (!slug.trim()) {
-      setError("Please enter a valid slug.");
+      setErrorSource({ code: "ORG_SLUG_REQUIRED" });
       return;
     }
 
     try {
       setSubmitting(true);
-      setError(null);
+      setErrorSource(null);
       const res = await api.post<{ organization: Organization }>(
         "/organizations",
         {
@@ -161,12 +169,7 @@ function OnboardingContent() {
       }, 700);
     } catch (err: unknown) {
       console.error(err);
-      if (typeof err === "object" && err !== null && "response" in err) {
-        const res = err as { response?: { data?: { message?: string } } };
-        setError(res.response?.data?.message || "Failed to create organization.");
-      } else {
-        setError("Error connecting to server.");
-      }
+      setErrorSource(err);
     } finally {
       setSubmitting(false);
     }
@@ -176,13 +179,13 @@ function OnboardingContent() {
   const handleJoinOrg = async (codeOrSlugToJoin?: string) => {
     const target = codeOrSlugToJoin || inviteCodeOrSlug;
     if (!target.trim()) {
-      setError("Please provide an invite link, code, or organization slug.");
+      setErrorSource(t("onboarding.inviteLinkPlaceholder"));
       return;
     }
 
     try {
       setSubmitting(true);
-      setError(null);
+      setErrorSource(null);
       const res = await api.post<{ organization: Organization; message: string }>(
         "/organizations/join",
         {
@@ -199,12 +202,7 @@ function OnboardingContent() {
       }, 700);
     } catch (err: unknown) {
       console.error(err);
-      if (typeof err === "object" && err !== null && "response" in err) {
-        const res = err as { response?: { data?: { message?: string } } };
-        setError(res.response?.data?.message || "Failed to join organization.");
-      } else {
-        setError("Error connecting to server.");
-      }
+      setErrorSource(err);
     } finally {
       setSubmitting(false);
     }
@@ -348,7 +346,7 @@ function OnboardingContent() {
                   type="button"
                   onClick={() => {
                     setMode("create");
-                    setError(null);
+                    setErrorSource(null);
                     setSuccessMsg(null);
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
@@ -359,7 +357,7 @@ function OnboardingContent() {
                   type="button"
                   onClick={() => {
                     setMode("join");
-                    setError(null);
+                    setErrorSource(null);
                     setSuccessMsg(null);
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
@@ -378,7 +376,7 @@ function OnboardingContent() {
                   type="button"
                   onClick={() => {
                     setMode("select");
-                    setError(null);
+                    setErrorSource(null);
                     setSuccessMsg(null);
                   }}
                   className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
@@ -451,7 +449,7 @@ function OnboardingContent() {
                   type="button"
                   onClick={() => {
                     setMode("join");
-                    setError(null);
+                    setErrorSource(null);
                     setSuccessMsg(null);
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
@@ -470,7 +468,7 @@ function OnboardingContent() {
                   type="button"
                   onClick={() => {
                     setMode("select");
-                    setError(null);
+                    setErrorSource(null);
                     setSuccessMsg(null);
                   }}
                   className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
@@ -513,7 +511,7 @@ function OnboardingContent() {
                       value={inviteCodeOrSlug}
                       onChange={(e) => {
                         setInviteCodeOrSlug(e.target.value);
-                        setError(null);
+                        setErrorSource(null);
                       }}
                       className="h-10 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-950"
                     />
@@ -537,7 +535,7 @@ function OnboardingContent() {
                   type="button"
                   onClick={() => {
                     setMode("create");
-                    setError(null);
+                    setErrorSource(null);
                     setSuccessMsg(null);
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"

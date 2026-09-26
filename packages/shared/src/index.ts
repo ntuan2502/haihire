@@ -6,3 +6,4 @@ export * from "./applications";
 export * from "./interviews";
 export * from "./email-templates";
 export * from "./common";
+export * from "./errors";

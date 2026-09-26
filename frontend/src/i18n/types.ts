@@ -52,6 +52,20 @@ export interface TranslationSchema {
     fullscreen: string;
     exitFullscreen: string;
   };
+  errors: {
+    generic: string;
+    networkError: string;
+    ORG_SLUG_ALREADY_EXISTS: string;
+    ORG_NOT_FOUND: string;
+    ORG_NAME_REQUIRED: string;
+    ORG_SLUG_REQUIRED: string;
+    ORG_MEMBER_ALREADY_EXISTS: string;
+    INVALID_CREDENTIALS: string;
+    USER_EMAIL_EXISTS: string;
+    UNAUTHORIZED: string;
+    FORBIDDEN: string;
+    RESOURCE_NOT_FOUND: string;
+  };
   nav: {
     dashboard: string;
     jobs: string;

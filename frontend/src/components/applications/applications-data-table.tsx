@@ -46,7 +46,7 @@ import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
-import { PIPELINE_STAGES } from "@/lib/stages";
+import { usePipelineStages } from "@/lib/stages";
 import { getApiBaseUrl } from "@/lib/api";
 import {
   useUpdateStageMutation,
@@ -114,6 +114,7 @@ export function ApplicationsDataTable({
 }: ApplicationsDataTableProps) {
   const router = useRouter();
   const { t } = useI18n();
+  const pipelineStages = usePipelineStages();
   const { canEdit } = useAuth();
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -1000,7 +1001,7 @@ export function ApplicationsDataTable({
                 {/* Stage Action Pipeline Bar */}
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {PIPELINE_STAGES.filter(
+                    {pipelineStages.filter(
                       (stage) => stage.id !== currentApp.stage,
                     ).map((stage) => (
                       <button

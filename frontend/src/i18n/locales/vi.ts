@@ -357,12 +357,12 @@ export const vi: TranslationSchema = {
   },
   pipeline: {
     stages: {
-      applied: "Đã nộp hồ sơ",
+      applied: "Ứng tuyển",
       screening: "Sơ loại",
       interview: "Phỏng vấn",
-      offer: "Đề nghị việc làm",
-      hired: "Đã tuyển dụng",
-      rejected: "Đã từ chối",
+      offer: "Đề nghị",
+      hired: "Tuyển dụng",
+      rejected: "Từ chối",
     },
     stageCounts: "ứng viên",
     emptyStage: "Chưa có ứng viên ở giai đoạn này",

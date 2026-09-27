@@ -155,6 +155,7 @@ export const vi: TranslationSchema = {
     docs: "Tài liệu",
     blog: "Bài viết",
     signIn: "Đăng nhập",
+    signUp: "Đăng ký",
     startFree: "Bắt đầu miễn phí",
     enterDashboard: "Vào Bảng điều khiển",
     createWorkspace: "Tạo Không gian làm việc",

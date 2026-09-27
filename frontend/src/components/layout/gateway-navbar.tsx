@@ -8,7 +8,7 @@ import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
-import { LogIn } from "lucide-react";
+import { LogIn, ArrowRight } from "lucide-react";
 import { cn } from "cn";
 
 export interface GatewayNavbarProps {
@@ -55,12 +55,21 @@ export function GatewayNavbar({
           <LanguageDropdown />
 
           {isAuthenticated && user ? (
-            <UserMenu showOrgSwitcher={false} />
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                <span>{t("landing.enterDashboard")}</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <UserMenu />
+            </div>
           ) : (
             !isAuthPage && (
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <LogIn className="h-3.5 w-3.5" />
                 <span>{t("landing.signIn")}</span>

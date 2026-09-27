@@ -281,10 +281,12 @@ export const LandingAtsPreview: React.FC = () => {
     if (!selectedCandidate) return [];
     return [
       {
+        id: "doc-preview-1",
         name: selectedCandidate.resumeFileName || "CV_Resume.pdf",
         url: selectedCandidate.resumeUrl || "/demo-resume.pdf",
         type: "RESUME",
         size: 2450000,
+        createdAt: new Date().toISOString(),
       },
     ];
   }, [selectedCandidate]);
@@ -484,26 +486,26 @@ export const LandingAtsPreview: React.FC = () => {
       {/* Main macOS Application Frame */}
       <div className="relative rounded-2xl border border-slate-200/90 dark:border-white/15 bg-white dark:bg-slate-950 shadow-2xl backdrop-blur-xl overflow-hidden ring-1 ring-slate-900/5 dark:ring-white/10 transition-colors">
         {/* 1. macOS Window Titlebar */}
-        <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/90 px-4 py-2.5 sm:px-6 select-none">
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-rose-500/80 ring-1 ring-rose-400/30" />
-            <span className="h-3 w-3 rounded-full bg-amber-500/80 ring-1 ring-amber-400/30" />
-            <span className="h-3 w-3 rounded-full bg-emerald-500/80 ring-1 ring-emerald-400/30" />
+        <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/90 px-3 sm:px-6 py-2 select-none">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-rose-500/80 ring-1 ring-rose-400/30" />
+            <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-amber-500/80 ring-1 ring-amber-400/30" />
+            <span className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-emerald-500/80 ring-1 ring-emerald-400/30" />
           </div>
 
-          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <div className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[160px] sm:max-w-none px-2">
             {t("landing.mockupAtsWindowTitle", { brand: "HaiHire" })}
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>{t("landing.mockupActiveCandidates")}</span>
           </div>
         </div>
 
         {/* 2. Top Internal Application Bar */}
-        <div className="border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/80 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-6">
+        <div className="border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/80 px-3 sm:px-6 py-2 flex items-center justify-between gap-3 overflow-hidden">
+          <div className="flex items-center gap-4 sm:gap-6 min-w-0">
             <BrandLogo size="sm" />
 
             <div className="hidden sm:flex items-center gap-1 text-xs font-semibold">
@@ -533,12 +535,12 @@ export const LandingAtsPreview: React.FC = () => {
         </div>
 
         {/* 3. Job Breadcrumb */}
-        <div className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 dark:text-slate-400 font-medium">{t("nav.jobs")}</span>
-            <span className="text-slate-400">/</span>
-            <span className="font-bold text-slate-900 dark:text-white">{mockJob.title}</span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full ml-1">
+        <div className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-3 sm:px-6 py-2 flex items-center justify-between text-xs overflow-hidden">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">{t("nav.jobs")}</span>
+            <span className="text-slate-400 shrink-0">/</span>
+            <span className="font-bold text-slate-900 dark:text-white truncate">{mockJob.title}</span>
+            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full ml-1 shrink-0">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span>{mockJob.location}</span>
             </span>

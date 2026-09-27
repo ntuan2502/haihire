@@ -155,6 +155,7 @@ export const en: TranslationSchema = {
     docs: "Docs",
     blog: "Blog",
     signIn: "Sign in",
+    signUp: "Sign up",
     startFree: "Start free",
     enterDashboard: "Enter Dashboard",
     createWorkspace: "Create Workspace",

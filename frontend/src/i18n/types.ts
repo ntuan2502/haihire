@@ -153,6 +153,7 @@ export interface TranslationSchema {
     docs: string;
     blog: string;
     signIn: string;
+    signUp: string;
     startFree: string;
     enterDashboard: string;
     createWorkspace: string;

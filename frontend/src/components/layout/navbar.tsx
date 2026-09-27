@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ElementType } from "react";
+import { useState, type ElementType } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -34,6 +34,7 @@ import {
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { UserMenu } from "@/components/layout/user-menu";
+import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { BRAND_CONFIG } from "@haihire/shared";
 import { useI18n } from "@/i18n";
 
@@ -67,17 +68,6 @@ export function Navbar({
   const { user, isAuthenticated, canEdit } = useAuth();
   const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileMenuOpen]);
 
   const handleCreateJobClick = () => {
     if (onOpenCreateJob) {
@@ -277,124 +267,101 @@ export function Navbar({
         </div>
       </header>
 
-      {/* MOBILE TOP-DOWN DROPDOWN MENU */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-16 bottom-0 z-40 lg:hidden">
-          {/* Backdrop Overlay */}
-          <div
-            onClick={() => setMobileMenuOpen(false)}
-            className="absolute inset-0 bg-black/25 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
-          />
-
-          {/* Top-Down Dropdown Menu Container */}
-          <div className="relative w-full max-h-[calc(100vh-3.5rem)] overflow-y-auto bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-top-4 duration-200 z-10 flex flex-col justify-between">
-            {/* Navigation List Items */}
-            <div className="px-3 py-3 space-y-0.5">
-              {navItems
-                .filter((item) => item.id !== "settings")
-                .map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleMobileNavSelect(item.id)}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${
-                        isActive
-                          ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
-                          : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon
-                          className={`h-4 w-4 ${
-                            isActive
-                              ? "text-blue-600 dark:text-blue-400"
-                              : "text-slate-500"
-                          }`}
-                        />
-                        <span>{item.label}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-
-              {/* More (Coming Soon) */}
-              <div className="pt-2.5 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                {t("nav.moreComingSoon")}
-              </div>
-              {moreItems.map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-70"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-4 w-4 text-slate-400" />
-                      <span>{item.label}</span>
-                    </div>
-                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
-                      {t("common.soon")}
-                    </span>
-                  </div>
-                );
-              })}
-
-              {/* Divider */}
-              <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
-
-              {/* Settings Item */}
+      {/* REUSABLE MOBILE MENU DRAWER */}
+      <MobileDrawer
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        breakpoint="lg"
+        footer={
+          canEdit ? (
+            <Button
+              onClick={() => {
+                handleCreateJobClick();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs gap-1.5 cursor-pointer"
+            >
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              {t("nav.newJob")}
+            </Button>
+          ) : undefined
+        }
+      >
+        {navItems
+          .filter((item) => item.id !== "settings")
+          .map((item) => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id;
+            return (
               <button
+                key={item.id}
                 type="button"
-                onClick={() => handleMobileNavSelect("settings")}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${currentTab === "settings"
+                onClick={() => handleMobileNavSelect(item.id)}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${
+                  isActive
                     ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
                     : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
-                  }`}
+                }`}
               >
-                <Settings
-                  className={`h-4 w-4 ${currentTab === "settings"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-slate-500"
+                <div className="flex items-center gap-3">
+                  <Icon
+                    className={`h-4 w-4 ${
+                      isActive
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-slate-500"
                     }`}
-                />
-                <span>{t("nav.settings")}</span>
-              </button>
-              {/* Divider */}
-              <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
-
-              {/* Mobile Theme & Language Row */}
-              <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {t("nav.theme")} / {t("nav.language")}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <ThemeToggle />
-                  <LanguageDropdown />
+                  />
+                  <span>{item.label}</span>
                 </div>
-              </div>
-            </div>
+              </button>
+            );
+          })}
 
-            {/* Bottom Actions: + New Job (Admins only) */}
-            {canEdit && (
-              <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
-                <Button
-                  onClick={() => {
-                    handleCreateJobClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs gap-1.5 cursor-pointer"
-                >
-                  <Plus className="h-4 w-4 stroke-[2.5]" />
-                  {t("nav.newJob")}
-                </Button>
-              </div>
-            )}
-          </div>
+        {/* More (Coming Soon) */}
+        <div className="pt-2.5 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          {t("nav.moreComingSoon")}
         </div>
-      )}
+        {moreItems.map((item, idx) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={idx}
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-70"
+            >
+              <div className="flex items-center gap-3">
+                <Icon className="h-4 w-4 text-slate-400" />
+                <span>{item.label}</span>
+              </div>
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
+                {t("common.soon")}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Divider */}
+        <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
+
+        {/* Settings Item */}
+        <button
+          type="button"
+          onClick={() => handleMobileNavSelect("settings")}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${
+            currentTab === "settings"
+              ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
+              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+          }`}
+        >
+          <Settings
+            className={`h-4 w-4 ${
+              currentTab === "settings"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-slate-500"
+            }`}
+          />
+          <span>{t("nav.settings")}</span>
+        </button>
+      </MobileDrawer>
     </>
   );
 }

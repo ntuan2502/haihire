@@ -1,14 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { UserMenu } from "@/components/layout/user-menu";
+import { MobileDrawer } from "@/components/layout/mobile-drawer";
+import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import {
   Building2,
   Share2,
   Check,
+  Menu,
+  X,
+  ArrowRight,
+  UserPlus,
+  ShieldCheck,
+  Briefcase,
 } from "lucide-react";
 
 export interface CareersHeaderProps {
@@ -35,6 +45,8 @@ export function CareersHeader({
   shareLabel,
 }: CareersHeaderProps) {
   const { t } = useI18n();
+  const { isAuthenticated, user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const activeShareLabel = shareLabel || t("careers.share");
 
   // Case 1: Organization or Job Detail page (Identical Navbar)
@@ -72,12 +84,12 @@ export function CareersHeader({
               <span>{t("careers.allCompanies")}</span>
             </Link>
 
-            {/* Share button */}
+            {/* Share button (desktop) */}
             {showShareButton && onShare && (
               <button
                 onClick={onShare}
                 type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title={t("careers.copyLink")}
               >
                 {copiedLink ? (
@@ -94,10 +106,106 @@ export function CareersHeader({
               </button>
             )}
 
-            <ThemeToggle />
-            <LanguageDropdown />
+            <div className="hidden md:flex items-center gap-1.5">
+              <ThemeToggle />
+              <LanguageDropdown />
+            </div>
+
+            {isAuthenticated && user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/dashboard"
+                  className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold shadow-xs transition-all cursor-pointer"
+                >
+                  <span>{t("landing.enterDashboard")}</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <UserMenu />
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <span>{t("landing.signIn")}</span>
+              </Link>
+            )}
+
+            {/* Mobile Menu Hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5 stroke-[2]" />
+              ) : (
+                <Menu className="h-5 w-5 stroke-[2]" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Reusable Mobile Drawer */}
+        <MobileDrawer
+          isOpen={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          footer={
+            isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                <span>{t("landing.enterDashboard")}</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>{t("landing.signUp")}</span>
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold h-9 rounded-xl transition-colors cursor-pointer"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>{t("landing.signIn")}</span>
+                </Link>
+              </div>
+            )
+          }
+        >
+          <Link
+            href="/careers"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
+          >
+            <Building2 className="h-4 w-4 text-slate-500" />
+            <span>{t("careers.allCompanies")}</span>
+          </Link>
+
+          {showShareButton && onShare && (
+            <button
+              type="button"
+              onClick={() => {
+                onShare();
+                setMobileMenuOpen(false);
+              }}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <Share2 className="h-4 w-4 text-slate-500" />
+              <span>{activeShareLabel}</span>
+            </button>
+          )}
+        </MobileDrawer>
       </header>
     );
   }
@@ -118,24 +226,118 @@ export function CareersHeader({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-2.5">
-          <ThemeToggle />
-          <LanguageDropdown />
+          <div className="hidden md:flex items-center gap-1.5">
+            <ThemeToggle />
+            <LanguageDropdown />
+          </div>
 
-          <Link
-            href="/login"
-            className="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white px-2.5 py-1.5 transition-colors hidden sm:inline-block"
-          >
-            {t("careers.forEmployers")} &rarr;
-          </Link>
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold shadow-xs hover:scale-102 transition-all cursor-pointer"
+              >
+                <span>{t("landing.enterDashboard")}</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <UserMenu />
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Link
+                href="/login"
+                className="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white px-2.5 py-1.5 transition-colors"
+              >
+                {t("careers.forEmployers")} &rarr;
+              </Link>
 
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs hover:scale-102 transition-all cursor-pointer"
+              <Link
+                href="/login"
+                className="text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-3 py-1.5 transition-colors"
+              >
+                <span>{t("landing.signIn")}</span>
+              </Link>
+
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs hover:scale-102 transition-all cursor-pointer"
+              >
+                <span>{t("landing.signUp")}</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile Menu Hamburger */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Toggle Navigation Menu"
           >
-            <span>{t("careers.goToDashboard")}</span>
-          </Link>
+            {mobileMenuOpen ? (
+              <X className="h-5 w-5 stroke-[2]" />
+            ) : (
+              <Menu className="h-5 w-5 stroke-[2]" />
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Reusable Mobile Drawer */}
+      <MobileDrawer
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        footer={
+          isAuthenticated ? (
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              <span>{t("landing.enterDashboard")}</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>{t("landing.signUp")}</span>
+              </Link>
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold h-9 rounded-xl transition-colors cursor-pointer"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span>{t("landing.signIn")}</span>
+              </Link>
+            </div>
+          )
+        }
+      >
+        <Link
+          href="/careers"
+          onClick={() => setMobileMenuOpen(false)}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
+        >
+          <Briefcase className="h-4 w-4 text-slate-500" />
+          <span>{t("landing.navCareers")}</span>
+        </Link>
+        {!isAuthenticated && (
+          <Link
+            href="/login"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white transition-colors"
+          >
+            <Building2 className="h-4 w-4 text-slate-500" />
+            <span>{t("careers.forEmployers")}</span>
+          </Link>
+        )}
+      </MobileDrawer>
     </header>
   );
 }

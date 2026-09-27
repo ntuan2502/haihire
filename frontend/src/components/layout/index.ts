@@ -1,3 +1,4 @@
 export * from "./navbar";
 export * from "./user-menu";
 export * from "./gateway-navbar";
+export * from "./mobile-drawer";

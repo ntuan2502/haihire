@@ -19,12 +19,12 @@ export const LandingHero: React.FC = () => {
       </div>
 
       {/* Main Headline */}
-      <h1 className="max-w-4xl text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.14]">
-        {t("landing.heroTitlePart1")}
-        <span className="inline-block rounded-2xl bg-blue-600 text-white dark:bg-white dark:text-slate-950 px-3.5 py-0.5 sm:px-5 sm:py-1 shadow-xl mx-1 align-baseline transform hover:scale-105 transition-transform">
+      <h1 className="max-w-4xl text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.2] sm:leading-[1.14] break-words">
+        {t("landing.heroTitlePart1")}{" "}
+        <span className="inline-block max-w-full rounded-2xl bg-blue-600 text-white dark:bg-white dark:text-slate-950 px-3 py-0.5 sm:px-5 sm:py-1 shadow-xl mx-1 align-baseline transform hover:scale-105 transition-transform break-words">
           {t("landing.heroHiring")}
         </span>
-        <br />
+        <br className="hidden sm:inline" />{" "}
         {t("landing.heroTitlePart2")}
       </h1>
 

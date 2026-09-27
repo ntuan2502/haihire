@@ -42,7 +42,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex items-center gap-1.5 rounded-full p-0.5 hover:ring-2 hover:ring-slate-200 dark:hover:ring-slate-800 transition-all cursor-pointer outline-none select-none",
+          "flex items-center rounded-full p-0.5 hover:ring-2 hover:ring-slate-200 dark:hover:ring-slate-800 transition-all cursor-pointer outline-none select-none",
           className,
         )}
         aria-label="User Profile"
@@ -50,7 +50,6 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white shadow-xs">
           {getInitials(user.name)}
         </div>
-        <ChevronDown className="h-3 w-3 text-slate-400 hidden sm:block" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent

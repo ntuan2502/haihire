@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   LandingNavbar,
   LandingHero,
@@ -15,10 +14,10 @@ import {
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-[#030b1e] font-sans text-slate-900 dark:text-white selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-300">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-slate-50 dark:bg-[#030b1e] font-sans text-slate-900 dark:text-white selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-300">
       {/* Dynamic Radial Atmosphere Glow Background */}
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.18),rgba(255,255,255,0))]" />
-      <div className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 w-[160%] max-w-[1920px] h-[60vh] bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.12)_0%,rgba(14,165,233,0.05)_35%,rgba(248,250,252,0)_75%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.25)_0%,rgba(14,165,233,0.1)_35%,rgba(3,11,30,0)_75%)] blur-3xl opacity-60" />
+      <div className="pointer-events-none fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[1920px] h-[60vh] bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.12)_0%,rgba(14,165,233,0.05)_35%,rgba(248,250,252,0)_75%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.25)_0%,rgba(14,165,233,0.1)_35%,rgba(3,11,30,0)_75%)] blur-3xl opacity-60" />
 
       {/* Sticky Glassmorphic Navbar */}
       <LandingNavbar />

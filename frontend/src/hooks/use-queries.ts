@@ -132,6 +132,26 @@ export function useAllJobs(organizationId?: string | null) {
   });
 }
 
+export function useOpenJobs(organizationId?: string | null) {
+  const { user } = useAuth();
+  const effectiveOrgId =
+    organizationId !== undefined ? organizationId : user?.organizationId;
+
+  return useQuery<Job[]>({
+    queryKey: ["jobs", "open", effectiveOrgId],
+    queryFn: async () => {
+      if (!effectiveOrgId) return [];
+      const res = await jobsApi.getAll({
+        organizationId: effectiveOrgId,
+        status: "PUBLISHED",
+        limit: 1000,
+      });
+      return res.data;
+    },
+    enabled: Boolean(effectiveOrgId),
+  });
+}
+
 export function useJob(id: string | null) {
   return useQuery<Job>({
     queryKey: ["jobs", id],

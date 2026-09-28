@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { CreateJobDto } from "./dto/create-job.dto";
@@ -26,8 +27,9 @@ export class JobsController {
   ) {}
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   findAll(
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request() req: { user?: { id?: string; role?: string; organizationId?: string | null } },
     @Query("status") status?: string,
     @Query("department") department?: string,
     @Query("search") search?: string,
@@ -41,9 +43,12 @@ export class JobsController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
   ) {
+    const isAuthenticated = Boolean(req?.user);
+    // Security: Unauthenticated public requests must ONLY ever see PUBLISHED jobs
+    const effectiveStatus = !isAuthenticated ? "PUBLISHED" : status;
     const orgId = organizationId || req?.user?.organizationId || undefined;
     return this.jobsService.findAll({
-      status,
+      status: effectiveStatus,
       department,
       search,
       type,

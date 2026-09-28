@@ -876,7 +876,6 @@ function CandidateDetailPageContent() {
               }
             : null
         }
-        jobs={jobs}
         existingApplications={candidateApps}
       />
 

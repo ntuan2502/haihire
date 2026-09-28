@@ -668,7 +668,6 @@ function CandidatesPageContent() {
         isOpen={!!applyToJobModalCandidate}
         onClose={() => setApplyToJobModalCandidate(null)}
         candidate={applyToJobModalCandidate}
-        jobs={jobs}
         existingApplications={selectedCandidateApps}
       />
 

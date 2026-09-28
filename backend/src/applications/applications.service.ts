@@ -560,6 +560,18 @@ export class ApplicationsService {
         });
         candidateId = newCandidate.id;
       }
+    } else {
+      // Validate candidate exists and belongs to the same organization as the target job
+      const existingCandidate = await this.prisma.db.orm.public.Candidate.select("id", "organizationId")
+        .where((c) => c.id.eq(candidateId as string))
+        .first();
+
+      if (!existingCandidate) {
+        throw new NotFoundException(`Candidate with ID ${candidateId} not found`);
+      }
+      if (job.organizationId && existingCandidate.organizationId !== job.organizationId) {
+        throw new ForbiddenException("Candidate does not belong to the target job's organization.");
+      }
     }
 
     // 3. Enforce: One application per job per candidate

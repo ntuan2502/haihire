@@ -37,7 +37,6 @@ import {
   Clipboard,
   Send,
   FileEdit,
-  Share2,
   Check,
   AlertTriangle,
   Save,
@@ -245,8 +244,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
         ? "closed"
         : "draft",
   );
-  const [listOnExternalBoards, setListOnExternalBoards] = useState(true);
-  const [copiedLink, setCopiedLink] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const steps = [
@@ -653,12 +650,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
           } catch {
             // ignore
           }
-          if (navigator.clipboard) {
-            navigator.clipboard.writeText(
-              `${window.location.origin}/dashboard/jobs`,
-            );
-            setCopiedLink(true);
-          }
         }
 
         router.push("/dashboard/jobs");
@@ -681,14 +672,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
             status: statusMapped,
           },
         });
-
-        if (typeof window !== "undefined" && navigator.clipboard) {
-          navigator.clipboard.writeText(
-            `${window.location.origin}/dashboard/jobs/${initialJob.id}/pipeline`,
-          );
-          setCopiedLink(true);
-          setTimeout(() => setCopiedLink(false), 2500);
-        }
 
         setSaveSuccess(t("jobs.wizard.saveSuccess"));
         setTimeout(() => setSaveSuccess(null), 3500);
@@ -2123,26 +2106,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
               )}
             </div>
 
-            {/* External Job Boards Card */}
-            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={listOnExternalBoards}
-                  onChange={(e) => setListOnExternalBoards(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4 mt-0.5"
-                />
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    {t("jobs.wizard.externalBoardsTitle")}
-                  </span>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    {t("jobs.wizard.externalBoardsDesc")}
-                  </p>
-                </div>
-              </label>
-            </div>
-
             {/* Job Summary Card */}
             <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-4">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -2197,23 +2160,6 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* After Publishing Callout */}
-            <div className="flex items-start gap-3 p-4 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/30">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white mt-0.5">
-                <Share2 className="h-3.5 w-3.5" />
-              </div>
-              <div className="space-y-0.5">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                  {mode === "create" ? t("jobs.wizard.afterPublishingTitle") : t("jobs.wizard.workspaceLinkTitle")}
-                </h4>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {mode === "create"
-                    ? t("jobs.wizard.afterPublishingDesc")
-                    : `${t("jobs.wizard.workspaceLinkDesc")} ${typeof window !== "undefined" && initialJob ? `${window.location.origin}/dashboard/jobs/${initialJob.id}/pipeline` : `/dashboard/jobs/${initialJob?.id}/pipeline`}`}
-                </p>
               </div>
             </div>
 
@@ -2290,7 +2236,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                     publishMode === "publish" ? (
                       <>
                         <Send className="h-3.5 w-3.5" />
-                        {copiedLink ? t("jobs.wizard.linkCopied") : t("jobs.wizard.publishAndCopyLink")}
+                        {t("jobs.wizard.publishNow")}
                       </>
                     ) : (
                       <>
@@ -2301,7 +2247,7 @@ export function JobWizardEditor({ mode, initialJob }: JobWizardEditorProps) {
                   ) : (
                     <>
                       <Save className="h-3.5 w-3.5" />
-                      {copiedLink ? t("jobs.wizard.savedAndLinkCopied") : t("jobs.wizard.saveAndUpdateJob")}
+                      {t("jobs.wizard.saveAndUpdateJob")}
                     </>
                   )}
                 </Button>

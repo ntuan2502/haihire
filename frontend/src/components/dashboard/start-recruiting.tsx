@@ -4,8 +4,6 @@ import {
   Briefcase,
   Plus,
   ArrowRight,
-  UploadCloud,
-  FlaskConical,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 
@@ -17,8 +15,6 @@ interface StartRecruitingProps {
 
 export function StartRecruiting({
   onOpenCreateJob,
-  onCreateTestJob,
-  onImportFromFile,
 }: StartRecruitingProps) {
   const { t } = useI18n();
 
@@ -59,55 +55,6 @@ export function StartRecruiting({
               </div>
             </div>
             <ArrowRight className="h-5 w-5 text-white/80 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
-        {/* Divider: or */}
-        <div className="relative my-6 flex items-center justify-center">
-          <div className="w-full border-t border-slate-200 dark:border-slate-800" />
-          <span className="absolute bg-slate-50 dark:bg-slate-950 px-3 text-xs text-slate-400 font-medium">
-            {t("common.or")}
-          </span>
-        </div>
-
-        {/* Secondary Action Cards (2 Columns) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {/* Card 1: Import from file */}
-          <button
-            type="button"
-            onClick={onImportFromFile || onOpenCreateJob}
-            className="group flex items-start gap-3 rounded-xl border border-slate-200/90 bg-white p-4 text-left shadow-xs hover:border-slate-300 hover:bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:bg-slate-850 transition-all cursor-pointer"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 transition-colors">
-              <UploadCloud className="h-4 w-4" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                {t("dashboard.importFromFile")}
-              </h4>
-              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                {t("dashboard.importFromFileDesc")}
-              </p>
-            </div>
-          </button>
-
-          {/* Card 2: Create a test job */}
-          <button
-            type="button"
-            onClick={onCreateTestJob || onOpenCreateJob}
-            className="group flex items-start gap-3 rounded-xl border border-slate-200/90 bg-white p-4 text-left shadow-xs hover:border-slate-300 hover:bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 dark:hover:bg-slate-850 transition-all cursor-pointer"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400 transition-colors">
-              <FlaskConical className="h-4 w-4" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                {t("dashboard.createTestJob")}
-              </h4>
-              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
-                {t("dashboard.createTestJobDesc")}
-              </p>
-            </div>
           </button>
         </div>
       </div>

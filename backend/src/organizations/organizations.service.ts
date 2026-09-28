@@ -326,13 +326,15 @@ export class OrganizationsService implements OnModuleInit {
       return [];
     }
 
-    const allOrgs = await this.prisma.db.orm.public.Organization.select(
+    const ownedOrgs = await this.prisma.db.orm.public.Organization.select(
       "id",
       "name",
       "slug",
       "ownerId",
       "createdAt",
-    ).all();
+    )
+      .where((o) => o.ownerId.eq(userId))
+      .all();
 
     // Query all persistent memberships for this user
     const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
@@ -343,16 +345,27 @@ export class OrganizationsService implements OnModuleInit {
       .where((m) => m.userId.eq(userId))
       .all();
 
-    const memberOrgIds = new Set(userMemberships.map((m) => m.organizationId));
+    const memberOrgIds = [
+      ...new Set([
+        ...userMemberships.map((m) => m.organizationId),
+        ...(user.organizationId ? [user.organizationId] : []),
+      ]),
+    ].filter((id) => !ownedOrgs.some((o) => o.id === id));
 
-    // Security & Multi-org: Only return organizations the user owns, is an active member of,
-    // or is currently switched to.
-    return allOrgs.filter(
-      (o) =>
-        (o.ownerId && o.ownerId === userId) ||
-        memberOrgIds.has(o.id) ||
-        (user.organizationId && o.id === user.organizationId),
-    );
+    const memberOrgs =
+      memberOrgIds.length > 0
+        ? await this.prisma.db.orm.public.Organization.select(
+            "id",
+            "name",
+            "slug",
+            "ownerId",
+            "createdAt",
+          )
+            .where((o) => o.id.in(memberOrgIds))
+            .all()
+        : [];
+
+    return [...ownedOrgs, ...memberOrgs];
   }
 
   async switchOrg(userId: string, targetOrgId: string) {
@@ -613,7 +626,7 @@ export class OrganizationsService implements OnModuleInit {
       memberUserIds.add(org.ownerId);
     }
 
-    const allUsers = await this.prisma.db.orm.public.User.select(
+    const orgUsers = await this.prisma.db.orm.public.User.select(
       "id",
       "name",
       "email",
@@ -621,7 +634,30 @@ export class OrganizationsService implements OnModuleInit {
       "avatarUrl",
       "organizationId",
       "createdAt",
-    ).all();
+    )
+      .where((u) => u.organizationId.eq(currentOrgId))
+      .all();
+
+    const additionalUserIds = Array.from(memberUserIds).filter(
+      (id) => !orgUsers.some((u) => u.id === id),
+    );
+
+    const additionalUsers =
+      additionalUserIds.length > 0
+        ? await this.prisma.db.orm.public.User.select(
+            "id",
+            "name",
+            "email",
+            "role",
+            "avatarUrl",
+            "organizationId",
+            "createdAt",
+          )
+            .where((u) => u.id.in(additionalUserIds))
+            .all()
+        : [];
+
+    const allUsers = [...orgUsers, ...additionalUsers];
 
     const roleMap = new Map<string, string>();
     for (const m of memberships) {

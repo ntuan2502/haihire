@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Briefcase, Menu, X, LogIn, UserPlus, ArrowRight } from "lucide-react";
+import { Briefcase, Menu, X, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { BrandLogo } from "@/components/shared";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { UserMenu } from "@/components/layout/user-menu";
-import { MobileDrawer } from "@/components/layout/mobile-drawer";
+import { UserMenu, MobileDrawer, EnterDashboardButton } from "@/components/layout";
 
 export const LandingNavbar = () => {
   const { isAuthenticated, user } = useAuth();
@@ -48,14 +47,8 @@ export const LandingNavbar = () => {
 
             {/* Auth Controls */}
             {isAuthenticated && user ? (
-              <div className="flex items-center gap-2 sm:gap-2.5">
-                <Link
-                  href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
-                  className="hidden md:inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 px-3.5 py-1.5 text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-all"
-                >
-                  <span>{t("landing.enterDashboard")}</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <EnterDashboardButton className="hidden md:inline-flex" />
                 <UserMenu />
               </div>
             ) : (
@@ -100,14 +93,10 @@ export const LandingNavbar = () => {
         onClose={() => setMobileMenuOpen(false)}
         footer={
           isAuthenticated ? (
-            <Link
-              href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
+            <EnterDashboardButton
+              fullWidth
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
-            >
-              <span>{t("landing.enterDashboard")}</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            />
           ) : (
             <div className="flex flex-col gap-2">
               <Link

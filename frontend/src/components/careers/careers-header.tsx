@@ -5,8 +5,7 @@ import Link from "next/link";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { BrandLogo } from "@/components/shared/brand-logo";
-import { UserMenu } from "@/components/layout/user-menu";
-import { MobileDrawer } from "@/components/layout/mobile-drawer";
+import { UserMenu, MobileDrawer, EnterDashboardButton } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import {
@@ -111,14 +110,8 @@ export function CareersHeader({
               </div>
 
               {isAuthenticated && user && (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/dashboard"
-                    className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold shadow-xs transition-all cursor-pointer"
-                  >
-                    <span>{t("landing.enterDashboard")}</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <EnterDashboardButton className="hidden md:inline-flex" />
                   <UserMenu />
                 </div>
               )}
@@ -146,14 +139,10 @@ export function CareersHeader({
           onClose={() => setMobileMenuOpen(false)}
           footer={
             isAuthenticated ? (
-              <Link
-                href="/dashboard"
+              <EnterDashboardButton
+                fullWidth
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
-              >
-                <span>{t("landing.enterDashboard")}</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              />
             ) : undefined
           }
         >
@@ -202,14 +191,8 @@ export function CareersHeader({
             </div>
 
             {isAuthenticated && user ? (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/dashboard"
-                  className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold shadow-xs hover:scale-102 transition-all cursor-pointer"
-                >
-                  <span>{t("landing.enterDashboard")}</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <EnterDashboardButton className="hidden md:inline-flex" />
                 <UserMenu />
               </div>
             ) : (
@@ -245,14 +228,10 @@ export function CareersHeader({
         onClose={() => setMobileMenuOpen(false)}
         footer={
           isAuthenticated ? (
-            <Link
-              href="/dashboard"
+            <EnterDashboardButton
+              fullWidth
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
-            >
-              <span>{t("landing.enterDashboard")}</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            />
           ) : undefined
         }
       >

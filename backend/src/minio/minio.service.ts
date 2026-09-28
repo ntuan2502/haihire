@@ -49,7 +49,11 @@ export class MinioService implements OnModuleInit {
   }
 
   async uploadFile(file: Express.Multer.File, folder = "resumes"): Promise<UploadResult> {
-    const ext = extname(file.originalname);
+    const ext = extname(file.originalname).toLowerCase();
+    const allowed = new Set([".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"]);
+    if (ext && !allowed.has(ext)) {
+      throw new Error(`Disallowed file extension: ${ext}`);
+    }
     const uniqueFileName = `${folder}/${Date.now()}-${randomUUID()}${ext}`;
 
     await this.client.putObject(

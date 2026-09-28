@@ -29,6 +29,7 @@ import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../common/doc-utils";
+import { resumeFileFilter } from "../common/upload-utils";
 import { MinioService } from "../minio/minio.service";
 import { ActivitiesService } from "../activities/activities.service";
 
@@ -115,6 +116,7 @@ export class CandidatesController {
   @UseInterceptors(
     FileInterceptor("resume", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
     }),
   )
   create(
@@ -145,6 +147,7 @@ export class CandidatesController {
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
     }),
   )
   uploadDocument(

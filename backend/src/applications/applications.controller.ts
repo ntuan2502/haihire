@@ -35,6 +35,7 @@ import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { MinioService } from "../minio/minio.service";
 import { ActivitiesService } from "../activities/activities.service";
+import { resumeFileFilter } from "../common/upload-utils";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -112,6 +113,7 @@ export class ApplicationsController {
   @UseInterceptors(
     FileInterceptor("resume", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
     }),
   )
   create(
@@ -154,6 +156,7 @@ export class ApplicationsController {
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
     }),
   )
   uploadDocument(

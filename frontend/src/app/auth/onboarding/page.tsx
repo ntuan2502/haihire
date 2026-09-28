@@ -59,6 +59,23 @@ function OnboardingContent() {
     }
   }, [urlMode, user?.organizationId, myOrgs.length, authLoading]);
 
+  // Handle switching view mode and updating URL query string
+  const handleSwitchMode = (newMode: "select" | "create" | "join") => {
+    setMode(newMode);
+    setErrorSource(null);
+    setSuccessMsg(null);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (newMode === "select") {
+      params.delete("mode");
+    } else {
+      params.set("mode", newMode);
+    }
+    const query = params.toString();
+    const newPath = query ? `/auth/onboarding?${query}` : "/auth/onboarding";
+    router.push(newPath, { scroll: false });
+  };
+
   // Create form state
   const [orgName, setOrgName] = useState("");
   const [slug, setSlug] = useState("");
@@ -296,22 +313,14 @@ function OnboardingContent() {
           <div className="mt-7 flex flex-col items-center gap-2.5">
             <button
               type="button"
-              onClick={() => {
-                setMode("create");
-                setErrorSource(null);
-                setSuccessMsg(null);
-              }}
+              onClick={() => handleSwitchMode("create")}
               className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
             >
               {t("onboarding.createOrgLink")}
             </button>
             <button
               type="button"
-              onClick={() => {
-                setMode("join");
-                setErrorSource(null);
-                setSuccessMsg(null);
-              }}
+              onClick={() => handleSwitchMode("join")}
               className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors cursor-pointer"
             >
               {t("onboarding.joinOrgLink")}
@@ -326,11 +335,7 @@ function OnboardingContent() {
           {hasExistingOrgs && (
             <button
               type="button"
-              onClick={() => {
-                setMode("select");
-                setErrorSource(null);
-                setSuccessMsg(null);
-              }}
+              onClick={() => handleSwitchMode("select")}
               className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -399,11 +404,7 @@ function OnboardingContent() {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => {
-                setMode("join");
-                setErrorSource(null);
-                setSuccessMsg(null);
-              }}
+              onClick={() => handleSwitchMode("join")}
               className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
             >
               {t("onboarding.joinOrgInstead")}
@@ -418,11 +419,7 @@ function OnboardingContent() {
           {hasExistingOrgs && (
             <button
               type="button"
-              onClick={() => {
-                setMode("select");
-                setErrorSource(null);
-                setSuccessMsg(null);
-              }}
+              onClick={() => handleSwitchMode("select")}
               className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -485,11 +482,7 @@ function OnboardingContent() {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => {
-                setMode("create");
-                setErrorSource(null);
-                setSuccessMsg(null);
-              }}
+              onClick={() => handleSwitchMode("create")}
               className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
             >
               {t("onboarding.createOrgInstead")}

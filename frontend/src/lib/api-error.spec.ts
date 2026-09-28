@@ -86,4 +86,11 @@ describe("getApiErrorMessage", () => {
     expect(getApiErrorMessage(new Error("Random crash"), mockT)).toBe("Random crash");
     expect(getApiErrorMessage("Plain string error", mockT)).toBe("Plain string error");
   });
+
+  it("gatekeeper rejects malformed URLs with [object Object]", async () => {
+    const { api } = await import("./api");
+    await expect(api.get("/test/[object Object]")).rejects.toThrow(
+      "[HaiHire API Gatekeeper] Malformed request URL",
+    );
+  });
 });

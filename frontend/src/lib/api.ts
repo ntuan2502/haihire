@@ -48,6 +48,16 @@ export const api = axios.create({
   },
 });
 
+// Defensive Gatekeeper: Prevent malformed URLs containing unparsed JavaScript objects
+api.interceptors.request.use((config) => {
+  if (config.url && (config.url.includes("[object") || config.url.includes("%5Bobject"))) {
+    return Promise.reject(
+      new Error(`[HaiHire API Gatekeeper] Malformed request URL containing unparsed object: ${config.url}`),
+    );
+  }
+  return config;
+});
+
 export const jobsApi = {
   getAll: async (params?: {
     status?: string;

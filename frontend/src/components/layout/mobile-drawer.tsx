@@ -6,6 +6,8 @@ import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
 
+import { Globe } from "lucide-react";
+
 export interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,32 +57,39 @@ export function MobileDrawer({
       {/* Top-Down Dropdown Menu Container */}
       <div
         className={cn(
-          "relative w-full max-h-[calc(100vh-3.5rem)] overflow-y-auto bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-2xl animate-in slide-in-from-top-4 duration-200 z-10 flex flex-col justify-between",
+          "relative w-full max-h-[calc(100vh-4rem)] overflow-y-auto bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in duration-150 z-10 flex flex-col justify-between",
           className
         )}
       >
-        {/* Navigation List Items & Preferences */}
-        <div className="px-3 py-3 space-y-0.5">
+        {/* Navigation List Items */}
+        <div className="px-3 py-2 space-y-1">
           {children}
+        </div>
 
-          {/* Divider */}
-          <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
-
-          {/* Unified Mobile Theme & Language Row */}
-          <div className="flex items-center justify-between px-3 py-2">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              {t("nav.theme")} / {t("nav.language")}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <ThemeToggle />
-              <LanguageDropdown />
+        {/* Unified Mobile Theme & Language Section - Symmetrically centered between two full-width border lines */}
+        <div
+          className={cn(
+            "border-t border-slate-200/80 dark:border-slate-800/80 px-3 py-2",
+            !footer && "border-b"
+          )}
+        >
+          <div className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-3">
+              <Globe className="h-4 w-4 text-slate-500 shrink-0" />
+              <span>
+                {t("nav.theme")} / {t("nav.language")}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <ThemeToggle size="sm" />
+              <LanguageDropdown size="sm" />
             </div>
           </div>
         </div>
 
         {/* Unified Bottom Actions Footer Bar */}
         {footer && (
-          <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="px-3 py-2 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
             {footer}
           </div>
         )}

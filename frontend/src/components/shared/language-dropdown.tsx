@@ -11,12 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export interface LanguageDropdownProps {
+  size?: "sm" | "md";
   variant?: "landing" | "default";
   direction?: "up" | "down";
   className?: string;
 }
 
 export function LanguageDropdown({
+  size = "md",
   direction = "down",
   className,
 }: LanguageDropdownProps) {
@@ -27,14 +29,15 @@ export function LanguageDropdown({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
+          "flex items-center justify-center font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
+          size === "sm" ? "h-7 w-7 rounded-lg text-xs" : "h-8 w-8 rounded-xl text-xs",
           className
         )}
         title={current.label}
         aria-label={current.label}
       >
         <span
-          className="text-base leading-none select-none"
+          className={cn("leading-none select-none", size === "sm" ? "text-sm" : "text-base")}
           role="img"
           aria-label={current.label}
         >

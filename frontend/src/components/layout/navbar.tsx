@@ -297,7 +297,7 @@ export function Navbar({
                 key={item.id}
                 type="button"
                 onClick={() => handleMobileNavSelect(item.id)}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${
+                className={`flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold transition-colors text-left cursor-pointer ${
                   isActive
                     ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
                     : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
@@ -305,7 +305,7 @@ export function Navbar({
               >
                 <div className="flex items-center gap-3">
                   <Icon
-                    className={`h-4 w-4 ${
+                    className={`h-4 w-4 shrink-0 ${
                       isActive
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-slate-500"
@@ -318,7 +318,7 @@ export function Navbar({
           })}
 
         {/* More (Coming Soon) */}
-        <div className="pt-2.5 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
           {t("nav.moreComingSoon")}
         </div>
         {moreItems.map((item, idx) => {
@@ -326,10 +326,10 @@ export function Navbar({
           return (
             <div
               key={idx}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-70"
+              className="flex h-9 w-full items-center justify-between rounded-lg px-3 text-xs font-medium text-slate-400 dark:text-slate-500 opacity-70"
             >
               <div className="flex items-center gap-3">
-                <Icon className="h-4 w-4 text-slate-400" />
+                <Icon className="h-4 w-4 shrink-0 text-slate-400" />
                 <span>{item.label}</span>
               </div>
               <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
@@ -340,20 +340,20 @@ export function Navbar({
         })}
 
         {/* Divider */}
-        <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
+        <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
         {/* Settings Item */}
         <button
           type="button"
           onClick={() => handleMobileNavSelect("settings")}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors text-left cursor-pointer ${
+          className={`flex h-10 w-full items-center gap-3 rounded-lg px-3 text-xs font-semibold transition-colors text-left cursor-pointer ${
             currentTab === "settings"
               ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
               : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
           }`}
         >
           <Settings
-            className={`h-4 w-4 ${
+            className={`h-4 w-4 shrink-0 ${
               currentTab === "settings"
                 ? "text-blue-600 dark:text-blue-400"
                 : "text-slate-500"

@@ -13,12 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export interface ThemeToggleProps {
+  size?: "sm" | "md";
   variant?: "landing" | "default";
   direction?: "up" | "down";
   className?: string;
 }
 
 export function ThemeToggle({
+  size = "md",
   direction = "down",
   className,
 }: ThemeToggleProps) {
@@ -59,11 +61,12 @@ export function ThemeToggle({
           disabled
           aria-label={t("theme.toggleTheme")}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold opacity-60 pointer-events-none select-none bg-slate-100 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
+            "flex items-center justify-center font-semibold opacity-60 pointer-events-none select-none bg-slate-100 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
+            size === "sm" ? "h-7 w-7 rounded-lg text-xs" : "h-8 w-8 rounded-xl text-xs",
             className
           )}
         >
-          <Sun className="h-4 w-4 text-amber-500" />
+          <Sun className={cn(size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4", "text-amber-500")} />
         </button>
       </div>
     );
@@ -77,13 +80,14 @@ export function ThemeToggle({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
+          "flex items-center justify-center font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
+          size === "sm" ? "h-7 w-7 rounded-lg text-xs" : "h-8 w-8 rounded-xl text-xs",
           className
         )}
         title={t("theme.toggleTheme")}
         aria-label={t("theme.toggleTheme")}
       >
-        <CurrentIcon className={cn("h-4 w-4", currentOption.iconColor)} />
+        <CurrentIcon className={cn(size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4", currentOption.iconColor)} />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent

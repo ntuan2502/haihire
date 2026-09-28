@@ -228,22 +228,29 @@ export class ApplicationsService {
       };
     }
 
-    const candidates = await this.prisma.db.orm.public.Candidate.select(
-      "id",
-      "name",
-      "firstName",
-      "lastName",
-      "gender",
-      "dateOfBirth",
-      "email",
-      "phone",
-      "resumeUrl",
-      "resumeFileName",
-      "resumeFileSize",
-      "resumeMimeType",
-    )
-      .where((c) => c.organizationId.eq(organizationId))
-      .all();
+    const neededCandidateIds = [
+      ...new Set(orgApps.map((a) => a.candidateId)),
+    ];
+
+    const candidates =
+      neededCandidateIds.length > 0
+        ? await this.prisma.db.orm.public.Candidate.select(
+            "id",
+            "name",
+            "firstName",
+            "lastName",
+            "gender",
+            "dateOfBirth",
+            "email",
+            "phone",
+            "resumeUrl",
+            "resumeFileName",
+            "resumeFileSize",
+            "resumeMimeType",
+          )
+            .where((c) => c.id.in(neededCandidateIds))
+            .all()
+        : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     const appIds = orgApps.map((a) => a.id);

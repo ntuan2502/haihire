@@ -87,60 +87,65 @@ services:
       timeout: 5s
       retries: 5
 
-  # # NestJS Backend Service
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: haihire-backend
-  #   restart: unless-stopped
-  #   environment:
-  #     PORT: ${BACKEND_PORT:-3001}
-  #     DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
-  #     MINIO_ENDPOINT: minio
-  #     MINIO_PORT: 9000
-  #     MINIO_USE_SSL: "false"
-  #     MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
-  #     MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-  #     MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
-  #     MINIO_PUBLIC_URL: http://localhost:9000
-  #     FRONTEND_URL: http://localhost:3000
-  #   ports:
-  #     - "${BACKEND_PORT:-3001}:3001"
-  #   volumes:
-  #     - ./backend:/app
-  #     - /app/node_modules
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     minio:
-  #       condition: service_healthy
-  #     minio-create-bucket:
-  #       condition: service_completed_successfully
-  #   networks:
-  #     - haihire-network
-  # 
-  # # Next.js Frontend Service
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: haihire-frontend
-  #   restart: unless-stopped
-  #   environment:
-  #     PORT: 3000
-  #     NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
-  #     NEXT_PUBLIC_MINIO_URL: http://localhost:${MINIO_PORT:-9000}/${MINIO_BUCKET_NAME:-haihire-resumes}
-  #   ports:
-  #     - "${FRONTEND_PORT:-3000}:3000"
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules
-  #     - /app/.next
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - haihire-network
+  # NestJS Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: haihire-backend
+    restart: unless-stopped
+    environment:
+      PORT: ${BACKEND_PORT:-3001}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
+      MINIO_PUBLIC_URL: http://localhost:9000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-haihire_super_secret_jwt_key_development_only_change_in_prod}
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-create-bucket:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    networks:
+      - haihire-network
+
+  # Next.js Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: haihire-frontend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - haihire-network
 
 volumes:
   postgres_data:

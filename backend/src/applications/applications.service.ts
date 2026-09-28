@@ -16,16 +16,8 @@ import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { toTimestamp } from "../common/date.util";
 
-import {
-  fixUtf8String,
-  extractDocsFromNotes,
-  packDocsIntoNotes,
-} from "../common/doc-utils";
-export {
-  fixUtf8String,
-  extractDocsFromNotes,
-  packDocsIntoNotes,
-};
+import { fixUtf8String } from "../common/doc-utils";
+export { fixUtf8String };
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
@@ -765,27 +757,8 @@ export class ApplicationsService {
       };
     }
 
-    const currentDocs = extractDocsFromNotes(existing.notes, {
-      id: existing.id,
-      url: existing.resumeUrl,
-      name: existing.resumeFileName,
-      size: existing.resumeFileSize,
-      mimeType: existing.resumeMimeType,
-      createdAt: existing.createdAt ? new Date(toTimestamp(existing.createdAt)) : undefined,
-    });
-
-    const newDoc: CandidateDocument = {
-      id: `doc-${Date.now()}`,
-      name: uploadResult.originalName,
-      url: uploadResult.url,
-      size: uploadResult.size,
-      mimeType: uploadResult.mimeType,
-      type: documentType || "Resume",
-      createdAt: new Date().toISOString(),
-    };
-
-    currentDocs.push(newDoc);
-    const updatedNotes = packDocsIntoNotes(existing.notes, currentDocs);
+    const newDocId = `doc-${Date.now()}`;
+    const cleanDocName = fixUtf8String(uploadResult.originalName);
 
     if (existing.candidateId) {
       try {
@@ -794,14 +767,14 @@ export class ApplicationsService {
           .first();
         if (cand) {
           await this.prisma.db.orm.public.CandidateDocument.create({
-            id: newDoc.id,
+            id: newDocId,
             candidateId: cand.id,
             organizationId: cand.organizationId,
-            name: newDoc.name,
-            url: newDoc.url,
-            size: newDoc.size ?? null,
-            mimeType: newDoc.mimeType ?? null,
-            type: newDoc.type ?? null,
+            name: cleanDocName,
+            url: uploadResult.url,
+            size: uploadResult.size ?? null,
+            mimeType: uploadResult.mimeType ?? null,
+            type: documentType || "Resume",
           });
         }
       } catch {
@@ -812,11 +785,10 @@ export class ApplicationsService {
     await this.prisma.db.orm.public.Application.where(
       (a) => a.id.eq(id),
     ).update({
-      resumeUrl: currentDocs[0].url,
-      resumeFileName: currentDocs[0].name,
-      resumeFileSize: currentDocs[0].size ?? null,
-      resumeMimeType: currentDocs[0].mimeType ?? null,
-      notes: updatedNotes,
+      resumeUrl: uploadResult.url,
+      resumeFileName: cleanDocName,
+      resumeFileSize: uploadResult.size ?? null,
+      resumeMimeType: uploadResult.mimeType ?? null,
     });
 
     return this.findOne(id);
@@ -826,57 +798,52 @@ export class ApplicationsService {
     id: string,
     opts?: { documentId?: string; url?: string },
   ) {
-    const existing = await this.findOne(id);
+    await this.findOne(id);
 
-    const currentDocs = extractDocsFromNotes(existing.notes, {
-      id: existing.id,
-      url: existing.resumeUrl,
-      name: existing.resumeFileName,
-      size: existing.resumeFileSize,
-      mimeType: existing.resumeMimeType,
-      createdAt: existing.createdAt ? new Date(toTimestamp(existing.createdAt)) : undefined,
-    });
-
-    let updatedDocs: CandidateDocument[] = [];
     if (opts?.documentId) {
-      updatedDocs = currentDocs.filter((d: CandidateDocument) => d.id !== opts.documentId);
       try {
         await this.prisma.db.orm.public.CandidateDocument.where((d) => d.id.eq(opts.documentId!)).delete();
       } catch {}
     } else if (opts?.url) {
-      updatedDocs = currentDocs.filter((d: CandidateDocument) => d.url !== opts.url);
       try {
         await this.prisma.db.orm.public.CandidateDocument.where((d) => d.url.eq(opts.url!)).delete();
       } catch {}
-    } else {
-      updatedDocs = [];
     }
 
-    const updatedNotes = packDocsIntoNotes(existing.notes, updatedDocs);
-
-    if (updatedDocs.length > 0) {
-      await this.prisma.db.orm.public.Application.where(
-        (a) => a.id.eq(id),
-      ).update({
-        resumeUrl: updatedDocs[0].url,
-        resumeFileName: updatedDocs[0].name,
-        resumeFileSize: updatedDocs[0].size ?? null,
-        resumeMimeType: updatedDocs[0].mimeType ?? null,
-        notes: updatedNotes,
-      });
-    } else {
-      await this.prisma.db.orm.public.Application.where(
-        (a) => a.id.eq(id),
-      ).update({
-        resumeUrl: null,
-        resumeFileName: null,
-        resumeFileSize: null,
-        resumeMimeType: null,
-        notes: updatedNotes,
-      });
-    }
+    await this.prisma.db.orm.public.Application.where(
+      (a) => a.id.eq(id),
+    ).update({
+      resumeUrl: null,
+      resumeFileName: null,
+      resumeFileSize: null,
+      resumeMimeType: null,
+    });
 
     return this.findOne(id);
+  }
+
+  async getCandidateDocuments(candidateId: string): Promise<CandidateDocument[]> {
+    try {
+      const queried = await this.prisma.db.orm.public.CandidateDocument.select(
+        "id",
+        "candidateId",
+        "organizationId",
+        "name",
+        "url",
+        "size",
+        "mimeType",
+        "type",
+        "createdAt",
+      )
+        .where((d) => d.candidateId.eq(candidateId))
+        .all();
+      return queried.map((d) => ({
+        ...d,
+        createdAt: d.createdAt ? new Date(toTimestamp(d.createdAt)).toISOString() : new Date().toISOString(),
+      }));
+    } catch {
+      return [];
+    }
   }
 
   async remove(id: string) {

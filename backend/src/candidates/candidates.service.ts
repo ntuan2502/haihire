@@ -12,11 +12,7 @@ import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import {
-  extractDocsFromNotes,
-  fixUtf8String,
-  packDocsIntoNotes,
-} from "../common/doc-utils";
+import { fixUtf8String } from "../common/doc-utils";
 import { toTimestamp } from "../common/date.util";
 
 @Injectable()
@@ -255,37 +251,43 @@ export class CandidatesService {
       dbDocs = [];
     }
 
-    const candidateDirectDocs = dbDocs.length > 0 ? dbDocs : extractDocsFromNotes(candidate.notes, {
-      id: candidate.id,
-      url: candidate.resumeUrl || "",
-      name: candidate.resumeFileName || "Resume.pdf",
-      size: candidate.resumeFileSize,
-      mimeType: candidate.resumeMimeType,
-      createdAt: candidate.createdAt ? new Date(toTimestamp(candidate.createdAt)) : undefined,
-    });
+    const candidateDirectDocs: CandidateDocument[] = dbDocs.length > 0
+      ? dbDocs
+      : (candidate.resumeUrl
+          ? [
+              {
+                id: `doc-${candidate.id}`,
+                name: fixUtf8String(candidate.resumeFileName || "Resume.pdf"),
+                url: candidate.resumeUrl,
+                size: candidate.resumeFileSize ?? null,
+                mimeType: candidate.resumeMimeType ?? "application/pdf",
+                type: "Resume",
+                createdAt: candidate.createdAt
+                  ? new Date(toTimestamp(candidate.createdAt)).toISOString()
+                  : new Date().toISOString(),
+              },
+            ]
+          : []);
 
     const allDocuments: CandidateDocument[] = [...candidateDirectDocs];
     const seenUrls = new Set(allDocuments.map((d) => d.url).filter(Boolean));
 
     for (const app of populatedApps) {
-      const appDocs = extractDocsFromNotes(app.notes, {
-        id: app.id,
-        url: app.resumeUrl || "",
-        name: app.resumeFileName || "Application_Resume.pdf",
-        size: app.resumeFileSize,
-        mimeType: app.resumeMimeType,
-        createdAt: app.createdAt ? new Date(toTimestamp(app.createdAt)) : undefined,
-      });
-
-      for (const d of appDocs) {
-        if (d.url && !seenUrls.has(d.url)) {
-          seenUrls.add(d.url);
-          allDocuments.push({
-            ...d,
-            sourceApplicationId: app.id,
-            jobTitle: app.job?.title || "Job Application",
-          });
-        }
+      if (app.resumeUrl && !seenUrls.has(app.resumeUrl)) {
+        seenUrls.add(app.resumeUrl);
+        allDocuments.push({
+          id: `doc-${app.id}`,
+          name: fixUtf8String(app.resumeFileName || "Application_Resume.pdf"),
+          url: app.resumeUrl,
+          size: app.resumeFileSize ?? null,
+          mimeType: app.resumeMimeType ?? "application/pdf",
+          type: "Resume",
+          createdAt: app.createdAt
+            ? new Date(toTimestamp(app.createdAt)).toISOString()
+            : new Date().toISOString(),
+          sourceApplicationId: app.id,
+          jobTitle: app.job?.title || "Job Application",
+        });
       }
     }
 
@@ -454,50 +456,32 @@ export class CandidatesService {
       };
     }
 
-    const currentDocs = extractDocsFromNotes(candidate.notes, {
-      id: candidate.id,
-      url: candidate.resumeUrl || "",
-      name: candidate.resumeFileName || "document.pdf",
-      size: candidate.resumeFileSize,
-      mimeType: candidate.resumeMimeType,
-      createdAt: candidate.createdAt ? new Date(toTimestamp(candidate.createdAt)) : undefined,
-    });
-
-    const newDoc: CandidateDocument = {
-      id: `doc-${Date.now()}`,
-      name: uploadResult.originalName,
-      url: uploadResult.url,
-      size: uploadResult.size,
-      mimeType: uploadResult.mimeType,
-      type: documentType || "Resume",
-      createdAt: new Date().toISOString(),
-    };
-
-    currentDocs.push(newDoc);
-    const updatedNotes = packDocsIntoNotes(candidate.notes, currentDocs);
+    const newDocId = `doc-${Date.now()}`;
+    const cleanDocName = fixUtf8String(uploadResult.originalName);
 
     try {
       await this.prisma.db.orm.public.CandidateDocument.create({
-        id: newDoc.id,
+        id: newDocId,
         candidateId: id,
         organizationId: candidate.organizationId,
-        name: newDoc.name,
-        url: newDoc.url,
-        size: newDoc.size ?? null,
-        mimeType: newDoc.mimeType ?? null,
-        type: newDoc.type ?? null,
+        name: cleanDocName,
+        url: uploadResult.url,
+        size: uploadResult.size ?? null,
+        mimeType: uploadResult.mimeType ?? null,
+        type: documentType || "Resume",
       });
     } catch {
       // ignore if mock or table unavailable in test
     }
 
-    await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
-      resumeUrl: currentDocs[0].url,
-      resumeFileName: currentDocs[0].name,
-      resumeFileSize: currentDocs[0].size ?? null,
-      resumeMimeType: currentDocs[0].mimeType ?? null,
-      notes: updatedNotes,
-    });
+    if (!candidate.resumeUrl) {
+      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
+        resumeUrl: uploadResult.url,
+        resumeFileName: cleanDocName,
+        resumeFileSize: uploadResult.size ?? null,
+        resumeMimeType: uploadResult.mimeType ?? null,
+      });
+    }
 
     return this.findOne(id);
   }
@@ -506,41 +490,38 @@ export class CandidatesService {
     id: string,
     opts?: { documentId?: string; url?: string },
   ) {
-    const candidate = await this.findOne(id);
+    await this.findOne(id);
 
-    const currentDocs = extractDocsFromNotes(candidate.notes, {
-      id: candidate.id,
-      url: candidate.resumeUrl || "",
-      name: candidate.resumeFileName || "document.pdf",
-      size: candidate.resumeFileSize,
-      mimeType: candidate.resumeMimeType,
-      createdAt: candidate.createdAt ? new Date(toTimestamp(candidate.createdAt)) : undefined,
-    });
-
-    let updatedDocs: CandidateDocument[] = [];
     if (opts?.documentId) {
-      updatedDocs = currentDocs.filter((d) => d.id !== opts.documentId);
       try {
         await this.prisma.db.orm.public.CandidateDocument.where((d) => d.id.eq(opts.documentId!)).delete();
       } catch {}
     } else if (opts?.url) {
-      updatedDocs = currentDocs.filter((d) => d.url !== opts.url);
       try {
         await this.prisma.db.orm.public.CandidateDocument.where((d) => d.url.eq(opts.url!)).delete();
       } catch {}
-    } else {
-      updatedDocs = [];
     }
 
-    const updatedNotes = packDocsIntoNotes(candidate.notes, updatedDocs);
+    let remainingDocs: CandidateDocument[] = [];
+    try {
+      const queried = await this.prisma.db.orm.public.CandidateDocument.select(
+        "id", "name", "url", "size", "mimeType", "type", "createdAt"
+      ).where((d) => d.candidateId.eq(id)).all();
+      if (Array.isArray(queried)) {
+        remainingDocs = queried.map((d) => ({
+          ...d,
+          createdAt: d.createdAt ? new Date(toTimestamp(d.createdAt)).toISOString() : new Date().toISOString(),
+        }));
+      }
+    } catch {}
 
-    if (updatedDocs.length > 0) {
+    const primaryDoc = remainingDocs[0];
+    if (primaryDoc) {
       await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
-        resumeUrl: updatedDocs[0].url,
-        resumeFileName: updatedDocs[0].name,
-        resumeFileSize: updatedDocs[0].size ?? null,
-        resumeMimeType: updatedDocs[0].mimeType ?? null,
-        notes: updatedNotes,
+        resumeUrl: primaryDoc.url,
+        resumeFileName: primaryDoc.name,
+        resumeFileSize: primaryDoc.size ?? null,
+        resumeMimeType: primaryDoc.mimeType ?? null,
       });
     } else {
       await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
@@ -548,7 +529,6 @@ export class CandidatesService {
         resumeFileName: null,
         resumeFileSize: null,
         resumeMimeType: null,
-        notes: updatedNotes,
       });
     }
 

@@ -27,7 +27,6 @@ import {
 } from "../common/app-exception";
 import {
   ApplicationsService,
-  extractDocsFromNotes,
   fixUtf8String,
 } from "./applications.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
@@ -204,10 +203,14 @@ export class ApplicationsController {
       const allowedUrls: string[] = [];
       if (app.resumeUrl) allowedUrls.push(app.resumeUrl);
       if (app.candidate?.resumeUrl) allowedUrls.push(app.candidate.resumeUrl);
-      const docs = extractDocsFromNotes(app.notes);
-      for (const doc of docs) {
-        if (doc && typeof doc.url === "string") {
-          allowedUrls.push(doc.url);
+      if (app.candidateId) {
+        try {
+          const candDocs = await this.applicationsService.getCandidateDocuments(app.candidateId);
+          for (const doc of candDocs) {
+            if (doc?.url) allowedUrls.push(doc.url);
+          }
+        } catch {
+          // ignore
         }
       }
 

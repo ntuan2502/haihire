@@ -353,7 +353,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
         name: "Nguyen Van A",
         email: "nguyenvana@example.com",
         phone: "+84901234567",
-        notes: "Docs:[{\"id\":\"doc-1\",\"name\":\"cv.pdf\",\"url\":\"http://localhost:9000/haihire-resumes/cv.pdf\"}]",
+        notes: "Senior TypeScript engineer with strong backend experience",
       },
       undefined,
       "org-test-1",

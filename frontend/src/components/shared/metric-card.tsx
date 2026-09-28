@@ -1,5 +1,5 @@
 import type { ReactNode, ComponentType, SVGProps } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 export type MetricCardColor = "blue" | "indigo" | "emerald" | "amber" | "rose" | "slate";
 

@@ -7,7 +7,10 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   let authService: AuthService;
   let mockPrismaService: unknown;
-  let mockJwtService: { sign: ReturnType<typeof vi.fn> };
+  let mockJwtService: {
+    sign: ReturnType<typeof vi.fn>;
+    verify: ReturnType<typeof vi.fn>;
+  };
 
   const validPassword = DEMO_PASSWORD;
   const hashedPassword = bcrypt.hashSync(validPassword, 10);
@@ -99,6 +102,12 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
     mockJwtService = {
       sign: vi.fn().mockReturnValue("mocked-jwt-access-token-tun-io-vn"),
+      verify: vi.fn().mockImplementation((token: string) => {
+        if (token === "valid-refresh-token") {
+          return { sub: "usr-admin", type: "refresh" };
+        }
+        throw new Error("Invalid token");
+      }),
     };
 
     authService = new AuthService(
@@ -185,6 +194,25 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
           password: DEMO_PASSWORD,
         }),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe("RefreshToken Flow", () => {
+    it("8. Should refresh token successfully when valid refreshToken is provided", async () => {
+      const result = await authService.refreshToken({
+        refreshToken: "valid-refresh-token",
+      });
+
+      expect(result).toHaveProperty("accessToken");
+      expect(result).toHaveProperty("refreshToken");
+    });
+
+    it("9. Should throw UnauthorizedException when invalid or expired refreshToken is provided", async () => {
+      await expect(
+        authService.refreshToken({
+          refreshToken: "invalid-token",
+        }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

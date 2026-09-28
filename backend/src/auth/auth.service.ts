@@ -10,6 +10,7 @@ import crypto from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { env } from "../config/env";
 
@@ -159,9 +160,14 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, type: "refresh" },
+      { expiresIn: "7d" },
+    );
 
     return {
       accessToken,
+      refreshToken,
       user,
     };
   }
@@ -215,10 +221,68 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, type: "refresh" },
+      { expiresIn: "7d" },
+    );
 
     return {
       accessToken,
+      refreshToken,
       user,
+    };
+  }
+
+  async refreshToken(dto: RefreshTokenDto) {
+    let decoded: { sub: string; type?: string };
+    try {
+      decoded = this.jwtService.verify(dto.refreshToken);
+    } catch {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "Invalid or expired refresh token",
+      );
+    }
+
+    if (decoded.type !== "refresh" || !decoded.sub) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "Invalid refresh token payload",
+      );
+    }
+
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "email",
+      "name",
+      "role",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(decoded.sub))
+      .first();
+
+    if (!user) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "User not found or account has been deactivated",
+      );
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const newAccessToken = this.jwtService.sign(payload);
+    const newRefreshToken = this.jwtService.sign(
+      { sub: user.id, type: "refresh" },
+      { expiresIn: "7d" },
+    );
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     };
   }
 

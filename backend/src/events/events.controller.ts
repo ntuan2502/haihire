@@ -3,10 +3,11 @@ import {
   Sse,
   Query,
   Req,
-  UnauthorizedException,
   Inject,
   type MessageEvent,
 } from "@nestjs/common";
+import { AppUnauthorizedException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { JwtService } from "@nestjs/jwt";
 import { Observable } from "rxjs";
 import { EventsService } from "./events.service";
@@ -34,7 +35,8 @@ export class EventsController {
         : undefined);
 
     if (!token) {
-      throw new UnauthorizedException(
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.SSE_UNAUTHORIZED,
         "Authentication token required for SSE stream",
       );
     }
@@ -44,7 +46,10 @@ export class EventsController {
       const userId = payload.sub || payload.id;
       return this.eventsService.subscribe(userId);
     } catch {
-      throw new UnauthorizedException("Invalid or expired token for SSE stream");
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.SSE_UNAUTHORIZED,
+        "Invalid or expired token for SSE stream",
+      );
     }
   }
 }

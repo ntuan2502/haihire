@@ -1,17 +1,18 @@
 import {
-  BadRequestException,
-  ConflictException,
   Inject,
   Injectable,
-  NotFoundException,
 } from "@nestjs/common";
+import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
+import {
+  AppBadRequestException,
+  AppConflictException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../applications/applications.service";
-
-import { type CandidateDocument } from "@haihire/shared";
 import { toTimestamp } from "../common/date.util";
 
 function extractDocsFromNotes(
@@ -220,7 +221,10 @@ export class CandidatesService {
       .first();
 
     if (!candidate) {
-      throw new NotFoundException(`Candidate with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+        `Candidate with ID ${id} not found`,
+      );
     }
 
     // Fetch all applications for this candidate
@@ -366,7 +370,10 @@ export class CandidatesService {
   ) {
     const orgId = dto.organizationId || defaultOrgId;
     if (!orgId) {
-      throw new BadRequestException("Organization ID is required");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.CANDIDATE_ORG_REQUIRED,
+        "Organization ID is required",
+      );
     }
 
     const email = dto.email.trim().toLowerCase();
@@ -378,7 +385,10 @@ export class CandidatesService {
       .first();
 
     if (existing) {
-      throw new ConflictException("A candidate with this email already exists in your organization");
+      throw new AppConflictException(
+        APP_ERROR_CODES.CANDIDATE_EMAIL_EXISTS,
+        "A candidate with this email already exists in your organization",
+      );
     }
 
     let uploadResult: { url: string; originalName: string; size: number; mimeType: string } = {
@@ -476,7 +486,10 @@ export class CandidatesService {
     const candidate = await this.findOne(id);
 
     if (!file) {
-      throw new BadRequestException("No document file provided");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.DOCUMENT_FILE_REQUIRED,
+        "No document file provided",
+      );
     }
 
     const cleanOriginalName = fixUtf8String(

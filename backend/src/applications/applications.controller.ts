@@ -2,10 +2,8 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Inject,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -21,6 +19,11 @@ import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import { ApplicationsService, fixUtf8String } from "./applications.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
@@ -77,7 +80,8 @@ export class ApplicationsController {
     @Request() req?: { user?: { id?: string; role?: string; organizationId?: string | null } },
   ) {
     if (req?.user?.role === "MEMBER") {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
         "Members have read-only access. Only Admins can perform this action.",
       );
     }
@@ -129,12 +133,18 @@ export class ApplicationsController {
   ) {
     const app = await this.applicationsService.findOne(id);
     if (!app) {
-      throw new NotFoundException("Application not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+        "Application not found",
+      );
     }
 
     const downloadUrl = targetUrl || app.resumeUrl;
     if (!downloadUrl) {
-      throw new NotFoundException("Document not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Document not found",
+      );
     }
 
     const rawName = targetName || app.resumeFileName || "document.pdf";
@@ -156,7 +166,10 @@ export class ApplicationsController {
     ) {
       const upstream = await fetch(downloadUrl);
       if (!upstream.ok) {
-        throw new NotFoundException("Document file could not be retrieved");
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+          "Document file could not be retrieved",
+        );
       }
       const buffer = Buffer.from(await upstream.arrayBuffer());
       return res.send(buffer);

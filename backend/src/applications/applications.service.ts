@@ -1,16 +1,19 @@
 import {
-  BadRequestException,
-  ConflictException,
   Inject,
   Injectable,
-  NotFoundException,
 } from "@nestjs/common";
+import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
+import {
+  AppBadRequestException,
+  AppConflictException,
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { type CandidateDocument } from "@haihire/shared";
 import { toTimestamp } from "../common/date.util";
 
 export function fixUtf8String(str?: string | null): string {
@@ -119,7 +122,10 @@ export class ApplicationsService {
       .first();
 
     if (!job) {
-      throw new NotFoundException(`Job with ID ${jobId} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
+        `Job with ID ${jobId} not found`,
+      );
     }
 
     const applications = await this.prisma.db.orm.public.Application.select(
@@ -412,7 +418,10 @@ export class ApplicationsService {
       .first();
 
     if (!app) {
-      throw new NotFoundException(`Application with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.APPLICATION_NOT_FOUND,
+        `Application with ID ${id} not found`,
+      );
     }
 
     const job = await this.prisma.db.orm.public.Job.select(
@@ -484,7 +493,10 @@ export class ApplicationsService {
 
   async create(dto: CreateApplicationDto, file?: Express.Multer.File) {
     if (!dto.jobId) {
-      throw new BadRequestException("Job ID is required to create an application.");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.JOB_ID_REQUIRED,
+        "Job ID is required to create an application.",
+      );
     }
 
     const job = await this.prisma.db.orm.public.Job.select(
@@ -499,11 +511,17 @@ export class ApplicationsService {
       .first();
 
     if (!job) {
-      throw new NotFoundException(`Job with ID ${dto.jobId} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
+        `Job with ID ${dto.jobId} not found`,
+      );
     }
 
     if (job.status !== "PUBLISHED") {
-      throw new BadRequestException("This job is not currently accepting applications.");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.JOB_NOT_ACCEPTING_APPLICATIONS,
+        "This job is not currently accepting applications.",
+      );
     }
 
     // 1. Upload CV to MinIO S3 Object Storage if file is provided
@@ -530,13 +548,19 @@ export class ApplicationsService {
 
     if (!candidateId) {
       if (!dto.candidateEmail || !dto.candidateName) {
-        throw new BadRequestException("Either candidateId or both candidateName and candidateEmail are required.");
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+          "Either candidateId or both candidateName and candidateEmail are required.",
+        );
       }
 
       const email = dto.candidateEmail.trim().toLowerCase();
       const orgId = job.organizationId;
       if (!orgId) {
-        throw new BadRequestException("Target job does not belong to a valid organization.");
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+          "Target job does not belong to a valid organization.",
+        );
       }
 
       const existingCandidate = await this.prisma.db.orm.public.Candidate.select("id")
@@ -567,10 +591,16 @@ export class ApplicationsService {
         .first();
 
       if (!existingCandidate) {
-        throw new NotFoundException(`Candidate with ID ${candidateId} not found`);
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+          `Candidate with ID ${candidateId} not found`,
+        );
       }
       if (job.organizationId && existingCandidate.organizationId !== job.organizationId) {
-        throw new ForbiddenException("Candidate does not belong to the target job's organization.");
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+          "Candidate does not belong to the target job's organization.",
+        );
       }
     }
 
@@ -581,7 +611,10 @@ export class ApplicationsService {
       .first();
 
     if (existingApplication) {
-      throw new ConflictException("Candidate has already applied to this job.");
+      throw new AppConflictException(
+        APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
+        "Candidate has already applied to this job.",
+      );
     }
 
     // 4. Determine highest orderIndex in APPLIED stage for the target job
@@ -770,7 +803,10 @@ export class ApplicationsService {
     const existing = await this.findOne(id);
 
     if (!file) {
-      throw new BadRequestException("No document file provided");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.DOCUMENT_FILE_REQUIRED,
+        "No document file provided",
+      );
     }
 
     const cleanOriginalName = fixUtf8String(

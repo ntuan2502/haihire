@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Inject,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -16,6 +15,8 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppNotFoundException } from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
@@ -110,12 +111,18 @@ export class CandidatesController {
   ) {
     const candidate = await this.candidatesService.findOne(id);
     if (!candidate) {
-      throw new NotFoundException("Candidate not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+        "Candidate not found",
+      );
     }
 
     const downloadUrl = targetUrl || candidate.resumeUrl;
     if (!downloadUrl) {
-      throw new NotFoundException("Document not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Document not found",
+      );
     }
 
     const rawName = targetName || candidate.resumeFileName || "document.pdf";
@@ -137,7 +144,10 @@ export class CandidatesController {
     ) {
       const upstream = await fetch(downloadUrl);
       if (!upstream.ok) {
-        throw new NotFoundException("Document file could not be retrieved");
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+          "Document file could not be retrieved",
+        );
       }
       const buffer = Buffer.from(await upstream.arrayBuffer());
       return res.send(buffer);

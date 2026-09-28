@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/constants/auth.constants";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 function LoginForm() {
   const router = useRouter();
@@ -82,15 +83,7 @@ function LoginForm() {
       handleSuccessfulAuth(user.organizationId);
     } catch (err: unknown) {
       console.error(err);
-      if (typeof err === "object" && err !== null && "response" in err) {
-        const res = err as { response?: { data?: { message?: string } } };
-        setError(
-          res.response?.data?.message ||
-            t("auth.errorAuthFailed"),
-        );
-      } else {
-        setError(t("auth.errorNetwork"));
-      }
+      setError(getApiErrorMessage(err, t, "auth.errorAuthFailed"));
     } finally {
       setLoading(false);
     }
@@ -108,7 +101,7 @@ function LoginForm() {
       handleSuccessfulAuth(user.organizationId);
     } catch (err: unknown) {
       console.error(err);
-      setError(t("auth.errorAuthFailed"));
+      setError(getApiErrorMessage(err, t, "auth.errorAuthFailed"));
       setDemoLoadingEmail(null);
     }
   };

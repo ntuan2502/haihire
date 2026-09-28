@@ -1,9 +1,10 @@
 import {
   Inject,
   Injectable,
-  NotFoundException,
   Optional,
 } from "@nestjs/common";
+import { AppNotFoundException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { PrismaService } from "../prisma/prisma.service";
@@ -132,7 +133,7 @@ export class EmailService {
       .first();
 
     if (!current) {
-      throw new NotFoundException(`Template ${type} not found`);
+      throw new AppNotFoundException(APP_ERROR_CODES.EMAIL_TEMPLATE_NOT_FOUND, `Template ${type} not found`, { templateType: type });
     }
 
     const updateData: {
@@ -222,7 +223,7 @@ export class EmailService {
     const currentId = rawCurrent?.id || (await this.getSettings(organizationId))?.id;
 
     if (!currentId) {
-      throw new NotFoundException("Email settings not found");
+      throw new AppNotFoundException(APP_ERROR_CODES.EMAIL_SETTINGS_NOT_FOUND, "Email settings not found");
     }
 
     interface EmailSettingUpdatePayload {

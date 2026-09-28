@@ -18,6 +18,7 @@ import {
   LogIn,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 function RegisterForm() {
   const router = useRouter();
@@ -84,15 +85,7 @@ function RegisterForm() {
       }
     } catch (err: unknown) {
       console.error(err);
-      if (typeof err === "object" && err !== null && "response" in err) {
-        const res = err as { response?: { data?: { message?: string } } };
-        setError(
-          res.response?.data?.message ||
-            t("auth.errorAuthFailed"),
-        );
-      } else {
-        setError(t("auth.errorNetwork"));
-      }
+      setError(getApiErrorMessage(err, t, "auth.errorAuthFailed"));
     } finally {
       setLoading(false);
     }

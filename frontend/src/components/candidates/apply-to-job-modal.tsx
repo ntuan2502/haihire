@@ -6,6 +6,7 @@ import { useCreateApplicationMutation, useOpenJobs } from "@/hooks/use-queries";
 import { useAuth } from "@/context/auth-context";
 import { MacOsModal } from "@/components/shared";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage, type AppErrorSource } from "@/lib/api-error";
 import { getJobTypeLabel } from "@/lib/jobs";
 import type { Job, Application } from "@/types";
 
@@ -36,7 +37,8 @@ export function ApplyToJobModal({
   const { t } = useI18n();
   const [submittingJobId, setSubmittingJobId] = useState<string | null>(null);
   const [successJobId, setSuccessJobId] = useState<string | null>(null);
-  const [errorText, setErrorText] = useState<string | null>(null);
+  const [errorSource, setErrorSource] = useState<AppErrorSource | null>(null);
+  const errorMessage = errorSource ? getApiErrorMessage(errorSource, t) : null;
   const createApplicationMutation = useCreateApplicationMutation();
 
   // Query only open/active jobs (status=PUBLISHED) from the backend API
@@ -65,7 +67,7 @@ export function ApplyToJobModal({
 
   const handleApply = async (job: Job) => {
     try {
-      setErrorText(null);
+      setErrorSource(null);
       setSubmittingJobId(job.id);
       const formData = new FormData();
       formData.append("jobId", String(job.id));
@@ -97,11 +99,7 @@ export function ApplyToJobModal({
       }, 600);
     } catch (err: unknown) {
       console.error("Failed to apply candidate to job:", err);
-      const msg =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          : null;
-      setErrorText(msg || t("errors.generic"));
+      setErrorSource(err);
     } finally {
       setSubmittingJobId(null);
     }
@@ -111,16 +109,16 @@ export function ApplyToJobModal({
     <MacOsModal
       isOpen={isOpen}
       onClose={() => {
-        setErrorText(null);
+        setErrorSource(null);
         onClose();
       }}
       title={t("applications.applyToJobTitle")}
       size="md"
       contentClassName="p-5 flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a] space-y-3"
     >
-      {errorText && (
+      {errorMessage && (
         <div className="p-2.5 rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-900/50">
-          {errorText}
+          {errorMessage}
         </div>
       )}
 

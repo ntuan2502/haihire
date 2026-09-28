@@ -22,6 +22,7 @@ import {
 } from "@/lib/utils";
 import type { Gender } from "@/types";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 function EditCandidatePageContent() {
   const params = useParams();
@@ -132,11 +133,7 @@ function EditCandidatePageContent() {
       router.push(`/dashboard/candidates/${candidate.id}`);
     } catch (err: unknown) {
       console.error("Failed to update candidate:", err);
-      const maybeAxios = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(
-        maybeAxios?.response?.data?.message ||
-          t("candidates.updateFailed"),
-      );
+      setErrorMsg(getApiErrorMessage(err, t, "candidates.updateFailed"));
     } finally {
       setIsSubmitting(false);
     }

@@ -1,9 +1,9 @@
 import {
-  ConflictException,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from "@nestjs/common";
+import { AppConflictException, AppUnauthorizedException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
@@ -112,12 +112,12 @@ export class AuthService {
     }
 
     if (!user || !user.password) {
-      throw new UnauthorizedException("Invalid email or password");
+      throw new AppUnauthorizedException(APP_ERROR_CODES.INVALID_CREDENTIALS, "Invalid email or password");
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException("Invalid email or password");
+      throw new AppUnauthorizedException(APP_ERROR_CODES.INVALID_CREDENTIALS, "Invalid email or password");
     }
 
     const { password: _, ...sanitizedUser } = user;
@@ -170,7 +170,8 @@ export class AuthService {
       .first();
 
     if (existing) {
-      throw new ConflictException(
+      throw new AppConflictException(
+        APP_ERROR_CODES.USER_EMAIL_EXISTS,
         "An account with this email address already exists.",
       );
     }
@@ -231,7 +232,7 @@ export class AuthService {
       .first();
 
     if (!user) {
-      throw new UnauthorizedException("User session expired or not found");
+      throw new AppUnauthorizedException(APP_ERROR_CODES.USER_SESSION_EXPIRED, "User session expired or not found");
     }
 
     let organization = null;

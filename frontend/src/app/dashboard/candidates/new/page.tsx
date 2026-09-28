@@ -29,6 +29,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 function AddCandidatePageContent() {
   const router = useRouter();
@@ -145,11 +146,7 @@ function AddCandidatePageContent() {
       await createCandidateMutation.mutateAsync(formData);
       router.push("/dashboard/candidates");
     } catch (err: unknown) {
-      const errResponse = err as { response?: { data?: { message?: string } } };
-      setErrorMsg(
-        errResponse?.response?.data?.message ||
-          t("candidates.createFailed"),
-      );
+      setErrorMsg(getApiErrorMessage(err, t, "candidates.createFailed"));
     } finally {
       setIsSubmitting(false);
     }

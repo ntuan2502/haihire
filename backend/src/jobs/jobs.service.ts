@@ -1,4 +1,6 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppNotFoundException } from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
@@ -207,7 +209,10 @@ export class JobsService {
       .first();
 
     if (!job) {
-      throw new NotFoundException(`Job with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
+        `Job with ID ${id} not found`,
+      );
     }
 
     const applications = await this.prisma.db.orm.public.Application.select(
@@ -313,7 +318,10 @@ export class JobsService {
       .first();
 
     if (!org) {
-      throw new NotFoundException(`Organization '${orgSlug}' not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        `Organization '${orgSlug}' not found`,
+      );
     }
 
     const jobs = await this.prisma.db.orm.public.Job.select(
@@ -358,7 +366,8 @@ export class JobsService {
     });
 
     if (!matchedJob) {
-      throw new NotFoundException(
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job '${jobSlug}' not found in organization '${orgSlug}'`,
       );
     }

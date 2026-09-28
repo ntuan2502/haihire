@@ -1,8 +1,9 @@
 import {
   Inject,
   Injectable,
-  NotFoundException,
 } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppNotFoundException } from "../common/app-exception";
 import crypto from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
@@ -389,7 +390,7 @@ export class InterviewsService {
   async findOne(id: string) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
-      throw new NotFoundException(`Interview with ID ${id} not found`);
+      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_NOT_FOUND, `Interview with ID ${id} not found`);
     }
 
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(intv.applicationId)).first();
@@ -432,7 +433,7 @@ export class InterviewsService {
   async create(dto: CreateInterviewDto) {
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(dto.applicationId)).first();
     if (!app) {
-      throw new NotFoundException(`Application with ID ${dto.applicationId} not found`);
+      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND, `Application with ID ${dto.applicationId} not found`);
     }
 
     const id = crypto.randomUUID();
@@ -539,7 +540,7 @@ export class InterviewsService {
   async update(id: string, dto: UpdateInterviewDto) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
-      throw new NotFoundException(`Interview with ID ${id} not found`);
+      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_NOT_FOUND, `Interview with ID ${id} not found`);
     }
 
     const updateData: InterviewUpdatePayload = {};
@@ -582,7 +583,7 @@ export class InterviewsService {
   async remove(id: string) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
-      throw new NotFoundException(`Interview with ID ${id} not found`);
+      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_NOT_FOUND, `Interview with ID ${id} not found`);
     }
 
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).delete();

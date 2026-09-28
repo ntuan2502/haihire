@@ -14,6 +14,8 @@ import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { EmailService } from "./email.service";
+import { AppBadRequestException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { AVAILABLE_VARIABLES } from "./variable-registry";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
@@ -52,7 +54,7 @@ export class EmailController {
     @Query("organizationId") organizationId?: string,
   ) {
     const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
+    if (!orgId) throw new AppBadRequestException(APP_ERROR_CODES.EMAIL_ORG_REQUIRED, "Organization ID is required");
     return this.emailService.updateTemplate(orgId, type, dto);
   }
 
@@ -74,7 +76,7 @@ export class EmailController {
     @Query("organizationId") organizationId?: string,
   ) {
     const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
+    if (!orgId) throw new AppBadRequestException(APP_ERROR_CODES.EMAIL_ORG_REQUIRED, "Organization ID is required");
     return this.emailService.updateSettings(orgId, dto);
   }
 
@@ -86,7 +88,7 @@ export class EmailController {
     @Query("organizationId") organizationId?: string,
   ) {
     const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
+    if (!orgId) throw new AppBadRequestException(APP_ERROR_CODES.EMAIL_ORG_REQUIRED, "Organization ID is required");
     return this.emailService.sendEmail(dto, orgId, req.user);
   }
 
@@ -98,7 +100,7 @@ export class EmailController {
     @Query("organizationId") organizationId?: string,
   ) {
     const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
+    if (!orgId) throw new AppBadRequestException(APP_ERROR_CODES.EMAIL_ORG_REQUIRED, "Organization ID is required");
     return this.emailService.sendTestEmail(dto, orgId, req.user);
   }
 

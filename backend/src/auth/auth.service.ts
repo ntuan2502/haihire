@@ -11,6 +11,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { env } from "../config/env";
 
 @Injectable()
 export class AuthService {
@@ -37,8 +38,11 @@ export class AuthService {
       .where((u) => u.email.eq(normalizedEmail))
       .first();
 
-    // Auto-provision demo accounts if database is fresh
-    if (!user) {
+    // Auto-provision demo accounts in non-production environments if database is fresh
+    const isDevOrDemoEnabled =
+      env.NODE_ENV !== "production" || process.env.ENABLE_DEMO_ACCOUNTS === "true";
+
+    if (!user && isDevOrDemoEnabled) {
       const demoAccountList = [DEMO_ACCOUNTS.ADMIN, DEMO_ACCOUNTS.MEMBER];
       const matchedDemo = demoAccountList.find(
         (a) => a.email.toLowerCase() === normalizedEmail,

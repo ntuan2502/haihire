@@ -12,78 +12,12 @@ import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { fixUtf8String } from "../applications/applications.service";
+import {
+  extractDocsFromNotes,
+  fixUtf8String,
+  packDocsIntoNotes,
+} from "../common/doc-utils";
 import { toTimestamp } from "../common/date.util";
-
-function extractDocsFromNotes(
-  notes: string | null,
-  fallback?: {
-    id: string;
-    url: string;
-    name: string;
-    size?: number | null;
-    mimeType?: string | null;
-    createdAt?: string | Date;
-  },
-): CandidateDocument[] {
-  let docs: CandidateDocument[] = [];
-  if (notes) {
-    const match = notes.match(/Docs:\s*(\[[^\]]*\])/);
-    if (match) {
-      try {
-        const rawDocs = JSON.parse(match[1]) as Array<Record<string, unknown>>;
-        if (Array.isArray(rawDocs)) {
-          docs = rawDocs.map((d) => ({
-            id: String(d.id || ""),
-            name: fixUtf8String(typeof d.name === "string" ? d.name : "document.pdf"),
-            url: String(d.url || ""),
-            size: typeof d.size === "number" ? d.size : null,
-            mimeType: typeof d.mimeType === "string" ? d.mimeType : null,
-            type: typeof d.type === "string" ? d.type : undefined,
-            createdAt: typeof d.createdAt === "string" ? d.createdAt : new Date().toISOString(),
-          }));
-        }
-      } catch {
-        docs = [];
-      }
-    }
-  }
-
-  if (
-    docs.length === 0 &&
-    fallback &&
-    fallback.url &&
-    fallback.url.trim() !== ""
-  ) {
-    docs.push({
-      id: `doc-${fallback.id}`,
-      name: fixUtf8String(fallback.name || "Resume.pdf"),
-      url: fallback.url,
-      size: fallback.size,
-      mimeType: fallback.mimeType || "application/pdf",
-      type: "Resume",
-      createdAt: fallback.createdAt
-        ? new Date(fallback.createdAt).toISOString()
-        : new Date().toISOString(),
-    });
-  }
-
-  return docs;
-}
-
-function packDocsIntoNotes(
-  existingNotes: string | null,
-  docs: CandidateDocument[],
-): string {
-  const cleanNotes = (existingNotes || "")
-    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
-    .trim();
-  const docsSegment = `Docs:${JSON.stringify(docs)}`;
-  if (!cleanNotes) {
-    return docsSegment;
-  }
-  return `${cleanNotes} | ${docsSegment}`;
-}
 
 @Injectable()
 export class CandidatesService {

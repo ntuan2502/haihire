@@ -8,6 +8,7 @@ dotenv.config({ path: path.resolve(process.cwd(), "backend/.env") });
 dotenv.config();
 
 const backendEnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce
     .number()
     .int("PORT must be an integer")

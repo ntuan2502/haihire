@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { Throttle } from "@nestjs/throttler";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
@@ -102,6 +103,7 @@ export class ApplicationsController {
     return app;
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("apply")
   @UseInterceptors(
     FileInterceptor("resume", {

@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Inject,
+  Optional,
   Param,
   Patch,
   Post,
@@ -27,8 +28,9 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { fixUtf8String } from "../applications/applications.service";
+import { fixUtf8String } from "../common/doc-utils";
 import { MinioService } from "../minio/minio.service";
+import { ActivitiesService } from "../activities/activities.service";
 
 @Controller("candidates")
 @UseGuards(AuthGuard("jwt"))
@@ -38,6 +40,9 @@ export class CandidatesController {
     private readonly candidatesService: CandidatesService,
     @Inject(MinioService)
     private readonly minioService: MinioService,
+    @Optional()
+    @Inject(ActivitiesService)
+    private readonly activitiesService?: ActivitiesService,
   ) {}
 
   @Get()
@@ -68,19 +73,39 @@ export class CandidatesController {
   @Get(":id")
   async findOne(
     @Param("id") id: string,
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request()
+    req: {
+      user?: { id?: string; name?: string; organizationId?: string | null };
+    },
   ) {
     const candidate = await this.candidatesService.findOne(id);
+    const userOrgId = req?.user?.organizationId || undefined;
     if (
-      req?.user?.organizationId &&
+      userOrgId &&
       candidate.organizationId &&
-      req.user.organizationId !== candidate.organizationId
+      userOrgId !== candidate.organizationId
     ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.FORBIDDEN,
         "Access denied: candidate belongs to another organization.",
       );
     }
+
+    if (req?.user?.id && this.activitiesService) {
+      this.activitiesService
+        .createActivity({
+          organizationId: candidate.organizationId,
+          candidateId: candidate.id,
+          type: "NOTE_ADDED",
+          title: "PII Access Audit",
+          description: `Candidate profile was accessed by ${req.user.name || "recruiter"}`,
+          actorId: req.user.id,
+          actorName: req.user.name || "Recruiter",
+          metadata: { action: "VIEW_PROFILE", accessType: "PII_READ" },
+        })
+        .catch(() => {});
+    }
+
     return candidate;
   }
 
@@ -136,7 +161,10 @@ export class CandidatesController {
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
     @Res() res: Response,
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request()
+    req: {
+      user?: { id?: string; name?: string; organizationId?: string | null };
+    },
   ) {
     const candidate = await this.candidatesService.findOne(id);
     if (!candidate) {
@@ -193,6 +221,25 @@ export class CandidatesController {
     const cleanFileName = fixUtf8String(rawName);
     const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
+
+    if (req?.user?.id && this.activitiesService) {
+      this.activitiesService
+        .createActivity({
+          organizationId: candidate.organizationId,
+          candidateId: candidate.id,
+          type: "NOTE_ADDED",
+          title: "Document Download Audit",
+          description: `Document "${cleanFileName}" was downloaded by ${req.user.name || "recruiter"}`,
+          actorId: req.user.id,
+          actorName: req.user.name || "Recruiter",
+          metadata: {
+            action: "DOWNLOAD_DOCUMENT",
+            fileName: cleanFileName,
+            documentUrl: downloadUrl,
+          },
+        })
+        .catch(() => {});
+    }
 
     res.setHeader(
       "Content-Disposition",

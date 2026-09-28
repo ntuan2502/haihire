@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Inject,
+  Optional,
   Param,
   Patch,
   Post,
@@ -33,6 +34,7 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { MinioService } from "../minio/minio.service";
+import { ActivitiesService } from "../activities/activities.service";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -41,6 +43,9 @@ export class ApplicationsController {
     private readonly applicationsService: ApplicationsService,
     @Inject(MinioService)
     private readonly minioService: MinioService,
+    @Optional()
+    @Inject(ActivitiesService)
+    private readonly activitiesService?: ActivitiesService,
   ) {}
 
   @Get()
@@ -166,7 +171,10 @@ export class ApplicationsController {
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
     @Res() res: Response,
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request()
+    req: {
+      user?: { id?: string; name?: string; organizationId?: string | null };
+    },
   ) {
     const app = await this.applicationsService.findOne(id);
     if (!app) {
@@ -230,6 +238,27 @@ export class ApplicationsController {
     const cleanFileName = fixUtf8String(rawName);
     const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
+
+    if (req?.user?.id && app.candidateId && this.activitiesService) {
+      this.activitiesService
+        .createActivity({
+          organizationId: app.candidate?.organizationId || appOrgId || "default",
+          candidateId: app.candidateId,
+          applicationId: app.id,
+          type: "NOTE_ADDED",
+          title: "Document Download Audit",
+          description: `Document "${cleanFileName}" was downloaded by ${req.user.name || "recruiter"}`,
+          actorId: req.user.id,
+          actorName: req.user.name || "Recruiter",
+          metadata: {
+            action: "DOWNLOAD_DOCUMENT",
+            fileName: cleanFileName,
+            documentUrl: downloadUrl,
+            applicationId: app.id,
+          },
+        })
+        .catch(() => {});
+    }
 
     res.setHeader(
       "Content-Disposition",

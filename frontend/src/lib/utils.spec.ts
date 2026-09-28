@@ -8,6 +8,7 @@ import {
   getCandidateDisplayName,
   normalizeDateForInput,
   fixUtf8String,
+  parseCandidateDocuments,
 } from "./utils";
 
 describe("Frontend utils", () => {
@@ -134,6 +135,27 @@ describe("Frontend utils", () => {
 
     it("preserves already clean UTF-8 text", () => {
       expect(fixUtf8String("Nguyễn Văn A")).toBe("Nguyễn Văn A");
+    });
+  });
+
+  describe("parseCandidateDocuments", () => {
+    it("returns empty array when fallback has no resumeUrl", () => {
+      expect(parseCandidateDocuments("some notes", undefined)).toEqual([]);
+    });
+
+    it("returns formatted document when fallbackApp provides resumeUrl", () => {
+      const docs = parseCandidateDocuments("notes", {
+        id: "app-1",
+        resumeUrl: "/uploads/resume.pdf",
+        resumeFileName: "My_Resume.pdf",
+        resumeFileSize: 1024,
+        resumeMimeType: "application/pdf",
+        createdAt: "2026-09-28T00:00:00.000Z",
+      });
+      expect(docs.length).toBe(1);
+      expect(docs[0].id).toBe("app-1");
+      expect(docs[0].url).toBe("/uploads/resume.pdf");
+      expect(docs[0].name).toBe("My_Resume.pdf");
     });
   });
 });

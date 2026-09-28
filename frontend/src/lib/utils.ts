@@ -106,9 +106,8 @@ export function parseCandidateNotes(
     };
   }
 
-  // Strip Docs segment and legacy brackets from candidate notes
+  // Clean candidate notes
   const rawCustom = (notes || "")
-    .replace(/Docs:\s*\[[^\]]*\]\|?/gi, "")
     .replace(/^[|{}\s]+|[|{}\s]+$/g, "")
     .replace(/\|\s*\|/g, "|")
     .trim();
@@ -178,7 +177,7 @@ export function fixUtf8String(str?: string | null): string {
  * Parse candidate documents list from candidate notes and fallback application
  */
 export function parseCandidateDocuments(
-  notes?: string | null,
+  _notes?: string | null,
   fallbackApp?: {
     id: string;
     resumeUrl: string;
@@ -188,43 +187,25 @@ export function parseCandidateDocuments(
     createdAt: string;
   },
 ): CandidateDocument[] {
-  let docs: CandidateDocument[] = [];
-  if (notes) {
-    const match = notes.match(/Docs:\s*(\[[^\]]*\])/);
-    if (match) {
-      try {
-        const rawDocs = JSON.parse(match[1]);
-        if (Array.isArray(rawDocs)) {
-          docs = rawDocs.map((d) => ({
-            ...d,
-            name: fixUtf8String(d.name || "document.pdf"),
-          }));
-        }
-      } catch (e) {
-        console.error("Failed to parse candidate documents from notes:", e);
-      }
-    }
-  }
-
-  // Fallback to legacy single resumeUrl if no docs array found yet
   if (
-    docs.length === 0 &&
     fallbackApp &&
     fallbackApp.resumeUrl &&
     fallbackApp.resumeUrl.trim() !== ""
   ) {
-    docs.push({
-      id: fallbackApp.id,
-      name: fixUtf8String(fallbackApp.resumeFileName || "Resume.pdf"),
-      url: fallbackApp.resumeUrl,
-      size: fallbackApp.resumeFileSize,
-      mimeType: fallbackApp.resumeMimeType || "application/pdf",
-      createdAt: fallbackApp.createdAt,
-      type: "Resume",
-    });
+    return [
+      {
+        id: fallbackApp.id,
+        name: fixUtf8String(fallbackApp.resumeFileName || "Resume.pdf"),
+        url: fallbackApp.resumeUrl,
+        size: fallbackApp.resumeFileSize,
+        mimeType: fallbackApp.resumeMimeType || "application/pdf",
+        createdAt: fallbackApp.createdAt,
+        type: "Resume",
+      },
+    ];
   }
 
-  return docs;
+  return [];
 }
 
 /**

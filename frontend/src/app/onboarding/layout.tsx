@@ -2,7 +2,7 @@
 
 import { type ReactNode } from "react";
 import { AuthGuard } from "@/components/shared/auth-guard";
-import { GatewayNavbar } from "@/components/layout";
+import { GatewayNavbar, PublicFooter } from "@/components/layout";
 
 export default function OnboardingLayout({
   children,
@@ -16,6 +16,7 @@ export default function OnboardingLayout({
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 sm:py-12">
           {children}
         </main>
+        <PublicFooter />
       </div>
     </AuthGuard>
   );

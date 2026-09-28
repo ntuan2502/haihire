@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Briefcase, Menu, X, ShieldCheck, UserPlus, ArrowRight } from "lucide-react";
+import { Briefcase, Menu, X, LogIn, UserPlus, ArrowRight } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { BrandLogo } from "@/components/shared";
@@ -14,28 +14,11 @@ import { MobileDrawer } from "@/components/layout/mobile-drawer";
 export const LandingNavbar = () => {
   const { isAuthenticated, user } = useAuth();
   const { t } = useI18n();
-  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-
 
   return (
     <>
-      <header
-        className={`sticky top-0 z-50 w-full h-16 transition-all duration-300 select-none ${
-          isScrolled || mobileMenuOpen
-            ? "bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs"
-            : "bg-transparent border-b border-transparent"
-        }`}
-      >
+      <header className="sticky top-0 z-50 w-full h-16 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 transition-colors select-none">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* Left: Brand Logo & Navigation Links */}
           <div className="flex items-center gap-6">
@@ -79,15 +62,17 @@ export const LandingNavbar = () => {
               <div className="hidden md:flex items-center gap-2 sm:gap-3">
                 <Link
                   href="/login"
-                  className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors px-3 py-2"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors px-3 py-2 cursor-pointer"
                 >
-                  {t("landing.signIn")}
+                  <LogIn className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                  <span>{t("landing.signIn")}</span>
                 </Link>
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-500 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer"
                 >
-                  {t("landing.signUp")}
+                  <UserPlus className="h-4 w-4" />
+                  <span>{t("landing.signUp")}</span>
                 </Link>
               </div>
             )}
@@ -118,7 +103,7 @@ export const LandingNavbar = () => {
             <Link
               href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               <span>{t("landing.enterDashboard")}</span>
               <ArrowRight className="h-4 w-4" />
@@ -126,20 +111,20 @@ export const LandingNavbar = () => {
           ) : (
             <div className="flex flex-col gap-2">
               <Link
-                href="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>{t("landing.signUp")}</span>
-              </Link>
-              <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold h-10 rounded-xl transition-colors cursor-pointer"
               >
-                <ShieldCheck className="h-4 w-4" />
+                <LogIn className="h-4 w-4" />
                 <span>{t("landing.signIn")}</span>
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>{t("landing.signUp")}</span>
               </Link>
             </div>
           )

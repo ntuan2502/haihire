@@ -11,7 +11,7 @@ import { Globe } from "lucide-react";
 export interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  children: ReactNode;
+  children?: ReactNode;
   footer?: ReactNode;
   breakpoint?: "md" | "lg";
   variant?: "landing" | "default";
@@ -62,15 +62,18 @@ export function MobileDrawer({
         )}
       >
         {/* Navigation List Items */}
-        <div className="px-3 py-2 space-y-1">
-          {children}
-        </div>
+        {children && (
+          <div className="px-3 py-2 space-y-1">
+            {children}
+          </div>
+        )}
 
         {/* Unified Mobile Theme & Language Section - Symmetrically centered between two full-width border lines */}
         <div
           className={cn(
-            "border-t border-slate-200/80 dark:border-slate-800/80 px-3 py-2",
-            !footer && "border-b"
+            children && "border-t border-slate-200/80 dark:border-slate-800/80",
+            "px-3 py-2",
+            !footer && "border-b border-slate-200/80 dark:border-slate-800/80"
           )}
         >
           <div className="flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold text-slate-700 dark:text-slate-300">

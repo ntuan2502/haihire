@@ -15,8 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { GatewayNavbar } from "@/components/layout";
-import { BRAND_CONFIG } from "@haihire/shared";
+import { GatewayNavbar, PublicFooter } from "@/components/layout";
 
 interface PublicInviteData {
   valid: boolean;
@@ -276,10 +275,7 @@ export default function JoinOrganizationPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="text-center py-4 text-[11px] text-slate-400">
-        © {new Date().getFullYear()} {BRAND_CONFIG.name}. {t("careers.allRightsReserved")}
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

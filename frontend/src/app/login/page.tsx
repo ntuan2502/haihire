@@ -11,10 +11,6 @@ import {
   Mail,
   Eye,
   EyeOff,
-  ShieldCheck,
-  Sparkles,
-  ArrowLeft,
-  CheckCircle2,
   AlertCircle,
   Building2,
   UserCheck,
@@ -23,8 +19,7 @@ import {
 } from "lucide-react";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/constants/auth.constants";
 import { useI18n } from "@/i18n";
-import { BRAND_CONFIG } from "@haihire/shared";
-import { GatewayNavbar } from "@/components/layout";
+import { GatewayNavbar, PublicFooter } from "@/components/layout";
 
 function LoginForm() {
   const router = useRouter();
@@ -127,18 +122,6 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-md space-y-6">
-      {/* Mobile Back Link & Header */}
-      <div className="lg:hidden flex items-center justify-between pb-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-600"
-        >
-          <ArrowLeft className="h-4 w-4" /> {t("common.back")}
-        </Link>
-        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-          {BRAND_CONFIG.name}
-        </span>
-      </div>
 
       <div>
         <div className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
@@ -305,24 +288,14 @@ function LoginForm() {
       </form>
 
       {/* Register Link */}
-      <div className="pt-2 text-center text-xs text-slate-500 dark:text-slate-400">
-        {t("auth.noAccount")}{" "}
+      <div className="pt-2 flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+        <span>{t("auth.noAccount")}</span>
         <Link
           href={registerHref}
-          className="font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
         >
-          <UserPlus className="h-3 w-3" />
+          <UserPlus className="h-3.5 w-3.5" />
           <span>{t("auth.signUpLink")}</span>
-        </Link>
-      </div>
-
-      {/* Quick Return */}
-      <div className="text-center pt-2">
-        <Link
-          href="/"
-          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
-        >
-          &larr; {t("auth.returnToJobs")}
         </Link>
       </div>
     </div>
@@ -330,97 +303,17 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  const { t } = useI18n();
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors">
-      <GatewayNavbar maxWidthClassName="w-full px-4 sm:px-8" />
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2">
-        {/* Left Column: Recruiter Branding & Value Proposition */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-white border-r border-slate-800">
-        {/* Background Glow Accents */}
-        <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 right-10 h-80 w-80 rounded-full bg-emerald-600/10 blur-3xl pointer-events-none" />
-
-        {/* Brand Header */}
-        <div className="relative z-10">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-indigo-300 hover:text-white transition-colors mb-8"
-          >
-            <ArrowLeft className="h-4 w-4" /> {t("auth.returnToJobs")}
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
-              <span className="font-black text-xl tracking-tighter">{BRAND_CONFIG.monogram}</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-xl tracking-tight">{BRAND_CONFIG.name}</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-blue-500/30">
-                  <Sparkles className="h-2.5 w-2.5" /> {t("auth.recruiterPortal")}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">
-                {t("auth.tagline")}
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950 font-sans transition-colors">
+      <GatewayNavbar />
+      <main className="flex-1 flex flex-col items-center justify-start pt-10 sm:pt-14 pb-16 px-4">
+        <div className="w-full max-w-md">
+          <Suspense fallback={<Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" />}>
+            <LoginForm />
+          </Suspense>
         </div>
-
-        {/* Center Feature Highlights */}
-        <div className="relative z-10 space-y-6 my-auto max-w-md">
-          <div className="inline-flex items-center gap-2 rounded-full bg-slate-800/80 px-3 py-1 text-xs font-medium text-indigo-300 border border-slate-700/80">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            {t("auth.teamPortal")}
-          </div>
-
-          <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-            {t("auth.loginHeroTitle")}
-          </h1>
-
-          <p className="text-sm text-slate-400 leading-relaxed">
-            {t("auth.loginHeroDesc")}
-          </p>
-
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-3 text-xs text-slate-300">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </div>
-              <span>{t("auth.featureMultiTenant")}</span>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs text-slate-300">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </div>
-              <span>{t("auth.featureKanban")}</span>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs text-slate-300">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </div>
-              <span>{t("auth.featureStorage")}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer Note */}
-        <div className="relative z-10 text-[11px] text-slate-500 border-t border-slate-800/80 pt-4">
-          {t("auth.footerNote")}
-        </div>
-      </div>
-
-      {/* Right Column: Recruiter Login Form wrapped in Suspense */}
-      <div className="flex flex-col justify-center items-center p-6 sm:p-12 lg:p-16">
-        <Suspense fallback={<Loader2 className="h-6 w-6 animate-spin text-blue-600" />}>
-          <LoginForm />
-        </Suspense>
-      </div>
+      </main>
+      <PublicFooter />
     </div>
-  </div>
   );
 }

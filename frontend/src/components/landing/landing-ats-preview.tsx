@@ -479,7 +479,7 @@ export const LandingAtsPreview: React.FC = () => {
       : `${t("common.showing")} 1-${filteredCandidates.length} ${t("common.of")} ${filteredCandidates.length} ${t("nav.candidates").toLowerCase()}`;
 
   return (
-    <section id="demo" className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-20">
+    <section id="demo" className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20">
       {/* Background Atmosphere Glow */}
       <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-3/4 h-96 bg-blue-600/15 dark:bg-blue-600/20 blur-[120px] rounded-full" />
 

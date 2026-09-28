@@ -106,7 +106,7 @@ export default function GeneralSettingsPage() {
       await deleteOrgMutation.mutateAsync();
       setDeleteModalOpen(false);
       logout();
-      router.push("/onboarding/create-org");
+      router.push("/auth/onboarding");
     } catch (err) {
       console.error("Failed to delete organization:", err);
       setSaveError("Failed to delete organization. Please try again.");

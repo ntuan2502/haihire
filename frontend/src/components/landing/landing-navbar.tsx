@@ -50,7 +50,7 @@ export const LandingNavbar = () => {
             {isAuthenticated && user ? (
               <div className="flex items-center gap-2 sm:gap-2.5">
                 <Link
-                  href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
+                  href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
                   className="hidden md:inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 px-3.5 py-1.5 text-xs font-bold shadow-xs hover:scale-105 active:scale-95 transition-all"
                 >
                   <span>{t("landing.enterDashboard")}</span>
@@ -61,14 +61,14 @@ export const LandingNavbar = () => {
             ) : (
               <div className="hidden md:flex items-center gap-2 sm:gap-3">
                 <Link
-                  href="/login"
+                  href="/auth/login"
                   className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors px-3 py-2 cursor-pointer"
                 >
                   <LogIn className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                   <span>{t("landing.signIn")}</span>
                 </Link>
                 <Link
-                  href="/register"
+                  href="/auth/register"
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer"
                 >
                   <UserPlus className="h-4 w-4" />
@@ -101,7 +101,7 @@ export const LandingNavbar = () => {
         footer={
           isAuthenticated ? (
             <Link
-              href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
+              href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
@@ -111,7 +111,7 @@ export const LandingNavbar = () => {
           ) : (
             <div className="flex flex-col gap-2">
               <Link
-                href="/login"
+                href="/auth/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold h-10 rounded-xl transition-colors cursor-pointer"
               >
@@ -119,7 +119,7 @@ export const LandingNavbar = () => {
                 <span>{t("landing.signIn")}</span>
               </Link>
               <Link
-                href="/register"
+                href="/auth/register"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 text-xs font-bold h-10 rounded-xl shadow-xs transition-colors cursor-pointer"
               >

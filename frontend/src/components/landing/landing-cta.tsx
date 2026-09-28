@@ -33,7 +33,7 @@ export const LandingCta: React.FC = () => {
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
             {isAuthenticated ? (
               <Link
-                href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
+                href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
                 className="inline-flex items-center gap-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 px-8 py-4 text-sm font-black shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
                 <span>{t("landing.enterDashboard")}</span>
@@ -41,7 +41,7 @@ export const LandingCta: React.FC = () => {
               </Link>
             ) : (
               <Link
-                href="/register"
+                href="/auth/register"
                 className="inline-flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-500 px-8 py-4 text-sm font-black text-white shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all"
               >
                 <span>{t("landing.ctaButton")}</span>

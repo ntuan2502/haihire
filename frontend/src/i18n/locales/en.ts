@@ -1198,7 +1198,7 @@ export const en: TranslationSchema = {
     joinOrgTitle: "Join an organization",
     joinOrgSubtitle: "Paste your invite link or token to join your team workspace.",
     inviteLinkBoxTitle: "Invite link",
-    inviteLinkPlaceholder: "Paste invite link (e.g. http://.../join/...) or token",
+    inviteLinkPlaceholder: "Paste invite link (e.g. http://.../auth/join/...) or token",
     joinButton: "Join",
     joining: "Joining...",
     inviteLinkHint: "Ask an organization owner or administrator to create and send you an invite link.",

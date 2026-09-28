@@ -1198,7 +1198,7 @@ export const vi: TranslationSchema = {
     joinOrgTitle: "Tham gia tổ chức",
     joinOrgSubtitle: "Dán liên kết mời hoặc mã token để gia nhập không gian làm việc của đội ngũ.",
     inviteLinkBoxTitle: "Liên kết mời",
-    inviteLinkPlaceholder: "Dán liên kết mời (ví dụ: http://.../join/...) hoặc token",
+    inviteLinkPlaceholder: "Dán liên kết mời (ví dụ: http://.../auth/join/...) hoặc token",
     joinButton: "Tham gia",
     joining: "Đang tham gia...",
     inviteLinkHint: "Hãy yêu cầu quản trị viên hoặc chủ sở hữu tổ chức gửi cho bạn liên kết mời.",

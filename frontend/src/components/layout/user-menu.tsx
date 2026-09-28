@@ -156,7 +156,7 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsOrgDropdownOpen(false);
-                    router.push("/onboarding/create-org?mode=create");
+                    router.push("/auth/onboarding?mode=create");
                   }}
                   className="w-full px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors"
                 >

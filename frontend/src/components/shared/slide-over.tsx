@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { X } from "lucide-react";
 import { cn } from "cn";
 
 export interface SlideOverProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  title?: string;
+  description?: string;
+  width?: string;
   maxWidth?: string;
   className?: string;
   panelClassName?: string;
@@ -16,6 +20,9 @@ export function SlideOver({
   isOpen,
   onClose,
   children,
+  title,
+  description,
+  width,
   maxWidth = "max-w-2xl",
   className,
   panelClassName,
@@ -59,10 +66,31 @@ export function SlideOver({
         <aside
           className={cn(
             "w-screen pointer-events-auto bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200/80 dark:border-slate-800 flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-300 ease-out",
-            maxWidth,
+            width || maxWidth,
             panelClassName
           )}
         >
+          {title && (
+            <div className="p-6 border-b border-slate-200/80 dark:border-slate-800 flex items-start justify-between shrink-0">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  {title}
+                </h3>
+                {description && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {description}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           {children}
         </aside>
       </div>

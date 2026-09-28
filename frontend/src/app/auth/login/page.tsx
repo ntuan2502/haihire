@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/constants/auth.constants";
 import { useI18n } from "@/i18n";
-import { GatewayNavbar, PublicFooter } from "@/components/layout";
 
 function LoginForm() {
   const router = useRouter();
@@ -28,7 +27,6 @@ function LoginForm() {
   const { login, isAuthenticated, user, loading: authLoading } = useAuth();
   const { t } = useI18n();
 
-  // Inputs are completely empty by default (no sample values)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +34,7 @@ function LoginForm() {
   const [demoLoadingEmail, setDemoLoadingEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // If already logged in, block access to login page and redirect immediately
+  // If already logged in, redirect immediately
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       if (redirectUrl) {
@@ -44,7 +42,7 @@ function LoginForm() {
       } else if (user?.organizationId) {
         router.replace("/dashboard");
       } else {
-        router.replace("/onboarding/create-org");
+        router.replace("/auth/onboarding");
       }
     }
   }, [isAuthenticated, user, authLoading, redirectUrl, router]);
@@ -64,7 +62,7 @@ function LoginForm() {
     if (redirectUrl) {
       router.push(redirectUrl);
     } else if (!organizationId) {
-      router.push("/onboarding/create-org");
+      router.push("/auth/onboarding");
     } else {
       router.push("/dashboard");
     }
@@ -98,7 +96,6 @@ function LoginForm() {
     }
   };
 
-  // 1-Click Demo: Directly logs in as specified demo account
   const handleQuickLogin = async (
     account: (typeof DEMO_ACCOUNTS)[keyof typeof DEMO_ACCOUNTS],
   ) => {
@@ -117,12 +114,11 @@ function LoginForm() {
   };
 
   const registerHref = redirectUrl
-    ? `/register?redirect=${encodeURIComponent(redirectUrl)}`
-    : "/register";
+    ? `/auth/register?redirect=${encodeURIComponent(redirectUrl)}`
+    : "/auth/register";
 
   return (
-    <div className="w-full max-w-md space-y-6">
-
+    <div className="space-y-6">
       <div>
         <div className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
           <Building2 className="h-3.5 w-3.5" /> {t("auth.recruiterSignIn")}
@@ -225,7 +221,7 @@ function LoginForm() {
         </div>
       )}
 
-      {/* Login Form: Clean, no default sample values */}
+      {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
@@ -304,16 +300,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/60 dark:bg-slate-950 font-sans transition-colors">
-      <GatewayNavbar />
-      <main className="flex-1 flex flex-col items-center justify-start pt-10 sm:pt-14 pb-16 px-4">
-        <div className="w-full max-w-md">
-          <Suspense fallback={<Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" />}>
-            <LoginForm />
-          </Suspense>
-        </div>
-      </main>
-      <PublicFooter />
-    </div>
+    <Suspense fallback={<Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

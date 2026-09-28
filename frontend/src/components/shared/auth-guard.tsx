@@ -25,9 +25,9 @@ export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.push("/login");
+        router.push("/auth/login");
       } else if (requireOrg && user && !user.organizationId) {
-        router.replace("/onboarding/create-org");
+        router.replace("/auth/onboarding");
       }
     }
   }, [isAuthenticated, user, loading, requireOrg, router]);

@@ -42,7 +42,7 @@ export const LandingHero: React.FC = () => {
         <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5 sm:gap-4">
           {isAuthenticated ? (
             <Link
-              href={user?.organizationId ? "/dashboard" : "/onboarding/create-org"}
+              href={user?.organizationId ? "/dashboard" : "/auth/onboarding"}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-7 py-3 text-xs sm:text-sm font-bold text-white shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer"
             >
               <span>
@@ -57,7 +57,7 @@ export const LandingHero: React.FC = () => {
           ) : (
             <>
               <Link
-                href="/register"
+                href="/auth/register"
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 text-xs sm:text-sm font-bold shadow-xs hover:scale-102 active:scale-98 transition-all cursor-pointer"
               >
                 <span>{t("landing.startFree")}</span>

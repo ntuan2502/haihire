@@ -58,10 +58,6 @@ const nextConfig: NextConfig = {
         destination: "http://127.0.0.1:3001/:path*",
       },
       {
-        source: "/auth/:path*",
-        destination: "http://127.0.0.1:3001/auth/:path*",
-      },
-      {
         source: "/organizations/:path*",
         destination: "http://127.0.0.1:3001/organizations/:path*",
       },

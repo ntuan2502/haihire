@@ -24,19 +24,27 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../common/app-exception";
-import { ApplicationsService, fixUtf8String } from "./applications.service";
+import {
+  ApplicationsService,
+  extractDocsFromNotes,
+  fixUtf8String,
+} from "./applications.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
+import { MinioService } from "../minio/minio.service";
 
 @Controller("applications")
 export class ApplicationsController {
   constructor(
     @Inject(ApplicationsService)
     private readonly applicationsService: ApplicationsService,
+    @Inject(MinioService)
+    private readonly minioService: MinioService,
   ) {}
 
   @Get()
+  @UseGuards(AuthGuard("jwt"))
   findAll(
     @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -46,7 +54,14 @@ export class ApplicationsController {
     @Query("jobId") jobId?: string,
     @Query("stage") stage?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
+    const userOrgId = req?.user?.organizationId || undefined;
+    if (organizationId && userOrgId && organizationId !== userOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: cannot access applications from another organization.",
+      );
+    }
+    const orgId = userOrgId || organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
     return this.applicationsService.findAll(orgId, {
@@ -59,13 +74,32 @@ export class ApplicationsController {
   }
 
   @Get("job/:jobId")
+  @UseGuards(AuthGuard("jwt"))
   findByJob(@Param("jobId") jobId: string) {
     return this.applicationsService.findByJob(jobId);
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.applicationsService.findOne(id);
+  @UseGuards(AuthGuard("jwt"))
+  async findOne(
+    @Param("id") id: string,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    const app = await this.applicationsService.findOne(id);
+    const appOrgId =
+      app?.job?.organizationId ||
+      (app as unknown as { organizationId?: string })?.organizationId;
+    if (
+      req?.user?.organizationId &&
+      appOrgId &&
+      req.user.organizationId !== appOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
+    }
+    return app;
   }
 
   @Post("apply")
@@ -125,11 +159,13 @@ export class ApplicationsController {
   }
 
   @Get(":id/documents/download")
+  @UseGuards(AuthGuard("jwt"))
   async downloadDocument(
     @Param("id") id: string,
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
     @Res() res: Response,
+    @Request() req: { user?: { organizationId?: string | null } },
   ) {
     const app = await this.applicationsService.findOne(id);
     if (!app) {
@@ -139,12 +175,50 @@ export class ApplicationsController {
       );
     }
 
+    const appOrgId =
+      app?.job?.organizationId ||
+      (app as unknown as { organizationId?: string })?.organizationId;
+    if (
+      req?.user?.organizationId &&
+      appOrgId &&
+      req.user.organizationId !== appOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
+    }
+
     const downloadUrl = targetUrl || app.resumeUrl;
     if (!downloadUrl) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
         "Document not found",
       );
+    }
+
+    // SSRF prevention: Verify that targetUrl belongs to this application
+    if (targetUrl) {
+      const allowedUrls: string[] = [];
+      if (app.resumeUrl) allowedUrls.push(app.resumeUrl);
+      if (app.candidate?.resumeUrl) allowedUrls.push(app.candidate.resumeUrl);
+      const docs = extractDocsFromNotes(app.notes);
+      for (const doc of docs) {
+        if (doc && typeof doc.url === "string") {
+          allowedUrls.push(doc.url);
+        }
+      }
+
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const isAllowed = allowedUrls.some(
+        (u) => u === targetUrl || this.minioService.extractObjectName(u) === targetObj,
+      );
+      if (!isAllowed) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.FORBIDDEN,
+          "Access denied: specified document does not belong to this application.",
+        );
+      }
     }
 
     const rawName = targetName || app.resumeFileName || "document.pdf";
@@ -160,22 +234,15 @@ export class ApplicationsController {
       res.setHeader("Content-Type", app.resumeMimeType);
     }
 
-    if (
-      downloadUrl.startsWith("http://") ||
-      downloadUrl.startsWith("https://")
-    ) {
-      const upstream = await fetch(downloadUrl);
-      if (!upstream.ok) {
-        throw new AppNotFoundException(
-          APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
-          "Document file could not be retrieved",
-        );
-      }
-      const buffer = Buffer.from(await upstream.arrayBuffer());
-      return res.send(buffer);
+    try {
+      const stream = await this.minioService.getObjectStream(downloadUrl);
+      stream.pipe(res);
+    } catch {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Document file could not be retrieved from storage",
+      );
     }
-
-    return res.redirect(downloadUrl);
   }
 
   @Delete(":id/documents")

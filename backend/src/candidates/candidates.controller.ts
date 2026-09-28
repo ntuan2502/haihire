@@ -16,7 +16,10 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppNotFoundException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
@@ -25,12 +28,16 @@ import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../applications/applications.service";
+import { MinioService } from "../minio/minio.service";
 
 @Controller("candidates")
+@UseGuards(AuthGuard("jwt"))
 export class CandidatesController {
   constructor(
     @Inject(CandidatesService)
     private readonly candidatesService: CandidatesService,
+    @Inject(MinioService)
+    private readonly minioService: MinioService,
   ) {}
 
   @Get()
@@ -41,7 +48,14 @@ export class CandidatesController {
     @Query("limit") limit?: string,
     @Query("search") search?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
+    const userOrgId = req?.user?.organizationId || undefined;
+    if (organizationId && userOrgId && organizationId !== userOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: cannot access candidates from another organization.",
+      );
+    }
+    const orgId = userOrgId || organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
     return this.candidatesService.findAll(orgId, {
@@ -52,8 +66,22 @@ export class CandidatesController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.candidatesService.findOne(id);
+  async findOne(
+    @Param("id") id: string,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    const candidate = await this.candidatesService.findOne(id);
+    if (
+      req?.user?.organizationId &&
+      candidate.organizationId &&
+      req.user.organizationId !== candidate.organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
+    return candidate;
   }
 
   @Post()
@@ -108,6 +136,7 @@ export class CandidatesController {
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
     @Res() res: Response,
+    @Request() req: { user?: { organizationId?: string | null } },
   ) {
     const candidate = await this.candidatesService.findOne(id);
     if (!candidate) {
@@ -117,12 +146,47 @@ export class CandidatesController {
       );
     }
 
+    if (
+      req?.user?.organizationId &&
+      candidate.organizationId &&
+      req.user.organizationId !== candidate.organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
+
     const downloadUrl = targetUrl || candidate.resumeUrl;
     if (!downloadUrl) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
         "Document not found",
       );
+    }
+
+    // SSRF prevention: Verify that targetUrl belongs to this candidate
+    if (targetUrl) {
+      const allowedUrls: string[] = [];
+      if (candidate.resumeUrl) allowedUrls.push(candidate.resumeUrl);
+      if (Array.isArray(candidate.allDocuments)) {
+        for (const doc of candidate.allDocuments) {
+          if (doc && typeof doc.url === "string") {
+            allowedUrls.push(doc.url);
+          }
+        }
+      }
+
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const isAllowed = allowedUrls.some(
+        (u) => u === targetUrl || this.minioService.extractObjectName(u) === targetObj,
+      );
+      if (!isAllowed) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.FORBIDDEN,
+          "Access denied: specified document does not belong to this candidate.",
+        );
+      }
     }
 
     const rawName = targetName || candidate.resumeFileName || "document.pdf";
@@ -138,22 +202,15 @@ export class CandidatesController {
       res.setHeader("Content-Type", candidate.resumeMimeType);
     }
 
-    if (
-      downloadUrl.startsWith("http://") ||
-      downloadUrl.startsWith("https://")
-    ) {
-      const upstream = await fetch(downloadUrl);
-      if (!upstream.ok) {
-        throw new AppNotFoundException(
-          APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
-          "Document file could not be retrieved",
-        );
-      }
-      const buffer = Buffer.from(await upstream.arrayBuffer());
-      return res.send(buffer);
+    try {
+      const stream = await this.minioService.getObjectStream(downloadUrl);
+      stream.pipe(res);
+    } catch {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Document file could not be retrieved from storage",
+      );
     }
-
-    return res.redirect(downloadUrl);
   }
 
   @Delete(":id/documents")

@@ -3,6 +3,7 @@ import type { OnModuleInit } from "@nestjs/common";
 import * as Minio from "minio";
 import { randomUUID } from "node:crypto";
 import { extname } from "node:path";
+import type { Readable } from "node:stream";
 import { env } from "../config/env";
 
 export interface UploadResult {
@@ -38,26 +39,7 @@ export class MinioService implements OnModuleInit {
       const exists = await this.client.bucketExists(this.bucketName);
       if (!exists) {
         await this.client.makeBucket(this.bucketName, "us-east-1");
-        this.logger.log(`Bucket '${this.bucketName}' created.`);
-
-        const policy = {
-          Version: "2012-10-17",
-          Statement: [
-            {
-              Effect: "Allow",
-              Principal: { AWS: ["*"] },
-              Action: ["s3:GetBucketLocation", "s3:ListBucket"],
-              Resource: [`arn:aws:s3:::${this.bucketName}`],
-            },
-            {
-              Effect: "Allow",
-              Principal: { AWS: ["*"] },
-              Action: ["s3:GetObject"],
-              Resource: [`arn:aws:s3:::${this.bucketName}/*`],
-            },
-          ],
-        };
-        await this.client.setBucketPolicy(this.bucketName, JSON.stringify(policy));
+        this.logger.log(`Bucket '${this.bucketName}' created (private access).`);
       }
       this.logger.log(`MinIO successfully connected to bucket: ${this.bucketName}`);
     } catch (error: unknown) {
@@ -97,6 +79,42 @@ export class MinioService implements OnModuleInit {
     } catch (error: unknown) {
       this.logger.error(`Failed to delete file '${fileName}' from MinIO`, error);
     }
+  }
+
+  extractObjectName(urlOrPath: string): string {
+    if (!urlOrPath) return "";
+    let clean = urlOrPath.trim();
+    try {
+      if (clean.startsWith("http://") || clean.startsWith("https://")) {
+        const parsed = new URL(clean);
+        clean = parsed.pathname;
+      }
+    } catch {
+      // not a full url, keep as path
+    }
+    // Normalize slashes
+    clean = clean.replace(/\\/g, "/");
+    // Strip leading slashes
+    clean = clean.replace(/^\/+/, "");
+    // Strip bucketName prefix if present
+    if (clean.startsWith(`${this.bucketName}/`)) {
+      clean = clean.slice(this.bucketName.length + 1);
+    }
+    // Prevent directory traversal
+    if (clean.includes("..")) {
+      throw new Error("Invalid object path: directory traversal not allowed");
+    }
+    return clean;
+  }
+
+  async getObjectStream(urlOrPath: string): Promise<Readable> {
+    const objectName = this.extractObjectName(urlOrPath);
+    return await this.client.getObject(this.bucketName, objectName);
+  }
+
+  async getPresignedUrl(urlOrPath: string, expirySeconds = 3600): Promise<string> {
+    const objectName = this.extractObjectName(urlOrPath);
+    return await this.client.presignedGetObject(this.bucketName, objectName, expirySeconds);
   }
 
   getFileUrl(fileName: string): string {

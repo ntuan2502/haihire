@@ -15,6 +15,8 @@ import { AuthGuard } from "@nestjs/passport";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
+import { AppForbiddenException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
@@ -46,7 +48,24 @@ export class JobsController {
     const isAuthenticated = Boolean(req?.user);
     // Security: Unauthenticated public requests must ONLY ever see PUBLISHED jobs
     const effectiveStatus = !isAuthenticated ? "PUBLISHED" : status;
-    const orgId = organizationId || req?.user?.organizationId || undefined;
+    const userOrgId = req?.user?.organizationId || undefined;
+
+    // Security: If requesting non-published jobs (draft, internal), user must belong to that organization
+    if (
+      isAuthenticated &&
+      effectiveStatus &&
+      effectiveStatus !== "PUBLISHED" &&
+      organizationId &&
+      userOrgId &&
+      organizationId !== userOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: cannot view unpublished jobs from another organization.",
+      );
+    }
+
+    const orgId = organizationId || userOrgId || undefined;
     return this.jobsService.findAll({
       status: effectiveStatus,
       department,

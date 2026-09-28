@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { AppForbiddenException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { ActivitiesService, type CreateActivityDto } from "./activities.service";
 
 @Controller("activities")
@@ -28,7 +30,14 @@ export class ActivitiesController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
+    const userOrgId = req?.user?.organizationId || undefined;
+    if (organizationId && userOrgId && organizationId !== userOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: cannot access activities from another organization.",
+      );
+    }
+    const orgId = userOrgId || organizationId || undefined;
     return this.activitiesService.findByCandidate(candidateId, orgId, {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
@@ -43,7 +52,14 @@ export class ActivitiesController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
+    const userOrgId = req?.user?.organizationId || undefined;
+    if (organizationId && userOrgId && organizationId !== userOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: cannot access activities from another organization.",
+      );
+    }
+    const orgId = userOrgId || organizationId || undefined;
     return this.activitiesService.findByApplication(applicationId, orgId, {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,

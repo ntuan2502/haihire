@@ -12,6 +12,8 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppForbiddenException } from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { InterviewsService } from "./interviews.service";
@@ -19,6 +21,7 @@ import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 
 @Controller("interviews")
+@UseGuards(AuthGuard("jwt"))
 export class InterviewsController {
   constructor(
     @Inject(InterviewsService)
@@ -37,7 +40,14 @@ export class InterviewsController {
     @Query("tab") tab?: string,
     @Query("sortBy") sortBy?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
+    const userOrgId = req?.user?.organizationId || undefined;
+    if (organizationId && userOrgId && organizationId !== userOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: cannot access interviews from another organization.",
+      );
+    }
+    const orgId = userOrgId || organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
     return this.interviewsService.findAll({
@@ -53,8 +63,21 @@ export class InterviewsController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.interviewsService.findOne(id);
+  async findOne(
+    @Param("id") id: string,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    const interview = await this.interviewsService.findOne(id);
+    const intvOrgId =
+      (interview as unknown as { organizationId?: string })?.organizationId ||
+      (interview as unknown as { application?: { job?: { organizationId?: string } } })?.application?.job?.organizationId;
+    if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: interview belongs to another organization.",
+      );
+    }
+    return interview;
   }
 
   @Post()

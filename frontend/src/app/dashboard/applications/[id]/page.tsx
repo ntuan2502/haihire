@@ -100,11 +100,26 @@ function ApplicationDetailPageContent() {
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
 
   // Cancel scheduled interview
-  const handleCancelInterview = async (interviewId?: string) => {
+  const handleCancelInterview = async (
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
     if (!app) return;
     try {
-      const targetId = interviewId || (app.interviews && app.interviews[0]?.id);
-      if (targetId) {
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else if (app.interviews && app.interviews.length > 0 && app.interviews[0]?.id) {
+        targetId = app.interviews[0].id;
+      }
+
+      if (targetId && typeof targetId === "string") {
         await deleteInterviewMutation.mutateAsync(targetId);
       }
     } catch (err) {

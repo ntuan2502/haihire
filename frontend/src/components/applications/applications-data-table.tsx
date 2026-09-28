@@ -196,11 +196,30 @@ export function ApplicationsDataTable({
     }
   };
 
-  const handleCancelInterview = async (interviewId?: string) => {
+  const handleCancelInterview = async (
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
     if (!currentApp) return;
     try {
-      const targetId = interviewId || (currentApp.interviews && currentApp.interviews[0]?.id);
-      if (targetId) {
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else if (
+        currentApp.interviews &&
+        currentApp.interviews.length > 0 &&
+        currentApp.interviews[0]?.id
+      ) {
+        targetId = currentApp.interviews[0].id;
+      }
+
+      if (targetId && typeof targetId === "string") {
         await deleteInterviewMutation.mutateAsync(targetId);
       }
     } catch (err) {

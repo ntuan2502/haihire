@@ -90,10 +90,26 @@ function CandidateDetailPageContent() {
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
 
-  const handleCancelInterview = async (targetApp: Application, interviewId?: string) => {
+  const handleCancelInterview = async (
+    targetApp: Application,
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
     try {
-      const targetId = interviewId || (targetApp.interviews && targetApp.interviews[0]?.id);
-      if (targetId) {
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else {
+        targetId = targetApp.interviews && targetApp.interviews[0]?.id;
+      }
+
+      if (targetId && typeof targetId === "string") {
         await deleteInterviewMutation.mutateAsync(targetId);
       }
     } catch (err) {
@@ -641,7 +657,7 @@ function CandidateDetailPageContent() {
                             setScheduleInterviewApp(app);
                             setEditingInterview(intv || null);
                           }}
-                          onCancelInterview={() => handleCancelInterview(app)}
+                          onCancelInterview={(intv) => handleCancelInterview(app, intv)}
                           canEdit={canEdit}
                           showSectionHeader={false}
                           hideIfEmpty={allInterviews.length === 0}

@@ -212,13 +212,28 @@ export function CandidateDrawer({
     }
   };
 
-  const handleCancelInterview = async (app: Application) => {
-    const interviews = getInterviewsFromApplication(app);
-    if (interviews.length === 0) return;
+  const handleCancelInterview = async (
+    app: Application,
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
     try {
-      const lastIntv = interviews[interviews.length - 1];
-      if (lastIntv?.id) {
-        await deleteInterviewMutation.mutateAsync(lastIntv.id);
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else {
+        const interviews = getInterviewsFromApplication(app);
+        targetId = interviews[0]?.id || (app.interviews && app.interviews[0]?.id);
+      }
+
+      if (targetId && typeof targetId === "string") {
+        await deleteInterviewMutation.mutateAsync(targetId);
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
@@ -512,7 +527,7 @@ export function CandidateDrawer({
                                 application={app}
                                 notes={app.notes}
                                 onSchedule={(intv) => onScheduleInterview(app, intv)}
-                                onCancelInterview={() => handleCancelInterview(app)}
+                                onCancelInterview={(intv) => handleCancelInterview(app, intv)}
                                 canEdit={canEdit}
                                 showSectionHeader={false}
                                 hideIfEmpty={allInterviews.length === 0}

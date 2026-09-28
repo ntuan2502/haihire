@@ -28,7 +28,7 @@ export interface CandidateInterviewsListProps {
   interviews?: Interview[] | null;
   notes?: string | null;
   onSchedule?: (interview?: ScheduledInterviewInfo) => void;
-  onCancelInterview?: () => void;
+  onCancelInterview?: (interview?: ScheduledInterviewInfo) => void;
   canEdit?: boolean;
   title?: string;
   showSectionHeader?: boolean;
@@ -322,7 +322,7 @@ export function CandidateInterviewsList({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={onCancelInterview}
+                    onClick={() => onCancelInterview?.(scheduled)}
                     className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
                   >
                     {t("interviews.cancelThisSchedule")}

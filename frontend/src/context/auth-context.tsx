@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_KEY);
     clearAuthCookies();
     delete api.defaults.headers.common.Authorization;
-    router.replace("/login");
+    router.replace("/auth/login");
   }, [router]);
 
   // Synchronize user profile with backend in real-time

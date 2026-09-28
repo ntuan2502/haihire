@@ -1,16 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo, type FormEvent } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect } from "@/components/shared/custom-select";
+import { CustomSelect, MacOsModal } from "@/components/shared";
 import {
   Calendar,
   Clock,
@@ -237,26 +230,22 @@ export function ScheduleInterviewModal({
     updateStageMutation.isPending;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-xl sm:max-w-2xl md:max-w-3xl rounded-3xl p-6 sm:p-8 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl overflow-y-auto max-h-[90vh]">
-        <DialogHeader className="space-y-1.5 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shadow-xs">
-              <Calendar className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
-                {editingInterview ? t("interviews.editScheduleBtn") : t("interviews.modalTitle")}
-              </DialogTitle>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("interviews.modalSubtitle")}
-              </p>
-            </div>
-          </div>
-        </DialogHeader>
+    <MacOsModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingInterview ? t("interviews.editScheduleBtn") : t("interviews.modalTitle")}
+      size="lg"
+      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+    >
+      <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
+        <span className="text-slate-500 dark:text-slate-400">
+          {t("interviews.modalSubtitle")}
+        </span>
+      </div>
 
+      <div className="flex-1 overflow-y-auto p-6">
         {formError && (
-          <div className="mt-4 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2.5">
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2.5">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{formError}</span>
           </div>
@@ -509,19 +498,19 @@ export function ScheduleInterviewModal({
             </div>
           </div>
 
-          <DialogFooter className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+          <div className="pt-4 border-t border-slate-200/60 dark:border-white/10 flex items-center justify-end gap-2.5">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-10 px-5 rounded-xl text-xs font-semibold cursor-pointer"
+              className="h-8 px-4 rounded-lg text-xs font-semibold cursor-pointer shadow-2xs"
             >
               {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isSaving}
-              className="h-10 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 cursor-pointer transition-all"
+              className="h-8 px-5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer transition-all"
             >
               {isSaving
                 ? t("interviews.savingSchedule")
@@ -529,9 +518,9 @@ export function ScheduleInterviewModal({
                 ? t("interviews.updateSchedule")
                 : t("interviews.confirmSchedule")}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </MacOsModal>
   );
 }

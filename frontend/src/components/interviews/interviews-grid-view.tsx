@@ -18,6 +18,7 @@ import { getInitials, getCandidateDisplayName } from "@/lib/utils";
 import {
   getInterviewsFromApplication,
   getInterviewTypeLabel,
+  getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
@@ -209,7 +210,7 @@ export function InterviewsGridView({
                           </span>
                         </div>
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
-                          {currentInterview.scorecard.recommendation}
+                          {getRecommendationLabel(currentInterview.scorecard.recommendation, t)}
                         </span>
                       </div>
                     ) : (

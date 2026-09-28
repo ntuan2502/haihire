@@ -127,7 +127,7 @@ export default function MembersSettingsPage() {
       typeof window !== "undefined"
         ? window.location.origin
         : `http://${displayHost}`;
-    const fullUrl = `${origin}/join/${link.token}`;
+    const fullUrl = `${origin}/auth/join/${link.token}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedLinkId(link.id);
     setTimeout(() => setCopiedLinkId(null), 2000);

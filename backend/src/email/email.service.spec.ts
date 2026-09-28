@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { EmailService, interpolate, DEFAULT_TEMPLATES } from "./email.service";
 import { EmailTransporterFactory } from "./transporters/transporter.factory";
 import { EncryptionService } from "../common/encryption.service";
+import { env } from "../config/env";
 
 describe("EmailService", () => {
   let service: EmailService;
@@ -271,12 +272,26 @@ describe("EmailService", () => {
     it("should retrieve masked system email configuration from env", () => {
       const config = service.getSystemEmailConfig();
       expect(config).toBeDefined();
-      expect(config.provider).toBe("SIMULATED");
-      expect(config.fromName).toBe("HaiHire Platform");
-      expect(config.fromEmail).toBe("noreply@haihire.internal");
+      expect(config.provider).toBe(env.SYSTEM_EMAIL_PROVIDER);
+      expect(config.fromName).toBe(env.SYSTEM_EMAIL_FROM_NAME || "HaiHire Platform");
+      expect(config.fromEmail).toBe(env.SYSTEM_EMAIL_FROM_EMAIL || "noreply@haihire.internal");
     });
 
+    const mockSimulatedConfig = {
+      provider: "SIMULATED" as const,
+      fromName: "HaiHire Platform",
+      fromEmail: "noreply@haihire.internal",
+      smtpHost: null,
+      smtpPort: 587,
+      smtpUser: null,
+      smtpPass: null,
+      resendApiKey: null,
+      sendgridApiKey: null,
+    };
+
     it("should send system email with simulated provider", async () => {
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+
       const result = await service.sendSystemEmail({
         to: "user@example.com",
         recipientName: "New User",
@@ -297,6 +312,9 @@ describe("EmailService", () => {
     });
 
     it("should send system test email", async () => {
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+      vi.spyOn(service, "getSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+
       const result = await service.sendSystemTestEmail({
         to: "admin@example.com",
       });

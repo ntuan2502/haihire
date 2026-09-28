@@ -237,12 +237,12 @@ export default function CareerJobSlugPage() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 pb-12 sm:pt-6 sm:pb-16 space-y-6">
         {/* Back Link Breadcrumb */}
         <div>
           <Link
             href={`/careers/${orgSlug}`}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             <span>{t("careers.backToOrgJobs", { name: orgName })}</span>

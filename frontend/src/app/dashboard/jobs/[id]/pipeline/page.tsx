@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, Suspense } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   useJob,
@@ -75,9 +75,15 @@ function JobPipelinePageContent() {
     }
   }, [searchParams]);
 
+  const initialTargetAppId =
+    searchParams.get("applicationId") || searchParams.get("candidateId");
+  const handledTargetAppIdRef = useRef<string | null>(null);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">("score");
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(
+    () => initialTargetAppId || null,
+  );
   const [candidateTab, setCandidateTab] = useState<string>("overview");
 
   const [overviewSections, setOverviewSections] = useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
@@ -99,10 +105,62 @@ function JobPipelinePageContent() {
   const [candidateNoteInput, setCandidateNoteInput] = useState("");
   const [isUpdatingNote, setIsUpdatingNote] = useState(false);
 
+  useEffect(() => {
+    const targetId =
+      searchParams.get("applicationId") || searchParams.get("candidateId");
+    if (!targetId || jobApplications.length === 0) return;
+    if (handledTargetAppIdRef.current === targetId) return;
+
+    const targetApp = jobApplications.find(
+      (app) =>
+        String(app.id) === String(targetId) ||
+        String(app.candidateId) === String(targetId),
+    );
+
+    if (targetApp) {
+      handledTargetAppIdRef.current = targetId;
+      if (targetApp.stage !== selectedStage) {
+        setSelectedStage(targetApp.stage);
+      }
+      setSelectedAppId(targetApp.id);
+      setMobileDetailOpen(true);
+
+      setTimeout(() => {
+        const el =
+          document.getElementById(`candidate-card-${targetApp.id}`) ||
+          document.getElementById(`candidate-card-${targetApp.candidateId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }, 150);
+    }
+  }, [searchParams, jobApplications, selectedStage]);
+
+  const handleSelectCandidate = useCallback(
+    (candidateId: string) => {
+      setSelectedAppId(candidateId);
+      setMobileDetailOpen(true);
+      if (typeof window !== "undefined") {
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set("stage", selectedStage);
+        newParams.set("applicationId", candidateId);
+        newParams.delete("candidateId");
+        window.history.replaceState(
+          null,
+          "",
+          `/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`,
+        );
+      }
+    },
+    [selectedStage, jobId],
+  );
+
   const handleSelectStage = (stage: ApplicationStage) => {
     setSelectedStage(stage);
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set("stage", stage);
+    newParams.delete("applicationId");
+    newParams.delete("candidateId");
     router.replace(`/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`, {
       scroll: false,
     });
@@ -167,22 +225,54 @@ function JobPipelinePageContent() {
   }, [jobApplications, selectedStage, searchQuery, sortBy]);
 
   useEffect(() => {
+    if (appsLoading) return;
+
+    const targetId =
+      searchParams.get("applicationId") || searchParams.get("candidateId");
+    if (targetId && handledTargetAppIdRef.current !== targetId) return;
+
     if (filteredCandidates.length > 0) {
-      if (!selectedAppId || !filteredCandidates.some((c) => String(c.id) === String(selectedAppId))) {
-        setSelectedAppId(filteredCandidates[0].id);
+      const isSelectedInList = filteredCandidates.some(
+        (c) =>
+          String(c.id) === String(selectedAppId) ||
+          String(c.candidateId) === String(selectedAppId),
+      );
+      if (!selectedAppId || !isSelectedInList) {
+        const nextId = filteredCandidates[0].id;
+        setSelectedAppId(nextId);
+        if (typeof window !== "undefined") {
+          const newParams = new URLSearchParams(window.location.search);
+          newParams.set("stage", selectedStage);
+          newParams.set("applicationId", nextId);
+          newParams.delete("candidateId");
+          window.history.replaceState(
+            null,
+            "",
+            `/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`,
+          );
+        }
       }
     } else {
       setSelectedAppId(null);
     }
-  }, [filteredCandidates, selectedAppId]);
+  }, [appsLoading, searchParams, filteredCandidates, selectedAppId, selectedStage, jobId]);
 
   const selectedCandidate = useMemo(() => {
     return (
-      filteredCandidates.find((c) => String(c.id) === String(selectedAppId)) ||
+      filteredCandidates.find(
+        (c) =>
+          String(c.id) === String(selectedAppId) ||
+          String(c.candidateId) === String(selectedAppId),
+      ) ||
+      jobApplications.find(
+        (c) =>
+          String(c.id) === String(selectedAppId) ||
+          String(c.candidateId) === String(selectedAppId),
+      ) ||
       filteredCandidates[0] ||
       null
     );
-  }, [filteredCandidates, selectedAppId]);
+  }, [filteredCandidates, jobApplications, selectedAppId]);
 
   const currentIndex = useMemo(() => {
     if (!selectedCandidate) return -1;
@@ -193,13 +283,13 @@ function JobPipelinePageContent() {
 
   const handlePrevCandidate = () => {
     if (currentIndex > 0) {
-      setSelectedAppId(filteredCandidates[currentIndex - 1].id);
+      handleSelectCandidate(filteredCandidates[currentIndex - 1].id);
     }
   };
 
   const handleNextCandidate = () => {
     if (currentIndex >= 0 && currentIndex < filteredCandidates.length - 1) {
-      setSelectedAppId(filteredCandidates[currentIndex + 1].id);
+      handleSelectCandidate(filteredCandidates[currentIndex + 1].id);
     }
   };
 
@@ -456,10 +546,12 @@ function JobPipelinePageContent() {
                 <PipelineCandidateCard
                   key={candidate.id}
                   candidate={candidate}
-                  isSelected={String(candidate.id) === String(selectedAppId)}
+                  isSelected={
+                    String(candidate.id) === String(selectedAppId) ||
+                    String(candidate.candidateId) === String(selectedAppId)
+                  }
                   onSelect={() => {
-                    setSelectedAppId(candidate.id);
-                    setMobileDetailOpen(true);
+                    handleSelectCandidate(candidate.id);
                   }}
                 />
               ))

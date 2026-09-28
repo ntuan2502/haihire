@@ -38,9 +38,6 @@ const backendEnvSchema = z.object({
   SYSTEM_EMAIL_SMTP_PORT: z.coerce.number().int("SYSTEM_EMAIL_SMTP_PORT must be an integer"),
   SYSTEM_EMAIL_SMTP_USER: z.string(),
   SYSTEM_EMAIL_SMTP_PASS: z.string(),
-  SYSTEM_EMAIL_SMTP_SECURE: z
-    .enum(["true", "false", "1", "0"])
-    .transform((val) => val === "true" || val === "1"),
   SYSTEM_EMAIL_RESEND_API_KEY: z.string(),
   SYSTEM_EMAIL_SENDGRID_API_KEY: z.string(),
 })

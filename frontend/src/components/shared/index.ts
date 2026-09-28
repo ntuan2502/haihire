@@ -6,4 +6,12 @@ export * from "./language-dropdown";
 export * from "./theme-toggle";
 export * from "./auth-guard";
 export * from "./brand-logo";
-
+export * from "./macos-modal";
+export * from "./device-preview-frame";
+export * from "./device-preview-selector";
+export * from "./page-header";
+export * from "./metric-card";
+export * from "./segmented-tabs";
+export * from "./pagination";
+export * from "./search-input";
+export * from "./slide-over";

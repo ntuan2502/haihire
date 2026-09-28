@@ -10,6 +10,7 @@ import {
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { MacOsModal } from "@/components/shared";
 import {
   Building2,
   AlertTriangle,
@@ -105,7 +106,7 @@ export default function GeneralSettingsPage() {
       await deleteOrgMutation.mutateAsync();
       setDeleteModalOpen(false);
       logout();
-      router.push("/onboarding/create-org");
+      router.push("/auth/onboarding");
     } catch (err) {
       console.error("Failed to delete organization:", err);
       setSaveError("Failed to delete organization. Please try again.");
@@ -113,7 +114,7 @@ export default function GeneralSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="space-y-6 animate-in fade-in duration-200 max-w-4xl">
       {/* Header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
@@ -267,69 +268,76 @@ export default function GeneralSettingsPage() {
       )}
 
       {/* ================= DELETE ORGANIZATION CONFIRMATION MODAL ================= */}
-      {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-2xl border border-rose-200 dark:border-rose-900 bg-white dark:bg-slate-900 p-6 shadow-xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  {t("settings.deleteOrg")}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {t("settings.dangerZoneDesc")}
-                </p>
-              </div>
+      <MacOsModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteConfirmText("");
+        }}
+        title={t("settings.deleteOrg")}
+        size="sm"
+        contentClassName="p-5 sm:p-6 space-y-4 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
+              <AlertTriangle className="h-5 w-5" />
             </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              {t("settings.deleteOrgConfirmPrompt", { slug: orgSlug })}
-            </p>
-
             <div>
-              <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {t("settings.deleteOrgTypeToConfirm", { slug: orgSlug })}:
-              </label>
-              <Input
-                type="text"
-                placeholder={orgSlug}
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                className="h-9 text-xs"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setDeleteModalOpen(false);
-                  setDeleteConfirmText("");
-                }}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900"
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                type="button"
-                disabled={
-                  deleteConfirmText.toLowerCase() !== orgSlug.toLowerCase() ||
-                  deleteOrgMutation.isPending
-                }
-                onClick={handleDeleteOrg}
-                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl px-4"
-              >
-                {deleteOrgMutation.isPending
-                  ? t("settings.deletingOrg")
-                  : t("settings.deleteOrgButton")}
-              </Button>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                {t("settings.deleteOrg")}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t("settings.dangerZoneDesc")}
+              </p>
             </div>
           </div>
+
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            {t("settings.deleteOrgConfirmPrompt", { slug: orgSlug })}
+          </p>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              {t("settings.deleteOrgTypeToConfirm", { slug: orgSlug })}:
+            </label>
+            <Input
+              type="text"
+              placeholder={orgSlug}
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="h-9 text-xs"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200/60 dark:border-white/10">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setDeleteConfirmText("");
+              }}
+              className="h-8 px-3.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer shadow-2xs"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                deleteConfirmText.toLowerCase() !== orgSlug.toLowerCase() ||
+                deleteOrgMutation.isPending
+              }
+              onClick={handleDeleteOrg}
+              className="h-8 px-3.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer shadow-2xs"
+            >
+              {deleteOrgMutation.isPending
+                ? t("settings.deletingOrg")
+                : t("settings.deleteOrgButton")}
+            </Button>
+          </div>
         </div>
-      )}
+      </MacOsModal>
     </div>
   );
 }

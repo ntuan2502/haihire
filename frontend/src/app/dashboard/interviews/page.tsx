@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
 import { SearchInput } from "@/components/shared/search-input";
+import { SegmentedTabs } from "@/components/shared/segmented-tabs";
+import { SlideOver } from "@/components/shared/slide-over";
+import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useTableParams } from "@/hooks/use-table-params";
 import {
   useAllJobs,
@@ -20,24 +23,24 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
   Calendar,
   CalendarDays,
-  Clock,
   Plus,
-  LayoutGrid,
   List,
   ArrowUpDown,
-  Users,
+  Columns3,
+  SlidersHorizontal,
+  RotateCcw,
+  X,
 } from "lucide-react";
 import {
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
-import { InterviewsGridView } from "@/components/interviews/interviews-grid-view";
 import { InterviewsTableView } from "@/components/interviews/interviews-table-view";
 import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
 import { useI18n } from "@/i18n";
 import type { Application } from "@/types";
 
-type ViewMode = "grid" | "table" | "calendar";
+type ViewMode = "table" | "calendar";
 type SortOption = "upcoming" | "newest" | "name";
 
 function InterviewsPageContent() {
@@ -72,20 +75,62 @@ function InterviewsPageContent() {
   const activeTab: "ALL" | "UPCOMING" | "AWAITING" =
     rawTab === "UPCOMING" || rawTab === "AWAITING" ? rawTab : "ALL";
 
-  const rawViewMode = getParam("viewMode", "grid");
+  const rawViewMode = getParam("viewMode", "table");
   const viewMode: ViewMode =
-    rawViewMode === "table" || rawViewMode === "calendar" ? rawViewMode : "grid";
+    rawViewMode === "calendar" ? "calendar" : "table";
 
   const rawSortBy = getParam("sortBy", "upcoming");
   const sortBy: SortOption =
     rawSortBy === "newest" || rawSortBy === "name" ? rawSortBy : "upcoming";
 
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  // Filter Drawer State & Columns Dropdown State
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
+  const columnsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        columnsRef.current &&
+        !columnsRef.current.contains(event.target as Node)
+      ) {
+        setIsColumnsOpen(false);
+      }
+    }
+    if (isColumnsOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isColumnsOpen]);
+
+  const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
+    "haihire_interviews_columns_v1",
+    {
+      candidate: true,
+      job: true,
+      schedule: true,
+      interviewer: true,
+      status: true,
+      rating: true,
+    },
+  );
+
+  const secondaryFiltersCount =
+    (selectedJobFilter !== "ALL" ? 1 : 0) +
+    (sortBy !== "upcoming" ? 1 : 0);
+  const hasSecondaryFilters = secondaryFiltersCount > 0;
+
+  const handleResetFilters = () => {
+    setParam("jobId", "ALL");
+    setParam("sortBy", "upcoming");
+  };
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(user?.organizationId);
   const { data: allApplications = [] } = useAllApplications(user?.organizationId);
 
-  // Paginated interviews query from server API
+  // Paginated interviews query from server API (for Table view & Total KPIs)
   const { data: interviewsData, isLoading: appsLoading } = useInterviews({
     organizationId: user?.organizationId,
     page: currentPage,
@@ -94,6 +139,16 @@ function InterviewsPageContent() {
     jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
     tab: activeTab,
     sortBy,
+  });
+
+  // Full interviews query for Calendar view (all scheduled events, up to 1000 items)
+  const { data: calendarInterviewsData, isLoading: calendarLoading } = useInterviews({
+    organizationId: user?.organizationId,
+    limit: 1000,
+    search: searchQuery.trim() || undefined,
+    jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
+    tab: activeTab,
+    enabled: viewMode === "calendar",
   });
 
   // Efficient KPI queries
@@ -122,12 +177,27 @@ function InterviewsPageContent() {
       .filter(Boolean);
   }, [interviewsData]);
 
+  const calendarApplications = useMemo(() => {
+    return (calendarInterviewsData?.data || [])
+      .map((intv) => intv.application as Application)
+      .filter(Boolean);
+  }, [calendarInterviewsData]);
+
   const filteredAndSortedList = paginatedList;
 
-  // KPIs
+  // Status counts for SegmentedTabs
   const scheduledCount = upcomingData?.total ?? 0;
   const awaitingCount = awaitingData?.total ?? 0;
   const totalCandidateCount = allData?.total ?? 0;
+
+  const interviewTabs = useMemo(
+    () => [
+      { id: "ALL", label: t("common.all"), count: totalCandidateCount },
+      { id: "UPCOMING", label: t("interviews.kpiScheduled"), count: scheduledCount },
+      { id: "AWAITING", label: t("interviews.kpiAwaiting"), count: awaitingCount },
+    ],
+    [t, totalCandidateCount, scheduledCount, awaitingCount],
+  );
 
   // Open Schedule Modal (for new schedule or editing existing interview)
   const handleOpenScheduleModal = (
@@ -148,14 +218,6 @@ function InterviewsPageContent() {
     setScorecardModalOpen(true);
   };
 
-  // Toggle card history expansion
-  const toggleCardHistory = (appId: string) => {
-    setExpandedCards((prev) => ({
-      ...prev,
-      [appId]: !prev[appId],
-    }));
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       {/* Navbar */}
@@ -167,213 +229,220 @@ function InterviewsPageContent() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* Header Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                {t("interviews.title")}
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60">
-                {t("interviews.candidatesCount", { count: totalCandidateCount })}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {t("interviews.pageSubtitle")}
-            </p>
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+        {/* Standard Header Row matching Jobs, Candidates & Applications */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {t("interviews.title")}
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {totalCandidateCount}
+            </span>
           </div>
 
-          {canEdit && (
-            <Button
-              onClick={() => handleOpenScheduleModal()}
-              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>{t("interviews.scheduleNew")}</span>
-            </Button>
-          )}
-        </div>
-
-        {/* 3 KPI Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiScheduled")}</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{scheduledCount}</span>
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{t("interviews.kpiReady")}</span>
-              </div>
-            </div>
-            <div className="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-900/50">
-              <Calendar className="h-5 w-5" />
-            </div>
-          </div>
-
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiAwaiting")}</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">{awaitingCount}</span>
-                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">{t("interviews.kpiActionRequired")}</span>
-              </div>
-            </div>
-            <div className="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-900/50">
-              <Clock className="h-5 w-5" />
-            </div>
-          </div>
-
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs">
-            <div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("interviews.kpiTotalCandidates")}</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{totalCandidateCount}</span>
-                <span className="text-[11px] font-semibold text-slate-400">{t("interviews.candidatesUnit")}</span>
-              </div>
-            </div>
-            <div className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 border border-slate-200/80 dark:border-slate-700">
-              <Users className="h-5 w-5" />
-            </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {canEdit && (
+              <Button
+                size="sm"
+                onClick={() => handleOpenScheduleModal()}
+                className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>{t("interviews.scheduleNew")}</span>
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Filters, Tabs & View Controls */}
-        <div className="space-y-3 pt-1">
-          {/* Row 1: Status Tabs & View Mode Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Status Tabs */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 w-fit border border-slate-200/60 dark:border-slate-700/60">
+        {/* Modern Unified Responsive Toolbar matching Jobs, Candidates & Applications */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Left: Quick Status Tabs using SegmentedTabs */}
+          <SegmentedTabs
+            tabs={interviewTabs}
+            activeTab={activeTab}
+            onChange={(tabId) => setParam("tab", tabId)}
+          />
+
+          {/* Right: View Mode Switcher + Search Box + Columns Dropdown + Filters Button */}
+          <div className="flex items-center gap-2.5 w-full lg:w-auto">
+            {/* View Mode Switcher (Table / Calendar) */}
+            <div className="flex items-center p-0.5 rounded-xl bg-slate-100/90 dark:bg-slate-850 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shrink-0">
               <button
                 type="button"
-                onClick={() => setParam("tab", "ALL")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "ALL"
-                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
+                onClick={() => setParam("viewMode", "table", false)}
+                className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs"
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                 }`}
+                title={t("interviews.tableTitle")}
               >
-                {t("interviews.tabAll", { count: totalCandidateCount })}
+                <List className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t("interviews.table")}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setParam("tab", "UPCOMING")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "UPCOMING"
-                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                onClick={() => setParam("viewMode", "calendar", false)}
+                className={`h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === "calendar"
+                    ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs"
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                 }`}
+                title={t("interviews.calendarTitle")}
               >
-                {t("interviews.tabScheduled", { count: scheduledCount })}
-              </button>
-              <button
-                type="button"
-                onClick={() => setParam("tab", "AWAITING")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "AWAITING"
-                    ? "bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs"
-                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {t("interviews.tabAwaiting", { count: awaitingCount })}
+                <CalendarDays className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t("interviews.calendar")}</span>
               </button>
             </div>
 
-            {/* Right Controls: Item Count + View Mode Switcher */}
-            <div className="flex items-center gap-2.5 self-end sm:self-auto">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">
-                {t("interviews.candidatesCount", { count: totalItems })}
-              </span>
-              <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setParam("viewMode", "grid", false)}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
-                    viewMode === "grid"
-                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                  title={t("interviews.gridTitle")}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">{t("interviews.grid")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setParam("viewMode", "table", false)}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
-                    viewMode === "table"
-                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                  title={t("interviews.tableTitle")}
-                >
-                  <List className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">{t("interviews.table")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setParam("viewMode", "calendar", false)}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
-                    viewMode === "calendar"
-                      ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                  title={t("interviews.calendarTitle")}
-                >
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">{t("interviews.calendar")}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 2: Search, Filter & Sort Strip */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             {/* Search Input */}
-            <SearchInput
-              placeholder={t("interviews.searchPlaceholder")}
-              value={searchQuery}
-              onChange={setSearch}
-              inputClassName="h-9.5"
-            />
-
-            {/* Job Filter Dropdown */}
-            <div className="sm:w-64">
-              <CustomSelect
-                value={selectedJobFilter}
-                onChange={(val) => setParam("jobId", val)}
-                options={[
-                  { value: "ALL", label: t("interviews.allJobsOption") },
-                  ...jobs.map((job) => ({
-                    value: job.id,
-                    label: `${job.title} (${job.department})`,
-                  })),
-                ]}
-                className="w-full"
-                triggerClassName="h-9.5 text-xs font-medium"
+            <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+              <SearchInput
+                placeholder={t("interviews.searchPlaceholder")}
+                value={searchQuery}
+                onChange={setSearch}
               />
             </div>
 
-            {/* Sort Dropdown */}
-            <div className="sm:w-56">
-              <CustomSelect
-                value={sortBy}
-                onChange={(val) => setParam("sortBy", val)}
-                icon={ArrowUpDown}
-                options={[
-                  { value: "upcoming", label: t("interviews.sortUpcoming") },
-                  { value: "newest", label: t("interviews.sortNewest") },
-                  { value: "name", label: t("interviews.sortName") },
-                ]}
-                className="w-full"
-                triggerClassName="h-9.5 text-xs font-medium"
-              />
-            </div>
+            {/* Columns Dropdown (Table View Only) */}
+            {viewMode === "table" && (
+              <div className="relative shrink-0" ref={columnsRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsColumnsOpen((prev) => !prev)}
+                  className={`h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
+                    isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
+                  }`}
+                >
+                  <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+                  <span>{t("common.columns")}</span>
+                </button>
+
+                {isColumnsOpen && (
+                  <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
+                    <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                      {t("interviews.toggleColumns")}
+                    </div>
+                    <div className="space-y-0.5 mt-1">
+                      {[
+                        { id: "candidate", label: t("interviews.columns.candidate"), locked: true },
+                        { id: "job", label: t("interviews.columns.job") },
+                        { id: "schedule", label: t("interviews.columns.schedule") },
+                        { id: "interviewer", label: t("interviews.columns.interviewer") },
+                        { id: "status", label: t("interviews.columns.status") },
+                        { id: "rating", label: t("interviews.columns.rating") },
+                      ].map((col) => {
+                        const isChecked =
+                          visibleColumns[col.id as keyof typeof visibleColumns];
+                        const isLocked = col.locked;
+                        return (
+                          <label
+                            key={col.id}
+                            className={`flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-xs font-semibold select-none transition-colors ${
+                              isLocked
+                                ? "opacity-60 cursor-not-allowed text-slate-500 dark:text-slate-400"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={isLocked}
+                              onChange={() =>
+                                toggleColumn(
+                                  col.id as keyof typeof visibleColumns,
+                                )
+                              }
+                              className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                            />
+                            <span>{col.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Filters Button */}
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(true)}
+              className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+              <span>{t("common.filter")}</span>
+              {secondaryFiltersCount > 0 && (
+                <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                  {secondaryFiltersCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Active Filter Chips Bar */}
+        {hasSecondaryFilters && (
+          <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+            <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+            {selectedJobFilter !== "ALL" && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
+                <span>{jobs.find((j) => j.id === selectedJobFilter)?.title || selectedJobFilter}</span>
+                <button
+                  type="button"
+                  onClick={() => setParam("jobId", "ALL")}
+                  className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+            {sortBy !== "upcoming" && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
+                <span>
+                  {sortBy === "newest"
+                    ? t("interviews.sortNewest")
+                    : t("interviews.sortName")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setParam("sortBy", "upcoming")}
+                  className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-medium cursor-pointer transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>{t("jobs.resetAll")}</span>
+            </button>
+          </div>
+        )}
 
         {/* Content Section */}
-        {(jobsLoading || appsLoading) && !interviewsData ? (
+        {viewMode === "calendar" ? (
+          calendarLoading && !calendarInterviewsData ? (
+            <div className="py-20 flex justify-center">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <InterviewsCalendarView
+              applications={calendarApplications}
+              jobs={jobs}
+              onScheduleDate={(dateStr) => handleOpenScheduleModal(undefined, dateStr)}
+              onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date, intv)}
+              onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
+              canEdit={canEdit}
+            />
+          )
+        ) : (jobsLoading || appsLoading) && !interviewsData ? (
           <div className="py-20 flex justify-center">
             <LoadingSpinner />
           </div>
@@ -398,42 +467,30 @@ function InterviewsPageContent() {
               </Button>
             )}
           </div>
-        ) : viewMode === "calendar" ? (
-          <InterviewsCalendarView
-            applications={filteredAndSortedList}
-            jobs={jobs}
-            onScheduleDate={(dateStr) => handleOpenScheduleModal(undefined, dateStr)}
-            onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date, intv)}
-            onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
-            canEdit={canEdit}
-          />
-        ) : viewMode === "grid" ? (
-          <InterviewsGridView
-            applications={paginatedList}
-            jobs={jobs}
-            expandedCards={expandedCards}
-            onToggleCardHistory={toggleCardHistory}
-            onOpenScheduleModal={handleOpenScheduleModal}
-            onOpenScorecard={handleOpenScorecard}
-            onNavigateToPipeline={(jobId) =>
-              router.push(`/dashboard/jobs/${jobId}/pipeline?stage=INTERVIEW`)
-            }
-            canEdit={canEdit}
-          />
         ) : (
           <InterviewsTableView
             applications={paginatedList}
             jobs={jobs}
+            visibleColumns={visibleColumns}
             onOpenScheduleModal={handleOpenScheduleModal}
             onOpenScorecard={handleOpenScorecard}
-            onNavigateToPipeline={(jobId) =>
-              router.push(`/dashboard/jobs/${jobId}/pipeline?stage=INTERVIEW`)
-            }
+            onNavigateToPipeline={(jobId, applicationId, stage) => {
+              const query = new URLSearchParams();
+              if (stage) {
+                query.set("stage", stage);
+              } else {
+                query.set("stage", "INTERVIEW");
+              }
+              if (applicationId) {
+                query.set("applicationId", applicationId);
+              }
+              router.push(`/dashboard/jobs/${jobId}/pipeline?${query.toString()}`);
+            }}
             canEdit={canEdit}
           />
         )}
 
-        {/* Pagination Bar (Only for Grid and Table modes) */}
+        {/* Pagination Bar (Only for Table mode) */}
         {filteredAndSortedList.length > 0 && viewMode !== "calendar" && (
           <div className="pt-2">
             <Pagination
@@ -479,6 +536,117 @@ function InterviewsPageContent() {
         interview={selectedInterviewForScorecard}
         job={jobs.find((j) => String(j.id) === String(selectedAppForScorecard?.jobId))}
       />
+
+      {/* Interviews Filter Drawer (SlideOver) matching Jobs / Applications / Candidates UX */}
+      <SlideOver
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        title={t("applications.filters")}
+        description={t("jobs.filterJobsDesc")}
+        width="max-w-md"
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
+            {/* 1. FILTER BY JOB */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("applications.filterByJob")}
+              </span>
+              <CustomSelect
+                value={selectedJobFilter}
+                onChange={(val) => setParam("jobId", val)}
+                options={[
+                  { value: "ALL", label: t("interviews.allJobsOption") },
+                  ...jobs.map((j) => ({
+                    value: j.id,
+                    label: `${j.title} (${j.department})`,
+                  })),
+                ]}
+                className="w-full"
+                triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+              />
+            </div>
+
+            {/* 2. STATUS TAB PILLS */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("interviews.tableHeaders.status")}
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: "ALL", label: t("interviews.tabAll", { count: totalCandidateCount }) },
+                  { id: "UPCOMING", label: t("interviews.tabScheduled", { count: scheduledCount }) },
+                  { id: "AWAITING", label: t("interviews.tabAwaiting", { count: awaitingCount }) },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setParam("tab", item.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                      activeTab === item.id
+                        ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
+                        : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. SORT BY */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("jobs.sortByUpper")}
+              </span>
+              <CustomSelect
+                value={sortBy}
+                onChange={(val) => setParam("sortBy", val)}
+                icon={ArrowUpDown}
+                options={[
+                  { value: "upcoming", label: t("interviews.sortUpcoming") },
+                  { value: "newest", label: t("interviews.sortNewest") },
+                  { value: "name", label: t("interviews.sortName") },
+                ]}
+                className="w-full"
+                triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>{t("jobs.resetAll")}</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFilterOpen(false)}
+                className="h-8 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsFilterOpen(false)}
+                className="h-8 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                {t("jobs.done")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </SlideOver>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { db } from "../prisma/db.ts";
 import { seed } from "../prisma/seed.ts";
+import { toTimestamp } from "../common/date.util.ts";
 
 export interface StarterUser {
   id: string;
@@ -46,7 +47,7 @@ export class UsersService {
         name: user.name,
         role: user.role,
         avatarUrl: user.avatarUrl ?? null,
-        createdAt: user.createdAt,
+        createdAt: new Date(toTimestamp(user.createdAt)),
       })),
       total,
       page,

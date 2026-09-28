@@ -138,18 +138,21 @@ export default function OrgCareersPage() {
       />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-slate-100/50 dark:from-slate-900 dark:via-slate-900/50 dark:to-slate-950 border-b border-slate-200/80 dark:border-slate-800 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/50 to-slate-100/50 dark:from-slate-900 dark:via-slate-900/50 dark:to-slate-950 border-b border-slate-200/80 dark:border-slate-800 py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-radial-[circle_at_top_right] from-blue-500/5 dark:from-blue-500/10 via-transparent to-transparent pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-5 relative">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 shadow-2xs">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{t("careers.hiringTalentBadge")}</span>
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-5">
+          {/* Eyebrow Badge */}
+          <div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 shadow-2xs">
+              <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{t("careers.hiringTalentBadge")}</span>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight text-balance">
             {t("careers.buildCareerWith")}{" "}
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               {orgName}
             </span>
           </h1>
@@ -159,7 +162,7 @@ export default function OrgCareersPage() {
           </p>
 
           {/* Quick Metrics */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-semibold text-slate-600 dark:text-slate-300">
             <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-blue-600" />
               <span>
@@ -179,7 +182,7 @@ export default function OrgCareersPage() {
       </section>
 
       {/* Main Content: Search, Filter, Jobs Grid */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
         {/* Search & Filter Bar */}
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">

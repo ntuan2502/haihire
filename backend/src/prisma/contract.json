@@ -1513,13 +1513,6 @@
                   "kind": "scalar"
                 }
               },
-              "smtpSecure": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/bool@1",
-                  "kind": "scalar"
-                }
-              },
               "smtpUser": {
                 "nullable": true,
                 "type": {
@@ -1587,9 +1580,6 @@
                 },
                 "smtpPort": {
                   "column": "smtpPort"
-                },
-                "smtpSecure": {
-                  "column": "smtpSecure"
                 },
                 "smtpUser": {
                   "column": "smtpUser"
@@ -3772,15 +3762,6 @@
                   "nativeType": "int4",
                   "nullable": true
                 },
-                "smtpSecure": {
-                  "codecId": "pg/bool@1",
-                  "default": {
-                    "kind": "literal",
-                    "value": true
-                  },
-                  "nativeType": "bool",
-                  "nullable": false
-                },
                 "smtpUser": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -4874,7 +4855,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "87a407d419bf51e30358af773efd868a72ae367fe09133c0c5909c808540bf52"
+    "storageHash": "42054e8c4b0f71517a63230f595080753f3aae773134d3f454999ecac182f27c"
   },
   "execution": {
     "executionHash": "0e50d3ac55cd1bb8d6595db6bbf3a1ef491fae96f6eff9e2ae842a7955555f0b",

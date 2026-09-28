@@ -3,6 +3,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { fixUtf8String } from "../applications/applications.service";
+import { toTimestamp } from "../common/date.util";
 
 @Injectable()
 export class JobsService {
@@ -15,6 +16,11 @@ export class JobsService {
     status?: string;
     department?: string;
     search?: string;
+    type?: string;
+    experienceLevel?: string;
+    workplace?: string;
+    sortBy?: string;
+    sortOrder?: string;
     organizationId?: string;
     organizationSlug?: string;
     page?: number;
@@ -64,12 +70,28 @@ export class JobsService {
       : await jobsQuery.all();
 
     if (filter?.status) {
-      jobs = jobs.filter((j) => j.status === filter.status);
+      const statuses = filter.status.split(",").map((s) => s.trim().toUpperCase());
+      jobs = jobs.filter((j) => {
+        if (statuses.includes("CLOSED") && j.status === "ARCHIVED") return true;
+        return statuses.includes(j.status);
+      });
     }
     if (filter?.department) {
       jobs = jobs.filter(
         (j) => j.department.toLowerCase() === filter.department?.toLowerCase(),
       );
+    }
+    if (filter?.type) {
+      const types = filter.type.split(",").map((t) => t.trim().toUpperCase());
+      jobs = jobs.filter((j) => j.type && types.includes(j.type.toUpperCase()));
+    }
+    if (filter?.experienceLevel) {
+      const levels = filter.experienceLevel.split(",").map((l) => l.trim().toUpperCase());
+      jobs = jobs.filter((j) => j.experienceLevel && levels.includes(j.experienceLevel.toUpperCase()));
+    }
+    if (filter?.workplace) {
+      const places = filter.workplace.split(",").map((w) => w.trim().toUpperCase());
+      jobs = jobs.filter((j) => j.workplace && places.includes(j.workplace.toUpperCase()));
     }
     if (filter?.search) {
       const s = filter.search.toLowerCase();
@@ -79,6 +101,23 @@ export class JobsService {
           j.department.toLowerCase().includes(s) ||
           j.location.toLowerCase().includes(s),
       );
+    }
+
+    const sortBy = filter?.sortBy || "created";
+    const sortOrder = filter?.sortOrder || "desc";
+
+    if (sortBy === "title") {
+      jobs.sort((a, b) =>
+        sortOrder === "asc"
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title),
+      );
+    } else {
+      jobs.sort((a, b) => {
+        const aDate = toTimestamp(a.createdAt);
+        const bDate = toTimestamp(b.createdAt);
+        return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+      });
     }
 
     if (jobs.length === 0) {

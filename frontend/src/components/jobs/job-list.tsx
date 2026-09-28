@@ -1,21 +1,17 @@
 "use client";
 
-import { useState, useMemo, type Dispatch, type SetStateAction } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  LayoutGrid,
-  List as ListIcon,
-  Table,
   SlidersHorizontal,
+  Columns3,
   MapPin,
   X,
   RotateCcw,
   Plus,
-  ChevronDown,
-  ArrowUpDown,
-  Eye,
-  Sparkles,
+  ArrowRight,
   Share2,
   Check,
 } from "lucide-react";
@@ -24,18 +20,25 @@ import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { Pagination } from "@/components/shared/pagination";
 import { SearchInput } from "@/components/shared/search-input";
-import type { Job, Application, ApplicationStage } from "@/types";
+import { SegmentedTabs } from "@/components/shared/segmented-tabs";
+import { usePersistedColumns } from "@/hooks/use-persisted-columns";
+import type { Job, ApplicationStage } from "@/types";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { usePipelineStages } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import { getJobPublicUrl } from "@/lib/utils";
 import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 
-type ViewMode = "grid" | "list" | "table";
 
 interface JobListProps {
   jobs: Job[];
   total?: number;
+  statusCounts?: {
+    all: number;
+    published: number;
+    draft: number;
+    closed: number;
+  };
   currentPage?: number;
   totalPages?: number;
   pageSize?: number;
@@ -43,18 +46,28 @@ interface JobListProps {
   onPageSizeChange?: (pageSize: number) => void;
   search?: string;
   onSearchChange?: (search: string) => void;
-  viewMode?: ViewMode;
-  onViewModeChange?: (mode: ViewMode) => void;
-  applications?: Application[];
   loading: boolean;
-  onViewCandidates: (jobId: string) => void;
-  onOpenCreateJob: () => void;
   onDeleteJob: (jobId: string) => void;
+  statusFilter?: string;
+  typeFilter?: string;
+  expFilter?: string;
+  workplaceFilter?: string;
+  sortBy?: "created" | "title" | "applicants";
+  sortOrder?: "desc" | "asc";
+  onFilterChange?: (filters: {
+    status?: string;
+    type?: string;
+    experience?: string;
+    workplace?: string;
+    sortBy?: "created" | "title" | "applicants";
+    sortOrder?: "desc" | "asc";
+  }) => void;
 }
 
 export function JobList({
   jobs,
   total,
+  statusCounts,
   currentPage = 1,
   totalPages = 1,
   pageSize = 20,
@@ -62,14 +75,18 @@ export function JobList({
   onPageSizeChange,
   search: propSearch,
   onSearchChange,
-  viewMode: propViewMode,
-  onViewModeChange,
-  applications: _applications = [],
-  onViewCandidates: _onViewCandidates,
-  _onOpenCreateJob,
-}: JobListProps & { _onOpenCreateJob?: () => void }) {
+  loading: _loading,
+  onDeleteJob: _onDeleteJob,
+  statusFilter,
+  typeFilter,
+  expFilter,
+  workplaceFilter,
+  sortBy: propSortBy,
+  sortOrder: propSortOrder,
+  onFilterChange,
+}: JobListProps) {
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const pipelineStages = usePipelineStages();
 
   // Toolbar & View state (controlled or local)
@@ -83,76 +100,192 @@ export function JobList({
     }
   };
 
-  const [localViewMode, setLocalViewMode] = useState<ViewMode>("grid");
-  const viewMode = onViewModeChange && propViewMode !== undefined ? propViewMode : localViewMode;
-  const setViewMode = (mode: ViewMode) => {
-    if (onViewModeChange) {
-      onViewModeChange(mode);
-    } else {
-      setLocalViewMode(mode);
-    }
-  };
-
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
 
-  // Filter criteria state
-  const [statusFilters, setStatusFilters] = useState<string[]>([]);
-  const [typeFilters, setTypeFilters] = useState<string[]>([]);
-  const [expFilters, setExpFilters] = useState<string[]>([]);
-  const [workplaceFilters, setWorkplaceFilters] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<"created" | "title" | "applicants">("created");
-  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  // Column Visibility Toggle State persisted in localStorage
+  const [isColumnsOpen, setIsColumnsOpen] = useState(false);
+  const columnsRef = useRef<HTMLDivElement>(null);
+  const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
+    "haihire_jobs_columns_v1",
+    {
+      title: true,
+      status: true,
+      pipeline: true,
+      applicants: true,
+    },
+  );
 
-  // Toggle filter pill helper
-  const toggleFilter = (
-    list: string[],
-    setList: Dispatch<SetStateAction<string[]>>,
-    val: string,
-  ) => {
-    if (list.includes(val)) {
-      setList(list.filter((x) => x !== val));
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        columnsRef.current &&
+        !columnsRef.current.contains(event.target as Node)
+      ) {
+        setIsColumnsOpen(false);
+      }
+    }
+    if (isColumnsOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isColumnsOpen]);
+
+  // Filter criteria state - synchronized with URL via props or local fallback
+  const [localStatusFilters, setLocalStatusFilters] = useState<string[]>([]);
+  const statusFilters = useMemo(
+    () => (statusFilter !== undefined ? (statusFilter ? statusFilter.split(",") : []) : localStatusFilters),
+    [statusFilter, localStatusFilters],
+  );
+
+  const [localTypeFilters, setLocalTypeFilters] = useState<string[]>([]);
+  const typeFilters = useMemo(
+    () => (typeFilter !== undefined ? (typeFilter ? typeFilter.split(",") : []) : localTypeFilters),
+    [typeFilter, localTypeFilters],
+  );
+
+  const [localExpFilters, setLocalExpFilters] = useState<string[]>([]);
+  const expFilters = useMemo(
+    () => (expFilter !== undefined ? (expFilter ? expFilter.split(",") : []) : localExpFilters),
+    [expFilter, localExpFilters],
+  );
+
+  const [localWorkplaceFilters, setLocalWorkplaceFilters] = useState<string[]>([]);
+  const workplaceFilters = useMemo(
+    () => (workplaceFilter !== undefined ? (workplaceFilter ? workplaceFilter.split(",") : []) : localWorkplaceFilters),
+    [workplaceFilter, localWorkplaceFilters],
+  );
+
+  const [localSortBy, setLocalSortBy] = useState<"created" | "title" | "applicants">("created");
+  const sortBy = propSortBy || localSortBy;
+
+  const [localSortOrder, setLocalSortOrder] = useState<"desc" | "asc">("desc");
+  const sortOrder = propSortOrder || localSortOrder;
+
+  // Single dispatch helper to update URL filters
+  const handleFilterUpdate = (updates: {
+    status?: string[];
+    type?: string[];
+    exp?: string[];
+    workplace?: string[];
+    sortBy?: "created" | "title" | "applicants";
+    sortOrder?: "desc" | "asc";
+  }) => {
+    const nextStatus = updates.status !== undefined ? updates.status : statusFilters;
+    const nextType = updates.type !== undefined ? updates.type : typeFilters;
+    const nextExp = updates.exp !== undefined ? updates.exp : expFilters;
+    const nextWorkplace = updates.workplace !== undefined ? updates.workplace : workplaceFilters;
+    const nextSortBy = updates.sortBy !== undefined ? updates.sortBy : sortBy;
+    const nextSortOrder = updates.sortOrder !== undefined ? updates.sortOrder : sortOrder;
+
+    if (onFilterChange) {
+      onFilterChange({
+        status: nextStatus.length > 0 ? nextStatus.join(",") : undefined,
+        type: nextType.length > 0 ? nextType.join(",") : undefined,
+        experience: nextExp.length > 0 ? nextExp.join(",") : undefined,
+        workplace: nextWorkplace.length > 0 ? nextWorkplace.join(",") : undefined,
+        sortBy: nextSortBy,
+        sortOrder: nextSortOrder,
+      });
     } else {
-      setList([...list, val]);
+      setLocalStatusFilters(nextStatus);
+      setLocalTypeFilters(nextType);
+      setLocalExpFilters(nextExp);
+      setLocalWorkplaceFilters(nextWorkplace);
+      setLocalSortBy(nextSortBy);
+      setLocalSortOrder(nextSortOrder);
     }
   };
 
-  const handleResetFilters = () => {
-    setStatusFilters([]);
-    setTypeFilters([]);
-    setExpFilters([]);
-    setWorkplaceFilters([]);
-    setSortBy("created");
-    setSortOrder("desc");
+  const toggleFilter = (
+    key: "status" | "type" | "exp" | "workplace",
+    currentList: string[],
+    val: string,
+  ) => {
+    const next = currentList.includes(val)
+      ? currentList.filter((x) => x !== val)
+      : [...currentList, val];
+    handleFilterUpdate({ [key]: next });
   };
 
-  // Filter & Sort jobs
+  const handleResetFilters = () => {
+    if (onFilterChange) {
+      onFilterChange({
+        status: undefined,
+        type: undefined,
+        experience: undefined,
+        workplace: undefined,
+        sortBy: "created",
+        sortOrder: "desc",
+      });
+    } else {
+      setLocalStatusFilters([]);
+      setLocalTypeFilters([]);
+      setLocalExpFilters([]);
+      setLocalWorkplaceFilters([]);
+      setLocalSortBy("created");
+      setLocalSortOrder("desc");
+    }
+  };
+
+
+  const secondaryFiltersCount =
+    (typeFilters.length > 0 ? 1 : 0) +
+    (expFilters.length > 0 ? 1 : 0) +
+    (workplaceFilters.length > 0 ? 1 : 0) +
+    (sortBy !== "created" || sortOrder !== "desc" ? 1 : 0);
+
+  const statusTabs = useMemo(() => [
+    {
+      id: "ALL",
+      label: t("common.all"),
+      count: statusCounts?.all ?? (total !== undefined ? total : jobs.length),
+    },
+    {
+      id: "PUBLISHED",
+      label: t("jobs.openStatus"),
+      count: statusCounts?.published,
+    },
+    {
+      id: "DRAFT",
+      label: t("jobs.draftStatus"),
+      count: statusCounts?.draft,
+    },
+    {
+      id: "CLOSED",
+      label: t("jobs.closed"),
+      count: statusCounts?.closed,
+    },
+  ], [t, statusCounts, total, jobs.length]);
+
+  // If server-side filtered, `jobs` is already processed by backend API.
+  // Fallback to client-side filtering only when not server-paginated.
   const filteredJobs = useMemo(() => {
+    if (onPageChange) {
+      return jobs;
+    }
     return jobs
       .filter((job) => {
-        // Search text
         const matchSearch =
           !search ||
           job.title.toLowerCase().includes(search.toLowerCase()) ||
           job.location.toLowerCase().includes(search.toLowerCase()) ||
           job.description.toLowerCase().includes(search.toLowerCase());
 
-        // Status filter (PUBLISHED, DRAFT, CLOSED)
         const matchStatus =
           statusFilters.length === 0 ||
           (job.status && statusFilters.includes(job.status)) ||
           (statusFilters.includes("CLOSED") && job.status === "ARCHIVED");
 
-        // Employment type
         const matchType =
           typeFilters.length === 0 || (job.type && typeFilters.includes(job.type));
 
-        // Experience level
         const matchExp =
           expFilters.length === 0 ||
           (job.experienceLevel && expFilters.includes(job.experienceLevel));
 
-        // Workplace
         const matchWorkplace =
           workplaceFilters.length === 0 ||
           (job.workplace && workplaceFilters.includes(job.workplace));
@@ -170,12 +303,11 @@ export function JobList({
           const bCount = b.applicationsCount || 0;
           return sortOrder === "asc" ? aCount - bCount : bCount - aCount;
         }
-        // default: created
         const aDate = new Date(a.createdAt).getTime();
         const bDate = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
       });
-  }, [jobs, search, statusFilters, typeFilters, expFilters, workplaceFilters, sortBy, sortOrder]);
+  }, [jobs, onPageChange, search, statusFilters, typeFilters, expFilters, workplaceFilters, sortBy, sortOrder]);
 
   // Stage count helper for a job
   const getJobStageCounts = (jobId: string) => {
@@ -193,88 +325,165 @@ export function JobList({
     };
   };
 
+  const hasSecondaryFilters =
+    typeFilters.length > 0 || expFilters.length > 0 || workplaceFilters.length > 0;
+
   return (
-    <div className="space-y-5">
-      {/* Top Control Bar matching screenshot */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Left: Search input */}
-        <SearchInput
-          placeholder={t("jobs.searchJobs")}
-          value={search}
-          onChange={setSearch}
+    <div className="space-y-4">
+      {/* Modern Unified Responsive Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Left: Quick Status Tabs (Smooth horizontal swipe on mobile/tablet) */}
+        <SegmentedTabs
+          multiSelect
+          tabs={statusTabs}
+          activeTabs={statusFilters}
+          onToggleTab={(tabId) => toggleFilter("status", statusFilters, tabId)}
+          onClearAll={() => handleFilterUpdate({ status: [] })}
         />
 
-        {/* Right: Views dropdown, 3 View toggles & Filters button */}
-        <div className="flex items-center gap-2">
-          {/* Views Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              disabled
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1.5 opacity-50 cursor-not-allowed shadow-xs"
-              title="Views (Coming soon)"
-            >
-              <span>Views</span>
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400 opacity-70" />
-            </button>
+        {/* Right: Search Box (proportional) + Filters Button */}
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+            <SearchInput
+              placeholder={t("jobs.searchJobs")}
+              value={search}
+              onChange={setSearch}
+            />
           </div>
 
-          {/* 3 View Switcher Toggles */}
-          <div className="flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200/80 dark:border-slate-700">
-            {/* View 1: Grid Cards */}
+          {/* Columns Dropdown (Persisted in localStorage) */}
+          <div className="relative shrink-0" ref={columnsRef}>
             <button
               type="button"
-              onClick={() => setViewMode("grid")}
-              title="Grid view"
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              onClick={() => setIsColumnsOpen((prev) => !prev)}
+              className={`h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
+                isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
               }`}
             >
-              <LayoutGrid className="h-4 w-4" />
+              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+              <span>{t("common.columns")}</span>
             </button>
 
-            {/* View 2: List View (Full-width Stacked Cards) */}
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              title="List view"
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === "list"
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
-            >
-              <ListIcon className="h-4 w-4" />
-            </button>
-
-            {/* View 3: Table View (Data Table) */}
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              title="Table view"
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === "table"
-                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
-            >
-              <Table className="h-4 w-4" />
-            </button>
+            {isColumnsOpen && (
+              <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-xl p-2 z-50">
+                <div className="px-2 py-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+                  {t("jobs.toggleColumns")}
+                </div>
+                <div className="space-y-0.5 mt-1">
+                  {[
+                    { id: "title", label: t("jobs.columns.title"), locked: true },
+                    { id: "status", label: t("jobs.columns.status") },
+                    { id: "pipeline", label: t("jobs.columns.pipeline") },
+                    { id: "applicants", label: t("jobs.columns.applicants") },
+                  ].map((col) => {
+                    const isChecked =
+                      visibleColumns[col.id as keyof typeof visibleColumns];
+                    const isLocked = col.locked;
+                    return (
+                      <label
+                        key={col.id}
+                        className={`flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-xs font-semibold select-none transition-colors ${
+                          isLocked
+                            ? "opacity-60 cursor-not-allowed text-slate-500 dark:text-slate-400"
+                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          disabled={isLocked}
+                          onChange={() =>
+                            toggleColumn(col.id as keyof typeof visibleColumns)
+                          }
+                          className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <span>{col.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Filters Button */}
           <button
             type="button"
             onClick={() => setIsFilterOpen(true)}
-            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs"
+            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
           >
             <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
             <span>{t("common.filter")}</span>
+            {secondaryFiltersCount > 0 && (
+              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                {secondaryFiltersCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Active Filter Chips Bar (Shown when secondary filters are applied) */}
+      {hasSecondaryFilters && (
+        <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+          <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+          {typeFilters.map((tf) => (
+            <span
+              key={tf}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium"
+            >
+              <span>{getJobTypeLabel(tf, t)}</span>
+              <button
+                type="button"
+                onClick={() => toggleFilter("type", typeFilters, tf)}
+                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer p-0.5"
+                title="Remove filter"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+          {expFilters.map((ef) => (
+            <span
+              key={ef}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/60 text-xs font-medium"
+            >
+              <span>{getExperienceLevelLabel(ef, t)}</span>
+              <button
+                type="button"
+                onClick={() => toggleFilter("exp", expFilters, ef)}
+                className="hover:text-indigo-900 dark:hover:text-indigo-100 cursor-pointer p-0.5"
+                title="Remove filter"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+          {workplaceFilters.map((wf) => (
+            <span
+              key={wf}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200/60 dark:border-teal-900/60 text-xs font-medium"
+            >
+              <span>{getWorkplaceLabel(wf, t)}</span>
+              <button
+                type="button"
+                onClick={() => toggleFilter("workplace", workplaceFilters, wf)}
+                className="hover:text-teal-900 dark:hover:text-teal-100 cursor-pointer p-0.5"
+                title="Remove filter"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 underline cursor-pointer ml-1"
+          >
+            {t("jobs.resetAll")}
+          </button>
+        </div>
+      )}
 
       {/* If No Matching Jobs from Search / Filters */}
       {filteredJobs.length === 0 ? (
@@ -300,377 +509,191 @@ export function JobList({
           </Button>
         </div>
       ) : (
-        <>
-          {/* VIEW 1: GRID CARDS VIEW (Screenshot 1) */}
-          {viewMode === "grid" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredJobs.map((job) => {
-            const counts = getJobStageCounts(job.id);
-
-            return (
-              <div
-                key={job.id}
-                className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
-              >
-                {/* Header Row: Title & Open Badge */}
-                <div className="space-y-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3
-                      onClick={() => router.push(`/dashboard/jobs/${job.id}/pipeline`)}
-                      className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer leading-snug"
-                    >
-                      {job.title}
-                    </h3>
-                    <JobStatusBadge status={job.status} className="shrink-0" />
-                  </div>
-
-                  {/* Sub-row: Type, Workplace, Experience & Location */}
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
-                    <span>{getJobTypeLabel(job.type, t)}</span>
-                    {job.workplace && (
-                      <>
-                        <span>•</span>
-                        <span>{getWorkplaceLabel(job.workplace, t)}</span>
-                      </>
-                    )}
-                    {job.experienceLevel && (
-                      <>
-                        <span>•</span>
-                        <span>{getExperienceLevelLabel(job.experienceLevel, t)}</span>
-                      </>
-                    )}
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5 truncate">
-                      <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                      {job.location || job.department || "Remote"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 6 Stage Metric Cards in 3x2 or 6x1 Grid */}
-                <div className="grid grid-cols-6 gap-1 pt-1">
-                  {pipelineStages.map((stage) => {
-                    const count = counts.byStage[stage.id] || 0;
-                    return (
-                      <div
-                        key={stage.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`);
-                        }}
-                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
-                      >
-                        <span
-                          className={`text-xs font-bold ${stage.textColor}`}
-                        >
-                          {count}
-                        </span>
-                        <span
-                          className={`text-[9px] font-semibold ${stage.textColor} opacity-80`}
-                        >
-                          {stage.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Bottom Row: Applicant count & Promote / Review button */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                  {counts.total === 0 ? (
-                    <span className="text-slate-400 text-[11px]">
-                      {t("jobs.noApplicantsYet")}
-                    </span>
-                  ) : (
-                    <span className="text-amber-600 dark:text-amber-400 font-medium text-[11px]">
-                      {counts.new > 0
-                        ? t("jobs.applicantsUnviewed", {
-                            count: counts.new,
-                            plural: counts.new > 1 ? "s" : "",
-                          })
-                        : t("jobs.applicantsInPipeline", {
-                            count: counts.total,
-                            plural: counts.total > 1 ? "s" : "",
-                          })}
-                    </span>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (typeof window !== "undefined" && navigator.clipboard) {
-                          navigator.clipboard.writeText(
-                            `${window.location.origin}${getJobPublicUrl(job)}`,
-                          );
-                          setCopiedJobId(job.id);
-                          setTimeout(() => setCopiedJobId(null), 2000);
-                        }
-                      }}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
-                      title={t("jobs.copyPublicApplyLink")}
-                    >
-                      {copiedJobId === job.id ? (
-                        <>
-                          <Check className="h-3 w-3 text-emerald-600" />
-                          <span className="text-emerald-600">{t("jobs.linkCopiedSuccess")}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Share2 className="h-3 w-3" />
-                          <span>{t("jobs.applyLink")}</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(
-                          `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
-                        );
-                      }}
-                      className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      <span>{t("jobs.review")}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* VIEW 2: LIST VIEW (Full-width Stacked Cards) */}
-      {viewMode === "list" && (
-        <div className="space-y-4">
-          {filteredJobs.map((job) => {
-            const counts = getJobStageCounts(job.id);
-
-            return (
-              <div
-                key={job.id}
-                className={`rounded-2xl border ${
-                  counts.new > 0
-                    ? "border-amber-200/90 dark:border-amber-900/60"
-                    : "border-slate-200/90 dark:border-slate-800"
-                } bg-white p-6 shadow-xs dark:bg-slate-900 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all`}
-              >
-                {/* Top Row: Title & Open Badge */}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3
-                        onClick={() => router.push(`/dashboard/jobs/${job.id}/pipeline`)}
-                        className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors cursor-pointer"
-                      >
-                        {job.title}
-                      </h3>
-                      <JobStatusBadge status={job.status} />
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 flex-wrap">
-                      <span>{getJobTypeLabel(job.type, t)}</span>
-                      {job.workplace && (
-                        <>
-                          <span>•</span>
-                          <span>{getWorkplaceLabel(job.workplace, t)}</span>
-                        </>
-                      )}
-                      {job.experienceLevel && (
-                        <>
-                          <span>•</span>
-                          <span>{getExperienceLevelLabel(job.experienceLevel, t)}</span>
-                        </>
-                      )}
-                      <span>•</span>
-                      <span className="flex items-center gap-0.5">
-                        <MapPin className="h-3 w-3 text-slate-400" />
-                        {job.location || job.department || "Remote"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Spanning 6 Stages Across Width */}
-                <div className="grid grid-cols-6 gap-2 pt-1">
-                  {pipelineStages.map((stage) => {
-                    const count = counts.byStage[stage.id] || 0;
-                    return (
-                      <div
-                        key={stage.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`);
-                        }}
-                        className={`flex flex-col items-center justify-center p-3 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
-                      >
-                        <span
-                          className={`text-xs font-bold ${stage.textColor}`}
-                        >
-                          {count}
-                        </span>
-                        <span
-                          className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5`}
-                        >
-                          {stage.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Bottom Row in List View: Applicant count & Review in Pipeline / Promote */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                  {counts.total === 0 ? (
-                    <span className="text-slate-400 text-xs">
-                      {t("jobs.noApplicantsYet")}
-                    </span>
-                  ) : (
-                    <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">
-                      {counts.new > 0
-                        ? t("jobs.applicantsUnviewed", {
-                            count: counts.new,
-                            plural: counts.new > 1 ? "s" : "",
-                          })
-                        : t("jobs.applicantsInPipeline", {
-                            count: counts.total,
-                            plural: counts.total > 1 ? "s" : "",
-                          })}
-                    </span>
-                  )}
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (typeof window !== "undefined" && navigator.clipboard) {
-                          navigator.clipboard.writeText(
-                            `${window.location.origin}${getJobPublicUrl(job)}`,
-                          );
-                          setCopiedJobId(job.id);
-                          setTimeout(() => setCopiedJobId(null), 2000);
-                        }
-                      }}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                      title={t("jobs.copyPublicApplyLink")}
-                    >
-                      {copiedJobId === job.id ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 text-emerald-600" />
-                          <span className="text-emerald-600 font-bold">{t("jobs.linkCopiedSuccess")}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Share2 className="h-3.5 w-3.5" />
-                          <span>{t("jobs.applyLink")}</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(
-                          `/dashboard/jobs/${job.id}/pipeline${counts.new > 0 ? "?stage=APPLIED" : ""}`,
-                        );
-                      }}
-                      className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span>{t("jobs.reviewInPipeline")}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* VIEW 3: TABLE VIEW (Data Table) */}
-      {viewMode === "table" && (
+        /* Unified Rich Table View matching Dashboard visual language */
         <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-[11px] font-semibold text-slate-500">
+              <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      {t("jobs.jobTitle")} <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      {t("jobs.status")} <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      {t("jobs.type")} <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      {t("jobs.location")} <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      {t("jobs.newApplicants")} <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      {t("jobs.activePipeline")} <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4">
-                    <span className="flex items-center gap-1">
-                      {t("candidates.columns.added")} <ArrowUpDown className="h-3 w-3" />
-                    </span>
-                  </th>
+                  <th className="py-3.5 px-5 min-w-[280px]">{t("jobs.jobTitle")}</th>
+                  {visibleColumns.status && (
+                    <th className="py-3.5 px-4 min-w-[110px]">{t("jobs.status")}</th>
+                  )}
+                  {visibleColumns.pipeline && (
+                    <th className="py-3.5 px-4 min-w-[340px]">{t("dashboard.hiringPipeline")}</th>
+                  )}
+                  {visibleColumns.applicants && (
+                    <th className="py-3.5 px-4 min-w-[130px]">{t("jobs.newApplicants")}</th>
+                  )}
+                  <th className="py-3.5 px-5 text-right min-w-[140px]">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {filteredJobs.map((job) => {
                   const counts = getJobStageCounts(job.id);
-                  const activeCounts = counts.new + counts.screening + counts.interview + counts.offer;
-                  const dateStr = new Date(job.createdAt).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US");
+                  const totalPipeline = counts.total;
 
                   return (
                     <tr
                       key={job.id}
-                      onClick={() => router.push(`/dashboard/jobs/${job.id}/pipeline`)}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                      className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group"
                     >
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                        {job.title}
+                      {/* 1. Job Title & Meta (Always Visible) */}
+                      <td className="py-4 px-5">
+                        <div className="space-y-1">
+                          <Link
+                            href={`/dashboard/jobs/${job.id}/pipeline`}
+                            className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors block"
+                          >
+                            {job.title}
+                          </Link>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 flex-wrap">
+                            <span className="font-medium text-slate-600 dark:text-slate-300">
+                              {job.department || "General"}
+                            </span>
+                            <span>•</span>
+                            <span>{getJobTypeLabel(job.type, t)}</span>
+                            <span>•</span>
+                            <span className="inline-flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                              {job.location || "Remote"}
+                            </span>
+                          </div>
+                        </div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <JobStatusBadge status={job.status} />
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
-                        {getJobTypeLabel(job.type, t)}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-slate-400" />
-                        {job.location || job.department || "Remote"}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
-                        {counts.new}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">
-                        {activeCounts}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400">
-                        {dateStr}
+
+                      {/* 2. Status Badge */}
+                      {visibleColumns.status && (
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <JobStatusBadge status={job.status} />
+                        </td>
+                      )}
+
+                      {/* 3. Pipeline Funnel Progress Bar & Stage Pills (Exact Dashboard Design) */}
+                      {visibleColumns.pipeline && (
+                        <td className="py-4 px-4">
+                          <div className="space-y-1.5 max-w-md">
+                            {/* Multi-segment Progress Bar */}
+                            <div className="h-1.5 w-full rounded-full bg-slate-200/70 dark:bg-slate-800 flex overflow-hidden">
+                              {pipelineStages.map((stage) => {
+                                const count = counts.byStage[stage.id] || 0;
+                                const pct =
+                                  totalPipeline > 0
+                                    ? (count / totalPipeline) * 100
+                                    : 0;
+                                if (pct <= 0) return null;
+                                return (
+                                  <div
+                                    key={stage.id}
+                                    style={{ width: `${pct}%` }}
+                                    className={`${stage.barColor} h-full`}
+                                    title={`${stage.label}: ${count}`}
+                                  />
+                                );
+                              })}
+                            </div>
+
+                            {/* 6 Stage Metric Pills */}
+                            <div className="grid grid-cols-6 gap-1">
+                              {pipelineStages.map((stage) => {
+                                const count = counts.byStage[stage.id] || 0;
+                                const displayLabel =
+                                  stage.id === "OFFER" && stage.label.includes("Đề nghị")
+                                    ? "Đề nghị"
+                                    : stage.id === "APPLIED" && stage.label.includes("Đã nộp")
+                                    ? "Đã nộp"
+                                    : stage.id === "HIRED" && stage.label.includes("Đã tuyển")
+                                    ? "Đã tuyển"
+                                    : stage.label;
+
+                                return (
+                                  <div
+                                    key={stage.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(
+                                        `/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`,
+                                      );
+                                    }}
+                                    className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02]`}
+                                    title={`${stage.label}: ${count}`}
+                                  >
+                                    <span
+                                      className={`text-[9px] font-semibold ${stage.textColor} opacity-85 truncate mr-0.5`}
+                                    >
+                                      {displayLabel}
+                                    </span>
+                                    <span
+                                      className={`text-[10.5px] font-black ${stage.textColor} shrink-0`}
+                                    >
+                                      {count}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </td>
+                      )}
+
+                      {/* 4. New Applicants / To Review */}
+                      {visibleColumns.applicants && (
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          {counts.new > 0 ? (
+                            <span
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/jobs/${job.id}/pipeline?stage=APPLIED`,
+                                )
+                              }
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/60 cursor-pointer hover:bg-amber-100 transition-colors"
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              <span>
+                                {counts.new} {t("jobs.newApplicants").toLowerCase()}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-xs font-medium">
+                              {counts.total} {t("pipeline.stageCounts")}
+                            </span>
+                          )}
+                        </td>
+                      )}
+
+                      {/* 5. Actions */}
+                      <td className="py-4 px-5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (typeof window !== "undefined" && navigator.clipboard) {
+                                navigator.clipboard.writeText(
+                                  `${window.location.origin}${getJobPublicUrl(job)}`,
+                                );
+                                setCopiedJobId(job.id);
+                                setTimeout(() => setCopiedJobId(null), 2000);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            title={t("jobs.copyPublicApplyLink")}
+                          >
+                            {copiedJobId === job.id ? (
+                              <Check className="h-4 w-4 text-emerald-600" />
+                            ) : (
+                              <Share2 className="h-4 w-4" />
+                            )}
+                          </button>
+
+                          <Link
+                            href={`/dashboard/jobs/${job.id}/pipeline`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+                          >
+                            <span>{t("jobs.tabs.pipeline")}</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -680,8 +703,6 @@ export function JobList({
           </div>
         </div>
       )}
-    </>
-  )}
 
       {/* Pagination Footer */}
       {filteredJobs.length > 0 && (
@@ -741,7 +762,7 @@ export function JobList({
                       <button
                         key={st.id}
                         type="button"
-                        onClick={() => toggleFilter(statusFilters, setStatusFilters, st.id)}
+                        onClick={() => toggleFilter("status", statusFilters, st.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           statusFilters.includes(st.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
@@ -769,7 +790,7 @@ export function JobList({
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => toggleFilter(typeFilters, setTypeFilters, item.id)}
+                        onClick={() => toggleFilter("type", typeFilters, item.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           typeFilters.includes(item.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
@@ -798,7 +819,7 @@ export function JobList({
                       <button
                         key={exp.id}
                         type="button"
-                        onClick={() => toggleFilter(expFilters, setExpFilters, exp.id)}
+                        onClick={() => toggleFilter("exp", expFilters, exp.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           expFilters.includes(exp.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
@@ -825,7 +846,7 @@ export function JobList({
                       <button
                         key={w.id}
                         type="button"
-                        onClick={() => toggleFilter(workplaceFilters, setWorkplaceFilters, w.id)}
+                        onClick={() => toggleFilter("workplace", workplaceFilters, w.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           workplaceFilters.includes(w.id)
                             ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
@@ -846,7 +867,7 @@ export function JobList({
                   <div className="grid grid-cols-2 gap-2">
                     <CustomSelect
                       value={sortBy}
-                      onChange={(val) => setSortBy(val as "created" | "title" | "applicants")}
+                      onChange={(val) => handleFilterUpdate({ sortBy: val as "created" | "title" | "applicants" })}
                       options={[
                         { value: "created", label: t("jobs.dateCreated") },
                         { value: "title", label: t("jobs.jobTitle") },
@@ -858,7 +879,7 @@ export function JobList({
 
                     <CustomSelect
                       value={sortOrder}
-                      onChange={(val) => setSortOrder(val as "desc" | "asc")}
+                      onChange={(val) => handleFilterUpdate({ sortOrder: val as "desc" | "asc" })}
                       options={[
                         { value: "desc", label: t("jobs.descending") },
                         { value: "asc", label: t("jobs.ascending") },

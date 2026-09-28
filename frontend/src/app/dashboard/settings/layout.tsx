@@ -155,10 +155,10 @@ export default function SettingsLayout({
       <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col">
         <Navbar activeTab="settings" />
 
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <main className="flex-1 w-full px-3 sm:px-6 lg:px-8 xl:px-10 py-4 sm:py-6 overflow-x-hidden">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start w-full">
             {/* ================= LEFT SIDEBAR ================= */}
-            <aside className="md:col-span-4 lg:col-span-3 space-y-4">
+            <aside className="w-full md:w-60 lg:w-64 shrink-0 space-y-3 sm:space-y-4">
               {/* Back to jobs link */}
               <Link
                 href="/dashboard/jobs"
@@ -176,8 +176,43 @@ export default function SettingsLayout({
                 </h2>
               </div>
 
-              {/* Navigation List */}
-              <nav className="space-y-1">
+              {/* Mobile Horizontal Navigation Pills */}
+              <nav className="flex md:hidden items-center gap-1.5 overflow-x-auto scrollbar-none pb-2 w-full min-w-0">
+                {SETTINGS_NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    item.href === "/dashboard/settings"
+                      ? pathname === "/dashboard/settings"
+                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+                  const localized = tabTranslations[item.id] || {
+                    label: item.label,
+                    sub: item.sublabel,
+                  };
+
+                  return (
+                    <Link
+                      key={`mobile-${item.id}`}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all",
+                        isActive
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800",
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span>{localized.label}</span>
+                      {item.locked && (
+                        <Lock className="h-3 w-3 shrink-0 opacity-60 ml-0.5" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Desktop Vertical Navigation List */}
+              <nav className="hidden md:block space-y-1">
                 {SETTINGS_NAV_ITEMS.map((item) => {
                   const Icon = item.icon;
                   const isActive =
@@ -239,7 +274,7 @@ export default function SettingsLayout({
             </aside>
 
             {/* ================= RIGHT CONTENT AREA ================= */}
-            <section className="md:col-span-8 lg:col-span-9 space-y-6">
+            <section className="w-full flex-1 min-w-0 space-y-6">
               {children}
             </section>
           </div>

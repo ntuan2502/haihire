@@ -46,7 +46,7 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
-import { PIPELINE_STAGES } from "@/lib/stages";
+import { usePipelineStages } from "@/lib/stages";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { getApiBaseUrl } from "@/lib/api";
 import {
@@ -66,6 +66,7 @@ function ApplicationDetailPageContent() {
   const router = useRouter();
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
+  const pipelineStages = usePipelineStages();
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const isAppIdValid = isValidUuid(appIdStr);
@@ -310,7 +311,7 @@ function ApplicationDetailPageContent() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
           {/* Left Stage Action Buttons (All stages except current) */}
           <div className="flex items-center gap-2 flex-wrap">
-            {PIPELINE_STAGES.filter((stage) => stage.id !== app?.stage).map(
+            {pipelineStages.filter((stage) => stage.id !== app?.stage).map(
               (stage) => (
                 <button
                   key={stage.id}

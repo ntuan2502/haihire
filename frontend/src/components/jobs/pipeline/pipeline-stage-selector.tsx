@@ -46,16 +46,12 @@ export function PipelineStageSelector({
                   : "border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
             >
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  isSelected ? "bg-white" : stage.dotColor
-                }`}
-              />
+              <span className={`h-2 w-2 rounded-full ${stage.dotColor}`} />
               <span>{stage.label}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                   isSelected
-                    ? "bg-white/20 text-white"
+                    ? stage.pillBadge
                     : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                 }`}
               >

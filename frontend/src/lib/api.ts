@@ -53,6 +53,11 @@ export const jobsApi = {
     status?: string;
     department?: string;
     search?: string;
+    type?: string;
+    experienceLevel?: string;
+    workplace?: string;
+    sortBy?: string;
+    sortOrder?: string;
     organizationId?: string | null;
     organizationSlug?: string | null;
     page?: number;

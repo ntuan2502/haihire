@@ -11,6 +11,7 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { type CandidateDocument } from "@haihire/shared";
+import { toTimestamp } from "../common/date.util";
 
 export function fixUtf8String(str?: string | null): string {
   if (!str) return "";
@@ -287,7 +288,8 @@ export class ApplicationsService {
       .all();
 
     if (options?.stage) {
-      orgApps = orgApps.filter((a) => a.stage === options.stage);
+      const stages = options.stage.split(",").map((s) => s.trim().toUpperCase());
+      orgApps = orgApps.filter((a) => stages.includes(a.stage));
     }
 
     if (orgApps.length === 0) {
@@ -793,7 +795,7 @@ export class ApplicationsService {
       name: existing.resumeFileName,
       size: existing.resumeFileSize,
       mimeType: existing.resumeMimeType,
-      createdAt: existing.createdAt,
+      createdAt: existing.createdAt ? new Date(toTimestamp(existing.createdAt)) : undefined,
     });
 
     const newDoc: CandidateDocument = {
@@ -824,8 +826,6 @@ export class ApplicationsService {
             size: newDoc.size ?? null,
             mimeType: newDoc.mimeType ?? null,
             type: newDoc.type ?? null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
           });
         }
       } catch {
@@ -858,7 +858,7 @@ export class ApplicationsService {
       name: existing.resumeFileName,
       size: existing.resumeFileSize,
       mimeType: existing.resumeMimeType,
-      createdAt: existing.createdAt,
+      createdAt: existing.createdAt ? new Date(toTimestamp(existing.createdAt)) : undefined,
     });
 
     let updatedDocs: CandidateDocument[] = [];

@@ -12,6 +12,7 @@ import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../applications/applications.service";
 
 import { type CandidateDocument } from "@haihire/shared";
+import { toTimestamp } from "../common/date.util";
 
 function extractDocsFromNotes(
   notes: string | null,
@@ -309,7 +310,7 @@ export class CandidatesService {
       if (Array.isArray(queried) && queried.length > 0) {
         dbDocs = queried.map((d) => ({
           ...d,
-          createdAt: d.createdAt ? new Date(d.createdAt).toISOString() : new Date().toISOString(),
+          createdAt: d.createdAt ? new Date(toTimestamp(d.createdAt)).toISOString() : new Date().toISOString(),
         }));
       }
     } catch {
@@ -322,7 +323,7 @@ export class CandidatesService {
       name: candidate.resumeFileName || "Resume.pdf",
       size: candidate.resumeFileSize,
       mimeType: candidate.resumeMimeType,
-      createdAt: candidate.createdAt,
+      createdAt: candidate.createdAt ? new Date(toTimestamp(candidate.createdAt)) : undefined,
     });
 
     const allDocuments: CandidateDocument[] = [...candidateDirectDocs];
@@ -335,7 +336,7 @@ export class CandidatesService {
         name: app.resumeFileName || "Application_Resume.pdf",
         size: app.resumeFileSize,
         mimeType: app.resumeMimeType,
-        createdAt: app.createdAt,
+        createdAt: app.createdAt ? new Date(toTimestamp(app.createdAt)) : undefined,
       });
 
       for (const d of appDocs) {
@@ -398,11 +399,11 @@ export class CandidatesService {
       };
     }
 
-    let dateOfBirth: Date | null = null;
+    let dateOfBirth: Temporal.Instant | null = null;
     if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
       const parsed = new Date(dto.dateOfBirth.trim());
       if (!isNaN(parsed.getTime())) {
-        dateOfBirth = parsed;
+        dateOfBirth = Temporal.Instant.fromEpochMilliseconds(parsed.getTime());
       }
     }
 
@@ -411,8 +412,8 @@ export class CandidatesService {
     if (!firstName && !lastName && dto.name) {
       const parts = dto.name.trim().split(/\s+/);
       if (parts.length > 1) {
-        firstName = parts[0];
-        lastName = parts.slice(1).join(" ");
+        firstName = parts[parts.length - 1];
+        lastName = parts.slice(0, -1).join(" ");
       } else {
         firstName = parts[0] || null;
       }
@@ -450,7 +451,9 @@ export class CandidatesService {
     if (dto.dateOfBirth !== undefined) {
       if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
         const parsed = new Date(dto.dateOfBirth.trim());
-        updatePayload.dateOfBirth = !isNaN(parsed.getTime()) ? parsed : null;
+        updatePayload.dateOfBirth = !isNaN(parsed.getTime())
+          ? Temporal.Instant.fromEpochMilliseconds(parsed.getTime())
+          : null;
       } else {
         updatePayload.dateOfBirth = null;
       }
@@ -510,7 +513,7 @@ export class CandidatesService {
       name: candidate.resumeFileName || "document.pdf",
       size: candidate.resumeFileSize,
       mimeType: candidate.resumeMimeType,
-      createdAt: candidate.createdAt,
+      createdAt: candidate.createdAt ? new Date(toTimestamp(candidate.createdAt)) : undefined,
     });
 
     const newDoc: CandidateDocument = {
@@ -536,8 +539,6 @@ export class CandidatesService {
         size: newDoc.size ?? null,
         mimeType: newDoc.mimeType ?? null,
         type: newDoc.type ?? null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
     } catch {
       // ignore if mock or table unavailable in test
@@ -566,7 +567,7 @@ export class CandidatesService {
       name: candidate.resumeFileName || "document.pdf",
       size: candidate.resumeFileSize,
       mimeType: candidate.resumeMimeType,
-      createdAt: candidate.createdAt,
+      createdAt: candidate.createdAt ? new Date(toTimestamp(candidate.createdAt)) : undefined,
     });
 
     let updatedDocs: CandidateDocument[] = [];

@@ -38,7 +38,7 @@ export default function SubSettingsPage() {
 
   if (tab === "localization") {
     return (
-      <div className="space-y-6 animate-in fade-in duration-200">
+      <div className="w-full space-y-6 animate-in fade-in duration-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
             {t("settings.tabs.localization")}
@@ -48,7 +48,7 @@ export default function SubSettingsPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+        <div className="w-full rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 min-w-0">
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
               {t("nav.language")}
@@ -99,7 +99,7 @@ export default function SubSettingsPage() {
           <div className="pt-2">
             <Button
               type="button"
-              className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs"
+              className="w-full sm:w-auto h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs cursor-pointer"
             >
               {t("settings.saveChanges")}
             </Button>
@@ -249,7 +249,7 @@ export default function SubSettingsPage() {
 
   if (tab === "account") {
     return (
-      <div className="space-y-6 animate-in fade-in duration-200">
+      <div className="w-full space-y-6 animate-in fade-in duration-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
             {t("settings.tabs.account")}
@@ -259,8 +259,8 @@ export default function SubSettingsPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="w-full rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 min-w-0">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
                 {t("settings.yourName")}
@@ -269,7 +269,7 @@ export default function SubSettingsPage() {
                 type="text"
                 disabled
                 value={user?.name || "Admin User"}
-                className="h-10 text-xs bg-slate-50 dark:bg-slate-950 opacity-80"
+                className="h-10 text-xs bg-slate-50 dark:bg-slate-950 opacity-80 w-full"
               />
             </div>
             <div>
@@ -280,7 +280,7 @@ export default function SubSettingsPage() {
                 type="email"
                 disabled
                 value={user?.email || "admin@example.com"}
-                className="h-10 text-xs bg-slate-50 dark:bg-slate-950 opacity-80"
+                className="h-10 text-xs bg-slate-50 dark:bg-slate-950 opacity-80 w-full"
               />
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function SubSettingsPage() {
               type="button"
               variant="outline"
               onClick={logout}
-              className="h-9 px-4 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400"
+              className="w-full sm:w-auto h-9 px-4 text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 cursor-pointer"
             >
               {t("nav.signOut")}
             </Button>

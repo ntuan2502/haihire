@@ -4,8 +4,6 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   SlidersHorizontal,
-  ArrowLeftRight,
-  Maximize2,
   ChevronDown,
   ArrowDown,
   ArrowUpDown,
@@ -23,12 +21,16 @@ import {
   FileText,
   MessageSquare,
   FileCheck,
+  RotateCcw,
 } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
+import { CustomSelect } from "@/components/shared/custom-select";
+import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Pagination } from "@/components/shared/pagination";
 import { SearchInput } from "@/components/shared/search-input";
+import { SegmentedTabs } from "@/components/shared/segmented-tabs";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
@@ -44,7 +46,7 @@ import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
-import { PIPELINE_STAGES } from "@/lib/stages";
+import { usePipelineStages } from "@/lib/stages";
 import { getApiBaseUrl } from "@/lib/api";
 import {
   useUpdateStageMutation,
@@ -80,9 +82,14 @@ interface ApplicationsDataTableProps {
   currentPage?: number;
   rowsPerPage?: number;
   search?: string;
+  stageFilter?: string;
+  stageCounts?: Record<string, number>;
+  jobFilter?: string;
   onPageChange?: (page: number) => void;
   onLimitChange?: (limit: number) => void;
   onSearchChange?: (search: string) => void;
+  onStageFilterChange?: (stage?: string) => void;
+  onJobFilterChange?: (jobId?: string) => void;
 }
 
 export function ApplicationsDataTable({
@@ -96,12 +103,18 @@ export function ApplicationsDataTable({
   currentPage: propCurrentPage,
   rowsPerPage: propRowsPerPage,
   search: propSearch,
+  stageFilter,
+  stageCounts,
+  jobFilter: propJobFilter,
   onPageChange,
   onLimitChange,
   onSearchChange,
+  onStageFilterChange,
+  onJobFilterChange,
 }: ApplicationsDataTableProps) {
   const router = useRouter();
   const { t } = useI18n();
+  const pipelineStages = usePipelineStages();
   const { canEdit } = useAuth();
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -195,25 +208,35 @@ export function ApplicationsDataTable({
     }
   };
 
-  // Column Visibility Toggle State
+  // Filter Drawer State & Secondary Filters
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [scoreFilter, setScoreFilter] = useState<string>("ALL");
+  const [localJobFilter, setLocalJobFilter] = useState<string>("ALL");
+  const currentJobFilter =
+    propJobFilter !== undefined ? (propJobFilter || "ALL") : localJobFilter;
+  const setJobFilter = (val: string) => {
+    if (onJobFilterChange) {
+      onJobFilterChange(val === "ALL" ? undefined : val);
+    } else {
+      setLocalJobFilter(val);
+      setLocalCurrentPage(1);
+    }
+  };
+
+  // Column Visibility Toggle State (Persisted in localStorage)
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
   const columnsRef = useRef<HTMLDivElement>(null);
-  const [visibleColumns, setVisibleColumns] = useState({
-    candidate: true,
-    email: true,
-    job: true,
-    status: true,
-    score: true,
-    applied: true,
-  });
-
-  const toggleColumn = (key: keyof typeof visibleColumns) => {
-    if (key === "candidate") return;
-    setVisibleColumns((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
+  const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
+    "haihire_applications_columns_v1",
+    {
+      candidate: true,
+      email: true,
+      job: true,
+      status: true,
+      score: true,
+      applied: true,
+    },
+  );
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -252,14 +275,59 @@ export function ApplicationsDataTable({
     );
   }, [initialApplications, fixedJobId]);
 
-  // Filter & Sort (Client-side when not server paginated)
+  const [localStageFilters, setLocalStageFilters] = useState<string[]>([]);
+  const stageFilters = useMemo(
+    () =>
+      stageFilter !== undefined
+        ? stageFilter
+          ? stageFilter.split(",")
+          : []
+        : localStageFilters,
+    [stageFilter, localStageFilters],
+  );
+
+  const toggleStage = (stageId: string) => {
+    const next = stageFilters.includes(stageId)
+      ? stageFilters.filter((x) => x !== stageId)
+      : [...stageFilters, stageId];
+    if (onStageFilterChange) {
+      onStageFilterChange(next.length > 0 ? next.join(",") : undefined);
+    } else {
+      setLocalStageFilters(next);
+      setLocalCurrentPage(1);
+    }
+  };
+
+  const handleClearStages = () => {
+    if (onStageFilterChange) {
+      onStageFilterChange(undefined);
+    } else {
+      setLocalStageFilters([]);
+      setLocalCurrentPage(1);
+    }
+  };
+
+  // Filter & Sort (Client-side when not server paginated, or score filter client refinement)
   const filteredApps = useMemo(() => {
-    if (isServerPaginated) return baseApplications;
-    return baseApplications
-      .filter((app) => {
-        // Search query
-        if (!search.trim()) return true;
-        const q = search.toLowerCase().trim();
+    let list = baseApplications;
+    if (stageFilters.length > 0) {
+      list = list.filter((app) => stageFilters.includes(app.stage));
+    }
+    if (!fixedJobId && currentJobFilter !== "ALL") {
+      list = list.filter((app) => String(app.jobId) === String(currentJobFilter));
+    }
+    if (scoreFilter !== "ALL") {
+      list = list.filter((app) => {
+        const score = typeof app.matchScore === "number" ? app.matchScore : 0;
+        if (scoreFilter === "80" && score < 80) return false;
+        if (scoreFilter === "60" && (score < 60 || score >= 80)) return false;
+        if (scoreFilter === "BELOW_60" && score >= 60) return false;
+        return true;
+      });
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      list = list.filter((app) => {
         const job = app.jobId ? jobMap.get(app.jobId) : null;
         return (
           app.candidateName.toLowerCase().includes(q) ||
@@ -267,49 +335,64 @@ export function ApplicationsDataTable({
           (app.candidatePhone && app.candidatePhone.toLowerCase().includes(q)) ||
           (job && job.title.toLowerCase().includes(q))
         );
-      })
-      .sort((a, b) => {
-        const jobA = a.jobId ? jobMap.get(a.jobId)?.title || "" : "";
-        const jobB = b.jobId ? jobMap.get(b.jobId)?.title || "" : "";
-
-        let diff = 0;
-        switch (sortField) {
-          case "candidate":
-            diff = a.candidateName.localeCompare(b.candidateName);
-            break;
-          case "email":
-            diff = a.candidateEmail.localeCompare(b.candidateEmail);
-            break;
-          case "job":
-            diff = jobA.localeCompare(jobB);
-            break;
-          case "status":
-            diff = a.stage.localeCompare(b.stage);
-            break;
-          case "score":
-            diff = 0;
-            break;
-          case "applied":
-          default:
-            diff =
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            break;
-        }
-        return sortDirection === "asc" ? diff : -diff;
       });
-  }, [isServerPaginated, baseApplications, search, jobMap, sortField, sortDirection]);
+    }
+    return [...list].sort((a, b) => {
+      let diff = 0;
+      switch (sortField) {
+        case "candidate":
+          diff = a.candidateName.localeCompare(b.candidateName);
+          break;
+        case "email":
+          diff = a.candidateEmail.localeCompare(b.candidateEmail);
+          break;
+        case "job": {
+          const jobA = a.jobId ? jobMap.get(a.jobId)?.title || "" : "";
+          const jobB = b.jobId ? jobMap.get(b.jobId)?.title || "" : "";
+          diff = jobA.localeCompare(jobB);
+          break;
+        }
+        case "status":
+          diff = a.stage.localeCompare(b.stage);
+          break;
+        case "score":
+          diff = (a.matchScore || 0) - (b.matchScore || 0);
+          break;
+        case "applied":
+        default:
+          diff =
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+      }
+      return sortDirection === "asc" ? diff : -diff;
+    });
+  }, [baseApplications, stageFilters, fixedJobId, currentJobFilter, scoreFilter, search, jobMap, sortField, sortDirection]);
+
+  // Secondary Filters Count & Reset
+  const secondaryFiltersCount =
+    (currentJobFilter !== "ALL" && !fixedJobId ? 1 : 0) +
+    (scoreFilter !== "ALL" ? 1 : 0);
+  const hasSecondaryFilters = secondaryFiltersCount > 0;
+
+  const handleResetFilters = () => {
+    setJobFilter("ALL");
+    setScoreFilter("ALL");
+    handleClearStages();
+    setSortField("applied");
+    setSortDirection("desc");
+  };
 
   // Pagination Slice
   const totalCount =
     isServerPaginated && propTotalCount !== undefined
-      ? propTotalCount
+      ? (scoreFilter !== "ALL" ? filteredApps.length : propTotalCount)
       : filteredApps.length;
   const totalPages =
     isServerPaginated && propTotalPages !== undefined
-      ? propTotalPages
+      ? (scoreFilter !== "ALL" ? Math.max(1, Math.ceil(filteredApps.length / rowsPerPage)) : propTotalPages)
       : Math.max(1, Math.ceil(totalCount / rowsPerPage));
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedApps = isServerPaginated
+  const paginatedApps = isServerPaginated && scoreFilter === "ALL"
     ? baseApplications
     : filteredApps.slice(startIndex, startIndex + rowsPerPage);
 
@@ -431,41 +514,51 @@ export function ApplicationsDataTable({
       ? `${t("jobs.jobTitle")} #${currentApp.jobId}`
       : t("candidates.role");
 
+  const stageTabs = useMemo(
+    () => [
+      { id: "ALL", label: t("common.all"), count: stageCounts?.ALL ?? totalCount },
+      { id: "APPLIED", label: t("pipeline.stages.applied"), count: stageCounts?.APPLIED },
+      { id: "SCREENING", label: t("pipeline.stages.screening"), count: stageCounts?.SCREENING },
+      { id: "INTERVIEW", label: t("pipeline.stages.interview"), count: stageCounts?.INTERVIEW },
+      { id: "OFFER", label: t("pipeline.stages.offer"), count: stageCounts?.OFFER },
+      { id: "HIRED", label: t("pipeline.stages.hired"), count: stageCounts?.HIRED },
+      { id: "REJECTED", label: t("pipeline.stages.rejected"), count: stageCounts?.REJECTED },
+    ],
+    [t, stageCounts, totalCount],
+  );
+
   return (
     <div className="space-y-4">
-      {/* Applications Toolbar matching Screenshot */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Search Box */}
-        <SearchInput
-          placeholder={t("applications.searchApplications")}
-          value={search}
-          onChange={(val) => {
-            if (onSearchChange) {
-              onSearchChange(val);
-            } else {
-              setLocalSearch(val);
-              setLocalCurrentPage(1);
-            }
-          }}
+      {/* Modern Unified Responsive Toolbar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        {/* Left: Quick Stage Tabs with MultiSelect (Swipeable horizontally on mobile/tablet) */}
+        <SegmentedTabs
+          multiSelect
+          tabs={stageTabs}
+          activeTabs={stageFilters}
+          onToggleTab={(stageId) => toggleStage(stageId)}
+          onClearAll={handleClearStages}
         />
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Views Button */}
-          <div className="relative">
-            <button
-              type="button"
-              disabled
-              className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
-              title={`${t("applications.views")} (Coming soon)`}
-            >
-              <span>{t("applications.views")}</span>
-              <ChevronDown className="h-3 w-3 text-slate-400 opacity-70" />
-            </button>
+        {/* Right: Search Box + Columns Dropdown */}
+        <div className="flex items-center gap-2.5 w-full lg:w-auto">
+          <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+            <SearchInput
+              placeholder={t("applications.searchApplications")}
+              value={search}
+              onChange={(val) => {
+                if (onSearchChange) {
+                  onSearchChange(val);
+                } else {
+                  setLocalSearch(val);
+                  setLocalCurrentPage(1);
+                }
+              }}
+            />
           </div>
 
-          {/* Columns Dropdown matching Screenshot */}
-          <div className="relative" ref={columnsRef}>
+          {/* Columns Dropdown (Existing Working Feature) */}
+          <div className="relative shrink-0" ref={columnsRef}>
             <button
               type="button"
               onClick={() => setIsColumnsOpen((prev) => !prev)}
@@ -523,38 +616,67 @@ export function ApplicationsDataTable({
             )}
           </div>
 
-          {/* Filters */}
+          {/* Filters Button */}
           <button
             type="button"
-            disabled
-            className="h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-400 dark:text-slate-500 shadow-xs cursor-not-allowed opacity-50 flex items-center gap-1.5 transition-colors"
-            title={`${t("applications.filters")} (Coming soon)`}
+            onClick={() => setIsFilterOpen(true)}
+            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-            <span>{t("applications.filters")}</span>
-          </button>
-
-          {/* Compare / Swap Icon */}
-          <button
-            type="button"
-            disabled
-            className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
-            title={`${t("applications.compare")} (Coming soon)`}
-          >
-            <ArrowLeftRight className="h-3.5 w-3.5" />
-          </button>
-
-          {/* Fullscreen Icon */}
-          <button
-            type="button"
-            disabled
-            className="h-9 w-9 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 shadow-xs cursor-not-allowed opacity-50 inline-flex items-center justify-center transition-colors"
-            title={`${t("applications.fullscreen")} (Coming soon)`}
-          >
-            <Maximize2 className="h-3.5 w-3.5" />
+            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+            <span>{t("common.filter")}</span>
+            {secondaryFiltersCount > 0 && (
+              <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                {secondaryFiltersCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Active Filter Chips Bar (Shown when secondary filters are applied) */}
+      {hasSecondaryFilters && (
+        <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+          <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+          {!fixedJobId && currentJobFilter !== "ALL" && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
+              <span>{jobs.find((j) => j.id === currentJobFilter)?.title || currentJobFilter}</span>
+              <button
+                type="button"
+                onClick={() => setJobFilter("ALL")}
+                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {scoreFilter !== "ALL" && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
+              <span>
+                {scoreFilter === "80"
+                  ? t("applications.scoreFilters.excellent")
+                  : scoreFilter === "60"
+                  ? t("applications.scoreFilters.good")
+                  : t("applications.scoreFilters.review")}
+              </span>
+              <button
+                type="button"
+                onClick={() => setScoreFilter("ALL")}
+                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-medium cursor-pointer transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+            <span>{t("jobs.resetAll")}</span>
+          </button>
+        </div>
+      )}
 
       {/* Content Area */}
       {loading ? (
@@ -879,7 +1001,7 @@ export function ApplicationsDataTable({
                 {/* Stage Action Pipeline Bar */}
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {PIPELINE_STAGES.filter(
+                    {pipelineStages.filter(
                       (stage) => stage.id !== currentApp.stage,
                     ).map((stage) => (
                       <button
@@ -1423,6 +1545,129 @@ export function ApplicationsDataTable({
           }}
         />
       )}
+      {/* Applications Filter Drawer (SlideOver) matching Jobs UX */}
+      <SlideOver
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        title={t("applications.filters")}
+        description={t("jobs.filterJobsDesc")}
+        width="max-w-md"
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
+            {/* 1. FILTER BY JOB */}
+            {!fixedJobId && (
+              <div className="space-y-2.5">
+                <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                  {t("applications.filterByJob")}
+                </span>
+                <CustomSelect
+                  value={currentJobFilter}
+                  onChange={(val) => setJobFilter(val)}
+                  options={[
+                    { value: "ALL", label: t("applications.allJobs") },
+                    ...jobs.map((j) => ({ value: j.id, label: j.title })),
+                  ]}
+                  className="w-full"
+                  triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                />
+              </div>
+            )}
+
+            {/* 2. MATCH SCORE RANGE */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("applications.score")}
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: "ALL", label: t("applications.scoreFilters.all") },
+                  { id: "80", label: t("applications.scoreFilters.excellent") },
+                  { id: "60", label: t("applications.scoreFilters.good") },
+                  { id: "BELOW_60", label: t("applications.scoreFilters.review") },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setScoreFilter(item.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                      scoreFilter === item.id
+                        ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
+                        : "bg-white text-slate-600 border-slate-200 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800 hover:border-slate-300"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. SORT BY */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block">
+                {t("jobs.sortByUpper")}
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <CustomSelect
+                  value={sortField}
+                  onChange={(val) => setSortField(val as SortField)}
+                  options={[
+                    { value: "applied", label: t("applications.columns.applied") },
+                    { value: "candidate", label: t("applications.columns.candidate") },
+                    { value: "job", label: t("applications.columns.job") },
+                    { value: "score", label: t("applications.columns.score") },
+                  ]}
+                  className="w-full"
+                  triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                />
+
+                <CustomSelect
+                  value={sortDirection}
+                  onChange={(val) => setSortDirection(val as SortDirection)}
+                  options={[
+                    { value: "desc", label: t("jobs.descending") },
+                    { value: "asc", label: t("jobs.ascending") },
+                  ]}
+                  className="w-full"
+                  triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>{t("jobs.resetAll")}</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFilterOpen(false)}
+                className="h-8 px-4 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsFilterOpen(false)}
+                className="h-8 px-4 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                {t("jobs.done")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </SlideOver>
     </div>
   );
 }

@@ -73,6 +73,35 @@ export function getInterviewTypeLabel(
   }
 }
 
+export function getRecommendationLabel(
+  rec?: string | null,
+  t?: (key: TranslationKey, params?: Record<string, string | number>) => string,
+): string {
+  if (!rec) return "";
+  const key = rec.toUpperCase();
+  if (t) {
+    if (key === "STRONG_YES") return t("interviews.recommendations.strongYes");
+    if (key === "YES") return t("interviews.recommendations.yes");
+    if (key === "NEUTRAL") return t("interviews.recommendations.neutral");
+    if (key === "NO") return t("interviews.recommendations.no");
+    if (key === "STRONG_NO") return t("interviews.recommendations.strongNo");
+  }
+  switch (key) {
+    case "STRONG_YES":
+      return "Tuyển ngay";
+    case "YES":
+      return "Đồng ý";
+    case "NEUTRAL":
+      return "Cân nhắc";
+    case "NO":
+      return "Không đạt";
+    case "STRONG_NO":
+      return "Loại ngay";
+    default:
+      return rec;
+  }
+}
+
 export interface ScheduledInterviewInfo {
   id?: string;
   applicationId?: string;

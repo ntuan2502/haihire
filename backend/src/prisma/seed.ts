@@ -6,11 +6,11 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
-function toInstant(d: Date): unknown {
+function toInstant(d: Date): Temporal.Instant {
   return Temporal.Instant.fromEpochMilliseconds(d.getTime());
 }
 
-const VIETNAMESE_FIRST_NAMES = [
+const VIETNAMESE_LAST_NAMES = [
   "Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng",
   "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý", "Đoàn", "Trịnh", "Lưu", "Mai",
 ];
@@ -20,7 +20,7 @@ const VIETNAMESE_MIDDLE_NAMES = [
   "Đình", "Xuân", "Ngọc", "Tuấn", "Bảo", "Anh", "Phương", "Thu", "Khánh", "Hữu",
 ];
 
-const VIETNAMESE_LAST_NAMES = [
+const VIETNAMESE_FIRST_NAMES = [
   "An", "Bình", "Cường", "Dũng", "Em", "Phong", "Giang", "Hương", "Huy", "Khoa",
   "Linh", "Minh", "Nam", "Oanh", "Phúc", "Quân", "Sơn", "Trang", "Tùng", "Uyên",
   "Việt", "Xuân", "Yến", "Thắng", "Thảo", "Hà", "Kiên", "Tú", "Hậu", "Loan",
@@ -215,12 +215,16 @@ const STAGES = ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED
 
 function generate200UniqueCandidates(): Array<{
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   candidateIndex: number;
 }> {
   const candidates: Array<{
     name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone: string;
     candidateIndex: number;
@@ -232,11 +236,11 @@ function generate200UniqueCandidates(): Array<{
   const targetIntl = 60;
 
   let vnCount = 0;
-  for (const fn of VIETNAMESE_FIRST_NAMES) {
+  for (const ln of VIETNAMESE_LAST_NAMES) {
     for (const mn of VIETNAMESE_MIDDLE_NAMES) {
-      for (const ln of VIETNAMESE_LAST_NAMES) {
+      for (const fn of VIETNAMESE_FIRST_NAMES) {
         if (vnCount >= targetVietnamese) break;
-        const name = `${fn} ${mn} ${ln}`;
+        const name = `${ln} ${mn} ${fn}`;
         if (!usedNames.has(name)) {
           usedNames.add(name);
           vnCount++;
@@ -251,6 +255,8 @@ function generate200UniqueCandidates(): Array<{
           const phone = `09${String(10000000 + vnCount * 137).slice(-8)}`;
           candidates.push({
             name,
+            firstName: fn,
+            lastName: `${ln} ${mn}`,
             email,
             phone,
             candidateIndex: vnCount,
@@ -275,6 +281,8 @@ function generate200UniqueCandidates(): Array<{
         const phone = `09${String(50000000 + intlCount * 179).slice(-8)}`;
         candidates.push({
           name,
+          firstName: fn,
+          lastName: ln,
           email,
           phone,
           candidateIndex: vnCount + intlCount,
@@ -502,6 +510,26 @@ export async function runSeed(): Promise<void> {
   console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
+  await db.orm.public.EmailLog.all().then((logs) =>
+    Promise.all(logs.map((l) => db.orm.public.EmailLog.where((x) => x.id.eq(l.id)).delete())),
+  );
+
+  await db.orm.public.EmailSetting.all().then((sets) =>
+    Promise.all(sets.map((s) => db.orm.public.EmailSetting.where((x) => x.id.eq(s.id)).delete())),
+  );
+
+  await db.orm.public.EmailTemplate.all().then((tmpls) =>
+    Promise.all(tmpls.map((t) => db.orm.public.EmailTemplate.where((x) => x.id.eq(t.id)).delete())),
+  );
+
+  await db.orm.public.ActivityLog.all().then((acts) =>
+    Promise.all(acts.map((a) => db.orm.public.ActivityLog.where((x) => x.id.eq(a.id)).delete())),
+  );
+
+  await db.orm.public.CandidateDocument.all().then((docs) =>
+    Promise.all(docs.map((d) => db.orm.public.CandidateDocument.where((x) => x.id.eq(d.id)).delete())),
+  );
+
   await db.orm.public.Interview.all().then((intvs) =>
     Promise.all(intvs.map((i) => db.orm.public.Interview.where((x) => x.id.eq(i.id)).delete())),
   );
@@ -708,6 +736,7 @@ export async function runSeed(): Promise<void> {
         status,
         organizationId: adminOrgId,
         createdById: adminUserId,
+        createdAt: toInstant(jobCreatedAt),
       },
       update: {},
       conflictOn: { id: jobId },
@@ -775,7 +804,7 @@ export async function runSeed(): Promise<void> {
     firstName: string;
     lastName: string;
     gender: "MALE" | "FEMALE" | "OTHER";
-    dateOfBirth: Date;
+    dateOfBirth: Temporal.Instant;
     email: string;
     phone: string;
     notes: string;
@@ -783,7 +812,7 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
-    createdAt: Date;
+    createdAt: Temporal.Instant;
   }> = [];
 
   const applicationsToInsert: Array<{
@@ -798,7 +827,7 @@ export async function runSeed(): Promise<void> {
     resumeMimeType: string;
     notes: string;
     orderIndex: number;
-    createdAt: Date;
+    createdAt: Temporal.Instant;
   }> = [];
 
   const interviewsToInsert: Array<{
@@ -857,9 +886,8 @@ export async function runSeed(): Promise<void> {
     const resumeFileSize = Math.floor(500000 + Math.random() * 1500000); // 500KB - 2MB
     const candidateId = crypto.randomUUID();
 
-    const nameParts = candidate.name.trim().split(/\s+/);
-    const firstName = nameParts[0] || candidate.name;
-    const lastName = nameParts.slice(1).join(" ") || nameParts[0];
+    const firstName = candidate.firstName;
+    const lastName = candidate.lastName;
 
     const { gender, dateOfBirth } = getCandidateDemographics(candidate.name, i);
     // Candidates spread over past 60 days

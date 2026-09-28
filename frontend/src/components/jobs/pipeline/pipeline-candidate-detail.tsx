@@ -26,7 +26,7 @@ import {
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
 import type { Application, ApplicationStage, CandidateDocument, Interview, Job } from "@/types";
-import { PIPELINE_STAGES, type StageConfig } from "@/lib/stages";
+import { usePipelineStages, type StageConfig } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import {
   formatDate,
@@ -103,6 +103,7 @@ export function PipelineCandidateDetail({
   onDeleteApplication,
 }: PipelineCandidateDetailProps) {
   const { t } = useI18n();
+  const pipelineStages = usePipelineStages();
 
   return (
     <section
@@ -127,7 +128,7 @@ export function PipelineCandidateDetail({
           {/* Quick Stage Transition Buttons (Admins only) */}
           {canEdit && (
             <div className="flex items-center justify-end gap-2 flex-wrap">
-              {PIPELINE_STAGES.filter(
+              {pipelineStages.filter(
                 (stage) => stage.id !== selectedCandidate.stage,
               ).map((stage) => (
                 <button

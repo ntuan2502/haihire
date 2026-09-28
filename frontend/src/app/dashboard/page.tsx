@@ -21,7 +21,6 @@ import {
   Activity,
   Clock,
   Calendar,
-  MessageSquare,
   ArrowRight,
   Video,
   MapPin,
@@ -144,7 +143,7 @@ function DashboardContent() {
         new Date(b.createdAt || 0).getTime() -
         new Date(a.createdAt || 0).getTime(),
     )
-    .slice(0, 8);
+    .slice(0, 25);
 
   // Quick action: Create a test job
   const handleCreateTestJob = async () => {
@@ -195,55 +194,67 @@ function DashboardContent() {
                   />
                 ) : (
                   /* When jobs exist, display full high-fidelity Dashboard with live database metrics */
-                  <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+                  <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10 space-y-6">
                     {/* Top Stat Cards Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       {/* Card 1: OPEN JOBS */}
                       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all hover:shadow-sm">
-                        <div className="relative z-10">
-                          <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                            {openJobsCount}.
+                        <div className="relative z-10 flex items-start justify-between">
+                          <div>
+                            <div className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                              {t("dashboard.openJobsUpper")}
+                            </div>
+                            <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mt-1">
+                              {openJobsCount}.
+                            </div>
+                            <div className="mt-1 text-xs text-slate-400">
+                              {t("dashboard.draftsCount", { count: draftJobsCount })}
+                            </div>
                           </div>
-                          <div className="mt-1 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                            {t("dashboard.openJobsUpper")}
-                          </div>
-                          <div className="mt-0.5 text-xs text-slate-400">
-                            {t("dashboard.draftsCount", { count: draftJobsCount })}
+                          <div className="h-10 w-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100/80 dark:border-blue-900/60 shrink-0">
+                            <Briefcase className="h-5 w-5" />
                           </div>
                         </div>
-                        <Briefcase className="absolute -bottom-2 -right-2 h-20 w-20 text-slate-100 dark:text-slate-800/40 pointer-events-none opacity-70" />
                       </div>
 
                       {/* Card 2: CANDIDATES */}
                       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all hover:shadow-sm">
-                        <div className="relative z-10">
-                          <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                            {totalCandidatesCount}.
+                        <div className="relative z-10 flex items-start justify-between">
+                          <div>
+                            <div className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                              {t("dashboard.candidatesUpper")}
+                            </div>
+                            <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mt-1">
+                              {totalCandidatesCount}.
+                            </div>
+                            <div className="mt-1 text-xs text-slate-400">
+                              {t("dashboard.talentPoolSubtitle")}
+                            </div>
                           </div>
-                          <div className="mt-1 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                            {t("dashboard.candidatesUpper")}
-                          </div>
-                          <div className="mt-0.5 text-xs text-slate-400">
-                            {t("dashboard.talentPoolSubtitle")}
+                          <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100/80 dark:border-indigo-900/60 shrink-0">
+                            <Users className="h-5 w-5" />
                           </div>
                         </div>
-                        <Users className="absolute -bottom-2 -right-2 h-20 w-20 text-slate-100 dark:text-slate-800/40 pointer-events-none opacity-70" />
                       </div>
 
                       {/* Card 3: APPLICATIONS */}
                       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all hover:shadow-sm">
-                        <div className="relative z-10">
-                          <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                            {totalApplicationsCount}.
+                        <div className="relative z-10 flex items-start justify-between">
+                          <div>
+                            <div className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                              {t("dashboard.applicationsUpper")}
+                            </div>
+                            <div className="text-3xl font-black tracking-tight text-slate-900 dark:text-white mt-1">
+                              {totalApplicationsCount}.
+                            </div>
+                            <div className="mt-1 text-xs text-slate-400">
+                              {t("dashboard.totalReceived")}
+                            </div>
                           </div>
-                          <div className="mt-1 text-[11px] font-bold tracking-wider text-slate-500 uppercase">
-                            {t("dashboard.applicationsUpper")}
-                          </div>
-                          <div className="mt-0.5 text-xs text-slate-400">
-                            {t("dashboard.totalReceived")}
+                          <div className="h-10 w-10 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100/80 dark:border-purple-900/60 shrink-0">
+                            <FileText className="h-5 w-5" />
                           </div>
                         </div>
-                        <FileText className="absolute -bottom-2 -right-2 h-20 w-20 text-slate-100 dark:text-slate-800/40 pointer-events-none opacity-70" />
                       </div>
 
                       {/* Card 4: TO REVIEW */}
@@ -254,427 +265,420 @@ function DashboardContent() {
                             : "border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900"
                         }`}
                       >
-                        <div className="relative z-10">
-                          <div
-                            className={`text-3xl font-black tracking-tight ${
-                              toReviewCount > 0
-                                ? "text-amber-600 dark:text-amber-400"
-                                : "text-slate-900 dark:text-white"
-                            }`}
-                          >
-                            {toReviewCount}.
+                        <div className="relative z-10 flex items-start justify-between">
+                          <div>
+                            <div
+                              className={`text-[11px] font-bold tracking-wider uppercase ${
+                                toReviewCount > 0
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : "text-slate-500"
+                              }`}
+                            >
+                              {t("dashboard.toReviewUpper")}
+                            </div>
+                            <div
+                              className={`text-3xl font-black tracking-tight mt-1 ${
+                                toReviewCount > 0
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : "text-slate-900 dark:text-white"
+                              }`}
+                            >
+                              {toReviewCount}.
+                            </div>
+                            <div
+                              className={`mt-1 text-xs ${
+                                toReviewCount > 0
+                                  ? "text-amber-600/80 dark:text-amber-400/80"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              {toReviewCount > 0 ? t("dashboard.youHaventViewed") : t("dashboard.allViewed")}
+                            </div>
                           </div>
                           <div
-                            className={`mt-1 text-[11px] font-bold tracking-wider uppercase ${
+                            className={`h-10 w-10 rounded-2xl flex items-center justify-center border shrink-0 ${
                               toReviewCount > 0
-                                ? "text-amber-600 dark:text-amber-400"
-                                : "text-slate-500"
+                                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-100/80 dark:border-amber-900/60"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200/60 dark:border-slate-700/50"
                             }`}
                           >
-                            {t("dashboard.toReviewUpper")}
-                          </div>
-                          <div
-                            className={`mt-0.5 text-xs ${
-                              toReviewCount > 0
-                                ? "text-amber-600/80 dark:text-amber-400/80"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            {toReviewCount > 0 ? t("dashboard.youHaventViewed") : t("dashboard.allViewed")}
+                            <AlertCircle className="h-5 w-5" />
                           </div>
                         </div>
-                        <AlertCircle
-                          className={`absolute -bottom-2 -right-2 h-20 w-20 pointer-events-none ${
-                            toReviewCount > 0
-                              ? "text-amber-50 dark:text-amber-950/40 opacity-80"
-                              : "text-slate-100 dark:text-slate-800/40 opacity-70"
-                          }`}
-                        />
                       </div>
                     </div>
 
-                    {/* Main 2-Column Dashboard Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                      {/* LEFT COLUMN: HIRING PIPELINE & RECENT APPLICATIONS */}
-                      <div className="lg:col-span-7 space-y-6">
-                        {/* Card A: Hiring Pipeline */}
-                        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
-                          {/* Header */}
-                          <div className="flex items-center justify-between flex-wrap gap-2">
-                            <div className="flex items-center gap-2">
-                              <Activity className="h-4 w-4 text-slate-400" />
-                              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                {t("dashboard.hiringPipeline")}
-                              </h3>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60">
-                                {t("dashboard.openPositionsCount", { count: pipelineJobs.length })}
-                              </span>
-                            </div>
-                            <Link
-                              href="/dashboard/jobs"
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
-                            >
-                              <span>{t("dashboard.allJobs")}</span>
-                              <ArrowRight className="h-3 w-3" />
-                            </Link>
+                    {/* Main 3-Column Equal Dashboard Grid (Option A) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                      {/* COLUMN 1: QUY TRÌNH TUYỂN DỤNG (Hiring Pipeline) */}
+                      <div className="flex flex-col h-[600px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        {/* Header */}
+                        <div className="flex items-center justify-between shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Activity className="h-4 w-4 text-slate-400 shrink-0" />
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {t("dashboard.hiringPipeline")}
+                            </h3>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/60 shrink-0">
+                              {pipelineJobs.length}
+                            </span>
                           </div>
-
-                          {/* Job Pipeline Breakdown for all active jobs */}
-                          {pipelineJobs.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
-                              <Briefcase className="h-8 w-8 text-slate-300 dark:text-slate-700" />
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                {t("dashboard.noActiveJobs")}
-                              </p>
-                              <Link
-                                href="/dashboard/jobs"
-                                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                              >
-                                {t("jobs.createJob")}
-                              </Link>
-                            </div>
-                          ) : (
-                            <div className="space-y-6 pt-1">
-                              {pipelineJobs.map((job) => {
-                                const jobApps = applications.filter(
-                                  (a) => a.jobId === job.id,
-                                );
-                                const totalPipeline = jobApps.length;
-                                const stageCounts: Record<
-                                  ApplicationStage,
-                                  number
-                                > = {
-                                  APPLIED: 0,
-                                  SCREENING: 0,
-                                  INTERVIEW: 0,
-                                  OFFER: 0,
-                                  HIRED: 0,
-                                  REJECTED: 0,
-                                };
-                                for (const a of jobApps) {
-                                  if (stageCounts[a.stage] !== undefined) {
-                                    stageCounts[a.stage]++;
-                                  }
-                                }
-
-                                return (
-                                  <div key={job.id} className="space-y-2.5">
-                                    {/* Job Title & Total Candidates */}
-                                    <div className="flex items-center justify-between">
-                                      <Link
-                                        href={`/dashboard/jobs/${job.id}/pipeline`}
-                                        className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                      >
-                                        {job.title}
-                                      </Link>
-                                      <span className="text-xs text-slate-400 font-normal">
-                                        {totalPipeline} {t("pipeline.stageCounts")}
-                                      </span>
-                                    </div>
-
-                                    {/* Multi-segment Progress Bar */}
-                                    <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 flex overflow-hidden">
-                                      {pipelineStages.map((stage) => {
-                                        const count =
-                                          stageCounts[stage.id] || 0;
-                                        const pct =
-                                          totalPipeline > 0
-                                            ? (count / totalPipeline) * 100
-                                            : 0;
-                                        if (pct <= 0) return null;
-                                        return (
-                                          <div
-                                            key={stage.id}
-                                            style={{ width: `${pct}%` }}
-                                            className={`${stage.barColor} h-full`}
-                                            title={`${stage.label}: ${count}`}
-                                          />
-                                        );
-                                      })}
-                                    </div>
-
-                                    {/* 6 Stage Metric Cards */}
-                                    <div className="grid grid-cols-6 gap-2 pt-1">
-                                      {pipelineStages.map((stage) => {
-                                        const count =
-                                          stageCounts[stage.id] || 0;
-                                        return (
-                                          <div
-                                            key={stage.id}
-                                            onClick={() =>
-                                              router.push(
-                                                `/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`,
-                                              )
-                                            }
-                                            className={`flex flex-col items-center justify-center p-2.5 rounded-xl ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-colors text-center`}
-                                          >
-                                            <span
-                                              className={`text-xs font-bold ${stage.textColor}`}
-                                            >
-                                              {count}
-                                            </span>
-                                            <span
-                                              className={`text-[10px] font-semibold ${stage.textColor} opacity-80 mt-0.5 text-center leading-tight`}
-                                            >
-                                              {stage.label}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                          <Link
+                            href="/dashboard/jobs"
+                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
+                          >
+                            <span>{t("dashboard.allJobs")}</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
                         </div>
 
-                        {/* Card B: Recent Applications */}
-                        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-                          {/* Header */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-slate-400" />
-                              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                {t("dashboard.recentApplications")}
-                              </h3>
-                            </div>
+                        {/* Scrollable Pipeline Jobs Content */}
+                        {pipelineJobs.length === 0 ? (
+                          <div className="flex flex-1 flex-col items-center justify-center py-8 text-center space-y-2">
+                            <Briefcase className="h-8 w-8 text-slate-300 dark:text-slate-700" />
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                              {t("dashboard.noActiveJobs")}
+                            </p>
                             <Link
-                              href="/dashboard/applications"
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                              href="/dashboard/jobs"
+                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                             >
-                              <span>{t("common.viewAll")}</span>
-                              <ArrowRight className="h-3 w-3" />
+                              {t("jobs.createJob")}
                             </Link>
                           </div>
+                        ) : (
+                          <div className="flex-1 overflow-y-auto pt-3 pr-1.5 -mr-1.5 space-y-3">
+                            {pipelineJobs.map((job) => {
+                              const jobApps = applications.filter(
+                                (a) => a.jobId === job.id,
+                              );
+                              const totalPipeline = jobApps.length;
+                              const stageCounts: Record<
+                                ApplicationStage,
+                                number
+                              > = {
+                                APPLIED: 0,
+                                SCREENING: 0,
+                                INTERVIEW: 0,
+                                OFFER: 0,
+                                HIRED: 0,
+                                REJECTED: 0,
+                              };
+                              for (const a of jobApps) {
+                                if (stageCounts[a.stage] !== undefined) {
+                                  stageCounts[a.stage]++;
+                                }
+                              }
 
-                          {/* Applications List */}
-                          {recentApplications.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-                                <FileText className="h-5 w-5" />
-                              </div>
-                              <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                {t("dashboard.noApplicationsYet")}
-                              </h4>
+                              return (
+                                <div
+                                  key={job.id}
+                                  className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 space-y-2.5 transition-colors hover:border-slate-200 dark:hover:border-slate-700/80"
+                                >
+                                  {/* Job Title & Total Candidates */}
+                                  <div className="flex items-center justify-between gap-2">
+                                    <Link
+                                      href={`/dashboard/jobs/${job.id}/pipeline`}
+                                      className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate"
+                                      title={job.title}
+                                    >
+                                      {job.title}
+                                    </Link>
+                                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 shrink-0 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700/60">
+                                      {totalPipeline} {t("pipeline.stageCounts")}
+                                    </span>
+                                  </div>
+
+                                  {/* Multi-segment Progress Bar */}
+                                  <div className="h-1.5 w-full rounded-full bg-slate-200/70 dark:bg-slate-800 flex overflow-hidden">
+                                    {pipelineStages.map((stage) => {
+                                      const count =
+                                        stageCounts[stage.id] || 0;
+                                      const pct =
+                                        totalPipeline > 0
+                                          ? (count / totalPipeline) * 100
+                                          : 0;
+                                      if (pct <= 0) return null;
+                                      return (
+                                        <div
+                                          key={stage.id}
+                                          style={{ width: `${pct}%` }}
+                                          className={`${stage.barColor} h-full`}
+                                          title={`${stage.label}: ${count}`}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* 6 Stage Metric Cards (Streamlined Compact Pills) */}
+                                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 pt-0.5">
+                                    {pipelineStages.map((stage) => {
+                                      const count =
+                                        stageCounts[stage.id] || 0;
+                                      const displayLabel =
+                                        stage.id === "OFFER" && stage.label.includes("Đề nghị")
+                                          ? "Đề nghị"
+                                          : stage.id === "APPLIED" && stage.label.includes("Đã nộp")
+                                          ? "Đã nộp"
+                                          : stage.id === "HIRED" && stage.label.includes("Đã tuyển")
+                                          ? "Đã tuyển"
+                                          : stage.label;
+
+                                      return (
+                                        <div
+                                          key={stage.id}
+                                          onClick={() =>
+                                            router.push(
+                                              `/dashboard/jobs/${job.id}/pipeline?stage=${stage.id}`,
+                                            )
+                                          }
+                                          className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02]`}
+                                          title={`${stage.label}: ${count}`}
+                                        >
+                                          <span
+                                            className={`text-[9px] font-semibold ${stage.textColor} opacity-85 truncate mr-0.5`}
+                                          >
+                                            {displayLabel}
+                                          </span>
+                                          <span
+                                            className={`text-[11px] font-black ${stage.textColor} shrink-0`}
+                                          >
+                                            {count}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* COLUMN 2: HỒ SƠ ỨNG TUYỂN GẦN ĐÂY (Recent Applications) */}
+                      <div className="flex flex-col h-[600px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        {/* Header */}
+                        <div className="flex items-center justify-between shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {t("dashboard.recentApplications")}
+                            </h3>
+                            {recentApplications.length > 0 && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
+                                {recentApplications.length}
+                              </span>
+                            )}
+                          </div>
+                          <Link
+                            href="/dashboard/applications"
+                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
+                          >
+                            <span>{t("common.viewAll")}</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+
+                        {/* Scrollable Applications List */}
+                        {recentApplications.length === 0 ? (
+                          <div className="flex flex-1 flex-col items-center justify-center py-10 text-center space-y-2">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                              <FileText className="h-5 w-5" />
                             </div>
-                          ) : (
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                              {recentApplications.map((app) => {
-                                const candidateJob = jobs.find(
-                                  (j) => j.id === app.jobId,
-                                );
+                            <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                              {t("dashboard.noApplicationsYet")}
+                            </h4>
+                          </div>
+                        ) : (
+                          <div className="flex-1 overflow-y-auto pt-1 pr-1.5 -mr-1.5 divide-y divide-slate-100 dark:divide-slate-800/80">
+                            {recentApplications.map((app) => {
+                              const candidateJob = jobs.find(
+                                (j) => j.id === app.jobId,
+                              );
 
-                                return (
-                                  <div
-                                    key={app.id}
-                                    onClick={() =>
-                                      router.push(
-                                        `/dashboard/applications/${app.id}`,
-                                      )
-                                    }
-                                    className="flex items-center justify-between py-3 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                                  >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      {/* Avatar with Initials */}
-                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs">
+                              return (
+                                <div
+                                  key={app.id}
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/applications/${app.id}`,
+                                    )
+                                  }
+                                  className="flex items-center justify-between py-3 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group gap-3"
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    {/* Avatar with Initials */}
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs">
+                                      {getInitials(app.candidateName)}
+                                    </div>
+
+                                    {/* Name + Status + Role */}
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors truncate max-w-[130px]">
+                                          {app.candidateName}
+                                        </span>
+                                        <StageBadge stage={app.stage} />
+                                      </div>
+                                      <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                                        {candidateJob?.title || "Open Role"}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Timestamp */}
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">
+                                    {formatRelativeTime(app.createdAt)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* COLUMN 3: LỊCH PHỎNG VẤN SẮP TỚI (Upcoming Interviews) */}
+                      <div className="flex flex-col h-[600px] rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        {/* Header */}
+                        <div className="flex items-center justify-between shrink-0 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {t("dashboard.upcomingInterviews")}
+                            </h3>
+                            {upcomingInterviews.length > 0 && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60 shrink-0">
+                                {upcomingInterviews.length}
+                              </span>
+                            )}
+                          </div>
+                          <Link
+                            href="/dashboard/interviews"
+                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors shrink-0"
+                          >
+                            <span>{t("common.viewAll")}</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+
+                        {/* Scrollable Interviews Content */}
+                        {upcomingInterviews.length === 0 ? (
+                          <div className="flex flex-1 flex-col items-center justify-center py-10 text-center space-y-2">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
+                              <Calendar className="h-5 w-5" />
+                            </div>
+                            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                              {t("dashboard.noUpcomingInterviews")}
+                            </h4>
+                            <p className="text-[11px] text-slate-400">
+                              {t("dashboard.next7Days")}
+                            </p>
+                            <Link
+                              href="/dashboard/interviews"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                            >
+                              <span>+ {t("dashboard.scheduleNew")}</span>
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="flex-1 overflow-y-auto pt-1 pr-1.5 -mr-1.5 divide-y divide-slate-100 dark:divide-slate-800/80">
+                            {upcomingInterviews.map((item, idx) => {
+                              const { application: app, interview: intv, job } = item;
+                              const dateMeta = formatInterviewDate(intv.date, intv.time);
+                              const isOnline = intv.format !== "OFFICE";
+                              const dateBadgeText = dateMeta.type === "today"
+                                ? `${t("dashboard.today")}${dateMeta.timeSuffix}`
+                                : dateMeta.type === "tomorrow"
+                                ? `${t("dashboard.tomorrow")}${dateMeta.timeSuffix}`
+                                : dateMeta.label;
+
+                              return (
+                                <div
+                                  key={`${app.id}-${intv.date}-${intv.time}-${idx}`}
+                                  className="py-3 px-1 space-y-2 group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 rounded-xl transition-colors"
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="h-8 w-8 rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
                                         {getInitials(app.candidateName)}
                                       </div>
-
-                                      {/* Name + Status + Role */}
                                       <div className="min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                          <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <Link
+                                            href="/dashboard/interviews"
+                                            className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors truncate max-w-[130px]"
+                                          >
                                             {app.candidateName}
+                                          </Link>
+                                          <span className="text-[10px] text-slate-400 shrink-0">•</span>
+                                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                                            {getInterviewTypeLabel(intv.type, t)}
                                           </span>
-                                          <StageBadge stage={app.stage} />
                                         </div>
                                         <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                                          {candidateJob?.title || "Open Role"}
+                                          {job?.title || t("jobs.title")}
                                         </p>
                                       </div>
                                     </div>
 
-                                    {/* Timestamp */}
-                                    <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
-                                      {formatRelativeTime(app.createdAt)}
+                                    {/* Date pill */}
+                                    <span
+                                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
+                                        dateMeta.isToday
+                                          ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60"
+                                          : dateMeta.isTomorrow
+                                          ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
+                                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80"
+                                      }`}
+                                    >
+                                      {dateBadgeText}
                                     </span>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
 
-                      {/* RIGHT COLUMN: UPCOMING INTERVIEWS & UNANSWERED REPLIES */}
-                      <div className="lg:col-span-5 space-y-6">
-                        {/* Card C: Upcoming Interviews */}
-                        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
-                          {/* Header */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-slate-400" />
-                              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                {t("dashboard.upcomingInterviews")}
-                              </h3>
-                              {upcomingInterviews.length > 0 && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-900/60">
-                                  {upcomingInterviews.length}
-                                </span>
-                              )}
-                            </div>
-                            <Link
-                              href="/dashboard/interviews"
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 transition-colors"
-                            >
-                              <span>{t("common.viewAll")}</span>
-                              <ArrowRight className="h-3 w-3" />
-                            </Link>
-                          </div>
-
-                          {/* Content: Real Upcoming Interviews or Empty State */}
-                          {upcomingInterviews.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-                                <Calendar className="h-5 w-5" />
-                              </div>
-                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {t("dashboard.noUpcomingInterviews")}
-                              </h4>
-                              <p className="text-[11px] text-slate-400">
-                                {t("dashboard.next7Days")}
-                              </p>
-                              <Link
-                                href="/dashboard/interviews"
-                                 className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                              >
-                                <span>+ {t("dashboard.scheduleNew")}</span>
-                              </Link>
-                            </div>
-                          ) : (
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                              {upcomingInterviews.slice(0, 5).map((item, idx) => {
-                                const { application: app, interview: intv, job } = item;
-                                const dateMeta = formatInterviewDate(intv.date, intv.time);
-                                const isOnline = intv.format !== "OFFICE";
-                                const dateBadgeText = dateMeta.type === "today"
-                                  ? `${t("dashboard.today")}${dateMeta.timeSuffix}`
-                                  : dateMeta.type === "tomorrow"
-                                  ? `${t("dashboard.tomorrow")}${dateMeta.timeSuffix}`
-                                  : dateMeta.label;
-
-                                return (
-                                  <div
-                                    key={`${app.id}-${intv.date}-${intv.time}-${idx}`}
-                                    className="py-3 px-1 space-y-2 group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 rounded-xl transition-colors"
-                                  >
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex items-center gap-2.5 min-w-0">
-                                        <div className="h-8 w-8 rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
-                                          {getInitials(app.candidateName)}
-                                        </div>
-                                        <div className="min-w-0">
-                                          <div className="flex items-center gap-1.5 flex-wrap">
-                                            <Link
-                                              href="/dashboard/interviews"
-                                              className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors truncate"
-                                            >
-                                              {app.candidateName}
-                                            </Link>
-                                            <span className="text-[10px] text-slate-400 shrink-0">•</span>
-                                            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                                              {getInterviewTypeLabel(intv.type, t)}
+                                  {/* Bottom details row */}
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pl-10.5">
+                                    <div className="flex items-center gap-3 truncate">
+                                      <span className="flex items-center gap-1 truncate max-w-[110px]">
+                                        <User className="h-3 w-3 text-slate-400 shrink-0" />
+                                        <span className="truncate">{intv.interviewer}</span>
+                                      </span>
+                                      <span className="flex items-center gap-1 shrink-0">
+                                        {isOnline ? (
+                                          <>
+                                            <Video className="h-3 w-3 text-emerald-500 shrink-0" />
+                                            <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[10px]">
+                                              {intv.format}
                                             </span>
-                                          </div>
-                                          <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                                            {job?.title || t("jobs.title")}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {/* Date pill */}
-                                      <span
-                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
-                                          dateMeta.isToday
-                                            ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60"
-                                            : dateMeta.isTomorrow
-                                            ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
-                                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80"
-                                        }`}
-                                      >
-                                        {dateBadgeText}
+                                          </>
+                                        ) : (
+                                          <>
+                                            <MapPin className="h-3 w-3 text-rose-500 shrink-0" />
+                                            <span className="text-rose-600 dark:text-rose-400 font-medium text-[10px]">
+                                              {t("dashboard.officeMeeting")}
+                                            </span>
+                                          </>
+                                        )}
                                       </span>
                                     </div>
 
-                                    {/* Bottom details row */}
-                                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pl-10.5">
-                                      <div className="flex items-center gap-3 truncate">
-                                        <span className="flex items-center gap-1 truncate">
-                                          <User className="h-3 w-3 text-slate-400 shrink-0" />
-                                          <span className="truncate">{intv.interviewer}</span>
-                                        </span>
-                                        <span className="flex items-center gap-1 shrink-0">
-                                          {isOnline ? (
-                                            <>
-                                              <Video className="h-3 w-3 text-emerald-500 shrink-0" />
-                                              <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[10px]">
-                                                {intv.format}
-                                              </span>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <MapPin className="h-3 w-3 text-rose-500 shrink-0" />
-                                              <span className="text-rose-600 dark:text-rose-400 font-medium text-[10px]">
-                                                {t("dashboard.officeMeeting")}
-                                              </span>
-                                            </>
-                                          )}
-                                        </span>
-                                      </div>
-
-                                      {intv.linkOrLocation?.startsWith("http") && (
-                                        <a
-                                          href={intv.linkOrLocation}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shrink-0"
-                                        >
-                                          <Video className="h-2.5 w-2.5" />
-                                          <span>{t("dashboard.joinMeeting")}</span>
-                                        </a>
-                                      )}
-                                    </div>
+                                    {intv.linkOrLocation?.startsWith("http") && (
+                                      <a
+                                        href={intv.linkOrLocation}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors shrink-0"
+                                      >
+                                        <Video className="h-2.5 w-2.5" />
+                                        <span>{t("dashboard.joinMeeting")}</span>
+                                      </a>
+                                    )}
                                   </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Card D: Unanswered Replies */}
-                        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-5">
-                          {/* Header */}
-                          <div className="flex items-center gap-2">
-                            <MessageSquare className="h-4 w-4 text-slate-400" />
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                              {t("dashboard.unansweredReplies")}
-                            </h3>
+                                </div>
+                              );
+                            })}
                           </div>
-
-                          {/* Empty State */}
-                          <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 mb-1">
-                              <MessageSquare className="h-5 w-5" />
-                            </div>
-                            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              {t("dashboard.noUnansweredReplies")}
-                            </h4>
-                            <p className="text-[11px] text-slate-400 max-w-xs">
-                              {t("dashboard.candidatesAppearHere")}
-                            </p>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>

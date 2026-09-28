@@ -65,6 +65,16 @@ services:
     image: redis:7-alpine
     container_name: haihire-redis
     restart: unless-stopped
+    command: >
+      /bin/sh -c "
+        if [ -n \"$${REDIS_PASSWORD}\" ]; then
+          redis-server --requirepass \"$${REDIS_PASSWORD}\";
+        else
+          redis-server;
+        fi
+      "
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -72,7 +82,7 @@ services:
     networks:
       - haihire-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD}\" ]; then redis-cli -a \"$${REDIS_PASSWORD}\" ping; else redis-cli ping; fi" ]
       interval: 5s
       timeout: 5s
       retries: 5

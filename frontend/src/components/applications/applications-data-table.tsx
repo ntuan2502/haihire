@@ -22,6 +22,7 @@ import {
   MessageSquare,
   FileCheck,
   RotateCcw,
+  Pencil,
 } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -828,6 +829,9 @@ export function ApplicationsDataTable({
                       </span>
                     </th>
                   )}
+                  <th className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500">
+                    {t("common.actions")}
+                  </th>
                 </tr>
               </thead>
 
@@ -902,6 +906,36 @@ export function ApplicationsDataTable({
                           {formatRelativeTime(application.createdAt)}
                         </td>
                       )}
+
+                      {/* Actions */}
+                      <td className="py-4 px-5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/applications/${application.id}`);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.edit")}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteModalApp(application);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+                              title={t("common.delete")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}

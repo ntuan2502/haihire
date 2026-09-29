@@ -11,6 +11,7 @@ import {
   Star,
   User,
   Video,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getInitials, getCandidateDisplayName } from "@/lib/utils";
@@ -41,6 +42,7 @@ export interface InterviewsTableViewProps {
   ) => void;
   onOpenScorecard: (app: Application, interview: ScheduledInterviewInfo) => void;
   onNavigateToPipeline: (jobId: string, applicationId?: string, stage?: string) => void;
+  onCancelInterview?: (app: Application, interview: ScheduledInterviewInfo) => void;
   canEdit?: boolean;
 }
 
@@ -51,6 +53,7 @@ export function InterviewsTableView({
   onOpenScheduleModal,
   onOpenScorecard,
   onNavigateToPipeline,
+  onCancelInterview,
   canEdit = true,
 }: InterviewsTableViewProps) {
   const { t } = useI18n();
@@ -333,19 +336,34 @@ export function InterviewsTableView({
                     )}
 
                     {/* 7. Actions */}
-                    <td className="py-3.5 px-4 text-right align-middle">
-                      {canEdit && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => onOpenScheduleModal(app, undefined, currentInterview)}
-                          className="h-7 px-2.5 rounded-xl text-[11px] font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 transition-colors shadow-2xs whitespace-nowrap"
-                        >
-                          {allInterviews.length > 0
-                            ? t("interviews.editSchedule")
-                            : t("interviews.scheduleNow")}
-                        </Button>
-                      )}
+                    <td className="py-3.5 px-4 text-right align-middle whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {canEdit && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onOpenScheduleModal(app, undefined, currentInterview)}
+                            className="h-7 px-2.5 rounded-xl text-[11px] font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 transition-colors shadow-2xs whitespace-nowrap"
+                          >
+                            {allInterviews.length > 0
+                              ? t("interviews.editSchedule")
+                              : t("interviews.scheduleNow")}
+                          </Button>
+                        )}
+                        {canEdit && currentInterview && onCancelInterview && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onCancelInterview(app, currentInterview);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("interviews.cancelThisSchedule")}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
 

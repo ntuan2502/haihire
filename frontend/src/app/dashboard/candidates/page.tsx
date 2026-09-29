@@ -15,6 +15,7 @@ import {
   useAllJobs,
   useCandidates,
   useCandidate,
+  useDeleteCandidateMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { SlideOver } from "@/components/shared/slide-over";
@@ -31,6 +32,8 @@ import {
   SlidersHorizontal,
   X,
   RotateCcw,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -39,6 +42,7 @@ import {
 } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
+import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-modal";
 import type { Application } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
@@ -86,6 +90,19 @@ function CandidatesPageContent() {
     useState<Application | null>(null);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
+
+  const deleteCandidateMutation = useDeleteCandidateMutation();
+  const [candidateToDelete, setCandidateToDelete] = useState<CandidateItem | null>(null);
+
+  const handleConfirmDeleteCandidate = async () => {
+    if (!candidateToDelete) return;
+    try {
+      await deleteCandidateMutation.mutateAsync(candidateToDelete.id);
+      setCandidateToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete candidate:", err);
+    }
+  };
 
 
 
@@ -554,6 +571,9 @@ function CandidatesPageContent() {
                         {t("candidates.columns.quickNotes")}
                       </th>
                     )}
+                    <th className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500">
+                      {t("common.actions")}
+                    </th>
                   </tr>
                 </thead>
 
@@ -627,6 +647,36 @@ function CandidatesPageContent() {
                           )}
                         </td>
                       )}
+
+                      {/* Actions */}
+                      <td className="py-4 px-5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/candidates/${candidate.id}`);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.edit")}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCandidateToDelete(candidate);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+                              title={t("common.delete")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -684,6 +734,17 @@ function CandidatesPageContent() {
           selectedJobId={scheduleInterviewApp.jobId || undefined}
           selectedApplicationId={scheduleInterviewApp.id}
           editingInterview={editingInterview}
+        />
+      )}
+
+      {/* Delete Candidate Confirmation Modal */}
+      {candidateToDelete && (
+        <DeleteCandidateModal
+          isOpen={!!candidateToDelete}
+          onClose={() => setCandidateToDelete(null)}
+          onConfirm={handleConfirmDeleteCandidate}
+          candidateName={candidateToDelete.name}
+          isDeleting={deleteCandidateMutation.isPending}
         />
       )}
 

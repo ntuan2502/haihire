@@ -83,6 +83,13 @@ updated: 2026-09-18
 ## Two-Tier Deletion Protocol
 - **Safety First**: Root records like Jobs and Candidates must support 30-day soft-delete recovery before permanently purging cascade relations.
 
+## Error Contract & Localized Exception Discipline
+- **Machine-Readable Codes**: Always throw `App<Type>Exception` with a specific `APP_ERROR_CODES` from `@haihire/shared`. Never use generic `FORBIDDEN` or NestJS raw `NotFoundException` when a specific domain code exists.
+- **Isolated Parameters**: Always isolate variable arguments in `params: { ... }`. Never concatenate dynamic variables into error messages.
+- **English Default Message**: Backend messages must be clean, professional English for logging and fallback.
+- **Client Locale Isolation**: All translated strings remain in client dictionaries. Never bundle full multi-language translations into `@haihire/shared` or backend.
+- **Centralized Test Setup**: Eliminate ad-hoc `mockTranslations` across test specs by using centralized `useI18n` mocks backed by real locale files.
+
 
 
 

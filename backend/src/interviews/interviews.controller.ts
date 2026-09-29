@@ -43,8 +43,9 @@ export class InterviewsController {
     const userOrgId = req?.user?.organizationId || undefined;
     if (organizationId && userOrgId && organizationId !== userOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
         "Access denied: cannot access interviews from another organization.",
+        { organizationId },
       );
     }
     const orgId = userOrgId || organizationId || undefined;
@@ -73,8 +74,9 @@ export class InterviewsController {
       (interview as unknown as { application?: { job?: { organizationId?: string } } })?.application?.job?.organizationId;
     if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
         "Access denied: interview belongs to another organization.",
+        { id, organizationId: intvOrgId },
       );
     }
     return interview;
@@ -105,8 +107,9 @@ export class InterviewsController {
       (interview as unknown as { application?: { candidate?: { organizationId?: string } } })?.application?.candidate?.organizationId;
     if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
         "Access denied: interview belongs to another organization.",
+        { id, organizationId: intvOrgId },
       );
     }
     return this.interviewsService.update(id, dto);
@@ -126,8 +129,9 @@ export class InterviewsController {
       (interview as unknown as { application?: { candidate?: { organizationId?: string } } })?.application?.candidate?.organizationId;
     if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
         "Access denied: interview belongs to another organization.",
+        { id, organizationId: intvOrgId },
       );
     }
     return this.interviewsService.remove(id);

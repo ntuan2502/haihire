@@ -57,8 +57,9 @@ export class CandidatesController {
     const userOrgId = req?.user?.organizationId || undefined;
     if (organizationId && userOrgId && organizationId !== userOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
         "Access denied: cannot access candidates from another organization.",
+        { organizationId },
       );
     }
     const orgId = userOrgId || organizationId || undefined;
@@ -87,8 +88,9 @@ export class CandidatesController {
       userOrgId !== candidate.organizationId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
         "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
       );
     }
 
@@ -146,8 +148,9 @@ export class CandidatesController {
       req.user.organizationId !== candidate.organizationId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
         "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
       );
     }
     return this.candidatesService.update(id, dto);
@@ -175,8 +178,9 @@ export class CandidatesController {
       req.user.organizationId !== candidate.organizationId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
         "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
       );
     }
     return this.candidatesService.uploadDocument(id, file, documentType);
@@ -207,8 +211,9 @@ export class CandidatesController {
       req.user.organizationId !== candidate.organizationId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
         "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
       );
     }
 
@@ -238,8 +243,9 @@ export class CandidatesController {
       );
       if (!isAllowed) {
         throw new AppForbiddenException(
-          APP_ERROR_CODES.FORBIDDEN,
+          APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
           "Access denied: specified document does not belong to this candidate.",
+          { id },
         );
       }
     }
@@ -303,8 +309,9 @@ export class CandidatesController {
       req.user.organizationId !== candidate.organizationId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
         "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
       );
     }
     return this.candidatesService.deleteDocument(id, { documentId, url });
@@ -324,8 +331,9 @@ export class CandidatesController {
       req.user.organizationId !== candidate.organizationId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
         "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
       );
     }
     return this.candidatesService.remove(id);

@@ -156,11 +156,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       }
 
       // Inject default brand context + custom parameters
+      const resolvedId = params?.id || params?.applicationId || params?.candidateId || params?.jobId || params?.interviewId;
       const mergedParams: Record<string, string | number> = {
         brand: BRAND_CONFIG.name,
         brandLegal: BRAND_CONFIG.legalName,
         brandMonogram: BRAND_CONFIG.monogram,
         domain: BRAND_CONFIG.domain,
+        ...(resolvedId !== undefined ? { id: resolvedId } : {}),
         ...params,
       };
 
@@ -168,6 +170,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       Object.entries(mergedParams).forEach(([paramKey, paramVal]) => {
         text = text.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramVal));
       });
+
+      // Gracefully clean up any unsupplied placeholders so literal `{param}` never leaks to users
+      text = text.replace(/\s*\(\{[a-zA-Z0-9_]+\}\)/g, "");
+      text = text.replace(/['"]\{[a-zA-Z0-9_]+\}['"]\s*/g, "");
+      text = text.replace(/\{[a-zA-Z0-9_]+\}/g, "");
+      text = text.replace(/\s{2,}/g, " ").trim();
       return text;
     },
     [locale]

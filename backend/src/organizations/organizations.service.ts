@@ -410,8 +410,9 @@ export class OrganizationsService implements OnModuleInit {
 
     if (!isOwner && !membership && !isCurrentMember) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "You do not have access to this organization. Please join via an invite link.",
+        { organizationId: targetOrgId },
       );
     }
 

@@ -154,6 +154,7 @@ export class CandidatesService {
       throw new AppNotFoundException(
         APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
         `Candidate with ID ${id} not found`,
+        { id },
       );
     }
 

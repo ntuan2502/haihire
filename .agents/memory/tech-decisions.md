@@ -88,9 +88,11 @@ updated: 2026-09-18
   - **Decision**: Log every state mutation on core domain entities to `ActivityLog` via `ActivitiesService` while scrubbing PII.
   - **Rationale**: Complies with enterprise HR audit requirements, delivers transparent activity feeds in candidate profiles, and prevents silent data tampering.
 
-- **Unified Error Envelope & Client Extraction**:
-  - **Decision**: Require all backend exceptions to inherit from `AppException` returning standardized JSON envelopes, parsed on frontend exclusively via `getApiErrorMessage`.
-  - **Rationale**: Prevents unhandled client exceptions, eliminates generic "Error occurred" toasts, and delivers precise, localized feedback to users.
+- **Unified Error Envelope, Machine-Readable Codes & Client-Side i18n Architecture**:
+  - **Decision**: Standardize all API errors on `AppException` returning `{ statusCode, code, message, params }`. `code` must be a machine-readable domain code from `APP_ERROR_CODES` in `@haihire/shared`. Dynamic values must be isolated in `params` (never concatenated into `message`).
+  - **English Fallback**: `message` is strictly English for logging, developer debugging, and external API consumers.
+  - **Client-Side Localization**: Client frontend resolves localized strings via `getApiErrorMessage(error, t)` by looking up `errors.${payload.code}` with parameter interpolation. Translations remain strictly on the frontend (or client locale files) to prevent backend bundle bloat when adding new languages (e.g. Japanese, French).
+  - **Centralized Test Setup**: Frontend Vitest configuration must provide a shared `useI18n` mock backed by actual locale dictionaries, eliminating repetitive mock declarations across `*.spec.tsx` files.
 
 - **Background Job Idempotency & Queue Resilience**:
   - **Decision**: Configure all BullMQ producer queues with deterministic `jobId` keys based on entity IDs and action types, combined with Redis deduplication windows.

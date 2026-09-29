@@ -27,7 +27,7 @@
 - [project] TanStack Query Factory: centralized QUERY_KEYS and mandatory mutation cache invalidation → project-conventions.md
 - [project] Recruitment Stage State Machine: deterministic lifecycle transitions with precondition checks → project-conventions.md
 - [project] Audit Trail Architecture: zero silent mutations, asynchronous ActivityLog emission with PII scrubbing → project-conventions.md
-- [project] Unified Error Envelope: standard AppException JSON shape and getApiErrorMessage client consumption → project-conventions.md
+- [project] Unified Error Envelope & Client-Side i18n Architecture: machine-readable APP_ERROR_CODES, isolated params, English fallback, and getApiErrorMessage → tech-decisions.md
 - [project] Background Job Idempotency: deterministic job IDs and Redis deduplication locks → project-conventions.md
 - [project] Safe Email Template Engine: strict HTML escaping, context sanitization, and anti-XSS → project-conventions.md
 - [project] Two-Tier Deletion Protocol: soft-delete on primary entities with 30-day purge cascade → project-conventions.md
@@ -53,8 +53,10 @@
 - [user] Queue & Job Idempotency: no duplicate email dispatches via deterministic jobId keys → user-preferences.md
 - [user] Email Template Security: safe rendering and anti-XSS sanitization of candidate variables → user-preferences.md
 - [user] Two-Tier Deletion: 30-day soft delete recovery window for Jobs and Candidates → user-preferences.md
+- [user] Error Contract Discipline: throw domain APP_ERROR_CODES, isolate params, centralized test i18n setup → user-preferences.md
 
 ## Feedback
+- [feedback] 2026-09-29: Error Contract Standardization, Isolated Dynamic Params & Centralized Test i18n Setup → feedback-history.md
 - [feedback] 2026-09-28: React Callback Hygiene, Network Gatekeeper & Comprehensive Test Baseline → feedback-history.md
 - [feedback] 2026-09-23: Standardized Project Commands & package.json First → feedback-history.md
 - [feedback] 2026-09-19: Senior / Principal Engineering Mindset (No Quick-and-Dirty Patches) → feedback-history.md

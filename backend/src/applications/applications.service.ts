@@ -50,8 +50,9 @@ export class ApplicationsService {
 
     if (organizationId && job.organizationId && job.organizationId !== organizationId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
+        { jobId, organizationId },
       );
     }
 
@@ -355,6 +356,7 @@ export class ApplicationsService {
       throw new AppNotFoundException(
         APP_ERROR_CODES.APPLICATION_NOT_FOUND,
         `Application with ID ${id} not found`,
+        { id },
       );
     }
 

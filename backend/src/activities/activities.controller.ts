@@ -33,8 +33,9 @@ export class ActivitiesController {
     const userOrgId = req?.user?.organizationId || undefined;
     if (organizationId && userOrgId && organizationId !== userOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Access denied: cannot access activities from another organization.",
+        { candidateId, organizationId },
       );
     }
     const orgId = userOrgId || organizationId || undefined;
@@ -55,8 +56,9 @@ export class ActivitiesController {
     const userOrgId = req?.user?.organizationId || undefined;
     if (organizationId && userOrgId && organizationId !== userOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Access denied: cannot access activities from another organization.",
+        { applicationId, organizationId },
       );
     }
     const orgId = userOrgId || organizationId || undefined;

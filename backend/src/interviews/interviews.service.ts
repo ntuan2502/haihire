@@ -394,7 +394,11 @@ export class InterviewsService {
   async findOne(id: string) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
-      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_NOT_FOUND, `Interview with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
+        `Interview with ID ${id} not found`,
+        { id },
+      );
     }
 
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(intv.applicationId)).first();
@@ -437,7 +441,11 @@ export class InterviewsService {
   async create(dto: CreateInterviewDto, organizationId?: string) {
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(dto.applicationId)).first();
     if (!app) {
-      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND, `Application with ID ${dto.applicationId} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND,
+        `Application with ID ${dto.applicationId} not found`,
+        { applicationId: dto.applicationId, id: dto.applicationId },
+      );
     }
 
     if (app.stage === "REJECTED") {
@@ -457,8 +465,9 @@ export class InterviewsService {
 
     if (organizationId && orgId && orgId !== organizationId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { applicationId: dto.applicationId, organizationId },
       );
     }
 
@@ -558,7 +567,11 @@ export class InterviewsService {
   async update(id: string, dto: UpdateInterviewDto) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
-      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_NOT_FOUND, `Interview with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
+        `Interview with ID ${id} not found`,
+        { id },
+      );
     }
 
     const updateData: InterviewUpdatePayload = {};
@@ -601,7 +614,11 @@ export class InterviewsService {
   async remove(id: string) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
-      throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_NOT_FOUND, `Interview with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
+        `Interview with ID ${id} not found`,
+        { id },
+      );
     }
 
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).delete();

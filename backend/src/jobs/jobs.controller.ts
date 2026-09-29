@@ -60,8 +60,9 @@ export class JobsController {
       organizationId !== userOrgId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: cannot view unpublished jobs from another organization.",
+        { organizationId },
       );
     }
 
@@ -105,8 +106,9 @@ export class JobsController {
     const userOrgId = req?.user?.organizationId || undefined;
     if (dto.organizationId && userOrgId && dto.organizationId !== userOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: cannot create job for another organization.",
+        { organizationId: dto.organizationId },
       );
     }
     const finalDto = {
@@ -128,8 +130,9 @@ export class JobsController {
     const job = await this.jobsService.findOne(id);
     if (req?.user?.organizationId && job.organizationId && req.user.organizationId !== job.organizationId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
       );
     }
     return this.jobsService.update(id, dto);
@@ -145,8 +148,9 @@ export class JobsController {
     const job = await this.jobsService.findOne(id);
     if (req?.user?.organizationId && job.organizationId && req.user.organizationId !== job.organizationId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
       );
     }
     return this.jobsService.remove(id);

@@ -41,8 +41,9 @@ export class TenantGuard implements CanActivate {
       );
       if (!isMember) {
         throw new AppForbiddenException(
-          APP_ERROR_CODES.FORBIDDEN,
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
           "Access denied: You do not have permission to access resources in this organization.",
+          { organizationId: requestedOrgId },
         );
       }
     } catch (err) {
@@ -50,8 +51,9 @@ export class TenantGuard implements CanActivate {
         throw err;
       }
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Access denied: Cross-tenant operation rejected.",
+        { organizationId: requestedOrgId },
       );
     }
 

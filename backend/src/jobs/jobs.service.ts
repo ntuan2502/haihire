@@ -212,6 +212,7 @@ export class JobsService {
       throw new AppNotFoundException(
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${id} not found`,
+        { id },
       );
     }
 
@@ -321,6 +322,7 @@ export class JobsService {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_NOT_FOUND,
         `Organization '${orgSlug}' not found`,
+        { slug: orgSlug },
       );
     }
 
@@ -369,6 +371,7 @@ export class JobsService {
       throw new AppNotFoundException(
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job '${jobSlug}' not found in organization '${orgSlug}'`,
+        { id: jobSlug, slug: orgSlug },
       );
     }
 

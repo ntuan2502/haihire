@@ -4,6 +4,10 @@ created: 2026-07-18
 updated: 2026-09-18
 ---
 
+## 2026-09-29: Error Contract Standardization, Isolated Dynamic Params & Centralized Test i18n Setup
+- **Feedback**: Avoid inconsistent and ad-hoc error returns (e.g. throwing generic `FORBIDDEN` with English text instead of specific domain error codes with parameters). Standardize error definitions, keep translations on client locales, and prevent test specs from having to repeatedly declare manual mock translations.
+- **Actionable Rule**: Always throw `App<Type>Exception` using specific machine-readable `APP_ERROR_CODES` from `@haihire/shared` with dynamic values placed in `params`. Default messages in backend must remain English for logs and dev fallbacks. Client applications translate error codes using `getApiErrorMessage(error, t)`. Centralize test i18n mocks in `vitest.setup.ts` backed by real locale files to eliminate duplicate test mocks.
+
 ## 2026-09-28: React Callback Hygiene, Network Gatekeeper & Comprehensive Test Baseline
 - **Feedback**: Prevent subtle runtime bugs (like `DELETE /interviews/[object%20Object]`) caused by passing parameterized callbacks directly to `onClick` which allows `MouseEvent` to overwrite data arguments. Build automated test suites covering all screens and happy/bad cases so that future changes do not break existing behavior.
 - **Actionable Rule**: Never pass parameterized callbacks directly to `onClick`; always wrap with `() => fn(item)`. Add client-side Axios gatekeepers to reject malformed URL segments before network requests. Maintain full test suite coverage (200+ tests across backend and frontend) and verify with `pnpm test` on every milestone.

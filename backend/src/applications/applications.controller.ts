@@ -63,8 +63,9 @@ export class ApplicationsController {
     const userOrgId = req?.user?.organizationId || undefined;
     if (organizationId && userOrgId && organizationId !== userOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: cannot access applications from another organization.",
+        { organizationId },
       );
     }
     const orgId = userOrgId || organizationId || undefined;
@@ -104,8 +105,9 @@ export class ApplicationsController {
       req.user.organizationId !== appOrgId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
       );
     }
     return app;
@@ -145,8 +147,9 @@ export class ApplicationsController {
     const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
     if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
       );
     }
     return this.applicationsService.updateStage(id, dto);
@@ -164,8 +167,9 @@ export class ApplicationsController {
     const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
     if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
       );
     }
     return this.applicationsService.updateCandidate(id, dto);
@@ -190,8 +194,9 @@ export class ApplicationsController {
     const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
     if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
       );
     }
     return this.applicationsService.uploadDocument(id, file, documentType);
@@ -226,8 +231,9 @@ export class ApplicationsController {
       req.user.organizationId !== appOrgId
     ) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
       );
     }
 
@@ -261,8 +267,9 @@ export class ApplicationsController {
       );
       if (!isAllowed) {
         throw new AppForbiddenException(
-          APP_ERROR_CODES.FORBIDDEN,
+          APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
           "Access denied: specified document does not belong to this application.",
+          { id },
         );
       }
     }
@@ -325,8 +332,9 @@ export class ApplicationsController {
     const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
     if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
       );
     }
     return this.applicationsService.deleteDocument(id, { documentId, url });
@@ -343,8 +351,9 @@ export class ApplicationsController {
     const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
     if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
       throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
         "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
       );
     }
     return this.applicationsService.remove(id);

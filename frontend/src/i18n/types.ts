@@ -83,6 +83,7 @@ export interface TranslationSchema {
     JOB_NOT_ACCEPTING_APPLICATIONS: string;
     JOB_INVALID_ORGANIZATION: string;
     APPLICATION_NOT_FOUND: string;
+    APPLICATION_INVALID_ORGANIZATION: string;
     CANDIDATE_INFO_REQUIRED: string;
     CANDIDATE_ORG_MISMATCH: string;
     CANDIDATE_ALREADY_APPLIED: string;
@@ -94,6 +95,7 @@ export interface TranslationSchema {
     CANDIDATE_ORG_REQUIRED: string;
     INTERVIEW_NOT_FOUND: string;
     INTERVIEW_APP_NOT_FOUND: string;
+    INTERVIEW_INVALID_ORGANIZATION: string;
     EMAIL_TEMPLATE_NOT_FOUND: string;
     EMAIL_SETTINGS_NOT_FOUND: string;
     EMAIL_ORG_REQUIRED: string;

@@ -32,8 +32,9 @@ function resolveOrgId(
 ): string | undefined {
   if (requestedOrgId && userOrgId && requestedOrgId !== userOrgId) {
     throw new AppForbiddenException(
-      APP_ERROR_CODES.FORBIDDEN,
+      APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
       "Access denied: cannot access email resources of another organization.",
+      { organizationId: requestedOrgId },
     );
   }
   const orgId = userOrgId || requestedOrgId || undefined;

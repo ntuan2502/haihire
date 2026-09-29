@@ -79,3 +79,25 @@ updated: 2026-09-18T20:53
 - **Zero `any` in application code**: The use of `any` is strictly prohibited across backend, frontend, and shared packages.
 - Always define clear types, interfaces, DTOs, or schema types.
 - Utilize `@ats/types` as the canonical source for domain models.
+
+## React SyntheticEvent & Callback Hygiene (MANDATORY)
+- **Never pass parameterized callbacks directly to `onClick`**: If a function accepts an optional parameter (such as `id?: string` or `item?: ScheduledInterviewInfo`), passing it directly as `onClick={onCancelInterview}` causes React to pass the native `MouseEvent` into the parameter. String interpolation or coercion turns this into `"[object Object]"`, leading to critical URL routing and API deletion errors (e.g. `/interviews/[object%20Object]`).
+- **Explicit Arrow Function Wrapper**: Always explicitly wrap event handlers:
+  - When no event is needed: `onClick={() => onCancelInterview(item)}` or `onClick={() => onSelect(candidate.id)}`.
+  - When event propagation must be stopped: `onClick={(e) => { e.stopPropagation(); onCancel(item); }}`.
+
+## Client-Side Network Gatekeeper & Defensive API Calls (MANDATORY)
+- **Fail-Fast URL Inspection**: All Axios and HTTP request clients must implement an active request interceptor (Gatekeeper) that validates request URLs before network dispatch.
+- **Reject Malformed Segment Strings**: If any URL contains `[object%20Object]`, `[object Object]`, `undefined`, or `null` within path segments, the interceptor must immediately abort and reject the promise with a descriptive error code (`CONTRACT.INVALID_URL_ARGUMENT`) without sending bad packets over the network.
+
+## Multi-Tenant Security & Query Scoping (MANDATORY)
+- **Two-Tier Tenant Isolation**: Tenant isolation must be strictly enforced at both the Guard/Controller layer and the Database/ORM layer.
+- **Guard Layer (`TenantGuard`)**: Validate that the requesting user's `organizationId` matches the requested tenant context. Cross-tenant access attempts must immediately throw `AppForbiddenException` (HTTP 403).
+- **Service & ORM Layer**: All database queries for tenant-scoped models (`Job`, `Candidate`, `Application`, `Interview`, `CandidateDocument`) must filter by `.where(e.organizationId.eq(organizationId))`. If `organizationId` is missing or invalid, services must return empty sets or throw `AppNotFoundException` without scanning global records.
+
+## Headless Form & JSDOM Testing Conventions (MANDATORY)
+- **HTML5 Constraint Validation in JSDOM**: When testing form components containing `<input required>` or constraint attributes in React Testing Library with jsdom, clicking a `<button type="submit">` will not trigger `onSubmit` if required fields are empty (jsdom silences invalid submissions without firing event handlers).
+- **Explicit Form Submission in Tests**: To test validation error display on empty form submission, always submit the `<form>` directly using `fireEvent.submit(form)` or `fireEvent.submit(submitBtn.closest("form")!)`.
+- **i18n Translation Key Synchronization**: All test fixtures mocking `useI18n()` must maintain exact 1-to-1 key parity with the component's actual translation calls (e.g., verifying `t("auth.signInButton")` vs `t("auth.signIn")`).
+- **Query Flexibility**: When querying common elements (like email addresses or candidate names that appear in multiple summary tiles), prefer `screen.getAllByText(...)[0]` or regular expression matchers (`screen.getByText(/admin@tun\.io\.vn/)`) to prevent collision errors.
+

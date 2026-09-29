@@ -58,3 +58,17 @@ updated: 2026-09-18
 - **React Named Import Convention**:
   - Always use named imports from `"react"` (e.g. `import { useState, useEffect, type ReactNode } from "react"`).
   - Never use default `import React from "react"`, wildcard `import * as React from "react"`, or namespace prefixing `React.x` in application code.
+
+- **Client-Side Network Gatekeeper Interceptors (Fail-Fast URL Inspection)**:
+  - **Decision**: Reject malformed URLs containing stringified objects (`[object Object]`, `[object%20Object]`) or `undefined`/`null` tokens directly inside Axios request interceptors.
+  - **Rationale**: Prevents accidental string interpolation bugs from causing malformed HTTP requests that pollute server logs, trigger 404/500 errors, or corrupt backend data.
+
+- **Database Driver Priority Protocol (Local DATABASE_URL First)**:
+  - **Decision**: In `backend/src/prisma/db.ts`, always evaluate and prioritize the local PostgreSQL connection via `env.DATABASE_URL` before falling back to cloud composer instances.
+  - **Rationale**: Eliminates `DRIVER.NOT_CONNECTED` or `CONTRACT.MARKER_READ_FAILED` failures when running local Docker environments without cloud credentials.
+
+- **Comprehensive Automated Testing Baseline (Full-Stack Continuous Verification)**:
+  - **Decision**: Enforce a mandatory suite of 200+ automated tests across backend services and frontend components.
+  - **Coverage**: Covers auth flows, job wizard, pipeline kanban, interview scheduling, scorecard evaluation, member invitations, and tenant isolation.
+  - **Verification**: Run `pnpm test` across the monorepo to guarantee 0 regressions before committing major refactors.
+

@@ -18,6 +18,11 @@
 - [project] React Import Convention: Always use named imports `{ useState, ReactNode } from "react"`, no `React.x` except inside `components/ui/` → tech-decisions.md
 - [project] Shadcn `cn` Standard: Use official `"cn"` package directly (`from "cn"`), no `clsx` or `tailwind-merge` → tech-decisions.md
 - [project] Strict Typing: Zero `any` policy across frontend, backend, and shared packages → project-conventions.md
+- [project] React SyntheticEvent hygiene: always wrap parameterized callbacks in arrow functions → project-conventions.md
+- [project] Client-side Axios gatekeeper: proactively reject malformed URLs with [object Object] → project-conventions.md
+- [project] Multi-tenant isolation: strict organizationId scoping at DB and Guard layers → project-conventions.md
+- [project] Form testing standard: trigger fireEvent.submit(form) for HTML5 validated inputs in jsdom → project-conventions.md
+- [project] Database Driver Priority: evaluate env.DATABASE_URL before cloud composer instances → tech-decisions.md
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
@@ -31,8 +36,12 @@
 - [user] Shell Execution: Never chain commands with `&&` in Windows PowerShell; execute each command individually → user-preferences.md
 - [user] Senior Engineering Mindset: Zero "instant-noodle" patches, root-cause analysis first, fail fast & loudly → user-preferences.md
 - [user] Standardized Project Commands: Check package.json first, avoid ad-hoc commands, maintain unified script suite → user-preferences.md
+- [user] Zero raw parameterized callbacks in onClick: wrap in arrow function to avoid MouseEvent leakage → user-preferences.md
+- [user] Client-Side Network Gatekeeper: catch stringification errors before HTTP dispatch → user-preferences.md
+- [user] Continuous Automated Testing: run full test suites before reporting completion → user-preferences.md
 
 ## Feedback
+- [feedback] 2026-09-28: React Callback Hygiene, Network Gatekeeper & Comprehensive Test Baseline → feedback-history.md
 - [feedback] 2026-09-23: Standardized Project Commands & package.json First → feedback-history.md
 - [feedback] 2026-09-19: Senior / Principal Engineering Mindset (No Quick-and-Dirty Patches) → feedback-history.md
 - [feedback] 2026-09-18: Pure TypeScript Mandate (Zero .mjs / .cjs / .js files, use .ts only) → feedback-history.md
@@ -40,4 +49,5 @@
 - [feedback] 2026-09-18: Full-Stack Pagination & Database Cascade Integrity → feedback-history.md
 - [feedback] 2026-09-17: Memory documentation must be in English → feedback-history.md
 - [feedback] 2026-09-17: Strict i18n and placeholder completeness mandate → feedback-history.md
+
 

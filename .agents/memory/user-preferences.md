@@ -56,4 +56,14 @@ updated: 2026-09-18
 - **No Ad-Hoc Variations**: If a command exists, execute the existing script as defined rather than running one-off CLI commands with custom flags.
 - **Propose Standard Scripts**: If a necessary command (e.g., `typecheck`, `lint:frontend`, `lint:backend`) is missing, explain to the user why it is needed and propose adding it to `package.json` so the entire project maintains a clean, uniform command suite.
 
+## React Callback Hygiene & SyntheticEvent Safety (MANDATORY)
+- **Zero Raw Parameterized Callbacks in `onClick`**: Never write `onClick={fn}` when `fn` accepts an optional argument (e.g., `onCancel(id?: string)` or `onSelect(item?: Candidate)`). Always explicitly declare arrow wrappers: `onClick={() => fn(item)}` or `onClick={(e) => { e.stopPropagation(); fn(item); }}` to avoid passing `MouseEvent` into domain arguments.
+
+## Client-Side Network Gatekeeper & Defensive URL Validation
+- **Catch Stringification Errors Early**: Prevent malformed URLs like `/interviews/[object%20Object]` from ever hitting the network by enforcing client-side interceptor rejection before HTTP dispatch.
+
+## Continuous Automated Testing & Zero Regression Mandate
+- **Run Tests Before Reporting Completion**: Always verify code changes by executing the corresponding Vitest suites (`pnpm --filter frontend test`, `pnpm --filter backend test`, or `pnpm test`). Ensure 100% green pass rate and 0 lint warnings before declaring tasks done.
+
+
 

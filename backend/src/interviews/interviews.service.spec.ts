@@ -335,7 +335,7 @@ describe("InterviewsService", () => {
       applicationId: "app-1",
       date: "2026-09-25",
       time: "14:00",
-      type: "FINAL",
+      type: "FINAL_ROUND",
       interviewer: "Director",
     });
     expect(mockApps[0].stage).toBe("OFFER");

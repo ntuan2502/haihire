@@ -116,6 +116,50 @@ export function CandidateTimeline({
         return "bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300";
     }
   };
+  const getLocalizedTimelineEvent = (event: ActivityEvent) => {
+    const meta = (event.metadata || {}) as Record<string, unknown>;
+    const subType = (meta.subType || meta.action || meta.accessType) as string | undefined;
+    const eventKey = subType || event.type;
+
+    let fromStageLabel = meta.fromStage ? String(meta.fromStage) : "";
+    let toStageLabel = meta.toStage ? String(meta.toStage) : "";
+    if (fromStageLabel) {
+      const stageKey = `pipeline.stages.${fromStageLabel.toLowerCase()}`;
+      const trans = t(stageKey);
+      if (trans && trans !== stageKey) fromStageLabel = trans;
+    }
+    if (toStageLabel) {
+      const stageKey = `pipeline.stages.${toStageLabel.toLowerCase()}`;
+      const trans = t(stageKey);
+      if (trans && trans !== stageKey) toStageLabel = trans;
+    }
+
+    const interpolationParams: Record<string, string | number> = {
+      userName: (meta.userName as string) || event.actorName || "Recruiter",
+      interviewer: (meta.interviewer as string) || event.actorName || "Interviewer",
+      fromStage: fromStageLabel,
+      toStage: toStageLabel,
+      recipientName: (meta.recipientName as string) || event.actorName || "",
+      recipientEmail: (meta.recipientEmail as string) || "",
+      round: Number(meta.round) || 1,
+      time: (meta.time as string) || "",
+      date: (meta.date as string) || "",
+      jobTitle: (meta.jobTitle as string) || "",
+      fileName: (meta.fileName as string) || "",
+      subject: (meta.subject as string) || "",
+    };
+
+    const titleKey = `timeline.events.${eventKey}_title`;
+    const descKey = `timeline.events.${eventKey}_desc`;
+
+    const localizedTitle = t(titleKey, interpolationParams);
+    const localizedDesc = t(descKey, interpolationParams);
+
+    return {
+      title: localizedTitle && localizedTitle !== titleKey ? localizedTitle : event.title,
+      description: localizedDesc && localizedDesc !== descKey ? localizedDesc : event.description,
+    };
+  };
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -195,6 +239,7 @@ export function CandidateTimeline({
         <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
           {filteredEvents.map((event) => {
             const isExpanded = expandedEventIds.has(event.id);
+            const { title, description } = getLocalizedTimelineEvent(event, t);
             return (
               <div key={event.id} className="relative group">
                 {/* Node icon */}
@@ -212,14 +257,14 @@ export function CandidateTimeline({
                             event.type,
                           )}`}
                         >
-                          {event.title}
+                          {title}
                         </span>
                         <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {event.timestamp}
+                          {event.timestamp || (event.createdAt ? new Date(event.createdAt).toLocaleDateString() : "")}
                         </span>
                       </div>
                       <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                        {event.description}
+                        {description}
                       </p>
                     </div>
 

@@ -382,10 +382,10 @@ export class EmailService {
         candidateId: dto.candidateId,
         applicationId: dto.applicationId || null,
         type: "EMAIL_SENT",
-        title: `Đã gửi email: ${renderedSubject}`,
-        description: `Gửi thư tới ${dto.recipientName} (${dto.to}) - Trạng thái: ${sendResult.status}`,
+        title: `Email Sent: ${renderedSubject}`,
+        description: `Sent to ${dto.recipientName} (${dto.to}) - Status: ${sendResult.status}`,
         actorId: senderUser?.id || null,
-        actorName: senderUser?.name || settings?.fromName || "Hệ thống Tuyển dụng",
+        actorName: senderUser?.name || settings?.fromName || "Recruiting Team",
         actorRole: "ADMIN",
         metadata: {
           emailLogId: logId,
@@ -393,6 +393,7 @@ export class EmailService {
           subject: renderedSubject,
           status: sendResult.status,
           recipientEmail: dto.to,
+          recipientName: dto.recipientName,
         },
       });
     }

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { TenantGuard } from "../common/guards/tenant.guard";
-import { AppForbiddenException, AppNotFoundException } from "../common/app-exception";
-import { JobsService } from "../jobs/jobs.service";
+import { AppForbiddenException } from "../common/app-exception";
 import { CandidatesService } from "../candidates/candidates.service";
 import type { ExecutionContext } from "@nestjs/common";
 
@@ -16,7 +15,6 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
 
   let dbState: MockDbState;
   let tenantGuard: TenantGuard;
-  let jobsService: JobsService;
   let candidatesService: CandidatesService;
 
   beforeEach(() => {
@@ -46,7 +44,7 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
           public: {
             OrganizationMember: {
               select: () => ({
-                where: (predicate: unknown) => ({
+                where: (_predicate: unknown) => ({
                   all: async () => {
                     // Match by userId and organizationId if queried
                     return dbState.orgMembers;
@@ -56,7 +54,7 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
             },
             Job: {
               select: () => ({
-                where: (predicate: (j: { organizationId: { eq: (id: string) => boolean }; id: { eq: (id: string) => boolean } }) => unknown) => ({
+                where: (_predicate: (j: { organizationId: { eq: (id: string) => boolean }; id: { eq: (id: string) => boolean } }) => unknown) => ({
                   all: async () => {
                     return dbState.jobs;
                   },
@@ -68,7 +66,7 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
             },
             Candidate: {
               select: () => ({
-                where: (predicate: (c: { organizationId: { eq: (id: string) => boolean }; id: { eq: (id: string) => boolean } }) => unknown) => ({
+                where: (_predicate: (c: { organizationId: { eq: (id: string) => boolean }; id: { eq: (id: string) => boolean } }) => unknown) => ({
                   all: async () => {
                     return dbState.candidates;
                   },
@@ -84,7 +82,6 @@ describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
     };
 
     tenantGuard = new TenantGuard(mockPrisma as never);
-    jobsService = new JobsService(mockPrisma as never);
     candidatesService = new CandidatesService(mockPrisma as never, {} as never);
   });
 

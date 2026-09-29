@@ -106,5 +106,7 @@ updated: 2026-09-18
   - **Decision**: Combine application-level soft delete (`deletedAt` field on `Job` and `Candidate`) with database-level `onDelete: Cascade` on child tables in `contract.prisma`.
   - **Rationale**: Enables a 30-day trash/restore grace period for accidental deletions while ensuring that permanent purge jobs leave zero orphan records in PostgreSQL.
 
-
-
+- **Event-Driven Activity Timeline & Localized Activity Formatting Architecture**:
+  - **Decision**: Reject storing raw localized text directly into `ActivityLog.title` and `ActivityLog.description` in the database. Instead, store standardized English prose as fallback, structured `type` / `subType`, and business parameters in `metadata` (`{ userName, interviewer, round, date, time, jobTitle, fromStage, toStage, fileName, subject }`).
+  - **Client-Side Reactive Translation**: Frontend timeline components format events reactively using `t("timeline.events." + key + "_title", metadata)` and `t("timeline.events." + key + "_desc", metadata)`. If the translation key is missing or the event is user-generated free-form notes (UGC), it gracefully falls back to `event.title` and `event.description` from the database.
+  - **Rationale**: Guarantees instantaneous multi-language switching across candidate timeline views without database migration, prevents cross-recruiter language mismatch in global teams, and keeps database audit logs clean and immutable.

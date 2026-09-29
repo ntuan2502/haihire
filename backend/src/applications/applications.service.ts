@@ -589,8 +589,8 @@ export class ApplicationsService {
         candidateId: result.candidate.id,
         applicationId: result.id,
         type: "APPLIED",
-        title: "Đã nộp đơn ứng tuyển",
-        description: `Ứng tuyển vị trí ${job.title}`,
+        title: "Application Submitted",
+        description: `Applied for ${job.title}`,
         actorName: result.candidate.name,
         actorRole: "CANDIDATE",
         metadata: {
@@ -660,13 +660,14 @@ export class ApplicationsService {
         candidateId: updated.candidate.id,
         applicationId: updated.id,
         type: "STAGE_CHANGED",
-        title: `Chuyển trạng thái: ${oldStage} → ${dto.stage}`,
-        description: `Cập nhật giai đoạn ứng tuyển cho vị trí ${updated.job?.title || ""}`,
+        title: `Stage Changed: ${oldStage} → ${dto.stage}`,
+        description: `Application moved from ${oldStage} to ${dto.stage} for position ${updated.job?.title || ""}`,
         actorName: "HR Team",
         actorRole: "ADMIN",
         metadata: {
           fromStage: oldStage,
           toStage: dto.stage,
+          jobTitle: updated.job?.title || "",
         },
       });
 

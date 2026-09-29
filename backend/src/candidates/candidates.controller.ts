@@ -100,11 +100,16 @@ export class CandidatesController {
           organizationId: candidate.organizationId,
           candidateId: candidate.id,
           type: "NOTE_ADDED",
-          title: "PII Access Audit",
+          title: "Candidate Profile Accessed",
           description: `Candidate profile was accessed by ${req.user.name || "recruiter"}`,
           actorId: req.user.id,
           actorName: req.user.name || "Recruiter",
-          metadata: { action: "VIEW_PROFILE", accessType: "PII_READ" },
+          metadata: {
+            action: "VIEW_PROFILE",
+            accessType: "PII_READ",
+            subType: "PII_READ",
+            userName: req.user.name || "Recruiter",
+          },
         })
         .catch(() => {});
     }
@@ -261,13 +266,15 @@ export class CandidatesController {
           organizationId: candidate.organizationId,
           candidateId: candidate.id,
           type: "NOTE_ADDED",
-          title: "Document Download Audit",
+          title: "Document Downloaded",
           description: `Document "${cleanFileName}" was downloaded by ${req.user.name || "recruiter"}`,
           actorId: req.user.id,
           actorName: req.user.name || "Recruiter",
           metadata: {
             action: "DOWNLOAD_DOCUMENT",
+            subType: "DOCUMENT_DOWNLOADED",
             fileName: cleanFileName,
+            userName: req.user.name || "Recruiter",
             documentUrl: downloadUrl,
           },
         })

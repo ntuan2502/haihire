@@ -450,7 +450,7 @@ export class InterviewsService {
 
     if (app.stage === "REJECTED") {
       throw new AppBadRequestException(
-        APP_ERROR_CODES.BAD_REQUEST,
+        APP_ERROR_CODES.VALIDATION_ERROR,
         "Cannot schedule an interview for a rejected application. Reopen the application before scheduling.",
       );
     }
@@ -488,7 +488,7 @@ export class InterviewsService {
       notes: dto.notes || null,
     });
 
-    if (app.stage !== "INTERVIEW" && app.stage !== "OFFER" && app.stage !== "HIRED" && app.stage !== "REJECTED") {
+    if (app.stage !== "INTERVIEW" && app.stage !== "OFFER" && app.stage !== "HIRED") {
       await this.prisma.db.orm.public.Application.where((a) => a.id.eq(app.id)).update({
         stage: "INTERVIEW",
       });
@@ -503,8 +503,8 @@ export class InterviewsService {
         candidateId: candidate.id,
         applicationId: app.id,
         type: "INTERVIEW_SCHEDULED",
-        title: `Đã lên lịch phỏng vấn (${dto.type})`,
-        description: `Buổi phỏng vấn vòng ${dto.round || 1} vào ${dto.time} ngày ${dto.date} với ${dto.interviewer}`,
+        title: `Interview Scheduled (${dto.type})`,
+        description: `Round ${dto.round || 1} interview on ${dto.date} at ${dto.time} with ${dto.interviewer}`,
         actorName: dto.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
@@ -513,6 +513,8 @@ export class InterviewsService {
           time: dto.time,
           format: dto.format || "MEET",
           type: dto.type,
+          interviewer: dto.interviewer,
+          round: dto.round || 1,
         },
       });
 
@@ -592,17 +594,26 @@ export class InterviewsService {
 
     const candidate = updated.application?.candidate;
     if (candidate && candidate.organizationId) {
+      const isScorecardUpdate = dto.scorecard !== undefined;
       await this.activitiesService.createActivity({
         organizationId: candidate.organizationId,
         candidateId: candidate.id,
         applicationId: updated.applicationId,
-        type: "INTERVIEW_UPDATED",
-        title: `Đã cập nhật lịch phỏng vấn (${updated.type})`,
-        description: `Cập nhật thông tin: ${updated.time} ngày ${updated.date}`,
+        type: isScorecardUpdate ? "SCORECARD_SUBMITTED" : "INTERVIEW_UPDATED",
+        title: isScorecardUpdate
+          ? `Scorecard Submitted (${updated.type})`
+          : `Interview Updated (${updated.type})`,
+        description: isScorecardUpdate
+          ? `Scorecard submitted by ${updated.interviewer}`
+          : `Interview schedule updated to ${updated.time} on ${updated.date}`,
         actorName: updated.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
           interviewId: id,
+          type: updated.type,
+          interviewer: updated.interviewer,
+          date: updated.date,
+          time: updated.time,
           changes: Object.keys(updateData),
         },
       });

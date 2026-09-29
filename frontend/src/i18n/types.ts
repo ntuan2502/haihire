@@ -1606,5 +1606,23 @@ export interface TranslationSchema {
     hideEmailBody: string;
     deliveredViaProvider: string;
     noEmailPreview: string;
+    events: {
+      APPLIED_title: string;
+      APPLIED_desc: string;
+      STAGE_CHANGED_title: string;
+      STAGE_CHANGED_desc: string;
+      INTERVIEW_SCHEDULED_title: string;
+      INTERVIEW_SCHEDULED_desc: string;
+      INTERVIEW_UPDATED_title: string;
+      INTERVIEW_UPDATED_desc: string;
+      SCORECARD_SUBMITTED_title: string;
+      SCORECARD_SUBMITTED_desc: string;
+      EMAIL_SENT_title: string;
+      EMAIL_SENT_desc: string;
+      PII_READ_title: string;
+      PII_READ_desc: string;
+      DOCUMENT_DOWNLOADED_title: string;
+      DOCUMENT_DOWNLOADED_desc: string;
+    };
   };
 }

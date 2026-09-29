@@ -101,3 +101,29 @@ updated: 2026-09-18T20:53
 - **i18n Translation Key Synchronization**: All test fixtures mocking `useI18n()` must maintain exact 1-to-1 key parity with the component's actual translation calls (e.g., verifying `t("auth.signInButton")` vs `t("auth.signIn")`).
 - **Query Flexibility**: When querying common elements (like email addresses or candidate names that appear in multiple summary tiles), prefer `screen.getAllByText(...)[0]` or regular expression matchers (`screen.getByText(/admin@tun\.io\.vn/)`) to prevent collision errors.
 
+## Object Storage Security & CV Asset Isolation (MANDATORY)
+- **Tenant Path Isolation**: Never upload files with raw client-supplied file paths to root buckets. All uploaded files (resumes, portfolios, attachments) must strictly follow the scoped path hierarchy:
+  `tenants/{organizationId}/candidates/{candidateId}/{uuid}-{sanitizedFileName}`
+- **Server-Side File Verification**: Do not rely on client-side MIME types or file extensions alone. Backend upload handlers must inspect buffer signatures (magic bytes) to verify genuine file types before persisting to MinIO / S3.
+- **Short-Lived Presigned URLs**: CV buckets containing Personal Identifiable Information (PII) must remain completely private. Generate presigned download/preview URLs with short expiration windows (15 to 30 minutes maximum).
+
+## TanStack Query Key Factory & Cache Invalidation Matrix (MANDATORY)
+- **Canonical Key Factory**: Never write ad-hoc string query keys like `["candidates"]` scattered across components. All query keys must be generated via a centralized `QUERY_KEYS` factory object.
+- **Mandatory Invalidation on Mutation**: Every mutation hook (creating/updating/deleting jobs, applications, candidates, or interviews) must explicitly declare all dependent query keys in its `onSuccess` callback via `queryClient.invalidateQueries(...)` to prevent stale UI states without requiring full page reloads.
+
+## Pipeline Stage State Machine & Transition Validation (MANDATORY)
+- **Deterministic Stage Progression**: Stage transitions must conform to the defined recruitment lifecycle: `APPLIED` → `SCREENING` → `INTERVIEW` → `OFFER` → `HIRED` or `REJECTED`.
+- **Pre-Condition Checks**:
+  - Transitioning to `INTERVIEW`: Automatically advance candidate from `APPLIED`/`SCREENING` upon first confirmed interview schedule.
+  - Transitioning to `HIRED`: Validate remaining vacancy quota on the target job and record hiring timestamp.
+  - Transitioning to `REJECTED`: Require a structured rejection reason (`rejectionReason`) and offer automated rejection email notification.
+
+## Audit Trail & Zero Silent Mutation Logging (MANDATORY)
+- **Zero Silent Mutations**: Every state-changing write operation (POST, PUT, PATCH, DELETE) modifying core domain entities must asynchronously create an `ActivityLog` entry via `ActivitiesService` recording `actorId`, `action`, `entityType`, `entityId`, and `metadata` (e.g., previous state vs new state).
+- **PII Scrubbing in Logs**: Application and system logs (NestJS, Winston, terminal output) must scrub all sensitive PII (passwords, tokens, resume body texts, bank details) before emitting log streams.
+
+## Unified Error Response Envelope & Client Extraction (MANDATORY)
+- **Standardized Backend Error Envelope**: All exceptions thrown by backend services must inherit from `AppException` and return the unified JSON shape: `{ statusCode, errorCode, message, timestamp }` mapped to `@haihire/shared` error codes.
+- **Client Error Handling**: Frontend components must never render raw error messages (`err.message` or `err.response.data`) directly. Always utilize the centralized `getApiErrorMessage(err, t, fallbackKey)` utility to ensure localized, user-friendly error dialogs and toasts.
+
+

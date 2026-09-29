@@ -65,5 +65,15 @@ updated: 2026-09-18
 ## Continuous Automated Testing & Zero Regression Mandate
 - **Run Tests Before Reporting Completion**: Always verify code changes by executing the corresponding Vitest suites (`pnpm --filter frontend test`, `pnpm --filter backend test`, or `pnpm test`). Ensure 100% green pass rate and 0 lint warnings before declaring tasks done.
 
+## Object Storage Security & Asset Isolation
+- **Strict Tenant Pathing**: Uploaded candidate assets must always be segregated by tenant ID and accessed solely through short-lived presigned URLs.
+
+## TanStack Query Cache Discipline
+- **Consistent Invalidation**: Never rely on full page reloads to refresh data after mutations. Always bind mutations to specific query key invalidations.
+
+## Zero Silent Mutations & Audit Logging
+- **Traceability**: All meaningful business entity modifications must produce audit records without leaking confidential PII into application logs.
+
+
 
 

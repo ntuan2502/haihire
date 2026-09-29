@@ -72,3 +72,24 @@ updated: 2026-09-18
   - **Coverage**: Covers auth flows, job wizard, pipeline kanban, interview scheduling, scorecard evaluation, member invitations, and tenant isolation.
   - **Verification**: Run `pnpm test` across the monorepo to guarantee 0 regressions before committing major refactors.
 
+- **Object Storage Architecture & Secure Asset Isolation**:
+  - **Decision**: Structure MinIO / S3 object keys under strictly namespaced tenant paths (`tenants/{orgId}/candidates/{candId}/...`) and enforce server-side magic byte inspection for file uploads.
+  - **Rationale**: Prevents file collisions across tenants, stops malicious payload uploads disguised with benign file extensions, and safeguards candidate PII via expiring presigned URLs.
+
+- **TanStack Query Key Architecture (Centralized Factory)**:
+  - **Decision**: Standardize all query keys into a canonical `QUERY_KEYS` factory and enforce explicit cache invalidation in all mutation hooks.
+  - **Rationale**: Eliminates race conditions and stale UI views across multiple connected recruitment dashboards (Kanban, Tables, Drawers).
+
+- **Recruitment Pipeline State Machine**:
+  - **Decision**: Formalize application progression rules (`APPLIED` → `SCREENING` → `INTERVIEW` → `OFFER` → `HIRED` / `REJECTED`) with pre-condition and vacancy checks.
+  - **Rationale**: Guarantees hiring funnel integrity, prevents accidental status overwrites, and automates interview stage progression.
+
+- **Audit Trail & Activity Logging Architecture**:
+  - **Decision**: Log every state mutation on core domain entities to `ActivityLog` via `ActivitiesService` while scrubbing PII.
+  - **Rationale**: Complies with enterprise HR audit requirements, delivers transparent activity feeds in candidate profiles, and prevents silent data tampering.
+
+- **Unified Error Envelope & Client Extraction**:
+  - **Decision**: Require all backend exceptions to inherit from `AppException` returning standardized JSON envelopes, parsed on frontend exclusively via `getApiErrorMessage`.
+  - **Rationale**: Prevents unhandled client exceptions, eliminates generic "Error occurred" toasts, and delivers precise, localized feedback to users.
+
+

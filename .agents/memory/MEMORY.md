@@ -23,6 +23,11 @@
 - [project] Multi-tenant isolation: strict organizationId scoping at DB and Guard layers → project-conventions.md
 - [project] Form testing standard: trigger fireEvent.submit(form) for HTML5 validated inputs in jsdom → project-conventions.md
 - [project] Database Driver Priority: evaluate env.DATABASE_URL before cloud composer instances → tech-decisions.md
+- [project] Object Storage Security: strict tenant path isolation and buffer magic bytes verification → project-conventions.md
+- [project] TanStack Query Factory: centralized QUERY_KEYS and mandatory mutation cache invalidation → project-conventions.md
+- [project] Recruitment Stage State Machine: deterministic lifecycle transitions with precondition checks → project-conventions.md
+- [project] Audit Trail Architecture: zero silent mutations, asynchronous ActivityLog emission with PII scrubbing → project-conventions.md
+- [project] Unified Error Envelope: standard AppException JSON shape and getApiErrorMessage client consumption → project-conventions.md
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
@@ -39,6 +44,9 @@
 - [user] Zero raw parameterized callbacks in onClick: wrap in arrow function to avoid MouseEvent leakage → user-preferences.md
 - [user] Client-Side Network Gatekeeper: catch stringification errors before HTTP dispatch → user-preferences.md
 - [user] Continuous Automated Testing: run full test suites before reporting completion → user-preferences.md
+- [user] Tenant Path Segregation: CVs and assets strictly stored under tenant paths with short-lived presigned URLs → user-preferences.md
+- [user] Query Cache Invalidation: bind all state mutations to canonical query key invalidations → user-preferences.md
+- [user] Audit Trail Integrity: capture all business entity modifications without logging raw PII → user-preferences.md
 
 ## Feedback
 - [feedback] 2026-09-28: React Callback Hygiene, Network Gatekeeper & Comprehensive Test Baseline → feedback-history.md

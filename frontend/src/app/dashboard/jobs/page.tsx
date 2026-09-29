@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { AuthGuard } from "@/components/shared/auth-guard";
+import { ConfirmDestructiveModal } from "@/components/shared";
 import { Navbar } from "@/components/layout";
 import { JobList } from "@/components/jobs/job-list";
 import { StartRecruiting } from "@/components/dashboard/start-recruiting";
@@ -117,8 +118,21 @@ function JobsPageContent() {
     }
   };
 
+  const [jobToDelete, setJobToDelete] = useState<{ id: string; title: string } | null>(null);
+
   const handleJobDeleted = (id: string) => {
-    deleteJobMutation.mutate(id);
+    const job = jobs.find((j) => j.id === id);
+    setJobToDelete({ id, title: job?.title || id });
+  };
+
+  const handleConfirmDeleteJob = async () => {
+    if (!jobToDelete) return;
+    try {
+      await deleteJobMutation.mutateAsync(jobToDelete.id);
+      setJobToDelete(null);
+    } catch (err) {
+      console.error("Failed to delete job:", err);
+    }
   };
 
   return (
@@ -201,6 +215,23 @@ function JobsPageContent() {
           </div>
         )}
       </main>
+
+      {/* Delete Job Confirmation Modal */}
+      {jobToDelete && (
+        <ConfirmDestructiveModal
+          isOpen={!!jobToDelete}
+          onClose={() => setJobToDelete(null)}
+          onConfirm={handleConfirmDeleteJob}
+          title={t("jobs.wizard.deleteConfirmTitle")}
+          description={t("jobs.wizard.deleteConfirmQuestion", { title: jobToDelete.title })}
+          notice={t("jobs.wizard.deleteConfirmNotice")}
+          confirmMatchText={jobToDelete.title}
+          confirmButtonLabel={t("jobs.wizard.confirmDeleteButton")}
+          cancelButtonLabel={t("common.cancel")}
+          isLoading={deleteJobMutation.isPending}
+          variant="danger"
+        />
+      )}
     </div>
   );
 }

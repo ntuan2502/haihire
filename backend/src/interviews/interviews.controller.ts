@@ -82,22 +82,55 @@ export class InterviewsController {
 
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN", "MEMBER")
-  create(@Body() dto: CreateInterviewDto) {
-    return this.interviewsService.create(dto);
+  @Roles("ADMIN")
+  create(
+    @Body() dto: CreateInterviewDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.create(dto, req?.user?.organizationId || undefined);
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN", "MEMBER")
-  update(@Param("id") id: string, @Body() dto: UpdateInterviewDto) {
+  @Roles("ADMIN")
+  async update(
+    @Param("id") id: string,
+    @Body() dto: UpdateInterviewDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const interview = await this.interviewsService.findOne(id);
+    const intvOrgId =
+      (interview as unknown as { organizationId?: string })?.organizationId ||
+      (interview as unknown as { application?: { job?: { organizationId?: string }; candidate?: { organizationId?: string } } })?.application?.job?.organizationId ||
+      (interview as unknown as { application?: { candidate?: { organizationId?: string } } })?.application?.candidate?.organizationId;
+    if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: interview belongs to another organization.",
+      );
+    }
     return this.interviewsService.update(id, dto);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN", "MEMBER")
-  remove(@Param("id") id: string) {
+  @Roles("ADMIN")
+  async remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const interview = await this.interviewsService.findOne(id);
+    const intvOrgId =
+      (interview as unknown as { organizationId?: string })?.organizationId ||
+      (interview as unknown as { application?: { job?: { organizationId?: string }; candidate?: { organizationId?: string } } })?.application?.job?.organizationId ||
+      (interview as unknown as { application?: { candidate?: { organizationId?: string } } })?.application?.candidate?.organizationId;
+    if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: interview belongs to another organization.",
+      );
+    }
     return this.interviewsService.remove(id);
   }
 }
+

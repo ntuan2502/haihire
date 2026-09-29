@@ -54,7 +54,7 @@ import {
 } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
-import { getApiBaseUrl, getDocumentUrl } from "@/lib/api";
+import { getApiBaseUrl, getDocumentUrl, downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { SendEmailModal } from "@/components/email/send-email-modal";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
@@ -293,36 +293,13 @@ function CandidateDetailPageContent() {
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
     const apiUrl = getApiBaseUrl();
 
-    try {
-      const targetUrl = appId
-        ? `${apiUrl}/applications/${appId}/documents/download${queryString}`
-        : candidate
-          ? `${apiUrl}/candidates/${candidate.id}/documents/download${queryString}`
-          : getDocumentUrl(url);
-
-      const response = await fetch(targetUrl);
-      if (!response.ok) throw new Error("Download request failed");
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch {
-      const fallbackUrl = appId
-        ? `${apiUrl}/applications/${appId}/documents/download${queryString}`
+    const downloadPath = appId
+      ? `/applications/${appId}/documents/download${queryString}`
+      : candidate
+        ? `/candidates/${candidate.id}/documents/download${queryString}`
         : getDocumentUrl(url);
-      const a = document.createElement("a");
-      a.href = fallbackUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+
+    await downloadAuthenticatedFile(downloadPath, downloadFileName);
   };
 
   const handleConfirmDeleteDoc = async () => {

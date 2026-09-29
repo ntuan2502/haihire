@@ -23,7 +23,7 @@ import {
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { PIPELINE_STAGES, usePipelineStages } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
-import { getApiBaseUrl } from "@/lib/api";
+import { getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import {
   getCandidateDisplayName,
@@ -80,7 +80,7 @@ function JobPipelinePageContent() {
   const handledTargetAppIdRef = useRef<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">("score");
+  const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">("newest");
   const [selectedAppId, setSelectedAppId] = useState<string | null>(
     () => initialTargetAppId || null,
   );
@@ -207,9 +207,18 @@ function JobPipelinePageContent() {
       })
       .sort((a, b) => {
         if (sortBy === "score") {
-          const scoreA = (a as unknown as { matchScore?: number }).matchScore ?? -1;
-          const scoreB = (b as unknown as { matchScore?: number }).matchScore ?? -1;
-          return scoreB - scoreA;
+          const scoreA = (a as unknown as { matchScore?: number }).matchScore;
+          const scoreB = (b as unknown as { matchScore?: number }).matchScore;
+          if (scoreA !== undefined && scoreA !== null && scoreB !== undefined && scoreB !== null && scoreA !== scoreB) {
+            return scoreB - scoreA;
+          }
+          if ((scoreA === undefined || scoreA === null) && scoreB !== undefined && scoreB !== null) {
+            return 1;
+          }
+          if (scoreA !== undefined && scoreA !== null && (scoreB === undefined || scoreB === null)) {
+            return -1;
+          }
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         }
         if (sortBy === "newest") {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -408,35 +417,11 @@ function JobPipelinePageContent() {
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
     const activeAppId = targetAppId || selectedCandidate?.id;
-    const apiUrl = getApiBaseUrl();
-    try {
-      const targetUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
+    const downloadPath = activeAppId
+      ? `/applications/${activeAppId}/documents/download${queryString}`
+      : url;
 
-      const response = await fetch(targetUrl);
-      if (!response.ok) throw new Error("Download request failed");
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch {
-      const fallbackUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
-      const a = document.createElement("a");
-      a.href = fallbackUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    await downloadAuthenticatedFile(downloadPath, downloadFileName);
   };
 
   if (jobLoading || appsLoading) {

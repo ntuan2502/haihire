@@ -380,5 +380,28 @@ describe("EmailService", () => {
       expect(transporter).toBeDefined();
     });
   });
+
+  describe("Anti-XSS Email Template Interpolation", () => {
+    it("should strictly HTML-escape malicious script tags in interpolated variables", () => {
+      const template = "Xin chào {{candidate_name}}, cảm ơn bạn!";
+      const variables = {
+        candidate_name: "<script>alert('xss')</script>",
+      };
+      const rendered = interpolate(template, variables);
+      expect(rendered).not.toContain("<script>");
+      expect(rendered).toContain("&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;");
+    });
+
+    it("should escape quotes, ampersands and angle brackets in variables", () => {
+      const template = "<a href='{{interview_link}}'>Tham gia: {{company_name}}</a>";
+      const variables = {
+        interview_link: "https://meet.google.com/abc?x=1&y=2",
+        company_name: 'Tech "Giants" & Co',
+      };
+      const rendered = interpolate(template, variables);
+      expect(rendered).toContain("https://meet.google.com/abc?x=1&amp;y=2");
+      expect(rendered).toContain("Tech &quot;Giants&quot; &amp; Co");
+    });
+  });
 });
 

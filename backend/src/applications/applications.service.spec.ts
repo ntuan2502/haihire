@@ -401,6 +401,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       await expect(service.findByJob("invalid-job")).rejects.toThrow(NotFoundException);
     });
 
+    it("should throw AppForbiddenException when accessing job applications from another organization", async () => {
+      await expect(service.findByJob("job-1", "foreign-org-id")).rejects.toThrow();
+    });
+
     it("should find a specific application by id", async () => {
       const app = await service.findOne("app-1");
       expect(app).toBeDefined();

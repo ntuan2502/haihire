@@ -283,10 +283,17 @@ export class EmailService {
   ) {
     if (this.emailQueue) {
       try {
+        const candidateKey = dto.candidateId || dto.to.toLowerCase();
+        const appKey = dto.applicationId || "general";
+        const templateKey = dto.templateType || "custom";
+        const timeBucket = Math.floor(Date.now() / (5 * 60 * 1000));
+        const deterministicJobId = `email:${organizationId}:${templateKey}:${candidateKey}:${appKey}:${timeBucket}`;
+
         const job = await this.emailQueue.add(
           "send-email",
           { dto, organizationId, senderUser },
           {
+            jobId: deterministicJobId,
             attempts: 3,
             backoff: {
               type: "exponential",

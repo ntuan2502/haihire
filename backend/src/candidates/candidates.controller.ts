@@ -134,10 +134,22 @@ export class CandidatesController {
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  update(
+  async update(
     @Param("id") id: string,
     @Body() dto: UpdateCandidateDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
+    const candidate = await this.candidatesService.findOne(id);
+    if (
+      req?.user?.organizationId &&
+      candidate.organizationId &&
+      req.user.organizationId !== candidate.organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
     return this.candidatesService.update(id, dto);
   }
 
@@ -150,11 +162,23 @@ export class CandidatesController {
       fileFilter: resumeFileFilter,
     }),
   )
-  uploadDocument(
+  async uploadDocument(
     @Param("id") id: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("type") documentType?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
+    const candidate = await this.candidatesService.findOne(id);
+    if (
+      req?.user?.organizationId &&
+      candidate.organizationId &&
+      req.user.organizationId !== candidate.organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
     return this.candidatesService.uploadDocument(id, file, documentType);
   }
 
@@ -266,18 +290,45 @@ export class CandidatesController {
   @Delete(":id/documents")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  deleteDocument(
+  async deleteDocument(
     @Param("id") id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
+    const candidate = await this.candidatesService.findOne(id);
+    if (
+      req?.user?.organizationId &&
+      candidate.organizationId &&
+      req.user.organizationId !== candidate.organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
     return this.candidatesService.deleteDocument(id, { documentId, url });
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  remove(@Param("id") id: string) {
+  async remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const candidate = await this.candidatesService.findOne(id);
+    if (
+      req?.user?.organizationId &&
+      candidate.organizationId &&
+      req.user.organizationId !== candidate.organizationId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: candidate belongs to another organization.",
+      );
+    }
     return this.candidatesService.remove(id);
   }
 }
+

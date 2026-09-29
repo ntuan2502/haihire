@@ -81,8 +81,11 @@ export class ApplicationsController {
 
   @Get("job/:jobId")
   @UseGuards(AuthGuard("jwt"))
-  findByJob(@Param("jobId") jobId: string) {
-    return this.applicationsService.findByJob(jobId);
+  findByJob(
+    @Param("jobId") jobId: string,
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
+  ) {
+    return this.applicationsService.findByJob(jobId, req?.user?.organizationId || undefined);
   }
 
   @Get(":id")
@@ -133,20 +136,38 @@ export class ApplicationsController {
   @Patch(":id/stage")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  updateStage(
+  async updateStage(
     @Param("id") id: string,
     @Body() dto: UpdateStageDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
+    const app = await this.applicationsService.findOne(id);
+    const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
+    if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
+    }
     return this.applicationsService.updateStage(id, dto);
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  updateCandidate(
+  async updateCandidate(
     @Param("id") id: string,
     @Body() dto: UpdateCandidateDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
+    const app = await this.applicationsService.findOne(id);
+    const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
+    if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
+    }
     return this.applicationsService.updateCandidate(id, dto);
   }
 
@@ -159,11 +180,20 @@ export class ApplicationsController {
       fileFilter: resumeFileFilter,
     }),
   )
-  uploadDocument(
+  async uploadDocument(
     @Param("id") id: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("type") documentType?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
+    const app = await this.applicationsService.findOne(id);
+    const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
+    if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
+    }
     return this.applicationsService.uploadDocument(id, file, documentType);
   }
 
@@ -285,18 +315,39 @@ export class ApplicationsController {
   @Delete(":id/documents")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  deleteDocument(
+  async deleteDocument(
     @Param("id") id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
+    const app = await this.applicationsService.findOne(id);
+    const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
+    if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
+    }
     return this.applicationsService.deleteDocument(id, { documentId, url });
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  remove(@Param("id") id: string) {
+  async remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const app = await this.applicationsService.findOne(id);
+    const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId;
+    if (req?.user?.organizationId && appOrgId && req.user.organizationId !== appOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
+    }
     return this.applicationsService.remove(id);
   }
 }
+

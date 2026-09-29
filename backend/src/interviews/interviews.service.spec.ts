@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NotFoundException } from "@nestjs/common";
+import { AppBadRequestException, AppForbiddenException } from "../common/app-exception";
 import { InterviewsService } from "./interviews.service";
 
 describe("InterviewsService", () => {
@@ -299,6 +300,47 @@ describe("InterviewsService", () => {
     expect(mockApps[0].stage).toBe("INTERVIEW");
   });
 
+  it("should throw AppBadRequestException when scheduling interview for a rejected application", async () => {
+    mockApps[0].stage = "REJECTED";
+    await expect(
+      service.create({
+        applicationId: "app-1",
+        date: "2026-09-25",
+        time: "14:00",
+        type: "TECHNICAL",
+        interviewer: "Lead Engineer",
+      }),
+    ).rejects.toThrow(AppBadRequestException);
+  });
+
+  it("should throw AppForbiddenException when scheduling interview across different organizations", async () => {
+    mockApps[0].stage = "APPLIED";
+    await expect(
+      service.create(
+        {
+          applicationId: "app-1",
+          date: "2026-09-25",
+          time: "14:00",
+          type: "TECHNICAL",
+          interviewer: "Lead Engineer",
+        },
+        "different-org-id",
+      ),
+    ).rejects.toThrow(AppForbiddenException);
+  });
+
+  it("should not overwrite stage if application is already in OFFER stage", async () => {
+    mockApps[0].stage = "OFFER";
+    await service.create({
+      applicationId: "app-1",
+      date: "2026-09-25",
+      time: "14:00",
+      type: "FINAL",
+      interviewer: "Director",
+    });
+    expect(mockApps[0].stage).toBe("OFFER");
+  });
+
   it("should update an existing interview", async () => {
     const updated = await service.update("intv-1", {
       time: "11:30",
@@ -315,3 +357,4 @@ describe("InterviewsService", () => {
     expect(mockInterviews).toHaveLength(0);
   });
 });
+

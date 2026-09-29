@@ -58,6 +58,36 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const downloadAuthenticatedFile = async (
+  downloadPath: string,
+  fileName: string,
+): Promise<void> => {
+  const cleanFileName = fileName || "document.pdf";
+  try {
+    const response = await api.get(downloadPath, { responseType: "blob" });
+    const blob = new Blob([response.data]);
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = cleanFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  } catch {
+    const baseUrl = getApiBaseUrl();
+    const fallbackUrl = downloadPath.startsWith("http")
+      ? downloadPath
+      : `${baseUrl.replace(/\/+$/, "")}${downloadPath.startsWith("/") ? "" : "/"}${downloadPath}`;
+    const a = document.createElement("a");
+    a.href = fallbackUrl;
+    a.download = cleanFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+};
+
 export const jobsApi = {
   getAll: async (params?: {
     status?: string;

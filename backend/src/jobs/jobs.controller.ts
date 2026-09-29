@@ -98,21 +98,58 @@ export class JobsController {
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  create(@Body() dto: CreateJobDto) {
-    return this.jobsService.create(dto);
+  create(
+    @Body() dto: CreateJobDto,
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
+  ) {
+    const userOrgId = req?.user?.organizationId || undefined;
+    if (dto.organizationId && userOrgId && dto.organizationId !== userOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: cannot create job for another organization.",
+      );
+    }
+    const finalDto = {
+      ...dto,
+      organizationId: userOrgId || dto.organizationId,
+      createdById: req?.user?.id || dto.createdById,
+    };
+    return this.jobsService.create(finalDto);
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  update(@Param("id") id: string, @Body() dto: UpdateJobDto) {
+  async update(
+    @Param("id") id: string,
+    @Body() dto: UpdateJobDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const job = await this.jobsService.findOne(id);
+    if (req?.user?.organizationId && job.organizationId && req.user.organizationId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: job belongs to another organization.",
+      );
+    }
     return this.jobsService.update(id, dto);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  remove(@Param("id") id: string) {
+  async remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    const job = await this.jobsService.findOne(id);
+    if (req?.user?.organizationId && job.organizationId && req.user.organizationId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: job belongs to another organization.",
+      );
+    }
     return this.jobsService.remove(id);
   }
 }
+

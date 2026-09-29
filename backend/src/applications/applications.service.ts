@@ -36,8 +36,8 @@ export class ApplicationsService {
     private readonly emailService: EmailService,
   ) {}
 
-  async findByJob(jobId: string) {
-    const job = await this.prisma.db.orm.public.Job.select("id", "title")
+  async findByJob(jobId: string, organizationId?: string) {
+    const job = await this.prisma.db.orm.public.Job.select("id", "title", "organizationId")
       .where((j) => j.id.eq(jobId))
       .first();
 
@@ -45,6 +45,13 @@ export class ApplicationsService {
       throw new AppNotFoundException(
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${jobId} not found`,
+      );
+    }
+
+    if (organizationId && job.organizationId && job.organizationId !== organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: job belongs to another organization.",
       );
     }
 

@@ -47,7 +47,7 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import { usePipelineStages } from "@/lib/stages";
-import { getApiBaseUrl } from "@/lib/api";
+import { getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
 import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
@@ -467,35 +467,11 @@ export function ApplicationsDataTable({
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
     const activeAppId = targetAppId || selectedApp?.id;
-    const apiUrl = getApiBaseUrl();
-    try {
-      const targetUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
+    const downloadPath = activeAppId
+      ? `/applications/${activeAppId}/documents/download${queryString}`
+      : url;
 
-      const response = await fetch(targetUrl);
-      if (!response.ok) throw new Error("Download request failed");
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch {
-      const fallbackUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
-      const a = document.createElement("a");
-      a.href = fallbackUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    await downloadAuthenticatedFile(downloadPath, downloadFileName);
   };
 
   const drawerCandidateDocuments = useMemo(() => {

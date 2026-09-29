@@ -3,7 +3,11 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppNotFoundException } from "../common/app-exception";
+import {
+  AppBadRequestException,
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import crypto from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
@@ -430,10 +434,32 @@ export class InterviewsService {
     };
   }
 
-  async create(dto: CreateInterviewDto) {
+  async create(dto: CreateInterviewDto, organizationId?: string) {
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(dto.applicationId)).first();
     if (!app) {
       throw new AppNotFoundException(APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND, `Application with ID ${dto.applicationId} not found`);
+    }
+
+    if (app.stage === "REJECTED") {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.BAD_REQUEST,
+        "Cannot schedule an interview for a rejected application. Reopen the application before scheduling.",
+      );
+    }
+
+    const candidate = app.candidateId
+      ? await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(app.candidateId)).first()
+      : null;
+    const job = app.jobId
+      ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
+      : null;
+    const orgId = candidate?.organizationId || job?.organizationId;
+
+    if (organizationId && orgId && orgId !== organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Access denied: application belongs to another organization.",
+      );
     }
 
     const id = crypto.randomUUID();
@@ -453,7 +479,7 @@ export class InterviewsService {
       notes: dto.notes || null,
     });
 
-    if (app.stage !== "INTERVIEW" && app.stage !== "OFFER" && app.stage !== "HIRED") {
+    if (app.stage !== "INTERVIEW" && app.stage !== "OFFER" && app.stage !== "HIRED" && app.stage !== "REJECTED") {
       await this.prisma.db.orm.public.Application.where((a) => a.id.eq(app.id)).update({
         stage: "INTERVIEW",
       });
@@ -462,14 +488,6 @@ export class InterviewsService {
     const createdInterview = await this.findOne(id);
 
     // Record activity log & optionally send interview invitation email
-    const candidate = app.candidateId
-      ? await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(app.candidateId)).first()
-      : null;
-    const job = app.jobId
-      ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
-      : null;
-    const orgId = candidate?.organizationId || job?.organizationId;
-
     if (candidate && orgId) {
       await this.activitiesService.createActivity({
         organizationId: orgId,

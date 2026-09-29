@@ -51,6 +51,14 @@ export interface TranslationSchema {
     collapse: string;
     fullscreen: string;
     exitFullscreen: string;
+    copy: string;
+    copied: string;
+    copyKeyword: string;
+    confirmInputInstruction: string;
+    confirmInputPlaceholder: string;
+    deleteConfirmWord: string;
+    cancelConfirmWord: string;
+    revokeConfirmWord: string;
   };
   errors: {
     generic: string;
@@ -638,11 +646,15 @@ export interface TranslationSchema {
       coverLetterDesc: string;
       offOption: string;
       screeningQuestionsTitle: string;
+      screeningQuestionsDesc: string;
       generateWithAi: string;
       pasteExisting: string;
       aiQuestionsNoticeTitle: string;
       aiQuestionsNoticeDesc: string;
       noScreeningQuestions: string;
+      addFirstQuestion: string;
+      openTextAnswer: string;
+      yesNoChoice: string;
       yesNoQuestion: string;
       freeTextAnswer: string;
       deleteQuestion: string;
@@ -914,6 +926,7 @@ export interface TranslationSchema {
     deleteApplicationHeading: string;
     deleteApplicationWarning: string;
     deleteCandidateHeading: string;
+    deleteCandidateDescription: string;
     deleteCandidateWarning: string;
     deleteDocumentHeading: string;
     deleteDocumentWarning: string;
@@ -1167,6 +1180,8 @@ export interface TranslationSchema {
     viewEvaluation: string;
     rateStar: string;
     close: string;
+    cancelInterviewTitle: string;
+    cancelInterviewWarning: string;
     errors: {
       selectCandidate: string;
       selectDate: string;
@@ -1197,6 +1212,10 @@ export interface TranslationSchema {
     copied: string;
     revokeLink: string;
     removeMember: string;
+    removeMemberConfirmTitle: string;
+    removeMemberConfirmWarning: string;
+    revokeLinkConfirmTitle: string;
+    revokeLinkConfirmWarning: string;
     roleOwner: string;
     roleAdmin: string;
     roleMember: string;
@@ -1415,6 +1434,9 @@ export interface TranslationSchema {
     phone: string;
     notes: string;
     resume: string;
+    cvResume: string;
+    dropCvHere: string;
+    cvFormats: string;
     dragDropResume: string;
     resumeFormats: string;
     submitting: string;

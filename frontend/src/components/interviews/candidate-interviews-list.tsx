@@ -10,7 +10,8 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { CancelInterviewModal } from "./cancel-interview-modal";
 import {
   getInterviewsFromApplication,
   getInterviewTypeLabel,
@@ -49,6 +50,19 @@ export function CandidateInterviewsList({
   hideIfEmpty = false,
 }: CandidateInterviewsListProps) {
   const { t } = useI18n();
+  const [interviewToCancel, setInterviewToCancel] = useState<ScheduledInterviewInfo | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleConfirmCancel = async () => {
+    if (!interviewToCancel) return;
+    try {
+      setIsCancelling(true);
+      await onCancelInterview?.(interviewToCancel);
+      setInterviewToCancel(null);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const allInterviews = useMemo(() => {
     if (interviews && Array.isArray(interviews) && interviews.length > 0) {
@@ -322,7 +336,7 @@ export function CandidateInterviewsList({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onCancelInterview?.(scheduled)}
+                    onClick={() => setInterviewToCancel(scheduled)}
                     className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold cursor-pointer"
                   >
                     {t("interviews.cancelThisSchedule")}
@@ -343,6 +357,13 @@ export function CandidateInterviewsList({
           </div>
         ))}
       </div>
+
+      <CancelInterviewModal
+        isOpen={!!interviewToCancel}
+        onClose={() => setInterviewToCancel(null)}
+        onConfirm={handleConfirmCancel}
+        isCancelling={isCancelling}
+      />
     </div>
   );
 }

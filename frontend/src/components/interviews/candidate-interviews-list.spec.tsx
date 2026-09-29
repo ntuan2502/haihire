@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { CandidateInterviewsList } from "./candidate-interviews-list";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 
@@ -18,6 +18,10 @@ vi.mock("@/i18n", () => ({
         "interviews.currentScheduleBadge": "Lịch hiện tại",
         "interviews.completedScheduleBadge": "Đã qua",
         "interviews.cancelThisSchedule": "Hủy lịch này",
+        "interviews.cancelInterviewTitle": "Hủy lịch phỏng vấn",
+        "interviews.cancelInterviewWarning": "Buổi phỏng vấn này sẽ bị hủy",
+        "common.cancelConfirmWord": "HỦY",
+        "common.cancel": "Hủy",
         "interviews.editScheduleBtn": "Chỉnh sửa lịch phỏng vấn",
         "interviews.updateBtn": "Cập nhật",
         "interviews.atOffice": "Tại văn phòng",
@@ -101,7 +105,18 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
     const cancelButton = screen.getByText("Hủy lịch này");
     expect(cancelButton).toBeInTheDocument();
 
-    fireEvent.click(cancelButton);
+    act(() => {
+      fireEvent.click(cancelButton);
+    });
+
+    // Modal is opened, confirmation match text required
+    const confirmInput = screen.getByRole("textbox");
+    act(() => {
+      fireEvent.change(confirmInput, { target: { value: "HỦY" } });
+    });
+    act(() => {
+      fireEvent.submit(confirmInput.closest("form")!);
+    });
 
     // 1. Must be called exactly once
     expect(handleCancel).toHaveBeenCalledTimes(1);

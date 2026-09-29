@@ -74,6 +74,16 @@ updated: 2026-09-18
 ## Zero Silent Mutations & Audit Logging
 - **Traceability**: All meaningful business entity modifications must produce audit records without leaking confidential PII into application logs.
 
+## Queue & Job Idempotency Mandate
+- **No Duplicate Emails**: All background queues must utilize deterministic idempotency keys to prevent duplicate communications to candidates.
+
+## Email Template Security Discipline
+- **Safe Rendering**: All interpolated candidate variables must be sanitized to eliminate any possibility of XSS or phishing attacks.
+
+## Two-Tier Deletion Protocol
+- **Safety First**: Root records like Jobs and Candidates must support 30-day soft-delete recovery before permanently purging cascade relations.
+
+
 
 
 

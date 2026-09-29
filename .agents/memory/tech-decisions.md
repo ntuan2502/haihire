@@ -92,4 +92,17 @@ updated: 2026-09-18
   - **Decision**: Require all backend exceptions to inherit from `AppException` returning standardized JSON envelopes, parsed on frontend exclusively via `getApiErrorMessage`.
   - **Rationale**: Prevents unhandled client exceptions, eliminates generic "Error occurred" toasts, and delivers precise, localized feedback to users.
 
+- **Background Job Idempotency & Queue Resilience**:
+  - **Decision**: Configure all BullMQ producer queues with deterministic `jobId` keys based on entity IDs and action types, combined with Redis deduplication windows.
+  - **Rationale**: Completely eliminates duplicate email dispatches or duplicate webhook triggers caused by network retries or process restarts.
+
+- **Email Template Security & Anti-XSS**:
+  - **Decision**: Enforce automatic HTML sanitization/escaping for all interpolated template variables, with validation of custom sender domain records (SPF/DKIM).
+  - **Rationale**: Protects recruitment personnel from malicious payloads injected into candidate form fields.
+
+- **Two-Tier Deletion Architecture (Soft Delete with Relational Cascade Purge)**:
+  - **Decision**: Combine application-level soft delete (`deletedAt` field on `Job` and `Candidate`) with database-level `onDelete: Cascade` on child tables in `contract.prisma`.
+  - **Rationale**: Enables a 30-day trash/restore grace period for accidental deletions while ensuring that permanent purge jobs leave zero orphan records in PostgreSQL.
+
+
 

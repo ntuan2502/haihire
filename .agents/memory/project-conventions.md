@@ -126,4 +126,17 @@ updated: 2026-09-18T20:53
 - **Standardized Backend Error Envelope**: All exceptions thrown by backend services must inherit from `AppException` and return the unified JSON shape: `{ statusCode, errorCode, message, timestamp }` mapped to `@haihire/shared` error codes.
 - **Client Error Handling**: Frontend components must never render raw error messages (`err.message` or `err.response.data`) directly. Always utilize the centralized `getApiErrorMessage(err, t, fallbackKey)` utility to ensure localized, user-friendly error dialogs and toasts.
 
+## Background Job Idempotency & Queue Resilience (MANDATORY)
+- **Unique Idempotency Keys**: All BullMQ background jobs (specifically email dispatches, webhook notifications, and AI resume parsing) must define an explicit and deterministic `jobId` (e.g. `email:${type}:${candidateId}:${interviewId}`).
+- **Prevent Duplicate Dispatches**: Redis/BullMQ must silently discard redundant job enqueues if an identical job is currently active or recently completed, preventing duplicate interview invitations or offer letters from being sent to candidates during network retries or worker restarts.
+
+## Safe Email Template Interpolation & Anti-XSS (MANDATORY)
+- **Strict Variable Sanitization**: All candidate-supplied fields (candidate name, notes, phone, custom answers) interpolated into HTML email templates (`{{candidateName}}`, `{{interviewLink}}`, `{{companyName}}`) must be strictly HTML-escaped to prevent cross-site scripting (XSS), phishing links, or HTML injection attacks against recruiters and interviewers.
+- **Deliverability & Domain Verification**: Monitor email sending status and ensure system mailers alert administrators if custom sending domains lack SPF/DKIM verification.
+
+## Two-Tier Deletion Protocol (Soft Delete vs Hard Cascade) (MANDATORY)
+- **Root Entities (Soft Delete)**: Core domain models (`Job`, `Candidate`) must utilize soft deletion (`deletedAt: Date | null`) to prevent irreversible accidental deletions and satisfy enterprise HR audit requirements (e.g., 30-day recovery window).
+- **Dependent Relations (Hard Cascade)**: Secondary relational records (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must maintain database-level `onDelete: Cascade` in `contract.prisma` so that when a root entity is genuinely purged/expunged, all dependent rows are cleanly and atomically wiped without leaving orphan records.
+
+
 

@@ -28,6 +28,9 @@
 - [project] Recruitment Stage State Machine: deterministic lifecycle transitions with precondition checks → project-conventions.md
 - [project] Audit Trail Architecture: zero silent mutations, asynchronous ActivityLog emission with PII scrubbing → project-conventions.md
 - [project] Unified Error Envelope: standard AppException JSON shape and getApiErrorMessage client consumption → project-conventions.md
+- [project] Background Job Idempotency: deterministic job IDs and Redis deduplication locks → project-conventions.md
+- [project] Safe Email Template Engine: strict HTML escaping, context sanitization, and anti-XSS → project-conventions.md
+- [project] Two-Tier Deletion Protocol: soft-delete on primary entities with 30-day purge cascade → project-conventions.md
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
@@ -47,6 +50,9 @@
 - [user] Tenant Path Segregation: CVs and assets strictly stored under tenant paths with short-lived presigned URLs → user-preferences.md
 - [user] Query Cache Invalidation: bind all state mutations to canonical query key invalidations → user-preferences.md
 - [user] Audit Trail Integrity: capture all business entity modifications without logging raw PII → user-preferences.md
+- [user] Queue & Job Idempotency: no duplicate email dispatches via deterministic jobId keys → user-preferences.md
+- [user] Email Template Security: safe rendering and anti-XSS sanitization of candidate variables → user-preferences.md
+- [user] Two-Tier Deletion: 30-day soft delete recovery window for Jobs and Candidates → user-preferences.md
 
 ## Feedback
 - [feedback] 2026-09-28: React Callback Hygiene, Network Gatekeeper & Comprehensive Test Baseline → feedback-history.md

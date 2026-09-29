@@ -34,6 +34,7 @@ import {
   RotateCcw,
   Pencil,
   Trash2,
+  Eye,
 } from "lucide-react";
 
 import {
@@ -651,6 +652,7 @@ function CandidatesPageContent() {
                       {/* Actions */}
                       <td className="py-4 px-5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Quick View */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -658,10 +660,25 @@ function CandidatesPageContent() {
                               router.push(`/dashboard/candidates/${candidate.id}`);
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.view")}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+
+                          {/* Quick Edit (Dedicated Edit Page) */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/candidates/${candidate.id}/edit`);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
                             title={t("common.edit")}
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
+
+                          {/* Quick Delete */}
                           {canEdit && (
                             <button
                               type="button"

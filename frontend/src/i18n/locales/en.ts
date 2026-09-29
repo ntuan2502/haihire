@@ -24,6 +24,7 @@ export const en: TranslationSchema = {
     comingSoon: "Coming Soon",
     soon: "Soon",
     noData: "No data available",
+    view: "View",
     viewAll: "View all",
     export: "Export",
     or: "or",
@@ -764,7 +765,7 @@ export const en: TranslationSchema = {
     },
   },
   candidates: {
-    title: "Candidate Directory",
+    title: "Candidates",
     candidateName: "Candidate",
     email: "Email",
     phone: "Phone",

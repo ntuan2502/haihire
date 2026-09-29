@@ -22,7 +22,7 @@ import {
   MessageSquare,
   FileCheck,
   RotateCcw,
-  Pencil,
+  Eye,
 } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -910,6 +910,7 @@ export function ApplicationsDataTable({
                       {/* Actions */}
                       <td className="py-4 px-5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Quick View */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -917,9 +918,9 @@ export function ApplicationsDataTable({
                               router.push(`/dashboard/applications/${application.id}`);
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
-                            title={t("common.edit")}
+                            title={t("common.view")}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                           </button>
                           {canEdit && (
                             <button

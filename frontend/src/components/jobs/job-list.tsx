@@ -16,6 +16,7 @@ import {
   Check,
   Pencil,
   Trash2,
+  Eye,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { SlideOver } from "@/components/shared/slide-over";
@@ -688,8 +689,19 @@ export function JobList({
                             )}
                           </button>
 
+                          {/* Quick View (Pipeline/Overview) */}
                           <Link
-                            href={`/dashboard/jobs/${job.id}/edit`}
+                            href={`/dashboard/jobs/${job.id}/pipeline`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.view")}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+
+                          {/* Quick Edit (Settings) */}
+                          <Link
+                            href={`/dashboard/jobs/${job.id}/settings`}
                             onClick={(e) => e.stopPropagation()}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
                             title={t("common.edit")}
@@ -697,6 +709,7 @@ export function JobList({
                             <Pencil className="h-4 w-4" />
                           </Link>
 
+                          {/* Quick Delete */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -708,14 +721,6 @@ export function JobList({
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-
-                          <Link
-                            href={`/dashboard/jobs/${job.id}/pipeline`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer ml-1"
-                          >
-                            <span>{t("jobs.tabs.pipeline")}</span>
-                            <ArrowRight className="h-3 w-3" />
-                          </Link>
                         </div>
                       </td>
                     </tr>

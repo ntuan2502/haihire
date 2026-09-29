@@ -22,6 +22,7 @@ export interface TranslationSchema {
     comingSoon: string;
     soon: string;
     noData: string;
+    view: string;
     viewAll: string;
     export: string;
     or: string;

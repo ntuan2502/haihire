@@ -12,6 +12,8 @@ import {
   User,
   Video,
   Trash2,
+  Pencil,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getInitials, getCandidateDisplayName } from "@/lib/utils";
@@ -339,16 +341,25 @@ export function InterviewsTableView({
                     <td className="py-3.5 px-4 text-right align-middle whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         {canEdit && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onOpenScheduleModal(app, undefined, currentInterview)}
-                            className="h-7 px-2.5 rounded-xl text-[11px] font-semibold cursor-pointer hover:border-blue-400 hover:text-blue-600 transition-colors shadow-2xs whitespace-nowrap"
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenScheduleModal(app, undefined, currentInterview);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={
+                              allInterviews.length > 0
+                                ? t("interviews.editSchedule")
+                                : t("interviews.scheduleNow")
+                            }
                           >
-                            {allInterviews.length > 0
-                              ? t("interviews.editSchedule")
-                              : t("interviews.scheduleNow")}
-                          </Button>
+                            {allInterviews.length > 0 ? (
+                              <Pencil className="h-4 w-4" />
+                            ) : (
+                              <Calendar className="h-4 w-4" />
+                            )}
+                          </button>
                         )}
                         {canEdit && currentInterview && onCancelInterview && (
                           <button
@@ -360,7 +371,7 @@ export function InterviewsTableView({
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
                             title={t("interviews.cancelThisSchedule")}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         )}
                       </div>

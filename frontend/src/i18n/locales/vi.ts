@@ -24,6 +24,7 @@ export const vi: TranslationSchema = {
     comingSoon: "Sắp ra mắt",
     soon: "Sắp có",
     noData: "Chưa có dữ liệu",
+    view: "Xem",
     viewAll: "Xem tất cả",
     export: "Xuất file",
     or: "hoặc",
@@ -764,7 +765,7 @@ export const vi: TranslationSchema = {
     },
   },
   candidates: {
-    title: "Danh bạ ứng viên",
+    title: "Ứng viên",
     candidateName: "Ứng viên",
     email: "Email",
     phone: "Số điện thoại",

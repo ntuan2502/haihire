@@ -9,7 +9,7 @@
     "start": "pnpm --filter ./backend --filter ./frontend --parallel run start",
     "start:backend": "pnpm --filter ./backend run start",
     "start:frontend": "pnpm --filter ./frontend run start",
-    "build": "pnpm --filter ./packages/shared run build & pnpm --filter ./backend run build & pnpm --filter ./frontend run build",
+    "build": "pnpm --filter @haihire/shared run build && pnpm --filter backend run build && pnpm --filter frontend run build",
     "lint": "pnpm --filter ./backend --filter ./frontend --parallel run lint",
     "test": "pnpm --filter ./backend --filter ./frontend --parallel run test",
     "test:backend": "pnpm --filter ./backend run test",

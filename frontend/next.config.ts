@@ -60,6 +60,7 @@ function getAllowedDevOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingRoot: path.resolve(process.cwd(), ".."),
   allowedDevOrigins: getAllowedDevOrigins(),
   images: {
     remotePatterns: [

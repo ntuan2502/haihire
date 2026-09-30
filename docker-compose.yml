@@ -1,5 +1,11 @@
 name: haihire
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # PostgreSQL Database
   postgres:
@@ -16,6 +22,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - haihire-network
+    logging: *default-logging
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-haihire_user} -d ${POSTGRES_DB:-haihire_db}" ]
       interval: 5s
@@ -39,6 +46,7 @@ services:
       - minio_data:/data
     networks:
       - haihire-network
+    logging: *default-logging
     healthcheck:
       test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:9000/minio/health/live || exit 1" ]
       interval: 5s
@@ -66,6 +74,7 @@ services:
       - redis_data:/data
     networks:
       - haihire-network
+    logging: *default-logging
     healthcheck:
       test: [ "CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD}\" ]; then redis-cli -a \"$${REDIS_PASSWORD}\" ping; else redis-cli ping; fi" ]
       interval: 5s
@@ -75,13 +84,15 @@ services:
   # NestJS Backend Service
   backend:
     profiles: [ "app" ]
+    init: true
     build:
       context: .
       dockerfile: backend/Dockerfile
     container_name: haihire-backend
     restart: unless-stopped
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env
+        required: false
     environment:
       PORT: ${BACKEND_PORT:-3001}
       DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
@@ -99,6 +110,12 @@ services:
       FRONTEND_URL: http://localhost:${FRONTEND_PORT:-3000}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:3001/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       postgres:
         condition: service_healthy
@@ -106,19 +123,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    logging: *default-logging
     networks:
       - haihire-network
 
   # Next.js Frontend Service
   frontend:
     profiles: [ "app" ]
+    init: true
     build:
       context: .
       dockerfile: frontend/Dockerfile
     container_name: haihire-frontend
     restart: unless-stopped
     env_file:
-      - ./frontend/.env
+      - path: ./frontend/.env
+        required: false
     environment:
       PORT: 3000
       NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
@@ -130,7 +150,9 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    logging: *default-logging
     networks:
       - haihire-network
 

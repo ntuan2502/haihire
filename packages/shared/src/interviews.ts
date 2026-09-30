@@ -29,6 +29,7 @@ export interface InterviewScorecard {
 export interface Interview {
   id: string;
   applicationId: string;
+  scheduledAt?: string;
   date: string;
   time: string;
   type: InterviewType;
@@ -50,8 +51,9 @@ export interface Interview {
 
 export interface CreateInterviewInput {
   applicationId: string;
-  date: string;
-  time: string;
+  scheduledAt?: string;
+  date?: string;
+  time?: string;
   type: InterviewType;
   format?: InterviewFormat;
   linkOrLocation?: string;
@@ -62,6 +64,7 @@ export interface CreateInterviewInput {
 }
 
 export interface UpdateInterviewInput {
+  scheduledAt?: string;
   date?: string;
   time?: string;
   type?: InterviewType;

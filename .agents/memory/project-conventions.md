@@ -14,6 +14,7 @@ updated: 2026-09-18T20:53
 - **100% TypeScript Repository**: No manually written plain `.js`, `.mjs`, or `.cjs` files are allowed. All code must be in TypeScript (`.ts`, `.tsx`, `.mts`, `.cts`).
 - **TypeScript-Supported Formats**: `.mts` and `.cts` are recognized first-class TypeScript modules and are completely valid alongside `.ts` and `.tsx`.
 - **Automatic Format Conversion**: If any external tool, generator, or scaffolding creates files in plain JavaScript formats without TypeScript support, convert them to their corresponding TypeScript equivalent (`.ts` / `.tsx` / `.mts` / `.cts`).
+- **Config File Exception**: `eslint.config.mjs`, `postcss.config.mjs`, and `vitest.config.mts` are acceptable as tooling requires ESM config files. These are build/tooling configuration files and do not violate the application code TypeScript mandate.
 - **Scripts**: Any utility or maintenance scripts (e.g., `scripts/*.ts`) must be authored in TypeScript and executed via native Node 22+ execution (`node scripts/<script>.ts`) or `tsx`.
 
 ## Environment Variable & Configuration Conventions

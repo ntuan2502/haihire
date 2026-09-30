@@ -7,14 +7,17 @@ import {
   Inject,
   Post,
   Request,
+  Res,
   UseGuards,
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
+import type { Response } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { env } from "../config/env";
 
 @Controller("auth")
 export class AuthController {
@@ -23,25 +26,67 @@ export class AuthController {
     private readonly authService: AuthService,
   ) {}
 
+  private setAuthCookie(res: Response, token: string) {
+    if (res?.cookie) {
+      res.cookie("haihire_token", token, {
+        httpOnly: true,
+        secure: env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
+      });
+    }
+  }
+
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post("login")
   @HttpCode(HttpStatus.OK)
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(dto);
+    this.setAuthCookie(res, result.accessToken);
+    return result;
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.register(dto);
+    this.setAuthCookie(res, result.accessToken);
+    return result;
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshToken(dto);
+  async refresh(
+    @Body() dto: RefreshTokenDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.refreshToken(dto);
+    this.setAuthCookie(res, result.accessToken);
+    return result;
+  }
+
+  @Post("logout")
+  @HttpCode(HttpStatus.OK)
+  logout(@Res({ passthrough: true }) res: Response) {
+    if (res?.cookie) {
+      res.cookie("haihire_token", "", {
+        httpOnly: true,
+        secure: env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 0,
+        path: "/",
+      });
+    }
+    return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)

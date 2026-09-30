@@ -35,12 +35,8 @@ if (!parsedClient.success) {
 // Validate server-only variables strictly when executing on the server
 let internalApiUrl = "";
 if (isServer) {
-  const fallbackUrl = process.env.BACKEND_PORT
-    ? `http://127.0.0.1:${process.env.BACKEND_PORT}`
-    : undefined;
-
   const parsedServer = serverEnvSchema.safeParse({
-    INTERNAL_API_URL: process.env.INTERNAL_API_URL || fallbackUrl,
+    INTERNAL_API_URL: process.env.INTERNAL_API_URL,
   });
 
   if (!parsedServer.success) {

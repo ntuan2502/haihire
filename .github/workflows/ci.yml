@@ -10,23 +10,95 @@ jobs:
   validate:
     name: Lint, Test & Build
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: haihire_test
+          POSTGRES_PASSWORD: haihire_test_password
+          POSTGRES_DB: haihire_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: "pnpm"
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Create backend .env for CI
+        run: |
+          cat > backend/.env << 'EOF'
+          NODE_ENV=test
+          PORT=3001
+          DATABASE_URL=postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
+          JWT_SECRET=ci-test-jwt-secret-minimum-16-chars
+          ENCRYPTION_SECRET=ci-test-encryption-secret-must-be-32-characters-long
+          FRONTEND_URL=http://localhost:3000
+          MINIO_ENDPOINT=localhost
+          MINIO_PORT=9000
+          MINIO_USE_SSL=false
+          MINIO_ACCESS_KEY=minioadmin
+          MINIO_SECRET_KEY=minioadmin
+          MINIO_BUCKET_NAME=haihire-resumes
+          MINIO_PUBLIC_URL=http://localhost:9000
+          SYSTEM_EMAIL_PROVIDER=SIMULATED
+          SYSTEM_EMAIL_FROM_NAME=HaiHire CI
+          SYSTEM_EMAIL_FROM_EMAIL=ci@haihire.test
+          SYSTEM_EMAIL_SMTP_HOST=
+          SYSTEM_EMAIL_SMTP_PORT=587
+          SYSTEM_EMAIL_SMTP_USER=
+          SYSTEM_EMAIL_SMTP_PASS=
+          SYSTEM_EMAIL_RESEND_API_KEY=
+          SYSTEM_EMAIL_SENDGRID_API_KEY=
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+          REDIS_PASSWORD=
+          EOF
+
+      - name: Create frontend .env for CI
+        run: |
+          cat > frontend/.env << 'EOF'
+          INTERNAL_API_URL=http://localhost:3001
+          NEXT_PUBLIC_API_URL=http://localhost:3001
+          NEXT_PUBLIC_MINIO_URL=/haihire-resumes
+          EOF
 
       - name: Run linter and type checks
         run: pnpm lint

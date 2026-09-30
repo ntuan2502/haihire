@@ -41,8 +41,7 @@ export class AuthService {
       .first();
 
     // Auto-provision demo accounts in non-production environments if database is fresh
-    const isDevOrDemoEnabled =
-      env.NODE_ENV !== "production" || process.env.ENABLE_DEMO_ACCOUNTS === "true";
+    const isDevOrDemoEnabled = env.NODE_ENV !== "production";
 
     if (!user && isDevOrDemoEnabled) {
       const demoAccountList = [DEMO_ACCOUNTS.ADMIN, DEMO_ACCOUNTS.MEMBER];
@@ -194,18 +193,14 @@ export class AuthService {
     const hashedPassword = bcrypt.hashSync(dto.password, 10);
     const id = crypto.randomUUID();
 
-    await this.prisma.db.orm.public.User.upsert({
-      create: {
-        id,
-        email: normalizedEmail,
-        name: dto.name.trim(),
-        password: hashedPassword,
-        role: "MEMBER",
-        organizationId: null,
-        updatedAt: toInstant(),
-      },
-      update: {},
-      conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
+    await this.prisma.db.orm.public.User.create({
+      id,
+      email: normalizedEmail,
+      name: dto.name.trim(),
+      password: hashedPassword,
+      role: "MEMBER",
+      organizationId: null,
+      updatedAt: toInstant(),
     });
 
     const user = {

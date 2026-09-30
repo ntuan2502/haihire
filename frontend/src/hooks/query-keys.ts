@@ -1,0 +1,37 @@
+export const queryKeys = {
+  jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
+  applications: (jobId?: string | null) => ["applications", { jobId }] as const,
+  application: (id?: string | null) => ["applications", "detail", id] as const,
+  allApplications: (orgId?: string | null) => ["applications", "all", { orgId }] as const,
+  paginatedApplications: (params?: Record<string, unknown>) => ["applications", "paginated", params] as const,
+  candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,
+  candidate: (id?: string | null) => ["candidates", id] as const,
+  interviews: (params?: Record<string, unknown>) => ["interviews", params] as const,
+  interview: (id?: string | null) => ["interviews", "detail", id] as const,
+  myOrg: () => ["organization", "my"] as const,
+  myOrgs: () => ["organization", "my-all"] as const,
+  orgMembers: () => ["organization", "members"] as const,
+  inviteLinks: () => ["organization", "invite-links"] as const,
+  emailTemplates: (orgId?: string | null) => ["email", "templates", { orgId }] as const,
+  emailSettings: (orgId?: string | null) => ["email", "settings", { orgId }] as const,
+  emailLogs: (params?: {
+    orgId?: string | null;
+    candidateId?: string | null;
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => ["email", "logs", params] as const,
+  candidateActivities: (
+    candidateId?: string | null,
+    orgId?: string | null,
+    page?: number,
+    limit?: number,
+  ) => ["activities", "candidate", candidateId, { orgId, page, limit }] as const,
+  applicationActivities: (
+    applicationId?: string | null,
+    orgId?: string | null,
+    page?: number,
+    limit?: number,
+  ) => ["activities", "application", applicationId, { orgId, page, limit }] as const,
+};

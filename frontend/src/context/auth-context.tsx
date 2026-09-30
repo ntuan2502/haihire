@@ -37,14 +37,16 @@ const USER_KEY = "haihire_recruiter_user";
 function setAuthCookies(token: string, hasOrg: boolean) {
   if (typeof document === "undefined") return;
   const maxAge = 60 * 60 * 24 * 7; // 7 days
-  document.cookie = `haihire_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-  document.cookie = `haihire_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `haihire_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+  document.cookie = `haihire_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 }
 
 function clearAuthCookies() {
   if (typeof document === "undefined") return;
-  document.cookie = "haihire_token=; path=/; max-age=0; SameSite=Lax";
-  document.cookie = "haihire_has_org=; path=/; max-age=0; SameSite=Lax";
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `haihire_token=; path=/; max-age=0; SameSite=Lax${secure}`;
+  document.cookie = `haihire_has_org=; path=/; max-age=0; SameSite=Lax${secure}`;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -59,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     clearAuthCookies();
+    api.post("/auth/logout").catch(() => {});
     delete api.defaults.headers.common.Authorization;
     router.replace("/auth/login");
   }, [router]);
@@ -131,9 +134,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token || !currentUserId) return;
 
     const sseBaseUrl = getApiBaseUrl();
-    const eventSource = new EventSource(
-      `${sseBaseUrl}/events/sse?token=${encodeURIComponent(token)}`,
-    );
+    const eventSource = new EventSource(`${sseBaseUrl}/events/sse`, {
+      withCredentials: true,
+    });
 
     eventSource.onmessage = (e) => {
       try {

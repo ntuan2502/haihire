@@ -475,9 +475,10 @@ class InterviewSlotManager {
         ? "Tầng 5, Tòa nhà Keangnam Landmark 72, Hà Nội"
         : `https://meet.google.com/haihire-demo-${candidateIdx}-${round}`;
 
+    const scheduledAt = toInstant(new Date(`${slot.date}T${slot.time}:00Z`));
+
     return {
-      date: slot.date,
-      time: slot.time,
+      scheduledAt,
       type,
       format,
       linkOrLocation,
@@ -838,8 +839,7 @@ export async function runSeed(): Promise<void> {
   const interviewsToInsert: Array<{
     id: string;
     applicationId: string;
-    date: string;
-    time: string;
+    scheduledAt: Temporal.Instant;
     type: "HR_SCREENING" | "TECHNICAL" | "CULTURE_FIT" | "FINAL_ROUND" | "ASSESSMENT";
     format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
     linkOrLocation: string;
@@ -964,8 +964,7 @@ export async function runSeed(): Promise<void> {
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
                 applicationId: appId,
-                date: intv.date,
-                time: intv.time,
+                scheduledAt: intv.scheduledAt,
                 type: intv.type,
                 format: intv.format,
                 linkOrLocation: intv.linkOrLocation,
@@ -987,8 +986,7 @@ export async function runSeed(): Promise<void> {
             interviewsToInsert.push({
               id: crypto.randomUUID(),
               applicationId: appId,
-              date: intv.date,
-              time: intv.time,
+              scheduledAt: intv.scheduledAt,
               type: intv.type,
               format: intv.format,
               linkOrLocation: intv.linkOrLocation,
@@ -1016,8 +1014,7 @@ export async function runSeed(): Promise<void> {
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
                 applicationId: appId,
-                date: intv.date,
-                time: intv.time,
+                scheduledAt: intv.scheduledAt,
                 type: intv.type,
                 format: intv.format,
                 linkOrLocation: intv.linkOrLocation,
@@ -1087,7 +1084,7 @@ export async function runSeed(): Promise<void> {
   // Kiểm tra nghiêm ngặt tính độc nhất của khung giờ phỏng vấn
   const slotCollisionCheck = new Set<string>();
   for (const intv of interviewsToInsert) {
-    const key = `${intv.date} ${intv.time}`;
+    const key = intv.scheduledAt.toString();
     if (slotCollisionCheck.has(key)) {
       throw new Error(`CRITICAL: Trùng khung giờ phỏng vấn: ${key}`);
     }

@@ -140,7 +140,7 @@ model User {
 model OrganizationMember {
   id             String       @id @default(uuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
   user           User         @relation(fields: [userId], references: [id])
   role           Role         @default(MEMBER)
@@ -160,7 +160,7 @@ model InviteLink {
   usesCount      Int          @default(0)
   status         InviteStatus @default(ACTIVE)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String?
   createdBy      User?        @relation(fields: [createdById], references: [id])
   createdAt      DateTime     @default(now())
@@ -184,9 +184,10 @@ model Job {
   status          JobStatus     @default(PUBLISHED)
   createdById     String?
   createdBy       User?         @relation(fields: [createdById], references: [id])
-  organizationId  String?
-  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  organization    Organization  @relation(fields: [organizationId], references: [id])
   applications    Application[]
+  deletedAt       DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       temporal.updatedAt()
 
@@ -214,6 +215,7 @@ model Candidate {
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
   documents      CandidateDocument[]
+  deletedAt      DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      temporal.updatedAt()
 
@@ -251,8 +253,7 @@ model Interview {
   id             String      @id @default(uuid())
   applicationId  String
   application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  date           String
-  time           String
+  scheduledAt    DateTime
   type           InterviewType   @default(TECHNICAL)
   format         InterviewFormat @default(MEET)
   linkOrLocation String
@@ -270,7 +271,7 @@ model Interview {
 model EmailTemplate {
   id             String            @id @default(uuid())
   organizationId String
-  organization   Organization      @relation(fields: [organizationId], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   type           EmailTemplateType
   name           String
   subject        String
@@ -287,7 +288,7 @@ model EmailTemplate {
 model EmailSetting {
   id             String       @id @default(uuid())
   organizationId String       @unique
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   provider       String       @default("SIMULATED")
   fromName       String       @default("Recruitment Team")
   fromEmail      String       @default("careers@workspace.com")
@@ -307,11 +308,11 @@ model EmailLog {
   id             String              @id @default(uuid())
   scope          EmailScope          @default(ORGANIZATION)
   organizationId String?
-  organization   Organization?       @relation(fields: [organizationId], references: [id])
+  organization   Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   candidateId    String?
-  candidate      Candidate?          @relation(fields: [candidateId], references: [id])
+  candidate      Candidate?          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
-  application    Application?        @relation(fields: [applicationId], references: [id])
+  application    Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   senderId       String?
   senderName     String
   senderEmail    String
@@ -334,7 +335,7 @@ model EmailLog {
 model ActivityLog {
   id             String       @id @default(uuid())
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   candidateId    String
   candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applicationId  String?
@@ -359,7 +360,7 @@ model CandidateDocument {
   candidateId    String
   candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   url            String
   size           Int?
@@ -372,5 +373,3 @@ model CandidateDocument {
   @@index([organizationId])
   @@map("candidateDocument")
 }
-
-

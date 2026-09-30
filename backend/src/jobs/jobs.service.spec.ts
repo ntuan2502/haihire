@@ -133,6 +133,11 @@ describe("JobsService - Multi-Tenant Job Management", () => {
                   }),
                 })),
               })),
+              create: vi.fn().mockImplementation(async (data) => {
+                const newJob = { ...data, createdAt: new Date(), updatedAt: new Date() };
+                mockJobs.push(newJob);
+                return newJob;
+              }),
               upsert: vi.fn().mockImplementation(async ({ create }) => {
                 mockJobs.push({ ...create, createdAt: new Date(), updatedAt: new Date() });
                 return create;

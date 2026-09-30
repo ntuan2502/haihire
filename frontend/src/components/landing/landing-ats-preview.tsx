@@ -53,6 +53,7 @@ export const LandingAtsPreview: React.FC = () => {
   const mockJob: Job = useMemo(
     () => ({
       id: "job-demo-1",
+      organizationId: "org-demo-1",
       title: "Senior Full-Stack Engineer",
       department: "Engineering",
       location: "Hanoi / Remote",

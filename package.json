@@ -17,6 +17,12 @@
     "seed": "pnpm --filter ./backend run seed",
     "contract:emit": "pnpm --filter ./backend run contract:emit",
     "check:i18n": "pnpm --filter ./frontend run check:i18n",
-    "check:env": "node --no-warnings packages/shared/scripts/check-env.ts"
+    "check:env": "node --no-warnings packages/shared/scripts/check-env.ts",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "husky": "^9.1.7"
   }
 }

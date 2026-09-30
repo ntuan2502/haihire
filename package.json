@@ -15,9 +15,18 @@
     "test:backend": "pnpm --filter ./backend run test",
     "test:frontend": "pnpm --filter ./frontend run test",
     "seed": "pnpm --filter ./backend run seed",
+    "db:update": "pnpm --filter ./backend run db:update",
+    "db:setup": "pnpm --filter ./backend run db:update && pnpm --filter ./backend run seed",
     "contract:emit": "pnpm --filter ./backend run contract:emit",
     "check:i18n": "pnpm --filter ./frontend run check:i18n",
     "check:env": "node --no-warnings packages/shared/scripts/check-env.ts",
+    "docker:up": "docker compose --profile app up -d",
+    "docker:up:build": "docker compose --profile app up -d --build",
+    "docker:down": "docker compose --profile app down",
+    "docker:logs": "docker compose --profile app logs -f",
+    "docker:infra:up": "docker compose up -d",
+    "docker:infra:down": "docker compose down",
+    "docker:infra:logs": "docker compose logs -f",
     "prepare": "husky"
   },
   "devDependencies": {

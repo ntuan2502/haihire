@@ -11,10 +11,12 @@ import {
   Trash2,
   ExternalLink,
   Link2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
 import Link from "next/link";
+import { slugify } from "@/lib/utils";
 
 interface TrackingLinksTabProps {
   data?: PaginatedResult<TrackingLinkItem>;
@@ -26,6 +28,7 @@ interface TrackingLinksTabProps {
   orgSlug: string;
   onToggleStatus: (id: string, currentActive: boolean) => void;
   onDeleteLink: (id: string) => void;
+  onEditLink?: (link: TrackingLinkItem) => void;
 }
 
 export function TrackingLinksTab({
@@ -38,13 +41,20 @@ export function TrackingLinksTab({
   orgSlug,
   onToggleStatus,
   onDeleteLink,
+  onEditLink,
 }: TrackingLinksTabProps) {
   const { t } = useI18n();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleCopyLink = (token: string, id: string, jobId?: string | null) => {
+  const handleCopyLink = (
+    token: string,
+    id: string,
+    jobId?: string | null,
+    jobTitle?: string | null,
+  ) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const jobSegment = jobId ? `/${jobId}` : "";
+    const jobSlug = jobTitle ? slugify(jobTitle) : jobId || "";
+    const jobSegment = jobSlug ? `/${jobSlug}` : "";
     const url = `${origin}/careers/${orgSlug}${jobSegment}?ref=${token}`;
 
     navigator.clipboard.writeText(url).then(() => {
@@ -178,7 +188,7 @@ export function TrackingLinksTab({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleCopyLink(link.token, link.id, link.jobId)}
+                            onClick={() => handleCopyLink(link.token, link.id, link.jobId, link.jobTitle)}
                             className="h-8 px-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 gap-1 text-[11px] font-semibold cursor-pointer"
                           >
                             {isCopied ? (
@@ -196,7 +206,7 @@ export function TrackingLinksTab({
 
                           {/* Open Career Link */}
                           <a
-                            href={`/careers/${orgSlug}${link.jobId ? `/${link.jobId}` : ""}?ref=${link.token}`}
+                            href={`/careers/${orgSlug}${link.jobTitle ? `/${slugify(link.jobTitle)}` : link.jobId ? `/${link.jobId}` : ""}?ref=${link.token}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
@@ -204,6 +214,19 @@ export function TrackingLinksTab({
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
+
+                          {/* Edit Link Button */}
+                          {onEditLink && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onEditLink(link)}
+                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
+                              title={t("common.edit")}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
 
                           {/* Toggle Power */}
                           <Button

@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { buildPublicTrackingUrl, type TimeRangeFilter } from "@haihire/shared";
+import { slugify } from "@/lib/utils";
 
 function TrackingLinkDetailContent() {
   const params = useParams();
@@ -77,11 +78,15 @@ function TrackingLinkDetailContent() {
         ? window.location.origin
         : "http://localhost:3000";
 
+    const jobSlug = detail.link.jobTitle
+      ? slugify(detail.link.jobTitle)
+      : detail.link.jobId;
+
     return buildPublicTrackingUrl(
       origin,
       orgSlug,
       detail.link.token,
-      detail.link.jobId,
+      jobSlug,
       {
         utmSource: detail.link.utmSource,
         utmMedium: detail.link.utmMedium,
@@ -192,6 +197,7 @@ function TrackingLinkDetailContent() {
               onClose={() => setIsEditModalOpen(false)}
               link={detail.link}
               jobs={jobsList}
+              orgSlug={orgSlug}
             />
           </>
         )}

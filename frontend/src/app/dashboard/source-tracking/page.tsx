@@ -16,12 +16,14 @@ import {
   useUpdateTrackingLinkMutation,
   useDeleteTrackingLinkMutation,
 } from "@/hooks/use-sourcing-queries";
+import type { TrackingLinkItem } from "@haihire/shared";
 import {
   SourcingStatsCards,
   OverviewTab,
   TrackingLinksTab,
   AttributionLogTab,
   CreateLinkModal,
+  EditLinkModal,
 } from "@/components/sourcing";
 import { Button } from "@/components/ui/button";
 import { SegmentedTabs, type TabItem } from "@/components/shared/segmented-tabs";
@@ -61,6 +63,7 @@ function SourceTrackingContent() {
   const selectedJobId = rawJobId && rawJobId !== "ALL" ? rawJobId : undefined;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState<TrackingLinkItem | null>(null);
 
   // Organization info (for public career site link slug)
   const { data: myOrg } = useMyOrg();
@@ -254,6 +257,7 @@ function SourceTrackingContent() {
               orgSlug={orgSlug}
               onToggleStatus={handleToggleStatus}
               onDeleteLink={handleDeleteLink}
+              onEditLink={(link) => setEditingLink(link)}
             />
           </div>
         )}
@@ -280,6 +284,17 @@ function SourceTrackingContent() {
         jobs={jobsList}
         orgSlug={orgSlug}
       />
+
+      {/* Modal Edit Link */}
+      {editingLink && (
+        <EditLinkModal
+          isOpen={Boolean(editingLink)}
+          onClose={() => setEditingLink(null)}
+          link={editingLink}
+          jobs={jobsList}
+          orgSlug={orgSlug}
+        />
+      )}
     </div>
   );
 }

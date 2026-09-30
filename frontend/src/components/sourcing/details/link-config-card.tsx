@@ -60,11 +60,14 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
         </div>
 
         {/* Job Scope */}
-        <div className="flex items-center justify-between py-1">
-          <span className="text-slate-500 dark:text-slate-400 font-medium">
+        <div className="flex items-start justify-between gap-3 py-1">
+          <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
             {t("sourcing.details.configJobScope")}
           </span>
-          <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[180px] text-right">
+          <span
+            className="font-semibold text-slate-900 dark:text-white text-right break-words max-w-[260px] leading-relaxed"
+            title={link.jobTitle || t("sourcing.details.allJobs")}
+          >
             {link.jobTitle || t("sourcing.details.allJobs")}
           </span>
         </div>

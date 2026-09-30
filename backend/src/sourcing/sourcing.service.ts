@@ -343,6 +343,11 @@ export class SourcingService {
       "jobId",
       "campaign",
       "medium",
+      "utmSource",
+      "utmMedium",
+      "utmCampaign",
+      "utmTerm",
+      "utmContent",
       "clicksCount",
       "isActive",
       "deletedAt",
@@ -369,7 +374,8 @@ export class SourcingService {
         (l) =>
           l.name.toLowerCase().includes(q) ||
           l.token.toLowerCase().includes(q) ||
-          (l.campaign && l.campaign.toLowerCase().includes(q)),
+          (l.campaign && l.campaign.toLowerCase().includes(q)) ||
+          (l.utmCampaign && l.utmCampaign.toLowerCase().includes(q)),
       );
     }
 
@@ -417,6 +423,11 @@ export class SourcingService {
         jobTitle: l.jobId ? jobTitleMap.get(l.jobId) ?? null : null,
         campaign: l.campaign,
         medium: l.medium,
+        utmSource: l.utmSource ?? (l.source ? String(l.source).toLowerCase() : null),
+        utmMedium: l.utmMedium ?? l.medium ?? null,
+        utmCampaign: l.utmCampaign ?? l.campaign ?? null,
+        utmTerm: l.utmTerm ?? null,
+        utmContent: l.utmContent ?? null,
         clicksCount: clicks,
         applicationsCount: apps,
         conversionRate: cvr,
@@ -457,6 +468,11 @@ export class SourcingService {
       "jobId",
       "campaign",
       "medium",
+      "utmSource",
+      "utmMedium",
+      "utmCampaign",
+      "utmTerm",
+      "utmContent",
       "clicksCount",
       "isActive",
       "deletedAt",
@@ -531,7 +547,11 @@ export class SourcingService {
       "stage",
       "referrerDomain",
       "sourceDetails",
+      "utmSource",
+      "utmMedium",
       "utmCampaign",
+      "utmTerm",
+      "utmContent",
       "createdAt",
     )
       .where((a) => a.trackingLinkId.eq(link.id))
@@ -649,7 +669,12 @@ export class SourcingService {
           jobTitle: jobInfo?.title || jobTitle || "Role",
           jobType: jobInfo?.type || jobType || null,
           referrer: a.referrerDomain || a.sourceDetails || null,
-          campaign: a.utmCampaign || link.campaign || null,
+          campaign: a.utmCampaign || link.utmCampaign || link.campaign || null,
+          utmSource: a.utmSource || null,
+          utmMedium: a.utmMedium || null,
+          utmCampaign: a.utmCampaign || link.utmCampaign || link.campaign || null,
+          utmTerm: a.utmTerm || link.utmTerm || null,
+          utmContent: a.utmContent || link.utmContent || null,
           stage: String(a.stage),
           appliedAt: new Date(toTimestamp(a.createdAt)).toISOString(),
         };
@@ -690,6 +715,11 @@ export class SourcingService {
         jobTitle,
         campaign: link.campaign,
         medium: link.medium,
+        utmSource: link.utmSource ?? (link.source ? String(link.source).toLowerCase() : null),
+        utmMedium: link.utmMedium ?? link.medium ?? null,
+        utmCampaign: link.utmCampaign ?? link.campaign ?? null,
+        utmTerm: link.utmTerm ?? null,
+        utmContent: link.utmContent ?? null,
         clicksCount: link.clicksCount || 0,
         applicationsCount: allTimeAttributed,
         conversionRate:
@@ -744,6 +774,12 @@ export class SourcingService {
     const token = `lnk-${crypto.randomBytes(3).toString("hex")}`;
     const id = crypto.randomUUID();
 
+    const utmSource = dto.utmSource?.trim() || dto.source.toLowerCase();
+    const utmMedium = dto.utmMedium?.trim() || dto.medium?.trim() || null;
+    const utmCampaign = dto.utmCampaign?.trim() || dto.campaign?.trim() || null;
+    const utmTerm = dto.utmTerm?.trim() || null;
+    const utmContent = dto.utmContent?.trim() || null;
+
     const created = await this.prisma.db.orm.public.TrackingLink.create({
       id,
       organizationId,
@@ -752,8 +788,13 @@ export class SourcingService {
       source: dto.source,
       customSource: dto.customSource?.trim() || null,
       jobId: dto.jobId || null,
-      campaign: dto.campaign?.trim() || null,
-      medium: dto.medium?.trim() || null,
+      campaign: utmCampaign,
+      medium: utmMedium,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
       clicksCount: 0,
       isActive: true,
       createdById: userId || null,
@@ -781,6 +822,11 @@ export class SourcingService {
       jobTitle,
       campaign: created.campaign,
       medium: created.medium,
+      utmSource: created.utmSource,
+      utmMedium: created.utmMedium,
+      utmCampaign: created.utmCampaign,
+      utmTerm: created.utmTerm,
+      utmContent: created.utmContent,
       clicksCount: 0,
       applicationsCount: 0,
       conversionRate: 0,
@@ -817,11 +863,27 @@ export class SourcingService {
       );
     }
 
-    await this.prisma.db.orm.public.TrackingLink.where((l) => l.id.eq(id)).update({
-      ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
-      ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+    const updateData: Record<string, unknown> = {
       updatedAt: toInstant(),
-    });
+    };
+    if (dto.name !== undefined) updateData.name = dto.name.trim();
+    if (dto.source !== undefined) updateData.source = dto.source;
+    if (dto.customSource !== undefined) updateData.customSource = dto.customSource?.trim() || null;
+    if (dto.jobId !== undefined) updateData.jobId = dto.jobId || null;
+    if (dto.utmSource !== undefined) updateData.utmSource = dto.utmSource?.trim() || null;
+    if (dto.utmMedium !== undefined) {
+      updateData.utmMedium = dto.utmMedium?.trim() || null;
+      updateData.medium = dto.utmMedium?.trim() || null;
+    }
+    if (dto.utmCampaign !== undefined) {
+      updateData.utmCampaign = dto.utmCampaign?.trim() || null;
+      updateData.campaign = dto.utmCampaign?.trim() || null;
+    }
+    if (dto.utmTerm !== undefined) updateData.utmTerm = dto.utmTerm?.trim() || null;
+    if (dto.utmContent !== undefined) updateData.utmContent = dto.utmContent?.trim() || null;
+    if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+
+    await this.prisma.db.orm.public.TrackingLink.where((l) => l.id.eq(id)).update(updateData);
   }
 
   async deleteLink(organizationId: string, id: string): Promise<void> {

@@ -17,6 +17,11 @@ const mockLink: TrackingLinkItem = {
   jobTitle: null,
   campaign: "company-page-hiring",
   medium: "social",
+  utmSource: "linkedin",
+  utmMedium: "social",
+  utmCampaign: "company-page-hiring",
+  utmTerm: "lead-dev",
+  utmContent: "sponsored-post",
   clicksCount: 512,
   applicationsCount: 2,
   conversionRate: 0.39,
@@ -79,6 +84,8 @@ describe("Link Details Components", () => {
     expect(screen.getByText("lnk-org1")).toBeDefined();
     expect(screen.getByText("company-page-hiring")).toBeDefined();
     expect(screen.getByText("social")).toBeDefined();
+    expect(screen.getByText("lead-dev")).toBeDefined();
+    expect(screen.getByText("sponsored-post")).toBeDefined();
   });
 
   it("renders LinkPipelineCard with breakdown data", () => {

@@ -25,4 +25,24 @@ export class CreateTrackingLinkDto {
   @IsString()
   @IsOptional()
   medium?: string;
+
+  @IsString()
+  @IsOptional()
+  utmSource?: string;
+
+  @IsString()
+  @IsOptional()
+  utmMedium?: string;
+
+  @IsString()
+  @IsOptional()
+  utmCampaign?: string;
+
+  @IsString()
+  @IsOptional()
+  utmTerm?: string;
+
+  @IsString()
+  @IsOptional()
+  utmContent?: string;
 }

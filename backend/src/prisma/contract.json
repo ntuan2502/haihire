@@ -769,6 +769,34 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "utmContent": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmMedium": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmSource": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmTerm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -921,6 +949,18 @@
                 },
                 "utmCampaign": {
                   "column": "utmCampaign"
+                },
+                "utmContent": {
+                  "column": "utmContent"
+                },
+                "utmMedium": {
+                  "column": "utmMedium"
+                },
+                "utmSource": {
+                  "column": "utmSource"
+                },
+                "utmTerm": {
+                  "column": "utmTerm"
                 }
               },
               "namespaceId": "public",
@@ -3037,6 +3077,41 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
                 }
+              },
+              "utmCampaign": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmContent": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmMedium": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmSource": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmTerm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -3165,6 +3240,21 @@
                 },
                 "updatedAt": {
                   "column": "updatedAt"
+                },
+                "utmCampaign": {
+                  "column": "utmCampaign"
+                },
+                "utmContent": {
+                  "column": "utmContent"
+                },
+                "utmMedium": {
+                  "column": "utmMedium"
+                },
+                "utmSource": {
+                  "column": "utmSource"
+                },
+                "utmTerm": {
+                  "column": "utmTerm"
                 }
               },
               "namespaceId": "public",
@@ -3676,6 +3766,26 @@
                   "nullable": false
                 },
                 "utmCampaign": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmContent": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmMedium": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmSource": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmTerm": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
@@ -5438,6 +5548,31 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
                   "nullable": false
+                },
+                "utmCampaign": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmContent": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmMedium": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmSource": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmTerm": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -5814,7 +5949,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "fbfd87e8fc4e876ce9c1e5fac74525272cb7e08b91e790c89d693cb0755b82f4"
+    "storageHash": "bfa964564c3810d57f0817f69ffec8f447a2b8a9a7b44dd4291f896556974055"
   },
   "execution": {
     "executionHash": "db3397098f3171ecc6ae5c859ca2f595e4c88d38adc4d78f1f1a95998bdf0cfa",

@@ -159,3 +159,17 @@ updated: 2026-09-18T20:53
 ## Conventional Commits & Quality Gate Enforcement (MANDATORY)
 - **Commitlint + Husky**: All commits must pass `@commitlint/cli` and `@commitlint/config-conventional` via `.husky/commit-msg`.
 - **Pre-Commit Validation**: The `.husky/pre-commit` hook automatically runs linting and test validation before every commit. Never bypass git hooks with `--no-verify` unless in an authorized disaster recovery scenario.
+
+## HaiHire Design System & Layout Conventions (MANDATORY)
+- **Full-Width Layout Mandate**: All application and dashboard views must use full-screen container sizing `<main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">` (or `space-y-6`). NEVER constrain pages with artificial desktop wrappers like `max-w-7xl mx-auto` or centered boxed shells.
+- **Design System Token & Component Rules**:
+  - **Colors & Canvas**: Clean slate palette (`bg-slate-50 dark:bg-slate-950 font-sans`). Cards must use `rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs`.
+  - **KPI Metrics**: Always use `<MetricCard>` with official color accents (`blue`, `indigo`, `emerald`, `amber`, `rose`, `slate`), never ad-hoc custom cards.
+  - **Select Controls**: Always use `<CustomSelect>` with `className="w-full"` and `triggerClassName="w-full text-xs h-9 ..."` for clean button expansion and right-pinned chevrons.
+  - **Status & Badges**: Use `<StageBadge>` with `useStageInfo()` for recruitment stages (`APPLIED`, `SCREENING`, `INTERVIEW`, `OFFER`, `HIRED`, `REJECTED`) and `<ChannelBadge>` for sourcing channels.
+- **Public Career & Tracking URL Standard**:
+  - Real candidate tracking links must ALWAYS construct public tenant URLs: `${origin}/careers/${orgSlug}${jobSegment}?ref=${token}` (plus optional UTM query parameters).
+  - NEVER use fake mock paths or internal backend endpoints like `/api/public/track/...`.
+- **Full 5-Parameter UTM Standard**:
+  - Tracking link models, creation/edit modals, link configuration cards, and attribution pipelines must always support the complete suite of 5 standard UTM parameters: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`.
+

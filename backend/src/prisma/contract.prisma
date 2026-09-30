@@ -264,7 +264,11 @@ model Application {
   sourceChannel  SourcingChannel  @default(DIRECT)
   sourceDetails  String?
   referrerDomain String?
+  utmSource      String?
+  utmMedium      String?
   utmCampaign    String?
+  utmTerm        String?
+  utmContent     String?
   interviews     Interview[]
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
@@ -414,6 +418,11 @@ model TrackingLink {
   job            Job?             @relation(fields: [jobId], references: [id], onDelete: SetNull)
   campaign       String?
   medium         String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  utmTerm        String?
+  utmContent     String?
   clicksCount    Int              @default(0)
   isActive       Boolean          @default(true)
   createdById    String?

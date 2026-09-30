@@ -18,9 +18,11 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
     link.customSource ||
     link.source;
 
-  const utmSource = link.source.toLowerCase();
-  const utmMedium = link.medium || "referral";
-  const utmCampaign = link.campaign;
+  const utmSource = link.utmSource || link.source.toLowerCase();
+  const utmMedium = link.utmMedium || link.medium || "—";
+  const utmCampaign = link.utmCampaign || link.campaign || null;
+  const utmTerm = link.utmTerm || null;
+  const utmContent = link.utmContent || null;
 
   return (
     <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs p-5 space-y-5">
@@ -103,6 +105,34 @@ export function LinkConfigCard({ link }: LinkConfigCardProps) {
             {utmCampaign ? (
               <span className="font-mono text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md truncate max-w-[180px]">
                 {utmCampaign}
+              </span>
+            ) : (
+              <span className="text-slate-400">—</span>
+            )}
+          </div>
+
+          {/* UTM Term */}
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500 dark:text-slate-400 font-medium">
+              {t("sourcing.details.configTerm")}
+            </span>
+            {utmTerm ? (
+              <span className="font-mono text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md truncate max-w-[180px]">
+                {utmTerm}
+              </span>
+            ) : (
+              <span className="text-slate-400">—</span>
+            )}
+          </div>
+
+          {/* UTM Content */}
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500 dark:text-slate-400 font-medium">
+              {t("sourcing.details.configContent")}
+            </span>
+            {utmContent ? (
+              <span className="font-mono text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md truncate max-w-[180px]">
+                {utmContent}
               </span>
             ) : (
               <span className="text-slate-400">—</span>

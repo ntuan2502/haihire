@@ -6,6 +6,7 @@ import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
+import { useMyOrg } from "@/hooks/use-organization-queries";
 import { useAllJobs } from "@/hooks/use-queries";
 import { useTrackingLinkDetailQuery } from "@/hooks/use-sourcing-queries";
 import {
@@ -23,7 +24,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import type { TimeRangeFilter } from "@haihire/shared";
+import { buildPublicTrackingUrl, type TimeRangeFilter } from "@haihire/shared";
 
 function TrackingLinkDetailContent() {
   const params = useParams();
@@ -50,6 +51,17 @@ function TrackingLinkDetailContent() {
   const [isCopied, setIsCopied] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Organization slug for real public career URLs
+  const { data: myOrg } = useMyOrg();
+  const orgSlug = myOrg?.slug || user?.organizationId || "demo";
+
+  // Jobs for navbar and edit modal
+  const { data: rawJobs = [] } = useAllJobs(user?.organizationId);
+  const jobsList = useMemo(
+    () => rawJobs.map((j) => ({ id: j.id, title: j.title })),
+    [rawJobs],
+  );
+
   // Load link details
   const {
     data: detail,
@@ -57,17 +69,28 @@ function TrackingLinkDetailContent() {
     isError,
   } = useTrackingLinkDetailQuery(linkId, { timeRange });
 
-  // Jobs count for navbar
-  const { data: rawJobs = [] } = useAllJobs(user?.organizationId);
-
+  // Real public career site link with full UTM parameters
   const trackingUrl = useMemo(() => {
     if (!detail?.link?.token) return "";
     const origin =
       typeof window !== "undefined"
         ? window.location.origin
         : "http://localhost:3000";
-    return `${origin}/api/public/track/${detail.link.token}`;
-  }, [detail?.link?.token]);
+
+    return buildPublicTrackingUrl(
+      origin,
+      orgSlug,
+      detail.link.token,
+      detail.link.jobId,
+      {
+        utmSource: detail.link.utmSource,
+        utmMedium: detail.link.utmMedium,
+        utmCampaign: detail.link.utmCampaign,
+        utmTerm: detail.link.utmTerm,
+        utmContent: detail.link.utmContent,
+      },
+    );
+  }, [detail?.link, orgSlug]);
 
   const handleCopy = async () => {
     if (!trackingUrl) return;
@@ -90,7 +113,8 @@ function TrackingLinkDetailContent() {
         candidatesCount={detail?.stats?.applications ?? 0}
       />
 
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-6 max-w-7xl mx-auto">
+      {/* Full-width container per HaiHire design system mandate (no max-w-7xl) */}
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-24 space-y-4">
             <LoadingSpinner />
@@ -141,9 +165,9 @@ function TrackingLinkDetailContent() {
             <LinkStatsCards stats={detail.stats} />
 
             {/* Two-Column Responsive Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
               {/* Left Column (Pipeline + Trend Chart + Attributed Applications) */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4">
                 <LinkPipelineCard
                   breakdown={detail.pipeline.stages}
                   totalApplications={detail.pipeline.total}
@@ -155,7 +179,7 @@ function TrackingLinkDetailContent() {
               </div>
 
               {/* Right Column (Link Configuration + Referrer Domains) */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <LinkConfigCard link={detail.link} />
 
                 <LinkReferrersCard referrers={detail.referrerDomains} />
@@ -167,6 +191,7 @@ function TrackingLinkDetailContent() {
               isOpen={isEditModalOpen}
               onClose={() => setIsEditModalOpen(false)}
               link={detail.link}
+              jobs={jobsList}
             />
           </>
         )}

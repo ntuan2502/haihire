@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'fbfd87e8fc4e876ce9c1e5fac74525272cb7e08b91e790c89d693cb0755b82f4'>;
+  StorageHashBase<'bfa964564c3810d57f0817f69ffec8f447a2b8a9a7b44dd4291f896556974055'>;
 export type ExecutionHash =
   ExecutionHashBase<'db3397098f3171ecc6ae5c859ca2f595e4c88d38adc4d78f1f1a95998bdf0cfa'>;
 export type ProfileHash =
@@ -307,6 +307,10 @@ export type FieldOutputTypes = {
       readonly trackingLinkId: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly Candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -492,6 +496,11 @@ export type FieldOutputTypes = {
         | 'OTHER';
       readonly token: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly User: {
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
@@ -565,6 +574,10 @@ export type FieldInputTypes = {
       readonly trackingLinkId: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly Candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -750,6 +763,11 @@ export type FieldInputTypes = {
         | 'OTHER';
       readonly token: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly User: {
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
@@ -823,6 +841,10 @@ export type StorageColumnTypes = {
       readonly trackingLinkId: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -1008,6 +1030,11 @@ export type StorageColumnTypes = {
         | 'OTHER';
       readonly token: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly user: {
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
@@ -1081,6 +1108,10 @@ export type StorageColumnInputTypes = {
       readonly trackingLinkId: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -1266,6 +1297,11 @@ export type StorageColumnInputTypes = {
         | 'OTHER';
       readonly token: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly user: {
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
@@ -1343,6 +1379,10 @@ export namespace Models {
     trackingLinkId: CodecTypes['pg/text@1']['output'] | null;
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+    utmContent: CodecTypes['pg/text@1']['output'] | null;
+    utmMedium: CodecTypes['pg/text@1']['output'] | null;
+    utmSource: CodecTypes['pg/text@1']['output'] | null;
+    utmTerm: CodecTypes['pg/text@1']['output'] | null;
     activityLogs: public_ActivityLog[];
     candidate: public_Candidate;
     emailLogs: public_EmailLog[];
@@ -1590,6 +1630,11 @@ export namespace Models {
       | 'OTHER';
     token: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+    utmContent: CodecTypes['pg/text@1']['output'] | null;
+    utmMedium: CodecTypes['pg/text@1']['output'] | null;
+    utmSource: CodecTypes['pg/text@1']['output'] | null;
+    utmTerm: CodecTypes['pg/text@1']['output'] | null;
     applications: public_Application[];
     clicks: public_TrackingClick[];
     createdBy: public_User | null;
@@ -1896,6 +1941,26 @@ type ContractBase = Omit<
                   readonly nullable: false;
                 };
                 readonly utmCampaign: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmContent: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmMedium: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmSource: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmTerm: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
@@ -3206,6 +3271,31 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-temporal@1';
                   readonly nullable: false;
                 };
+                readonly utmCampaign: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmContent: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmMedium: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmSource: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmTerm: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [{ readonly columns: readonly ['token'] }];
@@ -3730,6 +3820,22 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly utmContent: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmMedium: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmSource: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmTerm: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
             };
             readonly relations: {
               readonly activityLogs: {
@@ -3821,6 +3927,10 @@ type ContractBase = Omit<
                 readonly trackingLinkId: { readonly column: 'trackingLinkId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
                 readonly utmCampaign: { readonly column: 'utmCampaign' };
+                readonly utmContent: { readonly column: 'utmContent' };
+                readonly utmMedium: { readonly column: 'utmMedium' };
+                readonly utmSource: { readonly column: 'utmSource' };
+                readonly utmTerm: { readonly column: 'utmTerm' };
               };
             };
           };
@@ -5108,6 +5218,26 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-temporal@1';
                 };
               };
+              readonly utmCampaign: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmContent: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmMedium: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmSource: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmTerm: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
             };
             readonly relations: {
               readonly applications: {
@@ -5182,6 +5312,11 @@ type ContractBase = Omit<
                 readonly source: { readonly column: 'source' };
                 readonly token: { readonly column: 'token' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+                readonly utmCampaign: { readonly column: 'utmCampaign' };
+                readonly utmContent: { readonly column: 'utmContent' };
+                readonly utmMedium: { readonly column: 'utmMedium' };
+                readonly utmSource: { readonly column: 'utmSource' };
+                readonly utmTerm: { readonly column: 'utmTerm' };
               };
             };
           };

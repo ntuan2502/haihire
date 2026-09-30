@@ -56,4 +56,27 @@ describe("EventsService - SSE Streaming", () => {
 
     sub.unsubscribe();
   });
+
+  it("should throw AppUnauthorizedException when no token is provided to subscribeWithToken", () => {
+    expect(() => service.subscribeWithToken()).toThrow();
+  });
+
+  it("should throw AppUnauthorizedException when token verification fails", () => {
+    const mockJwt = {
+      verify: () => {
+        throw new Error("Invalid token");
+      },
+    };
+    const s = new EventsService(mockJwt as never);
+    expect(() => s.subscribeWithToken("bad-token")).toThrow();
+  });
+
+  it("should subscribe successfully when token is valid", () => {
+    const mockJwt = {
+      verify: () => ({ sub: "user-123" }),
+    };
+    const s = new EventsService(mockJwt as never);
+    const obs = s.subscribeWithToken("valid-token");
+    expect(obs).toBeDefined();
+  });
 });

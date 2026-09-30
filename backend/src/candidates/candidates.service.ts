@@ -1,6 +1,7 @@
 import {
   Inject,
   Injectable,
+  Optional,
 } from "@nestjs/common";
 import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
 import {
@@ -11,6 +12,7 @@ import {
 } from "../common/app-exception";
 import { MinioService } from "../minio/minio.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { ActivitiesService } from "../activities/activities.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../common/doc-utils";
@@ -24,13 +26,25 @@ export class CandidatesService {
     private readonly prisma: PrismaService,
     @Inject(MinioService)
     private readonly minioService: MinioService,
+    @Optional()
+    @Inject(ActivitiesService)
+    private readonly activitiesService?: ActivitiesService,
   ) {}
 
   async findAll(
     organizationId?: string,
     options?: { page?: number; limit?: number; search?: string },
+    tenantOrgId?: string | null,
   ) {
-    if (!organizationId) {
+    if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+        "Access denied: cannot access candidates from another organization.",
+        { organizationId },
+      );
+    }
+    const targetOrgId = tenantOrgId || organizationId || undefined;
+    if (!targetOrgId) {
       return { data: [], total: 0, page: 1, limit: options?.limit || 20, totalPages: 0 };
     }
 
@@ -52,7 +66,7 @@ export class CandidatesService {
       "createdAt",
       "updatedAt",
     )
-      .where((c) => c.organizationId.eq(organizationId))
+      .where((c) => c.organizationId.eq(targetOrgId))
       .all();
 
     if (candidates.length === 0) {
@@ -130,7 +144,11 @@ export class CandidatesService {
     };
   }
 
-  async findOne(id: string, tenantOrgId?: string | null) {
+  async findOne(
+    id: string,
+    tenantOrgId?: string | null,
+    currentUser?: { id?: string; name?: string } | null,
+  ) {
     const candidate = await this.prisma.db.orm.public.Candidate.select(
       "id",
       "organizationId",
@@ -300,6 +318,26 @@ export class CandidatesService {
           jobTitle: app.job?.title || "Job Application",
         });
       }
+    }
+
+    if (currentUser?.id && this.activitiesService && candidate.organizationId) {
+      this.activitiesService
+        .createActivity({
+          organizationId: candidate.organizationId,
+          candidateId: candidate.id,
+          type: "NOTE_ADDED",
+          title: "Candidate Profile Accessed",
+          description: `Candidate profile was accessed by ${currentUser.name || "recruiter"}`,
+          actorId: currentUser.id,
+          actorName: currentUser.name || "Recruiter",
+          metadata: {
+            action: "VIEW_PROFILE",
+            accessType: "PII_READ",
+            subType: "PII_READ",
+            userName: currentUser.name || "Recruiter",
+          },
+        })
+        .catch(() => {});
     }
 
     return {
@@ -506,6 +544,7 @@ export class CandidatesService {
     targetUrl?: string,
     targetName?: string,
     tenantOrgId?: string | null,
+    currentUser?: { id?: string; name?: string } | null,
   ) {
     const candidate = await this.findOne(id, tenantOrgId);
 
@@ -555,6 +594,27 @@ export class CandidatesService {
         APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
         "Document file could not be retrieved from storage",
       );
+    }
+
+    if (currentUser?.id && this.activitiesService && candidate.organizationId) {
+      this.activitiesService
+        .createActivity({
+          organizationId: candidate.organizationId,
+          candidateId: candidate.id,
+          type: "NOTE_ADDED",
+          title: "Document Downloaded",
+          description: `Document "${cleanFileName}" was downloaded by ${currentUser.name || "recruiter"}`,
+          actorId: currentUser.id,
+          actorName: currentUser.name || "Recruiter",
+          metadata: {
+            action: "DOWNLOAD_DOCUMENT",
+            subType: "DOCUMENT_DOWNLOADED",
+            fileName: cleanFileName,
+            userName: currentUser.name || "Recruiter",
+            documentUrl: downloadUrl,
+          },
+        })
+        .catch(() => {});
     }
 
     return {

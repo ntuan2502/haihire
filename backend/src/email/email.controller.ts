@@ -14,38 +14,11 @@ import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { EmailService } from "./email.service";
-import {
-  AppBadRequestException,
-  AppForbiddenException,
-} from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
 import { AVAILABLE_VARIABLES } from "./variable-registry";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
 import { SendSystemEmailDto, SendSystemTestEmailDto } from "./dto/send-system-email.dto";
-
-function resolveOrgId(
-  userOrgId?: string | null,
-  requestedOrgId?: string,
-  required = true,
-): string | undefined {
-  if (requestedOrgId && userOrgId && requestedOrgId !== userOrgId) {
-    throw new AppForbiddenException(
-      APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
-      "Access denied: cannot access email resources of another organization.",
-      { organizationId: requestedOrgId },
-    );
-  }
-  const orgId = userOrgId || requestedOrgId || undefined;
-  if (required && !orgId) {
-    throw new AppBadRequestException(
-      APP_ERROR_CODES.EMAIL_ORG_REQUIRED,
-      "Organization ID is required",
-    );
-  }
-  return orgId;
-}
 
 @Controller("email")
 @UseGuards(AuthGuard("jwt"), RolesGuard)
@@ -65,9 +38,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = resolveOrgId(req.user.organizationId, organizationId, false);
-    if (!orgId) return [];
-    return this.emailService.getTemplates(orgId);
+    return this.emailService.getTemplates(organizationId, req.user.organizationId);
   }
 
   @Put("templates/:type")
@@ -78,8 +49,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = resolveOrgId(req.user.organizationId, organizationId, true)!;
-    return this.emailService.updateTemplate(orgId, type, dto);
+    return this.emailService.updateTemplate(organizationId, type, dto, req.user.organizationId);
   }
 
   @Get("settings")
@@ -87,9 +57,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = resolveOrgId(req.user.organizationId, organizationId, false);
-    if (!orgId) return null;
-    return this.emailService.getSettings(orgId);
+    return this.emailService.getSettings(organizationId, req.user.organizationId);
   }
 
   @Put("settings")
@@ -99,8 +67,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = resolveOrgId(req.user.organizationId, organizationId, true)!;
-    return this.emailService.updateSettings(orgId, dto);
+    return this.emailService.updateSettings(organizationId, dto, req.user.organizationId);
   }
 
   @Post("send")
@@ -110,8 +77,7 @@ export class EmailController {
     @Request() req: { user: { id: string; name: string; email: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = resolveOrgId(req.user.organizationId, organizationId, true)!;
-    return this.emailService.sendEmail(dto, orgId, req.user);
+    return this.emailService.sendEmail(dto, organizationId, req.user, req.user.organizationId);
   }
 
   @Post("test")
@@ -121,8 +87,7 @@ export class EmailController {
     @Request() req: { user: { id: string; name: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = resolveOrgId(req.user.organizationId, organizationId, true)!;
-    return this.emailService.sendTestEmail(dto, orgId, req.user);
+    return this.emailService.sendTestEmail(dto, organizationId, req.user, req.user.organizationId);
   }
 
   @Get("logs")
@@ -135,15 +100,17 @@ export class EmailController {
     @Query("search") search?: string,
     @Query("status") status?: string,
   ) {
-    const orgId = resolveOrgId(req.user.organizationId, organizationId, false);
-    if (!orgId) return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
-    return this.emailService.getLogs(orgId, {
-      candidateId,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      search,
-      status,
-    });
+    return this.emailService.getLogs(
+      organizationId,
+      {
+        candidateId,
+        page: page ? parseInt(page, 10) : undefined,
+        limit: limit ? parseInt(limit, 10) : undefined,
+        search,
+        status,
+      },
+      req.user.organizationId,
+    );
   }
 
   @Get("system/config")

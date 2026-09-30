@@ -3,7 +3,11 @@ import {
   Injectable,
   Optional,
 } from "@nestjs/common";
-import { AppNotFoundException } from "../common/app-exception";
+import {
+  AppBadRequestException,
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
@@ -68,17 +72,40 @@ export class EmailService {
     private readonly emailQueue?: Queue,
   ) {}
 
-  async getTemplates(organizationId: string): Promise<EnrichedEmailTemplate[]> {
-    if (!organizationId) {
+  resolveOrgId(
+    userOrgId?: string | null,
+    requestedOrgId?: string,
+    required = true,
+  ): string | undefined {
+    if (requestedOrgId && userOrgId && requestedOrgId !== userOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Access denied: cannot access email resources of another organization.",
+        { organizationId: requestedOrgId },
+      );
+    }
+    const orgId = userOrgId || requestedOrgId || undefined;
+    if (required && !orgId) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.EMAIL_ORG_REQUIRED,
+        "Organization ID is required",
+      );
+    }
+    return orgId;
+  }
+
+  async getTemplates(organizationId?: string, userOrgId?: string | null): Promise<EnrichedEmailTemplate[]> {
+    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, false);
+    if (!targetOrgId) {
       return [];
     }
 
     const templates = await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.organizationId.eq(organizationId))
+      .where((t) => t.organizationId.eq(targetOrgId))
       .all();
 
     if (templates.length === 0) {
-      return this.seedDefaultTemplates(organizationId);
+      return this.seedDefaultTemplates(targetOrgId);
     }
 
     return templates.map((t) => ({
@@ -118,18 +145,24 @@ export class EmailService {
     return templates.find((t) => t.type === type);
   }
 
-  async updateTemplate(organizationId: string, type: string, dto: UpdateEmailTemplateDto) {
+  async updateTemplate(
+    organizationId: string | undefined,
+    type: string,
+    dto: UpdateEmailTemplateDto,
+    userOrgId?: string | null,
+  ) {
+    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
     const existing = await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.organizationId.eq(organizationId))
+      .where((t) => t.organizationId.eq(targetOrgId))
       .where((t) => t.type.eq(type as EmailTemplateType))
       .first();
 
     if (!existing) {
-      await this.seedDefaultTemplates(organizationId);
+      await this.seedDefaultTemplates(targetOrgId);
     }
 
     const current = await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.organizationId.eq(organizationId))
+      .where((t) => t.organizationId.eq(targetOrgId))
       .where((t) => t.type.eq(type as EmailTemplateType))
       .first();
 
@@ -162,19 +195,20 @@ export class EmailService {
     };
   }
 
-  async getSettings(organizationId: string) {
-    if (!organizationId) {
+  async getSettings(organizationId?: string, userOrgId?: string | null) {
+    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, false);
+    if (!targetOrgId) {
       return null;
     }
 
     let settings = await this.prisma.db.orm.public.EmailSetting
-      .where((s) => s.organizationId.eq(organizationId))
+      .where((s) => s.organizationId.eq(targetOrgId))
       .first();
 
     if (!settings) {
       settings = await this.prisma.db.orm.public.EmailSetting.create({
         id: crypto.randomUUID(),
-        organizationId,
+        organizationId: targetOrgId,
         provider: "SIMULATED",
         fromName: "Recruitment Team",
         fromEmail: "careers@workspace.com",
@@ -217,12 +251,17 @@ export class EmailService {
     };
   }
 
-  async updateSettings(organizationId: string, dto: UpdateEmailSettingDto) {
+  async updateSettings(
+    organizationId: string | undefined,
+    dto: UpdateEmailSettingDto,
+    userOrgId?: string | null,
+  ) {
+    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
     const rawCurrent = await this.prisma.db.orm.public.EmailSetting
-      .where((s) => s.organizationId.eq(organizationId))
+      .where((s) => s.organizationId.eq(targetOrgId))
       .first();
 
-    const currentId = rawCurrent?.id || (await this.getSettings(organizationId))?.id;
+    const currentId = rawCurrent?.id || (await this.getSettings(targetOrgId))?.id;
 
     if (!currentId) {
       throw new AppNotFoundException(APP_ERROR_CODES.EMAIL_SETTINGS_NOT_FOUND, "Email settings not found");
@@ -275,25 +314,27 @@ export class EmailService {
       .where((s) => s.id.eq(currentId))
       .update(updateData);
 
-    return this.getSettings(organizationId);
+    return this.getSettings(targetOrgId);
   }
 
   async sendEmail(
     dto: SendEmailDto,
-    organizationId: string,
+    organizationId?: string,
     senderUser?: { id?: string; name?: string; email?: string },
+    userOrgId?: string | null,
   ) {
+    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
     if (this.emailQueue) {
       try {
         const candidateKey = dto.candidateId || dto.to.toLowerCase();
         const appKey = dto.applicationId || "general";
         const templateKey = dto.templateType || "custom";
         const timeBucket = Math.floor(Date.now() / (5 * 60 * 1000));
-        const deterministicJobId = `email:${organizationId}:${templateKey}:${candidateKey}:${appKey}:${timeBucket}`;
+        const deterministicJobId = `email:${targetOrgId}:${templateKey}:${candidateKey}:${appKey}:${timeBucket}`;
 
         const job = await this.emailQueue.add(
           "send-email",
-          { dto, organizationId, senderUser },
+          { dto, organizationId: targetOrgId, senderUser },
           {
             jobId: deterministicJobId,
             attempts: 3,
@@ -311,10 +352,10 @@ export class EmailService {
         };
       } catch (_queueErr) {
         // Fallback gracefully to synchronous delivery if queue dispatch fails
-        return this.executeSendEmail(dto, organizationId, senderUser);
+        return this.executeSendEmail(dto, targetOrgId, senderUser);
       }
     }
-    return this.executeSendEmail(dto, organizationId, senderUser);
+    return this.executeSendEmail(dto, targetOrgId, senderUser);
   }
 
   async queueEmail(
@@ -404,8 +445,14 @@ export class EmailService {
     return log;
   }
 
-  async sendTestEmail(dto: SendTestEmailDto, organizationId: string, senderUser?: { id?: string; name?: string }) {
-    const settings = await this.getRawSettings(organizationId);
+  async sendTestEmail(
+    dto: SendTestEmailDto,
+    organizationId?: string,
+    senderUser?: { id?: string; name?: string },
+    userOrgId?: string | null,
+  ) {
+    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
+    const settings = await this.getRawSettings(targetOrgId);
     return this.sendEmail(
       {
         to: dto.to,
@@ -423,20 +470,21 @@ export class EmailService {
 </div>`,
         templateType: "CUSTOM",
       },
-      organizationId,
+      targetOrgId,
       senderUser,
     );
   }
 
-  async getLogs(organizationId: string, options?: GetLogsOptions) {
-    if (!organizationId) {
+  async getLogs(organizationId?: string, options?: GetLogsOptions, userOrgId?: string | null) {
+    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, false);
+    if (!targetOrgId) {
       return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
     }
 
     const opts = options || {};
 
     let query = this.prisma.db.orm.public.EmailLog
-      .where((l) => l.organizationId.eq(organizationId));
+      .where((l) => l.organizationId.eq(targetOrgId));
 
     if (opts.candidateId) {
       query = query.where((l) => l.candidateId.eq(opts.candidateId!));

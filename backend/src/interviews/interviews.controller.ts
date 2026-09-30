@@ -12,8 +12,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppForbiddenException } from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { InterviewsService } from "./interviews.service";
@@ -40,19 +38,10 @@ export class InterviewsController {
     @Query("tab") tab?: string,
     @Query("sortBy") sortBy?: string,
   ) {
-    const userOrgId = req?.user?.organizationId || undefined;
-    if (organizationId && userOrgId && organizationId !== userOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
-        "Access denied: cannot access interviews from another organization.",
-        { organizationId },
-      );
-    }
-    const orgId = userOrgId || organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
     return this.interviewsService.findAll({
-      organizationId: orgId,
+      organizationId,
       jobId,
       applicationId,
       page: pageNum,
@@ -60,6 +49,7 @@ export class InterviewsController {
       search,
       tab,
       sortBy,
+      tenantOrgId: req?.user?.organizationId,
     });
   }
 

@@ -1,37 +1,20 @@
 import { Controller, Get, Inject } from "@nestjs/common";
-import { PrismaService } from "./prisma/prisma.service";
+import { AppService } from "./app.service";
 
 @Controller()
 export class AppController {
   constructor(
-    @Inject(PrismaService)
-    private readonly prismaService: PrismaService,
+    @Inject(AppService)
+    private readonly appService: AppService,
   ) {}
 
   @Get()
   getRoot() {
-    return {
-      message: "hello from create-prisma + nest",
-    };
+    return this.appService.getRoot();
   }
 
   @Get("health")
-  async getHealth() {
-    let dbStatus = "up";
-    try {
-      await this.prismaService.db.orm.public.User.select("id").first();
-    } catch {
-      dbStatus = "down";
-    }
-
-    return {
-      status: dbStatus === "up" ? "ok" : "degraded",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      services: {
-        database: dbStatus,
-      },
-    };
+  getHealth() {
+    return this.appService.getHealth();
   }
 }
-

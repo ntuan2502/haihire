@@ -28,11 +28,32 @@ export class JobsService {
     organizationSlug?: string;
     page?: number;
     limit?: number;
+    tenantOrgId?: string | null;
+    isAuthenticated?: boolean;
   }) {
     const page = filter?.page && filter.page > 0 ? filter.page : 1;
     const limit = filter?.limit && filter.limit > 0 ? filter.limit : 20;
 
-    let targetOrgId = filter?.organizationId;
+    const isAuthenticated = filter?.isAuthenticated ?? false;
+    const effectiveStatus = !isAuthenticated ? "PUBLISHED" : filter?.status;
+    const userOrgId = filter?.tenantOrgId || undefined;
+
+    if (
+      isAuthenticated &&
+      effectiveStatus &&
+      effectiveStatus !== "PUBLISHED" &&
+      filter?.organizationId &&
+      userOrgId &&
+      filter.organizationId !== userOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: cannot view unpublished jobs from another organization.",
+        { organizationId: filter.organizationId },
+      );
+    }
+
+    let targetOrgId = filter?.organizationId || userOrgId || undefined;
     let targetOrg: { id: string; name: string; slug: string } | null = null;
 
     if (filter?.organizationSlug) {
@@ -187,7 +208,7 @@ export class JobsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tenantOrgId?: string | null) {
     const job = await this.prisma.db.orm.public.Job.select(
       "id",
       "title",
@@ -214,6 +235,14 @@ export class JobsService {
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${id} not found`,
         { id },
+      );
+    }
+
+    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
       );
     }
 

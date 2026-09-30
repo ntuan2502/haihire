@@ -156,11 +156,20 @@ export class ApplicationsService {
       jobId?: string;
       stage?: string;
     },
+    tenantOrgId?: string | null,
   ) {
+    if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: cannot access applications from another organization.",
+        { organizationId },
+      );
+    }
+    const targetOrgId = tenantOrgId || organizationId || undefined;
     const defaultLimit = options?.limit && options.limit > 0 ? options.limit : 20;
     const defaultPage = options?.page && options.page > 0 ? options.page : 1;
 
-    if (!organizationId) {
+    if (!targetOrgId) {
       return {
         data: [],
         total: 0,
@@ -176,7 +185,7 @@ export class ApplicationsService {
       "department",
       "location",
     )
-      .where((j) => j.organizationId.eq(organizationId))
+      .where((j) => j.organizationId.eq(targetOrgId))
       .all();
 
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
@@ -437,7 +446,18 @@ export class ApplicationsService {
     };
   }
 
-  async create(dto: CreateApplicationDto, file?: Express.Multer.File) {
+  async create(
+    dto: CreateApplicationDto,
+    file?: Express.Multer.File,
+    currentUser?: { role?: string; organizationId?: string | null } | null,
+  ) {
+    if (currentUser?.role === "MEMBER") {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+        "Members have read-only access. Only Admins can perform this action.",
+      );
+    }
+
     if (!dto.jobId) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.JOB_ID_REQUIRED,
@@ -832,6 +852,7 @@ export class ApplicationsService {
     targetUrl?: string,
     targetName?: string,
     tenantOrgId?: string | null,
+    currentUser?: { id?: string; name?: string } | null,
   ) {
     const app = await this.findOne(id, tenantOrgId);
 
@@ -885,6 +906,30 @@ export class ApplicationsService {
         APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
         "Document file could not be retrieved from storage",
       );
+    }
+
+    if (currentUser?.id && app.candidateId && this.activitiesService) {
+      const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId || "default";
+      this.activitiesService
+        .createActivity({
+          organizationId: appOrgId,
+          candidateId: app.candidateId,
+          applicationId: app.id,
+          type: "NOTE_ADDED",
+          title: "Document Downloaded",
+          description: `Document "${cleanFileName}" was downloaded by ${currentUser.name || "recruiter"}`,
+          actorId: currentUser.id,
+          actorName: currentUser.name || "Recruiter",
+          metadata: {
+            action: "DOWNLOAD_DOCUMENT",
+            subType: "DOCUMENT_DOWNLOADED",
+            fileName: cleanFileName,
+            userName: currentUser.name || "Recruiter",
+            documentUrl: downloadUrl,
+            applicationId: app.id,
+          },
+        })
+        .catch(() => {});
     }
 
     return {

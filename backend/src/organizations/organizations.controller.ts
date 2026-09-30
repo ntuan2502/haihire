@@ -30,7 +30,7 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(
+  create(
     @Request() req: { user: { id: string } },
     @Body() dto: CreateOrgDto,
   ) {
@@ -40,7 +40,7 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard)
   @Post("join")
   @HttpCode(HttpStatus.OK)
-  async join(
+  join(
     @Request() req: { user: { id: string } },
     @Body() dto: JoinOrgDto,
   ) {
@@ -49,20 +49,20 @@ export class OrganizationsController {
 
   @UseGuards(JwtAuthGuard)
   @Get("my")
-  async getMyOrg(@Request() req: { user: { id: string } }) {
+  getMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMyOrg(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get("my/all")
-  async getMyOrgs(@Request() req: { user: { id: string } }) {
+  getMyOrgs(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMyOrgs(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post("switch")
   @HttpCode(HttpStatus.OK)
-  async switchOrg(
+  switchOrg(
     @Request() req: { user: { id: string } },
     @Body() body: { organizationId: string },
   ) {
@@ -71,13 +71,13 @@ export class OrganizationsController {
 
   @UseGuards(JwtAuthGuard)
   @Get("my/members")
-  async getMembers(@Request() req: { user: { id: string } }) {
+  getMembers(@Request() req: { user: { id: string } }) {
     return this.orgsService.getMembers(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch("my/members/:memberId/role")
-  async updateMemberRole(
+  updateMemberRole(
     @Request() req: { user: { id: string } },
     @Param("memberId") memberId: string,
     @Body() body: { role: "ADMIN" | "MEMBER" },
@@ -87,7 +87,7 @@ export class OrganizationsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete("my/members/:memberId")
-  async removeMember(
+  removeMember(
     @Request() req: { user: { id: string } },
     @Param("memberId") memberId: string,
   ) {
@@ -97,7 +97,7 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ADMIN")
   @Patch("my")
-  async updateMyOrg(
+  updateMyOrg(
     @Request() req: { user: { id: string } },
     @Body() dto: UpdateOrgDto,
   ) {
@@ -107,7 +107,7 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ADMIN")
   @Delete("my")
-  async deleteMyOrg(@Request() req: { user: { id: string } }) {
+  deleteMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.deleteMyOrg(req.user.id);
   }
 
@@ -117,7 +117,7 @@ export class OrganizationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ADMIN")
   @Post("my/invite-links")
-  async createInviteLink(
+  createInviteLink(
     @Request() req: { user: { id: string } },
     @Body() dto: { role?: string; expiresIn?: string; maxUses?: string },
   ) {
@@ -126,14 +126,14 @@ export class OrganizationsController {
 
   @UseGuards(JwtAuthGuard)
   @Get("my/invite-links")
-  async getInviteLinks(@Request() req: { user: { id: string } }) {
+  getInviteLinks(@Request() req: { user: { id: string } }) {
     return this.orgsService.getInviteLinks(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("ADMIN")
   @Delete("my/invite-links/:id")
-  async revokeInviteLink(
+  revokeInviteLink(
     @Request() req: { user: { id: string } },
     @Param("id") id: string,
   ) {
@@ -142,14 +142,14 @@ export class OrganizationsController {
 
   // Public endpoint to view invite link details (no auth needed)
   @Get("invite-links/public/:token")
-  async getPublicInvite(@Param("token") token: string) {
+  getPublicInvite(@Param("token") token: string) {
     return this.orgsService.getPublicInvite(token);
   }
 
   // Auth endpoint to accept invite and join org
   @UseGuards(JwtAuthGuard)
   @Post("invite-links/join/:token")
-  async joinByToken(
+  joinByToken(
     @Request() req: { user: { id: string } },
     @Param("token") token: string,
   ) {
@@ -158,7 +158,7 @@ export class OrganizationsController {
 
   // Public endpoint to view organization profile by slug (no auth needed)
   @Get("public/:slug")
-  async getPublicOrg(@Param("slug") slug: string) {
+  getPublicOrg(@Param("slug") slug: string) {
     return this.orgsService.getPublicOrg(slug);
   }
 }

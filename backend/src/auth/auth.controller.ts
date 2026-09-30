@@ -26,27 +26,27 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post("login")
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto) {
+  login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() dto: RegisterDto) {
+  register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() dto: RefreshTokenDto) {
+  refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refreshToken(dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get("me")
-  async getProfile(@Request() req: { user: { id: string } }) {
+  getProfile(@Request() req: { user: { id: string } }) {
     return this.authService.getProfile(req.user.id);
   }
 }

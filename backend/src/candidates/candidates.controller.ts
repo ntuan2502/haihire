@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Inject,
-  Optional,
   Param,
   Patch,
   Post,
@@ -16,8 +15,6 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppForbiddenException } from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
@@ -26,7 +23,6 @@ import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { resumeFileFilter } from "../common/upload-utils";
-import { ActivitiesService } from "../activities/activities.service";
 
 @Controller("candidates")
 @UseGuards(AuthGuard("jwt"))
@@ -34,9 +30,6 @@ export class CandidatesController {
   constructor(
     @Inject(CandidatesService)
     private readonly candidatesService: CandidatesService,
-    @Optional()
-    @Inject(ActivitiesService)
-    private readonly activitiesService?: ActivitiesService,
   ) {}
 
   @Get()
@@ -47,55 +40,28 @@ export class CandidatesController {
     @Query("limit") limit?: string,
     @Query("search") search?: string,
   ) {
-    const userOrgId = req?.user?.organizationId || undefined;
-    if (organizationId && userOrgId && organizationId !== userOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: cannot access candidates from another organization.",
-        { organizationId },
-      );
-    }
-    const orgId = userOrgId || organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
-    return this.candidatesService.findAll(orgId, {
-      page: pageNum,
-      limit: limitNum,
-      search,
-    });
+    return this.candidatesService.findAll(
+      organizationId,
+      {
+        page: pageNum,
+        limit: limitNum,
+        search,
+      },
+      req?.user?.organizationId,
+    );
   }
 
   @Get(":id")
-  async findOne(
+  findOne(
     @Param("id") id: string,
     @Request()
     req: {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
   ) {
-    const candidate = await this.candidatesService.findOne(id, req?.user?.organizationId);
-
-    if (req?.user?.id && this.activitiesService) {
-      this.activitiesService
-        .createActivity({
-          organizationId: candidate.organizationId,
-          candidateId: candidate.id,
-          type: "NOTE_ADDED",
-          title: "Candidate Profile Accessed",
-          description: `Candidate profile was accessed by ${req.user.name || "recruiter"}`,
-          actorId: req.user.id,
-          actorName: req.user.name || "Recruiter",
-          metadata: {
-            action: "VIEW_PROFILE",
-            accessType: "PII_READ",
-            subType: "PII_READ",
-            userName: req.user.name || "Recruiter",
-          },
-        })
-        .catch(() => {});
-    }
-
-    return candidate;
+    return this.candidatesService.findOne(id, req?.user?.organizationId, req?.user);
   }
 
   @Post()
@@ -159,34 +125,14 @@ export class CandidatesController {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
   ) {
-    const { candidate, cleanFileName, asciiFallback, encodedFileName, mimeType, stream, downloadUrl } =
+    const { asciiFallback, encodedFileName, mimeType, stream } =
       await this.candidatesService.prepareDocumentDownload(
         id,
         targetUrl,
         targetName,
         req?.user?.organizationId,
+        req?.user,
       );
-
-    if (req?.user?.id && this.activitiesService) {
-      this.activitiesService
-        .createActivity({
-          organizationId: candidate.organizationId,
-          candidateId: candidate.id,
-          type: "NOTE_ADDED",
-          title: "Document Downloaded",
-          description: `Document "${cleanFileName}" was downloaded by ${req.user.name || "recruiter"}`,
-          actorId: req.user.id,
-          actorName: req.user.name || "Recruiter",
-          metadata: {
-            action: "DOWNLOAD_DOCUMENT",
-            subType: "DOCUMENT_DOWNLOADED",
-            fileName: cleanFileName,
-            userName: req.user.name || "Recruiter",
-            documentUrl: downloadUrl,
-          },
-        })
-        .catch(() => {});
-    }
 
     res.setHeader(
       "Content-Disposition",

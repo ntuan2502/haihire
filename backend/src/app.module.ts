@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { BullModule } from "@nestjs/bullmq";
 import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
 import { ApplicationsModule } from "./applications/applications.module";
 import { CandidatesModule } from "./candidates/candidates.module";
 import { InterviewsModule } from "./interviews/interviews.module";
@@ -57,6 +58,7 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
   ],
   controllers: [AppController],
   providers: [
+    AppService,
     PrismaService,
     ...(throttlerReflectorToken !== Reflector
       ? [{ provide: throttlerReflectorToken, useExisting: Reflector }]

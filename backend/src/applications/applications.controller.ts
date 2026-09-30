@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Inject,
-  Optional,
   Param,
   Patch,
   Post,
@@ -21,13 +20,10 @@ import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppForbiddenException } from "../common/app-exception";
 import { ApplicationsService } from "./applications.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { ActivitiesService } from "../activities/activities.service";
 import { resumeFileFilter } from "../common/upload-utils";
 
 @Controller("applications")
@@ -35,9 +31,6 @@ export class ApplicationsController {
   constructor(
     @Inject(ApplicationsService)
     private readonly applicationsService: ApplicationsService,
-    @Optional()
-    @Inject(ActivitiesService)
-    private readonly activitiesService?: ActivitiesService,
   ) {}
 
   @Get()
@@ -51,24 +44,19 @@ export class ApplicationsController {
     @Query("jobId") jobId?: string,
     @Query("stage") stage?: string,
   ) {
-    const userOrgId = req?.user?.organizationId || undefined;
-    if (organizationId && userOrgId && organizationId !== userOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
-        "Access denied: cannot access applications from another organization.",
-        { organizationId },
-      );
-    }
-    const orgId = userOrgId || organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
-    return this.applicationsService.findAll(orgId, {
-      page: pageNum,
-      limit: limitNum,
-      search,
-      jobId,
-      stage,
-    });
+    return this.applicationsService.findAll(
+      organizationId,
+      {
+        page: pageNum,
+        limit: limitNum,
+        search,
+        jobId,
+        stage,
+      },
+      req?.user?.organizationId,
+    );
   }
 
   @Get("job/:jobId")
@@ -82,26 +70,11 @@ export class ApplicationsController {
 
   @Get(":id")
   @UseGuards(AuthGuard("jwt"))
-  async findOne(
+  findOne(
     @Param("id") id: string,
     @Request() req: { user?: { organizationId?: string | null } },
   ) {
-    const app = await this.applicationsService.findOne(id);
-    const appOrgId =
-      app?.job?.organizationId ||
-      (app as unknown as { organizationId?: string })?.organizationId;
-    if (
-      req?.user?.organizationId &&
-      appOrgId &&
-      req.user.organizationId !== appOrgId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
-        "Access denied: application belongs to another organization.",
-        { id, organizationId: appOrgId },
-      );
-    }
-    return app;
+    return this.applicationsService.findOne(id, req?.user?.organizationId);
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -117,13 +90,7 @@ export class ApplicationsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req?: { user?: { id?: string; role?: string; organizationId?: string | null } },
   ) {
-    if (req?.user?.role === "MEMBER") {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
-        "Members have read-only access. Only Admins can perform this action.",
-      );
-    }
-    return this.applicationsService.create(dto, file);
+    return this.applicationsService.create(dto, file, req?.user);
   }
 
   @Patch(":id/stage")
@@ -178,38 +145,14 @@ export class ApplicationsController {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
   ) {
-    const { app, cleanFileName, asciiFallback, encodedFileName, mimeType, stream, downloadUrl } =
+    const { asciiFallback, encodedFileName, mimeType, stream } =
       await this.applicationsService.prepareDocumentDownload(
         id,
         targetUrl,
         targetName,
         req?.user?.organizationId,
+        req?.user,
       );
-
-    const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId || "default";
-
-    if (req?.user?.id && app.candidateId && this.activitiesService) {
-      this.activitiesService
-        .createActivity({
-          organizationId: appOrgId,
-          candidateId: app.candidateId,
-          applicationId: app.id,
-          type: "NOTE_ADDED",
-          title: "Document Downloaded",
-          description: `Document "${cleanFileName}" was downloaded by ${req.user.name || "recruiter"}`,
-          actorId: req.user.id,
-          actorName: req.user.name || "Recruiter",
-          metadata: {
-            action: "DOWNLOAD_DOCUMENT",
-            subType: "DOCUMENT_DOWNLOADED",
-            fileName: cleanFileName,
-            userName: req.user.name || "Recruiter",
-            documentUrl: downloadUrl,
-            applicationId: app.id,
-          },
-        })
-        .catch(() => {});
-    }
 
     res.setHeader(
       "Content-Disposition",

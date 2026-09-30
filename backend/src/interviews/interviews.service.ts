@@ -60,7 +60,17 @@ export class InterviewsService {
     search?: string;
     tab?: string;
     sortBy?: string;
+    tenantOrgId?: string | null;
   }) {
+    if (options?.organizationId && options?.tenantOrgId && options.organizationId !== options.tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
+        "Access denied: cannot access interviews from another organization.",
+        { organizationId: options.organizationId },
+      );
+    }
+    const targetOrgId = options?.tenantOrgId || options?.organizationId || undefined;
+
     type InterviewRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Interview.all>>[number];
     type AppRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Application.all>>[number];
     type CandidateRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Candidate.all>>[number];
@@ -104,9 +114,9 @@ export class InterviewsService {
       interviews = await this.prisma.db.orm.public.Interview
         .where((i) => i.applicationId.in(appIds))
         .all();
-    } else if (options?.organizationId) {
+    } else if (targetOrgId) {
       const orgCandidates = await this.prisma.db.orm.public.Candidate.select("id")
-        .where((c) => c.organizationId.eq(options.organizationId!))
+        .where((c) => c.organizationId.eq(targetOrgId))
         .all();
 
       if (orgCandidates.length === 0) {
@@ -335,7 +345,7 @@ export class InterviewsService {
 
     const allItems = [...scheduledItems, ...awaitingItems]
       .filter((item) => {
-        if (options?.organizationId && item.organizationId !== options.organizationId) {
+        if (targetOrgId && item.organizationId !== targetOrgId) {
           return false;
         }
         if (options?.jobId && item.jobId !== options.jobId) {

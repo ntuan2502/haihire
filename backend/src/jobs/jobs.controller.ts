@@ -13,8 +13,6 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
-import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppForbiddenException } from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { CreateJobDto } from "./dto/create-job.dto";
@@ -45,30 +43,8 @@ export class JobsController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
   ) {
-    const isAuthenticated = Boolean(req?.user);
-    // Security: Unauthenticated public requests must ONLY ever see PUBLISHED jobs
-    const effectiveStatus = !isAuthenticated ? "PUBLISHED" : status;
-    const userOrgId = req?.user?.organizationId || undefined;
-
-    // Security: If requesting non-published jobs (draft, internal), user must belong to that organization
-    if (
-      isAuthenticated &&
-      effectiveStatus &&
-      effectiveStatus !== "PUBLISHED" &&
-      organizationId &&
-      userOrgId &&
-      organizationId !== userOrgId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-        "Access denied: cannot view unpublished jobs from another organization.",
-        { organizationId },
-      );
-    }
-
-    const orgId = organizationId || userOrgId || undefined;
     return this.jobsService.findAll({
-      status: effectiveStatus,
+      status,
       department,
       search,
       type,
@@ -76,10 +52,12 @@ export class JobsController {
       workplace,
       sortBy,
       sortOrder,
-      organizationId: orgId,
+      organizationId,
       organizationSlug: organizationSlug || undefined,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
+      tenantOrgId: req?.user?.organizationId,
+      isAuthenticated: Boolean(req?.user),
     });
   }
 
@@ -92,8 +70,12 @@ export class JobsController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.jobsService.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  findOne(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.jobsService.findOne(id, req?.user?.organizationId);
   }
 
   @Post()

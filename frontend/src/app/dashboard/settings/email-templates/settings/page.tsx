@@ -13,6 +13,7 @@ import {
   DEFAULT_EMAIL_SETTINGS,
 } from "@/lib/email-templates";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -69,8 +70,7 @@ export default function EmailSettingsPage() {
       setSettingsToast({ type: "success", text: t("email.settingsSavedSuccess") });
       setTimeout(() => setSettingsToast(null), 3000);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      const msg = axiosErr.response?.data?.message || t("email.settingsSaveError");
+      const msg = getApiErrorMessage(err, t, "email.settingsSaveError");
       setSettingsToast({ type: "error", text: msg });
       setTimeout(() => setSettingsToast(null), 4000);
     }
@@ -84,8 +84,7 @@ export default function EmailSettingsPage() {
       setTestToast({ type: "success", text: t("email.testSentSuccess") });
       setTimeout(() => setTestToast(null), 4000);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      const msg = axiosErr.response?.data?.message || t("email.testSentError");
+      const msg = getApiErrorMessage(err, t, "email.testSentError");
       setTestToast({ type: "error", text: msg });
       setTimeout(() => setTestToast(null), 4000);
     }

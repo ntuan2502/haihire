@@ -1,11 +1,9 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { MacOsModal } from "@/components/shared";
+import { ConfirmDestructiveModal } from "@/components/shared";
 import { useI18n } from "@/i18n";
 
-interface DeleteCandidateModalProps {
+export interface DeleteCandidateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void> | void;
@@ -23,43 +21,18 @@ export function DeleteCandidateModal({
   const { t } = useI18n();
 
   return (
-    <MacOsModal
+    <ConfirmDestructiveModal
       isOpen={isOpen}
-      onClose={isDeleting ? () => {} : onClose}
+      onClose={onClose}
+      onConfirm={onConfirm}
       title={t("applications.deleteCandidateHeading")}
-      size="sm"
-      contentClassName="p-5 sm:p-6 space-y-4 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
-    >
-      <div className="space-y-4">
-        <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-          <strong className="font-semibold text-slate-900 dark:text-white">
-            {candidateName}
-          </strong>
-          . {t("applications.deleteCandidateWarning")}
-        </p>
-
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200/60 dark:border-white/10">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isDeleting}
-            onClick={onClose}
-            className="h-8 px-3.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer shadow-2xs"
-          >
-            {t("common.cancel")}
-          </Button>
-
-          <Button
-            type="button"
-            disabled={isDeleting}
-            onClick={onConfirm}
-            className="h-8 px-3.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-2xs flex items-center gap-1.5"
-          >
-            {isDeleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            <span>{isDeleting ? t("common.loading") : t("candidates.deleteCandidate")}</span>
-          </Button>
-        </div>
-      </div>
-    </MacOsModal>
+      description={t("applications.deleteCandidateDescription", { name: candidateName })}
+      notice={t("applications.deleteCandidateWarning")}
+      confirmMatchText={candidateName}
+      confirmButtonLabel={t("candidates.deleteCandidate")}
+      cancelButtonLabel={t("common.cancel")}
+      isLoading={isDeleting}
+      variant="danger"
+    />
   );
 }

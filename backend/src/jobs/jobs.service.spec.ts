@@ -332,8 +332,35 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       expect(updated?.status).toBe(JobStatus.CLOSED);
     });
 
+    it("should reject creating a job for another organization", async () => {
+      await expect(
+        service.create(
+          {
+            title: "Hacker Job",
+            department: "Engineering",
+            location: "Remote",
+            type: JobType.FULL_TIME,
+            description: "Unauthorized",
+            status: JobStatus.PUBLISHED,
+            organizationId: "org-2",
+          },
+          "org-1",
+        ),
+      ).rejects.toThrow();
+    });
+
+    it("should reject updating a job belonging to another organization", async () => {
+      await expect(
+        service.update("job-1", { title: "Hacked" }, "org-2"),
+      ).rejects.toThrow();
+    });
+
+    it("should reject removing a job belonging to another organization", async () => {
+      await expect(service.remove("job-1", "org-2")).rejects.toThrow();
+    });
+
     it("should remove a job", async () => {
-      const result = await service.remove("job-1");
+      const result = await service.remove("job-1", "org-1");
       expect(result.success).toBe(true);
       await expect(service.findOne("job-1")).rejects.toThrow(NotFoundException);
     });

@@ -1,10 +1,6 @@
 import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
-  NotFoundException,
   type OnModuleInit,
 } from "@nestjs/common";
 import crypto from "node:crypto";
@@ -13,8 +9,13 @@ import { EventsService } from "../events/events.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
-import { toTimestamp } from "../common/date.util";
-import { AppConflictException } from "../common/app-exception";
+import { toTimestamp, toInstant } from "../common/date.util";
+import {
+  AppBadRequestException,
+  AppConflictException,
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import { APP_ERROR_CODES } from "@haihire/shared";
 
 export interface InviteLinkRecord {
@@ -67,6 +68,7 @@ export class OrganizationsService implements OnModuleInit {
               organizationId: org.id,
               userId: org.ownerId,
               role: "ADMIN",
+              updatedAt: toInstant(),
             },
             update: {},
             conflictOn: { id },
@@ -91,6 +93,7 @@ export class OrganizationsService implements OnModuleInit {
               organizationId: user.organizationId,
               userId: user.id,
               role: user.role === "ADMIN" ? "ADMIN" : "MEMBER",
+              updatedAt: toInstant(),
             },
             update: {},
             conflictOn: { id },
@@ -119,11 +122,14 @@ export class OrganizationsService implements OnModuleInit {
       );
     }
 
+    const orgId = crypto.randomUUID();
     await this.prisma.db.orm.public.Organization.upsert({
       create: {
+        id: orgId,
         name: dto.name.trim(),
         slug: normalizedSlug,
         ownerId: userId,
+        updatedAt: toInstant(),
       },
       update: {
         ownerId: userId,
@@ -142,7 +148,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!org) {
-      throw new NotFoundException("Failed to retrieve created organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Failed to retrieve created organization");
     }
 
     // Record membership in OrganizationMember
@@ -153,6 +159,7 @@ export class OrganizationsService implements OnModuleInit {
         organizationId: org.id,
         userId,
         role: "ADMIN",
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: memberId },
@@ -173,7 +180,7 @@ export class OrganizationsService implements OnModuleInit {
   async join(userId: string, dto: JoinOrgDto) {
     let rawInput = dto.inviteCodeOrSlug.trim();
     if (!rawInput) {
-      throw new BadRequestException("Please provide a valid invite code or link.");
+      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_INVALID, "Please provide a valid invite code or link.");
     }
 
     // Extract token if user passed a full URL (e.g. /join/:token)
@@ -195,7 +202,8 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!inviteLink || inviteLink.status !== "ACTIVE") {
-      throw new NotFoundException(
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
         "Invalid or inactive invite link. Please ask an administrator for a new invite link.",
       );
     }
@@ -204,14 +212,15 @@ export class OrganizationsService implements OnModuleInit {
       inviteLink.expiresAt &&
       toTimestamp(inviteLink.expiresAt) < Date.now()
     ) {
-      throw new BadRequestException("This invite link has expired.");
+      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_EXPIRED, "This invite link has expired.");
     }
 
     if (
       inviteLink.maxUses !== null &&
       inviteLink.usesCount >= inviteLink.maxUses
     ) {
-      throw new BadRequestException(
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
         "This invite link has reached its maximum allowed uses.",
       );
     }
@@ -227,7 +236,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!org) {
-      throw new NotFoundException("Organization not found.");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found.");
     }
 
     const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
@@ -271,6 +280,7 @@ export class OrganizationsService implements OnModuleInit {
         organizationId: org.id,
         userId,
         role: assignedRole,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: newMemberId },
@@ -323,13 +333,15 @@ export class OrganizationsService implements OnModuleInit {
       return [];
     }
 
-    const allOrgs = await this.prisma.db.orm.public.Organization.select(
+    const ownedOrgs = await this.prisma.db.orm.public.Organization.select(
       "id",
       "name",
       "slug",
       "ownerId",
       "createdAt",
-    ).all();
+    )
+      .where((o) => o.ownerId.eq(userId))
+      .all();
 
     // Query all persistent memberships for this user
     const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
@@ -340,16 +352,27 @@ export class OrganizationsService implements OnModuleInit {
       .where((m) => m.userId.eq(userId))
       .all();
 
-    const memberOrgIds = new Set(userMemberships.map((m) => m.organizationId));
+    const memberOrgIds = [
+      ...new Set([
+        ...userMemberships.map((m) => m.organizationId),
+        ...(user.organizationId ? [user.organizationId] : []),
+      ]),
+    ].filter((id) => !ownedOrgs.some((o) => o.id === id));
 
-    // Security & Multi-org: Only return organizations the user owns, is an active member of,
-    // or is currently switched to.
-    return allOrgs.filter(
-      (o) =>
-        (o.ownerId && o.ownerId === userId) ||
-        memberOrgIds.has(o.id) ||
-        (user.organizationId && o.id === user.organizationId),
-    );
+    const memberOrgs =
+      memberOrgIds.length > 0
+        ? await this.prisma.db.orm.public.Organization.select(
+            "id",
+            "name",
+            "slug",
+            "ownerId",
+            "createdAt",
+          )
+            .where((o) => o.id.in(memberOrgIds))
+            .all()
+        : [];
+
+    return [...ownedOrgs, ...memberOrgs];
   }
 
   async switchOrg(userId: string, targetOrgId: string) {
@@ -362,7 +385,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new AppNotFoundException(APP_ERROR_CODES.RESOURCE_NOT_FOUND, "User not found");
     }
 
     const org = await this.prisma.db.orm.public.Organization.select(
@@ -376,7 +399,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!org) {
-      throw new NotFoundException("Organization not found");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
     }
 
     // Security: User must be owner, have an OrganizationMember record, or currently belong to the target org
@@ -393,8 +416,10 @@ export class OrganizationsService implements OnModuleInit {
     const isCurrentMember = user.organizationId === targetOrgId;
 
     if (!isOwner && !membership && !isCurrentMember) {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "You do not have access to this organization. Please join via an invite link.",
+        { organizationId: targetOrgId },
       );
     }
 
@@ -413,6 +438,7 @@ export class OrganizationsService implements OnModuleInit {
           organizationId: targetOrgId,
           userId,
           role: targetRole,
+          updatedAt: toInstant(),
         },
         update: {},
         conflictOn: { id: memberId },
@@ -451,11 +477,12 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new NotFoundException("User is not associated with an organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
     }
 
     if (user.role === "MEMBER") {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
         "Members have read-only access. Only Admins can perform this action.",
       );
     }
@@ -470,7 +497,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!currentOrg) {
-      throw new NotFoundException("Organization not found");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
     }
 
     if (dto.slug) {
@@ -483,8 +510,10 @@ export class OrganizationsService implements OnModuleInit {
           .first();
 
         if (existing) {
-          throw new ConflictException(
+          throw new AppConflictException(
+            APP_ERROR_CODES.ORG_SLUG_ALREADY_EXISTS,
             `Organization with slug '${normalizedSlug}' already exists. Please choose a different slug.`,
+            { slug: normalizedSlug },
           );
         }
       }
@@ -521,11 +550,12 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new NotFoundException("User is not associated with an organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
     }
 
     if (user.role === "MEMBER") {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
         "Members have read-only access. Only the Organization Owner can perform this action.",
       );
     }
@@ -540,11 +570,12 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!currentOrg) {
-      throw new NotFoundException("Organization not found");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
     }
 
     if (currentOrg.ownerId !== userId) {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only the organization owner can delete this organization.",
       );
     }
@@ -604,7 +635,7 @@ export class OrganizationsService implements OnModuleInit {
       memberUserIds.add(org.ownerId);
     }
 
-    const allUsers = await this.prisma.db.orm.public.User.select(
+    const orgUsers = await this.prisma.db.orm.public.User.select(
       "id",
       "name",
       "email",
@@ -612,7 +643,30 @@ export class OrganizationsService implements OnModuleInit {
       "avatarUrl",
       "organizationId",
       "createdAt",
-    ).all();
+    )
+      .where((u) => u.organizationId.eq(currentOrgId))
+      .all();
+
+    const additionalUserIds = Array.from(memberUserIds).filter(
+      (id) => !orgUsers.some((u) => u.id === id),
+    );
+
+    const additionalUsers =
+      additionalUserIds.length > 0
+        ? await this.prisma.db.orm.public.User.select(
+            "id",
+            "name",
+            "email",
+            "role",
+            "avatarUrl",
+            "organizationId",
+            "createdAt",
+          )
+            .where((u) => u.id.in(additionalUserIds))
+            .all()
+        : [];
+
+    const allUsers = [...orgUsers, ...additionalUsers];
 
     const roleMap = new Map<string, string>();
     for (const m of memberships) {
@@ -664,7 +718,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!caller || !caller.organizationId) {
-      throw new NotFoundException("User is not associated with an organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
     }
 
     const targetOrgId = caller.organizationId as string;
@@ -679,14 +733,15 @@ export class OrganizationsService implements OnModuleInit {
     const isCallerAdmin = caller.role === "ADMIN";
 
     if (!isCallerAdmin && !isCallerOwner) {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only organization owners and administrators can change member roles.",
       );
     }
 
     // Cannot change role of Owner
     if (org && org.ownerId === targetMemberId) {
-      throw new BadRequestException("Cannot change the role of the organization owner");
+      throw new AppBadRequestException(APP_ERROR_CODES.ORG_CANNOT_CHANGE_OWNER_ROLE, "Cannot change the role of the organization owner");
     }
 
     const orgMembers = await this.prisma.db.orm.public.OrganizationMember.select(
@@ -708,7 +763,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!membership && (!targetUser || targetUser.organizationId !== targetOrgId)) {
-      throw new NotFoundException("Member not found in this organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_MEMBER_NOT_FOUND, "Member not found in this organization");
     }
 
     if (membership) {
@@ -725,6 +780,7 @@ export class OrganizationsService implements OnModuleInit {
           organizationId: targetOrgId,
           userId: targetMemberId,
           role: newRole,
+          updatedAt: toInstant(),
         },
         update: {},
         conflictOn: { id: newMemberId },
@@ -765,7 +821,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!caller || !caller.organizationId) {
-      throw new NotFoundException("User is not associated with an organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
     }
 
     const targetOrgId = caller.organizationId as string;
@@ -780,18 +836,19 @@ export class OrganizationsService implements OnModuleInit {
     const isCallerAdmin = caller.role === "ADMIN";
 
     if (!isCallerAdmin && !isCallerOwner) {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only organization owners and administrators can remove members.",
       );
     }
 
     if (callerId === targetMemberId) {
-      throw new BadRequestException("You cannot remove yourself from the organization");
+      throw new AppBadRequestException(APP_ERROR_CODES.ORG_CANNOT_REMOVE_SELF, "You cannot remove yourself from the organization");
     }
 
     // Cannot remove Owner
     if (org && org.ownerId === targetMemberId) {
-      throw new BadRequestException("Cannot remove the organization owner");
+      throw new AppBadRequestException(APP_ERROR_CODES.ORG_CANNOT_REMOVE_OWNER, "Cannot remove the organization owner");
     }
 
     // Remove from OrganizationMember
@@ -867,7 +924,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new NotFoundException("User is not associated with an organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
     }
 
     const org = await this.prisma.db.orm.public.Organization.select(
@@ -880,14 +937,15 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!org) {
-      throw new NotFoundException("Organization not found");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
     }
 
     const isOwner = Boolean(org.ownerId && org.ownerId === user.id);
     const isAdmin = user.role === "ADMIN";
 
     if (!isAdmin && !isOwner) {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only organization owners and administrators can create invite links.",
       );
     }
@@ -937,6 +995,7 @@ export class OrganizationsService implements OnModuleInit {
         usesCount: 0,
         status: "ACTIVE",
         createdById: user.id,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
@@ -1050,7 +1109,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new NotFoundException("User is not associated with an organization");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
     }
 
     const org = await this.prisma.db.orm.public.Organization.select(
@@ -1064,7 +1123,8 @@ export class OrganizationsService implements OnModuleInit {
     const isAdmin = user.role === "ADMIN";
 
     if (!isAdmin && !isOwner) {
-      throw new ForbiddenException(
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only organization owners and administrators can revoke invite links.",
       );
     }
@@ -1171,19 +1231,20 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!link) {
-      throw new NotFoundException("Invite link not found or invalid");
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_INVITE_INVALID, "Invite link not found or invalid");
     }
 
     if (link.status === "REVOKED") {
-      throw new BadRequestException("This invitation link has been revoked");
+      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_REVOKED, "This invitation link has been revoked");
     }
 
     if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
-      throw new BadRequestException("This invitation link has expired");
+      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_EXPIRED, "This invitation link has expired");
     }
 
     if (link.maxUses !== null && link.usesCount >= link.maxUses) {
-      throw new BadRequestException(
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
         "This invitation link has reached its maximum allowed uses",
       );
     }
@@ -1209,7 +1270,8 @@ export class OrganizationsService implements OnModuleInit {
       (user && user.organizationId === link.organizationId);
 
     if (isAlreadyMember) {
-      throw new BadRequestException(
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_MEMBER_ALREADY_EXISTS,
         "You are already a member of this organization.",
       );
     }
@@ -1225,6 +1287,7 @@ export class OrganizationsService implements OnModuleInit {
         organizationId: link.organizationId,
         userId,
         role: assignedRole,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: newMemberId },
@@ -1274,7 +1337,7 @@ export class OrganizationsService implements OnModuleInit {
       .first();
 
     if (!org) {
-      throw new NotFoundException(`Organization '${slug}' not found`);
+      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, `Organization '${slug}' not found`, { slug });
     }
 
     return org;

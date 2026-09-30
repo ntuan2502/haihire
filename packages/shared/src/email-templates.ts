@@ -135,13 +135,23 @@ export const DEFAULT_TEMPLATES: TemplateDefinition[] = (
   };
 });
 
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function interpolateEmail(
   template: string,
   variables: Record<string, string | number | undefined | null>,
 ): string {
   return template.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, key) => {
     return variables[key] !== undefined && variables[key] !== null
-      ? String(variables[key])
+      ? escapeHtml(String(variables[key]))
       : `{{${key}}}`;
   });
 }
+

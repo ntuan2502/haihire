@@ -22,6 +22,7 @@ export interface TranslationSchema {
     comingSoon: string;
     soon: string;
     noData: string;
+    view: string;
     viewAll: string;
     export: string;
     or: string;
@@ -51,6 +52,14 @@ export interface TranslationSchema {
     collapse: string;
     fullscreen: string;
     exitFullscreen: string;
+    copy: string;
+    copied: string;
+    copyKeyword: string;
+    confirmInputInstruction: string;
+    confirmInputPlaceholder: string;
+    deleteConfirmWord: string;
+    cancelConfirmWord: string;
+    revokeConfirmWord: string;
   };
   errors: {
     generic: string;
@@ -60,11 +69,47 @@ export interface TranslationSchema {
     ORG_NAME_REQUIRED: string;
     ORG_SLUG_REQUIRED: string;
     ORG_MEMBER_ALREADY_EXISTS: string;
+    ORG_INVITE_INVALID: string;
+    ORG_INVITE_EXPIRED: string;
+    ORG_INVITE_REVOKED: string;
+    ORG_USER_NO_ORG: string;
+    ORG_CANNOT_CHANGE_OWNER_ROLE: string;
+    ORG_CANNOT_REMOVE_SELF: string;
+    ORG_CANNOT_REMOVE_OWNER: string;
+    ORG_MEMBER_NOT_FOUND: string;
+    ORG_FORBIDDEN_ACTION: string;
+    JOB_NOT_FOUND: string;
+    JOB_ID_REQUIRED: string;
+    JOB_NOT_ACCEPTING_APPLICATIONS: string;
+    JOB_INVALID_ORGANIZATION: string;
+    APPLICATION_NOT_FOUND: string;
+    APPLICATION_INVALID_ORGANIZATION: string;
+    CANDIDATE_INFO_REQUIRED: string;
+    CANDIDATE_ORG_MISMATCH: string;
+    CANDIDATE_ALREADY_APPLIED: string;
+    DOCUMENT_FILE_REQUIRED: string;
+    DOCUMENT_NOT_FOUND: string;
+    DOCUMENT_RETRIEVE_FAILED: string;
+    CANDIDATE_NOT_FOUND: string;
+    CANDIDATE_EMAIL_EXISTS: string;
+    CANDIDATE_ORG_REQUIRED: string;
+    INTERVIEW_NOT_FOUND: string;
+    INTERVIEW_APP_NOT_FOUND: string;
+    INTERVIEW_INVALID_ORGANIZATION: string;
+    EMAIL_TEMPLATE_NOT_FOUND: string;
+    EMAIL_SETTINGS_NOT_FOUND: string;
+    EMAIL_ORG_REQUIRED: string;
     INVALID_CREDENTIALS: string;
     USER_EMAIL_EXISTS: string;
+    USER_SESSION_EXPIRED: string;
     UNAUTHORIZED: string;
     FORBIDDEN: string;
+    FORBIDDEN_READ_ONLY: string;
+    SSE_UNAUTHORIZED: string;
+    GENERIC_ERROR: string;
+    VALIDATION_ERROR: string;
     RESOURCE_NOT_FOUND: string;
+    NETWORK_ERROR: string;
   };
   nav: {
     dashboard: string;
@@ -604,11 +649,15 @@ export interface TranslationSchema {
       coverLetterDesc: string;
       offOption: string;
       screeningQuestionsTitle: string;
+      screeningQuestionsDesc: string;
       generateWithAi: string;
       pasteExisting: string;
       aiQuestionsNoticeTitle: string;
       aiQuestionsNoticeDesc: string;
       noScreeningQuestions: string;
+      addFirstQuestion: string;
+      openTextAnswer: string;
+      yesNoChoice: string;
       yesNoQuestion: string;
       freeTextAnswer: string;
       deleteQuestion: string;
@@ -880,6 +929,7 @@ export interface TranslationSchema {
     deleteApplicationHeading: string;
     deleteApplicationWarning: string;
     deleteCandidateHeading: string;
+    deleteCandidateDescription: string;
     deleteCandidateWarning: string;
     deleteDocumentHeading: string;
     deleteDocumentWarning: string;
@@ -1133,6 +1183,8 @@ export interface TranslationSchema {
     viewEvaluation: string;
     rateStar: string;
     close: string;
+    cancelInterviewTitle: string;
+    cancelInterviewWarning: string;
     errors: {
       selectCandidate: string;
       selectDate: string;
@@ -1163,6 +1215,10 @@ export interface TranslationSchema {
     copied: string;
     revokeLink: string;
     removeMember: string;
+    removeMemberConfirmTitle: string;
+    removeMemberConfirmWarning: string;
+    revokeLinkConfirmTitle: string;
+    revokeLinkConfirmWarning: string;
     roleOwner: string;
     roleAdmin: string;
     roleMember: string;
@@ -1381,6 +1437,9 @@ export interface TranslationSchema {
     phone: string;
     notes: string;
     resume: string;
+    cvResume: string;
+    dropCvHere: string;
+    cvFormats: string;
     dragDropResume: string;
     resumeFormats: string;
     submitting: string;
@@ -1547,5 +1606,23 @@ export interface TranslationSchema {
     hideEmailBody: string;
     deliveredViaProvider: string;
     noEmailPreview: string;
+    events: {
+      APPLIED_title: string;
+      APPLIED_desc: string;
+      STAGE_CHANGED_title: string;
+      STAGE_CHANGED_desc: string;
+      INTERVIEW_SCHEDULED_title: string;
+      INTERVIEW_SCHEDULED_desc: string;
+      INTERVIEW_UPDATED_title: string;
+      INTERVIEW_UPDATED_desc: string;
+      SCORECARD_SUBMITTED_title: string;
+      SCORECARD_SUBMITTED_desc: string;
+      EMAIL_SENT_title: string;
+      EMAIL_SENT_desc: string;
+      PII_READ_title: string;
+      PII_READ_desc: string;
+      DOCUMENT_DOWNLOADED_title: string;
+      DOCUMENT_DOWNLOADED_desc: string;
+    };
   };
 }

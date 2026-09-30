@@ -22,6 +22,7 @@ import {
   interpolateTemplate,
 } from "@/lib/email-templates";
 import { useI18n, type TranslationKey } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmailPreviewModal } from "@/components/email/email-preview-modal";
@@ -145,8 +146,7 @@ export default function EmailTemplatesSettingsPage() {
       setTemplateToast({ type: "success", text: t("email.templateSavedSuccess") });
       setTimeout(() => setTemplateToast(null), 3000);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      const msg = axiosErr.response?.data?.message || t("email.templateSaveError");
+      const msg = getApiErrorMessage(err, t, "email.templateSaveError");
       setTemplateToast({ type: "error", text: msg });
       setTimeout(() => setTemplateToast(null), 4000);
     }

@@ -1,7 +1,9 @@
-import { Controller, Get, Inject, Query } from "@nestjs/common";
+import { Controller, Get, Inject, Query, UseGuards } from "@nestjs/common";
 import { UsersService } from "./users.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @Controller("users")
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(@Inject(UsersService) private readonly usersService: UsersService) {}
 

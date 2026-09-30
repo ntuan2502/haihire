@@ -14,6 +14,9 @@ import {
   ArrowRight,
   Share2,
   Check,
+  Pencil,
+  Trash2,
+  Eye,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { SlideOver } from "@/components/shared/slide-over";
@@ -76,7 +79,7 @@ export function JobList({
   search: propSearch,
   onSearchChange,
   loading: _loading,
-  onDeleteJob: _onDeleteJob,
+  onDeleteJob,
   statusFilter,
   typeFilter,
   expFilter,
@@ -663,7 +666,7 @@ export function JobList({
 
                       {/* 5. Actions */}
                       <td className="py-4 px-5 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -686,13 +689,38 @@ export function JobList({
                             )}
                           </button>
 
+                          {/* Quick View (Pipeline/Overview) */}
                           <Link
                             href={`/dashboard/jobs/${job.id}/pipeline`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.view")}
                           >
-                            <span>{t("jobs.tabs.pipeline")}</span>
-                            <ArrowRight className="h-3 w-3" />
+                            <Eye className="h-4 w-4" />
                           </Link>
+
+                          {/* Quick Edit (Settings) */}
+                          <Link
+                            href={`/dashboard/jobs/${job.id}/settings`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.edit")}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+
+                          {/* Quick Delete */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteJob(job.id);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.delete")}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>

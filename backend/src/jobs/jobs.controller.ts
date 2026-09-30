@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { CreateJobDto } from "./dto/create-job.dto";
@@ -26,8 +27,9 @@ export class JobsController {
   ) {}
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   findAll(
-    @Request() req: { user?: { organizationId?: string | null } },
+    @Request() req: { user?: { id?: string; role?: string; organizationId?: string | null } },
     @Query("status") status?: string,
     @Query("department") department?: string,
     @Query("search") search?: string,
@@ -41,7 +43,6 @@ export class JobsController {
     @Query("page") page?: string,
     @Query("limit") limit?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
     return this.jobsService.findAll({
       status,
       department,
@@ -51,10 +52,12 @@ export class JobsController {
       workplace,
       sortBy,
       sortOrder,
-      organizationId: orgId,
+      organizationId,
       organizationSlug: organizationSlug || undefined,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
+      tenantOrgId: req?.user?.organizationId,
+      isAuthenticated: Boolean(req?.user),
     });
   }
 
@@ -67,28 +70,48 @@ export class JobsController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.jobsService.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  findOne(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.jobsService.findOne(id, req?.user?.organizationId);
   }
 
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  create(@Body() dto: CreateJobDto) {
-    return this.jobsService.create(dto);
+  create(
+    @Body() dto: CreateJobDto,
+    @Request() req?: { user?: { id?: string; organizationId?: string | null } },
+  ) {
+    return this.jobsService.create(
+      dto,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  update(@Param("id") id: string, @Body() dto: UpdateJobDto) {
-    return this.jobsService.update(id, dto);
+  update(
+    @Param("id") id: string,
+    @Body() dto: UpdateJobDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.jobsService.update(id, dto, req?.user?.organizationId);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  remove(@Param("id") id: string) {
-    return this.jobsService.remove(id);
+  remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.jobsService.remove(id, req?.user?.organizationId);
   }
 }
+
+

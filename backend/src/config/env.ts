@@ -8,6 +8,7 @@ dotenv.config({ path: path.resolve(process.cwd(), "backend/.env") });
 dotenv.config();
 
 const backendEnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce
     .number()
     .int("PORT must be an integer")
@@ -85,7 +86,42 @@ const backendEnvSchema = z.object({
 
 export type BackendEnv = z.infer<typeof backendEnvSchema>;
 
-const parsed = backendEnvSchema.safeParse(process.env);
+const rawPort = process.env.BACKEND_PORT || process.env.PORT || "3001";
+const rawFrontendPort = process.env.FRONTEND_PORT;
+const rawPostgresPort = process.env.POSTGRES_PORT;
+const rawMinioPort = process.env.MINIO_PORT;
+
+let databaseUrl = process.env.DATABASE_URL || "";
+if (rawPostgresPort && databaseUrl.includes("@localhost:")) {
+  databaseUrl = databaseUrl.replace(/@localhost:\d+/, `@localhost:${rawPostgresPort}`);
+} else if (rawPostgresPort && databaseUrl.includes("@127.0.0.1:")) {
+  databaseUrl = databaseUrl.replace(/@127.0.0.1:\d+/, `@127.0.0.1:${rawPostgresPort}`);
+}
+
+let frontendUrl = process.env.FRONTEND_URL || "";
+if (rawFrontendPort && frontendUrl.includes("localhost:")) {
+  frontendUrl = frontendUrl.replace(/localhost:\d+/, `localhost:${rawFrontendPort}`);
+} else if (rawFrontendPort && frontendUrl.includes("127.0.0.1:")) {
+  frontendUrl = frontendUrl.replace(/127.0.0.1:\d+/, `127.0.0.1:${rawFrontendPort}`);
+}
+
+let minioPublicUrl = process.env.MINIO_PUBLIC_URL || "";
+if (rawMinioPort && minioPublicUrl.includes("localhost:")) {
+  minioPublicUrl = minioPublicUrl.replace(/localhost:\d+/, `localhost:${rawMinioPort}`);
+} else if (rawMinioPort && minioPublicUrl.includes("127.0.0.1:")) {
+  minioPublicUrl = minioPublicUrl.replace(/127.0.0.1:\d+/, `127.0.0.1:${rawMinioPort}`);
+}
+
+const envInput = {
+  ...process.env,
+  PORT: rawPort,
+  ...(databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
+  ...(frontendUrl ? { FRONTEND_URL: frontendUrl } : {}),
+  ...(rawMinioPort ? { MINIO_PORT: rawMinioPort } : {}),
+  ...(minioPublicUrl ? { MINIO_PUBLIC_URL: minioPublicUrl } : {}),
+};
+
+const parsed = backendEnvSchema.safeParse(envInput);
 
 if (!parsed.success) {
   console.error("\n===========================================================");

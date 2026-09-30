@@ -3,7 +3,7 @@ name: haihire
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: haihire-postgres
     restart: unless-stopped
     environment:
@@ -24,8 +24,9 @@ services:
 
   # MinIO Object Storage (S3 Compatible)
   minio:
-    image: minio/minio:latest
+    image: alpine/minio:latest-release
     container_name: haihire-minio
+    user: "0:0"
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -39,32 +40,26 @@ services:
     networks:
       - haihire-network
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:9000/minio/health/live || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # MinIO Auto-Bucket Initialization Service (MinIO Client)
-  minio-create-bucket:
-    image: minio/mc:latest
-    container_name: haihire-minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    networks:
-      - haihire-network
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
-    entrypoint: >
-      /bin/sh -c " echo 'Waiting for MinIO to be ready...'; /usr/bin/mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD}; echo 'Creating default bucket: ' $${MINIO_BUCKET_NAME}; /usr/bin/mc mb myminio/$${MINIO_BUCKET_NAME} --ignore-existing; echo 'Setting public download policy on bucket: ' $${MINIO_BUCKET_NAME}; /usr/bin/mc anonymous set download myminio/$${MINIO_BUCKET_NAME}; echo 'MinIO initialization complete.'; exit 0; "
-
   # Redis (Cache & Asynchronous Queue)
   redis:
-    image: redis:7-alpine
+    image: redis:alpine
     container_name: haihire-redis
     restart: unless-stopped
+    command: >
+      /bin/sh -c "
+        if [ -n \"$${REDIS_PASSWORD}\" ]; then
+          redis-server --requirepass \"$${REDIS_PASSWORD}\";
+        else
+          redis-server;
+        fi
+      "
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -72,65 +67,72 @@ services:
     networks:
       - haihire-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD}\" ]; then redis-cli -a \"$${REDIS_PASSWORD}\" ping; else redis-cli ping; fi" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # # NestJS Backend Service
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: haihire-backend
-  #   restart: unless-stopped
-  #   environment:
-  #     PORT: ${BACKEND_PORT:-3001}
-  #     DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
-  #     MINIO_ENDPOINT: minio
-  #     MINIO_PORT: 9000
-  #     MINIO_USE_SSL: "false"
-  #     MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
-  #     MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-  #     MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
-  #     MINIO_PUBLIC_URL: http://localhost:9000
-  #     FRONTEND_URL: http://localhost:3000
-  #   ports:
-  #     - "${BACKEND_PORT:-3001}:3001"
-  #   volumes:
-  #     - ./backend:/app
-  #     - /app/node_modules
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     minio:
-  #       condition: service_healthy
-  #     minio-create-bucket:
-  #       condition: service_completed_successfully
-  #   networks:
-  #     - haihire-network
-  # 
-  # # Next.js Frontend Service
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: haihire-frontend
-  #   restart: unless-stopped
-  #   environment:
-  #     PORT: 3000
-  #     NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
-  #     NEXT_PUBLIC_MINIO_URL: http://localhost:${MINIO_PORT:-9000}/${MINIO_BUCKET_NAME:-haihire-resumes}
-  #   ports:
-  #     - "${FRONTEND_PORT:-3000}:3000"
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules
-  #     - /app/.next
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - haihire-network
+  # NestJS Backend Service
+  backend:
+    profiles: [ "app" ]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: haihire-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: ${BACKEND_PORT:-3001}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
+      MINIO_PUBLIC_URL: http://localhost:${MINIO_PORT:-9000}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-haihire_super_secret_jwt_key_development_only_change_in_prod}
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-3000}
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - haihire-network
+
+  # Next.js Frontend Service
+  frontend:
+    profiles: [ "app" ]
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: haihire-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
+      INTERNAL_API_URL: http://backend:3001
+      BACKEND_HOST: backend
+      BACKEND_PORT: 3001
+      MINIO_HOST: minio
+      MINIO_PORT: 9000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    networks:
+      - haihire-network
 
 volumes:
   postgres_data:

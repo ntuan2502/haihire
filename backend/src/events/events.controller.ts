@@ -3,11 +3,9 @@ import {
   Sse,
   Query,
   Req,
-  UnauthorizedException,
   Inject,
   type MessageEvent,
 } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
 import { Observable } from "rxjs";
 import { EventsService } from "./events.service";
 import type { Request } from "express";
@@ -17,8 +15,6 @@ export class EventsController {
   constructor(
     @Inject(EventsService)
     private readonly eventsService: EventsService,
-    @Inject(JwtService)
-    private readonly jwtService: JwtService,
   ) {}
 
   @Sse("sse")
@@ -33,18 +29,6 @@ export class EventsController {
         ? req.headers.authorization.slice(7)
         : undefined);
 
-    if (!token) {
-      throw new UnauthorizedException(
-        "Authentication token required for SSE stream",
-      );
-    }
-
-    try {
-      const payload = this.jwtService.verify(token);
-      const userId = payload.sub || payload.id;
-      return this.eventsService.subscribe(userId);
-    } catch {
-      throw new UnauthorizedException("Invalid or expired token for SSE stream");
-    }
+    return this.eventsService.subscribeWithToken(token);
   }
 }

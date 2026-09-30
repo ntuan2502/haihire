@@ -48,7 +48,7 @@ import {
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { usePipelineStages } from "@/lib/stages";
 import { StageBadge } from "@/components/shared/stage-badge";
-import { getApiBaseUrl } from "@/lib/api";
+import { getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
 import {
   getInitials,
   formatDate,
@@ -100,11 +100,26 @@ function ApplicationDetailPageContent() {
   const [previewDoc, setPreviewDoc] = useState<CandidateDocument | null>(null);
 
   // Cancel scheduled interview
-  const handleCancelInterview = async (interviewId?: string) => {
+  const handleCancelInterview = async (
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
     if (!app) return;
     try {
-      const targetId = interviewId || (app.interviews && app.interviews[0]?.id);
-      if (targetId) {
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else if (app.interviews && app.interviews.length > 0 && app.interviews[0]?.id) {
+        targetId = app.interviews[0].id;
+      }
+
+      if (targetId && typeof targetId === "string") {
         await deleteInterviewMutation.mutateAsync(targetId);
       }
     } catch (err) {
@@ -168,35 +183,11 @@ function ApplicationDetailPageContent() {
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
     const activeAppId = targetAppId || app?.id;
-    const apiUrl = getApiBaseUrl();
-    try {
-      const targetUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
+    const downloadPath = activeAppId
+      ? `/applications/${activeAppId}/documents/download${queryString}`
+      : url;
 
-      const response = await fetch(targetUrl);
-      if (!response.ok) throw new Error("Download request failed");
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch {
-      const fallbackUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
-      const a = document.createElement("a");
-      a.href = fallbackUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    await downloadAuthenticatedFile(downloadPath, downloadFileName);
   };
 
   const handleStageChange = async (newStage: ApplicationStage) => {

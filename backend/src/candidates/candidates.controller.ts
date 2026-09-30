@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Inject,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -23,9 +22,10 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { fixUtf8String } from "../applications/applications.service";
+import { resumeFileFilter } from "../common/upload-utils";
 
 @Controller("candidates")
+@UseGuards(AuthGuard("jwt"))
 export class CandidatesController {
   constructor(
     @Inject(CandidatesService)
@@ -40,19 +40,28 @@ export class CandidatesController {
     @Query("limit") limit?: string,
     @Query("search") search?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
-    return this.candidatesService.findAll(orgId, {
-      page: pageNum,
-      limit: limitNum,
-      search,
-    });
+    return this.candidatesService.findAll(
+      organizationId,
+      {
+        page: pageNum,
+        limit: limitNum,
+        search,
+      },
+      req?.user?.organizationId,
+    );
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.candidatesService.findOne(id);
+  findOne(
+    @Param("id") id: string,
+    @Request()
+    req: {
+      user?: { id?: string; name?: string; organizationId?: string | null };
+    },
+  ) {
+    return this.candidatesService.findOne(id, req?.user?.organizationId, req?.user);
   }
 
   @Post()
@@ -61,6 +70,7 @@ export class CandidatesController {
   @UseInterceptors(
     FileInterceptor("resume", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
     }),
   )
   create(
@@ -81,8 +91,9 @@ export class CandidatesController {
   update(
     @Param("id") id: string,
     @Body() dto: UpdateCandidateDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.candidatesService.update(id, dto);
+    return this.candidatesService.update(id, dto, req?.user?.organizationId);
   }
 
   @Post(":id/documents")
@@ -91,14 +102,16 @@ export class CandidatesController {
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: resumeFileFilter,
     }),
   )
   uploadDocument(
     @Param("id") id: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("type") documentType?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.candidatesService.uploadDocument(id, file, documentType);
+    return this.candidatesService.uploadDocument(id, file, documentType, req?.user?.organizationId);
   }
 
   @Get(":id/documents/download")
@@ -107,43 +120,29 @@ export class CandidatesController {
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
     @Res() res: Response,
+    @Request()
+    req: {
+      user?: { id?: string; name?: string; organizationId?: string | null };
+    },
   ) {
-    const candidate = await this.candidatesService.findOne(id);
-    if (!candidate) {
-      throw new NotFoundException("Candidate not found");
-    }
-
-    const downloadUrl = targetUrl || candidate.resumeUrl;
-    if (!downloadUrl) {
-      throw new NotFoundException("Document not found");
-    }
-
-    const rawName = targetName || candidate.resumeFileName || "document.pdf";
-    const cleanFileName = fixUtf8String(rawName);
-    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
-    const encodedFileName = encodeURIComponent(cleanFileName);
+    const { asciiFallback, encodedFileName, mimeType, stream } =
+      await this.candidatesService.prepareDocumentDownload(
+        id,
+        targetUrl,
+        targetName,
+        req?.user?.organizationId,
+        req?.user,
+      );
 
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodedFileName}`,
     );
-    if (candidate.resumeMimeType) {
-      res.setHeader("Content-Type", candidate.resumeMimeType);
+    if (mimeType) {
+      res.setHeader("Content-Type", mimeType);
     }
 
-    if (
-      downloadUrl.startsWith("http://") ||
-      downloadUrl.startsWith("https://")
-    ) {
-      const upstream = await fetch(downloadUrl);
-      if (!upstream.ok) {
-        throw new NotFoundException("Document file could not be retrieved");
-      }
-      const buffer = Buffer.from(await upstream.arrayBuffer());
-      return res.send(buffer);
-    }
-
-    return res.redirect(downloadUrl);
+    stream.pipe(res);
   }
 
   @Delete(":id/documents")
@@ -153,14 +152,19 @@ export class CandidatesController {
     @Param("id") id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.candidatesService.deleteDocument(id, { documentId, url });
+    return this.candidatesService.deleteDocument(id, { documentId, url }, req?.user?.organizationId);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  remove(@Param("id") id: string) {
-    return this.candidatesService.remove(id);
+  remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.candidatesService.remove(id, req?.user?.organizationId);
   }
 }
+

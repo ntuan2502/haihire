@@ -19,6 +19,36 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Standard HTTP security headers
+  app.use((_req: unknown, res: { setHeader: (k: string, v: string) => void }, next: () => void) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    next();
+  });
+
+  // Lightweight cookie parser middleware
+  app.use((req: { headers?: { cookie?: string }; cookies?: Record<string, string> }, _res: unknown, next: () => void) => {
+    if (req.headers?.cookie && !req.cookies) {
+      const parsed: Record<string, string> = {};
+      const pairs = req.headers.cookie.split(";");
+      for (const pair of pairs) {
+        const idx = pair.indexOf("=");
+        if (idx > 0) {
+          const key = decodeURIComponent(pair.slice(0, idx).trim());
+          const val = decodeURIComponent(pair.slice(idx + 1).trim());
+          parsed[key] = val;
+        }
+      }
+      req.cookies = parsed;
+    } else if (!req.cookies) {
+      req.cookies = {};
+    }
+    next();
+  });
+
   // Global validation pipe for incoming request payloads
   app.useGlobalPipes(
     new ValidationPipe({

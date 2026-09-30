@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NotFoundException } from "@nestjs/common";
+import { AppBadRequestException, AppForbiddenException } from "../common/app-exception";
 import { InterviewsService } from "./interviews.service";
 
 describe("InterviewsService", () => {
@@ -299,6 +300,56 @@ describe("InterviewsService", () => {
     expect(mockApps[0].stage).toBe("INTERVIEW");
   });
 
+  it("should throw AppBadRequestException when scheduling interview for a rejected application", async () => {
+    mockApps[0].stage = "REJECTED";
+    await expect(
+      service.create({
+        applicationId: "app-1",
+        date: "2026-09-25",
+        time: "14:00",
+        type: "TECHNICAL",
+        interviewer: "Lead Engineer",
+      }),
+    ).rejects.toThrow(AppBadRequestException);
+  });
+
+  it("should throw AppForbiddenException when scheduling interview across different organizations", async () => {
+    mockApps[0].stage = "APPLIED";
+    await expect(
+      service.create(
+        {
+          applicationId: "app-1",
+          date: "2026-09-25",
+          time: "14:00",
+          type: "TECHNICAL",
+          interviewer: "Lead Engineer",
+        },
+        "different-org-id",
+      ),
+    ).rejects.toThrow(AppForbiddenException);
+  });
+
+  it("should not overwrite stage if application is already in OFFER stage", async () => {
+    mockApps[0].stage = "OFFER";
+    await service.create({
+      applicationId: "app-1",
+      date: "2026-09-25",
+      time: "14:00",
+      type: "FINAL_ROUND",
+      interviewer: "Director",
+    });
+    expect(mockApps[0].stage).toBe("OFFER");
+  });
+
+  it("should throw AppForbiddenException when accessing an interview belonging to another organization", async () => {
+    await expect(service.findOne("intv-1", "other-org")).rejects.toThrow(AppForbiddenException);
+  });
+
+  it("should allow findOne when tenant organization matches", async () => {
+    const res = await service.findOne("intv-1", "org-1");
+    expect(res.id).toBe("intv-1");
+  });
+
   it("should update an existing interview", async () => {
     const updated = await service.update("intv-1", {
       time: "11:30",
@@ -309,9 +360,26 @@ describe("InterviewsService", () => {
     expect(updated.notes).toBe("Updated notes");
   });
 
+  it("should throw AppForbiddenException when updating an interview from another organization", async () => {
+    await expect(
+      service.update(
+        "intv-1",
+        {
+          time: "11:30",
+        },
+        "other-org",
+      ),
+    ).rejects.toThrow(AppForbiddenException);
+  });
+
+  it("should throw AppForbiddenException when deleting an interview from another organization", async () => {
+    await expect(service.remove("intv-1", "other-org")).rejects.toThrow(AppForbiddenException);
+  });
+
   it("should delete an interview", async () => {
-    const res = await service.remove("intv-1");
+    const res = await service.remove("intv-1", "org-1");
     expect(res.success).toBe(true);
     expect(mockInterviews).toHaveLength(0);
   });
 });
+

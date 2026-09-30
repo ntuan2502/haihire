@@ -18,6 +18,7 @@ import {
   useAllJobs,
   useAllApplications,
   useInterviews,
+  useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import {
@@ -34,9 +35,11 @@ import {
 import {
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { getCandidateDisplayName } from "@/lib/utils";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
 import { InterviewsTableView } from "@/components/interviews/interviews-table-view";
 import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
+import { CancelInterviewModal } from "@/components/interviews/cancel-interview-modal";
 import { useI18n } from "@/i18n";
 import type { Application } from "@/types";
 
@@ -57,6 +60,13 @@ function InterviewsPageContent() {
   const [scorecardModalOpen, setScorecardModalOpen] = useState(false);
   const [selectedAppForScorecard, setSelectedAppForScorecard] = useState<Application | undefined>(undefined);
   const [selectedInterviewForScorecard, setSelectedInterviewForScorecard] = useState<ScheduledInterviewInfo | undefined>(undefined);
+
+  // Cancel interview modal state
+  const deleteInterviewMutation = useDeleteInterviewMutation();
+  const [cancelInterviewState, setCancelInterviewState] = useState<{
+    app: Application;
+    interview: ScheduledInterviewInfo;
+  } | null>(null);
 
   // Synchronized URL Query State for Pagination, Search & Filters
   const {
@@ -474,6 +484,7 @@ function InterviewsPageContent() {
             visibleColumns={visibleColumns}
             onOpenScheduleModal={handleOpenScheduleModal}
             onOpenScorecard={handleOpenScorecard}
+            onCancelInterview={(app, interview) => setCancelInterviewState({ app, interview })}
             onNavigateToPipeline={(jobId, applicationId, stage) => {
               const query = new URLSearchParams();
               if (stage) {
@@ -536,6 +547,22 @@ function InterviewsPageContent() {
         interview={selectedInterviewForScorecard}
         job={jobs.find((j) => String(j.id) === String(selectedAppForScorecard?.jobId))}
       />
+
+      {/* Cancel Interview Confirmation Modal */}
+      {cancelInterviewState && (
+        <CancelInterviewModal
+          isOpen={!!cancelInterviewState}
+          onClose={() => setCancelInterviewState(null)}
+          onConfirm={async () => {
+            if (cancelInterviewState.interview?.id) {
+              await deleteInterviewMutation.mutateAsync(cancelInterviewState.interview.id);
+              setCancelInterviewState(null);
+            }
+          }}
+          candidateName={getCandidateDisplayName(cancelInterviewState.app)}
+          isCancelling={deleteInterviewMutation.isPending}
+        />
+      )}
 
       {/* Interviews Filter Drawer (SlideOver) matching Jobs / Applications / Candidates UX */}
       <SlideOver

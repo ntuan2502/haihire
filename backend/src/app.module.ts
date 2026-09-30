@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { BullModule } from "@nestjs/bullmq";
 import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
 import { ApplicationsModule } from "./applications/applications.module";
 import { CandidatesModule } from "./candidates/candidates.module";
 import { InterviewsModule } from "./interviews/interviews.module";
@@ -14,9 +15,13 @@ import { ActivitiesModule } from "./activities/activities.module";
 import { EmailModule } from "./email/email.module";
 import { UsersModule } from "./users/users.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, Reflector } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PrismaService } from "./prisma/prisma.service";
+
+// Resolve ThrottlerGuard parameter token to bridge CJS/ESM dual package hazard under tsx in dev
+const throttlerParamTypes = (Reflect.getMetadata("design:paramtypes", ThrottlerGuard) as (new (...args: unknown[]) => unknown)[]) || [];
+const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
 
 @Module({
   imports: [
@@ -33,6 +38,7 @@ import { PrismaService } from "./prisma/prisma.service";
         connection: {
           host: configService.get<string>("REDIS_HOST", "localhost"),
           port: configService.get<number>("REDIS_PORT", 6379),
+          password: configService.get<string>("REDIS_PASSWORD") || undefined,
         },
       }),
       inject: [ConfigService],
@@ -52,7 +58,11 @@ import { PrismaService } from "./prisma/prisma.service";
   ],
   controllers: [AppController],
   providers: [
+    AppService,
     PrismaService,
+    ...(throttlerReflectorToken !== Reflector
+      ? [{ provide: throttlerReflectorToken, useExisting: Reflector }]
+      : []),
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
@@ -60,3 +70,4 @@ import { PrismaService } from "./prisma/prisma.service";
   ],
 })
 export class AppModule {}
+

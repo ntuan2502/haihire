@@ -1,16 +1,19 @@
 import {
-  ConflictException,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from "@nestjs/common";
+import { AppConflictException, AppUnauthorizedException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
+import { env } from "../config/env";
+import { toInstant } from "../common/date.util";
 
 @Injectable()
 export class AuthService {
@@ -37,8 +40,11 @@ export class AuthService {
       .where((u) => u.email.eq(normalizedEmail))
       .first();
 
-    // Auto-provision demo accounts if database is fresh
-    if (!user) {
+    // Auto-provision demo accounts in non-production environments if database is fresh
+    const isDevOrDemoEnabled =
+      env.NODE_ENV !== "production" || process.env.ENABLE_DEMO_ACCOUNTS === "true";
+
+    if (!user && isDevOrDemoEnabled) {
       const demoAccountList = [DEMO_ACCOUNTS.ADMIN, DEMO_ACCOUNTS.MEMBER];
       const matchedDemo = demoAccountList.find(
         (a) => a.email.toLowerCase() === normalizedEmail,
@@ -64,6 +70,7 @@ export class AuthService {
                 name: "Admin",
                 slug: "admin",
                 ownerId: adminUserId,
+                updatedAt: toInstant(),
               },
               update: { ownerId: adminUserId },
               conflictOn: { slug: "admin" },
@@ -81,6 +88,7 @@ export class AuthService {
               role: matchedDemo.role,
               password: hashedPassword,
               organizationId: orgId,
+              updatedAt: toInstant(),
             },
             update: {
               password: hashedPassword,
@@ -93,11 +101,13 @@ export class AuthService {
         } else {
           user = await this.prisma.db.orm.public.User.upsert({
             create: {
+              id: crypto.randomUUID(),
               email: normalizedEmail,
               name: matchedDemo.name,
               role: matchedDemo.role,
               password: hashedPassword,
               organizationId: null,
+              updatedAt: toInstant(),
             },
             update: {
               password: hashedPassword,
@@ -112,12 +122,12 @@ export class AuthService {
     }
 
     if (!user || !user.password) {
-      throw new UnauthorizedException("Invalid email or password");
+      throw new AppUnauthorizedException(APP_ERROR_CODES.INVALID_CREDENTIALS, "Invalid email or password");
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException("Invalid email or password");
+      throw new AppUnauthorizedException(APP_ERROR_CODES.INVALID_CREDENTIALS, "Invalid email or password");
     }
 
     const { password: _, ...sanitizedUser } = user;
@@ -155,9 +165,14 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, type: "refresh" },
+      { expiresIn: "7d" },
+    );
 
     return {
       accessToken,
+      refreshToken,
       user,
     };
   }
@@ -170,7 +185,8 @@ export class AuthService {
       .first();
 
     if (existing) {
-      throw new ConflictException(
+      throw new AppConflictException(
+        APP_ERROR_CODES.USER_EMAIL_EXISTS,
         "An account with this email address already exists.",
       );
     }
@@ -186,6 +202,7 @@ export class AuthService {
         password: hashedPassword,
         role: "MEMBER",
         organizationId: null,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
@@ -210,10 +227,68 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, type: "refresh" },
+      { expiresIn: "7d" },
+    );
 
     return {
       accessToken,
+      refreshToken,
       user,
+    };
+  }
+
+  async refreshToken(dto: RefreshTokenDto) {
+    let decoded: { sub: string; type?: string };
+    try {
+      decoded = this.jwtService.verify(dto.refreshToken);
+    } catch {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "Invalid or expired refresh token",
+      );
+    }
+
+    if (decoded.type !== "refresh" || !decoded.sub) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "Invalid refresh token payload",
+      );
+    }
+
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "email",
+      "name",
+      "role",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(decoded.sub))
+      .first();
+
+    if (!user) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "User not found or account has been deactivated",
+      );
+    }
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const newAccessToken = this.jwtService.sign(payload);
+    const newRefreshToken = this.jwtService.sign(
+      { sub: user.id, type: "refresh" },
+      { expiresIn: "7d" },
+    );
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     };
   }
 
@@ -231,7 +306,7 @@ export class AuthService {
       .first();
 
     if (!user) {
-      throw new UnauthorizedException("User session expired or not found");
+      throw new AppUnauthorizedException(APP_ERROR_CODES.USER_SESSION_EXPIRED, "User session expired or not found");
     }
 
     let organization = null;

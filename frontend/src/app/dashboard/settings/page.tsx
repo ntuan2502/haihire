@@ -10,7 +10,7 @@ import {
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MacOsModal } from "@/components/shared";
+import { ConfirmDestructiveModal } from "@/components/shared";
 import {
   Building2,
   AlertTriangle,
@@ -34,7 +34,6 @@ export default function GeneralSettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [appHost, setAppHost] = useState("");
 
   useEffect(() => {
@@ -98,10 +97,6 @@ export default function GeneralSettingsPage() {
 
   // Handle deleting organization
   const handleDeleteOrg = async () => {
-    if (deleteConfirmText.toLowerCase() !== orgSlug.toLowerCase()) {
-      return;
-    }
-
     try {
       await deleteOrgMutation.mutateAsync();
       setDeleteModalOpen(false);
@@ -109,7 +104,7 @@ export default function GeneralSettingsPage() {
       router.push("/auth/onboarding");
     } catch (err) {
       console.error("Failed to delete organization:", err);
-      setSaveError("Failed to delete organization. Please try again.");
+      setSaveError(t("errors.generic"));
     }
   };
 
@@ -268,76 +263,19 @@ export default function GeneralSettingsPage() {
       )}
 
       {/* ================= DELETE ORGANIZATION CONFIRMATION MODAL ================= */}
-      <MacOsModal
+      <ConfirmDestructiveModal
         isOpen={deleteModalOpen}
-        onClose={() => {
-          setDeleteModalOpen(false);
-          setDeleteConfirmText("");
-        }}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteOrg}
         title={t("settings.deleteOrg")}
-        size="sm"
-        contentClassName="p-5 sm:p-6 space-y-4 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                {t("settings.deleteOrg")}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("settings.dangerZoneDesc")}
-              </p>
-            </div>
-          </div>
-
-          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-            {t("settings.deleteOrgConfirmPrompt", { slug: orgSlug })}
-          </p>
-
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              {t("settings.deleteOrgTypeToConfirm", { slug: orgSlug })}:
-            </label>
-            <Input
-              type="text"
-              placeholder={orgSlug}
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              className="h-9 text-xs"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200/60 dark:border-white/10">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setDeleteModalOpen(false);
-                setDeleteConfirmText("");
-              }}
-              className="h-8 px-3.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer shadow-2xs"
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="button"
-              disabled={
-                deleteConfirmText.toLowerCase() !== orgSlug.toLowerCase() ||
-                deleteOrgMutation.isPending
-              }
-              onClick={handleDeleteOrg}
-              className="h-8 px-3.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer shadow-2xs"
-            >
-              {deleteOrgMutation.isPending
-                ? t("settings.deletingOrg")
-                : t("settings.deleteOrgButton")}
-            </Button>
-          </div>
-        </div>
-      </MacOsModal>
+        description={t("settings.dangerZoneDesc")}
+        notice={t("settings.deleteOrgConfirmPrompt", { slug: orgSlug })}
+        confirmMatchText={orgSlug}
+        confirmButtonLabel={t("settings.deleteOrgButton")}
+        cancelButtonLabel={t("common.cancel")}
+        isLoading={deleteOrgMutation.isPending}
+        variant="danger"
+      />
     </div>
   );
 }

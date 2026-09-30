@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
+import { ConfirmDestructiveModal } from "@/components/shared";
 import {
   UserPlus,
   Link2,
@@ -135,14 +136,18 @@ export default function MembersSettingsPage() {
 
   // Handle revoking link
   const [revokingId, setRevokingId] = useState<string | null>(null);
-  const handleRevokeLink = async (id: string) => {
+  const [linkToRevoke, setLinkToRevoke] = useState<string | null>(null);
+
+  const handleConfirmRevokeLink = async () => {
+    if (!linkToRevoke) return;
     try {
-      setRevokingId(id);
-      await revokeInviteMutation.mutateAsync(id);
+      setRevokingId(linkToRevoke);
+      await revokeInviteMutation.mutateAsync(linkToRevoke);
       await refetchLinks();
+      setLinkToRevoke(null);
     } catch (err) {
       console.error(err);
-      setInviteErrorMsg("Failed to revoke invite link.");
+      setInviteErrorMsg(t("errors.generic"));
     } finally {
       setRevokingId(null);
     }
@@ -157,28 +162,25 @@ export default function MembersSettingsPage() {
       setOpenMenuMemberId(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to update role. Please try again.");
+      alert(t("errors.generic"));
     } finally {
       setActionLoadingId(null);
     }
   };
 
   // Handle removing member from organization
-  const handleRemoveMember = async (memberId: string, memberName: string) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to remove "${memberName}" from the organization?`,
-      )
-    ) {
-      return;
-    }
+  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
+
+  const handleConfirmRemoveMember = async () => {
+    if (!memberToRemove) return;
     try {
-      setActionLoadingId(memberId);
-      await removeMemberMutation.mutateAsync(memberId);
+      setActionLoadingId(memberToRemove.id);
+      await removeMemberMutation.mutateAsync(memberToRemove.id);
       setOpenMenuMemberId(null);
+      setMemberToRemove(null);
     } catch (err) {
       console.error(err);
-      alert("Failed to remove member. Please try again.");
+      alert(t("errors.generic"));
     } finally {
       setActionLoadingId(null);
     }
@@ -546,7 +548,7 @@ export default function MembersSettingsPage() {
                         variant="outline"
                         size="sm"
                         disabled={revokingId === link.id}
-                        onClick={() => handleRevokeLink(link.id)}
+                        onClick={() => setLinkToRevoke(link.id)}
                         className="h-8 text-xs font-semibold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer flex items-center gap-1"
                       >
                         {revokingId === link.id ? (
@@ -708,7 +710,10 @@ export default function MembersSettingsPage() {
 
                           <button
                             type="button"
-                            onClick={() => handleRemoveMember(m.id, m.name)}
+                            onClick={() => {
+                              setOpenMenuMemberId(null);
+                              setMemberToRemove({ id: m.id, name: m.name });
+                            }}
                             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left cursor-pointer font-medium"
                           >
                             <Trash2 className="h-3.5 w-3.5 shrink-0" />
@@ -724,6 +729,45 @@ export default function MembersSettingsPage() {
           })}
         </div>
       </div>
+
+      {/* Remove Member Confirmation Modal */}
+      <ConfirmDestructiveModal
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={handleConfirmRemoveMember}
+        title={t("members.removeMemberConfirmTitle")}
+        description={
+          memberToRemove ? (
+            <span>
+              {t("members.removeMemberConfirmWarning")}{" "}
+              <strong className="font-semibold text-slate-900 dark:text-white">
+                ({memberToRemove.name})
+              </strong>
+            </span>
+          ) : (
+            t("members.removeMemberConfirmWarning")
+          )
+        }
+        confirmMatchText={memberToRemove?.name}
+        confirmButtonLabel={t("members.removeMember")}
+        cancelButtonLabel={t("common.cancel")}
+        isLoading={actionLoadingId === memberToRemove?.id}
+        variant="danger"
+      />
+
+      {/* Revoke Link Confirmation Modal */}
+      <ConfirmDestructiveModal
+        isOpen={!!linkToRevoke}
+        onClose={() => setLinkToRevoke(null)}
+        onConfirm={handleConfirmRevokeLink}
+        title={t("members.revokeLinkConfirmTitle")}
+        description={t("members.revokeLinkConfirmWarning")}
+        confirmMatchText={t("common.revokeConfirmWord")}
+        confirmButtonLabel={t("members.revokeLink")}
+        cancelButtonLabel={t("common.cancel")}
+        isLoading={!!revokingId}
+        variant="warning"
+      />
     </div>
   );
 }

@@ -1,9 +1,12 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppNotFoundException, AppForbiddenException } from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { fixUtf8String } from "../applications/applications.service";
-import { toTimestamp } from "../common/date.util";
+import crypto from "node:crypto";
+import { toTimestamp, toInstant } from "../common/date.util";
 
 @Injectable()
 export class JobsService {
@@ -25,11 +28,32 @@ export class JobsService {
     organizationSlug?: string;
     page?: number;
     limit?: number;
+    tenantOrgId?: string | null;
+    isAuthenticated?: boolean;
   }) {
     const page = filter?.page && filter.page > 0 ? filter.page : 1;
     const limit = filter?.limit && filter.limit > 0 ? filter.limit : 20;
 
-    let targetOrgId = filter?.organizationId;
+    const isAuthenticated = filter?.isAuthenticated ?? false;
+    const effectiveStatus = !isAuthenticated ? "PUBLISHED" : filter?.status;
+    const userOrgId = filter?.tenantOrgId || undefined;
+
+    if (
+      isAuthenticated &&
+      effectiveStatus &&
+      effectiveStatus !== "PUBLISHED" &&
+      filter?.organizationId &&
+      userOrgId &&
+      filter.organizationId !== userOrgId
+    ) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: cannot view unpublished jobs from another organization.",
+        { organizationId: filter.organizationId },
+      );
+    }
+
+    let targetOrgId = filter?.organizationId || userOrgId || undefined;
     let targetOrg: { id: string; name: string; slug: string } | null = null;
 
     if (filter?.organizationSlug) {
@@ -184,7 +208,7 @@ export class JobsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tenantOrgId?: string | null) {
     const job = await this.prisma.db.orm.public.Job.select(
       "id",
       "title",
@@ -207,7 +231,19 @@ export class JobsService {
       .first();
 
     if (!job) {
-      throw new NotFoundException(`Job with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
+        `Job with ID ${id} not found`,
+        { id },
+      );
+    }
+
+    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
+      );
     }
 
     const applications = await this.prisma.db.orm.public.Application.select(
@@ -313,7 +349,11 @@ export class JobsService {
       .first();
 
     if (!org) {
-      throw new NotFoundException(`Organization '${orgSlug}' not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        `Organization '${orgSlug}' not found`,
+        { slug: orgSlug },
+      );
     }
 
     const jobs = await this.prisma.db.orm.public.Job.select(
@@ -358,17 +398,28 @@ export class JobsService {
     });
 
     if (!matchedJob) {
-      throw new NotFoundException(
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job '${jobSlug}' not found in organization '${orgSlug}'`,
+        { id: jobSlug, slug: orgSlug },
       );
     }
 
     return this.findOne(matchedJob.id);
   }
 
-  async create(dto: CreateJobDto) {
+  async create(dto: CreateJobDto, tenantOrgId?: string | null, userId?: string | null) {
+    if (dto.organizationId && tenantOrgId && dto.organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: cannot create job for another organization.",
+        { organizationId: dto.organizationId },
+      );
+    }
+
     const created = await this.prisma.db.orm.public.Job.upsert({
       create: {
+        id: crypto.randomUUID(),
         title: dto.title,
         department: dto.department,
         location: dto.location,
@@ -380,8 +431,9 @@ export class JobsService {
         requirements: dto.requirements ?? null,
         salaryRange: dto.salaryRange ?? null,
         status: dto.status ?? "PUBLISHED",
-        organizationId: dto.organizationId ?? null,
-        createdById: dto.createdById ?? null,
+        organizationId: (tenantOrgId || dto.organizationId) ?? null,
+        createdById: (userId || dto.createdById) ?? null,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
@@ -390,8 +442,16 @@ export class JobsService {
     return created;
   }
 
-  async update(id: string, dto: UpdateJobDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateJobDto, tenantOrgId?: string | null) {
+    const job = await this.findOne(id);
+
+    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
+      );
+    }
 
     const updated = await this.prisma.db.orm.public.Job.where((j) =>
       j.id.eq(id),
@@ -418,8 +478,16 @@ export class JobsService {
     return updated;
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantOrgId?: string | null) {
+    const job = await this.findOne(id);
+
+    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
+      );
+    }
 
     // Delete associated applications first
     await this.prisma.db.orm.public.Application.where((a) =>

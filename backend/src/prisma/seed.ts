@@ -3,12 +3,9 @@ import { env } from "../config/env";
 import bcrypt from "bcryptjs";
 import { db } from "./db.ts";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
+import { toInstant } from "../common/date.util.ts";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
-
-function toInstant(d: Date): Temporal.Instant {
-  return Temporal.Instant.fromEpochMilliseconds(d.getTime());
-}
 
 const VIETNAMESE_LAST_NAMES = [
   "Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng",
@@ -577,6 +574,7 @@ export async function runSeed(): Promise<void> {
       name: "Admin",
       slug: "admin",
       ownerId: adminUserId,
+      updatedAt: toInstant(),
     },
     update: {
       name: "Admin",
@@ -594,6 +592,7 @@ export async function runSeed(): Promise<void> {
       role: DEMO_ACCOUNTS.ADMIN.role,
       password: defaultPasswordHash,
       organizationId: adminOrgId,
+      updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
@@ -611,6 +610,7 @@ export async function runSeed(): Promise<void> {
       organizationId: adminOrgId,
       userId: adminUserId,
       role: "ADMIN",
+      updatedAt: toInstant(),
     },
     update: {},
     conflictOn: { id: "00000000-0000-0000-0000-000000000001" },
@@ -625,6 +625,7 @@ export async function runSeed(): Promise<void> {
       role: DEMO_ACCOUNTS.MEMBER.role,
       password: defaultPasswordHash,
       organizationId: adminOrgId,
+      updatedAt: toInstant(),
     },
     update: {
       password: defaultPasswordHash,
@@ -641,6 +642,7 @@ export async function runSeed(): Promise<void> {
       organizationId: adminOrgId,
       userId: memberUserId,
       role: "MEMBER",
+      updatedAt: toInstant(),
     },
     update: {},
     conflictOn: { id: "00000000-0000-0000-0000-000000000002" },
@@ -737,6 +739,7 @@ export async function runSeed(): Promise<void> {
         organizationId: adminOrgId,
         createdById: adminUserId,
         createdAt: toInstant(jobCreatedAt),
+        updatedAt: toInstant(jobCreatedAt),
       },
       update: {},
       conflictOn: { id: jobId },
@@ -813,6 +816,7 @@ export async function runSeed(): Promise<void> {
     resumeFileSize: number;
     resumeMimeType: string;
     createdAt: Temporal.Instant;
+    updatedAt: Temporal.Instant;
   }> = [];
 
   const applicationsToInsert: Array<{
@@ -828,6 +832,7 @@ export async function runSeed(): Promise<void> {
     notes: string;
     orderIndex: number;
     createdAt: Temporal.Instant;
+    updatedAt: Temporal.Instant;
   }> = [];
 
   const interviewsToInsert: Array<{
@@ -842,6 +847,7 @@ export async function runSeed(): Promise<void> {
     round: number;
     scorecard: string | null;
     notes: string | null;
+    updatedAt: Temporal.Instant;
   }> = [];
 
   function getCandidateDemographics(name: string, index: number) {
@@ -910,6 +916,7 @@ export async function runSeed(): Promise<void> {
       resumeFileSize,
       resumeMimeType: "application/pdf",
       createdAt: toInstant(candidateCreatedAt),
+      updatedAt: toInstant(candidateCreatedAt),
     });
 
     if (jobCount === 0) {
@@ -966,6 +973,7 @@ export async function runSeed(): Promise<void> {
                 round: intv.round,
                 scorecard: null,
                 notes: intv.notes,
+                updatedAt: toInstant(),
               });
             }
           }
@@ -992,6 +1000,7 @@ export async function runSeed(): Promise<void> {
                 feedback: `Ứng viên hoàn thành xuất sắc vòng ${r}.`,
               }),
               notes: intv.notes,
+              updatedAt: toInstant(),
             });
           }
         } else if (stage === "REJECTED") {
@@ -1016,6 +1025,7 @@ export async function runSeed(): Promise<void> {
                 round: intv.round,
                 scorecard: null,
                 notes: intv.notes,
+                updatedAt: toInstant(),
               });
             }
           }
@@ -1038,6 +1048,7 @@ export async function runSeed(): Promise<void> {
           notes,
           orderIndex,
           createdAt: toInstant(appCreatedAt),
+          updatedAt: toInstant(appCreatedAt),
         });
       }
     }

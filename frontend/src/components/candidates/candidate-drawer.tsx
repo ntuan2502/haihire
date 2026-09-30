@@ -34,7 +34,7 @@ import {
   useDeleteDocumentMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
-import { getDocumentUrl, getApiBaseUrl } from "@/lib/api";
+import { getDocumentUrl, getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
 import {
   formatDate,
   parseCandidateNotes,
@@ -159,26 +159,12 @@ export function CandidateDrawer({
     docName: string,
     appId?: string,
   ) => {
-    try {
-      const cleanName = fixUtf8String(docName || "document.pdf");
-      const baseApi = getApiBaseUrl();
-      const downloadEndpoint = appId
-        ? `${baseApi}/applications/${appId}/documents/download?url=${encodeURIComponent(docUrl)}&fileName=${encodeURIComponent(cleanName)}`
-        : getDocumentUrl(docUrl);
+    const cleanName = fixUtf8String(docName || "document.pdf");
+    const downloadEndpoint = appId
+      ? `/applications/${appId}/documents/download?url=${encodeURIComponent(docUrl)}&fileName=${encodeURIComponent(cleanName)}`
+      : getDocumentUrl(docUrl);
 
-      const response = await fetch(downloadEndpoint, { credentials: "omit" });
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.setAttribute("download", cleanName);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open(getDocumentUrl(docUrl), "_blank");
-    }
+    await downloadAuthenticatedFile(downloadEndpoint, cleanName);
   };
 
   const handleConfirmDeleteDrawerDoc = async () => {
@@ -212,13 +198,28 @@ export function CandidateDrawer({
     }
   };
 
-  const handleCancelInterview = async (app: Application) => {
-    const interviews = getInterviewsFromApplication(app);
-    if (interviews.length === 0) return;
+  const handleCancelInterview = async (
+    app: Application,
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
     try {
-      const lastIntv = interviews[interviews.length - 1];
-      if (lastIntv?.id) {
-        await deleteInterviewMutation.mutateAsync(lastIntv.id);
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else {
+        const interviews = getInterviewsFromApplication(app);
+        targetId = interviews[0]?.id || (app.interviews && app.interviews[0]?.id);
+      }
+
+      if (targetId && typeof targetId === "string") {
+        await deleteInterviewMutation.mutateAsync(targetId);
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
@@ -512,7 +513,7 @@ export function CandidateDrawer({
                                 application={app}
                                 notes={app.notes}
                                 onSchedule={(intv) => onScheduleInterview(app, intv)}
-                                onCancelInterview={() => handleCancelInterview(app)}
+                                onCancelInterview={(intv) => handleCancelInterview(app, intv)}
                                 canEdit={canEdit}
                                 showSectionHeader={false}
                                 hideIfEmpty={allInterviews.length === 0}

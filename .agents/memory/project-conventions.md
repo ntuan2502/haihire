@@ -79,3 +79,64 @@ updated: 2026-09-18T20:53
 - **Zero `any` in application code**: The use of `any` is strictly prohibited across backend, frontend, and shared packages.
 - Always define clear types, interfaces, DTOs, or schema types.
 - Utilize `@ats/types` as the canonical source for domain models.
+
+## React SyntheticEvent & Callback Hygiene (MANDATORY)
+- **Never pass parameterized callbacks directly to `onClick`**: If a function accepts an optional parameter (such as `id?: string` or `item?: ScheduledInterviewInfo`), passing it directly as `onClick={onCancelInterview}` causes React to pass the native `MouseEvent` into the parameter. String interpolation or coercion turns this into `"[object Object]"`, leading to critical URL routing and API deletion errors (e.g. `/interviews/[object%20Object]`).
+- **Explicit Arrow Function Wrapper**: Always explicitly wrap event handlers:
+  - When no event is needed: `onClick={() => onCancelInterview(item)}` or `onClick={() => onSelect(candidate.id)}`.
+  - When event propagation must be stopped: `onClick={(e) => { e.stopPropagation(); onCancel(item); }}`.
+
+## Client-Side Network Gatekeeper & Defensive API Calls (MANDATORY)
+- **Fail-Fast URL Inspection**: All Axios and HTTP request clients must implement an active request interceptor (Gatekeeper) that validates request URLs before network dispatch.
+- **Reject Malformed Segment Strings**: If any URL contains `[object%20Object]`, `[object Object]`, `undefined`, or `null` within path segments, the interceptor must immediately abort and reject the promise with a descriptive error code (`CONTRACT.INVALID_URL_ARGUMENT`) without sending bad packets over the network.
+
+## Multi-Tenant Security & Query Scoping (MANDATORY)
+- **Two-Tier Tenant Isolation**: Tenant isolation must be strictly enforced at both the Guard/Controller layer and the Database/ORM layer.
+- **Guard Layer (`TenantGuard`)**: Validate that the requesting user's `organizationId` matches the requested tenant context. Cross-tenant access attempts must immediately throw `AppForbiddenException` (HTTP 403).
+- **Service & ORM Layer**: All database queries for tenant-scoped models (`Job`, `Candidate`, `Application`, `Interview`, `CandidateDocument`) must filter by `.where(e.organizationId.eq(organizationId))`. If `organizationId` is missing or invalid, services must return empty sets or throw `AppNotFoundException` without scanning global records.
+
+## Headless Form & JSDOM Testing Conventions (MANDATORY)
+- **HTML5 Constraint Validation in JSDOM**: When testing form components containing `<input required>` or constraint attributes in React Testing Library with jsdom, clicking a `<button type="submit">` will not trigger `onSubmit` if required fields are empty (jsdom silences invalid submissions without firing event handlers).
+- **Explicit Form Submission in Tests**: To test validation error display on empty form submission, always submit the `<form>` directly using `fireEvent.submit(form)` or `fireEvent.submit(submitBtn.closest("form")!)`.
+- **i18n Translation Key Synchronization**: All test fixtures mocking `useI18n()` must maintain exact 1-to-1 key parity with the component's actual translation calls (e.g., verifying `t("auth.signInButton")` vs `t("auth.signIn")`).
+- **Query Flexibility**: When querying common elements (like email addresses or candidate names that appear in multiple summary tiles), prefer `screen.getAllByText(...)[0]` or regular expression matchers (`screen.getByText(/admin@tun\.io\.vn/)`) to prevent collision errors.
+
+## Object Storage Security & CV Asset Isolation (MANDATORY)
+- **Tenant Path Isolation**: Never upload files with raw client-supplied file paths to root buckets. All uploaded files (resumes, portfolios, attachments) must strictly follow the scoped path hierarchy:
+  `tenants/{organizationId}/candidates/{candidateId}/{uuid}-{sanitizedFileName}`
+- **Server-Side File Verification**: Do not rely on client-side MIME types or file extensions alone. Backend upload handlers must inspect buffer signatures (magic bytes) to verify genuine file types before persisting to MinIO / S3.
+- **Short-Lived Presigned URLs**: CV buckets containing Personal Identifiable Information (PII) must remain completely private. Generate presigned download/preview URLs with short expiration windows (15 to 30 minutes maximum).
+
+## TanStack Query Key Factory & Cache Invalidation Matrix (MANDATORY)
+- **Canonical Key Factory**: Never write ad-hoc string query keys like `["candidates"]` scattered across components. All query keys must be generated via a centralized `QUERY_KEYS` factory object.
+- **Mandatory Invalidation on Mutation**: Every mutation hook (creating/updating/deleting jobs, applications, candidates, or interviews) must explicitly declare all dependent query keys in its `onSuccess` callback via `queryClient.invalidateQueries(...)` to prevent stale UI states without requiring full page reloads.
+
+## Pipeline Stage State Machine & Transition Validation (MANDATORY)
+- **Deterministic Stage Progression**: Stage transitions must conform to the defined recruitment lifecycle: `APPLIED` → `SCREENING` → `INTERVIEW` → `OFFER` → `HIRED` or `REJECTED`.
+- **Pre-Condition Checks**:
+  - Transitioning to `INTERVIEW`: Automatically advance candidate from `APPLIED`/`SCREENING` upon first confirmed interview schedule.
+  - Transitioning to `HIRED`: Validate remaining vacancy quota on the target job and record hiring timestamp.
+  - Transitioning to `REJECTED`: Require a structured rejection reason (`rejectionReason`) and offer automated rejection email notification.
+
+## Audit Trail & Zero Silent Mutation Logging (MANDATORY)
+- **Zero Silent Mutations**: Every state-changing write operation (POST, PUT, PATCH, DELETE) modifying core domain entities must asynchronously create an `ActivityLog` entry via `ActivitiesService` recording `actorId`, `action`, `entityType`, `entityId`, and `metadata` (e.g., previous state vs new state).
+- **PII Scrubbing in Logs**: Application and system logs (NestJS, Winston, terminal output) must scrub all sensitive PII (passwords, tokens, resume body texts, bank details) before emitting log streams.
+
+## Unified Error Response Envelope & Client Extraction (MANDATORY)
+- **Standardized Backend Error Envelope**: All exceptions thrown by backend services must inherit from `AppException` and return the unified JSON shape: `{ statusCode, errorCode, message, timestamp }` mapped to `@haihire/shared` error codes.
+- **Client Error Handling**: Frontend components must never render raw error messages (`err.message` or `err.response.data`) directly. Always utilize the centralized `getApiErrorMessage(err, t, fallbackKey)` utility to ensure localized, user-friendly error dialogs and toasts.
+
+## Background Job Idempotency & Queue Resilience (MANDATORY)
+- **Unique Idempotency Keys**: All BullMQ background jobs (specifically email dispatches, webhook notifications, and AI resume parsing) must define an explicit and deterministic `jobId` (e.g. `email:${type}:${candidateId}:${interviewId}`).
+- **Prevent Duplicate Dispatches**: Redis/BullMQ must silently discard redundant job enqueues if an identical job is currently active or recently completed, preventing duplicate interview invitations or offer letters from being sent to candidates during network retries or worker restarts.
+
+## Safe Email Template Interpolation & Anti-XSS (MANDATORY)
+- **Strict Variable Sanitization**: All candidate-supplied fields (candidate name, notes, phone, custom answers) interpolated into HTML email templates (`{{candidateName}}`, `{{interviewLink}}`, `{{companyName}}`) must be strictly HTML-escaped to prevent cross-site scripting (XSS), phishing links, or HTML injection attacks against recruiters and interviewers.
+- **Deliverability & Domain Verification**: Monitor email sending status and ensure system mailers alert administrators if custom sending domains lack SPF/DKIM verification.
+
+## Two-Tier Deletion Protocol (Soft Delete vs Hard Cascade) (MANDATORY)
+- **Root Entities (Soft Delete)**: Core domain models (`Job`, `Candidate`) must utilize soft deletion (`deletedAt: Date | null`) to prevent irreversible accidental deletions and satisfy enterprise HR audit requirements (e.g., 30-day recovery window).
+- **Dependent Relations (Hard Cascade)**: Secondary relational records (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must maintain database-level `onDelete: Cascade` in `contract.prisma` so that when a root entity is genuinely purged/expunged, all dependent rows are cleanly and atomically wiped without leaving orphan records.
+
+
+

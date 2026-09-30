@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect, MacOsModal } from "@/components/shared";
+import { CustomSelect, CustomModal } from "@/components/shared";
 import {
   Calendar,
   Clock,
@@ -230,20 +230,14 @@ export function ScheduleInterviewModal({
     updateStageMutation.isPending;
 
   return (
-    <MacOsModal
+    <CustomModal
       isOpen={isOpen}
       onClose={onClose}
       title={editingInterview ? t("interviews.editScheduleBtn") : t("interviews.modalTitle")}
-      size="lg"
-      contentClassName="flex flex-col min-h-0 bg-[#fbfbfd] dark:bg-[#1a1a1a]"
+      description={t("interviews.modalSubtitle")}
+      size="3xl"
     >
-      <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
-        <span className="text-slate-500 dark:text-slate-400">
-          {t("interviews.modalSubtitle")}
-        </span>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 md:p-7">
         {formError && (
           <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2.5">
             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -498,19 +492,19 @@ export function ScheduleInterviewModal({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200/60 dark:border-white/10 flex items-center justify-end gap-2.5">
+          <div className="pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-end gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-8 px-4 rounded-lg text-xs font-semibold cursor-pointer shadow-2xs"
+              className="h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer"
             >
               {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={isSaving}
-              className="h-8 px-5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-2xs cursor-pointer transition-all"
+              className="h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer transition-all shadow-xs"
             >
               {isSaving
                 ? t("interviews.savingSchedule")
@@ -521,6 +515,6 @@ export function ScheduleInterviewModal({
           </div>
         </form>
       </div>
-    </MacOsModal>
+    </CustomModal>
   );
 }

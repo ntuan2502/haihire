@@ -127,6 +127,20 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                     }
                     return { ...match };
                   }),
+                  all: vi.fn().mockImplementation(async () => {
+                    return mockOrgs
+                      .filter((o) => {
+                        const mockRecord = {
+                          id: {
+                            eq: (target: string) => o.id === target,
+                            in: (targets: string[]) => targets.includes(o.id),
+                          },
+                          ownerId: { eq: (target: string) => o.ownerId === target },
+                        };
+                        return predicateFn(mockRecord);
+                      })
+                      .map((o) => ({ ...o }));
+                  }),
                 })),
                 all: vi.fn().mockImplementation(async () => {
                   return mockOrgs.map((o) => ({ ...o }));
@@ -169,6 +183,10 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                     return mockUsers
                       .filter((u) => {
                         const mockRecord = {
+                          id: {
+                            eq: (target: string) => u.id === target,
+                            in: (arr: string[]) => arr.includes(u.id),
+                          },
                           organizationId: { eq: (target: string) => u.organizationId === target },
                         };
                         return predicateFn(mockRecord);

@@ -38,9 +38,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = organizationId || req.user.organizationId;
-    if (!orgId) return [];
-    return this.emailService.getTemplates(orgId);
+    return this.emailService.getTemplates(organizationId, req.user.organizationId);
   }
 
   @Put("templates/:type")
@@ -51,9 +49,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
-    return this.emailService.updateTemplate(orgId, type, dto);
+    return this.emailService.updateTemplate(organizationId, type, dto, req.user.organizationId);
   }
 
   @Get("settings")
@@ -61,9 +57,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = organizationId || req.user.organizationId;
-    if (!orgId) return null;
-    return this.emailService.getSettings(orgId);
+    return this.emailService.getSettings(organizationId, req.user.organizationId);
   }
 
   @Put("settings")
@@ -73,9 +67,7 @@ export class EmailController {
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
-    return this.emailService.updateSettings(orgId, dto);
+    return this.emailService.updateSettings(organizationId, dto, req.user.organizationId);
   }
 
   @Post("send")
@@ -85,9 +77,7 @@ export class EmailController {
     @Request() req: { user: { id: string; name: string; email: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
-    return this.emailService.sendEmail(dto, orgId, req.user);
+    return this.emailService.sendEmail(dto, organizationId, req.user, req.user.organizationId);
   }
 
   @Post("test")
@@ -97,9 +87,7 @@ export class EmailController {
     @Request() req: { user: { id: string; name: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
-    const orgId = organizationId || req.user.organizationId;
-    if (!orgId) throw new Error("Organization ID is required");
-    return this.emailService.sendTestEmail(dto, orgId, req.user);
+    return this.emailService.sendTestEmail(dto, organizationId, req.user, req.user.organizationId);
   }
 
   @Get("logs")
@@ -112,15 +100,17 @@ export class EmailController {
     @Query("search") search?: string,
     @Query("status") status?: string,
   ) {
-    const orgId = organizationId || req.user.organizationId;
-    if (!orgId) return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
-    return this.emailService.getLogs(orgId, {
-      candidateId,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      search,
-      status,
-    });
+    return this.emailService.getLogs(
+      organizationId,
+      {
+        candidateId,
+        page: page ? parseInt(page, 10) : undefined,
+        limit: limit ? parseInt(limit, 10) : undefined,
+        search,
+        status,
+      },
+      req.user.organizationId,
+    );
   }
 
   @Get("system/config")

@@ -1,14 +1,19 @@
 import {
   Inject,
   Injectable,
-  NotFoundException,
 } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  AppBadRequestException,
+  AppForbiddenException,
+  AppNotFoundException,
+} from "../common/app-exception";
 import crypto from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { fixUtf8String } from "../applications/applications.service";
-import { toTimestamp } from "../common/date.util";
+import { toTimestamp, toInstant } from "../common/date.util";
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
@@ -55,7 +60,17 @@ export class InterviewsService {
     search?: string;
     tab?: string;
     sortBy?: string;
+    tenantOrgId?: string | null;
   }) {
+    if (options?.organizationId && options?.tenantOrgId && options.organizationId !== options.tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
+        "Access denied: cannot access interviews from another organization.",
+        { organizationId: options.organizationId },
+      );
+    }
+    const targetOrgId = options?.tenantOrgId || options?.organizationId || undefined;
+
     type InterviewRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Interview.all>>[number];
     type AppRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Application.all>>[number];
     type CandidateRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Candidate.all>>[number];
@@ -99,9 +114,9 @@ export class InterviewsService {
       interviews = await this.prisma.db.orm.public.Interview
         .where((i) => i.applicationId.in(appIds))
         .all();
-    } else if (options?.organizationId) {
+    } else if (targetOrgId) {
       const orgCandidates = await this.prisma.db.orm.public.Candidate.select("id")
-        .where((c) => c.organizationId.eq(options.organizationId!))
+        .where((c) => c.organizationId.eq(targetOrgId))
         .all();
 
       if (orgCandidates.length === 0) {
@@ -330,7 +345,7 @@ export class InterviewsService {
 
     const allItems = [...scheduledItems, ...awaitingItems]
       .filter((item) => {
-        if (options?.organizationId && item.organizationId !== options.organizationId) {
+        if (targetOrgId && item.organizationId !== targetOrgId) {
           return false;
         }
         if (options?.jobId && item.jobId !== options.jobId) {
@@ -386,10 +401,14 @@ export class InterviewsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tenantOrgId?: string | null) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
-      throw new NotFoundException(`Interview with ID ${id} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
+        `Interview with ID ${id} not found`,
+        { id },
+      );
     }
 
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(intv.applicationId)).first();
@@ -399,6 +418,15 @@ export class InterviewsService {
     const job = app
       ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
       : null;
+
+    const interviewOrgId = candidate?.organizationId || job?.organizationId;
+    if (tenantOrgId && interviewOrgId && interviewOrgId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
+        "Access denied: interview belongs to another organization.",
+        { id, organizationId: interviewOrgId },
+      );
+    }
 
     let parsedScorecard: Record<string, unknown> | null = null;
     if (intv.scorecard) {
@@ -416,6 +444,7 @@ export class InterviewsService {
       interviewer: fixUtf8String(intv.interviewer),
       scorecard: parsedScorecard,
       notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      organizationId: interviewOrgId,
       application: app
         ? {
             ...app,
@@ -429,10 +458,37 @@ export class InterviewsService {
     };
   }
 
-  async create(dto: CreateInterviewDto) {
+  async create(dto: CreateInterviewDto, organizationId?: string | null) {
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(dto.applicationId)).first();
     if (!app) {
-      throw new NotFoundException(`Application with ID ${dto.applicationId} not found`);
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND,
+        `Application with ID ${dto.applicationId} not found`,
+        { applicationId: dto.applicationId, id: dto.applicationId },
+      );
+    }
+
+    if (app.stage === "REJECTED") {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Cannot schedule an interview for a rejected application. Reopen the application before scheduling.",
+      );
+    }
+
+    const candidate = app.candidateId
+      ? await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(app.candidateId)).first()
+      : null;
+    const job = app.jobId
+      ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
+      : null;
+    const orgId = candidate?.organizationId || job?.organizationId;
+
+    if (organizationId && orgId && orgId !== organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { applicationId: dto.applicationId, organizationId },
+      );
     }
 
     const id = crypto.randomUUID();
@@ -450,6 +506,7 @@ export class InterviewsService {
       round: dto.round || 1,
       scorecard: scorecardStr,
       notes: dto.notes || null,
+      updatedAt: toInstant(),
     });
 
     if (app.stage !== "INTERVIEW" && app.stage !== "OFFER" && app.stage !== "HIRED") {
@@ -461,22 +518,14 @@ export class InterviewsService {
     const createdInterview = await this.findOne(id);
 
     // Record activity log & optionally send interview invitation email
-    const candidate = app.candidateId
-      ? await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(app.candidateId)).first()
-      : null;
-    const job = app.jobId
-      ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
-      : null;
-    const orgId = candidate?.organizationId || job?.organizationId;
-
     if (candidate && orgId) {
       await this.activitiesService.createActivity({
         organizationId: orgId,
         candidateId: candidate.id,
         applicationId: app.id,
         type: "INTERVIEW_SCHEDULED",
-        title: `Đã lên lịch phỏng vấn (${dto.type})`,
-        description: `Buổi phỏng vấn vòng ${dto.round || 1} vào ${dto.time} ngày ${dto.date} với ${dto.interviewer}`,
+        title: `Interview Scheduled (${dto.type})`,
+        description: `Round ${dto.round || 1} interview on ${dto.date} at ${dto.time} with ${dto.interviewer}`,
         actorName: dto.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
@@ -485,6 +534,8 @@ export class InterviewsService {
           time: dto.time,
           format: dto.format || "MEET",
           type: dto.type,
+          interviewer: dto.interviewer,
+          round: dto.round || 1,
         },
       });
 
@@ -536,11 +587,8 @@ export class InterviewsService {
     return createdInterview;
   }
 
-  async update(id: string, dto: UpdateInterviewDto) {
-    const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
-    if (!intv) {
-      throw new NotFoundException(`Interview with ID ${id} not found`);
-    }
+  async update(id: string, dto: UpdateInterviewDto, tenantOrgId?: string | null) {
+    await this.findOne(id, tenantOrgId);
 
     const updateData: InterviewUpdatePayload = {};
     if (dto.date !== undefined) updateData.date = dto.date;
@@ -556,21 +604,30 @@ export class InterviewsService {
     }
 
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).update(updateData);
-    const updated = await this.findOne(id);
+    const updated = await this.findOne(id, tenantOrgId);
 
     const candidate = updated.application?.candidate;
     if (candidate && candidate.organizationId) {
+      const isScorecardUpdate = dto.scorecard !== undefined;
       await this.activitiesService.createActivity({
         organizationId: candidate.organizationId,
         candidateId: candidate.id,
         applicationId: updated.applicationId,
-        type: "INTERVIEW_UPDATED",
-        title: `Đã cập nhật lịch phỏng vấn (${updated.type})`,
-        description: `Cập nhật thông tin: ${updated.time} ngày ${updated.date}`,
+        type: isScorecardUpdate ? "SCORECARD_SUBMITTED" : "INTERVIEW_UPDATED",
+        title: isScorecardUpdate
+          ? `Scorecard Submitted (${updated.type})`
+          : `Interview Updated (${updated.type})`,
+        description: isScorecardUpdate
+          ? `Scorecard submitted by ${updated.interviewer}`
+          : `Interview schedule updated to ${updated.time} on ${updated.date}`,
         actorName: updated.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
           interviewId: id,
+          type: updated.type,
+          interviewer: updated.interviewer,
+          date: updated.date,
+          time: updated.time,
           changes: Object.keys(updateData),
         },
       });
@@ -579,12 +636,8 @@ export class InterviewsService {
     return updated;
   }
 
-  async remove(id: string) {
-    const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
-    if (!intv) {
-      throw new NotFoundException(`Interview with ID ${id} not found`);
-    }
-
+  async remove(id: string, tenantOrgId?: string | null) {
+    await this.findOne(id, tenantOrgId);
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).delete();
     return { success: true, message: `Interview ${id} deleted successfully` };
   }

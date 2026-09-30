@@ -1,6 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppForbiddenException } from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
-import { toTimestamp } from "../common/date.util";
+import { toTimestamp, toInstant } from "../common/date.util";
 import crypto from "node:crypto";
 
 export type ActivityType =
@@ -33,6 +35,13 @@ export class ActivitiesService {
   ) {}
 
   async createActivity(dto: CreateActivityDto) {
+    if (!dto.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+        "User must belong to an organization to record an activity.",
+      );
+    }
+
     const id = crypto.randomUUID();
     const metadataStr = dto.metadata ? JSON.stringify(dto.metadata) : null;
 
@@ -48,6 +57,7 @@ export class ActivitiesService {
       actorName: dto.actorName,
       actorRole: dto.actorRole || null,
       metadata: metadataStr,
+      updatedAt: toInstant(),
     });
   }
 
@@ -55,12 +65,22 @@ export class ActivitiesService {
     candidateId: string,
     organizationId?: string,
     pagination?: { page?: number; limit?: number },
+    tenantOrgId?: string | null,
   ) {
+    if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Access denied: cannot access activities from another organization.",
+        { candidateId, organizationId },
+      );
+    }
+    const targetOrgId = tenantOrgId || organizationId || undefined;
+
     let query = this.prisma.db.orm.public.ActivityLog
       .where((a) => a.candidateId.eq(candidateId));
 
-    if (organizationId) {
-      query = query.where((a) => a.organizationId.eq(organizationId));
+    if (targetOrgId) {
+      query = query.where((a) => a.organizationId.eq(targetOrgId));
     }
 
     const activities = await query.all();
@@ -84,12 +104,22 @@ export class ActivitiesService {
     applicationId: string,
     organizationId?: string,
     pagination?: { page?: number; limit?: number },
+    tenantOrgId?: string | null,
   ) {
+    if (organizationId && tenantOrgId && organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Access denied: cannot access activities from another organization.",
+        { applicationId, organizationId },
+      );
+    }
+    const targetOrgId = tenantOrgId || organizationId || undefined;
+
     let query = this.prisma.db.orm.public.ActivityLog
       .where((a) => a.applicationId.eq(applicationId));
 
-    if (organizationId) {
-      query = query.where((a) => a.organizationId.eq(organizationId));
+    if (targetOrgId) {
+      query = query.where((a) => a.organizationId.eq(targetOrgId));
     }
 
     const activities = await query.all();

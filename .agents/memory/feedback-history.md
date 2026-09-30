@@ -4,6 +4,14 @@ created: 2026-07-18
 updated: 2026-09-18
 ---
 
+## 2026-09-29: Error Contract Standardization, Isolated Dynamic Params & Centralized Test i18n Setup
+- **Feedback**: Avoid inconsistent and ad-hoc error returns (e.g. throwing generic `FORBIDDEN` with English text instead of specific domain error codes with parameters). Standardize error definitions, keep translations on client locales, and prevent test specs from having to repeatedly declare manual mock translations.
+- **Actionable Rule**: Always throw `App<Type>Exception` using specific machine-readable `APP_ERROR_CODES` from `@haihire/shared` with dynamic values placed in `params`. Default messages in backend must remain English for logs and dev fallbacks. Client applications translate error codes using `getApiErrorMessage(error, t)`. Centralize test i18n mocks in `vitest.setup.ts` backed by real locale files to eliminate duplicate test mocks.
+
+## 2026-09-28: React Callback Hygiene, Network Gatekeeper & Comprehensive Test Baseline
+- **Feedback**: Prevent subtle runtime bugs (like `DELETE /interviews/[object%20Object]`) caused by passing parameterized callbacks directly to `onClick` which allows `MouseEvent` to overwrite data arguments. Build automated test suites covering all screens and happy/bad cases so that future changes do not break existing behavior.
+- **Actionable Rule**: Never pass parameterized callbacks directly to `onClick`; always wrap with `() => fn(item)`. Add client-side Axios gatekeepers to reject malformed URL segments before network requests. Maintain full test suite coverage (200+ tests across backend and frontend) and verify with `pnpm test` on every milestone.
+
 ## 2026-09-23: Standardized Project Commands & package.json First
 - **Feedback**: Always check if a command already exists in `package.json` before running tasks. Do not arbitrarily append parameters or run varied ad-hoc commands. If a command or script is missing, explain its purpose and propose adding it to `package.json` to establish a unified, standard command suite across the entire project.
 - **Actionable Rule**: Check root and workspace `package.json` files first. Run existing scripts as configured. If a standard command is missing (e.g. `typecheck`, `lint:frontend`, `lint:backend`), propose it explicitly to the user before adding it to `package.json`.

@@ -4858,7 +4858,7 @@
     "storageHash": "42054e8c4b0f71517a63230f595080753f3aae773134d3f454999ecac182f27c"
   },
   "execution": {
-    "executionHash": "0e50d3ac55cd1bb8d6595db6bbf3a1ef491fae96f6eff9e2ae842a7955555f0b",
+    "executionHash": "c27aefd0d3dc25d690b797af39bfdd4b9307eaa0379c7e60a5555abe82990ced",
     "mutations": {
       "defaults": [
         {
@@ -4867,9 +4867,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "activityLog"
+            "entry": "activityLog",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4882,9 +4882,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "activityLog"
+            "entry": "activityLog",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4893,9 +4893,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "application"
+            "entry": "application",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4908,9 +4908,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "application"
+            "entry": "application",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4919,9 +4919,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "candidate"
+            "entry": "candidate",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4934,9 +4934,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "candidate"
+            "entry": "candidate",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4945,9 +4945,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "candidateDocument"
+            "entry": "candidateDocument",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4960,9 +4960,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "candidateDocument"
+            "entry": "candidateDocument",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4971,9 +4971,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "emailLog"
+            "entry": "emailLog",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4986,9 +4986,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "emailLog"
+            "entry": "emailLog",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4997,9 +4997,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "emailSetting"
+            "entry": "emailSetting",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5012,9 +5012,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "emailSetting"
+            "entry": "emailSetting",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5023,9 +5023,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "emailTemplate"
+            "entry": "emailTemplate",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5038,9 +5038,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "emailTemplate"
+            "entry": "emailTemplate",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5049,9 +5049,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "interview"
+            "entry": "interview",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5064,9 +5064,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "interview"
+            "entry": "interview",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5075,9 +5075,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "inviteLink"
+            "entry": "inviteLink",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5090,9 +5090,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "inviteLink"
+            "entry": "inviteLink",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5101,9 +5101,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "job"
+            "entry": "job",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5116,9 +5116,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "job"
+            "entry": "job",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5127,9 +5127,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "organization"
+            "entry": "organization",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5142,9 +5142,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "organization"
+            "entry": "organization",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5153,9 +5153,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "organizationMember"
+            "entry": "organizationMember",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5168,9 +5168,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "organizationMember"
+            "entry": "organizationMember",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5179,9 +5179,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "user"
+            "entry": "user",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5194,9 +5194,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "user"
+            "entry": "user",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         }
       ]
@@ -5215,6 +5215,8 @@
       "checkConstraint": true,
       "defaultInInsert": true,
       "enums": true,
+      "insertOnConflictSkip": true,
+      "insertOnConflictWithoutTarget": true,
       "lateral": true,
       "returning": true,
       "scalarList": true

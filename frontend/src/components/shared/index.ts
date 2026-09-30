@@ -15,3 +15,5 @@ export * from "./segmented-tabs";
 export * from "./pagination";
 export * from "./search-input";
 export * from "./slide-over";
+export * from "./confirm-destructive-modal";
+export * from "./custom-modal";

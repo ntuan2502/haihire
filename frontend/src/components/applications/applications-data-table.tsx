@@ -22,6 +22,7 @@ import {
   MessageSquare,
   FileCheck,
   RotateCcw,
+  Eye,
 } from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -47,7 +48,7 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import { usePipelineStages } from "@/lib/stages";
-import { getApiBaseUrl } from "@/lib/api";
+import { getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
 import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,
@@ -196,11 +197,30 @@ export function ApplicationsDataTable({
     }
   };
 
-  const handleCancelInterview = async (interviewId?: string) => {
+  const handleCancelInterview = async (
+    interviewOrId?: ScheduledInterviewInfo | string,
+  ) => {
     if (!currentApp) return;
     try {
-      const targetId = interviewId || (currentApp.interviews && currentApp.interviews[0]?.id);
-      if (targetId) {
+      let targetId: string | undefined;
+      if (typeof interviewOrId === "string") {
+        targetId = interviewOrId;
+      } else if (
+        interviewOrId &&
+        typeof interviewOrId === "object" &&
+        "id" in interviewOrId &&
+        typeof interviewOrId.id === "string"
+      ) {
+        targetId = interviewOrId.id;
+      } else if (
+        currentApp.interviews &&
+        currentApp.interviews.length > 0 &&
+        currentApp.interviews[0]?.id
+      ) {
+        targetId = currentApp.interviews[0].id;
+      }
+
+      if (targetId && typeof targetId === "string") {
         await deleteInterviewMutation.mutateAsync(targetId);
       }
     } catch (err) {
@@ -448,35 +468,11 @@ export function ApplicationsDataTable({
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
     const activeAppId = targetAppId || selectedApp?.id;
-    const apiUrl = getApiBaseUrl();
-    try {
-      const targetUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
+    const downloadPath = activeAppId
+      ? `/applications/${activeAppId}/documents/download${queryString}`
+      : url;
 
-      const response = await fetch(targetUrl);
-      if (!response.ok) throw new Error("Download request failed");
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-    } catch {
-      const fallbackUrl = activeAppId
-        ? `${apiUrl}/applications/${activeAppId}/documents/download${queryString}`
-        : url;
-      const a = document.createElement("a");
-      a.href = fallbackUrl;
-      a.download = downloadFileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    await downloadAuthenticatedFile(downloadPath, downloadFileName);
   };
 
   const drawerCandidateDocuments = useMemo(() => {
@@ -833,6 +829,9 @@ export function ApplicationsDataTable({
                       </span>
                     </th>
                   )}
+                  <th className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500">
+                    {t("common.actions")}
+                  </th>
                 </tr>
               </thead>
 
@@ -907,6 +906,37 @@ export function ApplicationsDataTable({
                           {formatRelativeTime(application.createdAt)}
                         </td>
                       )}
+
+                      {/* Actions */}
+                      <td className="py-4 px-5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Quick View */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/applications/${application.id}`);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+                            title={t("common.view")}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteModalApp(application);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
+                              title={t("common.delete")}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}

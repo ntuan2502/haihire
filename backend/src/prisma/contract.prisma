@@ -115,6 +115,8 @@ model Organization {
   documents      CandidateDocument[]
   createdAt   DateTime             @default(now())
   updatedAt   temporal.updatedAt()
+
+  @@map("organization")
 }
 
 model User {
@@ -131,6 +133,8 @@ model User {
   memberships    OrganizationMember[]
   createdAt      DateTime             @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@map("user")
 }
 
 model OrganizationMember {
@@ -144,6 +148,7 @@ model OrganizationMember {
   updatedAt      temporal.updatedAt()
 
   @@index([organizationId, userId])
+  @@map("organizationMember")
 }
 
 model InviteLink {
@@ -160,6 +165,8 @@ model InviteLink {
   createdBy      User?        @relation(fields: [createdById], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@map("inviteLink")
 }
 
 model Job {
@@ -184,6 +191,7 @@ model Job {
   updatedAt       temporal.updatedAt()
 
   @@index([organizationId, status])
+  @@map("job")
 }
 
 model Candidate {
@@ -210,6 +218,7 @@ model Candidate {
   updatedAt      temporal.updatedAt()
 
   @@unique([organizationId, email])
+  @@map("candidate")
 }
 
 model Application {
@@ -235,6 +244,7 @@ model Application {
   @@unique([candidateId, jobId])
   @@index([jobId, stage])
   @@index([candidateId])
+  @@map("application")
 }
 
 model Interview {
@@ -254,6 +264,7 @@ model Interview {
   updatedAt      temporal.updatedAt()
 
   @@index([applicationId])
+  @@map("interview")
 }
 
 model EmailTemplate {
@@ -270,6 +281,7 @@ model EmailTemplate {
   updatedAt      temporal.updatedAt()
 
   @@unique([organizationId, type])
+  @@map("emailTemplate")
 }
 
 model EmailSetting {
@@ -287,6 +299,8 @@ model EmailSetting {
   sendgridApiKey String?
   createdAt      DateTime     @default(now())
   updatedAt      temporal.updatedAt()
+
+  @@map("emailSetting")
 }
 
 model EmailLog {
@@ -314,6 +328,7 @@ model EmailLog {
 
   @@index([organizationId, createdAt])
   @@index([scope, createdAt])
+  @@map("emailLog")
 }
 
 model ActivityLog {
@@ -336,6 +351,7 @@ model ActivityLog {
 
   @@index([organizationId, createdAt])
   @@index([candidateId])
+  @@map("activityLog")
 }
 
 model CandidateDocument {
@@ -354,6 +370,7 @@ model CandidateDocument {
 
   @@index([candidateId])
   @@index([organizationId])
+  @@map("candidateDocument")
 }
 
 

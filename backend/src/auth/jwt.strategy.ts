@@ -1,4 +1,6 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { AppUnauthorizedException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { PrismaService } from "../prisma/prisma.service";
@@ -37,7 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       .first();
 
     if (!user) {
-      throw new UnauthorizedException("User not found or token invalid");
+      throw new AppUnauthorizedException(APP_ERROR_CODES.UNAUTHORIZED, "User not found or token invalid");
     }
 
     return user;

@@ -19,6 +19,7 @@ import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 
 @Controller("interviews")
+@UseGuards(AuthGuard("jwt"))
 export class InterviewsController {
   constructor(
     @Inject(InterviewsService)
@@ -37,11 +38,10 @@ export class InterviewsController {
     @Query("tab") tab?: string,
     @Query("sortBy") sortBy?: string,
   ) {
-    const orgId = organizationId || req?.user?.organizationId || undefined;
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
     return this.interviewsService.findAll({
-      organizationId: orgId,
+      organizationId,
       jobId,
       applicationId,
       page: pageNum,
@@ -49,32 +49,47 @@ export class InterviewsController {
       search,
       tab,
       sortBy,
+      tenantOrgId: req?.user?.organizationId,
     });
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.interviewsService.findOne(id);
+  findOne(
+    @Param("id") id: string,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.findOne(id, req?.user?.organizationId);
   }
 
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN", "MEMBER")
-  create(@Body() dto: CreateInterviewDto) {
-    return this.interviewsService.create(dto);
+  @Roles("ADMIN")
+  create(
+    @Body() dto: CreateInterviewDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.create(dto, req?.user?.organizationId);
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN", "MEMBER")
-  update(@Param("id") id: string, @Body() dto: UpdateInterviewDto) {
-    return this.interviewsService.update(id, dto);
+  @Roles("ADMIN")
+  update(
+    @Param("id") id: string,
+    @Body() dto: UpdateInterviewDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.update(id, dto, req?.user?.organizationId);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN", "MEMBER")
-  remove(@Param("id") id: string) {
-    return this.interviewsService.remove(id);
+  @Roles("ADMIN")
+  remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.remove(id, req?.user?.organizationId);
   }
 }
+

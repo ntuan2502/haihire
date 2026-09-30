@@ -144,7 +144,7 @@ updated: 2026-09-18T20:53
 - **Domain-Driven Directory Structure**:
   - API endpoints must be organized by domain under `frontend/src/lib/api/<domain>.ts` (e.g., `jobs.ts`, `candidates.ts`, `applications.ts`, `auth.ts`, `email.ts`, `interviews.ts`, `organizations.ts`, `activities.ts`) sharing a unified `client.ts` Axios instance.
   - React Query hooks must be organized by domain under `frontend/src/hooks/use-<domain>-queries.ts` sharing a centralized `query-keys.ts` factory.
-- **Backward-Compatible Barrel Exports**: Always provide a barrel re-export (`index.ts` and root file `lib/api.ts` / `hooks/use-queries.ts`) so existing consumers and imports do not break.
+- **Direct Folder Resolution (No Redundant Proxy Files)**: When modularizing into a subdirectory (e.g., `frontend/src/lib/api/`), the folder's `index.ts` is the single source of truth for barrel exports. Never create an overlapping root file with the same name (such as `frontend/src/lib/api.ts` right next to `frontend/src/lib/api/`). TypeScript and bundlers automatically resolve `@/lib/api` directly to `frontend/src/lib/api/index.ts`. Extra wrapper files add pointless indirection and resolution ambiguity.
 
 ## Node 26+ Runtime & Tooling Conventions (MANDATORY)
 - **No Corepack on Node 26+**: Node 26 has removed Corepack from its standard distribution. Never call `corepack enable` in CI workflows, Dockerfiles, setup scripts, or documentation.

@@ -91,7 +91,7 @@ updated: 2026-09-18
 - **Centralized Test Setup**: Eliminate ad-hoc `mockTranslations` across test specs by using centralized `useI18n` mocks backed by real locale files.
 
 ## Anti-Monolith Modular Architecture
-- **Proactive Modularization**: Never let API clients or hook files grow into monolithic files over 300-400 lines. Split by domain (`lib/api/<domain>.ts`, `hooks/use-<domain>-queries.ts`) with seamless barrel re-exports.
+- **Proactive Modularization**: Never let API clients or hook files grow into monolithic files over 300-400 lines. Split by domain (`lib/api/<domain>.ts`, `hooks/use-<domain>-queries.ts`). Use directory `index.ts` directly for barrel resolution (`@/lib/api`) and never create an overlapping file with the identical name (e.g. `lib/api.ts` next to `lib/api/`).
 
 ## Node 26+ Tooling Verification (No Corepack)
 - **Tooling Awareness**: Node 26 removed Corepack by default. Always install `pnpm@12` explicitly via `npm install -g pnpm@12` in CI/Docker rather than calling `corepack enable`.

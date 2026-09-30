@@ -3,8 +3,11 @@ FROM node:26-alpine AS builder
 
 RUN apk add --no-cache libc6-compat
 
-# Install latest pnpm (no pinned version)
-RUN npm install -g pnpm
+# Install latest pnpm and clean npm cache
+RUN npm install -g pnpm && npm cache clean --force
+
+# Disable Next.js telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
@@ -39,11 +42,14 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy Next.js standalone build artifacts and static assets (zero package install needed)
-COPY --from=builder /app/frontend/public ./frontend/public
-COPY --from=builder /app/frontend/.next/standalone ./
-COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
+COPY --from=builder --chown=node:node /app/frontend/public ./frontend/public
+COPY --from=builder --chown=node:node /app/frontend/.next/standalone ./
+COPY --from=builder --chown=node:node /app/frontend/.next/static ./frontend/.next/static
+
+USER node
 
 WORKDIR /app/frontend
 

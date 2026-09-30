@@ -29,8 +29,7 @@ export type InterviewType =
 export type InterviewFormat = "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
 
 export interface InterviewUpdatePayload {
-  date?: string;
-  time?: string;
+  scheduledAt?: Temporal.Instant;
   type?: InterviewType;
   format?: InterviewFormat;
   linkOrLocation?: string;
@@ -38,6 +37,7 @@ export interface InterviewUpdatePayload {
   round?: number;
   notes?: string | null;
   scorecard?: string | null;
+  updatedAt?: Temporal.Instant;
 }
 
 @Injectable()
@@ -237,11 +237,17 @@ export class InterviewsService {
             parsedScorecard = null;
           }
         }
+        const ms = toTimestamp(intv.scheduledAt);
+        const dt = ms ? new Date(ms) : new Date();
+        const date = dt.toISOString().split("T")[0];
+        const time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
+
         return {
           id: intv.id,
           applicationId: intv.applicationId,
-          date: intv.date,
-          time: intv.time,
+          scheduledAt: intv.scheduledAt,
+          date,
+          time,
           type: fixUtf8String(intv.type),
           format: intv.format,
           linkOrLocation: fixUtf8String(intv.linkOrLocation),
@@ -437,8 +443,16 @@ export class InterviewsService {
       }
     }
 
+    const ms = toTimestamp(intv.scheduledAt);
+    const dt = ms ? new Date(ms) : new Date();
+    const date = dt.toISOString().split("T")[0];
+    const time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
+
     return {
       ...intv,
+      date,
+      time,
+      scheduledAt: intv.scheduledAt,
       type: fixUtf8String(intv.type),
       linkOrLocation: fixUtf8String(intv.linkOrLocation),
       interviewer: fixUtf8String(intv.interviewer),
@@ -494,11 +508,21 @@ export class InterviewsService {
     const id = crypto.randomUUID();
     const scorecardStr = dto.scorecard ? (typeof dto.scorecard === "string" ? dto.scorecard : JSON.stringify(dto.scorecard)) : null;
 
+    let scheduledInstant: Temporal.Instant;
+    if (dto.scheduledAt) {
+      const parsed = new Date(dto.scheduledAt);
+      scheduledInstant = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
+    } else {
+      const rawDate = dto.date || new Date().toISOString().split("T")[0];
+      const rawTime = dto.time && dto.time.length === 5 ? `${dto.time}:00` : (dto.time || "00:00:00");
+      const parsed = new Date(`${rawDate}T${rawTime}Z`);
+      scheduledInstant = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
+    }
+
     await this.prisma.db.orm.public.Interview.create({
       id,
       applicationId: dto.applicationId,
-      date: dto.date,
-      time: dto.time,
+      scheduledAt: scheduledInstant,
       type: dto.type as InterviewType,
       format: (dto.format as InterviewFormat) || "MEET",
       linkOrLocation: dto.linkOrLocation || "",
@@ -588,11 +612,20 @@ export class InterviewsService {
   }
 
   async update(id: string, dto: UpdateInterviewDto, tenantOrgId?: string | null) {
-    await this.findOne(id, tenantOrgId);
+    const existing = await this.findOne(id, tenantOrgId);
 
     const updateData: InterviewUpdatePayload = {};
-    if (dto.date !== undefined) updateData.date = dto.date;
-    if (dto.time !== undefined) updateData.time = dto.time;
+    if (dto.scheduledAt !== undefined) {
+      const parsed = new Date(dto.scheduledAt);
+      updateData.scheduledAt = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
+    } else if (dto.date !== undefined || dto.time !== undefined) {
+      const newDate = dto.date !== undefined ? dto.date : existing.date;
+      const rawTime = dto.time !== undefined ? dto.time : existing.time;
+      const newTime = rawTime && rawTime.length === 5 ? `${rawTime}:00` : (rawTime || "00:00:00");
+      const parsed = new Date(`${newDate}T${newTime}Z`);
+      updateData.scheduledAt = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
+    }
+
     if (dto.type !== undefined) updateData.type = dto.type as InterviewType;
     if (dto.format !== undefined) updateData.format = dto.format as InterviewFormat;
     if (dto.linkOrLocation !== undefined) updateData.linkOrLocation = dto.linkOrLocation;
@@ -602,6 +635,7 @@ export class InterviewsService {
     if (dto.scorecard !== undefined) {
       updateData.scorecard = typeof dto.scorecard === "string" ? dto.scorecard : JSON.stringify(dto.scorecard);
     }
+    updateData.updatedAt = toInstant();
 
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).update(updateData);
     const updated = await this.findOne(id, tenantOrgId);

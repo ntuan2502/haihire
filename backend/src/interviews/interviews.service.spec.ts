@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NotFoundException } from "@nestjs/common";
 import { AppBadRequestException, AppForbiddenException } from "../common/app-exception";
+import { toTimestamp } from "../common/date.util";
 import { InterviewsService } from "./interviews.service";
 
 describe("InterviewsService", () => {
@@ -9,8 +10,7 @@ describe("InterviewsService", () => {
   interface MockInterview {
     id: string;
     applicationId: string;
-    date: string;
-    time: string;
+    scheduledAt: Date;
     type: string;
     format: string;
     linkOrLocation: string;
@@ -58,8 +58,7 @@ describe("InterviewsService", () => {
       {
         id: "intv-1",
         applicationId: "app-1",
-        date: "2026-09-20",
-        time: "10:00",
+        scheduledAt: new Date("2026-09-20T10:00:00Z"),
         type: "Technical",
         format: "MEET",
         linkOrLocation: "https://meet.google.com/test",
@@ -190,7 +189,12 @@ describe("InterviewsService", () => {
                 }),
               })),
               create: vi.fn().mockImplementation(async (data) => {
-                const newIntv = { ...data, createdAt: new Date(), updatedAt: new Date() };
+                const newIntv = {
+                  ...data,
+                  scheduledAt: data.scheduledAt ? new Date(toTimestamp(data.scheduledAt)) : new Date(),
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
                 mockInterviews.push(newIntv);
                 return newIntv;
               }),

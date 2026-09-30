@@ -9,6 +9,10 @@ import {
 export class UpdateInterviewDto {
   @IsString()
   @IsOptional()
+  scheduledAt?: string;
+
+  @IsString()
+  @IsOptional()
   date?: string;
 
   @IsString()

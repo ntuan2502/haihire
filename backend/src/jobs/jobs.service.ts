@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppNotFoundException, AppForbiddenException } from "../common/app-exception";
+import { AppNotFoundException, AppForbiddenException, AppBadRequestException } from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
@@ -87,11 +87,14 @@ export class JobsService {
       "createdById",
       "createdAt",
       "updatedAt",
+      "deletedAt",
     );
 
     let jobs = targetOrgId
       ? await jobsQuery.where((j) => j.organizationId.eq(targetOrgId!)).all()
       : await jobsQuery.all();
+
+    jobs = jobs.filter((j) => !j.deletedAt);
 
     if (filter?.status) {
       const statuses = filter.status.split(",").map((s) => s.trim().toUpperCase());
@@ -226,11 +229,12 @@ export class JobsService {
       "createdById",
       "createdAt",
       "updatedAt",
+      "deletedAt",
     )
       .where((j) => j.id.eq(id))
       .first();
 
-    if (!job) {
+    if (!job || job.deletedAt) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${id} not found`,
@@ -373,9 +377,12 @@ export class JobsService {
       "createdById",
       "createdAt",
       "updatedAt",
+      "deletedAt",
     )
       .where((j) => j.organizationId.eq(org.id))
       .all();
+
+    const activeJobs = jobs.filter((j) => !j.deletedAt);
 
     const slugify = (str: string) =>
       str
@@ -387,7 +394,7 @@ export class JobsService {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
-    const matchedJob = jobs.find((j) => {
+    const matchedJob = activeJobs.find((j) => {
       if (j.id === jobSlug) return true;
       if (j.id.startsWith(jobSlug)) return true;
       const titleSlug = slugify(j.title);
@@ -417,26 +424,30 @@ export class JobsService {
       );
     }
 
-    const created = await this.prisma.db.orm.public.Job.upsert({
-      create: {
-        id: crypto.randomUUID(),
-        title: dto.title,
-        department: dto.department,
-        location: dto.location,
-        postalCode: dto.postalCode ?? null,
-        experienceLevel: dto.experienceLevel ?? null,
-        workplace: dto.workplace ?? null,
-        type: dto.type ?? "FULL_TIME",
-        description: dto.description,
-        requirements: dto.requirements ?? null,
-        salaryRange: dto.salaryRange ?? null,
-        status: dto.status ?? "PUBLISHED",
-        organizationId: (tenantOrgId || dto.organizationId) ?? null,
-        createdById: (userId || dto.createdById) ?? null,
-        updatedAt: toInstant(),
-      },
-      update: {},
-      conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
+    const targetOrgId = tenantOrgId || dto.organizationId;
+    if (!targetOrgId) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Organization ID is required to create a job",
+      );
+    }
+
+    const created = await this.prisma.db.orm.public.Job.create({
+      id: crypto.randomUUID(),
+      title: dto.title,
+      department: dto.department,
+      location: dto.location,
+      postalCode: dto.postalCode ?? null,
+      experienceLevel: dto.experienceLevel ?? null,
+      workplace: dto.workplace ?? null,
+      type: dto.type ?? "FULL_TIME",
+      description: dto.description,
+      requirements: dto.requirements ?? null,
+      salaryRange: dto.salaryRange ?? null,
+      status: dto.status ?? "PUBLISHED",
+      organizationId: targetOrgId,
+      createdById: (userId || dto.createdById) ?? null,
+      updatedAt: toInstant(),
     });
 
     return created;
@@ -489,11 +500,10 @@ export class JobsService {
       );
     }
 
-    // Delete associated applications first
-    await this.prisma.db.orm.public.Application.where((a) =>
-      a.jobId.eq(id),
-    ).delete();
-    await this.prisma.db.orm.public.Job.where((j) => j.id.eq(id)).delete();
+    // Soft delete: set deletedAt timestamp (Two-Tier Deletion Protocol)
+    await this.prisma.db.orm.public.Job.where((j) => j.id.eq(id)).update({
+      deletedAt: toInstant(),
+    });
 
     return { success: true, message: `Job ${id} deleted successfully` };
   }

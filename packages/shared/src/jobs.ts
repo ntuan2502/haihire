@@ -47,8 +47,9 @@ export interface Job {
   salaryRange?: string | null;
   status: JobStatus;
   createdById?: string | null;
-  organizationId?: string | null;
+  organizationId: string;
   organization?: Organization | null;
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   applicationsCount?: number;

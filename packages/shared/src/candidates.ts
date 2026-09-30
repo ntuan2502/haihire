@@ -34,6 +34,7 @@ export interface Candidate {
   resumeFileName?: string | null;
   resumeFileSize?: number | null;
   resumeMimeType?: string | null;
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   applicationsCount?: number;

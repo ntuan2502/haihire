@@ -171,6 +171,16 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
                 return createCandidateQuery();
               }),
               where: vi.fn().mockImplementation((predicateFn) => ({
+                update: vi.fn().mockImplementation(async (updates) => {
+                  const target = dbState.candidates.find((c) =>
+                    predicateFn({ id: { eq: (targetId: string) => c.id === targetId } }),
+                  );
+                  if (target) {
+                    Object.assign(target, updates);
+                    return { ...target };
+                  }
+                  return null;
+                }),
                 delete: vi.fn().mockImplementation(async () => {
                   const idx = dbState.candidates.findIndex((c) =>
                     predicateFn({ id: { eq: (target: string) => c.id === target } }),
@@ -390,12 +400,15 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     );
     expect(updatedApp.stage).toBe("INTERVIEW");
 
-    // 6. Verify Cascade Deletion of Candidate & Relations
+    // 6. Verify Soft Deletion of Candidate (Two-Tier Deletion Protocol)
     const deleteResult = await candidatesService.remove(createdCandidate.id);
     expect(deleteResult.success).toBe(true);
 
-    // Verify candidate and associated application were removed
-    expect(dbState.candidates.length).toBe(0);
-    expect(dbState.applications.length).toBe(0);
+    // Verify candidate is marked with deletedAt and excluded from active listing
+    const candidateInDb = dbState.candidates.find((c) => c.id === createdCandidate.id);
+    expect(candidateInDb?.deletedAt).toBeDefined();
+
+    const pagedAfterDelete = await candidatesService.findAll("org-1", { limit: 10 });
+    expect(pagedAfterDelete.data.length).toBe(0);
   });
 });

@@ -4,6 +4,16 @@ created: 2026-07-18
 updated: 2026-09-18
 ---
 
+## 2026-09-30: Monolithic Code Splitting, Node 26 Corepack Deprecation & HttpOnly Security
+- **Feedback**: Avoid accumulating monolithic mega-files (>300-500 lines) such as centralized `api.ts` or sprawling React Query hooks. Verify modern runtime and tooling deprecations before implementation (Node 26 removed Corepack by default; pnpm must be installed explicitly via npm). Ensure documented conventions (like Two-Tier Soft Delete) are actively implemented in database schema and services rather than remaining theoretical. Enforce web security baselines (HttpOnly cookies, SSE withCredentials, image domain whitelists, demo account locking) and enforce Conventional Commits via Commitlint and Husky git hooks.
+- **Actionable Rule**:
+  1. Modularize API clients and React Query hooks by domain under dedicated directories (`lib/api/<domain>.ts`, `hooks/use-<domain>-queries.ts`) with barrel re-exports (`index.ts`). Prevent individual files from exceeding 300-400 lines.
+  2. For Node 26+ environments, install pnpm explicitly via `npm install -g pnpm@12` in CI pipelines and Dockerfiles; never invoke `corepack enable`.
+  3. Authenticate client sessions via backend-issued `HttpOnly`, `SameSite=Lax`, `Secure` cookies (`haihire_token`). Never persist authentication tokens in client `localStorage`. SSE connections must use `withCredentials: true` without URL query tokens.
+  4. Whitelist remote image hosts explicitly in `next.config.ts`; wildcards (`**`) are strictly prohibited.
+  5. Enforce Conventional Commits (`type(scope): description`) via Commitlint and Husky hooks (`.husky/commit-msg` and `.husky/pre-commit`).
+  6. Any architectural convention documented in memory must be implemented end-to-end (schema, DTOs, services, tests).
+
 ## 2026-09-29: Error Contract Standardization, Isolated Dynamic Params & Centralized Test i18n Setup
 - **Feedback**: Avoid inconsistent and ad-hoc error returns (e.g. throwing generic `FORBIDDEN` with English text instead of specific domain error codes with parameters). Standardize error definitions, keep translations on client locales, and prevent test specs from having to repeatedly declare manual mock translations.
 - **Actionable Rule**: Always throw `App<Type>Exception` using specific machine-readable `APP_ERROR_CODES` from `@haihire/shared` with dynamic values placed in `params`. Default messages in backend must remain English for logs and dev fallbacks. Client applications translate error codes using `getApiErrorMessage(error, t)`. Centralize test i18n mocks in `vitest.setup.ts` backed by real locale files to eliminate duplicate test mocks.

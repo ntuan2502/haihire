@@ -25,6 +25,15 @@ lerna-debug.log*
 # Database & Storage
 postgres_data/
 minio_data/
+redis_data/
+
+# Testing & Coverage
+coverage/
+.vitest/
+
+# Linter & Tooling Cache
+.eslintcache
+*.tsbuildinfo
 
 # OS Files
 .DS_Store
@@ -35,4 +44,8 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-*.tsbuildinfo
+
+# Local Overrides & Temp
+*.tmp
+*.temp
+docker-compose.override.yml

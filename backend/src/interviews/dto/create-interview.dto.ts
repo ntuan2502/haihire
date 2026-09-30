@@ -12,12 +12,16 @@ export class CreateInterviewDto {
   applicationId!: string;
 
   @IsString()
-  @IsNotEmpty()
-  date!: string;
+  @IsOptional()
+  scheduledAt?: string;
 
   @IsString()
-  @IsNotEmpty()
-  time!: string;
+  @IsOptional()
+  date?: string;
+
+  @IsString()
+  @IsOptional()
+  time?: string;
 
   @IsString()
   @IsNotEmpty()

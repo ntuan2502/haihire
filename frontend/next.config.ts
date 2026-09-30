@@ -60,16 +60,33 @@ function getAllowedDevOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingRoot: path.resolve(process.cwd(), ".."),
   allowedDevOrigins: getAllowedDevOrigins(),
   images: {
     remotePatterns: [
       {
         protocol: "http",
-        hostname: "**",
+        hostname: "localhost",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+      },
+      {
+        protocol: "http",
+        hostname: "minio",
       },
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.githubusercontent.com",
       },
     ],
   },

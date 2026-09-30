@@ -794,6 +794,13 @@
                   "kind": "scalar"
                 }
               },
+              "deletedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "email": {
                 "nullable": false,
                 "type": {
@@ -984,6 +991,9 @@
                 },
                 "dateOfBirth": {
                   "column": "dateOfBirth"
+                },
+                "deletedAt": {
+                  "column": "deletedAt"
                 },
                 "email": {
                   "column": "email"
@@ -1742,13 +1752,6 @@
                   "kind": "scalar"
                 }
               },
-              "date": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
               "format": {
                 "nullable": false,
                 "type": {
@@ -1797,15 +1800,15 @@
                   "kind": "scalar"
                 }
               },
-              "scorecard": {
-                "nullable": true,
+              "scheduledAt": {
+                "nullable": false,
                 "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
                 }
               },
-              "time": {
-                "nullable": false,
+              "scorecard": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -1858,9 +1861,6 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
-                "date": {
-                  "column": "date"
-                },
                 "format": {
                   "column": "format"
                 },
@@ -1879,11 +1879,11 @@
                 "round": {
                   "column": "round"
                 },
+                "scheduledAt": {
+                  "column": "scheduledAt"
+                },
                 "scorecard": {
                   "column": "scorecard"
-                },
-                "time": {
-                  "column": "time"
                 },
                 "type": {
                   "column": "type"
@@ -2078,6 +2078,13 @@
                   "kind": "scalar"
                 }
               },
+              "deletedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "department": {
                 "nullable": false,
                 "type": {
@@ -2120,7 +2127,7 @@
                 }
               },
               "organizationId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -2235,7 +2242,7 @@
               },
               "organization": {
                 "cardinality": "N:1",
-                "nullable": true,
+                "nullable": false,
                 "on": {
                   "localFields": [
                     "organizationId"
@@ -2257,6 +2264,9 @@
                 },
                 "createdById": {
                   "column": "createdById"
+                },
+                "deletedAt": {
+                  "column": "deletedAt"
                 },
                 "department": {
                   "column": "department"
@@ -2903,6 +2913,7 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "organizationId"
@@ -3192,6 +3203,11 @@
                   "nativeType": "timestamptz",
                   "nullable": true
                 },
+                "deletedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "email": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -3399,6 +3415,7 @@
                   }
                 },
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "organizationId"
@@ -3590,6 +3607,7 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "organizationId"
@@ -3606,6 +3624,7 @@
                   }
                 },
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "candidateId"
@@ -3622,6 +3641,7 @@
                   }
                 },
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "applicationId"
@@ -3775,6 +3795,7 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "organizationId"
@@ -3881,6 +3902,7 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "organizationId"
@@ -3949,11 +3971,6 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
-                "date": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
                 "format": {
                   "codecId": "pg/text@1",
                   "default": {
@@ -3998,15 +4015,15 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "scheduledAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
                 "scorecard": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
-                },
-                "time": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
                 },
                 "type": {
                   "codecId": "pg/text@1",
@@ -4165,6 +4182,7 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "organizationId"
@@ -4266,6 +4284,11 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "deletedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "department": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -4300,7 +4323,7 @@
                 "organizationId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "postalCode": {
                   "codecId": "pg/text@1",
@@ -4545,6 +4568,7 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "organizationId"
@@ -4855,7 +4879,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "42054e8c4b0f71517a63230f595080753f3aae773134d3f454999ecac182f27c"
+    "storageHash": "9f11fae4185177e2ec70b3343f6bbd27a118946d2bd378bdc6ed904fa8e2f427"
   },
   "execution": {
     "executionHash": "c27aefd0d3dc25d690b797af39bfdd4b9307eaa0379c7e60a5555abe82990ced",

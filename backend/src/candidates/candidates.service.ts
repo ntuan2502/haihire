@@ -65,11 +65,14 @@ export class CandidatesService {
       "resumeMimeType",
       "createdAt",
       "updatedAt",
+      "deletedAt",
     )
       .where((c) => c.organizationId.eq(targetOrgId))
       .all();
 
-    if (candidates.length === 0) {
+    let filtered = candidates.filter((c) => !c.deletedAt);
+
+    if (filtered.length === 0) {
       return {
         data: [],
         total: 0,
@@ -78,8 +81,6 @@ export class CandidatesService {
         totalPages: 0,
       };
     }
-
-    let filtered = candidates;
     if (options?.search && options.search.trim() !== "") {
       const q = options.search.trim().toLowerCase();
       filtered = filtered.filter(
@@ -166,11 +167,12 @@ export class CandidatesService {
       "resumeMimeType",
       "createdAt",
       "updatedAt",
+      "deletedAt",
     )
       .where((c) => c.id.eq(id))
       .first();
 
-    if (!candidate) {
+    if (!candidate || candidate.deletedAt) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
         `Candidate with ID ${id} not found`,
@@ -681,19 +683,11 @@ export class CandidatesService {
   async remove(id: string, tenantOrgId?: string | null) {
     await this.findOne(id, tenantOrgId);
 
-    try {
-      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
-    } catch {
-      // Fallback manual cleanup for relations if DB-level cascade is bypassed
-      try {
-        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.candidateId.eq(id)).delete();
-      } catch {}
-      try {
-        await this.prisma.db.orm.public.Application.where((a) => a.candidateId.eq(id)).delete();
-      } catch {}
-      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();
-    }
+    // Soft delete: set deletedAt timestamp (Two-Tier Deletion Protocol)
+    await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
+      deletedAt: toInstant(),
+    });
 
-    return { success: true, message: `Candidate ${id} and all applications deleted successfully` };
+    return { success: true, message: `Candidate ${id} deleted successfully` };
   }
 }

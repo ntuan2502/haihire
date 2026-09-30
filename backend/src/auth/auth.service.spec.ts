@@ -73,6 +73,15 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
                   }),
                 })),
               })),
+              create: vi.fn().mockImplementation(async (data) => {
+                const newUser = {
+                  ...data,
+                  organizationId: null,
+                  createdAt: new Date(),
+                };
+                mockUsers.push(newUser);
+                return newUser;
+              }),
               upsert: vi.fn().mockImplementation(async ({ create }) => {
                 const newUser = {
                   ...create,

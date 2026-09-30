@@ -3,8 +3,8 @@ FROM node:26-alpine AS builder
 
 RUN apk add --no-cache libc6-compat
 
-# Install latest pnpm (no pinned version)
-RUN npm install -g pnpm
+# Install latest pnpm and clean npm cache
+RUN npm install -g pnpm && npm cache clean --force
 
 WORKDIR /app
 
@@ -30,8 +30,8 @@ FROM node:26-alpine AS runner
 
 RUN apk add --no-cache libc6-compat
 
-# Install latest pnpm (no pinned version)
-RUN npm install -g pnpm
+# Install latest pnpm and clean npm cache
+RUN npm install -g pnpm && npm cache clean --force
 
 WORKDIR /app
 
@@ -52,7 +52,12 @@ COPY --from=builder /app/packages/shared/src ./packages/shared/src
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/src/prisma ./backend/src/prisma
 
+# Use non-root node user for container security
+RUN chown -R node:node /app
+
 WORKDIR /app/backend
+
+USER node
 
 EXPOSE 3001
 

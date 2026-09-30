@@ -13,10 +13,10 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppForbiddenException } from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
-import { AppForbiddenException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
@@ -103,57 +103,33 @@ export class JobsController {
     @Body() dto: CreateJobDto,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    const userOrgId = req?.user?.organizationId || undefined;
-    if (dto.organizationId && userOrgId && dto.organizationId !== userOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-        "Access denied: cannot create job for another organization.",
-        { organizationId: dto.organizationId },
-      );
-    }
-    const finalDto = {
-      ...dto,
-      organizationId: userOrgId || dto.organizationId,
-      createdById: req?.user?.id || dto.createdById,
-    };
-    return this.jobsService.create(finalDto);
+    return this.jobsService.create(
+      dto,
+      req?.user?.organizationId,
+      req?.user?.id,
+    );
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  async update(
+  update(
     @Param("id") id: string,
     @Body() dto: UpdateJobDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const job = await this.jobsService.findOne(id);
-    if (req?.user?.organizationId && job.organizationId && req.user.organizationId !== job.organizationId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-        "Access denied: job belongs to another organization.",
-        { id, organizationId: job.organizationId },
-      );
-    }
-    return this.jobsService.update(id, dto);
+    return this.jobsService.update(id, dto, req?.user?.organizationId);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  async remove(
+  remove(
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const job = await this.jobsService.findOne(id);
-    if (req?.user?.organizationId && job.organizationId && req.user.organizationId !== job.organizationId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-        "Access denied: job belongs to another organization.",
-        { id, organizationId: job.organizationId },
-      );
-    }
-    return this.jobsService.remove(id);
+    return this.jobsService.remove(id, req?.user?.organizationId);
   }
 }
+
 

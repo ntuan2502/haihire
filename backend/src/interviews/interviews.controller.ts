@@ -64,22 +64,11 @@ export class InterviewsController {
   }
 
   @Get(":id")
-  async findOne(
+  findOne(
     @Param("id") id: string,
     @Request() req: { user?: { organizationId?: string | null } },
   ) {
-    const interview = await this.interviewsService.findOne(id);
-    const intvOrgId =
-      (interview as unknown as { organizationId?: string })?.organizationId ||
-      (interview as unknown as { application?: { job?: { organizationId?: string } } })?.application?.job?.organizationId;
-    if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
-        "Access denied: interview belongs to another organization.",
-        { id, organizationId: intvOrgId },
-      );
-    }
-    return interview;
+    return this.interviewsService.findOne(id, req?.user?.organizationId);
   }
 
   @Post()
@@ -89,52 +78,28 @@ export class InterviewsController {
     @Body() dto: CreateInterviewDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.interviewsService.create(dto, req?.user?.organizationId || undefined);
+    return this.interviewsService.create(dto, req?.user?.organizationId);
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  async update(
+  update(
     @Param("id") id: string,
     @Body() dto: UpdateInterviewDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const interview = await this.interviewsService.findOne(id);
-    const intvOrgId =
-      (interview as unknown as { organizationId?: string })?.organizationId ||
-      (interview as unknown as { application?: { job?: { organizationId?: string }; candidate?: { organizationId?: string } } })?.application?.job?.organizationId ||
-      (interview as unknown as { application?: { candidate?: { organizationId?: string } } })?.application?.candidate?.organizationId;
-    if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
-        "Access denied: interview belongs to another organization.",
-        { id, organizationId: intvOrgId },
-      );
-    }
-    return this.interviewsService.update(id, dto);
+    return this.interviewsService.update(id, dto, req?.user?.organizationId);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  async remove(
+  remove(
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const interview = await this.interviewsService.findOne(id);
-    const intvOrgId =
-      (interview as unknown as { organizationId?: string })?.organizationId ||
-      (interview as unknown as { application?: { job?: { organizationId?: string }; candidate?: { organizationId?: string } } })?.application?.job?.organizationId ||
-      (interview as unknown as { application?: { candidate?: { organizationId?: string } } })?.application?.candidate?.organizationId;
-    if (req?.user?.organizationId && intvOrgId && req.user.organizationId !== intvOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
-        "Access denied: interview belongs to another organization.",
-        { id, organizationId: intvOrgId },
-      );
-    }
-    return this.interviewsService.remove(id);
+    return this.interviewsService.remove(id, req?.user?.organizationId);
   }
 }
 

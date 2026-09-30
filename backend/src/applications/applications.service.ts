@@ -334,7 +334,7 @@ export class ApplicationsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tenantOrgId?: string | null) {
     const app = await this.prisma.db.orm.public.Application.select(
       "id",
       "candidateId",
@@ -390,6 +390,15 @@ export class ApplicationsService {
     )
       .where((c) => c.id.eq(app.candidateId))
       .first();
+
+    const appOrgId = job?.organizationId || candidate?.organizationId;
+    if (tenantOrgId && appOrgId && tenantOrgId !== appOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Access denied: application belongs to another organization.",
+        { id, organizationId: appOrgId },
+      );
+    }
 
     const appInterviews = (await this.prisma.db.orm.public.Interview
       .where((i) => i.applicationId.eq(id))
@@ -644,8 +653,8 @@ export class ApplicationsService {
     return result;
   }
 
-  async updateStage(id: string, dto: UpdateStageDto) {
-    const existing = await this.findOne(id);
+  async updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) {
+    const existing = await this.findOne(id, tenantOrgId);
     const oldStage = existing.stage;
 
     await this.prisma.db.orm.public.Application.where(
@@ -655,7 +664,7 @@ export class ApplicationsService {
       ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
     });
 
-    const updated = await this.findOne(id);
+    const updated = await this.findOne(id, tenantOrgId);
 
     // Record activity log
     const orgId = updated.job?.organizationId || updated.candidate?.organizationId;
@@ -716,8 +725,8 @@ export class ApplicationsService {
     return updated;
   }
 
-  async updateCandidate(id: string, dto: UpdateCandidateDto) {
-    const existing = await this.findOne(id);
+  async updateCandidate(id: string, dto: UpdateCandidateDto, tenantOrgId?: string | null) {
+    const existing = await this.findOne(id, tenantOrgId);
 
     // Update candidate profile directly
     if (existing.candidateId) {
@@ -734,15 +743,16 @@ export class ApplicationsService {
       ).update(candidateUpdate);
     }
 
-    return this.findOne(id);
+    return this.findOne(id, tenantOrgId);
   }
 
   async uploadDocument(
     id: string,
     file: Express.Multer.File,
     documentType = "Resume",
+    tenantOrgId?: string | null,
   ) {
-    const existing = await this.findOne(id);
+    const existing = await this.findOne(id, tenantOrgId);
 
     if (!file) {
       throw new AppBadRequestException(
@@ -814,14 +824,86 @@ export class ApplicationsService {
       resumeMimeType: uploadResult.mimeType ?? null,
     });
 
-    return this.findOne(id);
+    return this.findOne(id, tenantOrgId);
+  }
+
+  async prepareDocumentDownload(
+    id: string,
+    targetUrl?: string,
+    targetName?: string,
+    tenantOrgId?: string | null,
+  ) {
+    const app = await this.findOne(id, tenantOrgId);
+
+    const downloadUrl = targetUrl || app.resumeUrl;
+    if (!downloadUrl) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Document not found",
+      );
+    }
+
+    // SSRF prevention: Verify that targetUrl belongs to this application
+    if (targetUrl) {
+      const allowedUrls: string[] = [];
+      if (app.resumeUrl) allowedUrls.push(app.resumeUrl);
+      if (app.candidate?.resumeUrl) allowedUrls.push(app.candidate.resumeUrl);
+      if (app.candidateId) {
+        try {
+          const candDocs = await this.getCandidateDocuments(app.candidateId);
+          for (const doc of candDocs) {
+            if (doc?.url) allowedUrls.push(doc.url);
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const isAllowed = allowedUrls.some(
+        (u) => u === targetUrl || this.minioService.extractObjectName(u) === targetObj,
+      );
+      if (!isAllowed) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+          "Access denied: specified document does not belong to this application.",
+          { id },
+        );
+      }
+    }
+
+    const rawName = targetName || app.resumeFileName || "document.pdf";
+    const cleanFileName = fixUtf8String(rawName);
+    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
+    const encodedFileName = encodeURIComponent(cleanFileName);
+
+    let stream: NodeJS.ReadableStream;
+    try {
+      stream = await this.minioService.getObjectStream(downloadUrl);
+    } catch {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Document file could not be retrieved from storage",
+      );
+    }
+
+    return {
+      app,
+      downloadUrl,
+      cleanFileName,
+      asciiFallback,
+      encodedFileName,
+      mimeType: app.resumeMimeType,
+      stream,
+    };
   }
 
   async deleteDocument(
     id: string,
     opts?: { documentId?: string; url?: string },
+    tenantOrgId?: string | null,
   ) {
-    await this.findOne(id);
+    await this.findOne(id, tenantOrgId);
 
     if (opts?.documentId) {
       try {
@@ -842,7 +924,7 @@ export class ApplicationsService {
       resumeMimeType: null,
     });
 
-    return this.findOne(id);
+    return this.findOne(id, tenantOrgId);
   }
 
   async getCandidateDocuments(candidateId: string): Promise<CandidateDocument[]> {
@@ -869,8 +951,8 @@ export class ApplicationsService {
     }
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantOrgId?: string | null) {
+    await this.findOne(id, tenantOrgId);
     await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).delete();
     return { success: true, message: `Application ${id} deleted successfully` };
   }

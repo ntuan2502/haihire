@@ -17,10 +17,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { APP_ERROR_CODES } from "@haihire/shared";
-import {
-  AppForbiddenException,
-  AppNotFoundException,
-} from "../common/app-exception";
+import { AppForbiddenException } from "../common/app-exception";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import type { Response } from "express";
@@ -28,9 +25,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { fixUtf8String } from "../common/doc-utils";
 import { resumeFileFilter } from "../common/upload-utils";
-import { MinioService } from "../minio/minio.service";
 import { ActivitiesService } from "../activities/activities.service";
 
 @Controller("candidates")
@@ -39,8 +34,6 @@ export class CandidatesController {
   constructor(
     @Inject(CandidatesService)
     private readonly candidatesService: CandidatesService,
-    @Inject(MinioService)
-    private readonly minioService: MinioService,
     @Optional()
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
@@ -80,19 +73,7 @@ export class CandidatesController {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
   ) {
-    const candidate = await this.candidatesService.findOne(id);
-    const userOrgId = req?.user?.organizationId || undefined;
-    if (
-      userOrgId &&
-      candidate.organizationId &&
-      userOrgId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
+    const candidate = await this.candidatesService.findOne(id, req?.user?.organizationId);
 
     if (req?.user?.id && this.activitiesService) {
       this.activitiesService
@@ -141,24 +122,12 @@ export class CandidatesController {
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  async update(
+  update(
     @Param("id") id: string,
     @Body() dto: UpdateCandidateDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const candidate = await this.candidatesService.findOne(id);
-    if (
-      req?.user?.organizationId &&
-      candidate.organizationId &&
-      req.user.organizationId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
-    return this.candidatesService.update(id, dto);
+    return this.candidatesService.update(id, dto, req?.user?.organizationId);
   }
 
   @Post(":id/documents")
@@ -170,25 +139,13 @@ export class CandidatesController {
       fileFilter: resumeFileFilter,
     }),
   )
-  async uploadDocument(
+  uploadDocument(
     @Param("id") id: string,
     @UploadedFile() file: Express.Multer.File,
     @Query("type") documentType?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const candidate = await this.candidatesService.findOne(id);
-    if (
-      req?.user?.organizationId &&
-      candidate.organizationId &&
-      req.user.organizationId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
-    return this.candidatesService.uploadDocument(id, file, documentType);
+    return this.candidatesService.uploadDocument(id, file, documentType, req?.user?.organizationId);
   }
 
   @Get(":id/documents/download")
@@ -202,63 +159,13 @@ export class CandidatesController {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
   ) {
-    const candidate = await this.candidatesService.findOne(id);
-    if (!candidate) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
-        "Candidate not found",
+    const { candidate, cleanFileName, asciiFallback, encodedFileName, mimeType, stream, downloadUrl } =
+      await this.candidatesService.prepareDocumentDownload(
+        id,
+        targetUrl,
+        targetName,
+        req?.user?.organizationId,
       );
-    }
-
-    if (
-      req?.user?.organizationId &&
-      candidate.organizationId &&
-      req.user.organizationId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
-
-    const downloadUrl = targetUrl || candidate.resumeUrl;
-    if (!downloadUrl) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
-        "Document not found",
-      );
-    }
-
-    // SSRF prevention: Verify that targetUrl belongs to this candidate
-    if (targetUrl) {
-      const allowedUrls: string[] = [];
-      if (candidate.resumeUrl) allowedUrls.push(candidate.resumeUrl);
-      if (Array.isArray(candidate.allDocuments)) {
-        for (const doc of candidate.allDocuments) {
-          if (doc && typeof doc.url === "string") {
-            allowedUrls.push(doc.url);
-          }
-        }
-      }
-
-      const targetObj = this.minioService.extractObjectName(targetUrl);
-      const isAllowed = allowedUrls.some(
-        (u) => u === targetUrl || this.minioService.extractObjectName(u) === targetObj,
-      );
-      if (!isAllowed) {
-        throw new AppForbiddenException(
-          APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
-          "Access denied: specified document does not belong to this candidate.",
-          { id },
-        );
-      }
-    }
-
-    const rawName = targetName || candidate.resumeFileName || "document.pdf";
-    const cleanFileName = fixUtf8String(rawName);
-    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
-    const encodedFileName = encodeURIComponent(cleanFileName);
 
     if (req?.user?.id && this.activitiesService) {
       this.activitiesService
@@ -285,65 +192,33 @@ export class CandidatesController {
       "Content-Disposition",
       `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodedFileName}`,
     );
-    if (candidate.resumeMimeType) {
-      res.setHeader("Content-Type", candidate.resumeMimeType);
+    if (mimeType) {
+      res.setHeader("Content-Type", mimeType);
     }
 
-    try {
-      const stream = await this.minioService.getObjectStream(downloadUrl);
-      stream.pipe(res);
-    } catch {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
-        "Document file could not be retrieved from storage",
-      );
-    }
+    stream.pipe(res);
   }
 
   @Delete(":id/documents")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  async deleteDocument(
+  deleteDocument(
     @Param("id") id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const candidate = await this.candidatesService.findOne(id);
-    if (
-      req?.user?.organizationId &&
-      candidate.organizationId &&
-      req.user.organizationId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
-    return this.candidatesService.deleteDocument(id, { documentId, url });
+    return this.candidatesService.deleteDocument(id, { documentId, url }, req?.user?.organizationId);
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
-  async remove(
+  remove(
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    const candidate = await this.candidatesService.findOne(id);
-    if (
-      req?.user?.organizationId &&
-      candidate.organizationId &&
-      req.user.organizationId !== candidate.organizationId
-    ) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-        "Access denied: candidate belongs to another organization.",
-        { id, organizationId: candidate.organizationId },
-      );
-    }
-    return this.candidatesService.remove(id);
+    return this.candidatesService.remove(id, req?.user?.organizationId);
   }
 }
 

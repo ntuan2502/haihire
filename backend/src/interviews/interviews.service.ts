@@ -391,7 +391,7 @@ export class InterviewsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tenantOrgId?: string | null) {
     const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
     if (!intv) {
       throw new AppNotFoundException(
@@ -409,6 +409,15 @@ export class InterviewsService {
       ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
       : null;
 
+    const interviewOrgId = candidate?.organizationId || job?.organizationId;
+    if (tenantOrgId && interviewOrgId && interviewOrgId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
+        "Access denied: interview belongs to another organization.",
+        { id, organizationId: interviewOrgId },
+      );
+    }
+
     let parsedScorecard: Record<string, unknown> | null = null;
     if (intv.scorecard) {
       try {
@@ -425,6 +434,7 @@ export class InterviewsService {
       interviewer: fixUtf8String(intv.interviewer),
       scorecard: parsedScorecard,
       notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      organizationId: interviewOrgId,
       application: app
         ? {
             ...app,
@@ -438,7 +448,7 @@ export class InterviewsService {
     };
   }
 
-  async create(dto: CreateInterviewDto, organizationId?: string) {
+  async create(dto: CreateInterviewDto, organizationId?: string | null) {
     const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(dto.applicationId)).first();
     if (!app) {
       throw new AppNotFoundException(
@@ -567,15 +577,8 @@ export class InterviewsService {
     return createdInterview;
   }
 
-  async update(id: string, dto: UpdateInterviewDto) {
-    const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
-    if (!intv) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
-        `Interview with ID ${id} not found`,
-        { id },
-      );
-    }
+  async update(id: string, dto: UpdateInterviewDto, tenantOrgId?: string | null) {
+    await this.findOne(id, tenantOrgId);
 
     const updateData: InterviewUpdatePayload = {};
     if (dto.date !== undefined) updateData.date = dto.date;
@@ -591,7 +594,7 @@ export class InterviewsService {
     }
 
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).update(updateData);
-    const updated = await this.findOne(id);
+    const updated = await this.findOne(id, tenantOrgId);
 
     const candidate = updated.application?.candidate;
     if (candidate && candidate.organizationId) {
@@ -623,16 +626,8 @@ export class InterviewsService {
     return updated;
   }
 
-  async remove(id: string) {
-    const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
-    if (!intv) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
-        `Interview with ID ${id} not found`,
-        { id },
-      );
-    }
-
+  async remove(id: string, tenantOrgId?: string | null) {
+    await this.findOne(id, tenantOrgId);
     await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).delete();
     return { success: true, message: `Interview ${id} deleted successfully` };
   }

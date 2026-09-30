@@ -341,6 +341,15 @@ describe("InterviewsService", () => {
     expect(mockApps[0].stage).toBe("OFFER");
   });
 
+  it("should throw AppForbiddenException when accessing an interview belonging to another organization", async () => {
+    await expect(service.findOne("intv-1", "other-org")).rejects.toThrow(AppForbiddenException);
+  });
+
+  it("should allow findOne when tenant organization matches", async () => {
+    const res = await service.findOne("intv-1", "org-1");
+    expect(res.id).toBe("intv-1");
+  });
+
   it("should update an existing interview", async () => {
     const updated = await service.update("intv-1", {
       time: "11:30",
@@ -351,8 +360,24 @@ describe("InterviewsService", () => {
     expect(updated.notes).toBe("Updated notes");
   });
 
+  it("should throw AppForbiddenException when updating an interview from another organization", async () => {
+    await expect(
+      service.update(
+        "intv-1",
+        {
+          time: "11:30",
+        },
+        "other-org",
+      ),
+    ).rejects.toThrow(AppForbiddenException);
+  });
+
+  it("should throw AppForbiddenException when deleting an interview from another organization", async () => {
+    await expect(service.remove("intv-1", "other-org")).rejects.toThrow(AppForbiddenException);
+  });
+
   it("should delete an interview", async () => {
-    const res = await service.remove("intv-1");
+    const res = await service.remove("intv-1", "org-1");
     expect(res.success).toBe(true);
     expect(mockInterviews).toHaveLength(0);
   });

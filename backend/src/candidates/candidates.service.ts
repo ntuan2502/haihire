@@ -6,6 +6,7 @@ import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
 import {
   AppBadRequestException,
   AppConflictException,
+  AppForbiddenException,
   AppNotFoundException,
 } from "../common/app-exception";
 import { MinioService } from "../minio/minio.service";
@@ -129,7 +130,7 @@ export class CandidatesService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tenantOrgId?: string | null) {
     const candidate = await this.prisma.db.orm.public.Candidate.select(
       "id",
       "organizationId",
@@ -156,6 +157,14 @@ export class CandidatesService {
         APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
         `Candidate with ID ${id} not found`,
         { id },
+      );
+    }
+
+    if (tenantOrgId && candidate.organizationId && tenantOrgId !== candidate.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+        "Access denied: candidate belongs to another organization.",
+        { id, organizationId: candidate.organizationId },
       );
     }
 
@@ -388,8 +397,8 @@ export class CandidatesService {
     return created;
   }
 
-  async update(id: string, dto: UpdateCandidateDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateCandidateDto, tenantOrgId?: string | null) {
+    await this.findOne(id, tenantOrgId);
 
     const updatePayload: Record<string, unknown> = {};
     if (dto.name !== undefined) updatePayload.name = dto.name.trim();
@@ -415,15 +424,16 @@ export class CandidatesService {
     if (dto.resumeFileName !== undefined) updatePayload.resumeFileName = dto.resumeFileName;
 
     await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update(updatePayload);
-    return this.findOne(id);
+    return this.findOne(id, tenantOrgId);
   }
 
   async uploadDocument(
     id: string,
     file: Express.Multer.File,
     documentType = "Resume",
+    tenantOrgId?: string | null,
   ) {
-    const candidate = await this.findOne(id);
+    const candidate = await this.findOne(id, tenantOrgId);
 
     if (!file) {
       throw new AppBadRequestException(
@@ -491,11 +501,79 @@ export class CandidatesService {
     return this.findOne(id);
   }
 
+  async prepareDocumentDownload(
+    id: string,
+    targetUrl?: string,
+    targetName?: string,
+    tenantOrgId?: string | null,
+  ) {
+    const candidate = await this.findOne(id, tenantOrgId);
+
+    const downloadUrl = targetUrl || candidate.resumeUrl;
+    if (!downloadUrl) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Document not found",
+      );
+    }
+
+    // SSRF prevention: Verify that targetUrl belongs to this candidate
+    if (targetUrl) {
+      const allowedUrls: string[] = [];
+      if (candidate.resumeUrl) allowedUrls.push(candidate.resumeUrl);
+      if (Array.isArray(candidate.allDocuments)) {
+        for (const doc of candidate.allDocuments) {
+          if (doc && typeof doc.url === "string") {
+            allowedUrls.push(doc.url);
+          }
+        }
+      }
+
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const isAllowed = allowedUrls.some(
+        (u) => u === targetUrl || this.minioService.extractObjectName(u) === targetObj,
+      );
+      if (!isAllowed) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+          "Access denied: specified document does not belong to this candidate.",
+          { id },
+        );
+      }
+    }
+
+    const rawName = targetName || candidate.resumeFileName || "document.pdf";
+    const cleanFileName = fixUtf8String(rawName);
+    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
+    const encodedFileName = encodeURIComponent(cleanFileName);
+
+    let stream: NodeJS.ReadableStream;
+    try {
+      stream = await this.minioService.getObjectStream(downloadUrl);
+    } catch {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Document file could not be retrieved from storage",
+      );
+    }
+
+    return {
+      candidate,
+      downloadUrl,
+      cleanFileName,
+      asciiFallback,
+      encodedFileName,
+      mimeType: candidate.resumeMimeType,
+      stream,
+    };
+  }
+
   async deleteDocument(
     id: string,
     opts?: { documentId?: string; url?: string },
+    tenantOrgId?: string | null,
   ) {
-    await this.findOne(id);
+    await this.findOne(id, tenantOrgId);
 
     if (opts?.documentId) {
       try {
@@ -537,11 +615,11 @@ export class CandidatesService {
       });
     }
 
-    return this.findOne(id);
+    return this.findOne(id, tenantOrgId);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantOrgId?: string | null) {
+    await this.findOne(id, tenantOrgId);
 
     try {
       await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).delete();

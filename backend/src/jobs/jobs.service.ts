@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppNotFoundException } from "../common/app-exception";
+import { AppNotFoundException, AppForbiddenException } from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
@@ -379,7 +379,15 @@ export class JobsService {
     return this.findOne(matchedJob.id);
   }
 
-  async create(dto: CreateJobDto) {
+  async create(dto: CreateJobDto, tenantOrgId?: string | null, userId?: string | null) {
+    if (dto.organizationId && tenantOrgId && dto.organizationId !== tenantOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: cannot create job for another organization.",
+        { organizationId: dto.organizationId },
+      );
+    }
+
     const created = await this.prisma.db.orm.public.Job.upsert({
       create: {
         id: crypto.randomUUID(),
@@ -394,8 +402,8 @@ export class JobsService {
         requirements: dto.requirements ?? null,
         salaryRange: dto.salaryRange ?? null,
         status: dto.status ?? "PUBLISHED",
-        organizationId: dto.organizationId ?? null,
-        createdById: dto.createdById ?? null,
+        organizationId: (tenantOrgId || dto.organizationId) ?? null,
+        createdById: (userId || dto.createdById) ?? null,
         updatedAt: toInstant(),
       },
       update: {},
@@ -405,8 +413,16 @@ export class JobsService {
     return created;
   }
 
-  async update(id: string, dto: UpdateJobDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateJobDto, tenantOrgId?: string | null) {
+    const job = await this.findOne(id);
+
+    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
+      );
+    }
 
     const updated = await this.prisma.db.orm.public.Job.where((j) =>
       j.id.eq(id),
@@ -433,8 +449,16 @@ export class JobsService {
     return updated;
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantOrgId?: string | null) {
+    const job = await this.findOne(id);
+
+    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+        "Access denied: job belongs to another organization.",
+        { id, organizationId: job.organizationId },
+      );
+    }
 
     // Delete associated applications first
     await this.prisma.db.orm.public.Application.where((a) =>

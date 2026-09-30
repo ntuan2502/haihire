@@ -33,6 +33,18 @@ export function useTrackingLinksQuery(params?: {
   });
 }
 
+export function useTrackingLinkDetailQuery(
+  id: string,
+  params?: { timeRange?: TimeRangeFilter },
+) {
+  return useQuery({
+    queryKey: queryKeys.sourcingLinkDetail(id, params),
+    queryFn: () => sourcingApi.getLinkDetails(id, params),
+    enabled: Boolean(id),
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useAttributionLogQuery(params?: {
   page?: number;
   limit?: number;

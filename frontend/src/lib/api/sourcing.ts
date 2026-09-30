@@ -7,6 +7,7 @@ import type {
   UpdateTrackingLinkDto,
   TimeRangeFilter,
   SourcingChannel,
+  TrackingLinkDetail,
 } from "@haihire/shared";
 import type { PaginatedResult } from "@/types";
 
@@ -27,6 +28,16 @@ export const sourcingApi = {
     isActive?: boolean;
   }): Promise<PaginatedResult<TrackingLinkItem>> => {
     const response = await api.get<PaginatedResult<TrackingLinkItem>>("/sourcing/links", {
+      params,
+    });
+    return response.data;
+  },
+
+  getLinkDetails: async (
+    id: string,
+    params?: { timeRange?: TimeRangeFilter },
+  ): Promise<TrackingLinkDetail> => {
+    const response = await api.get<TrackingLinkDetail>(`/sourcing/links/${id}`, {
       params,
     });
     return response.data;

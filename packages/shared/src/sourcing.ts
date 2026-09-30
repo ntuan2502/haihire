@@ -125,3 +125,47 @@ export interface UpdateTrackingLinkDto {
   name?: string;
   isActive?: boolean;
 }
+
+export interface PipelineStageBreakdown {
+  stage: string;
+  count: number;
+  percentage: number;
+}
+
+export interface TimeSeriesPoint {
+  date: string;
+  count: number;
+}
+
+export interface AttributedApplicationDetailItem {
+  applicationId: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  jobId: string;
+  jobTitle: string;
+  jobType?: string | null;
+  referrer?: string | null;
+  campaign?: string | null;
+  stage: string;
+  appliedAt: string;
+}
+
+export interface TrackingLinkDetail {
+  link: TrackingLinkItem;
+  stats: {
+    clicks: number;
+    applications: number;
+    cvr: number;
+    hireRate: number;
+    allTimeAttributed: number;
+  };
+  pipeline: {
+    total: number;
+    stages: PipelineStageBreakdown[];
+  };
+  applicationsOverTime: TimeSeriesPoint[];
+  attributedApplications: AttributedApplicationDetailItem[];
+  referrerDomains: TopReferrerItem[];
+}
+

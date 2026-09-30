@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
+import Link from "next/link";
 
 interface TrackingLinksTabProps {
   data?: PaginatedResult<TrackingLinkItem>;
@@ -105,9 +106,12 @@ export function TrackingLinksTab({
                       {/* Name & Token */}
                       <td className="py-3.5 px-5">
                         <div className="space-y-0.5">
-                          <p className="font-bold text-slate-900 dark:text-white">
+                          <Link
+                            href={`/dashboard/source-tracking/${link.id}`}
+                            className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-block"
+                          >
                             {link.name}
-                          </p>
+                          </Link>
                           <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                             ?ref={link.token}
                           </p>

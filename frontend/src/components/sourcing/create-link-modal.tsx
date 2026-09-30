@@ -121,13 +121,13 @@ export function CreateLinkModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
-        <DialogHeader className="space-y-1">
+      <DialogContent className="w-full sm:max-w-md overflow-hidden rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
+        <DialogHeader className="space-y-1 min-w-0">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Link2 className="h-4 w-4" />
             </div>
-            <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
+            <DialogTitle className="text-base font-bold text-slate-900 dark:text-white truncate">
               {t("sourcing.modal.createTitle")}
             </DialogTitle>
           </div>
@@ -136,7 +136,7 @@ export function CreateLinkModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2 min-w-0">
           {error && (
             <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200/80 dark:border-rose-900/60 text-xs font-semibold text-rose-700 dark:text-rose-400">
               {error}
@@ -170,6 +170,8 @@ export function CreateLinkModal({
               value={source}
               onChange={(val) => setSource(val as SourcingChannel)}
               options={channelOptions}
+              className="w-full"
+              triggerClassName="w-full h-9 text-xs font-normal bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3"
             />
           </div>
 
@@ -198,6 +200,8 @@ export function CreateLinkModal({
               value={jobId}
               onChange={(val) => setJobId(val)}
               options={jobOptions}
+              className="w-full"
+              triggerClassName="w-full h-9 text-xs font-normal bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3"
             />
           </div>
 
@@ -216,7 +220,7 @@ export function CreateLinkModal({
           </div>
 
           {/* URL Preview */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800/80 space-y-1">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800/80 space-y-1.5 min-w-0 overflow-hidden">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
               <span>{t("sourcing.modal.previewLabel")}</span>
               <button
@@ -237,7 +241,7 @@ export function CreateLinkModal({
                 )}
               </button>
             </div>
-            <p className="text-[11px] font-mono text-slate-600 dark:text-slate-300 truncate select-all">
+            <p className="text-[11px] font-mono text-slate-600 dark:text-slate-300 break-all select-all leading-relaxed">
               {previewUrl}
             </p>
           </div>

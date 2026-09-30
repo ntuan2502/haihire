@@ -23,7 +23,7 @@ import { UpdateTrackingLinkDto } from "./dto/update-tracking-link.dto";
 import { RecordClickDto } from "./dto/record-click.dto";
 import { SourcingFilterDto } from "./dto/sourcing-filter.dto";
 import { AppForbiddenException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { APP_ERROR_CODES, type TimeRangeFilter } from "@haihire/shared";
 
 @Controller("sourcing")
 export class SourcingController {
@@ -74,6 +74,23 @@ export class SourcingController {
       jobId: filter.jobId,
       isActive: activeBool,
     });
+  }
+
+  @Get("links/:id")
+  @UseGuards(AuthGuard("jwt"))
+  async getLinkDetails(
+    @Request() req: { user?: { organizationId?: string | null } },
+    @Param("id") id: string,
+    @Query("timeRange") timeRange?: TimeRangeFilter,
+  ) {
+    const orgId = req.user?.organizationId;
+    if (!orgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+        "Organization ID is required",
+      );
+    }
+    return this.sourcingService.getLinkDetails(orgId, id, timeRange);
   }
 
   @Post("links")

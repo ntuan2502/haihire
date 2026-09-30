@@ -193,35 +193,35 @@ function SourceTrackingContent() {
             )}
 
             {/* Job Filter CustomSelect */}
-            <div className="w-full sm:w-48">
-              <CustomSelect
-                value={selectedJobId || "ALL"}
-                onChange={(val) => {
-                  setParams({ jobId: val === "ALL" ? null : val, page: 1 });
-                }}
-                options={[
-                  { value: "ALL", label: t("sourcing.allJobs") },
-                  ...jobsList.map((j) => ({ value: j.id, label: j.title })),
-                ]}
-                placeholder={t("sourcing.allJobs")}
-              />
-            </div>
+            <CustomSelect
+              value={selectedJobId || "ALL"}
+              onChange={(val) => {
+                setParams({ jobId: val === "ALL" ? null : val, page: 1 });
+              }}
+              options={[
+                { value: "ALL", label: t("sourcing.allJobs") },
+                ...jobsList.map((j) => ({ value: j.id, label: j.title })),
+              ]}
+              placeholder={t("sourcing.allJobs")}
+              className="w-full sm:w-48 shrink-0"
+              triggerClassName="w-full h-9 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl px-3"
+            />
 
             {/* Time Range Filter CustomSelect */}
-            <div className="w-full sm:w-36">
-              <CustomSelect
-                value={timeRange}
-                onChange={(val) => {
-                  setParams({ timeRange: val === "30d" ? null : (val as TimeRangeFilter) });
-                }}
-                options={[
-                  { value: "7d", label: t("sourcing.time7d") },
-                  { value: "30d", label: t("sourcing.time30d") },
-                  { value: "90d", label: t("sourcing.time90d") },
-                  { value: "all", label: t("sourcing.timeAll") },
-                ]}
-              />
-            </div>
+            <CustomSelect
+              value={timeRange}
+              onChange={(val) => {
+                setParams({ timeRange: val === "30d" ? null : (val as TimeRangeFilter) });
+              }}
+              options={[
+                { value: "7d", label: t("sourcing.time7d") },
+                { value: "30d", label: t("sourcing.time30d") },
+                { value: "90d", label: t("sourcing.time90d") },
+                { value: "all", label: t("sourcing.timeAll") },
+              ]}
+              className="w-full sm:w-32 shrink-0"
+              triggerClassName="w-full h-9 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl px-3"
+            />
           </div>
         </div>
 

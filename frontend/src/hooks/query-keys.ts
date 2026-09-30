@@ -36,5 +36,6 @@ export const queryKeys = {
   ) => ["activities", "application", applicationId, { orgId, page, limit }] as const,
   sourcingStats: (params?: { timeRange?: string; jobId?: string }) => ["sourcing", "stats", params] as const,
   sourcingLinks: (params?: Record<string, unknown>) => ["sourcing", "links", params] as const,
+  sourcingLinkDetail: (id: string, params?: { timeRange?: string }) => ["sourcing", "links", id, params] as const,
   sourcingAttributionLog: (params?: Record<string, unknown>) => ["sourcing", "attribution-log", params] as const,
 };

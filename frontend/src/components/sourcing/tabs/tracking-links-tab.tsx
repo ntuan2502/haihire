@@ -7,22 +7,21 @@ import { ChannelBadge } from "../channel-badge";
 import {
   Copy,
   Check,
-  Search,
   Power,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
   ExternalLink,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/shared/pagination";
 
 interface TrackingLinksTabProps {
   data?: PaginatedResult<TrackingLinkItem>;
   isLoading?: boolean;
   page: number;
+  pageSize?: number;
   onPageChange: (newPage: number) => void;
-  search: string;
-  onSearchChange: (newSearch: string) => void;
+  onPageSizeChange?: (newPageSize: number) => void;
   orgSlug: string;
   onToggleStatus: (id: string, currentActive: boolean) => void;
   onDeleteLink: (id: string) => void;
@@ -32,9 +31,9 @@ export function TrackingLinksTab({
   data,
   isLoading,
   page,
+  pageSize = 15,
   onPageChange,
-  search,
-  onSearchChange,
+  onPageSizeChange,
   orgSlug,
   onToggleStatus,
   onDeleteLink,
@@ -59,48 +58,39 @@ export function TrackingLinksTab({
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t("sourcing.links.searchPlaceholder")}
-            className="h-9 w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 pl-9 pr-3 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-          />
-        </div>
-      </div>
-
       {/* Table Container */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 shadow-xs overflow-hidden">
+      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center text-xs text-slate-400">
             {t("common.loading")}
           </div>
         ) : links.length === 0 ? (
-          <div className="p-12 text-center space-y-2">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              {t("sourcing.links.emptyTitle")}
-            </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              {t("sourcing.links.emptyDesc")}
-            </p>
+          <div className="p-12 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+              <Link2 className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                {t("sourcing.links.emptyTitle")}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                {t("sourcing.links.emptyDesc")}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  <th className="py-3 px-5">{t("sourcing.links.name")}</th>
-                  <th className="py-3 px-4">{t("sourcing.links.source")}</th>
-                  <th className="py-3 px-4">{t("sourcing.links.job")}</th>
-                  <th className="py-3 px-4 text-center">{t("sourcing.links.clicks")}</th>
-                  <th className="py-3 px-4 text-center">{t("sourcing.links.apps")}</th>
-                  <th className="py-3 px-4 text-center">{t("sourcing.links.cvr")}</th>
-                  <th className="py-3 px-4 text-center">{t("sourcing.links.status")}</th>
-                  <th className="py-3 px-5 text-right">{t("sourcing.links.actions")}</th>
+                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <th className="py-3.5 px-5">{t("sourcing.links.name")}</th>
+                  <th className="py-3.5 px-4">{t("sourcing.links.source")}</th>
+                  <th className="py-3.5 px-4">{t("sourcing.links.job")}</th>
+                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.clicks")}</th>
+                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.apps")}</th>
+                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.cvr")}</th>
+                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.status")}</th>
+                  <th className="py-3.5 px-5 text-right">{t("sourcing.links.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
@@ -113,7 +103,7 @@ export function TrackingLinksTab({
                       className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
                     >
                       {/* Name & Token */}
-                      <td className="py-3 px-5">
+                      <td className="py-3.5 px-5">
                         <div className="space-y-0.5">
                           <p className="font-bold text-slate-900 dark:text-white">
                             {link.name}
@@ -125,7 +115,7 @@ export function TrackingLinksTab({
                       </td>
 
                       {/* Source */}
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         <ChannelBadge
                           channel={link.source}
                           customLabel={link.customSource}
@@ -134,32 +124,34 @@ export function TrackingLinksTab({
                       </td>
 
                       {/* Job */}
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
                         {link.jobTitle || t("sourcing.modal.allJobsOption")}
                       </td>
 
                       {/* Clicks */}
-                      <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
                         {link.clicksCount}
                       </td>
 
-                      {/* Apps */}
-                      <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
+                      {/* Applications */}
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-900 dark:text-white">
                         {link.applicationsCount}
                       </td>
 
                       {/* CVR */}
-                      <td className="py-3 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-3.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
                         {link.conversionRate}%
                       </td>
 
                       {/* Status */}
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => onToggleStatus(link.id, link.isActive)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
                             link.isActive
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60"
-                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60"
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
                           }`}
                         >
                           <span
@@ -172,44 +164,60 @@ export function TrackingLinksTab({
                               ? t("sourcing.links.active")
                               : t("sourcing.links.inactive")}
                           </span>
-                        </span>
+                        </button>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-5 text-right">
-                        <div className="inline-flex items-center gap-1 justify-end">
-                          {/* Copy Link Button */}
+                      <td className="py-3.5 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Copy URL Button */}
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopyLink(link.token, link.id, link.jobId)}
-                            className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer"
-                            title={t("sourcing.links.copyLink")}
+                            className="h-8 px-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 gap-1 text-[11px] font-semibold cursor-pointer"
                           >
                             {isCopied ? (
-                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              <>
+                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                <span className="text-emerald-600">{t("sourcing.links.linkCopied")}</span>
+                              </>
                             ) : (
-                              <Copy className="h-3.5 w-3.5" />
+                              <>
+                                <Copy className="h-3.5 w-3.5" />
+                                <span>{t("sourcing.links.copyLink")}</span>
+                              </>
                             )}
                           </Button>
 
-                          {/* Toggle Active Button */}
+                          {/* Open Career Link */}
+                          <a
+                            href={`/careers/${orgSlug}${link.jobId ? `/${link.jobId}` : ""}?ref=${link.token}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                            title={t("sourcing.modal.previewLabel")}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+
+                          {/* Toggle Power */}
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => onToggleStatus(link.id, link.isActive)}
-                            className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer"
+                            className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                             title={t("sourcing.links.toggleStatus")}
                           >
-                            <Power className={`h-3.5 w-3.5 ${link.isActive ? "text-emerald-600" : "text-slate-400"}`} />
+                            <Power className="h-3.5 w-3.5" />
                           </Button>
 
-                          {/* Delete Link Button */}
+                          {/* Delete Link */}
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              if (window.confirm(t("sourcing.links.deleteConfirm"))) {
+                              if (confirm(t("sourcing.links.deleteConfirm"))) {
                                 onDeleteLink(link.id);
                               }
                             }}
@@ -227,35 +235,17 @@ export function TrackingLinksTab({
           </div>
         )}
 
-        {/* Server-Side Pagination Bar */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {t("common.showing")} {links.length} {t("common.of")} {total}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={page <= 1}
-                onClick={() => onPageChange(page - 1)}
-                className="h-8 w-8 p-0 rounded-lg cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-xs font-semibold px-2 text-slate-700 dark:text-slate-300">
-                {page} / {totalPages}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={page >= totalPages}
-                onClick={() => onPageChange(page + 1)}
-                className="h-8 w-8 p-0 rounded-lg cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+        {/* Server-Side Pagination */}
+        {total > 0 && (
+          <div className="border-t border-slate-100 dark:border-slate-800 p-4">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={total}
+              pageSize={pageSize}
+              onPageChange={onPageChange}
+              onPageSizeChange={onPageSizeChange}
+            />
           </div>
         )}
       </div>

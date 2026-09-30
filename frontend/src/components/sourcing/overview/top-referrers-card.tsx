@@ -12,7 +12,7 @@ export function TopReferrersCard({ referrers }: TopReferrersCardProps) {
   const { t } = useI18n();
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-4">
+    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
         <Globe className="h-4 w-4 text-slate-400" />

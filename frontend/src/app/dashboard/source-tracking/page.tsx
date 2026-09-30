@@ -1,12 +1,14 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import { useMyOrg } from "@/hooks/use-organization-queries";
 import { useAllJobs } from "@/hooks/use-queries";
+import { useTableParams } from "@/hooks/use-table-params";
 import {
   useSourcingStatsQuery,
   useTrackingLinksQuery,
@@ -15,34 +17,50 @@ import {
   useDeleteTrackingLinkMutation,
 } from "@/hooks/use-sourcing-queries";
 import {
-  SourcingHeader,
   SourcingStatsCards,
   OverviewTab,
   TrackingLinksTab,
   AttributionLogTab,
   CreateLinkModal,
 } from "@/components/sourcing";
-import { BarChart3, Link2, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SegmentedTabs, type TabItem } from "@/components/shared/segmented-tabs";
+import { CustomSelect } from "@/components/shared/custom-select";
+import { SearchInput } from "@/components/shared/search-input";
+import { Plus } from "lucide-react";
 import type { TimeRangeFilter } from "@haihire/shared";
 
 type TabKey = "overview" | "links" | "attribution";
 
 function SourceTrackingContent() {
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, canEdit } = useAuth();
   const { t } = useI18n();
 
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [timeRange, setTimeRange] = useState<TimeRangeFilter>("30d");
-  const [selectedJobId, setSelectedJobId] = useState<string | undefined>(undefined);
+  // URL synchronized state
+  const {
+    page: currentPage,
+    limit: rowsPerPage,
+    search,
+    setSearch,
+    setPage: setCurrentPage,
+    setLimit: setRowsPerPage,
+    getParam,
+    setParams,
+  } = useTableParams();
+
+  const rawTab = getParam("tab", "overview");
+  const activeTab: TabKey =
+    rawTab === "links" || rawTab === "attribution" ? rawTab : "overview";
+
+  const rawTime = getParam("timeRange", "30d");
+  const timeRange: TimeRangeFilter =
+    rawTime === "7d" || rawTime === "90d" || rawTime === "all" ? rawTime : "30d";
+
+  const rawJobId = getParam("jobId", "");
+  const selectedJobId = rawJobId && rawJobId !== "ALL" ? rawJobId : undefined;
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Pagination & Search for Links Tab
-  const [linksPage, setLinksPage] = useState(1);
-  const [linksSearch, setLinksSearch] = useState("");
-
-  // Pagination & Search for Attribution Log Tab
-  const [attributionPage, setAttributionPage] = useState(1);
-  const [attributionSearch, setAttributionSearch] = useState("");
 
   // Organization info (for public career site link slug)
   const { data: myOrg } = useMyOrg();
@@ -50,7 +68,10 @@ function SourceTrackingContent() {
 
   // Jobs for filters and modal
   const { data: rawJobs = [] } = useAllJobs(user?.organizationId);
-  const jobsList = rawJobs.map((j) => ({ id: j.id, title: j.title }));
+  const jobsList = useMemo(
+    () => rawJobs.map((j) => ({ id: j.id, title: j.title })),
+    [rawJobs],
+  );
 
   // Queries
   const { data: stats, isLoading: statsLoading } = useSourcingStatsQuery({
@@ -59,17 +80,17 @@ function SourceTrackingContent() {
   });
 
   const { data: linksData, isLoading: linksLoading } = useTrackingLinksQuery({
-    page: linksPage,
-    limit: 15,
-    search: linksSearch.trim() || undefined,
+    page: activeTab === "links" ? currentPage : 1,
+    limit: rowsPerPage || 15,
+    search: activeTab === "links" ? search.trim() || undefined : undefined,
     jobId: selectedJobId,
   });
 
   const { data: attributionData, isLoading: attributionLoading } =
     useAttributionLogQuery({
-      page: attributionPage,
-      limit: 15,
-      search: attributionSearch.trim() || undefined,
+      page: activeTab === "attribution" ? currentPage : 1,
+      limit: rowsPerPage || 15,
+      search: activeTab === "attribution" ? search.trim() || undefined : undefined,
       jobId: selectedJobId,
     });
 
@@ -86,101 +107,150 @@ function SourceTrackingContent() {
   };
 
   const linksCount = linksData?.total ?? stats?.totalLinksCount ?? 0;
+  const attributionCount = attributionData?.total ?? stats?.trackedCount ?? 0;
+
+  const tabItems: TabItem<TabKey>[] = useMemo(
+    () => [
+      { id: "overview", label: t("sourcing.tabs.overview") },
+      {
+        id: "links",
+        label: t("sourcing.tabs.trackingLinks"),
+        count: linksCount,
+      },
+      {
+        id: "attribution",
+        label: t("sourcing.tabs.attributionLog"),
+        count: attributionCount,
+      },
+    ],
+    [t, linksCount, attributionCount],
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
-      <Navbar activeTab="sourcing" />
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
+      <Navbar
+        activeTab="sourcing"
+        onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
+        jobsCount={jobsList.length}
+        candidatesCount={stats?.trackedCount ?? 0}
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-        {/* Header with Title, Time Filter, Job Selector & + New Link */}
-        <SourcingHeader
-          timeRange={timeRange}
-          onTimeRangeChange={(val) => setTimeRange(val)}
-          selectedJobId={selectedJobId}
-          onJobSelect={(jobId) => setSelectedJobId(jobId)}
-          jobs={jobsList}
-          onOpenCreateLink={() => setIsCreateModalOpen(true)}
-        />
+      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+        {/* Standard Page Header Row matching Jobs & Candidates */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {t("sourcing.title")}
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+              {linksCount}
+            </span>
+          </div>
 
-        {/* 3 Main Tabs Switcher */}
-        <div className="flex items-center gap-1 border-b border-slate-200/80 dark:border-slate-800">
-          {/* Tab 1: Overview */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("overview")}
-            className={`inline-flex items-center gap-2 pb-3 px-3 text-xs font-bold transition-all border-b-2 -mb-px cursor-pointer ${
-              activeTab === "overview"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span>{t("sourcing.tabs.overview")}</span>
-          </button>
-
-          {/* Tab 2: Tracking Links */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("links")}
-            className={`inline-flex items-center gap-2 pb-3 px-3 text-xs font-bold transition-all border-b-2 -mb-px cursor-pointer ${
-              activeTab === "links"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Link2 className="h-4 w-4" />
-            <span>{t("sourcing.tabs.trackingLinks")}</span>
-            {linksCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                {linksCount}
-              </span>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {canEdit && (
+              <Button
+                size="sm"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Plus className="h-4 w-4 stroke-[2.5]" />
+                <span>{t("sourcing.newLink")}</span>
+              </Button>
             )}
-          </button>
-
-          {/* Tab 3: Attribution Log */}
-          <button
-            type="button"
-            onClick={() => setActiveTab("attribution")}
-            className={`inline-flex items-center gap-2 pb-3 px-3 text-xs font-bold transition-all border-b-2 -mb-px cursor-pointer ${
-              activeTab === "attribution"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            <span>{t("sourcing.tabs.attributionLog")}</span>
-          </button>
+          </div>
         </div>
 
-        {/* Tab 1: Overview */}
+        {/* Modern Unified Responsive Toolbar */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Left: Tab Switcher using SegmentedTabs */}
+          <SegmentedTabs
+            tabs={tabItems}
+            activeTab={activeTab}
+            onChange={(newTab) => {
+              setParams({ tab: newTab === "overview" ? null : newTab, page: 1 });
+            }}
+          />
+
+          {/* Right: Contextual Controls Toolbar */}
+          <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
+            {/* Search Input (visible on links and attribution tabs) */}
+            {activeTab !== "overview" && (
+              <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
+                <SearchInput
+                  placeholder={
+                    activeTab === "links"
+                      ? t("sourcing.links.searchPlaceholder")
+                      : t("sourcing.attribution.searchPlaceholder")
+                  }
+                  value={search}
+                  onChange={(val) => {
+                    setSearch(val);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Job Filter CustomSelect */}
+            <div className="w-full sm:w-48">
+              <CustomSelect
+                value={selectedJobId || "ALL"}
+                onChange={(val) => {
+                  setParams({ jobId: val === "ALL" ? null : val, page: 1 });
+                }}
+                options={[
+                  { value: "ALL", label: t("sourcing.allJobs") },
+                  ...jobsList.map((j) => ({ value: j.id, label: j.title })),
+                ]}
+                placeholder={t("sourcing.allJobs")}
+              />
+            </div>
+
+            {/* Time Range Filter CustomSelect */}
+            <div className="w-full sm:w-36">
+              <CustomSelect
+                value={timeRange}
+                onChange={(val) => {
+                  setParams({ timeRange: val === "30d" ? null : (val as TimeRangeFilter) });
+                }}
+                options={[
+                  { value: "7d", label: t("sourcing.time7d") },
+                  { value: "30d", label: t("sourcing.time30d") },
+                  { value: "90d", label: t("sourcing.time90d") },
+                  { value: "all", label: t("sourcing.timeAll") },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 4 Metric KPI Cards */}
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* 4 Metric KPI Cards via MetricCard shared component */}
             <SourcingStatsCards stats={stats} isLoading={statsLoading} />
 
-            {/* Overview Grid (Applications by Source, Conversion, Top Links, Top Referrers, Recent) */}
+            {/* Overview Visualizations Grid */}
             <OverviewTab
               stats={stats}
               isLoading={statsLoading}
-              onNavigateToLinks={() => setActiveTab("links")}
-              onNavigateToAttribution={() => setActiveTab("attribution")}
+              onNavigateToLinks={() => setParams({ tab: "links", page: 1 })}
+              onNavigateToAttribution={() => setParams({ tab: "attribution", page: 1 })}
             />
           </div>
         )}
 
-        {/* Tab 2: Tracking Links */}
+        {/* TAB 2: TRACKING LINKS */}
         {activeTab === "links" && (
           <div className="animate-in fade-in duration-200">
             <TrackingLinksTab
               data={linksData}
               isLoading={linksLoading}
-              page={linksPage}
-              onPageChange={(p) => setLinksPage(p)}
-              search={linksSearch}
-              onSearchChange={(s) => {
-                setLinksSearch(s);
-                setLinksPage(1);
-              }}
+              page={currentPage}
+              pageSize={rowsPerPage || 15}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPageSizeChange={(newSize) => setRowsPerPage(newSize)}
               orgSlug={orgSlug}
               onToggleStatus={handleToggleStatus}
               onDeleteLink={handleDeleteLink}
@@ -188,19 +258,16 @@ function SourceTrackingContent() {
           </div>
         )}
 
-        {/* Tab 3: Attribution Log */}
+        {/* TAB 3: ATTRIBUTION LOG */}
         {activeTab === "attribution" && (
           <div className="animate-in fade-in duration-200">
             <AttributionLogTab
               data={attributionData}
               isLoading={attributionLoading}
-              page={attributionPage}
-              onPageChange={(p) => setAttributionPage(p)}
-              search={attributionSearch}
-              onSearchChange={(s) => {
-                setAttributionSearch(s);
-                setAttributionPage(1);
-              }}
+              page={currentPage}
+              pageSize={rowsPerPage || 15}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPageSizeChange={(newSize) => setRowsPerPage(newSize)}
             />
           </div>
         )}

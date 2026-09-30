@@ -3,6 +3,7 @@
 import { useI18n } from "@/i18n";
 import type { ChannelBreakdownItem } from "@haihire/shared";
 import { getChannelColor } from "../channel-badge";
+import { BarChart3 } from "lucide-react";
 
 interface ApplicationsBySourceProps {
   data: ChannelBreakdownItem[];
@@ -16,14 +17,12 @@ export function ApplicationsBySource({
   const { t } = useI18n();
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-5">
+    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
+          <span className="p-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+            <BarChart3 className="h-4 w-4" />
           </span>
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">
             {t("sourcing.overview.applicationsBySource")}

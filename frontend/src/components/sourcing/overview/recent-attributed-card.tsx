@@ -3,7 +3,8 @@
 import { useI18n } from "@/i18n";
 import type { RecentAttributedCandidateItem } from "@haihire/shared";
 import { ChannelBadge } from "../channel-badge";
-import { Users, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
+import { getInitials } from "@/lib/utils";
 import Link from "next/link";
 
 interface RecentAttributedCardProps {
@@ -18,7 +19,7 @@ export function RecentAttributedCard({
   const { t } = useI18n();
 
   return (
-    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 shadow-xs space-y-4">
+    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -46,13 +47,7 @@ export function RecentAttributedCard({
       ) : (
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {candidates.map((cand) => {
-            const initials = cand.candidateName
-              .split(" ")
-              .filter(Boolean)
-              .map((n) => n[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase();
+            const initials = getInitials(cand.candidateName);
 
             return (
               <div
@@ -61,7 +56,7 @@ export function RecentAttributedCard({
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
-                    {initials || "CA"}
+                    {initials}
                   </div>
                   <div className="min-w-0 flex-1">
                     <Link
@@ -87,3 +82,4 @@ export function RecentAttributedCard({
     </div>
   );
 }
+

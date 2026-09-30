@@ -13,6 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { CustomSelect } from "@/components/shared/custom-select";
 import { Link2, Sparkles, Check, Copy } from "lucide-react";
 
 interface JobOption {
@@ -108,12 +109,22 @@ export function CreateLinkModal({
     });
   };
 
+  const channelOptions = CHANNEL_OPTIONS.map((ch) => ({
+    value: ch,
+    label: (t as (key: string) => string)(`sourcing.channels.${ch}`) || ch,
+  }));
+
+  const jobOptions = [
+    { value: "", label: t("sourcing.modal.allJobsOption") },
+    ...jobs.map((j) => ({ value: j.id, label: j.title })),
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl">
+      <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl">
         <DialogHeader className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+            <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <Link2 className="h-4 w-4" />
             </div>
             <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
@@ -155,17 +166,11 @@ export function CreateLinkModal({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
               {t("sourcing.modal.sourceLabel")}
             </label>
-            <select
+            <CustomSelect
               value={source}
-              onChange={(e) => setSource(e.target.value as SourcingChannel)}
-              className="h-9 w-full rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
-            >
-              {CHANNEL_OPTIONS.map((ch) => (
-                <option key={ch} value={ch}>
-                  {(t as (key: string) => string)(`sourcing.channels.${ch}`) || ch}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSource(val as SourcingChannel)}
+              options={channelOptions}
+            />
           </div>
 
           {/* Custom source name if OTHER */}
@@ -189,18 +194,11 @@ export function CreateLinkModal({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
               {t("sourcing.modal.jobLabel")}
             </label>
-            <select
+            <CustomSelect
               value={jobId}
-              onChange={(e) => setJobId(e.target.value)}
-              className="h-9 w-full rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
-            >
-              <option value="">{t("sourcing.modal.allJobsOption")}</option>
-              {jobs.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.title}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setJobId(val)}
+              options={jobOptions}
+            />
           </div>
 
           {/* Campaign Tag (Optional) */}
@@ -239,7 +237,7 @@ export function CreateLinkModal({
                 )}
               </button>
             </div>
-            <p className="font-mono text-[11px] text-slate-600 dark:text-slate-400 truncate">
+            <p className="text-[11px] font-mono text-slate-600 dark:text-slate-300 truncate select-all">
               {previewUrl}
             </p>
           </div>
@@ -249,21 +247,18 @@ export function CreateLinkModal({
               type="button"
               variant="outline"
               onClick={handleClose}
-              className="h-9 rounded-xl text-xs font-semibold cursor-pointer"
+              className="h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer"
             >
-              {t("sourcing.modal.cancelBtn")}
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending}
-              className="h-9 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs gap-1.5"
+              className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>
-                {createMutation.isPending
-                  ? t("sourcing.modal.creatingBtn")
-                  : t("sourcing.modal.createBtn")}
-              </span>
+              {createMutation.isPending
+                ? t("sourcing.modal.creatingBtn")
+                : t("sourcing.modal.createBtn")}
             </Button>
           </DialogFooter>
         </form>

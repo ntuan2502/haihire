@@ -88,6 +88,25 @@ enum EmailScope {
   ORGANIZATION
 }
 
+enum SourcingChannel {
+  LINKEDIN
+  INDEED
+  GOOGLE_JOBS
+  CAREER_SITE
+  REFERRAL
+  DIRECT
+  HANDSHAKE
+  EMAIL
+  WE_WORK_REMOTELY
+  STACK_OVERFLOW
+  TWITTER_X
+  REDDIT
+  GLASSDOOR
+  AGENCY
+  FACEBOOK
+  OTHER
+}
+
 enum ActivityType {
   APPLIED
   STAGE_CHANGED
@@ -113,6 +132,7 @@ model Organization {
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
   documents      CandidateDocument[]
+  trackingLinks  TrackingLink[]
   createdAt   DateTime             @default(now())
   updatedAt   temporal.updatedAt()
 
@@ -130,6 +150,7 @@ model User {
   organization   Organization?        @relation(fields: [organizationId], references: [id])
   jobs           Job[]
   inviteLinks    InviteLink[]
+  trackingLinks  TrackingLink[]
   memberships    OrganizationMember[]
   createdAt      DateTime             @default(now())
   updatedAt      temporal.updatedAt()
@@ -187,6 +208,7 @@ model Job {
   organizationId  String
   organization    Organization  @relation(fields: [organizationId], references: [id])
   applications    Application[]
+  trackingLinks   TrackingLink[]
   deletedAt       DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       temporal.updatedAt()
@@ -237,6 +259,12 @@ model Application {
   resumeMimeType String?          @default("application/pdf")
   notes          String?
   orderIndex     Int              @default(0)
+  trackingLinkId String?
+  trackingLink   TrackingLink?    @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)
+  sourceChannel  SourcingChannel  @default(DIRECT)
+  sourceDetails  String?
+  referrerDomain String?
+  utmCampaign    String?
   interviews     Interview[]
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
@@ -373,3 +401,46 @@ model CandidateDocument {
   @@index([organizationId])
   @@map("candidateDocument")
 }
+
+model TrackingLink {
+  id             String           @id @default(uuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  token          String           @unique
+  source         SourcingChannel  @default(OTHER)
+  customSource   String?
+  jobId          String?
+  job            Job?             @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  campaign       String?
+  medium         String?
+  clicksCount    Int              @default(0)
+  isActive       Boolean          @default(true)
+  createdById    String?
+  createdBy      User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  applications   Application[]
+  clicks         TrackingClick[]
+  deletedAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      temporal.updatedAt()
+
+  @@index([organizationId, isActive])
+  @@index([token])
+  @@map("trackingLink")
+}
+
+model TrackingClick {
+  id             String        @id @default(uuid())
+  trackingLinkId String
+  trackingLink   TrackingLink  @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  referrer       String?
+  referrerDomain String?
+  ipHash         String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
+
+  @@index([trackingLinkId, createdAt])
+  @@index([referrerDomain])
+  @@map("trackingClick")
+}
+

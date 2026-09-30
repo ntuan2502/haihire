@@ -16,6 +16,7 @@
     "seed": "node --import tsx src/prisma/seed.ts",
     "dev:composer": "pnpm run build && pnpm run composer:dev",
     "lint": "eslint . && tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "migrate": "prisma db migrate",
     "migration:plan": "prisma migration plan",
     "migration:show": "prisma migration show",

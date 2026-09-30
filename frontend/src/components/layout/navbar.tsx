@@ -45,6 +45,7 @@ export type NavTab =
   | "applications"
   | "inbox"
   | "interviews"
+  | "sourcing"
   | "assistant"
   | "settings";
 
@@ -83,6 +84,7 @@ export function Navbar({
   else if (pathname.startsWith("/dashboard/candidates")) currentTab = "candidates";
   else if (pathname.startsWith("/dashboard/applications")) currentTab = "applications";
   else if (pathname.startsWith("/dashboard/interviews")) currentTab = "interviews";
+  else if (pathname.startsWith("/dashboard/source-tracking")) currentTab = "sourcing";
   else if (pathname.startsWith("/dashboard/settings")) currentTab = "settings";
   else if (pathname === "/dashboard") currentTab = "dashboard";
 
@@ -99,13 +101,12 @@ export function Navbar({
     { id: "settings", label: t("nav.settings"), icon: Settings },
   ];
 
-  // Features inside "More" (all Coming Soon)
+  // Features inside "More" (Coming Soon)
   const moreItems = [
     { label: t("nav.inbox"), icon: Inbox },
     { label: t("nav.assistant"), icon: MessageSquare },
     { label: t("nav.features.analyticsReports"), icon: BarChart3 },
     { label: t("nav.features.talentPools"), icon: Users },
-    { label: t("nav.features.sourceTracking"), icon: Radio },
     { label: t("nav.features.aiAnalysis"), icon: Bot },
     { label: t("nav.features.timeline"), icon: Clock },
   ];
@@ -119,6 +120,8 @@ export function Navbar({
       router.push("/dashboard/applications");
     } else if (tab === "interviews") {
       router.push("/dashboard/interviews");
+    } else if (tab === "sourcing") {
+      router.push("/dashboard/source-tracking");
     } else if (tab === "settings") {
       router.push("/dashboard/settings");
     } else if (tab === "dashboard") {
@@ -184,11 +187,31 @@ export function Navbar({
 
               {/* More dropdown */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer">
+                <DropdownMenuTrigger className={`flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold cursor-pointer transition-colors ${
+                  currentTab === "sourcing"
+                    ? "bg-blue-50 text-blue-700 font-bold dark:bg-blue-950/60 dark:text-blue-300"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
+                }`}>
                   <span>{t("nav.more")}</span>
                   <ChevronDown className="h-3 w-3 opacity-60" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56 p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-0.5">
+                  <DropdownMenuItem
+                    onClick={() => router.push("/dashboard/source-tracking")}
+                    className={`flex items-center justify-between px-2.5 py-2 text-xs rounded-lg cursor-pointer transition-colors ${
+                      currentTab === "sourcing"
+                        ? "bg-blue-50 text-blue-700 font-semibold dark:bg-blue-950/60 dark:text-blue-300"
+                        : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Radio className={`h-3.5 w-3.5 ${currentTab === "sourcing" ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`} />
+                      <span>{t("nav.features.sourceTracking")}</span>
+                    </div>
+                  </DropdownMenuItem>
+
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
                   <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     {t("common.comingSoon")}
                   </div>
@@ -316,6 +339,28 @@ export function Navbar({
               </button>
             );
           })}
+
+        {/* Source Tracking Active Feature */}
+        <button
+          type="button"
+          onClick={() => handleMobileNavSelect("sourcing")}
+          className={`flex h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-semibold transition-colors text-left cursor-pointer ${
+            currentTab === "sourcing"
+              ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 font-bold"
+              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Radio
+              className={`h-4 w-4 shrink-0 ${
+                currentTab === "sourcing"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-slate-500"
+              }`}
+            />
+            <span>{t("nav.features.sourceTracking")}</span>
+          </div>
+        </button>
 
         {/* More (Coming Soon) */}
         <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">

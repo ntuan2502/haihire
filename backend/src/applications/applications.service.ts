@@ -2,7 +2,7 @@ import {
   Inject,
   Injectable,
 } from "@nestjs/common";
-import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
+import { APP_ERROR_CODES, SourcingChannel, type CandidateDocument } from "@haihire/shared";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -598,7 +598,64 @@ export class ApplicationsService {
       -1,
     );
 
-    // 5. Save Application record
+    // 5. Resolve Sourcing / Attribution
+    let trackingLinkId: string | null = null;
+    let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
+    let sourceDetails: string | null = null;
+    let referrerDomain: string | null = null;
+    let utmCampaign: string | null = dto.utmCampaign?.trim() || null;
+
+    if (dto.ref) {
+      const link = await this.prisma.db.orm.public.TrackingLink.select(
+        "id",
+        "source",
+        "customSource",
+        "campaign",
+        "isActive",
+        "deletedAt",
+      )
+        .where((l) => l.token.eq(dto.ref as string))
+        .first();
+
+      if (link && !link.deletedAt && link.isActive) {
+        trackingLinkId = link.id;
+        sourceChannel = (link.source as SourcingChannel) || SourcingChannel.OTHER;
+        sourceDetails = link.customSource || null;
+        if (!utmCampaign && link.campaign) {
+          utmCampaign = link.campaign;
+        }
+      }
+    }
+
+    if (!trackingLinkId && dto.referrer) {
+      try {
+        let norm = dto.referrer.trim();
+        if (!norm.startsWith("http://") && !norm.startsWith("https://")) {
+          norm = `https://${norm}`;
+        }
+        const parsed = new URL(norm);
+        referrerDomain = parsed.hostname.replace(/^www\./, "").toLowerCase();
+
+        if (referrerDomain.includes("linkedin.com")) sourceChannel = SourcingChannel.LINKEDIN;
+        else if (referrerDomain.includes("indeed.com")) sourceChannel = SourcingChannel.INDEED;
+        else if (referrerDomain.includes("google.com")) sourceChannel = SourcingChannel.GOOGLE_JOBS;
+        else if (referrerDomain.includes("glassdoor.com")) sourceChannel = SourcingChannel.GLASSDOOR;
+        else if (referrerDomain.includes("facebook.com")) sourceChannel = SourcingChannel.FACEBOOK;
+        else if (referrerDomain.includes("twitter.com") || referrerDomain.includes("x.com")) sourceChannel = SourcingChannel.TWITTER_X;
+        else if (referrerDomain.includes("reddit.com")) sourceChannel = SourcingChannel.REDDIT;
+        else if (referrerDomain.includes("stackoverflow.com")) sourceChannel = SourcingChannel.STACK_OVERFLOW;
+        else if (referrerDomain.includes("handshake.com")) sourceChannel = SourcingChannel.HANDSHAKE;
+        else if (referrerDomain) sourceChannel = SourcingChannel.OTHER;
+      } catch {
+        // Ignore URL parse error
+      }
+    }
+
+    if (!trackingLinkId && dto.sourceChannel) {
+      sourceChannel = dto.sourceChannel as SourcingChannel;
+    }
+
+    // 6. Save Application record
     const created = await this.prisma.db.orm.public.Application.create({
       id: crypto.randomUUID(),
       candidateId: candidateId as string,
@@ -610,6 +667,11 @@ export class ApplicationsService {
       resumeMimeType: uploadResult.mimeType || "application/pdf",
       notes: dto.notes || null,
       orderIndex: maxOrder + 1,
+      trackingLinkId,
+      sourceChannel,
+      sourceDetails,
+      referrerDomain,
+      utmCampaign,
       updatedAt: toInstant(),
     });
 
@@ -631,6 +693,9 @@ export class ApplicationsService {
           jobId: job.id,
           jobTitle: job.title,
           resumeFileName: result.resumeFileName,
+          sourceChannel,
+          sourceDetails,
+          utmCampaign,
         },
       });
 

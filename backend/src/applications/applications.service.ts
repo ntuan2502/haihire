@@ -14,7 +14,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
-import { toTimestamp } from "../common/date.util";
+import crypto from "node:crypto";
+import { toTimestamp, toInstant } from "../common/date.util";
 
 import { fixUtf8String } from "../common/doc-utils";
 export { fixUtf8String };
@@ -508,6 +509,7 @@ export class ApplicationsService {
         candidateId = existingCandidate.id;
       } else {
         const newCandidate = await this.prisma.db.orm.public.Candidate.create({
+          id: crypto.randomUUID(),
           organizationId: orgId,
           name: dto.candidateName.trim(),
           email,
@@ -517,6 +519,7 @@ export class ApplicationsService {
           resumeFileName: uploadResult.originalName || null,
           resumeFileSize: uploadResult.size || null,
           resumeMimeType: uploadResult.mimeType || "application/pdf",
+          updatedAt: toInstant(),
         });
         candidateId = newCandidate.id;
       }
@@ -568,6 +571,7 @@ export class ApplicationsService {
 
     // 5. Save Application record
     const created = await this.prisma.db.orm.public.Application.create({
+      id: crypto.randomUUID(),
       candidateId: candidateId as string,
       jobId: dto.jobId,
       stage: "APPLIED",
@@ -577,6 +581,7 @@ export class ApplicationsService {
       resumeMimeType: uploadResult.mimeType || "application/pdf",
       notes: dto.notes || null,
       orderIndex: maxOrder + 1,
+      updatedAt: toInstant(),
     });
 
     const result = await this.findOne(created.id);
@@ -792,6 +797,7 @@ export class ApplicationsService {
             size: uploadResult.size ?? null,
             mimeType: uploadResult.mimeType ?? null,
             type: documentType || "Resume",
+            updatedAt: toInstant(),
           });
         }
       } catch {

@@ -13,6 +13,7 @@ import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { env } from "../config/env";
+import { toInstant } from "../common/date.util";
 
 @Injectable()
 export class AuthService {
@@ -69,6 +70,7 @@ export class AuthService {
                 name: "Admin",
                 slug: "admin",
                 ownerId: adminUserId,
+                updatedAt: toInstant(),
               },
               update: { ownerId: adminUserId },
               conflictOn: { slug: "admin" },
@@ -86,6 +88,7 @@ export class AuthService {
               role: matchedDemo.role,
               password: hashedPassword,
               organizationId: orgId,
+              updatedAt: toInstant(),
             },
             update: {
               password: hashedPassword,
@@ -98,11 +101,13 @@ export class AuthService {
         } else {
           user = await this.prisma.db.orm.public.User.upsert({
             create: {
+              id: crypto.randomUUID(),
               email: normalizedEmail,
               name: matchedDemo.name,
               role: matchedDemo.role,
               password: hashedPassword,
               organizationId: null,
+              updatedAt: toInstant(),
             },
             update: {
               password: hashedPassword,
@@ -197,6 +202,7 @@ export class AuthService {
         password: hashedPassword,
         role: "MEMBER",
         organizationId: null,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: "00000000-0000-0000-0000-000000000000" },

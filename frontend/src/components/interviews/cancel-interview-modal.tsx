@@ -19,6 +19,7 @@ export function CancelInterviewModal({
   isCancelling = false,
 }: CancelInterviewModalProps) {
   const { t } = useI18n();
+  const loading = isCancelling;
 
   return (
     <ConfirmDestructiveModal
@@ -41,7 +42,7 @@ export function CancelInterviewModal({
       confirmMatchText={t("common.cancelConfirmWord")}
       confirmButtonLabel={t("interviews.cancelThisSchedule")}
       cancelButtonLabel={t("common.cancel")}
-      isLoading={isCancelling}
+      isLoading={loading}
       variant="warning"
     />
   );

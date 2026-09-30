@@ -9,7 +9,7 @@ import { EventsService } from "../events/events.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
-import { toTimestamp } from "../common/date.util";
+import { toTimestamp, toInstant } from "../common/date.util";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -68,6 +68,7 @@ export class OrganizationsService implements OnModuleInit {
               organizationId: org.id,
               userId: org.ownerId,
               role: "ADMIN",
+              updatedAt: toInstant(),
             },
             update: {},
             conflictOn: { id },
@@ -92,6 +93,7 @@ export class OrganizationsService implements OnModuleInit {
               organizationId: user.organizationId,
               userId: user.id,
               role: user.role === "ADMIN" ? "ADMIN" : "MEMBER",
+              updatedAt: toInstant(),
             },
             update: {},
             conflictOn: { id },
@@ -120,11 +122,14 @@ export class OrganizationsService implements OnModuleInit {
       );
     }
 
+    const orgId = crypto.randomUUID();
     await this.prisma.db.orm.public.Organization.upsert({
       create: {
+        id: orgId,
         name: dto.name.trim(),
         slug: normalizedSlug,
         ownerId: userId,
+        updatedAt: toInstant(),
       },
       update: {
         ownerId: userId,
@@ -154,6 +159,7 @@ export class OrganizationsService implements OnModuleInit {
         organizationId: org.id,
         userId,
         role: "ADMIN",
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: memberId },
@@ -274,6 +280,7 @@ export class OrganizationsService implements OnModuleInit {
         organizationId: org.id,
         userId,
         role: assignedRole,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: newMemberId },
@@ -431,6 +438,7 @@ export class OrganizationsService implements OnModuleInit {
           organizationId: targetOrgId,
           userId,
           role: targetRole,
+          updatedAt: toInstant(),
         },
         update: {},
         conflictOn: { id: memberId },
@@ -772,6 +780,7 @@ export class OrganizationsService implements OnModuleInit {
           organizationId: targetOrgId,
           userId: targetMemberId,
           role: newRole,
+          updatedAt: toInstant(),
         },
         update: {},
         conflictOn: { id: newMemberId },
@@ -986,6 +995,7 @@ export class OrganizationsService implements OnModuleInit {
         usesCount: 0,
         status: "ACTIVE",
         createdById: user.id,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
@@ -1277,6 +1287,7 @@ export class OrganizationsService implements OnModuleInit {
         organizationId: link.organizationId,
         userId,
         role: assignedRole,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: newMemberId },

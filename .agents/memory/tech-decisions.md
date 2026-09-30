@@ -110,3 +110,26 @@ updated: 2026-09-18
   - **Decision**: Reject storing raw localized text directly into `ActivityLog.title` and `ActivityLog.description` in the database. Instead, store standardized English prose as fallback, structured `type` / `subType`, and business parameters in `metadata` (`{ userName, interviewer, round, date, time, jobTitle, fromStage, toStage, fileName, subject }`).
   - **Client-Side Reactive Translation**: Frontend timeline components format events reactively using `t("timeline.events." + key + "_title", metadata)` and `t("timeline.events." + key + "_desc", metadata)`. If the translation key is missing or the event is user-generated free-form notes (UGC), it gracefully falls back to `event.title` and `event.description` from the database.
   - **Rationale**: Guarantees instantaneous multi-language switching across candidate timeline views without database migration, prevents cross-recruiter language mismatch in global teams, and keeps database audit logs clean and immutable.
+
+- **Docker Monorepo Architecture, Node 26 Alpine & Pure Production Containerization**:
+  - **Decision**: Centralize port overrides in a single root `.env` file (`POSTGRES_PORT`, `MINIO_PORT`, `MINIO_CONSOLE_PORT`, `BACKEND_PORT`, `FRONTEND_PORT`, `REDIS_PORT`).
+  - **Node 26 Alpine Baseline & Unpinned Latest pnpm**:
+    - Upgraded all Docker base images to `node:26-alpine` to match modern host development environments.
+    - Node 26 provides out-of-the-box native `Temporal` API without requiring experimental `--harmony-temporal` flags.
+    - `pnpm` is installed dynamically at its latest release via `npm install -g pnpm` without pinning specific versions.
+  - **High-Performance Multi-Stage Production Builds & BuildKit Caching**:
+    - **BuildKit Cache Mounts**: Both `backend/Dockerfile` and `frontend/Dockerfile` utilize `--mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store` to cache package tarballs across builds. Subsequent builds bypass package downloads completely.
+    - **Frontend Next.js Standalone Optimization (`output: "standalone"`)**:
+      - `next.config.ts` enables `output: "standalone"`, tracing runtime node_modules into `.next/standalone`.
+      - Stage 2 (`runner`) copies only `.next/standalone`, `.next/static`, and `public`, requiring zero npm/pnpm installation steps. Image size dropped by ~70% (down to ~330MB) and runner startup is instant (0ms).
+      - `BACKEND_HOST=backend` and `MINIO_HOST=minio` are baked into the builder stage to ensure Next.js route manifests point to internal docker services.
+    - **Backend (`backend/Dockerfile`)**: Stage 1 (`builder`) compiles `@haihire/shared` and bundles NestJS backend via esbuild to `dist/server.mjs` with `--alias:@haihire/shared=../packages/shared/src/index.ts`. Stage 2 (`runner`) installs only `--prod` dependencies directly from local cache mount and runs via `node dist/server.mjs`.
+    - **Elimination of Dev Volumes**: Removed host source volume mounts (`./backend` and `./frontend`) from `docker-compose.yml` so production containers run compiled, immutable build artifacts.
+    - **Single Command Operation**: Infrastructure runs via `docker compose up -d`, while the full containerized production stack runs via `docker compose --profile app up -d`.
+  - **Infrastructure Baseline Upgrades (Postgres 17, Redis Alpine & MinIO Community)**:
+    - **PostgreSQL**: Upgraded from `postgres:16-alpine` to `postgres:17-alpine` (standard stable production major release).
+    - **Redis**: Upgraded to `redis:alpine` (latest official alpine release).
+    - **MinIO Migration**: Due to upstream removal of `minio/minio` and `minio/mc` from Docker Hub in October 2025, switched to `alpine/minio:latest-release` configured with root execution (`user: "0:0"`) and native HTTP healthcheck (`/minio/health/live`).
+    - **Bucket Provisioning**: Removed the redundant `minio-create-bucket` container. `MinioService` in NestJS natively handles bucket creation and verification via the official AWS S3 SDK on application bootstrap.
+  - **State Naming Conventions**:
+    - Standardized interview cancellation loading state to `isCancelling` across modal and list components; eliminated redundant `isCanceling` prop.

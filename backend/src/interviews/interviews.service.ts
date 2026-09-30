@@ -13,7 +13,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { fixUtf8String } from "../applications/applications.service";
-import { toTimestamp } from "../common/date.util";
+import { toTimestamp, toInstant } from "../common/date.util";
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
@@ -486,6 +486,7 @@ export class InterviewsService {
       round: dto.round || 1,
       scorecard: scorecardStr,
       notes: dto.notes || null,
+      updatedAt: toInstant(),
     });
 
     if (app.stage !== "INTERVIEW" && app.stage !== "OFFER" && app.stage !== "HIRED") {

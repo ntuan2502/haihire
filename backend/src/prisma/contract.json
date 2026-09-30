@@ -4,55 +4,55 @@
   "target": "postgres",
   "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
   "roots": {
-    "activityLog": {
+    "ActivityLog": {
       "model": "ActivityLog",
       "namespace": "public"
     },
-    "application": {
+    "Application": {
       "model": "Application",
       "namespace": "public"
     },
-    "candidate": {
+    "Candidate": {
       "model": "Candidate",
       "namespace": "public"
     },
-    "candidateDocument": {
+    "CandidateDocument": {
       "model": "CandidateDocument",
       "namespace": "public"
     },
-    "emailLog": {
+    "EmailLog": {
       "model": "EmailLog",
       "namespace": "public"
     },
-    "emailSetting": {
+    "EmailSetting": {
       "model": "EmailSetting",
       "namespace": "public"
     },
-    "emailTemplate": {
+    "EmailTemplate": {
       "model": "EmailTemplate",
       "namespace": "public"
     },
-    "interview": {
+    "Interview": {
       "model": "Interview",
       "namespace": "public"
     },
-    "inviteLink": {
+    "InviteLink": {
       "model": "InviteLink",
       "namespace": "public"
     },
-    "job": {
+    "Job": {
       "model": "Job",
       "namespace": "public"
     },
-    "organization": {
+    "Organization": {
       "model": "Organization",
       "namespace": "public"
     },
-    "organizationMember": {
+    "OrganizationMember": {
       "model": "OrganizationMember",
       "namespace": "public"
     },
-    "user": {
+    "User": {
       "model": "User",
       "namespace": "public"
     }
@@ -550,7 +550,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "activityLog"
+              "table": "ActivityLog"
             }
           },
           "Application": {
@@ -775,7 +775,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "application"
+              "table": "Application"
             }
           },
           "Candidate": {
@@ -1029,7 +1029,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "candidate"
+              "table": "Candidate"
             }
           },
           "CandidateDocument": {
@@ -1173,7 +1173,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "candidateDocument"
+              "table": "CandidateDocument"
             }
           },
           "EmailLog": {
@@ -1431,7 +1431,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "emailLog"
+              "table": "EmailLog"
             }
           },
           "EmailSetting": {
@@ -1589,7 +1589,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "emailSetting"
+              "table": "EmailSetting"
             }
           },
           "EmailTemplate": {
@@ -1723,7 +1723,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "emailTemplate"
+              "table": "EmailTemplate"
             }
           },
           "Interview": {
@@ -1893,7 +1893,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "interview"
+              "table": "Interview"
             }
           },
           "InviteLink": {
@@ -2059,7 +2059,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "inviteLink"
+              "table": "InviteLink"
             }
           },
           "Job": {
@@ -2302,7 +2302,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "job"
+              "table": "Job"
             }
           },
           "Organization": {
@@ -2525,7 +2525,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "organization"
+              "table": "Organization"
             }
           },
           "OrganizationMember": {
@@ -2635,7 +2635,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "organizationMember"
+              "table": "OrganizationMember"
             }
           },
           "User": {
@@ -2804,7 +2804,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "user"
+              "table": "User"
             }
           }
         }
@@ -2816,12 +2816,12 @@
       "public": {
         "entries": {
           "table": {
-            "activityLog": {
+            "ActivityLog": {
               "checks": [
                 {
                   "expression": "\"type\" IN ('APPLIED', 'STAGE_CHANGED', 'EMAIL_SENT', 'INTERVIEW_SCHEDULED', 'INTERVIEW_UPDATED', 'SCORECARD_SUBMITTED', 'NOTE_ADDED')",
-                  "name": "activityLog_type_check_fbd4cb01",
-                  "prefix": "activityLog_type_check"
+                  "name": "ActivityLog_type_check_fbd4cb01",
+                  "prefix": "ActivityLog_type_check"
                 }
               ],
               "columns": {
@@ -2908,14 +2908,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "activityLog"
+                    "tableName": "ActivityLog"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 },
                 {
@@ -2925,14 +2925,14 @@
                       "candidateId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "activityLog"
+                    "tableName": "ActivityLog"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "candidate"
+                    "tableName": "Candidate"
                   }
                 },
                 {
@@ -2942,14 +2942,14 @@
                       "applicationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "activityLog"
+                    "tableName": "ActivityLog"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "application"
+                    "tableName": "Application"
                   }
                 }
               ],
@@ -2958,16 +2958,16 @@
                   "columns": [
                     "applicationId"
                   ],
-                  "name": "activityLog_applicationId_idx_8158f91a",
-                  "prefix": "activityLog_applicationId_idx",
+                  "name": "ActivityLog_applicationId_idx_8158f91a",
+                  "prefix": "ActivityLog_applicationId_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "candidateId"
                   ],
-                  "name": "activityLog_candidateId_idx_462b5869",
-                  "prefix": "activityLog_candidateId_idx",
+                  "name": "ActivityLog_candidateId_idx_462b5869",
+                  "prefix": "ActivityLog_candidateId_idx",
                   "unique": false
                 },
                 {
@@ -2975,16 +2975,16 @@
                     "organizationId",
                     "createdAt"
                   ],
-                  "name": "activityLog_organizationId_createdAt_idx_c52d1cc3",
-                  "prefix": "activityLog_organizationId_createdAt_idx",
+                  "name": "ActivityLog_organizationId_createdAt_idx_c52d1cc3",
+                  "prefix": "ActivityLog_organizationId_createdAt_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "activityLog_organizationId_idx_2e17ef41",
-                  "prefix": "activityLog_organizationId_idx",
+                  "name": "ActivityLog_organizationId_idx_2e17ef41",
+                  "prefix": "ActivityLog_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -2995,12 +2995,12 @@
               },
               "uniques": []
             },
-            "application": {
+            "Application": {
               "checks": [
                 {
                   "expression": "\"stage\" IN ('APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED')",
-                  "name": "application_stage_check_6a822e91",
-                  "prefix": "application_stage_check"
+                  "name": "Application_stage_check_6a822e91",
+                  "prefix": "Application_stage_check"
                 }
               ],
               "columns": {
@@ -3100,14 +3100,14 @@
                       "candidateId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "application"
+                    "tableName": "Application"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "candidate"
+                    "tableName": "Candidate"
                   }
                 },
                 {
@@ -3117,14 +3117,14 @@
                       "jobId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "application"
+                    "tableName": "Application"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "job"
+                    "tableName": "Job"
                   }
                 }
               ],
@@ -3133,16 +3133,16 @@
                   "columns": [
                     "candidateId"
                   ],
-                  "name": "application_candidateId_idx_462b5869",
-                  "prefix": "application_candidateId_idx",
+                  "name": "Application_candidateId_idx_462b5869",
+                  "prefix": "Application_candidateId_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "jobId"
                   ],
-                  "name": "application_jobId_idx_623c8f77",
-                  "prefix": "application_jobId_idx",
+                  "name": "Application_jobId_idx_623c8f77",
+                  "prefix": "Application_jobId_idx",
                   "unique": false
                 },
                 {
@@ -3150,8 +3150,8 @@
                     "jobId",
                     "stage"
                   ],
-                  "name": "application_jobId_stage_idx_e669f3f8",
-                  "prefix": "application_jobId_stage_idx",
+                  "name": "Application_jobId_stage_idx_e669f3f8",
+                  "prefix": "Application_jobId_stage_idx",
                   "unique": false
                 }
               ],
@@ -3169,12 +3169,12 @@
                 }
               ]
             },
-            "candidate": {
+            "Candidate": {
               "checks": [
                 {
                   "expression": "\"gender\" IN ('MALE', 'FEMALE', 'OTHER')",
-                  "name": "candidate_gender_check_30490488",
-                  "prefix": "candidate_gender_check"
+                  "name": "Candidate_gender_check_30490488",
+                  "prefix": "Candidate_gender_check"
                 }
               ],
               "columns": {
@@ -3280,14 +3280,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "candidate"
+                    "tableName": "Candidate"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 }
               ],
@@ -3296,8 +3296,8 @@
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "candidate_organizationId_idx_2e17ef41",
-                  "prefix": "candidate_organizationId_idx",
+                  "name": "Candidate_organizationId_idx_2e17ef41",
+                  "prefix": "Candidate_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -3315,7 +3315,7 @@
                 }
               ]
             },
-            "candidateDocument": {
+            "CandidateDocument": {
               "columns": {
                 "candidateId": {
                   "codecId": "pg/text@1",
@@ -3388,14 +3388,14 @@
                       "candidateId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "candidateDocument"
+                    "tableName": "CandidateDocument"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "candidate"
+                    "tableName": "Candidate"
                   }
                 },
                 {
@@ -3404,14 +3404,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "candidateDocument"
+                    "tableName": "CandidateDocument"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 }
               ],
@@ -3420,16 +3420,16 @@
                   "columns": [
                     "candidateId"
                   ],
-                  "name": "candidateDocument_candidateId_idx_462b5869",
-                  "prefix": "candidateDocument_candidateId_idx",
+                  "name": "CandidateDocument_candidateId_idx_462b5869",
+                  "prefix": "CandidateDocument_candidateId_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "candidateDocument_organizationId_idx_2e17ef41",
-                  "prefix": "candidateDocument_organizationId_idx",
+                  "name": "CandidateDocument_organizationId_idx_2e17ef41",
+                  "prefix": "CandidateDocument_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -3440,22 +3440,22 @@
               },
               "uniques": []
             },
-            "emailLog": {
+            "EmailLog": {
               "checks": [
                 {
                   "expression": "\"scope\" IN ('SYSTEM', 'ORGANIZATION')",
-                  "name": "emailLog_scope_check_6f463ed9",
-                  "prefix": "emailLog_scope_check"
+                  "name": "EmailLog_scope_check_6f463ed9",
+                  "prefix": "EmailLog_scope_check"
                 },
                 {
                   "expression": "\"status\" IN ('SENT', 'SIMULATED', 'FAILED')",
-                  "name": "emailLog_status_check_5d366a78",
-                  "prefix": "emailLog_status_check"
+                  "name": "EmailLog_status_check_5d366a78",
+                  "prefix": "EmailLog_status_check"
                 },
                 {
                   "expression": "\"templateType\" IN ('APPLICATION_CONFIRMATION', 'INTERVIEW_INVITATION', 'REJECTION', 'OFFER', 'CUSTOM')",
-                  "name": "emailLog_templateType_check_ac874270",
-                  "prefix": "emailLog_templateType_check"
+                  "name": "EmailLog_templateType_check_ac874270",
+                  "prefix": "EmailLog_templateType_check"
                 }
               ],
               "columns": {
@@ -3595,14 +3595,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "emailLog"
+                    "tableName": "EmailLog"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 },
                 {
@@ -3611,14 +3611,14 @@
                       "candidateId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "emailLog"
+                    "tableName": "EmailLog"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "candidate"
+                    "tableName": "Candidate"
                   }
                 },
                 {
@@ -3627,14 +3627,14 @@
                       "applicationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "emailLog"
+                    "tableName": "EmailLog"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "application"
+                    "tableName": "Application"
                   }
                 }
               ],
@@ -3643,16 +3643,16 @@
                   "columns": [
                     "applicationId"
                   ],
-                  "name": "emailLog_applicationId_idx_8158f91a",
-                  "prefix": "emailLog_applicationId_idx",
+                  "name": "EmailLog_applicationId_idx_8158f91a",
+                  "prefix": "EmailLog_applicationId_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "candidateId"
                   ],
-                  "name": "emailLog_candidateId_idx_462b5869",
-                  "prefix": "emailLog_candidateId_idx",
+                  "name": "EmailLog_candidateId_idx_462b5869",
+                  "prefix": "EmailLog_candidateId_idx",
                   "unique": false
                 },
                 {
@@ -3660,16 +3660,16 @@
                     "organizationId",
                     "createdAt"
                   ],
-                  "name": "emailLog_organizationId_createdAt_idx_c52d1cc3",
-                  "prefix": "emailLog_organizationId_createdAt_idx",
+                  "name": "EmailLog_organizationId_createdAt_idx_c52d1cc3",
+                  "prefix": "EmailLog_organizationId_createdAt_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "emailLog_organizationId_idx_2e17ef41",
-                  "prefix": "emailLog_organizationId_idx",
+                  "name": "EmailLog_organizationId_idx_2e17ef41",
+                  "prefix": "EmailLog_organizationId_idx",
                   "unique": false
                 },
                 {
@@ -3677,8 +3677,8 @@
                     "scope",
                     "createdAt"
                   ],
-                  "name": "emailLog_scope_createdAt_idx_9f80888a",
-                  "prefix": "emailLog_scope_createdAt_idx",
+                  "name": "EmailLog_scope_createdAt_idx_9f80888a",
+                  "prefix": "EmailLog_scope_createdAt_idx",
                   "unique": false
                 }
               ],
@@ -3689,7 +3689,7 @@
               },
               "uniques": []
             },
-            "emailSetting": {
+            "EmailSetting": {
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -3780,14 +3780,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "emailSetting"
+                    "tableName": "EmailSetting"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 }
               ],
@@ -3805,12 +3805,12 @@
                 }
               ]
             },
-            "emailTemplate": {
+            "EmailTemplate": {
               "checks": [
                 {
                   "expression": "\"type\" IN ('APPLICATION_CONFIRMATION', 'INTERVIEW_INVITATION', 'REJECTION', 'OFFER', 'CUSTOM')",
-                  "name": "emailTemplate_type_check_1e067137",
-                  "prefix": "emailTemplate_type_check"
+                  "name": "EmailTemplate_type_check_1e067137",
+                  "prefix": "EmailTemplate_type_check"
                 }
               ],
               "columns": {
@@ -3886,14 +3886,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "emailTemplate"
+                    "tableName": "EmailTemplate"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 }
               ],
@@ -3902,8 +3902,8 @@
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "emailTemplate_organizationId_idx_2e17ef41",
-                  "prefix": "emailTemplate_organizationId_idx",
+                  "name": "EmailTemplate_organizationId_idx_2e17ef41",
+                  "prefix": "EmailTemplate_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -3921,17 +3921,17 @@
                 }
               ]
             },
-            "interview": {
+            "Interview": {
               "checks": [
                 {
                   "expression": "\"format\" IN ('MEET', 'ZOOM', 'TEAMS', 'OFFICE')",
-                  "name": "interview_format_check_581367dc",
-                  "prefix": "interview_format_check"
+                  "name": "Interview_format_check_581367dc",
+                  "prefix": "Interview_format_check"
                 },
                 {
                   "expression": "\"type\" IN ('HR_SCREENING', 'TECHNICAL', 'CULTURE_FIT', 'FINAL_ROUND', 'ASSESSMENT')",
-                  "name": "interview_type_check_710710c6",
-                  "prefix": "interview_type_check"
+                  "name": "Interview_type_check_710710c6",
+                  "prefix": "Interview_type_check"
                 }
               ],
               "columns": {
@@ -4037,14 +4037,14 @@
                       "applicationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "interview"
+                    "tableName": "Interview"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "application"
+                    "tableName": "Application"
                   }
                 }
               ],
@@ -4053,8 +4053,8 @@
                   "columns": [
                     "applicationId"
                   ],
-                  "name": "interview_applicationId_idx_8158f91a",
-                  "prefix": "interview_applicationId_idx",
+                  "name": "Interview_applicationId_idx_8158f91a",
+                  "prefix": "Interview_applicationId_idx",
                   "unique": false
                 }
               ],
@@ -4065,17 +4065,17 @@
               },
               "uniques": []
             },
-            "inviteLink": {
+            "InviteLink": {
               "checks": [
                 {
                   "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
-                  "name": "inviteLink_role_check_ddb31015",
-                  "prefix": "inviteLink_role_check"
+                  "name": "InviteLink_role_check_ddb31015",
+                  "prefix": "InviteLink_role_check"
                 },
                 {
                   "expression": "\"status\" IN ('ACTIVE', 'EXPIRED', 'REVOKED')",
-                  "name": "inviteLink_status_check_4a183461",
-                  "prefix": "inviteLink_status_check"
+                  "name": "InviteLink_status_check_4a183461",
+                  "prefix": "InviteLink_status_check"
                 }
               ],
               "columns": {
@@ -4170,14 +4170,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "inviteLink"
+                    "tableName": "InviteLink"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 },
                 {
@@ -4186,14 +4186,14 @@
                       "createdById"
                     ],
                     "namespaceId": "public",
-                    "tableName": "inviteLink"
+                    "tableName": "InviteLink"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "user"
+                    "tableName": "User"
                   }
                 }
               ],
@@ -4202,16 +4202,16 @@
                   "columns": [
                     "createdById"
                   ],
-                  "name": "inviteLink_createdById_idx_8bf640ed",
-                  "prefix": "inviteLink_createdById_idx",
+                  "name": "InviteLink_createdById_idx_8bf640ed",
+                  "prefix": "InviteLink_createdById_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "inviteLink_organizationId_idx_2e17ef41",
-                  "prefix": "inviteLink_organizationId_idx",
+                  "name": "InviteLink_organizationId_idx_2e17ef41",
+                  "prefix": "InviteLink_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -4228,27 +4228,27 @@
                 }
               ]
             },
-            "job": {
+            "Job": {
               "checks": [
                 {
                   "expression": "\"experienceLevel\" IN ('ENTRY_LEVEL', 'MID_LEVEL', 'SENIOR_LEVEL', 'LEAD', 'EXECUTIVE')",
-                  "name": "job_experienceLevel_check_c0bba8bd",
-                  "prefix": "job_experienceLevel_check"
+                  "name": "Job_experienceLevel_check_c0bba8bd",
+                  "prefix": "Job_experienceLevel_check"
                 },
                 {
                   "expression": "\"status\" IN ('DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED')",
-                  "name": "job_status_check_aaf19bbb",
-                  "prefix": "job_status_check"
+                  "name": "Job_status_check_aaf19bbb",
+                  "prefix": "Job_status_check"
                 },
                 {
                   "expression": "\"type\" IN ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP')",
-                  "name": "job_type_check_11718726",
-                  "prefix": "job_type_check"
+                  "name": "Job_type_check_11718726",
+                  "prefix": "Job_type_check"
                 },
                 {
                   "expression": "\"workplace\" IN ('ON_SITE', 'HYBRID', 'REMOTE')",
-                  "name": "job_workplace_check_e95ad321",
-                  "prefix": "job_workplace_check"
+                  "name": "Job_workplace_check_e95ad321",
+                  "prefix": "Job_workplace_check"
                 }
               ],
               "columns": {
@@ -4376,14 +4376,14 @@
                       "createdById"
                     ],
                     "namespaceId": "public",
-                    "tableName": "job"
+                    "tableName": "Job"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "user"
+                    "tableName": "User"
                   }
                 },
                 {
@@ -4392,14 +4392,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "job"
+                    "tableName": "Job"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 }
               ],
@@ -4408,16 +4408,16 @@
                   "columns": [
                     "createdById"
                   ],
-                  "name": "job_createdById_idx_8bf640ed",
-                  "prefix": "job_createdById_idx",
+                  "name": "Job_createdById_idx_8bf640ed",
+                  "prefix": "Job_createdById_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "job_organizationId_idx_2e17ef41",
-                  "prefix": "job_organizationId_idx",
+                  "name": "Job_organizationId_idx_2e17ef41",
+                  "prefix": "Job_organizationId_idx",
                   "unique": false
                 },
                 {
@@ -4425,8 +4425,8 @@
                     "organizationId",
                     "status"
                   ],
-                  "name": "job_organizationId_status_idx_21af5e82",
-                  "prefix": "job_organizationId_status_idx",
+                  "name": "Job_organizationId_status_idx_21af5e82",
+                  "prefix": "Job_organizationId_status_idx",
                   "unique": false
                 }
               ],
@@ -4437,7 +4437,7 @@
               },
               "uniques": []
             },
-            "organization": {
+            "Organization": {
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -4489,12 +4489,12 @@
                 }
               ]
             },
-            "organizationMember": {
+            "OrganizationMember": {
               "checks": [
                 {
                   "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
-                  "name": "organizationMember_role_check_ddb31015",
-                  "prefix": "organizationMember_role_check"
+                  "name": "OrganizationMember_role_check_ddb31015",
+                  "prefix": "OrganizationMember_role_check"
                 }
               ],
               "columns": {
@@ -4550,14 +4550,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organizationMember"
+                    "tableName": "OrganizationMember"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 },
                 {
@@ -4566,14 +4566,14 @@
                       "userId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organizationMember"
+                    "tableName": "OrganizationMember"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "user"
+                    "tableName": "User"
                   }
                 }
               ],
@@ -4582,8 +4582,8 @@
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "organizationMember_organizationId_idx_2e17ef41",
-                  "prefix": "organizationMember_organizationId_idx",
+                  "name": "OrganizationMember_organizationId_idx_2e17ef41",
+                  "prefix": "OrganizationMember_organizationId_idx",
                   "unique": false
                 },
                 {
@@ -4591,16 +4591,16 @@
                     "organizationId",
                     "userId"
                   ],
-                  "name": "organizationMember_organizationId_userId_idx_28366c8d",
-                  "prefix": "organizationMember_organizationId_userId_idx",
+                  "name": "OrganizationMember_organizationId_userId_idx_28366c8d",
+                  "prefix": "OrganizationMember_organizationId_userId_idx",
                   "unique": false
                 },
                 {
                   "columns": [
                     "userId"
                   ],
-                  "name": "organizationMember_userId_idx_a489d58a",
-                  "prefix": "organizationMember_userId_idx",
+                  "name": "OrganizationMember_userId_idx_a489d58a",
+                  "prefix": "OrganizationMember_userId_idx",
                   "unique": false
                 }
               ],
@@ -4611,12 +4611,12 @@
               },
               "uniques": []
             },
-            "user": {
+            "User": {
               "checks": [
                 {
                   "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
-                  "name": "user_role_check_ddb31015",
-                  "prefix": "user_role_check"
+                  "name": "User_role_check_ddb31015",
+                  "prefix": "User_role_check"
                 }
               ],
               "columns": {
@@ -4687,14 +4687,14 @@
                       "organizationId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "user"
+                    "tableName": "User"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "organization"
+                    "tableName": "Organization"
                   }
                 }
               ],
@@ -4703,8 +4703,8 @@
                   "columns": [
                     "organizationId"
                   ],
-                  "name": "user_organizationId_idx_2e17ef41",
-                  "prefix": "user_organizationId_idx",
+                  "name": "User_organizationId_idx_2e17ef41",
+                  "prefix": "User_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -4855,10 +4855,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "42054e8c4b0f71517a63230f595080753f3aae773134d3f454999ecac182f27c"
+    "storageHash": "56110699a6b5c3d0c34c7bfd966bcba7793ebf1b85b0481abdbae6c9d196178d"
   },
   "execution": {
-    "executionHash": "0e50d3ac55cd1bb8d6595db6bbf3a1ef491fae96f6eff9e2ae842a7955555f0b",
+    "executionHash": "a57d18cee8c6e99c67651171d5caf68bfba04479ec36e83329bcb3bfbe69c25f",
     "mutations": {
       "defaults": [
         {
@@ -4867,9 +4867,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "activityLog"
+            "entry": "ActivityLog",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4882,9 +4882,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "activityLog"
+            "entry": "ActivityLog",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4893,9 +4893,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "application"
+            "entry": "Application",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4908,9 +4908,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "application"
+            "entry": "Application",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4919,9 +4919,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "candidate"
+            "entry": "Candidate",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4934,9 +4934,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "candidate"
+            "entry": "Candidate",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4945,9 +4945,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "candidateDocument"
+            "entry": "CandidateDocument",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4960,9 +4960,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "candidateDocument"
+            "entry": "CandidateDocument",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4971,9 +4971,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "emailLog"
+            "entry": "EmailLog",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -4986,9 +4986,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "emailLog"
+            "entry": "EmailLog",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -4997,9 +4997,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "emailSetting"
+            "entry": "EmailSetting",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5012,9 +5012,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "emailSetting"
+            "entry": "EmailSetting",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5023,9 +5023,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "emailTemplate"
+            "entry": "EmailTemplate",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5038,9 +5038,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "emailTemplate"
+            "entry": "EmailTemplate",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5049,9 +5049,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "interview"
+            "entry": "Interview",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5064,9 +5064,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "interview"
+            "entry": "Interview",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5075,9 +5075,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "inviteLink"
+            "entry": "InviteLink",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5090,9 +5090,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "inviteLink"
+            "entry": "InviteLink",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5101,9 +5101,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "job"
+            "entry": "Job",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5116,9 +5116,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "job"
+            "entry": "Job",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5127,9 +5127,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "organization"
+            "entry": "Organization",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5142,9 +5142,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "organization"
+            "entry": "Organization",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5153,9 +5153,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "organizationMember"
+            "entry": "OrganizationMember",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5168,9 +5168,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "organizationMember"
+            "entry": "OrganizationMember",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -5179,9 +5179,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "id",
-            "namespace": "public",
-            "table": "user"
+            "entry": "User",
+            "field": "id",
+            "namespace": "public"
           }
         },
         {
@@ -5194,9 +5194,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "user"
+            "entry": "User",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         }
       ]
@@ -5215,6 +5215,8 @@
       "checkConstraint": true,
       "defaultInInsert": true,
       "enums": true,
+      "insertOnConflictSkip": true,
+      "insertOnConflictWithoutTarget": true,
       "lateral": true,
       "returning": true,
       "scalarList": true

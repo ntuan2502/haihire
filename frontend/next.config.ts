@@ -1,14 +1,35 @@
 import type { NextConfig } from "next";
 import os from "node:os";
+import fs from "node:fs";
+import path from "node:path";
+
+const rootEnv = path.resolve(process.cwd(), "..", ".env");
+if (fs.existsSync(rootEnv)) {
+  process.loadEnvFile(rootEnv);
+}
+const localEnv = path.resolve(process.cwd(), ".env");
+if (fs.existsSync(localEnv)) {
+  process.loadEnvFile(localEnv);
+}
+
+const frontendPort = process.env.FRONTEND_PORT || process.env.PORT || "3000";
+const backendPort = process.env.BACKEND_PORT || "3001";
+const minioPort = process.env.MINIO_PORT || "9000";
+const backendUrl = process.env.BACKEND_HOST
+  ? `http://${process.env.BACKEND_HOST}:${backendPort}`
+  : (process.env.INTERNAL_API_URL || `http://127.0.0.1:${backendPort}`);
+const minioUrl = process.env.MINIO_HOST
+  ? `http://${process.env.MINIO_HOST}:${minioPort}`
+  : `http://127.0.0.1:${minioPort}`;
 
 function getAllowedDevOrigins(): string[] {
   const origins = new Set<string>([
     "localhost",
-    "localhost:3000",
+    `localhost:${frontendPort}`,
     "127.0.0.1",
-    "127.0.0.1:3000",
+    `127.0.0.1:${frontendPort}`,
     "0.0.0.0",
-    "0.0.0.0:3000",
+    `0.0.0.0:${frontendPort}`,
     "*.local",
   ]);
 
@@ -18,7 +39,7 @@ function getAllowedDevOrigins(): string[] {
       if (iface.family === "IPv4" || (iface.family as unknown as number) === 4) {
         const ip = iface.address;
         origins.add(ip);
-        origins.add(`${ip}:3000`);
+        origins.add(`${ip}:${frontendPort}`);
 
         // Tự động cho phép toàn bộ dải mạng /24 của card mạng hiện tại
         const parts = ip.split(".");
@@ -27,7 +48,7 @@ function getAllowedDevOrigins(): string[] {
           for (let i = 1; i <= 254; i++) {
             const subnetIp = `${prefix}.${i}`;
             origins.add(subnetIp);
-            origins.add(`${subnetIp}:3000`);
+            origins.add(`${subnetIp}:${frontendPort}`);
           }
         }
       }
@@ -38,6 +59,7 @@ function getAllowedDevOrigins(): string[] {
 }
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   allowedDevOrigins: getAllowedDevOrigins(),
   images: {
     remotePatterns: [
@@ -55,31 +77,31 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:3001/:path*",
+        destination: `${backendUrl}/:path*`,
       },
       {
         source: "/organizations/:path*",
-        destination: "http://127.0.0.1:3001/organizations/:path*",
+        destination: `${backendUrl}/organizations/:path*`,
       },
       {
         source: "/jobs/:path*",
-        destination: "http://127.0.0.1:3001/jobs/:path*",
+        destination: `${backendUrl}/jobs/:path*`,
       },
       {
         source: "/applications/:path*",
-        destination: "http://127.0.0.1:3001/applications/:path*",
+        destination: `${backendUrl}/applications/:path*`,
       },
       {
         source: "/users/:path*",
-        destination: "http://127.0.0.1:3001/users/:path*",
+        destination: `${backendUrl}/users/:path*`,
       },
       {
         source: "/events/:path*",
-        destination: "http://127.0.0.1:3001/events/:path*",
+        destination: `${backendUrl}/events/:path*`,
       },
       {
         source: "/haihire-resumes/:path*",
-        destination: "http://127.0.0.1:9000/haihire-resumes/:path*",
+        destination: `${minioUrl}/haihire-resumes/:path*`,
       },
     ];
   },

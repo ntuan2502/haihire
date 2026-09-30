@@ -13,7 +13,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../common/doc-utils";
-import { toTimestamp } from "../common/date.util";
+import crypto from "node:crypto";
+import { toTimestamp, toInstant } from "../common/date.util";
 
 @Injectable()
 export class CandidatesService {
@@ -367,6 +368,7 @@ export class CandidatesService {
     }
 
     const created = await this.prisma.db.orm.public.Candidate.create({
+      id: crypto.randomUUID(),
       organizationId: orgId,
       name: dto.name.trim(),
       firstName,
@@ -380,6 +382,7 @@ export class CandidatesService {
       resumeFileName: uploadResult.originalName || null,
       resumeFileSize: uploadResult.size || null,
       resumeMimeType: uploadResult.mimeType || "application/pdf",
+      updatedAt: toInstant(),
     });
 
     return created;
@@ -470,6 +473,7 @@ export class CandidatesService {
         size: uploadResult.size ?? null,
         mimeType: uploadResult.mimeType ?? null,
         type: documentType || "Resume",
+        updatedAt: toInstant(),
       });
     } catch {
       // ignore if mock or table unavailable in test

@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.git
+.github
+.agents
+dist
+**/dist
+.next
+**/.next
+.env*
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage

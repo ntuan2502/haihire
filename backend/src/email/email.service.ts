@@ -15,7 +15,7 @@ import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
 import { SendSystemEmailDto, SendSystemTestEmailDto } from "./dto/send-system-email.dto";
 import { EmailTransporterFactory } from "./transporters/transporter.factory";
-import { toTimestamp } from "../common/date.util";
+import { toTimestamp, toInstant } from "../common/date.util";
 import { env } from "../config/env";
 import crypto from "node:crypto";
 
@@ -101,6 +101,7 @@ export class EmailService {
         body: def.body,
         enabled: true,
         variables: JSON.stringify(def.variables),
+        updatedAt: toInstant(),
       });
       created.push({
         ...item,
@@ -183,6 +184,7 @@ export class EmailService {
         smtpPass: null,
         resendApiKey: null,
         sendgridApiKey: null,
+        updatedAt: toInstant(),
       });
     }
 
@@ -373,6 +375,7 @@ export class EmailService {
       body: renderedBody,
       status: sendResult.status,
       errorMessage: sendResult.error || null,
+      updatedAt: toInstant(),
     });
 
     // Record candidate activity timeline event
@@ -565,6 +568,7 @@ export class EmailService {
       body: renderedBody,
       status: sendResult.status,
       errorMessage: sendResult.error || null,
+      updatedAt: toInstant(),
     });
 
     return {

@@ -560,7 +560,7 @@ function InterviewsPageContent() {
             }
           }}
           candidateName={getCandidateDisplayName(cancelInterviewState.app)}
-          isCanceling={deleteInterviewMutation.isPending}
+          isCancelling={deleteInterviewMutation.isPending}
         />
       )}
 

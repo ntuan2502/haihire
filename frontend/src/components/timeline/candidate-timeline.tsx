@@ -239,7 +239,7 @@ export function CandidateTimeline({
         <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
           {filteredEvents.map((event) => {
             const isExpanded = expandedEventIds.has(event.id);
-            const { title, description } = getLocalizedTimelineEvent(event, t);
+            const { title, description } = getLocalizedTimelineEvent(event);
             return (
               <div key={event.id} className="relative group">
                 {/* Node icon */}
@@ -251,7 +251,7 @@ export function CandidateTimeline({
                 <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 dark:border-slate-800/90 dark:bg-slate-900/90 transition-all">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${getBadgeClass(
                             event.type,
@@ -260,7 +260,7 @@ export function CandidateTimeline({
                           {title}
                         </span>
                         <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {event.timestamp || (event.createdAt ? new Date(event.createdAt).toLocaleDateString() : "")}
+                          {event.timestamp || ((event as { createdAt?: string }).createdAt ? new Date((event as { createdAt?: string }).createdAt!).toLocaleDateString() : "")}
                         </span>
                       </div>
                       <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">

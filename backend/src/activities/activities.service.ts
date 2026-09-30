@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { toTimestamp } from "../common/date.util";
+import { toTimestamp, toInstant } from "../common/date.util";
 import crypto from "node:crypto";
 
 export type ActivityType =
@@ -48,6 +48,7 @@ export class ActivitiesService {
       actorName: dto.actorName,
       actorRole: dto.actorRole || null,
       metadata: metadataStr,
+      updatedAt: toInstant(),
     });
   }
 

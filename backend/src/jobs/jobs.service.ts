@@ -5,7 +5,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { fixUtf8String } from "../applications/applications.service";
-import { toTimestamp } from "../common/date.util";
+import crypto from "node:crypto";
+import { toTimestamp, toInstant } from "../common/date.util";
 
 @Injectable()
 export class JobsService {
@@ -381,6 +382,7 @@ export class JobsService {
   async create(dto: CreateJobDto) {
     const created = await this.prisma.db.orm.public.Job.upsert({
       create: {
+        id: crypto.randomUUID(),
         title: dto.title,
         department: dto.department,
         location: dto.location,
@@ -394,6 +396,7 @@ export class JobsService {
         status: dto.status ?? "PUBLISHED",
         organizationId: dto.organizationId ?? null,
         createdById: dto.createdById ?? null,
+        updatedAt: toInstant(),
       },
       update: {},
       conflictOn: { id: "00000000-0000-0000-0000-000000000000" },

@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { connectDatabase, db } from "./db";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
+import { toInstant } from "../common/date.util";
 
 @Injectable()
 export class PrismaService implements OnModuleInit {
@@ -25,6 +26,7 @@ export class PrismaService implements OnModuleInit {
             name: "Admin",
             slug: "admin",
             ownerId: adminUserId,
+            updatedAt: toInstant(),
           },
           update: {
             name: "Admin",
@@ -41,6 +43,7 @@ export class PrismaService implements OnModuleInit {
             role: DEMO_ACCOUNTS.ADMIN.role,
             password: hashedPassword,
             organizationId: adminOrgId,
+            updatedAt: toInstant(),
           },
           update: {},
           conflictOn: { email: DEMO_ACCOUNTS.ADMIN.email },
@@ -54,6 +57,7 @@ export class PrismaService implements OnModuleInit {
             role: DEMO_ACCOUNTS.MEMBER.role,
             password: hashedPassword,
             organizationId: null,
+            updatedAt: toInstant(),
           },
           update: {},
           conflictOn: { email: DEMO_ACCOUNTS.MEMBER.email },

@@ -139,5 +139,23 @@ updated: 2026-09-18T20:53
 - **Root Entities (Soft Delete)**: Core domain models (`Job`, `Candidate`) must utilize soft deletion (`deletedAt: Date | null`) to prevent irreversible accidental deletions and satisfy enterprise HR audit requirements (e.g., 30-day recovery window).
 - **Dependent Relations (Hard Cascade)**: Secondary relational records (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must maintain database-level `onDelete: Cascade` in `contract.prisma` so that when a root entity is genuinely purged/expunged, all dependent rows are cleanly and atomically wiped without leaving orphan records.
 
+## Frontend Modular Architecture & Anti-Monolith Policy (MANDATORY)
+- **No Monolithic Files**: Never allow API client files, state stores, or hook collections to grow beyond 300-400 lines into monolithic "mega-files" (such as a 600+ line `api.ts` or 1000+ line `use-queries.ts`).
+- **Domain-Driven Directory Structure**:
+  - API endpoints must be organized by domain under `frontend/src/lib/api/<domain>.ts` (e.g., `jobs.ts`, `candidates.ts`, `applications.ts`, `auth.ts`, `email.ts`, `interviews.ts`, `organizations.ts`, `activities.ts`) sharing a unified `client.ts` Axios instance.
+  - React Query hooks must be organized by domain under `frontend/src/hooks/use-<domain>-queries.ts` sharing a centralized `query-keys.ts` factory.
+- **Backward-Compatible Barrel Exports**: Always provide a barrel re-export (`index.ts` and root file `lib/api.ts` / `hooks/use-queries.ts`) so existing consumers and imports do not break.
 
+## Node 26+ Runtime & Tooling Conventions (MANDATORY)
+- **No Corepack on Node 26+**: Node 26 has removed Corepack from its standard distribution. Never call `corepack enable` in CI workflows, Dockerfiles, setup scripts, or documentation.
+- **Explicit pnpm Installation**: CI workflows and container builds must install pnpm explicitly via `npm install -g pnpm@12` (matching `packageManager` in `package.json`).
 
+## Web Security & HttpOnly Cookie Baseline (MANDATORY)
+- **HttpOnly Cookie Authentication**: JWT access tokens must be stored in secure, server-issued HttpOnly cookies (`haihire_token` with `SameSite=Lax`, `Path=/`, and `Secure` on HTTPS). Never store access tokens in `localStorage` or `sessionStorage` where they are vulnerable to XSS.
+- **SSE Authentication**: Server-Sent Events must authenticate via browser-managed cookies (`new EventSource(url, { withCredentials: true })`). Never pass auth tokens in URL query strings (`?token=...`), which exposes credentials in browser history, proxy logs, and referer headers.
+- **Strict Image Domain Whitelist**: Remote image domains in Next.js (`next.config.ts`) must be explicitly whitelisted by host (e.g., `localhost`, `127.0.0.1`, `minio`, `images.unsplash.com`, `*.googleusercontent.com`, `*.githubusercontent.com`). Never use wildcards (`**`) which enable SSRF or arbitrary image proxy abuse.
+- **Demo Accounts Environment Lock**: Demo/seed accounts must only be permitted in non-production environments (`env.NODE_ENV !== "production"`). Never allow bypass flags (such as `ENABLE_DEMO_ACCOUNTS=true`) in production builds.
+
+## Conventional Commits & Quality Gate Enforcement (MANDATORY)
+- **Commitlint + Husky**: All commits must pass `@commitlint/cli` and `@commitlint/config-conventional` via `.husky/commit-msg`.
+- **Pre-Commit Validation**: The `.husky/pre-commit` hook automatically runs linting and test validation before every commit. Never bypass git hooks with `--no-verify` unless in an authorized disaster recovery scenario.

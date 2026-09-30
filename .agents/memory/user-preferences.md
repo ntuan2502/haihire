@@ -90,7 +90,14 @@ updated: 2026-09-18
 - **Client Locale Isolation**: All translated strings remain in client dictionaries. Never bundle full multi-language translations into `@haihire/shared` or backend.
 - **Centralized Test Setup**: Eliminate ad-hoc `mockTranslations` across test specs by using centralized `useI18n` mocks backed by real locale files.
 
+## Anti-Monolith Modular Architecture
+- **Proactive Modularization**: Never let API clients or hook files grow into monolithic files over 300-400 lines. Split by domain (`lib/api/<domain>.ts`, `hooks/use-<domain>-queries.ts`) with seamless barrel re-exports.
 
+## Node 26+ Tooling Verification (No Corepack)
+- **Tooling Awareness**: Node 26 removed Corepack by default. Always install `pnpm@12` explicitly via `npm install -g pnpm@12` in CI/Docker rather than calling `corepack enable`.
 
+## Web Security & HttpOnly Cookie Baseline
+- **Secure Token Handling**: No auth tokens in `localStorage`. Use HttpOnly cookies (`haihire_token`) with SameSite=Lax. SSE connections must use `withCredentials: true` with zero token leakage in URL query strings. Strict Next.js image domain whitelists and non-production demo account locks.
 
-
+## Conventional Commits & Quality Gates
+- **Enforced Standards**: Strict adherence to Conventional Commits with scope `type(scope): description`. Enforce automatically via Commitlint and Husky git hooks.

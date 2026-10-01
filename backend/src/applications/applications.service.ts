@@ -6,7 +6,6 @@ import {
   APP_ERROR_CODES,
   SourcingChannel,
   VALID_APPLICATION_STAGE_TRANSITIONS,
-  type ApplicationStage,
   type CandidateDocument,
 } from "@haihire/shared";
 import {

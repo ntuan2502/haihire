@@ -3,6 +3,7 @@ import { AppUnauthorizedException } from "../common/app-exception";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
+import type { Request } from "express";
 import { PrismaService } from "../prisma/prisma.service";
 import { env } from "../config/env";
 
@@ -20,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: any) => {
+        (req: Request) => {
           if (req?.cookies && req.cookies["haihire_token"]) {
             return req.cookies["haihire_token"];
           }

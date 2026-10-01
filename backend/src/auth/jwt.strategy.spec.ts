@@ -4,7 +4,17 @@ import { AppUnauthorizedException } from "../common/app-exception";
 
 describe("JwtStrategy", () => {
   let strategy: JwtStrategy;
-  let mockPrisma: any;
+  let mockPrisma: {
+    db: {
+      orm: {
+        public: {
+          User: {
+            select: unknown;
+          };
+        };
+      };
+    };
+  };
 
   beforeEach(() => {
     mockPrisma = {
@@ -33,7 +43,7 @@ describe("JwtStrategy", () => {
       },
     };
 
-    strategy = new JwtStrategy(mockPrisma);
+    strategy = new JwtStrategy(mockPrisma as never);
   });
 
   it("should validate and return user from payload", async () => {
@@ -72,7 +82,7 @@ describe("JwtStrategy", () => {
     };
 
     // Access extractor configured in strategy
-    const extractor = (strategy as any)._jwtFromRequest;
+    const extractor = (strategy as unknown as { _jwtFromRequest: (req: unknown) => string | null })._jwtFromRequest;
     expect(extractor).toBeDefined();
     const token = extractor(reqWithCookie);
     expect(token).toBe("my-jwt-cookie-token");
@@ -85,7 +95,7 @@ describe("JwtStrategy", () => {
       },
     };
 
-    const extractor = (strategy as any)._jwtFromRequest;
+    const extractor = (strategy as unknown as { _jwtFromRequest: (req: unknown) => string | null })._jwtFromRequest;
     const token = extractor(reqWithHeaderCookie);
     expect(token).toBe("raw-cookie-token");
   });
@@ -97,7 +107,7 @@ describe("JwtStrategy", () => {
       },
     };
 
-    const extractor = (strategy as any)._jwtFromRequest;
+    const extractor = (strategy as unknown as { _jwtFromRequest: (req: unknown) => string | null })._jwtFromRequest;
     const token = extractor(reqWithBearer);
     expect(token).toBe("my-bearer-token");
   });

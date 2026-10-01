@@ -1,27 +1,32 @@
 # 🗺️ HaiHire - Roadmap & Product Horizon
 
 > **Tài liệu tổng quan lộ trình phát triển của hệ thống Tuyển dụng Hiện đại HaiHire (Applicant Tracking System).**  
-> **Phiên bản hiện tại:** `v1.0.0-beta`  
-> **Cập nhật:** Tháng 09/2026  
-> **Trạng thái:** Sẵn sàng vận hành thử nghiệm (Beta Production-Ready)
+> **Phiên bản hiện tại:** `v1.0.0` (Production-Ready)  
+> **Cập nhật:** 01/10/2026  
+> **Trạng thái:** Sẵn sàng triển khai Production (Verified qua 7 giai đoạn Audit & Hardening độc lập)
 
 ---
 
 ## 🧭 Tổng quan kiến trúc hệ thống (System Architecture)
 
-- **Mô hình**: Monorepo (`pnpm workspaces`)
+- **Mô hình**: Monorepo (`pnpm workspaces`) với `@ats/shared` chia sẻ kiểu dữ liệu và codec dùng chung
 - **Backend**:
   - Framework: **NestJS 11** (Modular Architecture) + Express + TypeScript
   - Database: **PostgreSQL** thông qua **Prisma 8** (Contract-First với `@prisma/composer`, `@prisma/orm-postgres`)
-  - Storage: **MinIO Object Storage** (S3-compatible) cho tài liệu và hồ sơ ứng viên
-  - Real-time: **Server-Sent Events (SSE)** thông qua RxJS Subject cho đồng bộ dữ liệu tức thì
-  - Bảo mật: Mã hóa **AES-256-GCM** cho mật khẩu SMTP & API keys, JWT Authentication, Bcrypt Password Hashing
+  - Storage: **MinIO Object Storage** (S3-compatible) cho tài liệu và hồ sơ ứng viên với phân vùng tenant đa tầng (`tenants/<safeTenant>/...`)
+  - Real-time: **Server-Sent Events (SSE)** thông qua RxJS Subject cho đồng bộ dữ liệu tức thì, cách ly hoàn toàn theo `organizationId`
+  - Bảo mật:
+    - Xác thực kép: **HttpOnly Cookie** (`haihire_token`, SameSite=Lax) kết hợp Authorization Bearer header
+    - Mã hóa **AES-256-GCM** cho mật khẩu SMTP & API keys
+    - Rate-limiting qua **Redis Throttler** bảo vệ endpoint nhạy cảm (HTTP 429)
+    - Kiểm định nhị phân sâu (Deep Binary Inspection): Kiểm tra magic bytes header & trailer (PDF `%%EOF`, DOCX EOCD trailer `PK\x05\x06` trong 65,557 bytes cuối)
+    - Concurrency Control: **Optimistic Locking** cho bước chuyển trạng thái hồ sơ (HTTP 409 Conflict)
   - Email Service: Multi-provider (Simulated In-App, SMTP Server, Resend API, SendGrid API) + Trigger Hooks tự động
 - **Frontend**:
   - Framework: **Next.js 15+** (App Router, Server & Client Components) + **React 19**
   - Styling: **Tailwind CSS**, Lucide Icons, Responsive UI
-  - State & Data Fetching: **TanStack Query (React Query)**
-  - Đa ngôn ngữ (i18n): Hỗ trợ **Tiếng Việt & Tiếng Anh** với 100% placeholder/label completeness
+  - State & Data Fetching: **TanStack Query (React Query)** với cơ chế `keepPreviousData`
+  - Đa ngôn ngữ (i18n): Hỗ trợ **Tiếng Việt & Tiếng Anh** đồng bộ 100% (1682 / 1682 keys đồng nhất, bảo vệ bởi `check:i18n`)
   - Hỗ trợ mạng nội bộ (LAN): Lắng nghe `0.0.0.0`, tự động cấp quyền subnet `/24`, tích hợp Reverse Proxy Next.js cho MinIO & Backend API tránh lỗi CORS và PNA (Private Network Access)
 
 ---
@@ -30,131 +35,95 @@
 
 | Trạng thái | Ký hiệu | Ý nghĩa |
 | :--- | :---: | :--- |
-| **Đã hoàn thành (Released)** | 🟢 | Tính năng đã được xây dựng hoàn chỉnh, có test tự động và hoạt động trên UI |
+| **Đã hoàn thành (Released)** | 🟢 | Tính năng đã được xây dựng hoàn chỉnh, có test tự động và nghiệm thu runtime 100% |
 | **Đang chuẩn bị (Next Horizon - Q4/2026)** | 🟡 | Tính năng cốt lõi tiếp theo, có kế hoạch kỹ thuật cụ thể |
 | **Tương lai đề xuất (Future Vision - 2027)** | 🔵 | Định hướng mở rộng dài hạn cho phân khúc Enterprise & Tự động hóa |
 
 ---
 
-## 🟢 PHẦN 1: CÁC TÍNH NĂNG ĐÃ PHÁT HÀNH (RELEASED - v1.0.0-BETA)
+## 🟢 PHẦN 1: CÁC TÍNH NĂNG ĐÃ PHÁT HÀNH (RELEASED - v1.0.0 PRODUCTION)
 
-Hệ thống hiện tại đã hoàn thiện trọn vẹn quy trình tuyển dụng cốt lõi từ lúc đăng tin, nhận ứng viên, sàng lọc Kanban, phỏng vấn, đánh giá Scorecard cho tới gửi email tự động:
+Hệ thống hiện tại đã hoàn thiện trọn vẹn quy trình tuyển dụng cốt lõi, vượt qua 7 giai đoạn kiểm thử độc lập (IV&V) và đạt chuẩn vận hành production:
 
-### 1. Phân hệ Xác thực & Quản lý người dùng (Authentication & Session)
-- 🟢 **Đăng ký & Đăng nhập**: Xác thực JWT an toàn, mã hóa mật khẩu Bcrypt.
-- 🟢 **Quick Login**: Chế độ đăng nhập nhanh tài khoản Admin/Member cho môi trường phát triển & kiểm thử.
-- 🟢 **Khôi phục phiên (Session Persistence)**: Tự động duy trì đăng nhập qua `/auth/me`, xử lý khi token hết hạn.
+### 1. Phân hệ Xác thực & Bảo mật Phiên (Authentication & Security)
+- 🟢 **Xác thực Đa tầng**: Hỗ trợ đồng thời HttpOnly Cookie (`haihire_token`) chống XSS và Bearer header cho API client.
+- 🟢 **Bảo vệ Brute-Force & DoS**: Tích hợp Redis Throttler trên các endpoint đăng nhập/đăng ký, trả về HTTP 429 Too Many Requests khi vượt ngưỡng.
+- 🟢 **Quick Login**: Chế độ đăng nhập nhanh tài khoản Admin/Member cho môi trường phát triển & kiểm thử nội bộ.
+- 🟢 **Khôi phục phiên (Session Persistence)**: Tự động duy trì đăng nhập qua `/auth/me`, xử lý mượt mà khi token hết hạn.
 - 🟢 **Bảo vệ tuyến đường (Route Guard)**: Middleware Next.js bảo vệ các trang `/dashboard/*`, tự động chuyển hướng người dùng chưa đăng nhập.
 
 ### 2. Quản lý Tổ chức & Đa khách hàng (Organization & Multi-Tenancy)
 - 🟢 **Onboarding & Khởi tạo Workspace**: Quy trình dẫn dắt tạo tổ chức ban đầu với slug duy nhất.
 - 🟢 **Mời thành viên (Invite System)**: Tạo liên kết mời bảo mật kèm cấu hình thời hạn hết hạn (`expiresAt`), giới hạn số lượt sử dụng (`maxUses`), và theo dõi số lần dùng thực tế (`usesCount`).
 - 🟢 **Quản trị thành viên (Member Management)**: Danh sách thành viên, chuyển đổi vai trò (`ADMIN` $\leftrightarrow$ `MEMBER`), thu hồi quyền truy cập hoặc xóa thành viên.
-- 🟢 **Đồng bộ thời gian thực (SSE Synchronization)**:
+- 🟢 **Đồng bộ thời gian thực cách ly (Isolated SSE)**:
+  - Sự kiện thời gian thực chỉ phát tán trong phạm vi cùng một `organizationId` (loại bỏ hoàn toàn rủi ro cross-tenant leak).
   - Khi thành viên bị xóa khỏi tổ chức $\rightarrow$ lập tức nhận tín hiệu SSE và bị đẩy về trang onboarding.
-  - Khi thành viên được nâng/hạ quyền $\rightarrow$ giao diện tự động ẩn/hiện các nút tác vụ nhạy cảm mà không cần F5.
-  - Tự động invalidate cache React Query khi có cập nhật trong tổ chức.
+  - Khi thành viên được nâng/hạ quyền $\rightarrow$ giao diện tự động cập nhật mà không cần F5.
 
-### 3. Quản lý Tin tuyển dụng (Job Management)
-- 🟢 **CRUD Tin tuyển dụng**: Quản lý đầy đủ chức danh, phòng ban, địa điểm, mã bưu chính, loại hình làm việc (Toàn thời gian, Bán thời gian, Hợp đồng, Thực tập), hình thức (Tại văn phòng, Hybrid, Từ xa), mức độ kinh nghiệm (Mới đi làm, Trung cấp, Cao cấp, Trưởng nhóm, Giám đốc), mô tả, yêu cầu và dải lương.
+### 3. Quản lý Tin tuyển dụng & Cổng sự nghiệp (Job & Career Portal)
+- 🟢 **CRUD Tin tuyển dụng**: Quản lý đầy đủ chức danh, phòng ban, địa điểm, mã bưu chính, loại hình làm việc, mức độ kinh nghiệm, mô tả, yêu cầu và dải lương.
 - 🟢 **Trạng thái tin (Job Status)**: Bản nháp (`DRAFT`), Đã xuất bản (`PUBLISHED`), Đóng tuyển dụng (`CLOSED`), Lưu trữ (`ARCHIVED`).
-- 🟢 **Giao diện hiển thị kép (Card / Table View)**: Chuyển đổi linh hoạt giữa dạng lưới thẻ trực quan và bảng dữ liệu chuyên sâu.
-- 🟢 **Bộ lọc & Tìm kiếm**: Lọc theo phòng ban, trạng thái tuyển dụng, tìm kiếm tức thì theo từ khóa.
 - 🟢 **Trang Tuyển dụng Công khai (Public Career Portal)**:
-  - Tuyến `/careers/[orgSlug]`: Hiển thị danh sách tất cả các vị trí đang mở tuyển của công ty.
+  - Tuyến `/careers/[orgSlug]`: Hiển thị danh sách tất cả các vị trí đang mở tuyển (`PUBLISHED`) của công ty (các trạng thái khác trả về 404).
   - Tuyến `/careers/[orgSlug]/[jobSlug]`: Trang chi tiết công việc kèm biểu mẫu nộp CV trực tuyến cho ứng viên vãng lai.
+- 🟢 **Giao diện hiển thị kép (Card / Table View)**: Chuyển đổi linh hoạt giữa dạng lưới thẻ trực quan và bảng dữ liệu chuyên sâu.
 
 ### 4. Quy trình Tuyển dụng & Quản lý Ứng viên (Candidate & Pipeline)
 - 🟢 **Pipeline Kanban 6 giai đoạn chuẩn**:
-  - `APPLIED` (Ứng tuyển mới)
-  - `SCREENING` (Sàng lọc hồ sơ)
-  - `INTERVIEW` (Phỏng vấn)
-  - `OFFER` (Đề nghị nhận việc)
-  - `HIRED` (Đã tuyển dụng)
-  - `REJECTED` (Từ chối)
+  `APPLIED` $\rightarrow$ `SCREENING` $\rightarrow$ `INTERVIEW` $\rightarrow$ `OFFER` $\rightarrow$ `HIRED` $\rightarrow$ `REJECTED`.
+- 🟢 **Kiểm soát đồng thời (Optimistic Locking)**:
+  - Ngăn chặn triệt để tình trạng Last-Write-Wins khi nhiều chuyên viên tuyển dụng thao tác cùng lúc trên 1 hồ sơ.
+  - Trả về HTTP 409 `APPLICATION_STAGE_CONFLICT` khi có xung đột phiên bản, frontend hiển thị thông báo tiếng Việt/Anh thân thiện yêu cầu làm mới.
 - 🟢 **Kéo thả tương tác (Drag & Drop)**: Kéo thẻ ứng viên giữa các cột Kanban để cập nhật trạng thái tuyển dụng tức thì.
 - 🟢 **Bảng dữ liệu ứng viên nâng cao (Candidate Data Table)**:
   - Tìm kiếm toàn văn theo họ tên, email, vị trí.
-  - Sắp xếp đa cột (Sorting), phân trang (Pagination).
-  - Tùy chỉnh ẩn/hiện cột hiển thị (Column Visibility Toggle).
-  - Menu tác vụ nhanh (Quick Action) đổi vòng tuyển dụng chỉ với 1 click.
-- 🟢 **Chi tiết hồ sơ ứng viên (Candidate Profile)**: Quản lý thông tin liên hệ, ghi chú nội bộ, lịch sử ứng tuyển, và danh sách tài liệu đính kèm.
+  - Sắp xếp đa cột (Sorting), phân trang (Pagination), tùy chỉnh ẩn/hiện cột hiển thị.
 
-### 5. Quản lý Hồ sơ & Lưu trữ Tập trung (Resume & MinIO Storage)
-- 🟢 **Tích hợp S3/MinIO**: Tải lên và quản lý tập tin CV, thư ngỏ, bằng cấp với độ an toàn cao.
-- 🟢 **Trình xem trước PDF tại chỗ (In-App PDF Modal Viewer)**: Mở và đọc nội dung CV trực tiếp trên trình duyệt mà không cần tải file về máy.
-- 🟢 **Xử lý tên file tiếng Việt UTF-8**: Tự động mã hóa chuẩn `Content-Disposition` giữ nguyên dấu tiếng Việt khi tải xuống.
-- 🟢 **Reverse Proxy an toàn**: Tuyến `/haihire-resumes/*` được chuyển tiếp server-side, bảo vệ MinIO khỏi truy cập trực tiếp từ Internet công cộng.
+### 5. Kênh Tìm Nguồn & Ghi nhận Đóng góp (Sourcing & Candidate Attribution)
+- 🟢 **Quản lý Link Tracking Nguồn**: Tạo liên kết tuyển dụng đính kèm tham số chiến dịch (LinkedIn, Facebook, Referral nội bộ, TopCV, v.v.).
+- 🟢 **Theo dõi lượt truy cập (Click Tracking)**: Ghi nhận số lượt click và địa chỉ IP truy cập liên kết theo thời gian thực.
+- 🟢 **Ghi nhận nguồn ứng viên tự động (Candidate Attribution)**: Tự động liên kết hồ sơ ứng viên với chiến dịch sourcing tương ứng khi nộp qua link tracking.
+- 🟢 **Thống kê hiệu quả kênh (Sourcing Analytics)**: Thống kê số lượng click, số hồ sơ thu hút và tỷ lệ chuyển đổi theo từng kênh tìm kiếm.
 
-### 6. Lịch phỏng vấn & Đánh giá ứng viên (Interviews & Scorecards)
-- 🟢 **Đặt lịch phỏng vấn đa vòng**:
-  - Loại hình: Sàng lọc nhân sự (`HR_SCREENING`), Chuyên môn kỹ thuật (`TECHNICAL`), Văn hóa (`CULTURE_FIT`), Vòng cuối (`FINAL_ROUND`), Bài kiểm tra năng lực (`ASSESSMENT`).
-  - Hình thức họp: Google Meet (`MEET`), Zoom (`ZOOM`), Microsoft Teams (`TEAMS`), Trực tiếp tại văn phòng (`OFFICE`).
-- 🟢 **Giao diện Lịch (Calendar View)**: Chế độ xem theo Tháng (Month) và theo Tuần (Week), trực quan hóa các buổi phỏng vấn cùng huy hiệu hình thức họp và liên kết phòng họp.
+### 6. Quản lý Tài liệu & Lưu trữ An toàn (Resume Storage & Deep Inspection)
+- 🟢 **Cô lập Tenant MinIO**: Khử khuẩn đường dẫn tuyệt đối với regex `safeTenant` (`[^a-zA-Z0-9_-]`), lưu trữ hồ sơ theo tiền tố bắt buộc `tenants/<safeTenant>/...`.
+- 🟢 **Kiểm định nhị phân sâu (Deep Binary Inspection)**:
+  - PDF: Kiểm tra header `%PDF-` và chữ ký đuôi `%%EOF` trong 1024 bytes cuối (loại bỏ tệp bị cắt ngang / truncated).
+  - DOCX: Kiểm tra header `PK\x03\x04` và chữ ký đuôi EOCD (`PK\x05\x06`) trong 65,557 bytes cuối (bảo đảm cấu trúc ZIP không bị hỏng).
+  - Tự động từ chối tệp script giả mạo (`.sh`, `.bat`) hoặc tệp rỗng 0-byte với mã lỗi chuẩn `UPLOAD_TRUNCATED_FILE` và `VALIDATION_ERROR`.
+- 🟢 **Trình xem trước PDF tại chỗ (In-App PDF Modal Viewer)**: Mở và đọc nội dung CV trực tiếp trên trình duyệt qua Server-Side Reverse Proxy an toàn.
+
+### 7. Lịch phỏng vấn & Đánh giá ứng viên (Interviews & Scorecards)
+- 🟢 **Đặt lịch phỏng vấn đa vòng**: HR Screening, Technical, Culture Fit, Final Round, Assessment.
+- 🟢 **Hình thức họp đa dạng**: Google Meet, Zoom, Microsoft Teams, Trực tiếp tại văn phòng.
+- 🟢 **Giao diện Lịch (Calendar View)**: Chế độ xem theo Tháng (Month) và theo Tuần (Week), trực quan hóa các buổi phỏng vấn.
 - 🟢 **Hệ thống Phiếu đánh giá (Scorecard System)**:
-  - Đánh giá từ 1 đến 5 sao theo 4 tiêu chí cốt lõi (Chuyên môn, Giao tiếp, Tư duy giải quyết vấn đề, Mức độ phù hợp văn hóa).
-  - Khuyến nghị tuyển dụng 5 mức: Tuyệt đối nên nhận (`Strong Yes`), Nên nhận (`Yes`), Trung lập (`Neutral`), Không nên nhận (`No`), Tuyệt đối từ chối (`Strong No`).
-  - Lưu trữ ghi chú chi tiết của hội đồng phỏng vấn.
+  - Đánh giá từ 1 đến 5 sao theo 4 tiêu chí cốt lõi (Chuyên môn, Giao tiếp, Giải quyết vấn đề, Văn hóa).
+  - Khuyến nghị tuyển dụng 5 mức: Strong Yes, Yes, Neutral, No, Strong No.
 
-### 7. Hệ thống Email & Tự động hóa (Email & Communication Engine)
-- 🟢 **4 Mẫu thư mặc định có sẵn (Pre-seeded Templates)**:
-  - Thư xác nhận tiếp nhận hồ sơ (`APPLICATION_CONFIRMATION`)
-  - Thư mời tham dự phỏng vấn (`INTERVIEW_INVITATION`)
-  - Thư từ chối lịch sự (`REJECTION`)
-  - Thư mời nhận việc (`OFFER`)
-  - Hỗ trợ mẫu thư tùy biến tự do (`CUSTOM`)
-- 🟢 **Bộ máy chèn biến động (Dot-Notation Variable Engine)**:
-  - Hỗ trợ biến phẳng và biến lồng: `{{candidate.name}}`, `{{job.title}}`, `{{company.name}}`, `{{interview.date}}`, `{{interview.link}}`, v.v.
-  - API `/email/variables` cung cấp danh sách biến sẵn có cho bộ soạn thảo.
-- 🟢 **Trình tùy biến mẫu thư (Template Customizer)**:
-  - Chỉnh sửa tiêu đề và nội dung HTML chuyên nghiệp.
-  - Xem trước hiển thị trực tiếp (Live Preview) trên cả 2 khung màn hình **Máy tính (Desktop)** và **Điện thoại (Mobile)**.
-  - Bật/tắt chế độ tự động kích hoạt gửi cho từng loại thư.
-- 🟢 **4 Chế độ gửi thư (Delivery Providers)**:
-  - `SIMULATED`: Mô phỏng trong hệ thống (phục vụ thử nghiệm không tốn chi phí).
-  - `SMTP`: Kết nối máy chủ thư doanh nghiệp (Gmail Workspace, Zoho, Postmark, Outlook).
-  - `RESEND`: Tích hợp dịch vụ hiện đại Resend API.
-  - `SENDGRID`: Tích hợp hạ tầng gửi thư quy mô lớn SendGrid API.
-- 🟢 **Két an toàn thông tin nhạy cảm (AES-256-GCM Vault)**: Mật khẩu SMTP và API Key được mã hóa trước khi lưu vào DB, trả về frontend dạng che dấu `••••••••`.
-- 🟢 **Kích hoạt tự động theo vòng đời ứng viên (Lifecycle Hooks)**:
-  - Ứng viên nộp hồ sơ thành công $\rightarrow$ tự động gửi mail xác nhận.
-  - Đổi trạng thái sang `REJECTED` $\rightarrow$ tự động gửi thư từ chối.
-  - Lên lịch phỏng vấn (tích chọn gửi mail) $\rightarrow$ tự động gửi thư mời kèm link họp.
-- 🟢 **Soạn thư thủ công (Manual Send Email Modal)**: Gửi thư nhanh cho ứng viên từ trang chi tiết với bản xem trước động.
-- 🟢 **Nhật ký hộp thư đi (Email Outbox Logs)**: Phân trang, tìm kiếm theo người nhận, lọc trạng thái gửi (`SENT`, `SIMULATED`, `FAILED`) và thông điệp lỗi chi tiết.
-- 🟢 **Kiến trúc Email Hệ thống Thống nhất (System Email Architecture)**:
-  - Cấu hình cấp nền tảng thông qua cụm biến môi trường `SYSTEM_EMAIL_*` trong `.env` với kiểm định Zod fail-fast tại thời điểm khởi động.
-  - Tái sử dụng 100% Strategy Transporter Engine (`SIMULATED`, `SMTP`, `RESEND`, `SENDGRID`) và hàng đợi bất đồng bộ BullMQ với retry tự động.
-  - Thống nhất bảng nhật ký `EmailLog` đa năng với trường `scope` (`SYSTEM` vs `ORGANIZATION`), cho phép ghi log thư hệ thống độc lập.
+### 8. Hệ thống Email & Tự động hóa (Email & Communication Engine)
+- 🟢 **Mẫu thư & Tự động hóa**: 4 mẫu thư mặc định (`APPLICATION_CONFIRMATION`, `INTERVIEW_INVITATION`, `REJECTION`, `OFFER`) cùng mẫu tùy biến `CUSTOM`.
+- 🟢 **Tên tổ chức động & Chống XSS**: Trích xuất tên công ty chính xác từ cơ sở dữ liệu, tự động escape HTML các biến động ngăn ngừa injection.
+- 🟢 **Két an toàn AES-256-GCM**: Mật khẩu SMTP và API Key được mã hóa trước khi lưu vào DB, che giấu dạng `••••••••` ra frontend.
+- 🟢 **4 Chế độ gửi thư**: Simulated In-App, SMTP Server, Resend API, SendGrid API.
 
-### 8. Dòng thời gian hoạt động (Candidate Activity Timeline)
-- 🟢 **Nhật ký kiểm toán thống nhất (`ActivityLog`)**: Tự động ghi nhận mọi sự kiện phát sinh: ứng tuyển, chuyển stage, gửi email, lên lịch phỏng vấn, cập nhật kết quả đánh giá, thêm ghi chú.
-- 🟢 **Component `CandidateTimeline`**: Hiển thị dòng thời gian trực quan theo trục dọc, có bộ lọc theo từng nhóm sự kiện (Tất cả, Email, Phỏng vấn, Đổi trạng thái) và hỗ trợ phân trang dữ liệu.
+### 9. Dòng thời gian hoạt động & Kiểm toán (Candidate Activity Timeline)
+- 🟢 **Nhật ký kiểm toán (`ActivityLog`)**: Tự động lưu vết mọi thao tác ứng tuyển, đổi stage, gửi email, lên lịch phỏng vấn, đánh giá và ghi chú.
+- 🟢 **Bảo toàn Audit Trail khi xóa**: Soft-delete ứng viên vẫn bảo toàn đầy đủ lịch sử hoạt động để phục vụ kiểm toán nội bộ.
 
-### 9. Phân trang Toàn diện & Đồng bộ Trạng thái URL (Full-Stack Pagination & URL State Sync)
-- 🟢 **Phân trang máy chủ 100% (Server-Side Pagination)**: Loại bỏ hoàn toàn cắt mảng client-side. Mọi danh sách (Ứng viên, Hồ sơ, Tin tuyển dụng, Thành viên, Nhật ký email, Nhật ký hệ thống, Dòng thời gian) phân trang trực tiếp ở tầng database với `skip` & `take`, trả về metadata chuẩn `{ data, total, page, limit, totalPages }`.
-- 🟢 **Đồng bộ tham số qua URL (`useTableParams`)**: Mọi thao tác đổi trang, số hàng/trang (`limit`), tìm kiếm (`search`), bộ lọc (trạng thái, vòng tuyển dụng, phòng ban, sắp xếp) được đồng bộ 2 chiều trực tiếp lên URL search parameters. Người dùng có thể sao chép URL hoặc tải lại trang mà không bị mất bộ lọc.
-- 🟢 **Tối ưu trải nghiệm không giật khung hình (Zero Layout Jump)**:
-  - Tích hợp `placeholderData: keepPreviousData` của TanStack Query giữ nguyên bảng dữ liệu trong khi chờ tải trang mới.
-  - Component `SearchInput` cô lập state nội bộ với debounce thông minh, gõ phím mượt mà không kích hoạt re-render toàn bộ trang.
-
-### 10. Hạ tầng Kỹ thuật, Đa ngôn ngữ & Gói chia sẻ Monorepo
-- 🟢 **Kiến trúc Monorepo & Gói chia sẻ (`@ats/shared`)**: Tách biệt thư mục `packages/shared` xuất bản kiểu dữ liệu TypeScript, hằng số, DTOs và codec API dùng chung giữa Backend và Frontend, loại bỏ hoàn toàn sự sai lệch schema.
-- 🟢 **Cấu hình môi trường tập trung & Fail-Fast**: Toàn bộ biến môi trường của Backend và Frontend được định nghĩa qua Zod schema với chính sách không fallback ngầm; tiến trình tự dừng (exit 1) ngay khi boot nếu thiếu biến. Script `pnpm check:env` tự động bảo đảm 100% key parity giữa `.env` và `.env.example`.
-- 🟢 **Hàng đợi xử lý nền bất đồng bộ (BullMQ & Redis)**: Tích hợp module xử lý nền chịu lỗi với cơ chế tự động thử lại 3 lần (exponential backoff) và tự động fallback sang xử lý trực tiếp (synchronous) nếu Redis không sẵn sàng.
-- 🟢 **Tương thích chuẩn Node 26 & Temporal API**: Module `toTimestamp()` xử lý trơn tru kiểu dữ liệu `Temporal.Instant` của Prisma 8, triệt tiêu hoàn toàn các lỗi `valueOf()` khi sắp xếp theo ngày tháng.
-- 🟢 **Song ngữ Việt - Anh toàn diện (i18n)**: 100% chuỗi hiển thị, nhãn, placeholder được quản lý qua bộ từ khóa i18n và xác thực tự động bằng script `pnpm check:i18n`.
-- 🟢 **Vận hành trên mạng LAN**: Cho phép các thiết bị khác trong cùng mạng cục bộ kết nối qua IP mà không gặp rào cản CORS hay Private Network Access.
+### 10. Hạ tầng Kỹ thuật & Chuẩn hóa Monorepo
+- 🟢 **Gói chia sẻ `@ats/shared`**: Đồng bộ kiểu dữ liệu TypeScript, hằng số, DTOs giữa Backend và Frontend.
+- 🟢 **Song ngữ Việt - Anh 100%**: 1682 / 1682 keys đồng nhất, hỗ trợ toàn bộ thông điệp lỗi kỹ thuật 400, 409, 429.
+- 🟢 **Hệ thống Test Suite Toàn diện**: **276 / 276 tests tự động pass 100%** (169 Backend + 107 Frontend) kèm 31 kịch bản runtime zero-regression.
 
 ---
 
 ## 🟡 PHẦN 2: LỘ TRÌNH TÍNH NĂNG TƯƠNG LAI (FUTURE HORIZON ROADMAP)
 
-Dựa trên cấu trúc hiện tại và khoảng trống trong các tab Settings (`integrations`, `ai-configuration`, `privacy-retention`), dưới đây là lộ trình các tính năng chiến lược được phân bổ theo từng giai đoạn phát triển:
-
 ```mermaid
 timeline
-    title Lộ trình phát triển ATS Platform
+    title Lộ trình phát triển HaiHire ATS Platform
     section Giai đoạn 2 (Q4/2026)
         AI Trích xuất CV (Parsing) : Tự động đọc PDF thành thông tin
         AI Chấm điểm phù hợp (Matching) : So khớp CV và JD
@@ -179,59 +148,41 @@ timeline
 *Mục tiêu: Giảm 70% thời gian nhập liệu thủ công và nâng cao tốc độ phản hồi hồ sơ.*
 
 #### 1. Trích xuất CV tự động bằng AI (AI Resume Parsing)
-- **Vấn đề giải quyết**: Hiện tại khi ứng viên nộp CV hoặc HR upload CV, thông tin kinh nghiệm, học vấn, kỹ năng vẫn phải xem bằng mắt qua PDF.
+- **Vấn đề giải quyết**: Thông tin kinh nghiệm, học vấn, kỹ năng trong CV hiện vẫn cần đọc thủ công.
 - **Giải pháp**: Tích hợp OpenAI / Claude / Gemini API (qua tab `ai-configuration`):
-  - Tự động bóc tách: Họ tên, số điện thoại, email, địa chỉ, số năm kinh nghiệm, các công ty từng làm việc, kỹ năng chuyên môn (Skills).
-  - Tự động điền vào hồ sơ ứng viên chỉ sau vài giây tải file PDF.
+  - Tự động bóc tách: Họ tên, số điện thoại, email, địa chỉ, số năm kinh nghiệm, kỹ năng chuyên môn.
+  - Tự động điền vào hồ sơ ứng viên sau khi tải lên file PDF/DOCX.
 - **Độ ưu tiên**: 🔴 Cao (P0)
 
 #### 2. AI Đánh giá mức độ phù hợp (`matchScore` thông minh)
-- **Vấn đề giải quyết**: Hiện tại trường `matchScore` trên bảng `Application` đang để trống hoặc tính toán cơ bản.
-- **Giải pháp**:
-  - Phân tích ngữ nghĩa (Semantic Matching) giữa Yêu cầu công việc (JD) và CV của ứng viên.
-  - Chấm điểm phù hợp từ 0 - 100 điểm kèm bản tóm tắt: "Điểm mạnh", "Điểm còn thiếu" và "Gợi ý câu hỏi phỏng vấn khai thác sâu".
+- Phân tích ngữ nghĩa (Semantic Matching) giữa Yêu cầu công việc (JD) và CV của ứng viên.
+- Chấm điểm phù hợp từ 0 - 100 điểm kèm bản tóm tắt: "Điểm mạnh", "Điểm còn thiếu" và "Gợi ý câu hỏi phỏng vấn".
 - **Độ ưu tiên**: 🟡 Trung bình cao (P1)
 
 #### 3. AI Hỗ trợ viết thư & Tinh chỉnh Email (AI Email Copilot)
 - Tích hợp nút **"Viết lại bằng AI"** trong modal gửi thư (`SendEmailModal`):
   - Viết lại thư từ chối với văn phong ấm áp, tôn trọng ứng viên.
-  - Tùy chỉnh thư mời phỏng vấn hoặc thư gửi đề nghị (Offer) theo phong cách trang trọng hoặc hiện đại.
+  - Tùy chỉnh thư mời phỏng vấn hoặc thư gửi đề nghị (Offer) theo phong cách trang trọng.
 - **Độ ưu tiên**: 🟢 Trung bình (P2)
-
-#### 4. Giao diện Quản trị Email Hệ thống cho Super Admin (Super Admin System Email UI)
-- **Mục tiêu**: Cho phép Quản trị viên Tối cao (Super Admin) kiểm soát cấu hình gửi thư nền tảng trực quan trên Web Dashboard.
-- **Tính năng**:
-  - Xem thông tin cấu hình hiện tại đang nạp từ file `.env` (ẩn mật khẩu/API key nhạy cảm).
-  - Gửi email thử nghiệm kiểm tra kết nối trực tiếp trên giao diện (`/email/system/test`).
-  - Hỗ trợ cơ chế Hybrid nâng cao: Cho phép Super Admin kích hoạt ghi đè (override) cấu hình email hệ thống qua giao diện (lưu mã hóa AES-256 vào Database) và khôi phục về mặc định `.env` chỉ với 1 cú click.
-- **Độ ưu tiên**: 🟡 Trung bình cao (P1)
 
 ---
 
 ### 🔗 Giai đoạn 3: Tích hợp Lịch & Kênh cộng tác nội bộ (Q1/2027)
-*Mục tiêu: Đưa ATS trở thành trung tâm kết nối, không còn phải chuyển qua lại giữa các ứng dụng bên ngoài.*
+*Mục tiêu: Đưa ATS trở thành trung tâm kết nối, loại bỏ thao tác thủ công qua lại giữa các ứng dụng bên ngoài.*
 
 #### 1. Đồng bộ 2 chiều với Google Calendar & Microsoft 365
-- **Mục tiêu**: Kích hoạt tab `settings/integrations`.
-- **Tính năng**:
-  - Kết nối tài khoản Google Workspace hoặc Microsoft Outlook của người phỏng vấn.
-  - Khi tạo phỏng vấn trong ATS $\rightarrow$ tự động tạo sự kiện trên Calendar của người phỏng vấn và ứng viên.
-  - Tự động sinh link Google Meet / Microsoft Teams thực tế mà không cần tạo thủ công rồi dán URL vào.
-  - Hiển thị tình trạng bận/rảnh (Busy/Free) của người phỏng vấn để tránh trùng lịch.
+- Kết nối tài khoản Google Workspace hoặc Microsoft Outlook của người phỏng vấn.
+- Khi tạo phỏng vấn trong ATS $\rightarrow$ tự động tạo sự kiện trên Calendar của người phỏng vấn và ứng viên.
+- Tự động sinh link Google Meet / Microsoft Teams thực tế.
 - **Độ ưu tiên**: 🔴 Cao (P0)
 
 #### 2. Ứng viên tự chọn lịch phỏng vấn (Candidate Self-Scheduling)
-- Tương tự mô hình Calendly / SavvyCal:
-  - Hệ thống gửi email chứa liên kết độc nhất cho ứng viên.
-  - Ứng viên tự chọn khung thời gian rảnh phù hợp từ các slot trống mà hội đồng phỏng vấn đã thiết lập.
-  - Giảm thiểu việc trao đổi email qua lại nhiều lần chỉ để chốt giờ họp.
+- Hệ thống gửi email chứa liên kết độc nhất cho ứng viên.
+- Ứng viên tự chọn khung thời gian rảnh phù hợp từ các slot trống của hội đồng phỏng vấn (tương tự Calendly).
 - **Độ ưu tiên**: 🟡 Trung bình (P1)
 
 #### 3. Tích hợp Thông báo Slack / Microsoft Teams Webhooks
-- Nhận thông báo tức thì trên kênh làm việc nội bộ của công ty:
-  - Thông báo khi có ứng viên mới nộp hồ sơ vào vị trí quan trọng.
-  - Nhắc nhở người phỏng vấn trước 30 phút buổi họp.
-  - Thông báo khi người phỏng vấn nộp Scorecard đánh giá xong.
+- Nhận thông báo tức thì trên kênh làm việc nội bộ của công ty khi có ứng viên mới hoặc có người nộp Scorecard.
 - **Độ ưu tiên**: 🟢 Trung bình (P2)
 
 ---
@@ -239,27 +190,20 @@ timeline
 ### 👥 Giai đoạn 4: Phân quyền chuyên sâu (RBAC) & Trải nghiệm Tuyển dụng (Q2/2027)
 *Mục tiêu: Đáp ứng quy mô doanh nghiệp vừa và lớn với nhiều phòng ban tham gia phỏng vấn.*
 
-#### 1. Hệ thống Phân quyền chi tiết (Granular RBAC)
-Hiện tại hệ thống đang có 2 quyền `ADMIN` và `MEMBER`. Cần mở rộng thành 4 vai trò chuẩn ATS quốc tế:
-- **Super Admin (Quản trị viên cấp cao)**: Toàn quyền cấu hình công ty, billing, tích hợp và bảo mật.
-- **Recruiter (Chuyên viên tuyển dụng)**: Quản lý tất cả jobs, xem toàn bộ ứng viên, gửi thư, đặt lịch phỏng vấn, xem dải lương.
-- **Hiring Manager (Trưởng bộ phận chuyên môn)**: Chỉ xem các Jobs và ứng viên thuộc phòng ban mình phụ trách, xem Scorecards, phê duyệt đề xuất Offer, không xem được cấu hình hệ thống.
-- **Interviewer (Người phỏng vấn)**: Chỉ xem hồ sơ của ứng viên mà mình được phân công phỏng vấn, chỉ điền phiếu Scorecard của mình, bị ẩn dải lương và thông tin cá nhân nhạy cảm.
+#### 1. Hệ thống Phân quyền 4 vai trò (Granular RBAC)
+- **Super Admin**: Toàn quyền cấu hình công ty, billing, tích hợp và bảo mật.
+- **Recruiter**: Quản lý tất cả jobs, xem toàn bộ ứng viên, gửi thư, đặt lịch phỏng vấn, xem dải lương.
+- **Hiring Manager**: Chỉ xem các Jobs và ứng viên thuộc phòng ban mình phụ trách, xem Scorecards, duyệt Offer.
+- **Interviewer**: Chỉ xem hồ sơ ứng viên mình được phân công phỏng vấn, chỉ điền phiếu Scorecard của mình.
 - **Độ ưu tiên**: 🔴 Cao (P0)
 
 #### 2. Tùy biến trang tuyển dụng công ty (Career Site Customizer)
-- Kích hoạt tab `settings/career-page`:
-  - Cho phép tải lên Banner, Logo công ty, Video giới thiệu môi trường làm việc.
-  - Cấu hình màu sắc chủ đạo của thương hiệu (Primary Brand Color).
-  - Thêm phần "Tại sao nên gia nhập chúng tôi" (Why Join Us), Phúc lợi công ty (Perks & Benefits), hình ảnh văn phòng.
-  - Tùy biến tên miền riêng (Custom Domain: `careers.yourcompany.com`).
+- Cho phép tải lên Banner, Logo công ty, Video giới thiệu môi trường làm việc.
+- Cấu hình màu sắc chủ đạo của thương hiệu (Primary Brand Color), chuyên mục "Tại sao gia nhập chúng tôi".
 - **Độ ưu tiên**: 🟡 Trung bình cao (P1)
 
-#### 3. Biểu mẫu ứng tuyển tùy biến (Custom Application Forms)
-- Cho phép tạo các câu hỏi sàng lọc riêng cho từng vị trí tuyển dụng:
-  - Câu hỏi trắc nghiệm (VD: "Bạn có thể đi làm ngay không?", "Bạn có kinh nghiệm NestJS trên 2 năm không?").
-  - Đính kèm liên kết danh mục sản phẩm (Portfolio, GitHub, Behance, LinkedIn).
-  - Tự động loại (Auto-reject) hoặc gắn nhãn ưu tiên nếu ứng viên trả lời đúng/sai các câu hỏi sàng lọc cốt lõi.
+#### 3. Biểu mẫu ứng tuyển tùy biến (Custom Screening Forms)
+- Cho phép tạo câu hỏi sàng lọc riêng cho từng vị trí tuyển dụng với tính năng tự động loại hồ sơ không đạt yêu cầu tiên quyết.
 - **Độ ưu tiên**: 🟡 Trung bình (P1)
 
 ---
@@ -268,22 +212,12 @@ Hiện tại hệ thống đang có 2 quyền `ADMIN` và `MEMBER`. Cần mở r
 *Mục tiêu: Cung cấp dữ liệu định lượng cho Giám đốc nhân sự (CHRO) và Ban lãnh đạo.*
 
 #### 1. Phễu tuyển dụng & Tỷ lệ chuyển đổi (Recruitment Funnel Analytics)
-- Báo cáo trực quan dạng phễu: Số lượng và tỷ lệ chuyển đổi qua các vòng:
-  $$\text{Ứng tuyển} \rightarrow \text{Sàng lọc} \rightarrow \text{Phỏng vấn} \rightarrow \text{Nhận Offer} \rightarrow \text{Đi làm}$$
-- Phát hiện nhanh các "điểm nghẽn" (bottleneck): Vòng nào đang có tỷ lệ rớt bất thường hoặc bị ngâm hồ sơ quá lâu.
+- Báo cáo trực quan dạng phễu: Số lượng và tỷ lệ chuyển đổi qua các vòng từ Applied đến Hired.
 - **Độ ưu tiên**: 🟡 Trung bình cao (P1)
 
 #### 2. Chỉ số Tốc độ Tuyển dụng (Hiring Velocity Metrics)
-- **Time-to-Hire**: Thời gian trung bình từ khi ứng viên nộp hồ sơ đến khi chấp nhận Offer.
-- **Time-to-Fill**: Thời gian trung bình từ khi đăng tin tuyển dụng đến khi có người nhận việc.
-- **Cost-per-Hire**: Chi phí trung bình để tuyển được một nhân sự.
+- Theo dõi các chỉ số: Time-to-Hire, Time-to-Fill, Cost-per-Hire theo từng vị trí và phòng ban.
 - **Độ ưu tiên**: 🟡 Trung bình (P1)
-
-#### 3. Phân tích Nguồn ứng viên (Source Quality Tracking)
-- Đo lường hiệu quả các nguồn nộp hồ sơ: Website công ty, LinkedIn, Facebook, Giới thiệu nội bộ (Referral), TopCV, VietnamWorks.
-- Thống kê nguồn nào mang lại ứng viên chất lượng cao nhất (tỷ lệ Hired cao nhất).
-- Xuất báo cáo thống kê định dạng Excel, CSV, PDF.
-- **Độ ưu tiên**: 🟢 Trung bình (P2)
 
 ---
 
@@ -291,25 +225,16 @@ Hiện tại hệ thống đang có 2 quyền `ADMIN` và `MEMBER`. Cần mở r
 *Mục tiêu: Đạt chuẩn bảo mật cho khách hàng Doanh nghiệp và Tập đoàn đa quốc gia.*
 
 #### 1. Đăng nhập một chạm Doanh nghiệp (Enterprise Single Sign-On - SSO)
-- Kích hoạt tab `settings/sso`:
-  - Hỗ trợ giao thức SAML 2.0 và OpenID Connect (OIDC).
-  - Tích hợp trực tiếp với Google Workspace, Microsoft Azure Active Directory, Okta, OneLogin.
-  - Tự động tạo và phân quyền tài khoản theo nhóm người dùng trong tổ chức (JIT Provisioning).
+- Hỗ trợ SAML 2.0 và OpenID Connect (OIDC) với Google Workspace, Azure AD, Okta.
 - **Độ ưu tiên**: 🟡 Trung bình (P1)
 
 #### 2. Chính sách Lưu trữ & Xóa dữ liệu (Privacy & Retention Policy)
-- Kích hoạt tab `settings/privacy-retention`:
-  - Tuân thủ Quy định bảo vệ dữ liệu cá nhân (GDPR của Châu Âu và Nghị định 13/2023/NĐ-CP của Việt Nam).
-  - Tự động thông báo và xin chấp thuận của ứng viên về việc lưu trữ CV.
-  - Thiết lập quy tắc tự động ẩn danh hoặc xóa hẳn hồ sơ sau một khoảng thời gian quy định (ví dụ: 6 tháng hoặc 12 tháng kể từ khi từ chối).
-  - Cung cấp nút "Yêu cầu xóa dữ liệu của tôi" cho ứng viên.
+- Tuân thủ GDPR Châu Âu và Nghị định 13/2023/NĐ-CP của Việt Nam về bảo vệ dữ liệu cá nhân.
+- Tự động ẩn danh hoặc xóa hẳn hồ sơ sau khoảng thời gian quy định.
 - **Độ ưu tiên**: 🟡 Trung bình (P1)
 
 #### 3. Cổng thông tin ứng viên (Candidate Self-Service Portal)
-- Cung cấp một trang tra cứu tiến độ ứng tuyển dành riêng cho ứng viên:
-  - Đăng nhập bảo mật qua Magic Link hoặc mã OTP gửi về email.
-  - Xem hồ sơ hiện tại đang ở giai đoạn nào (Đang duyệt, Đã lên lịch phỏng vấn, v.v.).
-  - Cập nhật thông tin liên hệ hoặc bổ sung chứng chỉ mới mà không cần gửi email riêng cho HR.
+- Trang tra cứu tiến độ ứng tuyển dành riêng cho ứng viên qua Magic Link.
 - **Độ ưu tiên**: 🟢 Tương lai (P2)
 
 ---
@@ -324,7 +249,6 @@ Hiện tại hệ thống đang có 2 quyền `ADMIN` và `MEMBER`. Cần mở r
 | **AI Candidate Matching & Scoring** | AI & Automation | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Candidate Self-Scheduling (Tự đặt lịch)** | Interviews | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Slack / MS Teams Webhook Alert** | Integrations | Thấp | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
-| **Super Admin System Email UI (Quản trị thư hệ thống)** | Settings & Email | Thấp - Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Career Site Builder (Tùy biến trang tuyển dụng)** | Public Portal | Thấp - Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Phễu tuyển dụng & Time-to-Hire Analytics** | Analytics | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
 | **Chính sách dữ liệu GDPR / Nghị định 13** | Compliance | Trung bình | ⭐⭐⭐⭐ Cao | 🟡 **P1** |
@@ -333,4 +257,4 @@ Hiện tại hệ thống đang có 2 quyền `ADMIN` và `MEMBER`. Cần mở r
 
 ---
 
-> 💡 *Tài liệu này là căn cứ chiến lược để định hướng các Sprint phát triển tiếp theo của dự án ATS Platform. Nội dung có thể được điều chỉnh linh hoạt theo nhu cầu thực tế của người dùng và định hướng mở rộng của doanh nghiệp.*
+> 💡 *Tài liệu này là căn cứ chiến lược để định hướng các Sprint phát triển tiếp theo của dự án HaiHire ATS Platform.*

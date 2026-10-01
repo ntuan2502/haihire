@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MinioService } from "./minio.service";
 
 describe("MinioService Security", () => {
@@ -63,6 +63,34 @@ describe("MinioService Security", () => {
       await expect(service.uploadFile(dummyFile, "resumes", "   ")).rejects.toThrow(
         "Tenant organization ID is required",
       );
+    });
+
+    it("should sanitize traversal tenantOrgId '../../../etc/passwd' to 'etcpasswd'", async () => {
+      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(dummyFile, "resumes", "../../../etc/passwd");
+      expect(res.fileName).toContain("tenants/etcpasswd/resumes/");
+      expect(res.fileName).not.toContain("..");
+      putSpy.mockRestore();
+    });
+
+    it("should preserve valid tenantOrgId 'org-abc_123'", async () => {
+      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(dummyFile, "resumes", "org-abc_123");
+      expect(res.fileName).toContain("tenants/org-abc_123/resumes/");
+      putSpy.mockRestore();
+    });
+
+    it("should throw AppBadRequestException when tenantOrgId contains only special characters '!!!@@@###'", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", "!!!@@@###")).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+
+    it("should trim whitespace in tenantOrgId '  abc  ' to 'abc'", async () => {
+      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(dummyFile, "resumes", "  abc  ");
+      expect(res.fileName).toContain("tenants/abc/resumes/");
+      putSpy.mockRestore();
     });
   });
 });

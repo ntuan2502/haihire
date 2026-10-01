@@ -7,6 +7,7 @@ import {
 } from "./upload-utils";
 import type { Request } from "express";
 import { APP_ERROR_CODES } from "@haihire/shared";
+import { AppBadRequestException } from "./app-exception";
 
 describe("upload-utils resumeFileFilter", () => {
   it("should accept valid PDF file", () => {
@@ -90,9 +91,45 @@ describe("upload-utils resumeFileFilter", () => {
       expect(validateMagicBytes(fakePdfBuffer, ".pdf")).toBe(false);
     });
 
-    it("should accept valid DOCX zip signature PK\\x03\\x04", () => {
-      const validDocxBuffer = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00]);
+    it("should accept valid DOCX with PK\\x03\\x04 header and PK\\x05\\x06 EOCD trailer", () => {
+      const validDocxBuffer = Buffer.concat([
+        Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00]),
+        Buffer.from("dummy zip payload content"),
+        Buffer.from([0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00]),
+      ]);
       expect(validateMagicBytes(validDocxBuffer, ".docx")).toBe(true);
+    });
+
+    it("should reject DOCX truncated 90% (missing EOCD trailer)", () => {
+      const truncatedDocx = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x00]);
+      expect(validateMagicBytes(truncatedDocx, ".docx")).toBe(false);
+    });
+
+    it("should reject DOCX with header PK\\x03\\x04 but no EOCD", () => {
+      const noEocdDocx = Buffer.concat([
+        Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+        Buffer.alloc(1000, 0xaa),
+      ]);
+      expect(validateMagicBytes(noEocdDocx, ".docx")).toBe(false);
+    });
+
+    it("should reject DOCX where EOCD is outside last 65557 bytes", () => {
+      const eocdOutside = Buffer.concat([
+        Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+        Buffer.from([0x50, 0x4b, 0x05, 0x06]),
+        Buffer.alloc(66000, 0x20),
+      ]);
+      expect(validateMagicBytes(eocdOutside, ".docx")).toBe(false);
+    });
+
+    it("should accept DOCX where EOCD is within last 65557 bytes (middle of trailing window)", () => {
+      const eocdInsideWindow = Buffer.concat([
+        Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+        Buffer.alloc(10000, 0xaa),
+        Buffer.from([0x50, 0x4b, 0x05, 0x06]),
+        Buffer.alloc(20000, 0x20),
+      ]);
+      expect(validateMagicBytes(eocdInsideWindow, ".docx")).toBe(true);
     });
 
     it("should reject fake DOCX with non-zip content", () => {
@@ -131,8 +168,26 @@ describe("upload-utils resumeFileFilter", () => {
       try {
         validateUploadedFile(truncatedFile);
         expect.unreachable("Should have thrown");
-      } catch (err: any) {
-        expect(err.code).toBe(APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE);
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppBadRequestException);
+        expect((err as AppBadRequestException).code).toBe(APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE);
+      }
+    });
+
+    it("should reject truncated DOCX via validateUploadedFile with UPLOAD_TRUNCATED_FILE", () => {
+      const truncatedDocxFile = {
+        originalname: "truncated_resume.docx",
+        mimetype: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x00]),
+      } as Express.Multer.File;
+
+      try {
+        validateUploadedFile(truncatedDocxFile);
+        expect.unreachable("Should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppBadRequestException);
+        expect((err as AppBadRequestException).code).toBe(APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE);
+        expect((err as AppBadRequestException).message).toContain("DOCX file appears truncated or corrupt");
       }
     });
 

@@ -57,12 +57,19 @@ export class MinioService implements OnModuleInit {
         "Tenant organization ID is required for file uploads to enforce tenant namespace isolation.",
       );
     }
+    const safeTenant = tenantOrgId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!safeTenant) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.TENANT_ID_REQUIRED_FOR_UPLOAD,
+        "Tenant organization ID is required for file uploads to enforce tenant namespace isolation.",
+      );
+    }
     const ext = extname(file.originalname).toLowerCase();
     const allowed = new Set([".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"]);
     if (ext && !allowed.has(ext)) {
       throw new Error(`Disallowed file extension: ${ext}`);
     }
-    const orgPrefix = `tenants/${tenantOrgId.trim()}/`;
+    const orgPrefix = `tenants/${safeTenant}/`;
     const uniqueFileName = `${orgPrefix}${folder}/${Date.now()}-${randomUUID()}${ext}`;
 
     await this.client.putObject(

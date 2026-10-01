@@ -86,6 +86,8 @@ export const vi: TranslationSchema = {
     JOB_INVALID_ORGANIZATION: "Vị trí tuyển dụng ({id}) không thuộc tổ chức hiện tại của bạn.",
     APPLICATION_NOT_FOUND: "Không tìm thấy hồ sơ ứng tuyển ({id}).",
     APPLICATION_INVALID_ORGANIZATION: "Hồ sơ ứng tuyển ({id}) không thuộc tổ chức hiện tại của bạn.",
+    APPLICATION_STAGE_CONFLICT: "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác. Vui lòng tải lại trang để xem trạng thái mới nhất.",
+    APPLICATION_INVALID_STAGE_TRANSITION: "Không thể chuyển hồ sơ sang giai đoạn này. Vui lòng kiểm tra lại quy trình tuyển dụng.",
     CANDIDATE_INFO_REQUIRED: "Vui lòng cung cấp đầy đủ họ tên và email của ứng viên.",
     CANDIDATE_ORG_MISMATCH: "Ứng viên ({id}) không thuộc tổ chức hiện tại của bạn.",
     CANDIDATE_ALREADY_APPLIED: "Ứng viên này đã nộp hồ sơ ứng tuyển vào vị trí này rồi.",

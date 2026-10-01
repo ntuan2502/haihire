@@ -86,6 +86,8 @@ export const en: TranslationSchema = {
     JOB_INVALID_ORGANIZATION: "Job position ({id}) does not belong to your organization.",
     APPLICATION_NOT_FOUND: "Application record ({id}) not found.",
     APPLICATION_INVALID_ORGANIZATION: "Application ({id}) does not belong to your organization.",
+    APPLICATION_STAGE_CONFLICT: "This application was just updated by another user. Please refresh to see the latest status.",
+    APPLICATION_INVALID_STAGE_TRANSITION: "This stage transition is not allowed. Please check the recruitment workflow.",
     CANDIDATE_INFO_REQUIRED: "Candidate name and email are required.",
     CANDIDATE_ORG_MISMATCH: "Candidate ({id}) does not belong to your organization.",
     CANDIDATE_ALREADY_APPLIED: "Candidate has already applied to this job position.",

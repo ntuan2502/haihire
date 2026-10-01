@@ -43,14 +43,19 @@ export function validateMagicBytes(buffer: Buffer, ext: string): boolean {
     return tail.includes("%%EOF");
   }
 
-  // 2. DOCX: ZIP archive header PK\x03\x04 (0x50 0x4B 0x03 0x04)
+  // 2. DOCX: ZIP archive header PK\x03\x04 (0x50 0x4B 0x03 0x04) and EOCD trailer PK\x05\x06 (0x50 0x4B 0x05 0x06)
   if (normalizedExt === ".docx") {
-    return (
+    const hasHeader = (
       buffer[0] === 0x50 &&
       buffer[1] === 0x4b &&
       buffer[2] === 0x03 &&
       buffer[3] === 0x04
     );
+    if (!hasHeader) return false;
+
+    const windowSize = Math.min(buffer.length, 65557);
+    const tail = buffer.subarray(buffer.length - windowSize);
+    return tail.includes(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
   }
 
   // 3. DOC: OLE2 Compound Document (0xD0 0xCF 0x11 0xE0)
@@ -111,6 +116,27 @@ export function validateUploadedFile(file?: Express.Multer.File | null) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
           "PDF file appears truncated or corrupt (missing %%EOF trailer in trailing 2048 bytes).",
+        );
+      }
+    } else if (ext === ".docx") {
+      const hasHeader =
+        file.buffer.length >= 4 &&
+        file.buffer[0] === 0x50 &&
+        file.buffer[1] === 0x4b &&
+        file.buffer[2] === 0x03 &&
+        file.buffer[3] === 0x04;
+      if (!hasHeader) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
+        );
+      }
+      const tailStart = Math.max(0, file.buffer.length - 65557);
+      const tail = file.buffer.subarray(tailStart);
+      if (!tail.includes(Buffer.from([0x50, 0x4b, 0x05, 0x06]))) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
+          "DOCX file appears truncated or corrupt (missing ZIP End of Central Directory trailer in trailing 65557 bytes).",
         );
       }
     } else if (!validateMagicBytes(file.buffer, ext)) {

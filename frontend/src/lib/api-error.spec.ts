@@ -87,6 +87,62 @@ describe("getApiErrorMessage", () => {
     expect(getApiErrorMessage("Plain string error", mockT)).toBe("Plain string error");
   });
 
+  it("translates APPLICATION_STAGE_CONFLICT (HTTP 409) with Vietnamese message", async () => {
+    const { vi } = await import("@/i18n/locales/vi");
+    const realT = (key: TranslationKey): string => {
+      if (key === "errors.APPLICATION_STAGE_CONFLICT") {
+        return vi.errors.APPLICATION_STAGE_CONFLICT;
+      }
+      return key;
+    };
+
+    const conflictError = {
+      name: "AxiosError",
+      message: "Request failed with status code 409",
+      response: {
+        status: 409,
+        data: {
+          statusCode: 409,
+          code: "APPLICATION_STAGE_CONFLICT",
+          message: "Application stage conflict: the application has been modified by another request.",
+        },
+      },
+    };
+
+    const message = getApiErrorMessage(conflictError, realT);
+    expect(message).toBe(
+      "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác. Vui lòng tải lại trang để xem trạng thái mới nhất.",
+    );
+  });
+
+  it("translates APPLICATION_INVALID_STAGE_TRANSITION (HTTP 400) with Vietnamese message", async () => {
+    const { vi } = await import("@/i18n/locales/vi");
+    const realT = (key: TranslationKey): string => {
+      if (key === "errors.APPLICATION_INVALID_STAGE_TRANSITION") {
+        return vi.errors.APPLICATION_INVALID_STAGE_TRANSITION;
+      }
+      return key;
+    };
+
+    const invalidTransitionError = {
+      name: "AxiosError",
+      message: "Request failed with status code 400",
+      response: {
+        status: 400,
+        data: {
+          statusCode: 400,
+          code: "APPLICATION_INVALID_STAGE_TRANSITION",
+          message: "Cannot transition application stage from 'APPLIED' to 'OFFER'.",
+        },
+      },
+    };
+
+    const message = getApiErrorMessage(invalidTransitionError, realT);
+    expect(message).toBe(
+      "Không thể chuyển hồ sơ sang giai đoạn này. Vui lòng kiểm tra lại quy trình tuyển dụng.",
+    );
+  });
+
   it("gatekeeper rejects malformed URLs with [object Object]", async () => {
     const { api } = await import("./api/client");
     await expect(api.get("/test/[object Object]")).rejects.toThrow(

@@ -49,3 +49,5 @@ Thumbs.db
 *.tmp
 *.temp
 docker-compose.override.yml
+scratch/
+**/scratch/

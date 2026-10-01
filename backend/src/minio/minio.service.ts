@@ -50,6 +50,14 @@ export class MinioService implements OnModuleInit {
     }
   }
 
+  async checkHealth(): Promise<boolean> {
+    try {
+      return await this.client.bucketExists(this.bucketName);
+    } catch {
+      return false;
+    }
+  }
+
   async uploadFile(file: Express.Multer.File, folder = "resumes", tenantOrgId?: string | null): Promise<UploadResult> {
     if (!tenantOrgId || !tenantOrgId.trim()) {
       throw new AppBadRequestException(

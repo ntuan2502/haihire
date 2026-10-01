@@ -1,0 +1,178 @@
+name: haihire-prod
+
+x-logging: &prod-logging
+  driver: "json-file"
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+services:
+  # ------------------------------------------------------------------------------
+  # 1. PostgreSQL Database Service (Internal Network Only - No Exposed Ports)
+  # ------------------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: haihire-prod-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - haihire-prod-network
+    logging: *prod-logging
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ------------------------------------------------------------------------------
+  # 2. Redis Cache & Async Job Queue (Internal Network Only - No Exposed Ports)
+  # ------------------------------------------------------------------------------
+  redis:
+    image: redis:alpine
+    container_name: haihire-prod-redis
+    restart: unless-stopped
+    command: >
+      /bin/sh -c "
+        if [ -n \"$$REDIS_PASSWORD\" ]; then
+          redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes;
+        else
+          redis-server --appendonly yes;
+        fi
+      "
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    networks:
+      - haihire-prod-network
+    logging: *prod-logging
+    healthcheck:
+      test: [ "CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------------------------
+  # 3. MinIO S3 Object Storage (Internal API Network - No Direct Host Ports)
+  # ------------------------------------------------------------------------------
+  minio:
+    image: alpine/minio:latest-release
+    container_name: haihire-prod-minio
+    restart: unless-stopped
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    networks:
+      - haihire-prod-network
+    logging: *prod-logging
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:9000/minio/health/live || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------------------------
+  # 4. NestJS Production Backend Service
+  # ------------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: haihire-prod-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SYSTEM_EMAIL_PROVIDER: ${SYSTEM_EMAIL_PROVIDER:-SMTP}
+      SYSTEM_EMAIL_FROM_NAME: ${SYSTEM_EMAIL_FROM_NAME}
+      SYSTEM_EMAIL_FROM_EMAIL: ${SYSTEM_EMAIL_FROM_EMAIL}
+      SYSTEM_EMAIL_SMTP_HOST: ${SYSTEM_EMAIL_SMTP_HOST:-}
+      SYSTEM_EMAIL_SMTP_PORT: ${SYSTEM_EMAIL_SMTP_PORT:-587}
+      SYSTEM_EMAIL_SMTP_USER: ${SYSTEM_EMAIL_SMTP_USER:-}
+      SYSTEM_EMAIL_SMTP_PASS: ${SYSTEM_EMAIL_SMTP_PASS:-}
+      SYSTEM_EMAIL_RESEND_API_KEY: ${SYSTEM_EMAIL_RESEND_API_KEY:-}
+      SYSTEM_EMAIL_SENDGRID_API_KEY: ${SYSTEM_EMAIL_SENDGRID_API_KEY:-}
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    logging: *prod-logging
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:3001/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - haihire-prod-network
+
+  # ------------------------------------------------------------------------------
+  # 5. Next.js Production Frontend Service
+  # ------------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: haihire-prod-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${FRONTEND_API_URL:-http://localhost:3001}
+      INTERNAL_API_URL: http://backend:3001
+      BACKEND_HOST: backend
+      BACKEND_PORT: 3001
+      MINIO_HOST: minio
+      MINIO_PORT: 9000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    logging: *prod-logging
+    networks:
+      - haihire-prod-network
+
+volumes:
+  postgres_data:
+    name: haihire_prod_postgres_data
+    driver: local
+  redis_data:
+    name: haihire_prod_redis_data
+    driver: local
+  minio_data:
+    name: haihire_prod_minio_data
+    driver: local
+
+networks:
+  haihire-prod-network:
+    name: haihire_prod_network
+    driver: bridge

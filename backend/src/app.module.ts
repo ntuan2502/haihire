@@ -19,6 +19,8 @@ import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD, Reflector } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
 
+import { MetricsService } from "./metrics/metrics.service";
+
 // Resolve ThrottlerGuard parameter token to bridge CJS/ESM dual package hazard under tsx in dev
 const throttlerParamTypes = (Reflect.getMetadata("design:paramtypes", ThrottlerGuard) as (new (...args: unknown[]) => unknown)[]) || [];
 const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
@@ -60,6 +62,7 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
   controllers: [AppController],
   providers: [
     AppService,
+    MetricsService,
     ...(throttlerReflectorToken !== Reflector
       ? [{ provide: throttlerReflectorToken, useExisting: Reflector }]
       : []),
@@ -68,6 +71,7 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
       useClass: ThrottlerGuard,
     },
   ],
+  exports: [MetricsService],
 })
 export class AppModule {}
 

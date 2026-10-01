@@ -29,6 +29,7 @@ redis_data/
 
 # Testing & Coverage
 coverage/
+**/coverage/
 .vitest/
 
 # Linter & Tooling Cache

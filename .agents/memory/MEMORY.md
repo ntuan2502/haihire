@@ -61,7 +61,9 @@
 - [user] Anti-Monolith Architecture: never allow API clients or hooks to become monolithic mega-files → user-preferences.md
 - [user] Node 26+ Tooling Awareness: always install pnpm explicitly, never invoke corepack enable → user-preferences.md
 - [project] HaiHire Design System & Layout Conventions: full-width canvas (never max-w-7xl mx-auto), standard tokens (MetricCard, CustomSelect, StageBadge), real tenant URLs, and full 5-parameter UTM suite → project-conventions.md
+- [project] Source Tracking Attribution Architecture: session-scoped hygiene, zero cross-session pollution, deduplicated clicks → tech-decisions.md
 - [user] Full-width layout mandate: span full width without desktop container boxes; use real public career tracking URLs; support 5 UTM parameters → user-preferences.md
+- [user] Session-Scoped Attribution: prevent sticky attribution pollution, isolate tracking tokens to active sessions with URL link propagation → user-preferences.md
 
 ## Feedback
 - [feedback] 2026-09-30 (Part 2): HaiHire Design System Layout Consistency, Full UTM Parameters & Real Public URLs → feedback-history.md

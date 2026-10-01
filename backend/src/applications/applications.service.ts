@@ -608,6 +608,7 @@ export class ApplicationsService {
     if (dto.ref) {
       const link = await this.prisma.db.orm.public.TrackingLink.select(
         "id",
+        "organizationId",
         "source",
         "customSource",
         "campaign",
@@ -617,7 +618,12 @@ export class ApplicationsService {
         .where((l) => l.token.eq(dto.ref as string))
         .first();
 
-      if (link && !link.deletedAt && link.isActive) {
+      if (
+        link &&
+        !link.deletedAt &&
+        link.isActive &&
+        (!job.organizationId || link.organizationId === job.organizationId)
+      ) {
         trackingLinkId = link.id;
         sourceChannel = (link.source as SourcingChannel) || SourcingChannel.OTHER;
         sourceDetails = link.customSource || null;

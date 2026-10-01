@@ -56,20 +56,24 @@ export default function CareerJobSlugPage() {
   const searchParams = useSearchParams();
   const refParam = searchParams.get("ref");
 
-  // Record click on public tracking link
+  // Record click on public tracking link (with session deduplication)
   useEffect(() => {
     if (refParam) {
       try {
         sessionStorage.setItem("haihire_sourcing_ref", refParam);
+        const clickRecordedKey = `haihire_click_recorded_${refParam}`;
+        if (!sessionStorage.getItem(clickRecordedKey)) {
+          sessionStorage.setItem(clickRecordedKey, "true");
+          sourcingApi
+            .recordPublicClick({
+              token: refParam,
+              referrer: typeof document !== "undefined" ? document.referrer : undefined,
+            })
+            .catch(() => {});
+        }
       } catch {
         // Ignore storage errors in private browsing
       }
-      sourcingApi
-        .recordPublicClick({
-          token: refParam,
-          referrer: typeof document !== "undefined" ? document.referrer : undefined,
-        })
-        .catch(() => {});
     }
   }, [refParam]);
 
@@ -170,7 +174,7 @@ export default function CareerJobSlugPage() {
       }
       formData.append("resume", resumeFile);
 
-      // Attach sourcing attribution
+      // Attach sourcing attribution (session-scoped)
       const activeRef =
         refParam ||
         (typeof sessionStorage !== "undefined"

@@ -34,7 +34,7 @@ import {
   useDeleteDocumentMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
-import { getDocumentUrl, getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
+import { getDocumentUrl, downloadAuthenticatedFile } from "@/lib/api";
 import {
   formatDate,
   parseCandidateNotes,

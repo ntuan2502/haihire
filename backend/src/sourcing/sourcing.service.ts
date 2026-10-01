@@ -801,9 +801,6 @@ export class SourcingService {
       updatedAt: toInstant(),
     });
 
-    // Log Activity
-    const user = await this.prisma.db.orm.public.User.select("name").where((u) => u.id.eq(userId)).first();
-    const actorName = user?.name || "Team Member";
 
     let jobTitle: string | null = null;
     if (dto.jobId) {

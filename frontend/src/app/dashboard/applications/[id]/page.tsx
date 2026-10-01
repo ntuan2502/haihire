@@ -48,7 +48,7 @@ import {
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { usePipelineStages } from "@/lib/stages";
 import { StageBadge } from "@/components/shared/stage-badge";
-import { getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
+import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   getInitials,
   formatDate,

@@ -54,7 +54,7 @@ import {
 } from "@/lib/interviews";
 import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
-import { getApiBaseUrl, getDocumentUrl, downloadAuthenticatedFile } from "@/lib/api";
+import { getDocumentUrl, downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { SendEmailModal } from "@/components/email/send-email-modal";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
@@ -291,7 +291,6 @@ function CandidateDetailPageContent() {
     if (url) queryParams.set("url", url);
     if (downloadFileName) queryParams.set("name", downloadFileName);
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
-    const apiUrl = getApiBaseUrl();
 
     const downloadPath = appId
       ? `/applications/${appId}/documents/download${queryString}`

@@ -23,7 +23,7 @@ import {
 import type { ApplicationStage, CandidateDocument } from "@/types";
 import { PIPELINE_STAGES, usePipelineStages } from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
-import { getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
+import { downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import {
   getCandidateDisplayName,

@@ -48,7 +48,7 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import { usePipelineStages } from "@/lib/stages";
-import { getApiBaseUrl, downloadAuthenticatedFile } from "@/lib/api";
+import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   useUpdateStageMutation,
   useDeleteApplicationMutation,

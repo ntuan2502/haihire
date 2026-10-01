@@ -11,7 +11,6 @@ import {
   X,
   RotateCcw,
   Plus,
-  ArrowRight,
   Share2,
   Check,
   Pencil,

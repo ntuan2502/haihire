@@ -370,4 +370,79 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       await expect(service.findOne("job-1")).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe("Public Career Page Visibility (Unauthenticated)", () => {
+    beforeEach(() => {
+      // Add CLOSED and ARCHIVED jobs to test complete lifecycle isolation
+      mockJobs.push(
+        {
+          id: "job-closed",
+          title: "Closed Position",
+          department: "Engineering",
+          location: "Remote",
+          type: "FULL_TIME",
+          description: "Closed",
+          requirements: "None",
+          salaryRange: "$1000",
+          status: "CLOSED",
+          organizationId: "org-1",
+          createdAt: new Date(),
+        },
+        {
+          id: "job-archived",
+          title: "Archived Position",
+          department: "Engineering",
+          location: "Remote",
+          type: "FULL_TIME",
+          description: "Archived",
+          requirements: "None",
+          salaryRange: "$1000",
+          status: "ARCHIVED",
+          organizationId: "org-1",
+          createdAt: new Date(),
+        },
+      );
+    });
+
+    it("should return ONLY PUBLISHED jobs for unauthenticated career page requests", async () => {
+      const results = await service.findAll({
+        organizationSlug: "acme-corp",
+        isAuthenticated: false,
+      });
+
+      // job-1 is PUBLISHED; job-2 is DRAFT; job-closed is CLOSED; job-archived is ARCHIVED
+      expect(results.total).toBe(1);
+      expect(results.data.length).toBe(1);
+      expect(results.data[0].id).toBe("job-1");
+      expect(results.data[0].status).toBe("PUBLISHED");
+    });
+
+    it("should reject exposing DRAFT/CLOSED jobs even if unauthenticated user requests status query param", async () => {
+      const draftReq = await service.findAll({
+        organizationSlug: "acme-corp",
+        status: "DRAFT",
+        isAuthenticated: false,
+      });
+      // Should not return draft jobs
+      expect(draftReq.data.some((j) => j.status === "DRAFT")).toBe(false);
+
+      const closedReq = await service.findAll({
+        organizationSlug: "acme-corp",
+        status: "CLOSED",
+        isAuthenticated: false,
+      });
+      expect(closedReq.data.some((j) => j.status === "CLOSED" || j.status === "ARCHIVED")).toBe(false);
+    });
+
+    it("should throw NotFoundException when public user tries to access a DRAFT job via findBySlug", async () => {
+      await expect(service.findBySlug("acme-corp", "job-2")).rejects.toThrow();
+    });
+
+    it("should not leak applicant applications data to public career viewers", async () => {
+      const job = await service.findBySlug("acme-corp", "job-1");
+      expect(job).toBeDefined();
+      expect(job.applications).toEqual([]);
+      expect(job.applicationsCount).toBe(0);
+    });
+  });
 });

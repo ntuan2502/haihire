@@ -1,4 +1,4 @@
-import { extname } from "node:path";
+import { extname, basename } from "node:path";
 import { AppBadRequestException } from "./app-exception";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import type { Request } from "express";
@@ -15,6 +15,88 @@ export const ALLOWED_RESUME_EXTENSIONS = new Set([
   ".doc",
   ".docx",
 ]);
+
+export function sanitizeFilename(filename: string): string {
+  if (!filename) return "document";
+  // Remove directory traversal paths, control chars, and illegal characters
+  const base = basename(filename).replace(/[/\\?%*:|"<>]/g, "_");
+  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return cleaned || "document";
+}
+
+export function validateMagicBytes(buffer: Buffer, ext: string): boolean {
+  if (!buffer || buffer.length < 4) {
+    return false;
+  }
+
+  const normalizedExt = ext.toLowerCase();
+
+  // 1. PDF: %PDF- (0x25 0x50 0x44 0x46 0x2D)
+  if (normalizedExt === ".pdf") {
+    const header = buffer.subarray(0, Math.min(buffer.length, 1024)).toString("binary");
+    return header.includes("%PDF-");
+  }
+
+  // 2. DOCX: ZIP archive header PK\x03\x04 (0x50 0x4B 0x03 0x04)
+  if (normalizedExt === ".docx") {
+    return (
+      buffer[0] === 0x50 &&
+      buffer[1] === 0x4b &&
+      buffer[2] === 0x03 &&
+      buffer[3] === 0x04
+    );
+  }
+
+  // 3. DOC: OLE2 Compound Document (0xD0 0xCF 0x11 0xE0)
+  if (normalizedExt === ".doc") {
+    return (
+      buffer[0] === 0xd0 &&
+      buffer[1] === 0xcf &&
+      buffer[2] === 0x11 &&
+      buffer[3] === 0xe0
+    );
+  }
+
+  // 4. Images if used for avatars or attachments
+  if (normalizedExt === ".png") {
+    return (
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47
+    );
+  }
+
+  if (normalizedExt === ".jpg" || normalizedExt === ".jpeg") {
+    return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
+  return false;
+}
+
+export function validateUploadedFile(file?: Express.Multer.File | null) {
+  if (!file) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.DOCUMENT_FILE_REQUIRED,
+      "Upload file is required.",
+    );
+  }
+
+  const ext = extname(file.originalname).toLowerCase();
+  if (!ALLOWED_RESUME_EXTENSIONS.has(ext)) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      `File extension '${ext}' is not permitted. Only .pdf, .doc, and .docx formats are accepted.`,
+    );
+  }
+
+  if (file.buffer && !validateMagicBytes(file.buffer, ext)) {
+    throw new AppBadRequestException(
+      APP_ERROR_CODES.VALIDATION_ERROR,
+      `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
+    );
+  }
+}
 
 export function resumeFileFilter(
   _req: Request,

@@ -75,7 +75,7 @@ export class JobsController {
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.jobsService.findOne(id, req?.user?.organizationId);
+    return this.jobsService.findOne(id, req?.user?.organizationId, !req?.user);
   }
 
   @Post()

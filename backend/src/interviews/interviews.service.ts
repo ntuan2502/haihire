@@ -567,6 +567,14 @@ export class InterviewsService {
         try {
           const template = await this.emailService.getTemplateByType(orgId, "INTERVIEW_INVITATION");
           if (template && template.enabled) {
+            let orgName = "Company";
+            const org = await this.prisma.db.orm.public.Organization.select("name")
+              .where((o) => o.id.eq(orgId))
+              .first();
+            if (org?.name) {
+              orgName = org.name;
+            }
+
             await this.emailService.sendEmail(
               {
                 to: candidate.email,
@@ -587,7 +595,7 @@ export class InterviewsService {
                     department: job?.department || "",
                     location: job?.location || "",
                   },
-                  organization: { name: "ATS Recruitment" },
+                  organization: { name: orgName },
                   interview: {
                     date: dto.date,
                     time: dto.time,

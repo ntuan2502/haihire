@@ -16,6 +16,7 @@ import { ActivitiesService } from "../activities/activities.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../common/doc-utils";
+import { validateUploadedFile, sanitizeFilename } from "../common/upload-utils";
 import crypto from "node:crypto";
 import { toTimestamp, toInstant } from "../common/date.util";
 
@@ -386,7 +387,8 @@ export class CandidatesService {
     };
 
     if (file) {
-      uploadResult = await this.minioService.uploadFile(file, "resumes");
+      validateUploadedFile(file);
+      uploadResult = await this.minioService.uploadFile(file, "resumes", orgId);
     } else if (dto.resumeUrl) {
       uploadResult = {
         url: dto.resumeUrl,
@@ -482,9 +484,8 @@ export class CandidatesService {
       );
     }
 
-    const cleanOriginalName = fixUtf8String(
-      file.originalname || "document.pdf",
-    );
+    validateUploadedFile(file);
+    const cleanOriginalName = sanitizeFilename(fixUtf8String(file.originalname || "document.pdf"));
 
     let uploadResult: {
       url: string;
@@ -499,7 +500,7 @@ export class CandidatesService {
     };
 
     try {
-      uploadResult = await this.minioService.uploadFile(file, "resumes");
+      uploadResult = await this.minioService.uploadFile(file, "resumes", candidate.organizationId);
       uploadResult.originalName = cleanOriginalName;
     } catch {
       uploadResult = {
@@ -510,7 +511,7 @@ export class CandidatesService {
       };
     }
 
-    const newDocId = `doc-${Date.now()}`;
+    const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
     try {

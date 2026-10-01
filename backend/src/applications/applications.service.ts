@@ -2,7 +2,13 @@ import {
   Inject,
   Injectable,
 } from "@nestjs/common";
-import { APP_ERROR_CODES, SourcingChannel, type CandidateDocument } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  SourcingChannel,
+  VALID_APPLICATION_STAGE_TRANSITIONS,
+  type ApplicationStage,
+  type CandidateDocument,
+} from "@haihire/shared";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -14,6 +20,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
+import { validateUploadedFile, sanitizeFilename } from "../common/upload-utils";
 import crypto from "node:crypto";
 import { toTimestamp, toInstant } from "../common/date.util";
 
@@ -499,7 +506,9 @@ export class ApplicationsService {
     };
 
     if (file) {
-      uploadResult = await this.minioService.uploadFile(file, "resumes");
+      validateUploadedFile(file);
+      uploadResult = await this.minioService.uploadFile(file, "resumes", job.organizationId);
+      uploadResult.originalName = sanitizeFilename(fixUtf8String(file.originalname || "resume.pdf"));
     } else if (dto.resumeUrl) {
       uploadResult = {
         url: dto.resumeUrl,
@@ -709,6 +718,14 @@ export class ApplicationsService {
         try {
           const template = await this.emailService.getTemplateByType(orgId, "APPLICATION_CONFIRMATION");
           if (template && template.enabled) {
+            let orgName = "Company";
+            const org = await this.prisma.db.orm.public.Organization.select("name")
+              .where((o) => o.id.eq(orgId))
+              .first();
+            if (org?.name) {
+              orgName = org.name;
+            }
+
             await this.emailService.sendEmail(
               {
                 to: result.candidate.email,
@@ -729,7 +746,7 @@ export class ApplicationsService {
                     department: job.department,
                     location: job.location,
                   },
-                  organization: { name: "ATS Recruitment" },
+                  organization: { name: orgName },
                 }),
               },
               orgId,
@@ -747,6 +764,18 @@ export class ApplicationsService {
   async updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) {
     const existing = await this.findOne(id, tenantOrgId);
     const oldStage = existing.stage;
+
+    // Validate state transition
+    if (dto.stage !== oldStage) {
+      const allowedNextStages = (VALID_APPLICATION_STAGE_TRANSITIONS as Record<string, readonly string[]>)[oldStage] || [];
+      if (!allowedNextStages.includes(dto.stage)) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.APPLICATION_INVALID_STAGE_TRANSITION,
+          `Cannot transition application stage from '${oldStage}' to '${dto.stage}'. Valid transitions from '${oldStage}' are: ${allowedNextStages.join(", ") || "none (terminal stage)"}.`,
+          { currentStage: oldStage, targetStage: dto.stage },
+        );
+      }
+    }
 
     await this.prisma.db.orm.public.Application.where(
       (a) => a.id.eq(id),
@@ -781,6 +810,14 @@ export class ApplicationsService {
         try {
           const template = await this.emailService.getTemplateByType(orgId, "REJECTION");
           if (template && template.enabled) {
+            let orgName = "Company";
+            const org = await this.prisma.db.orm.public.Organization.select("name")
+              .where((o) => o.id.eq(orgId))
+              .first();
+            if (org?.name) {
+              orgName = org.name;
+            }
+
             await this.emailService.sendEmail(
               {
                 to: updated.candidate.email,
@@ -801,7 +838,7 @@ export class ApplicationsService {
                     department: updated.job?.department || "",
                     location: updated.job?.location || "",
                   },
-                  organization: { name: "ATS Recruitment" },
+                  organization: { name: orgName },
                 }),
               },
               orgId,
@@ -852,8 +889,9 @@ export class ApplicationsService {
       );
     }
 
-    const cleanOriginalName = fixUtf8String(
-      file.originalname || "document.pdf",
+    validateUploadedFile(file);
+    const cleanOriginalName = sanitizeFilename(
+      fixUtf8String(file.originalname || "document.pdf"),
     );
 
     let uploadResult: {
@@ -868,8 +906,10 @@ export class ApplicationsService {
       mimeType: file.mimetype || "application/pdf",
     };
 
+    const targetOrgId = existing.job?.organizationId || tenantOrgId;
+
     try {
-      uploadResult = await this.minioService.uploadFile(file, "resumes");
+      uploadResult = await this.minioService.uploadFile(file, "resumes", targetOrgId);
       uploadResult.originalName = cleanOriginalName;
     } catch {
       uploadResult = {
@@ -880,7 +920,7 @@ export class ApplicationsService {
       };
     }
 
-    const newDocId = `doc-${Date.now()}`;
+    const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
     if (existing.candidateId) {
@@ -1068,7 +1108,35 @@ export class ApplicationsService {
   }
 
   async remove(id: string, tenantOrgId?: string | null) {
-    await this.findOne(id, tenantOrgId);
+    const existing = await this.findOne(id, tenantOrgId);
+    const orgId = existing.job?.organizationId || existing.candidate?.organizationId || tenantOrgId;
+
+    if (orgId && existing.candidate) {
+      try {
+        await this.activitiesService.createActivity({
+          organizationId: orgId,
+          candidateId: existing.candidate.id,
+          applicationId: null, // Detach from application record so log persists when application is deleted
+          type: "NOTE_ADDED",
+          title: `Application Removed: ${existing.job?.title || "Position"}`,
+          description: `Application for job '${existing.job?.title || ""}' was deleted from the system.`,
+          actorName: "HR Team",
+          actorRole: "ADMIN",
+          metadata: {
+            action: "APPLICATION_DELETED",
+            applicationId: existing.id,
+            candidateName: existing.candidate.name,
+            candidateEmail: existing.candidate.email,
+            jobId: existing.job?.id,
+            jobTitle: existing.job?.title,
+            stageAtDeletion: existing.stage,
+          },
+        });
+      } catch (err) {
+        console.warn("Failed to create audit activity log on application deletion:", err);
+      }
+    }
+
     await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).delete();
     return { success: true, message: `Application ${id} deleted successfully` };
   }

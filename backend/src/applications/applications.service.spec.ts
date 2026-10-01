@@ -411,14 +411,63 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(app.candidateName).toBe("Alice Nguyen");
     });
 
-    it("should update application stage and orderIndex", async () => {
-      const updated = await service.updateStage("app-1", {
-        stage: ApplicationStage.OFFER,
-        orderIndex: 5,
+    it("should update application stage through valid lifecycle transitions", async () => {
+      // APPLIED -> SCREENING
+      const s1 = await service.updateStage("app-1", {
+        stage: ApplicationStage.SCREENING,
+        orderIndex: 2,
       });
+      expect(s1?.stage).toBe(ApplicationStage.SCREENING);
+      expect(s1?.orderIndex).toBe(2);
 
-      expect(updated?.stage).toBe(ApplicationStage.OFFER);
-      expect(updated?.orderIndex).toBe(5);
+      // SCREENING -> INTERVIEW
+      const s2 = await service.updateStage("app-1", {
+        stage: ApplicationStage.INTERVIEW,
+      });
+      expect(s2?.stage).toBe(ApplicationStage.INTERVIEW);
+
+      // INTERVIEW -> OFFER
+      const s3 = await service.updateStage("app-1", {
+        stage: ApplicationStage.OFFER,
+      });
+      expect(s3?.stage).toBe(ApplicationStage.OFFER);
+
+      // OFFER -> HIRED
+      const s4 = await service.updateStage("app-1", {
+        stage: ApplicationStage.HIRED,
+      });
+      expect(s4?.stage).toBe(ApplicationStage.HIRED);
+    });
+
+    it("should reject invalid stage transitions without changing database state", async () => {
+      // 1. APPLIED -> HIRED (skipping screening/interview/offer)
+      await expect(
+        service.updateStage("app-1", { stage: ApplicationStage.HIRED }),
+      ).rejects.toThrow();
+
+      let app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.APPLIED);
+
+      // 2. APPLIED -> OFFER (skipping stages)
+      await expect(
+        service.updateStage("app-1", { stage: ApplicationStage.OFFER }),
+      ).rejects.toThrow();
+
+      app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.APPLIED);
+
+      // 3. Move to REJECTED (terminal state)
+      await service.updateStage("app-1", { stage: ApplicationStage.REJECTED });
+      app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.REJECTED);
+
+      // 4. REJECTED -> OFFER (invalid from terminal)
+      await expect(
+        service.updateStage("app-1", { stage: ApplicationStage.OFFER }),
+      ).rejects.toThrow();
+
+      app = await service.findOne("app-1");
+      expect(app.stage).toBe(ApplicationStage.REJECTED);
     });
 
     it("should update candidate personal information", async () => {
@@ -431,7 +480,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(updated.candidatePhone).toBe("0999999999");
     });
 
-    it("should delete an application", async () => {
+    it("should delete an application and record audit activity log", async () => {
       const result = await service.remove("app-1");
       expect(result.success).toBe(true);
       await expect(service.findOne("app-1")).rejects.toThrow(NotFoundException);

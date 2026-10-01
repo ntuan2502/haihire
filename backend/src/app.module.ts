@@ -61,7 +61,6 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
   controllers: [AppController],
   providers: [
     AppService,
-    PrismaService,
     ...(throttlerReflectorToken !== Reflector
       ? [{ provide: throttlerReflectorToken, useExisting: Reflector }]
       : []),

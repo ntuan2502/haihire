@@ -3,6 +3,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { env } from "./config/env";
+import { GlobalExceptionFilter } from "./common/http-exception.filter";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -57,6 +58,9 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
+
+  // Global exception filter handling Rate Limiting (429) and standard HTTP errors
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   await app.listen(env.PORT, "0.0.0.0");
   console.log(`HaiHire Backend running at http://0.0.0.0:${env.PORT}`);

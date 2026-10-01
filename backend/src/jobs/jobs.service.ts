@@ -34,8 +34,9 @@ export class JobsService {
     const page = filter?.page && filter.page > 0 ? filter.page : 1;
     const limit = filter?.limit && filter.limit > 0 ? filter.limit : 20;
 
-    const isAuthenticated = filter?.isAuthenticated ?? false;
-    const effectiveStatus = !isAuthenticated ? "PUBLISHED" : filter?.status;
+    const isAuthenticated = filter?.isAuthenticated ?? (!filter?.organizationSlug);
+    const isPublic = !isAuthenticated;
+    const effectiveStatus = isPublic ? "PUBLISHED" : filter?.status;
     const userOrgId = filter?.tenantOrgId || undefined;
 
     if (
@@ -96,8 +97,8 @@ export class JobsService {
 
     jobs = jobs.filter((j) => !j.deletedAt);
 
-    if (filter?.status) {
-      const statuses = filter.status.split(",").map((s) => s.trim().toUpperCase());
+    if (effectiveStatus) {
+      const statuses = effectiveStatus.split(",").map((s) => s.trim().toUpperCase());
       jobs = jobs.filter((j) => {
         if (statuses.includes("CLOSED") && j.status === "ARCHIVED") return true;
         return statuses.includes(j.status);
@@ -211,7 +212,7 @@ export class JobsService {
     };
   }
 
-  async findOne(id: string, tenantOrgId?: string | null) {
+  async findOne(id: string, tenantOrgId?: string | null, isPublic = false) {
     const job = await this.prisma.db.orm.public.Job.select(
       "id",
       "title",
@@ -242,12 +243,40 @@ export class JobsService {
       );
     }
 
+    if (isPublic && job.status !== "PUBLISHED") {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.JOB_NOT_FOUND,
+        `Job with ID ${id} not found`,
+        { id },
+      );
+    }
+
     if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
         { id, organizationId: job.organizationId },
       );
+    }
+
+    let organization: { id: string; name: string; slug: string } | null = null;
+    if (job.organizationId) {
+      organization = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+      )
+        .where((o) => o.id.eq(job.organizationId as string))
+        .first();
+    }
+
+    if (isPublic) {
+      return {
+        ...job,
+        organization,
+        applications: [],
+        applicationsCount: 0,
+      };
     }
 
     const applications = await this.prisma.db.orm.public.Application.select(
@@ -324,17 +353,6 @@ export class JobsService {
       };
     });
 
-    let organization = null;
-    if (job.organizationId) {
-      organization = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-      )
-        .where((o) => o.id.eq(job.organizationId as string))
-        .first();
-    }
-
     return {
       ...job,
       organization,
@@ -382,7 +400,7 @@ export class JobsService {
       .where((j) => j.organizationId.eq(org.id))
       .all();
 
-    const activeJobs = jobs.filter((j) => !j.deletedAt);
+    const activeJobs = jobs.filter((j) => !j.deletedAt && j.status === "PUBLISHED");
 
     const slugify = (str: string) =>
       str
@@ -412,7 +430,7 @@ export class JobsService {
       );
     }
 
-    return this.findOne(matchedJob.id);
+    return this.findOne(matchedJob.id, undefined, true);
   }
 
   async create(dto: CreateJobDto, tenantOrgId?: string | null, userId?: string | null) {

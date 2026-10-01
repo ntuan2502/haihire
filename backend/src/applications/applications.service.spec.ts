@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ApplicationsService } from "./applications.service";
 import { NotFoundException } from "@nestjs/common";
 import { ApplicationStage } from "./dto/update-stage.dto";
+import { AppConflictException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 
 describe("ApplicationsService - Multi-Tenant Candidate & Application Management", () => {
   let service: ApplicationsService;
@@ -298,35 +300,44 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                 mockApps.push(newApp);
                 return newApp;
               }),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                update: vi.fn().mockImplementation(async (updates) => {
-                  const target = mockApps.find((a) => {
-                    const mockRecord = {
-                      id: { eq: (targetId: string) => a.id === targetId },
-                      jobId: { eq: (targetId: string) => a.jobId === targetId },
-                      candidateId: { eq: (targetId: string) => a.candidateId === targetId },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (target) {
-                    Object.assign(target, updates);
-                    return { ...target };
-                  }
-                  return null;
-                }),
-                delete: vi.fn().mockImplementation(async () => {
-                  const idx = mockApps.findIndex((a) => {
-                    const mockRecord = {
-                      id: { eq: (targetId: string) => a.id === targetId },
-                      jobId: { eq: (targetId: string) => a.jobId === targetId },
-                      candidateId: { eq: (targetId: string) => a.candidateId === targetId },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (idx !== -1) mockApps.splice(idx, 1);
-                  return { count: 1 };
-                }),
-              })),
+              where: vi.fn().mockImplementation(function whereBuilder(predicateFn) {
+                const predicates = [predicateFn];
+                const builder = {
+                  where: vi.fn().mockImplementation((nextFn) => {
+                    predicates.push(nextFn);
+                    return builder;
+                  }),
+                  update: vi.fn().mockImplementation(async (updates) => {
+                    const target = mockApps.find((a) => {
+                      const mockRecord = {
+                        id: { eq: (targetId: string) => a.id === targetId },
+                        jobId: { eq: (targetId: string) => a.jobId === targetId },
+                        candidateId: { eq: (targetId: string) => a.candidateId === targetId },
+                        stage: { eq: (targetStage: string) => a.stage === targetStage },
+                      };
+                      return predicates.every((fn) => fn(mockRecord));
+                    });
+                    if (target) {
+                      Object.assign(target, updates);
+                      return { ...target };
+                    }
+                    return null;
+                  }),
+                  delete: vi.fn().mockImplementation(async () => {
+                    const idx = mockApps.findIndex((a) => {
+                      const mockRecord = {
+                        id: { eq: (targetId: string) => a.id === targetId },
+                        jobId: { eq: (targetId: string) => a.jobId === targetId },
+                        candidateId: { eq: (targetId: string) => a.candidateId === targetId },
+                      };
+                      return predicates.every((fn) => fn(mockRecord));
+                    });
+                    if (idx !== -1) mockApps.splice(idx, 1);
+                    return { count: 1 };
+                  }),
+                };
+                return builder;
+              }),
             },
             Interview: {
               all: vi.fn().mockResolvedValue([]),
@@ -468,6 +479,38 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
       app = await service.findOne("app-1");
       expect(app.stage).toBe(ApplicationStage.REJECTED);
+    });
+
+    it("should allow sequential valid updates to next stages", async () => {
+      // app-1 starts at APPLIED
+      const step1 = await service.updateStage("app-1", { stage: ApplicationStage.SCREENING });
+      expect(step1.stage).toBe(ApplicationStage.SCREENING);
+
+      const step2 = await service.updateStage("app-1", { stage: ApplicationStage.INTERVIEW });
+      expect(step2.stage).toBe(ApplicationStage.INTERVIEW);
+    });
+
+    it("should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict", async () => {
+      // app-1 starts at APPLIED. Both see APPLIED.
+      const p1 = service.updateStage("app-1", { stage: ApplicationStage.SCREENING });
+      const p2 = service.updateStage("app-1", { stage: ApplicationStage.REJECTED });
+
+      const results = await Promise.allSettled([p1, p2]);
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+
+      expect(fulfilled.length).toBe(1);
+      expect(rejected.length).toBe(1);
+
+      const err = (rejected[0] as PromiseRejectedResult).reason;
+      expect(err).toBeInstanceOf(AppConflictException);
+      expect(err.code).toBe(APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT);
+    });
+
+    it("should throw NotFoundException when updating non-existent application", async () => {
+      await expect(
+        service.updateStage("non-existent-app-id", { stage: ApplicationStage.SCREENING }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it("should update candidate personal information", async () => {

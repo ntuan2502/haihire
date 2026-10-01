@@ -257,25 +257,39 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
                 });
                 return createApplicationQuery();
               }),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                update: vi.fn().mockImplementation(async (updates) => {
-                  const target = dbState.applications.find((a) =>
-                    predicateFn({ id: { eq: (target: string) => a.id === target } }),
-                  );
-                  if (target) {
-                    Object.assign(target, updates);
-                    return { ...target };
-                  }
-                  return null;
-                }),
-                delete: vi.fn().mockImplementation(async () => {
-                  const idx = dbState.applications.findIndex((a) =>
-                    predicateFn({ id: { eq: (target: string) => a.id === target } }),
-                  );
-                  if (idx !== -1) dbState.applications.splice(idx, 1);
-                  return { count: 1 };
-                }),
-              })),
+              where: vi.fn().mockImplementation(function whereBuilder(predicateFn) {
+                const predicates = [predicateFn];
+                const builder = {
+                  where: vi.fn().mockImplementation((nextFn) => {
+                    predicates.push(nextFn);
+                    return builder;
+                  }),
+                  update: vi.fn().mockImplementation(async (updates) => {
+                    const target = dbState.applications.find((a) => {
+                      const mockRecord = {
+                        id: { eq: (target: string) => a.id === target },
+                        jobId: { eq: (target: string) => a.jobId === target },
+                        candidateId: { eq: (target: string) => a.candidateId === target },
+                        stage: { eq: (target: string) => a.stage === target },
+                      };
+                      return predicates.every((fn) => fn(mockRecord));
+                    });
+                    if (target) {
+                      Object.assign(target, updates);
+                      return { ...target };
+                    }
+                    return null;
+                  }),
+                  delete: vi.fn().mockImplementation(async () => {
+                    const idx = dbState.applications.findIndex((a) =>
+                      predicates.every((fn) => fn({ id: { eq: (target: string) => a.id === target } })),
+                    );
+                    if (idx !== -1) dbState.applications.splice(idx, 1);
+                    return { count: 1 };
+                  }),
+                };
+                return builder;
+              }),
             },
             ActivityLog: {
               create: vi.fn().mockImplementation(async (record) => {

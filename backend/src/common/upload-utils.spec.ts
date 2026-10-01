@@ -6,6 +6,7 @@ import {
   validateUploadedFile,
 } from "./upload-utils";
 import type { Request } from "express";
+import { APP_ERROR_CODES } from "@haihire/shared";
 
 describe("upload-utils resumeFileFilter", () => {
   it("should accept valid PDF file", () => {
@@ -61,9 +62,27 @@ describe("upload-utils resumeFileFilter", () => {
   });
 
   describe("Magic Bytes & Content Verification", () => {
-    it("should accept valid PDF binary signature %PDF-", () => {
-      const validPdfBuffer = Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj");
+    it("should accept valid PDF binary signature %PDF- with %%EOF trailer", () => {
+      const validPdfBuffer = Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF");
       expect(validateMagicBytes(validPdfBuffer, ".pdf")).toBe(true);
+    });
+
+    it("should reject PDF truncated 50% (missing %%EOF trailer)", () => {
+      const truncated50 = Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj");
+      expect(validateMagicBytes(truncated50, ".pdf")).toBe(false);
+    });
+
+    it("should reject PDF truncated 99% (only missing %%EOF)", () => {
+      const truncated99 = Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj\ntrailer\n<< /Root 1 0 R >>\n");
+      expect(validateMagicBytes(truncated99, ".pdf")).toBe(false);
+    });
+
+    it("should accept valid PDF where %%EOF is outside last 1024 bytes but within 2048 bytes", () => {
+      const validPdfLong = Buffer.concat([
+        Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"),
+        Buffer.alloc(1200, 0x20), // 1200 bytes of trailing whitespace/metadata
+      ]);
+      expect(validateMagicBytes(validPdfLong, ".pdf")).toBe(true);
     });
 
     it("should reject fake PDF with text/bash content", () => {
@@ -102,11 +121,26 @@ describe("upload-utils resumeFileFilter", () => {
       expect(() => validateUploadedFile(fakeFile)).toThrow();
     });
 
+    it("should reject truncated PDF via validateUploadedFile with UPLOAD_TRUNCATED_FILE", () => {
+      const truncatedFile = {
+        originalname: "truncated_resume.pdf",
+        mimetype: "application/pdf",
+        buffer: Buffer.from("%PDF-1.4 Incomplete payload without EOF"),
+      } as Express.Multer.File;
+
+      try {
+        validateUploadedFile(truncatedFile);
+        expect.unreachable("Should have thrown");
+      } catch (err: any) {
+        expect(err.code).toBe(APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE);
+      }
+    });
+
     it("should accept legitimate PDF via validateUploadedFile", () => {
       const goodFile = {
         originalname: "real_resume.pdf",
         mimetype: "application/pdf",
-        buffer: Buffer.from("%PDF-1.4 Real Candidate Resume Content"),
+        buffer: Buffer.from("%PDF-1.4 Real Candidate Resume Content\n%%EOF"),
       } as Express.Multer.File;
 
       expect(() => validateUploadedFile(goodFile)).not.toThrow();

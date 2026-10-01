@@ -31,10 +31,16 @@ export function validateMagicBytes(buffer: Buffer, ext: string): boolean {
 
   const normalizedExt = ext.toLowerCase();
 
-  // 1. PDF: %PDF- (0x25 0x50 0x44 0x46 0x2D)
+  // 1. PDF: %PDF- (0x25 0x50 0x44 0x46 0x2D) header and %%EOF trailer
   if (normalizedExt === ".pdf") {
     const header = buffer.subarray(0, Math.min(buffer.length, 1024)).toString("binary");
-    return header.includes("%PDF-");
+    if (!header.includes("%PDF-")) {
+      return false;
+    }
+    // Trailer check: %%EOF in trailing bytes (traverse backwards up to 2048 bytes)
+    const tailStart = Math.max(0, buffer.length - 2048);
+    const tail = buffer.subarray(tailStart).toString("binary");
+    return tail.includes("%%EOF");
   }
 
   // 2. DOCX: ZIP archive header PK\x03\x04 (0x50 0x4B 0x03 0x04)
@@ -90,11 +96,29 @@ export function validateUploadedFile(file?: Express.Multer.File | null) {
     );
   }
 
-  if (file.buffer && !validateMagicBytes(file.buffer, ext)) {
-    throw new AppBadRequestException(
-      APP_ERROR_CODES.VALIDATION_ERROR,
-      `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
-    );
+  if (file.buffer) {
+    if (ext === ".pdf") {
+      const header = file.buffer.subarray(0, Math.min(file.buffer.length, 1024)).toString("binary");
+      if (!header.includes("%PDF-")) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
+        );
+      }
+      const tailStart = Math.max(0, file.buffer.length - 2048);
+      const tail = file.buffer.subarray(tailStart).toString("binary");
+      if (!tail.includes("%%EOF")) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
+          "PDF file appears truncated or corrupt (missing %%EOF trailer in trailing 2048 bytes).",
+        );
+      }
+    } else if (!validateMagicBytes(file.buffer, ext)) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        `File content does not match expected binary signature for extension '${ext}'. Malformed or potentially malicious file rejected.`,
+      );
+    }
   }
 }
 

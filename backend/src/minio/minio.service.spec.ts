@@ -38,4 +38,31 @@ describe("MinioService Security", () => {
       expect(service.extractObjectName("   ")).toBe("");
     });
   });
+
+  describe("uploadFile Tenant Defense", () => {
+    const dummyFile = {
+      originalname: "resume.pdf",
+      mimetype: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"),
+      size: 40,
+    } as Express.Multer.File;
+
+    it("should throw AppBadRequestException when tenantOrgId is null", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", null)).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+
+    it("should throw AppBadRequestException when tenantOrgId is undefined", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", undefined)).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+
+    it("should throw AppBadRequestException when tenantOrgId is empty string", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", "   ")).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+  });
 });

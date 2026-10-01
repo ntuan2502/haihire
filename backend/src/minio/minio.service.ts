@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 import { extname } from "node:path";
 import type { Readable } from "node:stream";
 import { env } from "../config/env";
+import { AppBadRequestException } from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 
 export interface UploadResult {
   url: string;
@@ -49,12 +51,18 @@ export class MinioService implements OnModuleInit {
   }
 
   async uploadFile(file: Express.Multer.File, folder = "resumes", tenantOrgId?: string | null): Promise<UploadResult> {
+    if (!tenantOrgId || !tenantOrgId.trim()) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.TENANT_ID_REQUIRED_FOR_UPLOAD,
+        "Tenant organization ID is required for file uploads to enforce tenant namespace isolation.",
+      );
+    }
     const ext = extname(file.originalname).toLowerCase();
     const allowed = new Set([".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg"]);
     if (ext && !allowed.has(ext)) {
       throw new Error(`Disallowed file extension: ${ext}`);
     }
-    const orgPrefix = tenantOrgId ? `tenants/${tenantOrgId}/` : "";
+    const orgPrefix = `tenants/${tenantOrgId.trim()}/`;
     const uniqueFileName = `${orgPrefix}${folder}/${Date.now()}-${randomUUID()}${ext}`;
 
     await this.client.putObject(

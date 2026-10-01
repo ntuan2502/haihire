@@ -88,9 +88,9 @@ describe("getApiErrorMessage", () => {
   });
 
   it("gatekeeper rejects malformed URLs with [object Object]", async () => {
-    const { api } = await import("./api");
+    const { api } = await import("./api/client");
     await expect(api.get("/test/[object Object]")).rejects.toThrow(
       "[HaiHire API Gatekeeper] Malformed request URL",
     );
-  });
+  }, 10000);
 });

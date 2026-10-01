@@ -101,3 +101,18 @@ updated: 2026-09-18
 
 ## Conventional Commits & Quality Gates
 - **Enforced Standards**: Strict adherence to Conventional Commits with scope `type(scope): description`. Enforce automatically via Commitlint and Husky git hooks.
+
+## HaiHire Design System & Layout Mandate (MANDATORY)
+- **Full-Width Canvas**: Never wrap dashboard pages in artificial containers like `max-w-7xl mx-auto`. All views must span full-width using `<main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">` (or `space-y-6`).
+- **Standard UI Tokens**:
+  - Slate foundation: `bg-slate-50 dark:bg-slate-950 font-sans`.
+  - Cards: `rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs`.
+  - Metrics: Always use `<MetricCard>` with official color accents (`blue`, `indigo`, `emerald`, `amber`, `rose`, `slate`).
+  - Inputs: Always use `<CustomSelect>` with full-width triggers (`triggerClassName="w-full text-xs h-9 ..."`).
+  - Stage Badges: Always use `<StageBadge>` with `useStageInfo()`.
+- **Public Career Tracking URLs**:
+  - Real URLs must always point to `${origin}/careers/${orgSlug}${jobSegment}?ref=${token}` (plus UTM parameters).
+  - NEVER output mock backend API paths like `/api/public/track/...`.
+- **Full 5 UTM Parameters Suite**:
+  - All tracking links, modals, database models, and analytics must support all 5 UTM parameters: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`.
+

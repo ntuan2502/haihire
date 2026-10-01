@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { usePublicOrg, usePublicJobs } from "@/hooks/use-queries";
+import { sourcingApi } from "@/lib/api";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,8 +32,31 @@ export default function OrgCareersPage() {
   const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refParam = searchParams.get("ref");
   const rawOrgSlug = params?.orgSlug;
   const orgSlug = Array.isArray(rawOrgSlug) ? rawOrgSlug[0] : (rawOrgSlug as string);
+
+  // Record click on public tracking link (with session deduplication)
+  useEffect(() => {
+    if (refParam) {
+      try {
+        sessionStorage.setItem("haihire_sourcing_ref", refParam);
+        const clickRecordedKey = `haihire_click_recorded_${refParam}`;
+        if (!sessionStorage.getItem(clickRecordedKey)) {
+          sessionStorage.setItem(clickRecordedKey, "true");
+          sourcingApi
+            .recordPublicClick({
+              token: refParam,
+              referrer: typeof document !== "undefined" ? document.referrer : undefined,
+            })
+            .catch(() => {});
+        }
+      } catch {
+        // Ignore storage errors in private browsing
+      }
+    }
+  }, [refParam]);
 
   const { data: org, isLoading: isOrgLoading, isError: isOrgError } = usePublicOrg(orgSlug);
   const { data: jobs, isLoading: isJobsLoading } = usePublicJobs(orgSlug);
@@ -262,7 +286,9 @@ export default function OrgCareersPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredJobs.map((job) => {
               const jobSlug = slugify(job.title) || job.id;
-              const jobUrl = `/careers/${orgSlug}/${jobSlug}`;
+              const jobUrl = refParam
+                ? `/careers/${orgSlug}/${jobSlug}?ref=${encodeURIComponent(refParam)}`
+                : `/careers/${orgSlug}/${jobSlug}`;
 
               return (
                 <Link

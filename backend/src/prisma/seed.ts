@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { db } from "./db.ts";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 import { toInstant } from "../common/date.util.ts";
+import { SourcingChannel } from "@haihire/shared";
 
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
@@ -536,6 +537,14 @@ export async function runSeed(): Promise<void> {
     Promise.all(apps.map((a) => db.orm.public.Application.where((x) => x.id.eq(a.id)).delete())),
   );
 
+  await db.orm.public.TrackingClick.all().then((clicks) =>
+    Promise.all(clicks.map((c) => db.orm.public.TrackingClick.where((x) => x.id.eq(c.id)).delete())),
+  );
+
+  await db.orm.public.TrackingLink.all().then((links) =>
+    Promise.all(links.map((l) => db.orm.public.TrackingLink.where((x) => x.id.eq(l.id)).delete())),
+  );
+
   await db.orm.public.Candidate.all().then((cands) =>
     Promise.all(cands.map((c) => db.orm.public.Candidate.where((x) => x.id.eq(c.id)).delete())),
   );
@@ -758,6 +767,550 @@ export async function runSeed(): Promise<void> {
   console.log(`   - CLOSED (Đã đóng):    ${statusCounts.CLOSED}`);
 
   console.log("==================================================");
+  console.log("🔗 3.5. Seeding 24 Diverse Tracking Links & Clicks...");
+  console.log("==================================================");
+
+  function getDomainForChannel(channel: SourcingChannel): string {
+    switch (channel) {
+      case SourcingChannel.LINKEDIN:
+        return "linkedin.com";
+      case SourcingChannel.INDEED:
+        return "indeed.com";
+      case SourcingChannel.GOOGLE_JOBS:
+        return "google.com";
+      case SourcingChannel.FACEBOOK:
+        return "facebook.com";
+      case SourcingChannel.TWITTER_X:
+        return "t.co";
+      case SourcingChannel.REDDIT:
+        return "reddit.com";
+      case SourcingChannel.WE_WORK_REMOTELY:
+        return "weworkremotely.com";
+      case SourcingChannel.STACK_OVERFLOW:
+        return "stackoverflow.com";
+      case SourcingChannel.GLASSDOOR:
+        return "glassdoor.com";
+      case SourcingChannel.HANDSHAKE:
+        return "joinhandshake.com";
+      case SourcingChannel.EMAIL:
+        return "mail.google.com";
+      case SourcingChannel.REFERRAL:
+        return "internal.haihire.vn";
+      case SourcingChannel.AGENCY:
+        return "adecco.com.vn";
+      case SourcingChannel.CAREER_SITE:
+        return "careers.haihire.vn";
+      case SourcingChannel.OTHER:
+      default:
+        return "topdev.vn";
+    }
+  }
+
+  const SEED_TRACKING_LINKS: Array<{
+    name: string;
+    source: SourcingChannel;
+    customSource?: string | null;
+    jobIndex: number | null;
+    campaign?: string | null;
+    medium?: string | null;
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+    utmTerm?: string | null;
+    utmContent?: string | null;
+    clicksCount: number;
+    isActive: boolean;
+    ageDays: number;
+    token: string;
+  }> = [
+    {
+      name: "LinkedIn - Tech Hiring Campaign Q3",
+      source: SourcingChannel.LINKEDIN,
+      jobIndex: 0,
+      campaign: "tech-q3-2026",
+      medium: "social",
+      utmSource: "linkedin",
+      utmMedium: "social",
+      utmCampaign: "tech-q3-2026",
+      utmTerm: "fullstack-lead",
+      utmContent: "sponsored-feed-ad",
+      clicksCount: 840,
+      isActive: true,
+      ageDays: 45,
+      token: "lnk-li-q3-fullstack",
+    },
+    {
+      name: "LinkedIn - Recruiter Direct InMail",
+      source: SourcingChannel.LINKEDIN,
+      jobIndex: 1,
+      campaign: "inmail-backend-direct",
+      medium: "inmail",
+      utmSource: "linkedin",
+      utmMedium: "inmail",
+      utmCampaign: "inmail-backend-direct",
+      utmTerm: "senior-backend",
+      utmContent: "talent-solutions-msg",
+      clicksCount: 260,
+      isActive: true,
+      ageDays: 30,
+      token: "lnk-li-inmail-backend",
+    },
+    {
+      name: "LinkedIn - Official Company Page Life",
+      source: SourcingChannel.LINKEDIN,
+      jobIndex: null,
+      campaign: "company-page-hiring",
+      medium: "social",
+      utmSource: "linkedin",
+      utmMedium: "social",
+      utmCampaign: "company-page-hiring",
+      utmTerm: "tech-careers",
+      utmContent: "header-button",
+      clicksCount: 650,
+      isActive: true,
+      ageDays: 60,
+      token: "lnk-li-org-page",
+    },
+    {
+      name: "Indeed - Sponsored Backend Developer",
+      source: SourcingChannel.INDEED,
+      jobIndex: 1,
+      campaign: "indeed-sponsored-vn",
+      medium: "job-board",
+      utmSource: "indeed",
+      utmMedium: "job-board",
+      utmCampaign: "indeed-sponsored-vn",
+      utmTerm: "backend-nodejs",
+      utmContent: "premium-placement",
+      clicksCount: 520,
+      isActive: true,
+      ageDays: 40,
+      token: "lnk-indeed-backend",
+    },
+    {
+      name: "Indeed - Free Organic Feed Sync",
+      source: SourcingChannel.INDEED,
+      jobIndex: null,
+      campaign: "indeed-organic-feed",
+      medium: "job-board",
+      utmSource: "indeed",
+      utmMedium: "job-board",
+      utmCampaign: "indeed-organic-feed",
+      utmTerm: null,
+      utmContent: null,
+      clicksCount: 310,
+      isActive: true,
+      ageDays: 50,
+      token: "lnk-indeed-feed",
+    },
+    {
+      name: "Google for Jobs - Organic Indexing",
+      source: SourcingChannel.GOOGLE_JOBS,
+      jobIndex: null,
+      campaign: "google-jobs-schema",
+      medium: "job-board",
+      utmSource: "google-jobs",
+      utmMedium: "job-board",
+      utmCampaign: "google-jobs-schema",
+      utmTerm: "job-search",
+      utmContent: "rich-snippet",
+      clicksCount: 920,
+      isActive: true,
+      ageDays: 55,
+      token: "lnk-google-organic",
+    },
+    {
+      name: "Facebook - Cộng Đồng Lập Trình Viên JS/TS",
+      source: SourcingChannel.FACEBOOK,
+      jobIndex: 0,
+      campaign: "fb-community-post",
+      medium: "social",
+      utmSource: "facebook",
+      utmMedium: "social",
+      utmCampaign: "fb-community-post",
+      utmTerm: "reactjs-vietnam",
+      utmContent: "pinned-post",
+      clicksCount: 460,
+      isActive: true,
+      ageDays: 35,
+      token: "lnk-fb-js-community",
+    },
+    {
+      name: "Facebook - Ads Retargeting Tech Talent",
+      source: SourcingChannel.FACEBOOK,
+      jobIndex: 2,
+      campaign: "fb-retargeting-devops",
+      medium: "paid-social",
+      utmSource: "facebook",
+      utmMedium: "paid-social",
+      utmCampaign: "fb-retargeting-devops",
+      utmTerm: "cloud-devops",
+      utmContent: "carousel-ad",
+      clicksCount: 230,
+      isActive: true,
+      ageDays: 25,
+      token: "lnk-fb-devops-ads",
+    },
+    {
+      name: "X / Twitter - Founder Hiring Thread",
+      source: SourcingChannel.TWITTER_X,
+      jobIndex: 0,
+      campaign: "twitter-founder-q3",
+      medium: "social",
+      utmSource: "twitter",
+      utmMedium: "social",
+      utmCampaign: "twitter-founder-q3",
+      utmTerm: "tech-lead",
+      utmContent: "retweet-thread",
+      clicksCount: 380,
+      isActive: true,
+      ageDays: 28,
+      token: "lnk-x-founder-thread",
+    },
+    {
+      name: "Reddit - r/forhire & r/vietnamesetech",
+      source: SourcingChannel.REDDIT,
+      jobIndex: 3,
+      campaign: "reddit-monthly-hiring",
+      medium: "social",
+      utmSource: "reddit",
+      utmMedium: "social",
+      utmCampaign: "reddit-monthly-hiring",
+      utmTerm: "qa-automation",
+      utmContent: "monthly-thread-comment",
+      clicksCount: 195,
+      isActive: true,
+      ageDays: 20,
+      token: "lnk-reddit-qa-job",
+    },
+    {
+      name: "WeWorkRemotely - Remote Global Search",
+      source: SourcingChannel.WE_WORK_REMOTELY,
+      jobIndex: 0,
+      campaign: "wwr-featured-listing",
+      medium: "job-board",
+      utmSource: "weworkremotely",
+      utmMedium: "job-board",
+      utmCampaign: "wwr-featured-listing",
+      utmTerm: "remote-fullstack",
+      utmContent: "highlighted-listing",
+      clicksCount: 620,
+      isActive: true,
+      ageDays: 42,
+      token: "lnk-wwr-remote-dev",
+    },
+    {
+      name: "Stack Overflow - Developer Talent Direct",
+      source: SourcingChannel.STACK_OVERFLOW,
+      jobIndex: 4,
+      campaign: "stackoverflow-talent",
+      medium: "job-board",
+      utmSource: "stackoverflow",
+      utmMedium: "job-board",
+      utmCampaign: "stackoverflow-talent",
+      utmTerm: "growth-marketing",
+      utmContent: "sidebar-banner",
+      clicksCount: 290,
+      isActive: true,
+      ageDays: 32,
+      token: "lnk-so-talent-direct",
+    },
+    {
+      name: "Glassdoor - Verified Employer Profile",
+      source: SourcingChannel.GLASSDOOR,
+      jobIndex: null,
+      campaign: "glassdoor-brand-hub",
+      medium: "job-board",
+      utmSource: "glassdoor",
+      utmMedium: "job-board",
+      utmCampaign: "glassdoor-brand-hub",
+      utmTerm: "company-review",
+      utmContent: "profile-cta",
+      clicksCount: 410,
+      isActive: true,
+      ageDays: 50,
+      token: "lnk-glassdoor-hub",
+    },
+    {
+      name: "Handshake - Campus & New Grad Outreach",
+      source: SourcingChannel.HANDSHAKE,
+      jobIndex: 5,
+      campaign: "handshake-fall-grad",
+      medium: "university",
+      utmSource: "handshake",
+      utmMedium: "university",
+      utmCampaign: "handshake-fall-grad",
+      utmTerm: "junior-recruiter",
+      utmContent: "campus-fair-link",
+      clicksCount: 165,
+      isActive: true,
+      ageDays: 18,
+      token: "lnk-handshake-grad",
+    },
+    {
+      name: "Email - Monthly Tech Talent Newsletter",
+      source: SourcingChannel.EMAIL,
+      jobIndex: null,
+      campaign: "talent-newsletter-aug2026",
+      medium: "email",
+      utmSource: "email",
+      utmMedium: "email",
+      utmCampaign: "talent-newsletter-aug2026",
+      utmTerm: "tech-digest",
+      utmContent: "open-positions-section",
+      clicksCount: 340,
+      isActive: true,
+      ageDays: 35,
+      token: "lnk-email-newsletter",
+    },
+    {
+      name: "Referral - Chương Trình Giới Thiệu Nội Bộ",
+      source: SourcingChannel.REFERRAL,
+      jobIndex: null,
+      campaign: "internal-referral-2026",
+      medium: "referral",
+      utmSource: "referral",
+      utmMedium: "referral",
+      utmCampaign: "internal-referral-2026",
+      utmTerm: "haihire-staff",
+      utmContent: "slack-announcement",
+      clicksCount: 280,
+      isActive: true,
+      ageDays: 60,
+      token: "lnk-internal-referral",
+    },
+    {
+      name: "Agency - Adecco Vietnam Săn Đầu Người",
+      source: SourcingChannel.AGENCY,
+      jobIndex: 6,
+      campaign: "adecco-enterprise-sales",
+      medium: "agency",
+      utmSource: "adecco",
+      utmMedium: "agency",
+      utmCampaign: "adecco-enterprise-sales",
+      utmTerm: "saas-account-executive",
+      utmContent: "executive-search",
+      clicksCount: 110,
+      isActive: true,
+      ageDays: 22,
+      token: "lnk-agency-adecco",
+    },
+    {
+      name: "Career Site - Trang Tuyển Dụng Chính Thức",
+      source: SourcingChannel.CAREER_SITE,
+      jobIndex: null,
+      campaign: "careers-direct-brand",
+      medium: "career-portal",
+      utmSource: "careers-site",
+      utmMedium: "career-portal",
+      utmCampaign: "careers-direct-brand",
+      utmTerm: "haihire-jobs",
+      utmContent: "navbar-apply-now",
+      clicksCount: 1450,
+      isActive: true,
+      ageDays: 70,
+      token: "lnk-career-site-main",
+    },
+    {
+      name: "Job Fair - Ngày Hội Việc Làm ĐH Bách Khoa HCM",
+      source: SourcingChannel.OTHER,
+      customSource: "ĐH Bách Khoa TP.HCM - Job Fair",
+      jobIndex: 7,
+      campaign: "jobfair-bachkhoa-2026",
+      medium: "offline-event",
+      utmSource: "jobfair-bachkhoa",
+      utmMedium: "offline-event",
+      utmCampaign: "jobfair-bachkhoa-2026",
+      utmTerm: "ai-llm-engineer",
+      utmContent: "booth-qr-code",
+      clicksCount: 220,
+      isActive: true,
+      ageDays: 14,
+      token: "lnk-bk-jobfair-2026",
+    },
+    {
+      name: "Tech Expo - Triển Lãm Công Nghệ TopDev 2026",
+      source: SourcingChannel.OTHER,
+      customSource: "TopDev Vietnam Tech Expo",
+      jobIndex: null,
+      campaign: "topdev-expo-autumn",
+      medium: "sponsorship",
+      utmSource: "topdev-expo",
+      utmMedium: "sponsorship",
+      utmCampaign: "topdev-expo-autumn",
+      utmTerm: "all-tech-roles",
+      utmContent: "flyer-badge-qr",
+      clicksCount: 430,
+      isActive: true,
+      ageDays: 26,
+      token: "lnk-topdev-expo",
+    },
+    {
+      name: "Startup Fair - TechInAsia Vietnam Conference",
+      source: SourcingChannel.OTHER,
+      customSource: "TechInAsia Vietnam",
+      jobIndex: 8,
+      campaign: "tia-vietnam-2026",
+      medium: "event-partner",
+      utmSource: "techinasia",
+      utmMedium: "event-partner",
+      utmCampaign: "tia-vietnam-2026",
+      utmTerm: "mobile-developer",
+      utmContent: "event-directory",
+      clicksCount: 180,
+      isActive: true,
+      ageDays: 16,
+      token: "lnk-techinasia-fair",
+    },
+    {
+      name: "LinkedIn - Senior Cloud Architect (Đã Tạm Dừng)",
+      source: SourcingChannel.LINKEDIN,
+      jobIndex: 9,
+      campaign: "li-arch-paused",
+      medium: "social",
+      utmSource: "linkedin",
+      utmMedium: "social",
+      utmCampaign: "li-arch-paused",
+      utmTerm: "cloud-architect",
+      utmContent: "sponsored-feed",
+      clicksCount: 95,
+      isActive: false,
+      ageDays: 60,
+      token: "lnk-li-arch-paused",
+    },
+    {
+      name: "Indeed - Closed Position Promotion",
+      source: SourcingChannel.INDEED,
+      jobIndex: 2,
+      campaign: "indeed-devops-old",
+      medium: "job-board",
+      utmSource: "indeed",
+      utmMedium: "job-board",
+      utmCampaign: "indeed-devops-old",
+      utmTerm: "devops-k8s",
+      utmContent: "standard-listing",
+      clicksCount: 120,
+      isActive: false,
+      ageDays: 65,
+      token: "lnk-indeed-devops-closed",
+    },
+    {
+      name: "X / Twitter - Chiến Dịch Mới Mở (Chưa Có Lượt Nhấp)",
+      source: SourcingChannel.TWITTER_X,
+      jobIndex: 1,
+      campaign: "twitter-fresh-launch",
+      medium: "social",
+      utmSource: "twitter",
+      utmMedium: "social",
+      utmCampaign: "twitter-fresh-launch",
+      utmTerm: "backend-hire",
+      utmContent: "fresh-post",
+      clicksCount: 0,
+      isActive: true,
+      ageDays: 1,
+      token: "lnk-x-fresh-zero",
+    },
+  ];
+
+  const createdTrackingLinks: Array<{
+    id: string;
+    name: string;
+    source: SourcingChannel;
+    customSource: string | null;
+    jobId: string | null;
+    utmSource: string | null;
+    utmMedium: string | null;
+    utmCampaign: string | null;
+    utmTerm: string | null;
+    utmContent: string | null;
+    isActive: boolean;
+  }> = [];
+
+  const clicksToInsert: Array<{
+    id: string;
+    trackingLinkId: string;
+    referrer: string | null;
+    referrerDomain: string | null;
+    ipHash: string;
+    userAgent: string;
+    createdAt: Temporal.Instant;
+  }> = [];
+
+  for (const item of SEED_TRACKING_LINKS) {
+    const linkId = crypto.randomUUID();
+    const assignedJobId =
+      item.jobIndex !== null && createdJobIds[item.jobIndex]
+        ? createdJobIds[item.jobIndex]
+        : null;
+
+    const linkCreatedAt = new Date(Date.now() - item.ageDays * 86400000);
+
+    await db.orm.public.TrackingLink.upsert({
+      create: {
+        id: linkId,
+        organizationId: adminOrgId,
+        createdById: adminUserId,
+        name: item.name,
+        token: item.token,
+        source: item.source,
+        customSource: item.customSource || null,
+        jobId: assignedJobId,
+        campaign: item.campaign || null,
+        medium: item.medium || null,
+        utmSource: item.utmSource || null,
+        utmMedium: item.utmMedium || null,
+        utmCampaign: item.utmCampaign || null,
+        utmTerm: item.utmTerm || null,
+        utmContent: item.utmContent || null,
+        clicksCount: item.clicksCount,
+        isActive: item.isActive,
+        createdAt: toInstant(linkCreatedAt),
+        updatedAt: toInstant(linkCreatedAt),
+      },
+      update: {},
+      conflictOn: { id: linkId },
+    });
+
+    createdTrackingLinks.push({
+      id: linkId,
+      name: item.name,
+      source: item.source,
+      customSource: item.customSource || null,
+      jobId: assignedJobId,
+      utmSource: item.utmSource || null,
+      utmMedium: item.utmMedium || null,
+      utmCampaign: item.utmCampaign || null,
+      utmTerm: item.utmTerm || null,
+      utmContent: item.utmContent || null,
+      isActive: item.isActive,
+    });
+
+    // Generate representative TrackingClick records for this link
+    if (item.clicksCount > 0) {
+      const clickSamplesCount = Math.min(item.clicksCount, 40);
+      const domain = getDomainForChannel(item.source);
+
+      for (let c = 0; c < clickSamplesCount; c++) {
+        const clickOffsetMs = Math.floor(Math.random() * item.ageDays * 86400000);
+        const clickDate = new Date(Date.now() - clickOffsetMs);
+
+        clicksToInsert.push({
+          id: crypto.randomUUID(),
+          trackingLinkId: linkId,
+          referrer: `https://${domain}/jobs/feed?ref=${item.token}`,
+          referrerDomain: domain,
+          ipHash: crypto.createHash("sha256").update(`ip-${c}-${item.token}`).digest("hex").slice(0, 16),
+          userAgent:
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+          createdAt: toInstant(clickDate),
+        });
+      }
+    }
+  }
+
+  console.log(`✅ Đã tạo thành công ${createdTrackingLinks.length} liên kết theo dõi (đủ 15 kênh nguồn, active/inactive, cụ thể job và toàn công ty).`);
+
+  console.log("==================================================");
   console.log("👥 4. Seeding Exactly 200 Unique Candidates (0-6 jobs each)...");
   console.log("==================================================");
 
@@ -832,6 +1385,15 @@ export async function runSeed(): Promise<void> {
     resumeMimeType: string;
     notes: string;
     orderIndex: number;
+    trackingLinkId: string | null;
+    sourceChannel: SourcingChannel;
+    sourceDetails: string | null;
+    referrerDomain: string | null;
+    utmSource: string | null;
+    utmMedium: string | null;
+    utmCampaign: string | null;
+    utmTerm: string | null;
+    utmContent: string | null;
     createdAt: Temporal.Instant;
     updatedAt: Temporal.Instant;
   }> = [];
@@ -1032,6 +1594,45 @@ export async function runSeed(): Promise<void> {
         const appTime = Math.min(Date.now() - 1800000, candidateCreatedAt.getTime() + appOffsetMs);
         const appCreatedAt = new Date(appTime);
 
+        // Attribution mapping: ~80% attributed to a tracking link, ~20% direct
+        const isAttributed = ((candidate.candidateIndex * 13 + j * 7) % 10) < 8;
+        let trackingLinkId: string | null = null;
+        let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
+        let sourceDetails: string | null = null;
+        let referrerDomain: string | null = null;
+        let utmSource: string | null = null;
+        let utmMedium: string | null = null;
+        let utmCampaign: string | null = null;
+        let utmTerm: string | null = null;
+        let utmContent: string | null = null;
+
+        const activeLinks = createdTrackingLinks.filter((l) => l.isActive);
+
+        if (isAttributed && activeLinks.length > 0) {
+          // Find links that match this jobId, or company-wide links (jobId == null)
+          const candidateLinks = activeLinks.filter(
+            (l) => l.jobId === jobId || l.jobId === null,
+          );
+          const chosenLink =
+            candidateLinks.length > 0
+              ? candidateLinks[(candidate.candidateIndex + j) % candidateLinks.length]
+              : activeLinks[(candidate.candidateIndex + j) % activeLinks.length];
+
+          trackingLinkId = chosenLink.id;
+          sourceChannel = chosenLink.source;
+          sourceDetails = chosenLink.customSource || chosenLink.name;
+          referrerDomain = getDomainForChannel(chosenLink.source);
+          utmSource = chosenLink.utmSource;
+          utmMedium = chosenLink.utmMedium;
+          utmCampaign = chosenLink.utmCampaign;
+          utmTerm = chosenLink.utmTerm;
+          utmContent = chosenLink.utmContent;
+        } else {
+          sourceChannel = SourcingChannel.DIRECT;
+          sourceDetails = "Ứng tuyển trực tiếp từ Career Site";
+          referrerDomain = (candidate.candidateIndex + j) % 2 === 0 ? "google.com" : null;
+        }
+
         applicationsToInsert.push({
           id: appId,
           candidateId,
@@ -1044,6 +1645,15 @@ export async function runSeed(): Promise<void> {
           resumeMimeType: "application/pdf",
           notes,
           orderIndex,
+          trackingLinkId,
+          sourceChannel,
+          sourceDetails,
+          referrerDomain,
+          utmSource,
+          utmMedium,
+          utmCampaign,
+          utmTerm,
+          utmContent,
           createdAt: toInstant(appCreatedAt),
           updatedAt: toInstant(appCreatedAt),
         });
@@ -1105,6 +1715,21 @@ export async function runSeed(): Promise<void> {
   }
   console.log(`   ✨ Đã lưu thành công: toàn bộ ${interviewsToInsert.length} khung giờ phỏng vấn không hề bị trùng lặp.`);
 
+  console.log(`\n⏳ Đang lưu ${clicksToInsert.length} lượt nhấp (TrackingClick) vào cơ sở dữ liệu...`);
+  for (let b = 0; b < clicksToInsert.length; b += BATCH_SIZE) {
+    const chunk = clicksToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((click) =>
+        db.orm.public.TrackingClick.upsert({
+          create: click,
+          update: {},
+          conflictOn: { id: click.id },
+        }),
+      ),
+    );
+  }
+  console.log(`   ✨ Đã lưu thành công ${clicksToInsert.length} lượt nhấp mẫu (TrackingClick).`);
+
   console.log(`\n\n✅ Thành công! Đã gieo mầm cố định 200 ứng viên độc nhất (tổng ${applicationsToInsert.length} đơn ứng tuyển):`);
   console.log(`   - 0 job (Chưa ứng tuyển):  ${jobDistributionStats[0]} ứng viên`);
   console.log(`   - 1 job:                   ${jobDistributionStats[1]} ứng viên`);
@@ -1120,6 +1745,13 @@ export async function runSeed(): Promise<void> {
   console.log(`   - OFFER (Đề nghị việc làm): ${stageStats.OFFER} đơn (1-3 lịch phỏng vấn)`);
   console.log(`   - HIRED (Đã tuyển dụng):    ${stageStats.HIRED} đơn (1-3 lịch phỏng vấn)`);
   console.log(`   - REJECTED (Đã từ chối):    ${stageStats.REJECTED} đơn (0-3 lịch phỏng vấn)`);
+  console.log(`   --------------------------------------------------`);
+  const attributedCount = applicationsToInsert.filter((a) => a.trackingLinkId).length;
+  console.log(`📊 Thống kê Source Tracking (Theo dõi nguồn):`);
+  console.log(`   - Tổng liên kết theo dõi:   ${createdTrackingLinks.length} liên kết (đầy đủ 15 kênh nguồn, 5 UTM, active/inactive)`);
+  console.log(`   - Tổng lượt nhấp chi tiết: ${clicksToInsert.length} lượt nhấp`);
+  console.log(`   - Đã ghi nhận nguồn:       ${attributedCount}/${applicationsToInsert.length} đơn (${Math.round((attributedCount / applicationsToInsert.length) * 100)}%)`);
+  console.log(`   - Trực tiếp / Chưa rõ:      ${applicationsToInsert.length - attributedCount} đơn (${Math.round(((applicationsToInsert.length - attributedCount) / applicationsToInsert.length) * 100)}%)`);
   console.log("==================================================");
 }
 

@@ -52,6 +52,14 @@
       "model": "OrganizationMember",
       "namespace": "public"
     },
+    "trackingClick": {
+      "model": "TrackingClick",
+      "namespace": "public"
+    },
+    "trackingLink": {
+      "model": "TrackingLink",
+      "namespace": "public"
+    },
     "user": {
       "model": "User",
       "namespace": "public"
@@ -338,6 +346,75 @@
               }
             ]
           },
+          "SourcingChannel": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "LINKEDIN",
+                "value": "LINKEDIN"
+              },
+              {
+                "name": "INDEED",
+                "value": "INDEED"
+              },
+              {
+                "name": "GOOGLE_JOBS",
+                "value": "GOOGLE_JOBS"
+              },
+              {
+                "name": "CAREER_SITE",
+                "value": "CAREER_SITE"
+              },
+              {
+                "name": "REFERRAL",
+                "value": "REFERRAL"
+              },
+              {
+                "name": "DIRECT",
+                "value": "DIRECT"
+              },
+              {
+                "name": "HANDSHAKE",
+                "value": "HANDSHAKE"
+              },
+              {
+                "name": "EMAIL",
+                "value": "EMAIL"
+              },
+              {
+                "name": "WE_WORK_REMOTELY",
+                "value": "WE_WORK_REMOTELY"
+              },
+              {
+                "name": "STACK_OVERFLOW",
+                "value": "STACK_OVERFLOW"
+              },
+              {
+                "name": "TWITTER_X",
+                "value": "TWITTER_X"
+              },
+              {
+                "name": "REDDIT",
+                "value": "REDDIT"
+              },
+              {
+                "name": "GLASSDOOR",
+                "value": "GLASSDOOR"
+              },
+              {
+                "name": "AGENCY",
+                "value": "AGENCY"
+              },
+              {
+                "name": "FACEBOOK",
+                "value": "FACEBOOK"
+              },
+              {
+                "name": "OTHER",
+                "value": "OTHER"
+              }
+            ]
+          },
           "WorkplaceType": {
             "codecId": "pg/text@1",
             "members": [
@@ -604,6 +681,13 @@
                   "kind": "scalar"
                 }
               },
+              "referrerDomain": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "resumeFileName": {
                 "nullable": true,
                 "type": {
@@ -632,6 +716,26 @@
                   "kind": "scalar"
                 }
               },
+              "sourceChannel": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "SourcingChannel",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "sourceDetails": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "stage": {
                 "nullable": false,
                 "type": {
@@ -645,10 +749,52 @@
                   "plane": "domain"
                 }
               },
+              "trackingLinkId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmCampaign": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmContent": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmMedium": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmSource": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmTerm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               }
@@ -730,6 +876,22 @@
                   "model": "Job",
                   "namespace": "public"
                 }
+              },
+              "trackingLink": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "trackingLinkId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "TrackingLink",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -755,6 +917,9 @@
                 "orderIndex": {
                   "column": "orderIndex"
                 },
+                "referrerDomain": {
+                  "column": "referrerDomain"
+                },
                 "resumeFileName": {
                   "column": "resumeFileName"
                 },
@@ -767,11 +932,35 @@
                 "resumeUrl": {
                   "column": "resumeUrl"
                 },
+                "sourceChannel": {
+                  "column": "sourceChannel"
+                },
+                "sourceDetails": {
+                  "column": "sourceDetails"
+                },
                 "stage": {
                   "column": "stage"
                 },
+                "trackingLinkId": {
+                  "column": "trackingLinkId"
+                },
                 "updatedAt": {
                   "column": "updatedAt"
+                },
+                "utmCampaign": {
+                  "column": "utmCampaign"
+                },
+                "utmContent": {
+                  "column": "utmContent"
+                },
+                "utmMedium": {
+                  "column": "utmMedium"
+                },
+                "utmSource": {
+                  "column": "utmSource"
+                },
+                "utmTerm": {
+                  "column": "utmTerm"
                 }
               },
               "namespaceId": "public",
@@ -2255,6 +2444,21 @@
                   "model": "Organization",
                   "namespace": "public"
                 }
+              },
+              "trackingLinks": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "jobId"
+                  ]
+                },
+                "to": {
+                  "model": "TrackingLink",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -2497,6 +2701,21 @@
                   "namespace": "public"
                 }
               },
+              "trackingLinks": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "TrackingLink",
+                  "namespace": "public"
+                }
+              },
               "users": {
                 "cardinality": "1:N",
                 "on": {
@@ -2648,6 +2867,400 @@
               "table": "organizationMember"
             }
           },
+          "TrackingClick": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "ipHash": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "referrer": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "referrerDomain": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "trackingLinkId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "userAgent": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "trackingLink": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "trackingLinkId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "TrackingLink",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "ipHash": {
+                  "column": "ipHash"
+                },
+                "referrer": {
+                  "column": "referrer"
+                },
+                "referrerDomain": {
+                  "column": "referrerDomain"
+                },
+                "trackingLinkId": {
+                  "column": "trackingLinkId"
+                },
+                "userAgent": {
+                  "column": "userAgent"
+                }
+              },
+              "namespaceId": "public",
+              "table": "trackingClick"
+            }
+          },
+          "TrackingLink": {
+            "fields": {
+              "campaign": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clicksCount": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "customSource": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "deletedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "isActive": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "jobId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "medium": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "source": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "SourcingChannel",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "token": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmCampaign": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmContent": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmMedium": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmSource": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "utmTerm": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "applications": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "trackingLinkId"
+                  ]
+                },
+                "to": {
+                  "model": "Application",
+                  "namespace": "public"
+                }
+              },
+              "clicks": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "trackingLinkId"
+                  ]
+                },
+                "to": {
+                  "model": "TrackingClick",
+                  "namespace": "public"
+                }
+              },
+              "createdBy": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "createdById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "job": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "jobId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Job",
+                  "namespace": "public"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "campaign": {
+                  "column": "campaign"
+                },
+                "clicksCount": {
+                  "column": "clicksCount"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "createdById": {
+                  "column": "createdById"
+                },
+                "customSource": {
+                  "column": "customSource"
+                },
+                "deletedAt": {
+                  "column": "deletedAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "isActive": {
+                  "column": "isActive"
+                },
+                "jobId": {
+                  "column": "jobId"
+                },
+                "medium": {
+                  "column": "medium"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "source": {
+                  "column": "source"
+                },
+                "token": {
+                  "column": "token"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "utmCampaign": {
+                  "column": "utmCampaign"
+                },
+                "utmContent": {
+                  "column": "utmContent"
+                },
+                "utmMedium": {
+                  "column": "utmMedium"
+                },
+                "utmSource": {
+                  "column": "utmSource"
+                },
+                "utmTerm": {
+                  "column": "utmTerm"
+                }
+              },
+              "namespaceId": "public",
+              "table": "trackingLink"
+            }
+          },
           "User": {
             "fields": {
               "avatarUrl": {
@@ -2779,6 +3392,21 @@
                 },
                 "to": {
                   "model": "Organization",
+                  "namespace": "public"
+                }
+              },
+              "trackingLinks": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "createdById"
+                  ]
+                },
+                "to": {
+                  "model": "TrackingLink",
                   "namespace": "public"
                 }
               }
@@ -3009,6 +3637,11 @@
             "application": {
               "checks": [
                 {
+                  "expression": "\"sourceChannel\" IN ('LINKEDIN', 'INDEED', 'GOOGLE_JOBS', 'CAREER_SITE', 'REFERRAL', 'DIRECT', 'HANDSHAKE', 'EMAIL', 'WE_WORK_REMOTELY', 'STACK_OVERFLOW', 'TWITTER_X', 'REDDIT', 'GLASSDOOR', 'AGENCY', 'FACEBOOK', 'OTHER')",
+                  "name": "application_sourceChannel_check_1f6400c8",
+                  "prefix": "application_sourceChannel_check"
+                },
+                {
                   "expression": "\"stage\" IN ('APPLIED', 'SCREENING', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED')",
                   "name": "application_stage_check_6a822e91",
                   "prefix": "application_stage_check"
@@ -3058,6 +3691,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "referrerDomain": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "resumeFileName": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -3082,6 +3720,26 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "sourceChannel": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "DIRECT"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "SourcingChannel",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "sourceDetails": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "stage": {
                   "codecId": "pg/text@1",
                   "default": {
@@ -3097,10 +3755,40 @@
                     "plane": "storage"
                   }
                 },
+                "trackingLinkId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
                   "nullable": false
+                },
+                "utmCampaign": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmContent": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmMedium": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmSource": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmTerm": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -3137,6 +3825,23 @@
                     "namespaceId": "public",
                     "tableName": "job"
                   }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "trackingLinkId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "application"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "trackingLink"
+                  }
                 }
               ],
               "indexes": [
@@ -3163,6 +3868,14 @@
                   ],
                   "name": "application_jobId_stage_idx_e669f3f8",
                   "prefix": "application_jobId_stage_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "trackingLinkId"
+                  ],
+                  "name": "application_trackingLinkId_idx_dd4cd8d5",
+                  "prefix": "application_trackingLinkId_idx",
                   "unique": false
                 }
               ],
@@ -4635,6 +5348,342 @@
               },
               "uniques": []
             },
+            "trackingClick": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "ipHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "referrer": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "referrerDomain": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "trackingLinkId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "userAgent": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "trackingLinkId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "trackingClick"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "trackingLink"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "referrerDomain"
+                  ],
+                  "name": "trackingClick_referrerDomain_idx_c9d49a55",
+                  "prefix": "trackingClick_referrerDomain_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "trackingLinkId",
+                    "createdAt"
+                  ],
+                  "name": "trackingClick_trackingLinkId_createdAt_idx_84ab446c",
+                  "prefix": "trackingClick_trackingLinkId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "trackingLinkId"
+                  ],
+                  "name": "trackingClick_trackingLinkId_idx_dd4cd8d5",
+                  "prefix": "trackingClick_trackingLinkId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "trackingLink": {
+              "checks": [
+                {
+                  "expression": "\"source\" IN ('LINKEDIN', 'INDEED', 'GOOGLE_JOBS', 'CAREER_SITE', 'REFERRAL', 'DIRECT', 'HANDSHAKE', 'EMAIL', 'WE_WORK_REMOTELY', 'STACK_OVERFLOW', 'TWITTER_X', 'REDDIT', 'GLASSDOOR', 'AGENCY', 'FACEBOOK', 'OTHER')",
+                  "name": "trackingLink_source_check_0d3dd3d5",
+                  "prefix": "trackingLink_source_check"
+                }
+              ],
+              "columns": {
+                "campaign": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clicksCount": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "createdById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "customSource": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "deletedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "isActive": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "jobId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "medium": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "source": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "OTHER"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "SourcingChannel",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "token": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "utmCampaign": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmContent": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmMedium": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmSource": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "utmTerm": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "trackingLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "jobId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "trackingLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "job"
+                  }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "createdById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "trackingLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "user"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "createdById"
+                  ],
+                  "name": "trackingLink_createdById_idx_8bf640ed",
+                  "prefix": "trackingLink_createdById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "jobId"
+                  ],
+                  "name": "trackingLink_jobId_idx_623c8f77",
+                  "prefix": "trackingLink_jobId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "trackingLink_organizationId_idx_2e17ef41",
+                  "prefix": "trackingLink_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId",
+                    "isActive"
+                  ],
+                  "name": "trackingLink_organizationId_isActive_idx_c89f2a48",
+                  "prefix": "trackingLink_organizationId_isActive_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "token"
+                  ],
+                  "name": "trackingLink_token_idx_8b25281e",
+                  "prefix": "trackingLink_token_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "token"
+                  ]
+                }
+              ]
+            },
             "user": {
               "checks": [
                 {
@@ -4865,6 +5914,27 @@
                 "MEMBER"
               ]
             },
+            "SourcingChannel": {
+              "kind": "valueSet",
+              "values": [
+                "LINKEDIN",
+                "INDEED",
+                "GOOGLE_JOBS",
+                "CAREER_SITE",
+                "REFERRAL",
+                "DIRECT",
+                "HANDSHAKE",
+                "EMAIL",
+                "WE_WORK_REMOTELY",
+                "STACK_OVERFLOW",
+                "TWITTER_X",
+                "REDDIT",
+                "GLASSDOOR",
+                "AGENCY",
+                "FACEBOOK",
+                "OTHER"
+              ]
+            },
             "WorkplaceType": {
               "kind": "valueSet",
               "values": [
@@ -4879,10 +5949,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9f11fae4185177e2ec70b3343f6bbd27a118946d2bd378bdc6ed904fa8e2f427"
+    "storageHash": "bfa964564c3810d57f0817f69ffec8f447a2b8a9a7b44dd4291f896556974055"
   },
   "execution": {
-    "executionHash": "c27aefd0d3dc25d690b797af39bfdd4b9307eaa0379c7e60a5555abe82990ced",
+    "executionHash": "db3397098f3171ecc6ae5c859ca2f595e4c88d38adc4d78f1f1a95998bdf0cfa",
     "mutations": {
       "defaults": [
         {
@@ -5193,6 +6263,43 @@
           },
           "ref": {
             "entry": "organizationMember",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "trackingClick",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "trackingLink",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "trackingLink",
             "field": "updatedAt",
             "namespace": "public"
           }

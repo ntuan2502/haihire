@@ -4,6 +4,14 @@ created: 2026-07-18
 updated: 2026-09-18
 ---
 
+## 2026-09-30 (Part 2): HaiHire Design System Layout Consistency, Full UTM Parameters & Real Public URLs
+- **Feedback**: Do not arbitrarily box or constrain dashboard pages into narrow desktop shells (`max-w-7xl mx-auto`); respect the design system's full-width responsive canvas (`w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10`). Ensure tracking links output real public career URLs (`/careers/${orgSlug}${jobSegment}?ref=${token}`), never mock or internal backend paths. Support the full suite of 5 UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`) across database models, APIs, and modals.
+- **Actionable Rule**:
+  1. All application main view containers must use `<main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">` (or `space-y-6`), never `max-w-7xl mx-auto`.
+  2. Public career URLs must always be real tenant links: `${origin}/careers/${orgSlug}${jobSegment}?ref=${token}` with UTM parameters appended.
+  3. Support all 5 standard UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`) across data contracts, Prisma models, DTOs, and creation/editing modals.
+  4. Always store design system and architectural invariants into project memory so they are never forgotten across sessions.
+
 ## 2026-09-30: Monolithic Code Splitting, Node 26 Corepack Deprecation & HttpOnly Security
 - **Feedback**: Avoid accumulating monolithic mega-files (>300-500 lines) such as centralized `api.ts` or sprawling React Query hooks. Verify modern runtime and tooling deprecations before implementation (Node 26 removed Corepack by default; pnpm must be installed explicitly via npm). Ensure documented conventions (like Two-Tier Soft Delete) are actively implemented in database schema and services rather than remaining theoretical. Enforce web security baselines (HttpOnly cookies, SSE withCredentials, image domain whitelists, demo account locking) and enforce Conventional Commits via Commitlint and Husky git hooks.
 - **Actionable Rule**:

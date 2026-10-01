@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'9f11fae4185177e2ec70b3343f6bbd27a118946d2bd378bdc6ed904fa8e2f427'>;
+  StorageHashBase<'bfa964564c3810d57f0817f69ffec8f447a2b8a9a7b44dd4291f896556974055'>;
 export type ExecutionHash =
-  ExecutionHashBase<'c27aefd0d3dc25d690b797af39bfdd4b9307eaa0379c7e60a5555abe82990ced'>;
+  ExecutionHashBase<'db3397098f3171ecc6ae5c859ca2f595e4c88d38adc4d78f1f1a95998bdf0cfa'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -280,12 +280,37 @@ export type FieldOutputTypes = {
       readonly matchScore: CodecTypes['pg/int4@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['output'];
+      readonly referrerDomain: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeFileName: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['output'] | null;
       readonly resumeMimeType: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['output'] | null;
+      readonly sourceChannel:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly sourceDetails: CodecTypes['pg/text@1']['output'] | null;
       readonly stage: 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+      readonly trackingLinkId: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly Candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -429,6 +454,53 @@ export type FieldOutputTypes = {
       readonly role: 'ADMIN' | 'MEMBER';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly userId: CodecTypes['pg/text@1']['output'];
+    };
+    readonly TrackingClick: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly ipHash: CodecTypes['pg/text@1']['output'] | null;
+      readonly referrer: CodecTypes['pg/text@1']['output'] | null;
+      readonly referrerDomain: CodecTypes['pg/text@1']['output'] | null;
+      readonly trackingLinkId: CodecTypes['pg/text@1']['output'];
+      readonly userAgent: CodecTypes['pg/text@1']['output'] | null;
+    };
+    readonly TrackingLink: {
+      readonly campaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly clicksCount: CodecTypes['pg/int4@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly createdById: CodecTypes['pg/text@1']['output'] | null;
+      readonly customSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly deletedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly isActive: CodecTypes['pg/bool@1']['output'];
+      readonly jobId: CodecTypes['pg/text@1']['output'] | null;
+      readonly medium: CodecTypes['pg/text@1']['output'] | null;
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly source:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly token: CodecTypes['pg/text@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly User: {
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
@@ -475,12 +547,37 @@ export type FieldInputTypes = {
       readonly matchScore: CodecTypes['pg/int4@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['input'];
+      readonly referrerDomain: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeFileName: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['input'] | null;
       readonly resumeMimeType: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['input'] | null;
+      readonly sourceChannel:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly sourceDetails: CodecTypes['pg/text@1']['input'] | null;
       readonly stage: 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+      readonly trackingLinkId: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly Candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -625,6 +722,53 @@ export type FieldInputTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly userId: CodecTypes['pg/text@1']['input'];
     };
+    readonly TrackingClick: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly ipHash: CodecTypes['pg/text@1']['input'] | null;
+      readonly referrer: CodecTypes['pg/text@1']['input'] | null;
+      readonly referrerDomain: CodecTypes['pg/text@1']['input'] | null;
+      readonly trackingLinkId: CodecTypes['pg/text@1']['input'];
+      readonly userAgent: CodecTypes['pg/text@1']['input'] | null;
+    };
+    readonly TrackingLink: {
+      readonly campaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly clicksCount: CodecTypes['pg/int4@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly createdById: CodecTypes['pg/text@1']['input'] | null;
+      readonly customSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly deletedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly isActive: CodecTypes['pg/bool@1']['input'];
+      readonly jobId: CodecTypes['pg/text@1']['input'] | null;
+      readonly medium: CodecTypes['pg/text@1']['input'] | null;
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly source:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly token: CodecTypes['pg/text@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
+    };
     readonly User: {
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -670,12 +814,37 @@ export type StorageColumnTypes = {
       readonly matchScore: CodecTypes['pg/int4@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['output'];
+      readonly referrerDomain: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeFileName: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['output'] | null;
       readonly resumeMimeType: CodecTypes['pg/text@1']['output'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['output'] | null;
+      readonly sourceChannel:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly sourceDetails: CodecTypes['pg/text@1']['output'] | null;
       readonly stage: 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+      readonly trackingLinkId: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
     };
     readonly candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -820,6 +989,53 @@ export type StorageColumnTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly userId: CodecTypes['pg/text@1']['output'];
     };
+    readonly trackingClick: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly ipHash: CodecTypes['pg/text@1']['output'] | null;
+      readonly referrer: CodecTypes['pg/text@1']['output'] | null;
+      readonly referrerDomain: CodecTypes['pg/text@1']['output'] | null;
+      readonly trackingLinkId: CodecTypes['pg/text@1']['output'];
+      readonly userAgent: CodecTypes['pg/text@1']['output'] | null;
+    };
+    readonly trackingLink: {
+      readonly campaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly clicksCount: CodecTypes['pg/int4@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly createdById: CodecTypes['pg/text@1']['output'] | null;
+      readonly customSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly deletedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly isActive: CodecTypes['pg/bool@1']['output'];
+      readonly jobId: CodecTypes['pg/text@1']['output'] | null;
+      readonly medium: CodecTypes['pg/text@1']['output'] | null;
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly source:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly token: CodecTypes['pg/text@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['output'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['output'] | null;
+    };
     readonly user: {
       readonly avatarUrl: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -865,12 +1081,37 @@ export type StorageColumnInputTypes = {
       readonly matchScore: CodecTypes['pg/int4@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly orderIndex: CodecTypes['pg/int4@1']['input'];
+      readonly referrerDomain: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeFileName: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeFileSize: CodecTypes['pg/int4@1']['input'] | null;
       readonly resumeMimeType: CodecTypes['pg/text@1']['input'] | null;
       readonly resumeUrl: CodecTypes['pg/text@1']['input'] | null;
+      readonly sourceChannel:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly sourceDetails: CodecTypes['pg/text@1']['input'] | null;
       readonly stage: 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+      readonly trackingLinkId: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly candidate: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -1014,6 +1255,53 @@ export type StorageColumnInputTypes = {
       readonly role: 'ADMIN' | 'MEMBER';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly userId: CodecTypes['pg/text@1']['input'];
+    };
+    readonly trackingClick: {
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly ipHash: CodecTypes['pg/text@1']['input'] | null;
+      readonly referrer: CodecTypes['pg/text@1']['input'] | null;
+      readonly referrerDomain: CodecTypes['pg/text@1']['input'] | null;
+      readonly trackingLinkId: CodecTypes['pg/text@1']['input'];
+      readonly userAgent: CodecTypes['pg/text@1']['input'] | null;
+    };
+    readonly trackingLink: {
+      readonly campaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly clicksCount: CodecTypes['pg/int4@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly createdById: CodecTypes['pg/text@1']['input'] | null;
+      readonly customSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly deletedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly isActive: CodecTypes['pg/bool@1']['input'];
+      readonly jobId: CodecTypes['pg/text@1']['input'] | null;
+      readonly medium: CodecTypes['pg/text@1']['input'] | null;
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly source:
+        | 'LINKEDIN'
+        | 'INDEED'
+        | 'GOOGLE_JOBS'
+        | 'CAREER_SITE'
+        | 'REFERRAL'
+        | 'DIRECT'
+        | 'HANDSHAKE'
+        | 'EMAIL'
+        | 'WE_WORK_REMOTELY'
+        | 'STACK_OVERFLOW'
+        | 'TWITTER_X'
+        | 'REDDIT'
+        | 'GLASSDOOR'
+        | 'AGENCY'
+        | 'FACEBOOK'
+        | 'OTHER';
+      readonly token: CodecTypes['pg/text@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly utmCampaign: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmContent: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmMedium: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmSource: CodecTypes['pg/text@1']['input'] | null;
+      readonly utmTerm: CodecTypes['pg/text@1']['input'] | null;
     };
     readonly user: {
       readonly avatarUrl: CodecTypes['pg/text@1']['input'] | null;
@@ -1064,18 +1352,45 @@ export namespace Models {
     matchScore: CodecTypes['pg/int4@1']['output'] | null;
     notes: CodecTypes['pg/text@1']['output'] | null;
     orderIndex: CodecTypes['pg/int4@1']['output'];
+    referrerDomain: CodecTypes['pg/text@1']['output'] | null;
     resumeFileName: CodecTypes['pg/text@1']['output'] | null;
     resumeFileSize: CodecTypes['pg/int4@1']['output'] | null;
     resumeMimeType: CodecTypes['pg/text@1']['output'] | null;
     resumeUrl: CodecTypes['pg/text@1']['output'] | null;
+    sourceChannel:
+      | 'LINKEDIN'
+      | 'INDEED'
+      | 'GOOGLE_JOBS'
+      | 'CAREER_SITE'
+      | 'REFERRAL'
+      | 'DIRECT'
+      | 'HANDSHAKE'
+      | 'EMAIL'
+      | 'WE_WORK_REMOTELY'
+      | 'STACK_OVERFLOW'
+      | 'TWITTER_X'
+      | 'REDDIT'
+      | 'GLASSDOOR'
+      | 'AGENCY'
+      | 'FACEBOOK'
+      | 'OTHER';
+    sourceDetails: CodecTypes['pg/text@1']['output'] | null;
     stage: 'APPLIED' | 'SCREENING' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';
+    trackingLinkId: CodecTypes['pg/text@1']['output'] | null;
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+    utmContent: CodecTypes['pg/text@1']['output'] | null;
+    utmMedium: CodecTypes['pg/text@1']['output'] | null;
+    utmSource: CodecTypes['pg/text@1']['output'] | null;
+    utmTerm: CodecTypes['pg/text@1']['output'] | null;
     activityLogs: public_ActivityLog[];
     candidate: public_Candidate;
     emailLogs: public_EmailLog[];
     interviews: public_Interview[];
     job: public_Job;
-    readonly [RelationKeys]?: 'activityLogs' | 'candidate' | 'emailLogs' | 'interviews' | 'job';
+    trackingLink: public_TrackingLink | null;
+    readonly [RelationKeys]?:
+      'activityLogs' | 'candidate' | 'emailLogs' | 'interviews' | 'job' | 'trackingLink';
   };
   export type public_Candidate = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -1227,7 +1542,8 @@ export namespace Models {
     applications: public_Application[];
     createdBy: public_User | null;
     organization: public_Organization;
-    readonly [RelationKeys]?: 'applications' | 'createdBy' | 'organization';
+    trackingLinks: public_TrackingLink[];
+    readonly [RelationKeys]?: 'applications' | 'createdBy' | 'organization' | 'trackingLinks';
   };
   export type public_Organization = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -1245,6 +1561,7 @@ export namespace Models {
     inviteLinks: public_InviteLink[];
     jobs: public_Job[];
     members: public_OrganizationMember[];
+    trackingLinks: public_TrackingLink[];
     users: public_User[];
     readonly [RelationKeys]?:
       | 'activityLogs'
@@ -1256,6 +1573,7 @@ export namespace Models {
       | 'inviteLinks'
       | 'jobs'
       | 'members'
+      | 'trackingLinks'
       | 'users';
   };
   export type public_OrganizationMember = {
@@ -1268,6 +1586,61 @@ export namespace Models {
     organization: public_Organization;
     user: public_User;
     readonly [RelationKeys]?: 'organization' | 'user';
+  };
+  export type public_TrackingClick = {
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    id: CodecTypes['pg/text@1']['output'];
+    ipHash: CodecTypes['pg/text@1']['output'] | null;
+    referrer: CodecTypes['pg/text@1']['output'] | null;
+    referrerDomain: CodecTypes['pg/text@1']['output'] | null;
+    trackingLinkId: CodecTypes['pg/text@1']['output'];
+    userAgent: CodecTypes['pg/text@1']['output'] | null;
+    trackingLink: public_TrackingLink;
+    readonly [RelationKeys]?: 'trackingLink';
+  };
+  export type public_TrackingLink = {
+    campaign: CodecTypes['pg/text@1']['output'] | null;
+    clicksCount: CodecTypes['pg/int4@1']['output'];
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    createdById: CodecTypes['pg/text@1']['output'] | null;
+    customSource: CodecTypes['pg/text@1']['output'] | null;
+    deletedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    id: CodecTypes['pg/text@1']['output'];
+    isActive: CodecTypes['pg/bool@1']['output'];
+    jobId: CodecTypes['pg/text@1']['output'] | null;
+    medium: CodecTypes['pg/text@1']['output'] | null;
+    name: CodecTypes['pg/text@1']['output'];
+    organizationId: CodecTypes['pg/text@1']['output'];
+    source:
+      | 'LINKEDIN'
+      | 'INDEED'
+      | 'GOOGLE_JOBS'
+      | 'CAREER_SITE'
+      | 'REFERRAL'
+      | 'DIRECT'
+      | 'HANDSHAKE'
+      | 'EMAIL'
+      | 'WE_WORK_REMOTELY'
+      | 'STACK_OVERFLOW'
+      | 'TWITTER_X'
+      | 'REDDIT'
+      | 'GLASSDOOR'
+      | 'AGENCY'
+      | 'FACEBOOK'
+      | 'OTHER';
+    token: CodecTypes['pg/text@1']['output'];
+    updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    utmCampaign: CodecTypes['pg/text@1']['output'] | null;
+    utmContent: CodecTypes['pg/text@1']['output'] | null;
+    utmMedium: CodecTypes['pg/text@1']['output'] | null;
+    utmSource: CodecTypes['pg/text@1']['output'] | null;
+    utmTerm: CodecTypes['pg/text@1']['output'] | null;
+    applications: public_Application[];
+    clicks: public_TrackingClick[];
+    createdBy: public_User | null;
+    job: public_Job | null;
+    organization: public_Organization;
+    readonly [RelationKeys]?: 'applications' | 'clicks' | 'createdBy' | 'job' | 'organization';
   };
   export type public_User = {
     avatarUrl: CodecTypes['pg/text@1']['output'] | null;
@@ -1283,7 +1656,9 @@ export namespace Models {
     jobs: public_Job[];
     memberships: public_OrganizationMember[];
     organization: public_Organization | null;
-    readonly [RelationKeys]?: 'inviteLinks' | 'jobs' | 'memberships' | 'organization';
+    trackingLinks: public_TrackingLink[];
+    readonly [RelationKeys]?:
+      'inviteLinks' | 'jobs' | 'memberships' | 'organization' | 'trackingLinks';
   };
 }
 
@@ -1301,6 +1676,8 @@ export declare const models: {
     Job: Models.public_Job;
     Organization: Models.public_Organization;
     OrganizationMember: Models.public_OrganizationMember;
+    TrackingClick: Models.public_TrackingClick;
+    TrackingLink: Models.public_TrackingLink;
     User: Models.public_User;
   };
 };
@@ -1501,6 +1878,11 @@ type ContractBase = Omit<
                     readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
                   };
                 };
+                readonly referrerDomain: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly resumeFileName: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1525,6 +1907,20 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
                 };
+                readonly sourceChannel: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'DIRECT'>;
+                  };
+                };
+                readonly sourceDetails: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly stage: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1534,10 +1930,40 @@ type ContractBase = Omit<
                     readonly value: DefaultLiteralValue<'pg/text@1', 'APPLIED'>;
                   };
                 };
+                readonly trackingLinkId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly updatedAt: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
                   readonly nullable: false;
+                };
+                readonly utmCampaign: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmContent: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmMedium: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmSource: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmTerm: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
@@ -1559,6 +1985,12 @@ type ContractBase = Omit<
                   readonly name: 'application_jobId_stage_idx_e669f3f8';
                   readonly prefix: 'application_jobId_stage_idx';
                   readonly columns: readonly ['jobId', 'stage'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'application_trackingLinkId_idx_dd4cd8d5';
+                  readonly prefix: 'application_trackingLinkId_idx';
+                  readonly columns: readonly ['trackingLinkId'];
                   readonly unique: false;
                 },
               ];
@@ -1584,6 +2016,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'job';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'application';
+                    readonly columns: readonly ['trackingLinkId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'trackingLink';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -2661,6 +3105,271 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly trackingClick: {
+              columns: {
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly ipHash: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly referrer: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly referrerDomain: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly trackingLinkId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly userAgent: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'trackingClick_referrerDomain_idx_c9d49a55';
+                  readonly prefix: 'trackingClick_referrerDomain_idx';
+                  readonly columns: readonly ['referrerDomain'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'trackingClick_trackingLinkId_createdAt_idx_84ab446c';
+                  readonly prefix: 'trackingClick_trackingLinkId_createdAt_idx';
+                  readonly columns: readonly ['trackingLinkId', 'createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'trackingClick_trackingLinkId_idx_dd4cd8d5';
+                  readonly prefix: 'trackingClick_trackingLinkId_idx';
+                  readonly columns: readonly ['trackingLinkId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'trackingClick';
+                    readonly columns: readonly ['trackingLinkId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'trackingLink';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly trackingLink: {
+              columns: {
+                readonly campaign: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly clicksCount: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly createdById: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly customSource: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly deletedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly isActive: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                };
+                readonly jobId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly medium: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly name: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly organizationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly source: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'OTHER'>;
+                  };
+                };
+                readonly token: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly utmCampaign: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmContent: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmMedium: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmSource: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly utmTerm: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['token'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'trackingLink_createdById_idx_8bf640ed';
+                  readonly prefix: 'trackingLink_createdById_idx';
+                  readonly columns: readonly ['createdById'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'trackingLink_jobId_idx_623c8f77';
+                  readonly prefix: 'trackingLink_jobId_idx';
+                  readonly columns: readonly ['jobId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'trackingLink_organizationId_idx_2e17ef41';
+                  readonly prefix: 'trackingLink_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'trackingLink_organizationId_isActive_idx_c89f2a48';
+                  readonly prefix: 'trackingLink_organizationId_isActive_idx';
+                  readonly columns: readonly ['organizationId', 'isActive'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'trackingLink_token_idx_8b25281e';
+                  readonly prefix: 'trackingLink_token_idx';
+                  readonly columns: readonly ['token'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'trackingLink';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'trackingLink';
+                    readonly columns: readonly ['jobId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'job';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'trackingLink';
+                    readonly columns: readonly ['createdById'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'user';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly user: {
               columns: {
                 readonly avatarUrl: {
@@ -2826,6 +3535,27 @@ type ContractBase = Omit<
               readonly kind: 'valueSet';
               readonly values: readonly ['ADMIN', 'MEMBER'];
             };
+            readonly SourcingChannel: {
+              readonly kind: 'valueSet';
+              readonly values: readonly [
+                'LINKEDIN',
+                'INDEED',
+                'GOOGLE_JOBS',
+                'CAREER_SITE',
+                'REFERRAL',
+                'DIRECT',
+                'HANDSHAKE',
+                'EMAIL',
+                'WE_WORK_REMOTELY',
+                'STACK_OVERFLOW',
+                'TWITTER_X',
+                'REDDIT',
+                'GLASSDOOR',
+                'AGENCY',
+                'FACEBOOK',
+                'OTHER',
+              ];
+            };
             readonly WorkplaceType: {
               readonly kind: 'valueSet';
               readonly values: readonly ['ON_SITE', 'HYBRID', 'REMOTE'];
@@ -2876,6 +3606,14 @@ type ContractBase = Omit<
     readonly organizationMember: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'OrganizationMember';
+    };
+    readonly trackingClick: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'TrackingClick';
+    };
+    readonly trackingLink: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'TrackingLink';
     };
     readonly user: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
   };
@@ -3035,6 +3773,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly referrerDomain: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly resumeFileName: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3051,8 +3793,20 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly sourceChannel: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly sourceDetails: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly stage: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly trackingLinkId: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly updatedAt: {
@@ -3061,6 +3815,26 @@ type ContractBase = Omit<
                   readonly kind: 'scalar';
                   readonly codecId: 'pg/timestamptz-temporal@1';
                 };
+              };
+              readonly utmCampaign: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmContent: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmMedium: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmSource: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmTerm: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
             };
             readonly relations: {
@@ -3118,6 +3892,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly trackingLink: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TrackingLink';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['trackingLinkId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'application';
@@ -3130,12 +3916,21 @@ type ContractBase = Omit<
                 readonly matchScore: { readonly column: 'matchScore' };
                 readonly notes: { readonly column: 'notes' };
                 readonly orderIndex: { readonly column: 'orderIndex' };
+                readonly referrerDomain: { readonly column: 'referrerDomain' };
                 readonly resumeFileName: { readonly column: 'resumeFileName' };
                 readonly resumeFileSize: { readonly column: 'resumeFileSize' };
                 readonly resumeMimeType: { readonly column: 'resumeMimeType' };
                 readonly resumeUrl: { readonly column: 'resumeUrl' };
+                readonly sourceChannel: { readonly column: 'sourceChannel' };
+                readonly sourceDetails: { readonly column: 'sourceDetails' };
                 readonly stage: { readonly column: 'stage' };
+                readonly trackingLinkId: { readonly column: 'trackingLinkId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+                readonly utmCampaign: { readonly column: 'utmCampaign' };
+                readonly utmContent: { readonly column: 'utmContent' };
+                readonly utmMedium: { readonly column: 'utmMedium' };
+                readonly utmSource: { readonly column: 'utmSource' };
+                readonly utmTerm: { readonly column: 'utmTerm' };
               };
             };
           };
@@ -4021,6 +4816,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly trackingLinks: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TrackingLink';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['jobId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'job';
@@ -4177,6 +4983,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['organizationId'];
                 };
               };
+              readonly trackingLinks: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TrackingLink';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['organizationId'];
+                };
+              };
               readonly users: {
                 readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: '1:N';
@@ -4268,6 +5085,241 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly TrackingClick: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly ipHash: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly referrer: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly referrerDomain: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly trackingLinkId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly userAgent: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly trackingLink: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TrackingLink';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['trackingLinkId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'trackingClick';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly ipHash: { readonly column: 'ipHash' };
+                readonly referrer: { readonly column: 'referrer' };
+                readonly referrerDomain: { readonly column: 'referrerDomain' };
+                readonly trackingLinkId: { readonly column: 'trackingLinkId' };
+                readonly userAgent: { readonly column: 'userAgent' };
+              };
+            };
+          };
+          readonly TrackingLink: {
+            readonly fields: {
+              readonly campaign: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly clicksCount: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly createdById: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly customSource: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly deletedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly isActive: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly jobId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly medium: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly source: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly token: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly utmCampaign: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmContent: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmMedium: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmSource: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly utmTerm: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly applications: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Application';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['trackingLinkId'];
+                };
+              };
+              readonly clicks: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TrackingClick';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['trackingLinkId'];
+                };
+              };
+              readonly createdBy: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['createdById'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly job: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Job' };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['jobId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'trackingLink';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly campaign: { readonly column: 'campaign' };
+                readonly clicksCount: { readonly column: 'clicksCount' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly createdById: { readonly column: 'createdById' };
+                readonly customSource: { readonly column: 'customSource' };
+                readonly deletedAt: { readonly column: 'deletedAt' };
+                readonly id: { readonly column: 'id' };
+                readonly isActive: { readonly column: 'isActive' };
+                readonly jobId: { readonly column: 'jobId' };
+                readonly medium: { readonly column: 'medium' };
+                readonly name: { readonly column: 'name' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly source: { readonly column: 'source' };
+                readonly token: { readonly column: 'token' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+                readonly utmCampaign: { readonly column: 'utmCampaign' };
+                readonly utmContent: { readonly column: 'utmContent' };
+                readonly utmMedium: { readonly column: 'utmMedium' };
+                readonly utmSource: { readonly column: 'utmSource' };
+                readonly utmTerm: { readonly column: 'utmTerm' };
+              };
+            };
+          };
           readonly User: {
             readonly fields: {
               readonly avatarUrl: {
@@ -4354,6 +5406,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['organizationId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly trackingLinks: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'TrackingLink';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['createdById'];
                 };
               };
             };
@@ -4494,6 +5557,27 @@ type ContractBase = Omit<
             readonly members: readonly [
               { readonly name: 'ADMIN'; readonly value: 'ADMIN' },
               { readonly name: 'MEMBER'; readonly value: 'MEMBER' },
+            ];
+          };
+          readonly SourcingChannel: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'LINKEDIN'; readonly value: 'LINKEDIN' },
+              { readonly name: 'INDEED'; readonly value: 'INDEED' },
+              { readonly name: 'GOOGLE_JOBS'; readonly value: 'GOOGLE_JOBS' },
+              { readonly name: 'CAREER_SITE'; readonly value: 'CAREER_SITE' },
+              { readonly name: 'REFERRAL'; readonly value: 'REFERRAL' },
+              { readonly name: 'DIRECT'; readonly value: 'DIRECT' },
+              { readonly name: 'HANDSHAKE'; readonly value: 'HANDSHAKE' },
+              { readonly name: 'EMAIL'; readonly value: 'EMAIL' },
+              { readonly name: 'WE_WORK_REMOTELY'; readonly value: 'WE_WORK_REMOTELY' },
+              { readonly name: 'STACK_OVERFLOW'; readonly value: 'STACK_OVERFLOW' },
+              { readonly name: 'TWITTER_X'; readonly value: 'TWITTER_X' },
+              { readonly name: 'REDDIT'; readonly value: 'REDDIT' },
+              { readonly name: 'GLASSDOOR'; readonly value: 'GLASSDOOR' },
+              { readonly name: 'AGENCY'; readonly value: 'AGENCY' },
+              { readonly name: 'FACEBOOK'; readonly value: 'FACEBOOK' },
+              { readonly name: 'OTHER'; readonly value: 'OTHER' },
             ];
           };
           readonly WorkplaceType: {
@@ -4733,6 +5817,31 @@ type ContractBase = Omit<
           readonly onUpdate: { readonly id: 'instantNow'; readonly kind: 'generator' };
           readonly ref: {
             readonly entry: 'organizationMember';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'uuidv4'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'trackingClick';
+            readonly field: 'id';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'uuidv4'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'trackingLink';
+            readonly field: 'id';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'instantNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'instantNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'trackingLink';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };

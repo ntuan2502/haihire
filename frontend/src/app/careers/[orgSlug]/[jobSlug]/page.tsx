@@ -2,15 +2,17 @@
 
 import {
   useState,
+  useEffect,
   useRef,
   useId,
   type ChangeEvent,
   type DragEvent,
   type FormEvent,
 } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { usePublicJob, useCreateApplicationMutation } from "@/hooks/use-queries";
+import { sourcingApi } from "@/lib/api";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,29 @@ export default function CareerJobSlugPage() {
 
   const { data: job, isLoading, isError } = usePublicJob(orgSlug, jobSlug);
   const applyMutation = useCreateApplicationMutation();
+  const searchParams = useSearchParams();
+  const refParam = searchParams.get("ref");
+
+  // Record click on public tracking link (with session deduplication)
+  useEffect(() => {
+    if (refParam) {
+      try {
+        sessionStorage.setItem("haihire_sourcing_ref", refParam);
+        const clickRecordedKey = `haihire_click_recorded_${refParam}`;
+        if (!sessionStorage.getItem(clickRecordedKey)) {
+          sessionStorage.setItem(clickRecordedKey, "true");
+          sourcingApi
+            .recordPublicClick({
+              token: refParam,
+              referrer: typeof document !== "undefined" ? document.referrer : undefined,
+            })
+            .catch(() => {});
+        }
+      } catch {
+        // Ignore storage errors in private browsing
+      }
+    }
+  }, [refParam]);
 
   // Form states
   const [lastName, setLastName] = useState("");
@@ -148,6 +173,19 @@ export default function CareerJobSlugPage() {
         formData.append("notes", formattedNotes);
       }
       formData.append("resume", resumeFile);
+
+      // Attach sourcing attribution (session-scoped)
+      const activeRef =
+        refParam ||
+        (typeof sessionStorage !== "undefined"
+          ? sessionStorage.getItem("haihire_sourcing_ref")
+          : null);
+      if (activeRef) {
+        formData.append("ref", activeRef);
+      }
+      if (typeof document !== "undefined" && document.referrer) {
+        formData.append("referrer", document.referrer);
+      }
 
       await applyMutation.mutateAsync(formData);
       setIsSuccess(true);

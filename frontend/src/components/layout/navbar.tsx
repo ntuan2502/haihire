@@ -45,6 +45,7 @@ export type NavTab =
   | "applications"
   | "inbox"
   | "interviews"
+  | "sourcing"
   | "assistant"
   | "settings";
 
@@ -83,6 +84,7 @@ export function Navbar({
   else if (pathname.startsWith("/dashboard/candidates")) currentTab = "candidates";
   else if (pathname.startsWith("/dashboard/applications")) currentTab = "applications";
   else if (pathname.startsWith("/dashboard/interviews")) currentTab = "interviews";
+  else if (pathname.startsWith("/dashboard/source-tracking")) currentTab = "sourcing";
   else if (pathname.startsWith("/dashboard/settings")) currentTab = "settings";
   else if (pathname === "/dashboard") currentTab = "dashboard";
 
@@ -96,16 +98,16 @@ export function Navbar({
     { id: "candidates", label: t("nav.candidates"), icon: Users },
     { id: "applications", label: t("nav.applications"), icon: FileText },
     { id: "interviews", label: t("nav.interviews"), icon: Calendar },
+    { id: "sourcing", label: t("nav.features.sourceTracking"), icon: Radio },
     { id: "settings", label: t("nav.settings"), icon: Settings },
   ];
 
-  // Features inside "More" (all Coming Soon)
+  // Features inside "More" (Coming Soon)
   const moreItems = [
     { label: t("nav.inbox"), icon: Inbox },
     { label: t("nav.assistant"), icon: MessageSquare },
     { label: t("nav.features.analyticsReports"), icon: BarChart3 },
     { label: t("nav.features.talentPools"), icon: Users },
-    { label: t("nav.features.sourceTracking"), icon: Radio },
     { label: t("nav.features.aiAnalysis"), icon: Bot },
     { label: t("nav.features.timeline"), icon: Clock },
   ];
@@ -119,6 +121,8 @@ export function Navbar({
       router.push("/dashboard/applications");
     } else if (tab === "interviews") {
       router.push("/dashboard/interviews");
+    } else if (tab === "sourcing") {
+      router.push("/dashboard/source-tracking");
     } else if (tab === "settings") {
       router.push("/dashboard/settings");
     } else if (tab === "dashboard") {
@@ -184,7 +188,7 @@ export function Navbar({
 
               {/* More dropdown */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer">
+                <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white cursor-pointer transition-colors">
                   <span>{t("nav.more")}</span>
                   <ChevronDown className="h-3 w-3 opacity-60" />
                 </DropdownMenuTrigger>
@@ -316,6 +320,7 @@ export function Navbar({
               </button>
             );
           })}
+
 
         {/* More (Coming Soon) */}
         <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">

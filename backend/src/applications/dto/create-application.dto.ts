@@ -32,4 +32,20 @@ export class CreateApplicationDto {
   @IsString()
   @IsOptional()
   resumeFileName?: string;
+
+  @IsString()
+  @IsOptional()
+  ref?: string;
+
+  @IsString()
+  @IsOptional()
+  referrer?: string;
+
+  @IsString()
+  @IsOptional()
+  sourceChannel?: string;
+
+  @IsString()
+  @IsOptional()
+  utmCampaign?: string;
 }

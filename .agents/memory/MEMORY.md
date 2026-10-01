@@ -60,10 +60,13 @@
 - [user] Error Contract Discipline: throw domain APP_ERROR_CODES, isolate params, centralized test i18n setup → user-preferences.md
 - [user] Anti-Monolith Architecture: never allow API clients or hooks to become monolithic mega-files → user-preferences.md
 - [user] Node 26+ Tooling Awareness: always install pnpm explicitly, never invoke corepack enable → user-preferences.md
-- [user] Web Security Baseline: HttpOnly token cookies, zero token leakage in URLs, image domain whitelists → user-preferences.md
-- [user] Conventional Commits Enforcement: strict type(scope): description via Commitlint and Husky → user-preferences.md
+- [project] HaiHire Design System & Layout Conventions: full-width canvas (never max-w-7xl mx-auto), standard tokens (MetricCard, CustomSelect, StageBadge), real tenant URLs, and full 5-parameter UTM suite → project-conventions.md
+- [project] Source Tracking Attribution Architecture: session-scoped hygiene, zero cross-session pollution, deduplicated clicks → tech-decisions.md
+- [user] Full-width layout mandate: span full width without desktop container boxes; use real public career tracking URLs; support 5 UTM parameters → user-preferences.md
+- [user] Session-Scoped Attribution: prevent sticky attribution pollution, isolate tracking tokens to active sessions with URL link propagation → user-preferences.md
 
 ## Feedback
+- [feedback] 2026-09-30 (Part 2): HaiHire Design System Layout Consistency, Full UTM Parameters & Real Public URLs → feedback-history.md
 - [feedback] 2026-09-30: Monolithic Code Splitting, Node 26 Corepack Deprecation & HttpOnly Security → feedback-history.md
 - [feedback] 2026-09-29: Error Contract Standardization, Isolated Dynamic Params & Centralized Test i18n Setup → feedback-history.md
 - [feedback] 2026-09-28: React Callback Hygiene, Network Gatekeeper & Comprehensive Test Baseline → feedback-history.md

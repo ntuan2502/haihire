@@ -133,3 +133,12 @@ updated: 2026-09-18
     - **Bucket Provisioning**: Removed the redundant `minio-create-bucket` container. `MinioService` in NestJS natively handles bucket creation and verification via the official AWS S3 SDK on application bootstrap.
   - **State Naming Conventions**:
     - Standardized interview cancellation loading state to `isCancelling` across modal and list components; eliminated redundant `isCanceling` prop.
+
+- **Source Tracking Attribution Architecture & Session-Scoped Storage Hygiene**:
+  - **Decision**: Strictly forbid unconstrained `localStorage` for marketing and referral tracking tokens (`ref`). Implement **session-scoped storage (`sessionStorage`)** paired with **explicit internal URL parameter propagation** and **session-level click deduplication**.
+  - **Anti-Pattern (Sticky Cross-Session Attribution Poisoning)**: Unbounded `localStorage` persists indefinitely across browser restarts and days/weeks of unrelated visits. An applicant who initially landed via a Facebook ad days earlier and returns via a new tab to apply directly would have their application falsely attributed to the old Facebook link rather than Organic/Direct traffic.
+  - **Architectural Pillars**:
+    1. **Strict Session Lifetime (`sessionStorage`)**: Referral tokens are isolated to the active tab's session. Opening an independent new tab or restarting the browser creates a fresh session with zero residual attribution, accurately recording Direct traffic.
+    2. **Job Card Link Propagation**: On general career landing pages (`/careers/[orgSlug]?ref=TOKEN`), job card URLs proactively attach `?ref=TOKEN` to internal navigation links (`/careers/[orgSlug]/[jobSlug]?ref=TOKEN`). Candidates who right-click or middle-click "Open in new tab" naturally retain their campaign attribution in the target tab without relying on shared cross-tab persistent storage.
+    3. **Session-Level Click Deduplication (`haihire_click_recorded_${ref}`)**: Before issuing `sourcingApi.recordPublicClick`, the client checks and sets `sessionStorage.getItem("haihire_click_recorded_" + ref)`. This ensures that internal browsing between the career landing page and job detail pages, as well as page refreshes (F5), never falsely inflate campaign click counts.
+    4. **Tenant Isolation**: Backend validates `link.organizationId === job.organizationId` before attributing an application.

@@ -46,7 +46,14 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
-import { usePipelineStages } from "@/lib/stages";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
+import {
+  canTransition,
+  getTransitionDisabledReason,
+} from "@/lib/stages";
+import { StageSelector } from "@/components/jobs/pipeline/stage-selector";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import {
@@ -66,7 +73,7 @@ function ApplicationDetailPageContent() {
   const router = useRouter();
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
-  const pipelineStages = usePipelineStages();
+  const queryClient = useQueryClient();
   const appIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const isAppIdValid = isValidUuid(appIdStr);
@@ -124,6 +131,7 @@ function ApplicationDetailPageContent() {
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
+      toast.error(getApiErrorMessage(err, t));
     }
   };
 
@@ -192,6 +200,11 @@ function ApplicationDetailPageContent() {
 
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!app) return;
+    if (!canTransition(app.stage, newStage)) {
+      const reason = getTransitionDisabledReason(app.stage, newStage, t);
+      toast.error(reason);
+      return;
+    }
     try {
       await updateStageMutation.mutateAsync({
         id: app.id,
@@ -199,6 +212,10 @@ function ApplicationDetailPageContent() {
       });
     } catch (err) {
       console.error("Failed to update stage:", err);
+      const errorMsg = getApiErrorMessage(err, t);
+      toast.error(errorMsg);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
     }
   };
 
@@ -211,6 +228,7 @@ function ApplicationDetailPageContent() {
       router.push("/dashboard/applications");
     } catch (err) {
       console.error("Failed to delete application:", err);
+      toast.error(getApiErrorMessage(err, t));
     } finally {
       setIsDeleting(false);
     }
@@ -300,23 +318,15 @@ function ApplicationDetailPageContent() {
 
         {/* Stage Action Pipeline Bar matching Screenshot 2 & 3 */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          {/* Left Stage Action Buttons (All stages except current) */}
+          {/* Left Stage Action Buttons with State Machine Prevention */}
           <div className="flex items-center gap-2 flex-wrap">
-            {pipelineStages.filter((stage) => stage.id !== app?.stage).map(
-              (stage) => (
-                <button
-                  key={stage.id}
-                  type="button"
-                  onClick={() => handleStageChange(stage.id)}
-                  disabled={updateStageMutation.isPending}
-                  className={`h-8 px-3.5 rounded-xl ${stage.btnBg} ${stage.btnHover} text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50`}
-                >
-                  <span>{stage.actionLabel}</span>
-                  <span className="h-4 w-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center">
-                    {stage.stepNumber}
-                  </span>
-                </button>
-              ),
+            {app && (
+              <StageSelector
+                currentStage={app.stage}
+                onSelectStage={handleStageChange}
+                disabled={updateStageMutation.isPending}
+                variant="buttons"
+              />
             )}
           </div>
 

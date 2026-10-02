@@ -113,6 +113,12 @@ jobs:
       - name: Verify Internationalization & No Hardcoded Strings
         run: pnpm check:i18n
 
+      - name: Check error code i18n coverage
+        run: pnpm lint:error-i18n
+
+      - name: Check API contract coverage
+        run: pnpm lint:api-contract
+
       - name: Run linter and type checks
         run: pnpm lint
 

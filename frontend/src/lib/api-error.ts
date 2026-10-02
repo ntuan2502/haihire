@@ -34,8 +34,10 @@ export function getApiErrorMessage(
         }
       }
 
+      const status = (axiosErr.response as { status?: number })?.status;
+
       if (data && typeof data === "object") {
-        const payload = data as ApiErrorPayload;
+        const payload = data as ApiErrorPayload & { message?: string | string[] };
         if (payload.code && typeof payload.code === "string") {
           const errorKey = `errors.${payload.code}` as TranslationKey;
           try {
@@ -48,11 +50,24 @@ export function getApiErrorMessage(
           }
         }
 
+        if (Array.isArray(payload.message)) {
+          return payload.message.join("; ");
+        }
+
         if (payload.message && typeof payload.message === "string") {
           return payload.message;
         }
       } else if (typeof data === "string" && data.trim()) {
         return data;
+      }
+
+      // Status code fallback if no payload code/message provided
+      if (status) {
+        if (status === 429) return t("errors.TOO_MANY_REQUESTS");
+        if (status === 401) return t("errors.UNAUTHORIZED");
+        if (status === 403) return t("errors.FORBIDDEN");
+        if (status === 404) return t("errors.RESOURCE_NOT_FOUND");
+        if (status === 500) return t("errors.GENERIC_ERROR");
       }
     }
 

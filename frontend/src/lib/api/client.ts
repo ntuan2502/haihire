@@ -28,6 +28,7 @@ export const getDocumentUrl = (url: string) => {
 
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },

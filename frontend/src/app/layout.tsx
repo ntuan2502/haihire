@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider, QueryProvider } from "@/components/providers";
 import { AuthProvider } from "@/context/auth-context";
 import { I18nProvider } from "@/i18n";
+import { Toaster } from "sonner";
 import { BRAND_CONFIG } from "@haihire/shared";
 import "./globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
           <QueryProvider>
             <I18nProvider>
               <AuthProvider>{children}</AuthProvider>
+              <Toaster richColors position="top-right" />
             </I18nProvider>
           </QueryProvider>
         </ThemeProvider>

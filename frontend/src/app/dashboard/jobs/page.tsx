@@ -19,6 +19,8 @@ import {
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Plus } from "lucide-react";
 
 function JobsPageContent() {
@@ -132,6 +134,7 @@ function JobsPageContent() {
       setJobToDelete(null);
     } catch (err) {
       console.error("Failed to delete job:", err);
+      toast.error(getApiErrorMessage(err, t));
     }
   };
 

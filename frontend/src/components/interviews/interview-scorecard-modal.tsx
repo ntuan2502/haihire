@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useUpdateCandidateMutation, useUpdateInterviewMutation } from "@/hooks/use-queries";
 import { getCandidateDisplayName } from "@/lib/utils";
 import {
@@ -114,11 +115,7 @@ export function InterviewScorecardModal({
       onClose();
     } catch (err: unknown) {
       console.error("Failed to save interview scorecard:", err);
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : t("interviews.errors.saveScorecardFailed"),
-      );
+      setErrorMsg(getApiErrorMessage(err, t, "interviews.errors.saveScorecardFailed"));
     }
   };
 

@@ -49,6 +49,8 @@ import {
 } from "@/lib/interviews";
 import type { CandidateDocument, Application, Job } from "@/types";
 import { useI18n } from "@/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 interface CandidateDrawerProps {
   candidate: CandidateItem | null;
@@ -193,6 +195,7 @@ export function CandidateDrawer({
       setDrawerDocToDelete(null);
     } catch (err) {
       console.error("Failed to delete document in drawer:", err);
+      toast.error(getApiErrorMessage(err, t));
     } finally {
       setIsDeletingDoc(false);
     }
@@ -223,6 +226,7 @@ export function CandidateDrawer({
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
+      toast.error(getApiErrorMessage(err, t));
     }
   };
 
@@ -625,6 +629,7 @@ export function CandidateDrawer({
                                       });
                                     } catch (err) {
                                       console.error("Failed to upload document in drawer:", err);
+                                      toast.error(getApiErrorMessage(err, t));
                                     } finally {
                                       setIsUploadingDrawerDoc(false);
                                       if (drawerDocInputRef.current)

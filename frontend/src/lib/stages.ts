@@ -1,5 +1,10 @@
-import type { ApplicationStage } from "@/types";
+import {
+  ApplicationStage,
+  VALID_APPLICATION_STAGE_TRANSITIONS,
+} from "@haihire/shared";
 import { useI18n } from "@/i18n";
+
+export { VALID_APPLICATION_STAGE_TRANSITIONS };
 
 export interface StageConfig {
   id: ApplicationStage;
@@ -241,5 +246,69 @@ export function usePipelineStages(): StageConfig[] {
       actionLabel: localizedLabel,
     };
   });
+}
+
+/**
+ * Check whether an application stage transition is valid according to the ATS state machine.
+ *
+ * Rules:
+ * - from === to -> true (no-op)
+ * - Otherwise, must be in VALID_APPLICATION_STAGE_TRANSITIONS[from]
+ */
+export function canTransition(
+  from?: ApplicationStage | string | null,
+  to?: ApplicationStage | string | null,
+): boolean {
+  if (!from || !to) return false;
+  if (from === to) return true;
+  const allowed = VALID_APPLICATION_STAGE_TRANSITIONS[from as ApplicationStage];
+  return allowed ? allowed.includes(to as ApplicationStage) : false;
+}
+
+/**
+ * Get human-readable localized reason why an application stage transition is disabled.
+ */
+export function getTransitionDisabledReason(
+  from?: ApplicationStage | string | null,
+  to?: ApplicationStage | string | null,
+  t?: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  if (!from || !to || from === to) return "";
+  const fromStage = from as ApplicationStage;
+  const toStage = to as ApplicationStage;
+
+  if (fromStage === "HIRED") {
+    if (t) {
+      try {
+        const msg = t("pipeline.tooltips.cannotMoveHired", { from: fromStage, to: toStage });
+        if (msg && msg !== "pipeline.tooltips.cannotMoveHired") return msg;
+      } catch {
+        // Fallback
+      }
+    }
+    return `Ứng viên đã HIRED không thể quay lại ${toStage}`;
+  }
+
+  if (fromStage === "REJECTED") {
+    if (t) {
+      try {
+        const msg = t("pipeline.tooltips.cannotMoveRejected", { from: fromStage, to: toStage });
+        if (msg && msg !== "pipeline.tooltips.cannotMoveRejected") return msg;
+      } catch {
+        // Fallback
+      }
+    }
+    return `Ứng viên đã REJECTED không thể chuyển sang ${toStage}`;
+  }
+
+  if (t) {
+    try {
+      const msg = t("pipeline.tooltips.invalidTransition", { from: fromStage, to: toStage });
+      if (msg && msg !== "pipeline.tooltips.invalidTransition") return msg;
+    } catch {
+      // Fallback
+    }
+  }
+  return `Không thể chuyển từ ${fromStage} sang ${toStage}`;
 }
 

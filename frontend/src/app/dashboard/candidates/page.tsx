@@ -47,6 +47,8 @@ import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-m
 import type { Application } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { useI18n } from "@/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 type SortField = "name" | "email" | "phone" | "applications" | "added";
 type SortDirection = "asc" | "desc";
@@ -102,6 +104,7 @@ function CandidatesPageContent() {
       setCandidateToDelete(null);
     } catch (err) {
       console.error("Failed to delete candidate:", err);
+      toast.error(getApiErrorMessage(err, t));
     }
   };
 

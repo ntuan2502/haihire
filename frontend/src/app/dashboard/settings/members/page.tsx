@@ -34,11 +34,13 @@ import {
 } from "lucide-react";
 import type { InviteLink } from "@/types";
 import { useI18n } from "@/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 export default function MembersSettingsPage() {
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
-  const { data: members = [] } = useOrgMembers();
+  const { data: members = [], refetch: refetchMembers } = useOrgMembers();
   const { data: serverInviteLinks = [], refetch: refetchLinks } = useInviteLinks();
   const createInviteMutation = useCreateInviteLinkMutation();
   const revokeInviteMutation = useRevokeInviteLinkMutation();
@@ -118,7 +120,9 @@ export default function MembersSettingsPage() {
       refetchLinks();
     } catch (err: unknown) {
       console.error(err);
-      setInviteErrorMsg("Failed to create invite link.");
+      const msg = getApiErrorMessage(err, t);
+      setInviteErrorMsg(msg);
+      toast.error(msg);
     }
   };
 
@@ -147,7 +151,10 @@ export default function MembersSettingsPage() {
       setLinkToRevoke(null);
     } catch (err) {
       console.error(err);
-      setInviteErrorMsg(t("errors.generic"));
+      const msg = getApiErrorMessage(err, t);
+      setInviteErrorMsg(msg);
+      toast.error(msg);
+      refetchLinks?.();
     } finally {
       setRevokingId(null);
     }
@@ -162,7 +169,8 @@ export default function MembersSettingsPage() {
       setOpenMenuMemberId(null);
     } catch (err) {
       console.error(err);
-      alert(t("errors.generic"));
+      toast.error(getApiErrorMessage(err, t));
+      refetchMembers?.();
     } finally {
       setActionLoadingId(null);
     }
@@ -180,7 +188,8 @@ export default function MembersSettingsPage() {
       setMemberToRemove(null);
     } catch (err) {
       console.error(err);
-      alert(t("errors.generic"));
+      toast.error(getApiErrorMessage(err, t));
+      refetchMembers?.();
     } finally {
       setActionLoadingId(null);
     }

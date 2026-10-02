@@ -85,4 +85,36 @@ describe("PipelineCandidateCard Component", () => {
     }
     expect(handleSelect).toHaveBeenCalledTimes(1);
   });
+
+  it("supports dragging candidate card and sets dataTransfer payload", () => {
+    const { container } = render(
+      <PipelineCandidateCard
+        candidate={mockCandidate}
+        isSelected={false}
+        onSelect={vi.fn()}
+        canDrag={true}
+      />
+    );
+
+    const card = container.querySelector("#candidate-card-app-101");
+    expect(card).toHaveAttribute("draggable", "true");
+
+    const setData = vi.fn();
+    const dragEvent = new Event("dragstart", { bubbles: true });
+    Object.assign(dragEvent, {
+      dataTransfer: {
+        setData,
+        effectAllowed: "none",
+      },
+    });
+
+    if (card) {
+      card.dispatchEvent(dragEvent);
+    }
+
+    expect(setData).toHaveBeenCalledWith(
+      "application/json",
+      JSON.stringify({ id: "app-101", stage: "SCREENING" }),
+    );
+  });
 });

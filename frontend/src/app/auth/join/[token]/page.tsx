@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 interface PublicInviteData {
   valid: boolean;
@@ -70,7 +71,7 @@ export default function JoinOrganizationPage() {
         }
       } catch (err: unknown) {
         console.error(err);
-        setError("Failed to verify invitation link. Please check the URL.");
+        setError(getApiErrorMessage(err, t, "auth.invalidInvitation"));
       } finally {
         setLoading(false);
       }
@@ -98,12 +99,7 @@ export default function JoinOrganizationPage() {
       }, 1200);
     } catch (err: unknown) {
       console.error(err);
-      const msg =
-        err && typeof err === "object" && "response" in err
-          ? ((err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message ?? "Failed to join organization.")
-          : "Failed to join organization.";
-      setError(msg);
+      setError(getApiErrorMessage(err, t));
       setJoining(false);
     }
   };

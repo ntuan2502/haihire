@@ -56,6 +56,8 @@ import type { CandidateDocument, Application } from "@/types";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { getDocumentUrl, downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { SendEmailModal } from "@/components/email/send-email-modal";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 
@@ -114,6 +116,7 @@ function CandidateDetailPageContent() {
       }
     } catch (err) {
       console.error("Failed to cancel interview:", err);
+      toast.error(getApiErrorMessage(err, t));
     }
   };
   const [documentFilter, setDocumentFilter] = useState("Resume");
@@ -259,6 +262,7 @@ function CandidateDetailPageContent() {
         });
       } catch (err) {
         console.error("Failed to upload document:", err);
+        toast.error(getApiErrorMessage(err, t));
       } finally {
         setIsUploadingDoc(false);
         if (docInputRef.current) docInputRef.current.value = "";
@@ -275,6 +279,7 @@ function CandidateDetailPageContent() {
       router.push("/dashboard/candidates");
     } catch (err) {
       console.error("Failed to delete candidate:", err);
+      toast.error(getApiErrorMessage(err, t));
     } finally {
       setIsDeleting(false);
     }
@@ -327,6 +332,7 @@ function CandidateDetailPageContent() {
       setDocToDelete(null);
     } catch (err) {
       console.error("Failed to delete document:", err);
+      toast.error(getApiErrorMessage(err, t));
     } finally {
       setIsDeletingDoc(false);
     }

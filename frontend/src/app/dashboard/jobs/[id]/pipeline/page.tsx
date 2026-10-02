@@ -16,12 +16,20 @@ import { CustomSelect } from "@/components/shared/custom-select";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
 import type { ApplicationStage, CandidateDocument } from "@/types";
-import { PIPELINE_STAGES, usePipelineStages } from "@/lib/stages";
+import {
+  PIPELINE_STAGES,
+  usePipelineStages,
+  canTransition,
+  getTransitionDisabledReason,
+} from "@/lib/stages";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
@@ -44,6 +52,7 @@ function JobPipelinePageContent() {
   const searchParams = useSearchParams();
   const { canEdit } = useAuth();
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const pipelineStages = usePipelineStages();
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
@@ -371,22 +380,56 @@ function JobPipelinePageContent() {
     }
   };
 
-  const handleMoveCandidateStage = async (newStage: ApplicationStage) => {
-    if (!selectedCandidate) return;
+  const handleMoveCandidateStage = async (
+    newStage: ApplicationStage,
+    overrideCandidateId?: string,
+  ) => {
+    const activeAppId = overrideCandidateId || selectedCandidate?.id;
+    const candidate = jobApplications.find((a) => a.id === activeAppId) || selectedCandidate;
+    if (!candidate) return;
+
+    // PART A (A3 Prevention): Enforce state machine transition check before calling API
+    if (!canTransition(candidate.stage, newStage)) {
+      const reason = getTransitionDisabledReason(candidate.stage, newStage, t);
+      toast.error(reason);
+      return;
+    }
+
     try {
       await updateStageMutation.mutateAsync({
-        id: selectedCandidate.id,
+        id: candidate.id,
         stage: newStage,
       });
       setSelectedStage(newStage);
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.set("stage", newStage);
+      newParams.set("applicationId", candidate.id);
       router.replace(`/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`, {
         scroll: false,
       });
     } catch (err) {
       console.error("Failed to move candidate stage", err);
+      // PART B (B2 & B4 Defense in Depth): Pass all errors through getApiErrorMessage -> i18n
+      const errorMsg = getApiErrorMessage(err, t);
+      toast.error(errorMsg);
+      // Refresh / sync Kanban queries
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
     }
+  };
+
+  const handleDropCandidate = (
+    candidateId: string,
+    fromStage: ApplicationStage,
+    toStage: ApplicationStage,
+  ) => {
+    if (fromStage === toStage) return;
+    if (!canTransition(fromStage, toStage)) {
+      const reason = getTransitionDisabledReason(fromStage, toStage, t);
+      toast.error(reason);
+      return;
+    }
+    handleMoveCandidateStage(toStage, candidateId);
   };
 
   const handleConfirmDeleteCandidate = async () => {
@@ -399,6 +442,7 @@ function JobPipelinePageContent() {
       setMobileDetailOpen(false);
     } catch (err) {
       console.error("Failed to delete candidate application:", err);
+      toast.error(getApiErrorMessage(err, t));
     } finally {
       setIsDeletingApp(false);
     }
@@ -455,6 +499,7 @@ function JobPipelinePageContent() {
         onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
         isListCollapsed={isListCollapsed}
         onToggleCollapse={() => setIsListCollapsed((prev) => !prev)}
+        onDropCandidate={handleDropCandidate}
       />
 
       {/* 2. Main Master-Detail Workspace */}
@@ -538,6 +583,7 @@ function JobPipelinePageContent() {
                   onSelect={() => {
                     handleSelectCandidate(candidate.id);
                   }}
+                  canDrag={canEdit}
                 />
               ))
             )}

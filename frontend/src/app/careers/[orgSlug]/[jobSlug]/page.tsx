@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { buildCandidateNotes } from "@/lib/utils";
 import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
 import {
@@ -191,8 +192,7 @@ export default function CareerJobSlugPage() {
       setIsSuccess(true);
     } catch (err: unknown) {
       console.error("Apply error:", err);
-      const errorMsg =
-        err instanceof Error ? err.message : t("careers.errorGeneric");
+      const errorMsg = getApiErrorMessage(err, t, "careers.errorGeneric");
       setSubmitError(errorMsg);
     }
   };

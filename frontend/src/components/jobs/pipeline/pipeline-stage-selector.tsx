@@ -14,6 +14,7 @@ interface PipelineStageSelectorProps {
   onToggleFullscreen: () => void;
   isListCollapsed: boolean;
   onToggleCollapse: () => void;
+  onDropCandidate?: (candidateId: string, fromStage: ApplicationStage, toStage: ApplicationStage) => void;
 }
 
 export function PipelineStageSelector({
@@ -25,6 +26,7 @@ export function PipelineStageSelector({
   onToggleFullscreen,
   isListCollapsed,
   onToggleCollapse,
+  onDropCandidate,
 }: PipelineStageSelectorProps) {
   const { t } = useI18n();
 
@@ -38,8 +40,26 @@ export function PipelineStageSelector({
           return (
             <button
               key={stage.id}
+              data-testid={`stage-pill-${stage.id}`}
               type="button"
               onClick={() => onSelectStage(stage.id)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                try {
+                  const raw = e.dataTransfer.getData("application/json");
+                  if (!raw) return;
+                  const parsed = JSON.parse(raw);
+                  if (parsed.id && parsed.stage && onDropCandidate) {
+                    onDropCandidate(parsed.id, parsed.stage, stage.id);
+                  }
+                } catch {
+                  // Ignore
+                }
+              }}
               className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer whitespace-nowrap ${
                 isSelected
                   ? stage.activePill

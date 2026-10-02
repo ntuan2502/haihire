@@ -29,6 +29,8 @@ import {
   normalizeInterviewType,
   INTERVIEW_TYPE_OPTIONS,
 } from "@/lib/interviews";
+import { canTransition } from "@/lib/stages";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { useI18n } from "@/i18n";
 import type { Application, Job, Interview, InterviewType, InterviewFormat } from "@/types";
 
@@ -206,8 +208,8 @@ export function ScheduleInterviewModal({
           round: (candidate.interviews?.length || 0) + 1,
         });
 
-        // If candidate is still in APPLIED/SCREENING stage, advance to INTERVIEW stage
-        if (candidate.stage !== "INTERVIEW" && candidate.stage !== "OFFER" && candidate.stage !== "HIRED") {
+        // If candidate stage can transition to INTERVIEW stage according to state machine, advance
+        if (canTransition(candidate.stage, "INTERVIEW")) {
           await updateStageMutation.mutateAsync({
             id: candidate.id,
             stage: "INTERVIEW",
@@ -220,7 +222,7 @@ export function ScheduleInterviewModal({
       onClose();
     } catch (err) {
       console.error("Schedule interview failed:", err);
-      setFormError(t("interviews.errors.saveFailed"));
+      setFormError(getApiErrorMessage(err, t));
     }
   };
 

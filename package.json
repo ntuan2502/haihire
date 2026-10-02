@@ -15,6 +15,8 @@
     "build:frontend": "pnpm --filter ./frontend run build",
     "lint": "pnpm --filter ./backend --filter ./frontend --parallel run lint",
     "lint:dtopipe": "node --no-warnings --experimental-strip-types scripts/check-dtopipe-coverage.ts",
+    "lint:error-i18n": "tsx scripts/check-error-code-i18n.ts",
+    "lint:api-contract": "tsx scripts/check-api-contract-coverage.ts",
     "typecheck": "pnpm run typecheck:backend && pnpm run typecheck:frontend",
     "typecheck:backend": "pnpm --filter ./backend run typecheck",
     "typecheck:frontend": "pnpm --filter ./frontend run typecheck",
@@ -46,6 +48,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "tsx": "^4.23.15"
   }
 }

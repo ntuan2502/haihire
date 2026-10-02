@@ -115,7 +115,6 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
       {/* Schema.org JobPosting Structured Data for SEO / Search Engine Preview */}
       <script
         type="application/ld+json"
-        suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 

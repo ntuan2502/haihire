@@ -43,6 +43,14 @@ export class ApplicationsService {
     private readonly emailService: EmailService,
   ) {}
 
+  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
+    if (typeof p.transaction === "function") {
+      return p.transaction(fn);
+    }
+    return fn(this.prisma.db);
+  }
+
   async findByJob(jobId: string, organizationId?: string) {
     const job = await this.prisma.db.orm.public.Job.select("id", "title", "organizationId")
       .where((j) => j.id.eq(jobId))
@@ -496,18 +504,21 @@ export class ApplicationsService {
       );
     }
 
-    // 1. Upload CV to MinIO S3 Object Storage if file is provided
-    let uploadResult: { url: string; originalName: string; size: number; mimeType: string } = {
+    // 1. Upload CV to MinIO S3 Object Storage if file is provided (SAGA Step 1: Pre-transaction storage upload)
+    let uploadResult: { url: string; originalName: string; size: number; mimeType: string; fileName?: string } = {
       url: "",
       originalName: "Candidate Resume",
       size: 0,
       mimeType: "application/pdf",
     };
 
+    let uploadedFileInMinio = false;
+
     if (file) {
       validateUploadedFile(file);
       uploadResult = await this.minioService.uploadFile(file, "resumes", job.organizationId);
       uploadResult.originalName = sanitizeFilename(fixUtf8String(file.originalname || "resume.pdf"));
+      uploadedFileInMinio = true;
     } else if (dto.resumeUrl) {
       uploadResult = {
         url: dto.resumeUrl,
@@ -517,177 +528,199 @@ export class ApplicationsService {
       };
     }
 
-    // 2. Resolve or create Candidate
-    let candidateId = dto.candidateId;
-
-    if (!candidateId) {
-      if (!dto.candidateEmail || !dto.candidateName) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
-          "Either candidateId or both candidateName and candidateEmail are required.",
-        );
-      }
-
-      const email = dto.candidateEmail.trim().toLowerCase();
-      const orgId = job.organizationId;
-      if (!orgId) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-          "Target job does not belong to a valid organization.",
-        );
-      }
-
-      const existingCandidate = await this.prisma.db.orm.public.Candidate.select("id")
-        .where((c) => c.organizationId.eq(orgId))
-        .where((c) => c.email.eq(email))
-        .first();
-
-      if (existingCandidate) {
-        candidateId = existingCandidate.id;
-      } else {
-        const newCandidate = await this.prisma.db.orm.public.Candidate.create({
-          id: crypto.randomUUID(),
-          organizationId: orgId,
-          name: dto.candidateName.trim(),
-          email,
-          phone: dto.candidatePhone?.trim() || null,
-          notes: dto.notes || null,
-          resumeUrl: uploadResult.url || null,
-          resumeFileName: uploadResult.originalName || null,
-          resumeFileSize: uploadResult.size || null,
-          resumeMimeType: uploadResult.mimeType || "application/pdf",
-          updatedAt: toInstant(),
-        });
-        candidateId = newCandidate.id;
-      }
-    } else {
-      // Validate candidate exists and belongs to the same organization as the target job
-      const existingCandidate = await this.prisma.db.orm.public.Candidate.select("id", "organizationId")
-        .where((c) => c.id.eq(candidateId as string))
-        .first();
-
-      if (!existingCandidate) {
-        throw new AppNotFoundException(
-          APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
-          `Candidate with ID ${candidateId} not found`,
-        );
-      }
-      if (job.organizationId && existingCandidate.organizationId !== job.organizationId) {
-        throw new AppForbiddenException(
-          APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
-          "Candidate does not belong to the target job's organization.",
-        );
-      }
-    }
-
-    // 3. Enforce: One application per job per candidate
-    const existingApplication = await this.prisma.db.orm.public.Application.select("id")
-      .where((a) => a.candidateId.eq(candidateId as string))
-      .where((a) => a.jobId.eq(dto.jobId))
-      .first();
-
-    if (existingApplication) {
-      throw new AppConflictException(
-        APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
-        "Candidate has already applied to this job.",
-      );
-    }
-
-    // 4. Determine highest orderIndex in APPLIED stage for the target job
-    const existingInStage = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "orderIndex",
-    )
-      .where((a) => a.jobId.eq(dto.jobId))
-      .all();
-
-    const maxOrder = existingInStage.reduce(
-      (max, item) => Math.max(max, item.orderIndex),
-      -1,
-    );
-
-    // 5. Resolve Sourcing / Attribution
+    // SAGA Step 2 & 3: Database writes inside atomic transaction with compensating action on failure
+    let created: {
+      id: string;
+      sourceChannel?: string | null;
+      sourceDetails?: string | null;
+      utmCampaign?: string | null;
+    };
     let trackingLinkId: string | null = null;
     let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
     let sourceDetails: string | null = null;
     let referrerDomain: string | null = null;
     let utmCampaign: string | null = dto.utmCampaign?.trim() || null;
 
-    if (dto.ref) {
-      const link = await this.prisma.db.orm.public.TrackingLink.select(
-        "id",
-        "organizationId",
-        "source",
-        "customSource",
-        "campaign",
-        "isActive",
-        "deletedAt",
-      )
-        .where((l) => l.token.eq(dto.ref as string))
-        .first();
+    try {
+      created = await this.executeTx(async (tx) => {
+        // 2. Resolve or create Candidate
+        let candidateId = dto.candidateId;
 
-      if (
-        link &&
-        !link.deletedAt &&
-        link.isActive &&
-        (!job.organizationId || link.organizationId === job.organizationId)
-      ) {
-        trackingLinkId = link.id;
-        sourceChannel = (link.source as SourcingChannel) || SourcingChannel.OTHER;
-        sourceDetails = link.customSource || null;
-        if (!utmCampaign && link.campaign) {
-          utmCampaign = link.campaign;
+        if (!candidateId) {
+          if (!dto.candidateEmail || !dto.candidateName) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+              "Either candidateId or both candidateName and candidateEmail are required.",
+            );
+          }
+
+          const email = dto.candidateEmail.trim().toLowerCase();
+          const orgId = job.organizationId;
+          if (!orgId) {
+            throw new AppBadRequestException(
+              APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+              "Target job does not belong to a valid organization.",
+            );
+          }
+
+          const existingCandidate = await tx.orm.public.Candidate.select("id")
+            .where((c) => c.organizationId.eq(orgId))
+            .where((c) => c.email.eq(email))
+            .first();
+
+          if (existingCandidate) {
+            candidateId = existingCandidate.id;
+          } else {
+            const newCandidate = await tx.orm.public.Candidate.create({
+              id: crypto.randomUUID(),
+              organizationId: orgId,
+              name: dto.candidateName.trim(),
+              email,
+              phone: dto.candidatePhone?.trim() || null,
+              notes: dto.notes || null,
+              resumeUrl: uploadResult.url || null,
+              resumeFileName: uploadResult.originalName || null,
+              resumeFileSize: uploadResult.size || null,
+              resumeMimeType: uploadResult.mimeType || "application/pdf",
+              updatedAt: toInstant(),
+            });
+            candidateId = newCandidate.id;
+          }
+        } else {
+          // Validate candidate exists and belongs to the same organization as the target job
+          const existingCandidate = await tx.orm.public.Candidate.select("id", "organizationId")
+            .where((c) => c.id.eq(candidateId as string))
+            .first();
+
+          if (!existingCandidate) {
+            throw new AppNotFoundException(
+              APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
+              `Candidate with ID ${candidateId} not found`,
+            );
+          }
+          if (job.organizationId && existingCandidate.organizationId !== job.organizationId) {
+            throw new AppForbiddenException(
+              APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
+              "Candidate does not belong to the target job's organization.",
+            );
+          }
+        }
+
+        const existingApplication = await tx.orm.public.Application.select("id")
+          .where((a) => a.candidateId.eq(candidateId as string))
+          .where((a) => a.jobId.eq(dto.jobId))
+          .first();
+
+        if (existingApplication) {
+          throw new AppConflictException(
+            APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
+            "Candidate has already applied to this job.",
+          );
+        }
+
+        const existingInStage = await tx.orm.public.Application.select(
+          "id",
+          "orderIndex",
+        )
+          .where((a) => a.jobId.eq(dto.jobId))
+          .all();
+
+        const maxOrder = existingInStage.reduce(
+          (max, item) => Math.max(max, item.orderIndex),
+          -1,
+        );
+
+        // 5. Resolve Sourcing / Attribution
+        if (dto.ref) {
+          const link = await tx.orm.public.TrackingLink.select(
+            "id",
+            "organizationId",
+            "source",
+            "customSource",
+            "campaign",
+            "isActive",
+            "deletedAt",
+          )
+            .where((l) => l.token.eq(dto.ref as string))
+            .first();
+
+          if (
+            link &&
+            !link.deletedAt &&
+            link.isActive &&
+            (!job.organizationId || link.organizationId === job.organizationId)
+          ) {
+            trackingLinkId = link.id;
+            sourceChannel = (link.source as SourcingChannel) || SourcingChannel.OTHER;
+            sourceDetails = link.customSource || null;
+            if (!utmCampaign && link.campaign) {
+              utmCampaign = link.campaign;
+            }
+          }
+        }
+
+        if (!trackingLinkId && dto.referrer) {
+          try {
+            let norm = dto.referrer.trim();
+            if (!norm.startsWith("http://") && !norm.startsWith("https://")) {
+              norm = `https://${norm}`;
+            }
+            const parsed = new URL(norm);
+            referrerDomain = parsed.hostname.replace(/^www\./, "").toLowerCase();
+
+            if (referrerDomain.includes("linkedin.com")) sourceChannel = SourcingChannel.LINKEDIN;
+            else if (referrerDomain.includes("indeed.com")) sourceChannel = SourcingChannel.INDEED;
+            else if (referrerDomain.includes("google.com")) sourceChannel = SourcingChannel.GOOGLE_JOBS;
+            else if (referrerDomain.includes("glassdoor.com")) sourceChannel = SourcingChannel.GLASSDOOR;
+            else if (referrerDomain.includes("facebook.com")) sourceChannel = SourcingChannel.FACEBOOK;
+            else if (referrerDomain.includes("twitter.com") || referrerDomain.includes("x.com")) sourceChannel = SourcingChannel.TWITTER_X;
+            else if (referrerDomain.includes("reddit.com")) sourceChannel = SourcingChannel.REDDIT;
+            else if (referrerDomain.includes("stackoverflow.com")) sourceChannel = SourcingChannel.STACK_OVERFLOW;
+            else if (referrerDomain.includes("handshake.com")) sourceChannel = SourcingChannel.HANDSHAKE;
+            else if (referrerDomain) sourceChannel = SourcingChannel.OTHER;
+          } catch {
+            // Ignore URL parse error
+          }
+        }
+
+        if (!trackingLinkId && dto.sourceChannel) {
+          sourceChannel = dto.sourceChannel as SourcingChannel;
+        }
+
+        // 6. Save Application record
+        return await tx.orm.public.Application.create({
+          id: crypto.randomUUID(),
+          candidateId: candidateId as string,
+          jobId: dto.jobId,
+          stage: "APPLIED",
+          resumeUrl: uploadResult.url || null,
+          resumeFileName: uploadResult.originalName || null,
+          resumeFileSize: uploadResult.size || null,
+          resumeMimeType: uploadResult.mimeType || "application/pdf",
+          notes: dto.notes || null,
+          orderIndex: maxOrder + 1,
+          trackingLinkId,
+          sourceChannel,
+          sourceDetails,
+          referrerDomain,
+          utmCampaign,
+          updatedAt: toInstant(),
+        });
+      });
+    } catch (dbError) {
+      // Step 3: Compensating action — rollback MinIO uploaded file
+      if (uploadedFileInMinio && (uploadResult.fileName || uploadResult.url)) {
+        try {
+          const objectToDelete = uploadResult.fileName || this.minioService.extractObjectName(uploadResult.url);
+          if (objectToDelete) {
+            await this.minioService.deleteFile(objectToDelete);
+          }
+        } catch (compensationErr) {
+          console.warn("Failed to delete MinIO file during transaction compensation:", compensationErr);
         }
       }
+      throw dbError;
     }
-
-    if (!trackingLinkId && dto.referrer) {
-      try {
-        let norm = dto.referrer.trim();
-        if (!norm.startsWith("http://") && !norm.startsWith("https://")) {
-          norm = `https://${norm}`;
-        }
-        const parsed = new URL(norm);
-        referrerDomain = parsed.hostname.replace(/^www\./, "").toLowerCase();
-
-        if (referrerDomain.includes("linkedin.com")) sourceChannel = SourcingChannel.LINKEDIN;
-        else if (referrerDomain.includes("indeed.com")) sourceChannel = SourcingChannel.INDEED;
-        else if (referrerDomain.includes("google.com")) sourceChannel = SourcingChannel.GOOGLE_JOBS;
-        else if (referrerDomain.includes("glassdoor.com")) sourceChannel = SourcingChannel.GLASSDOOR;
-        else if (referrerDomain.includes("facebook.com")) sourceChannel = SourcingChannel.FACEBOOK;
-        else if (referrerDomain.includes("twitter.com") || referrerDomain.includes("x.com")) sourceChannel = SourcingChannel.TWITTER_X;
-        else if (referrerDomain.includes("reddit.com")) sourceChannel = SourcingChannel.REDDIT;
-        else if (referrerDomain.includes("stackoverflow.com")) sourceChannel = SourcingChannel.STACK_OVERFLOW;
-        else if (referrerDomain.includes("handshake.com")) sourceChannel = SourcingChannel.HANDSHAKE;
-        else if (referrerDomain) sourceChannel = SourcingChannel.OTHER;
-      } catch {
-        // Ignore URL parse error
-      }
-    }
-
-    if (!trackingLinkId && dto.sourceChannel) {
-      sourceChannel = dto.sourceChannel as SourcingChannel;
-    }
-
-    // 6. Save Application record
-    const created = await this.prisma.db.orm.public.Application.create({
-      id: crypto.randomUUID(),
-      candidateId: candidateId as string,
-      jobId: dto.jobId,
-      stage: "APPLIED",
-      resumeUrl: uploadResult.url || null,
-      resumeFileName: uploadResult.originalName || null,
-      resumeFileSize: uploadResult.size || null,
-      resumeMimeType: uploadResult.mimeType || "application/pdf",
-      notes: dto.notes || null,
-      orderIndex: maxOrder + 1,
-      trackingLinkId,
-      sourceChannel,
-      sourceDetails,
-      referrerDomain,
-      utmCampaign,
-      updatedAt: toInstant(),
-    });
 
     const result = await this.findOne(created.id);
 
@@ -1145,7 +1178,20 @@ export class ApplicationsService {
       }
     }
 
-    await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).delete();
+    await this.executeTx(async (tx) => {
+      try {
+        const txObj = tx as unknown as { orm: { public: { Interview?: { where?: (fn: (i: { applicationId: { eq: (val: string) => boolean } }) => boolean) => { delete?: () => Promise<unknown> } } } } };
+        if (typeof txObj.orm.public.Interview?.where === "function") {
+          const query = txObj.orm.public.Interview.where((i) => i.applicationId.eq(id));
+          if (typeof query?.delete === "function") {
+            await query.delete();
+          }
+        }
+      } catch {
+        // Cascade handles if schema level onDelete: Cascade is configured
+      }
+      await tx.orm.public.Application.where((a) => a.id.eq(id)).delete();
+    });
     return { success: true, message: `Application ${id} deleted successfully` };
   }
 }

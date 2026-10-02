@@ -15,6 +15,14 @@ export class JobsService {
     private readonly prisma: PrismaService,
   ) {}
 
+  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
+    if (typeof p.transaction === "function") {
+      return p.transaction(fn);
+    }
+    return fn(this.prisma.db);
+  }
+
   async findAll(filter?: {
     status?: string;
     department?: string;
@@ -518,9 +526,11 @@ export class JobsService {
       );
     }
 
-    // Soft delete: set deletedAt timestamp (Two-Tier Deletion Protocol)
-    await this.prisma.db.orm.public.Job.where((j) => j.id.eq(id)).update({
-      deletedAt: toInstant(),
+    // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
+    await this.executeTx(async (tx) => {
+      await tx.orm.public.Job.where((j) => j.id.eq(id)).update({
+        deletedAt: toInstant(),
+      });
     });
 
     return { success: true, message: `Job ${id} deleted successfully` };

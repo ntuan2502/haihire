@@ -9,7 +9,7 @@ x-logging: &default-logging
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.6-alpine
     container_name: haihire-postgres
     restart: unless-stopped
     environment:
@@ -31,7 +31,7 @@ services:
 
   # MinIO Object Storage (S3 Compatible)
   minio:
-    image: alpine/minio:latest-release
+    image: alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4
     container_name: haihire-minio
     user: "0:0"
     restart: unless-stopped
@@ -53,9 +53,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis (Cache & Asynchronous Queue)
+  # Redis / Valkey (Cache & Asynchronous Queue)
   redis:
-    image: redis:alpine
+    image: valkey/valkey:8.0.2-alpine
     container_name: haihire-redis
     restart: unless-stopped
     command: >

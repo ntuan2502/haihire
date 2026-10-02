@@ -26,7 +26,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:17.6-alpine
         env:
           POSTGRES_USER: haihire_test
           POSTGRES_PASSWORD: haihire_test_password
@@ -40,7 +40,7 @@ jobs:
           --health-retries 5
 
       redis:
-        image: redis:alpine
+        image: valkey/valkey:8.0.2-alpine
         ports:
           - 6379:6379
         options: >-

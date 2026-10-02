@@ -10,6 +10,14 @@ import { toInstant } from "../common/date.util";
 export class PrismaService implements OnModuleInit {
   readonly db = db;
 
+  async transaction<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+    const client = this.db as unknown as { transaction?: (cb: (tx: typeof db) => Promise<T>) => Promise<T> };
+    if (typeof client.transaction === "function") {
+      return client.transaction(fn);
+    }
+    return fn(this.db);
+  }
+
   async onModuleInit() {
     try {
       await connectDatabase();

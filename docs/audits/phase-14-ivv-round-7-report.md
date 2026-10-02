@@ -129,7 +129,7 @@ export const apiClient = axios.create({
 ```
 
 #### B. Runtime Test 1: Đăng nhập nhận `Set-Cookie`
-- **Request:** `POST http://127.0.0.1:13001/auth/login` với `{ email: "admin@tun.io.vn", password: "password123" }`
+- **Request:** `POST http://127.0.0.1:13001/auth/login` với `{ email: "admin@tun.io.vn", password: "[REDACTED_DEMO_PASSWORD]" }`
 - **Response Headers:**
 ```http
 HTTP/1.1 200 OK

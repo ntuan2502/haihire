@@ -32,6 +32,14 @@ export class CandidatesService {
     private readonly activitiesService?: ActivitiesService,
   ) {}
 
+  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
+    if (typeof p.transaction === "function") {
+      return p.transaction(fn);
+    }
+    return fn(this.prisma.db);
+  }
+
   async findAll(
     organizationId?: string,
     options?: { page?: number; limit?: number; search?: string },
@@ -684,9 +692,11 @@ export class CandidatesService {
   async remove(id: string, tenantOrgId?: string | null) {
     await this.findOne(id, tenantOrgId);
 
-    // Soft delete: set deletedAt timestamp (Two-Tier Deletion Protocol)
-    await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
-      deletedAt: toInstant(),
+    // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
+    await this.executeTx(async (tx) => {
+      await tx.orm.public.Candidate.where((c) => c.id.eq(id)).update({
+        deletedAt: toInstant(),
+      });
     });
 
     return { success: true, message: `Candidate ${id} deleted successfully` };

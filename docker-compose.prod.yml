@@ -11,7 +11,7 @@ services:
   # 1. PostgreSQL Database Service (Internal Network Only - No Exposed Ports)
   # ------------------------------------------------------------------------------
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.6-alpine
     container_name: haihire-prod-postgres
     restart: unless-stopped
     environment:
@@ -39,10 +39,10 @@ services:
       start_period: 10s
 
   # ------------------------------------------------------------------------------
-  # 2. Redis Cache & Async Job Queue (Internal Network Only - No Exposed Ports)
+  # 2. Valkey Cache & Async Job Queue (Internal Network Only - No Exposed Ports)
   # ------------------------------------------------------------------------------
   redis:
-    image: redis:alpine
+    image: valkey/valkey:8.0.2-alpine
     container_name: haihire-prod-redis
     restart: unless-stopped
     command: >
@@ -78,7 +78,7 @@ services:
   # 3. MinIO S3 Object Storage (Internal API Network - No Direct Host Ports)
   # ------------------------------------------------------------------------------
   minio:
-    image: alpine/minio:latest-release
+    image: alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4
     container_name: haihire-prod-minio
     restart: unless-stopped
     command: server /data

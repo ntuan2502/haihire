@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "runId": "20261002-155429-920",
+  "strategy": "merge",
+  "toolkitVersion": "2026.8.31",
+  "createdAt": "2026-10-02T15:54:30.407Z",
+  "backupDir": "C:\\Workspaces\\haihire\\.ag-kit-backups\\20261002-155429-920",
+  "summary": {
+    "actions": 15,
+    "conflicts": 0,
+    "preserved": 6,
+    "unchanged": 200
+  },
+  "actions": [
+    {
+      "type": "update",
+      "file": "CHANGELOG.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "DEPENDENCY_GRAPH.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "VERSION",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "manifest.json",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "manifest.lock.json",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/SKILL.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/agent-coordination.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/feature-building.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/project-detection.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/scaffolding.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/tech-stack.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/templates/express-api/TEMPLATE.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/templates/nextjs-fullstack/TEMPLATE.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/templates/nextjs-saas/TEMPLATE.md",
+      "reason": "changed upstream and unchanged locally"
+    },
+    {
+      "type": "update",
+      "file": "skills/app-builder/templates/nextjs-static/TEMPLATE.md",
+      "reason": "changed upstream and unchanged locally"
+    }
+  ],
+  "conflicts": [],
+  "preserved": [
+    {
+      "file": "memory/MEMORY.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "memory/feedback-history.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "memory/project-conventions.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "memory/tech-decisions.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "memory/user-preferences.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "rules/code-rules.md",
+      "reason": "changed locally only"
+    }
+  ]
+}

@@ -15,7 +15,6 @@ export interface HealthCheckResult {
     postgres: "up" | "down";
     redis: "up" | "down";
     minio: "up" | "down";
-    database: "up" | "down";
   };
   downServices?: string[];
 }
@@ -112,7 +111,6 @@ export class AppService {
         postgres: postgresStatus,
         redis: redisStatus,
         minio: minioStatus,
-        database: postgresStatus,
       },
       ...(downServices.length > 0 ? { downServices } : {}),
     };

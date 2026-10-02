@@ -23,6 +23,7 @@ import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { resumeFileFilter } from "../common/upload-utils";
+import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("candidates")
 @UseGuards(AuthGuard("jwt"))
@@ -74,7 +75,7 @@ export class CandidatesController {
     }),
   )
   create(
-    @Body() dto: CreateCandidateDto,
+    @Body(DtoPipe(CreateCandidateDto)) dto: CreateCandidateDto,
     @UploadedFile() file: Express.Multer.File,
     @Request() req: { user?: { organizationId?: string | null } },
   ) {
@@ -90,7 +91,7 @@ export class CandidatesController {
   @Roles("ADMIN")
   update(
     @Param("id") id: string,
-    @Body() dto: UpdateCandidateDto,
+    @Body(DtoPipe(UpdateCandidateDto)) dto: UpdateCandidateDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.candidatesService.update(id, dto, req?.user?.organizationId);

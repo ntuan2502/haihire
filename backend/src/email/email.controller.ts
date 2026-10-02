@@ -19,6 +19,7 @@ import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
 import { SendSystemEmailDto, SendSystemTestEmailDto } from "./dto/send-system-email.dto";
+import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("email")
 @UseGuards(AuthGuard("jwt"), RolesGuard)
@@ -45,7 +46,7 @@ export class EmailController {
   @Roles("ADMIN")
   updateTemplate(
     @Param("type") type: string,
-    @Body() dto: UpdateEmailTemplateDto,
+    @Body(DtoPipe(UpdateEmailTemplateDto)) dto: UpdateEmailTemplateDto,
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
@@ -63,7 +64,7 @@ export class EmailController {
   @Put("settings")
   @Roles("ADMIN")
   updateSettings(
-    @Body() dto: UpdateEmailSettingDto,
+    @Body(DtoPipe(UpdateEmailSettingDto)) dto: UpdateEmailSettingDto,
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
@@ -73,7 +74,7 @@ export class EmailController {
   @Post("send")
   @Roles("ADMIN")
   sendEmail(
-    @Body() dto: SendEmailDto,
+    @Body(DtoPipe(SendEmailDto)) dto: SendEmailDto,
     @Request() req: { user: { id: string; name: string; email: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
@@ -83,7 +84,7 @@ export class EmailController {
   @Post("test")
   @Roles("ADMIN")
   sendTestEmail(
-    @Body() dto: SendTestEmailDto,
+    @Body(DtoPipe(SendTestEmailDto)) dto: SendTestEmailDto,
     @Request() req: { user: { id: string; name: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
   ) {
@@ -121,13 +122,13 @@ export class EmailController {
 
   @Post("system/test")
   @Roles("ADMIN")
-  sendSystemTestEmail(@Body() dto: SendSystemTestEmailDto) {
+  sendSystemTestEmail(@Body(DtoPipe(SendSystemTestEmailDto)) dto: SendSystemTestEmailDto) {
     return this.emailService.sendSystemTestEmail(dto);
   }
 
   @Post("system/send")
   @Roles("ADMIN")
-  sendSystemEmail(@Body() dto: SendSystemEmailDto) {
+  sendSystemEmail(@Body(DtoPipe(SendSystemEmailDto)) dto: SendSystemEmailDto) {
     return this.emailService.sendSystemEmail(dto);
   }
 

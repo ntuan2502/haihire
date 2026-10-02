@@ -38,22 +38,19 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy root package manifests
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.json ./
-COPY packages/shared/package.json ./packages/shared/
-COPY backend/package.json ./backend/
+COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.json ./
+COPY --chown=node:node packages/shared/package.json ./packages/shared/
+COPY --chown=node:node backend/package.json ./backend/
 
 # Install production dependencies with cache mount (instantaneous from cache)
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --prod --filter @haihire/shared --filter backend... --frozen-lockfile || \
     pnpm install --prod --filter @haihire/shared --filter backend...
 
-# Copy compiled code, Prisma 8 schema & contract
-COPY --from=builder /app/packages/shared/src ./packages/shared/src
-COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/backend/src/prisma ./backend/src/prisma
-
-# Use non-root node user for container security
-RUN chown -R node:node /app
+# Copy compiled code, Prisma 8 schema & contract with non-root ownership
+COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src
+COPY --chown=node:node --from=builder /app/backend/dist ./backend/dist
+COPY --chown=node:node --from=builder /app/backend/src/prisma ./backend/src/prisma
 
 WORKDIR /app/backend
 

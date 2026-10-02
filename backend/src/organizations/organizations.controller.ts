@@ -16,9 +16,15 @@ import { OrganizationsService } from "./organizations.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
+import {
+  SwitchOrgDto,
+  UpdateMemberRoleDto,
+  CreateInviteLinkDto,
+} from "./dto/org-actions.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
+import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("organizations")
 export class OrganizationsController {
@@ -32,7 +38,7 @@ export class OrganizationsController {
   @HttpCode(HttpStatus.CREATED)
   create(
     @Request() req: { user: { id: string } },
-    @Body() dto: CreateOrgDto,
+    @Body(DtoPipe(CreateOrgDto)) dto: CreateOrgDto,
   ) {
     return this.orgsService.create(req.user.id, dto);
   }
@@ -42,7 +48,7 @@ export class OrganizationsController {
   @HttpCode(HttpStatus.OK)
   join(
     @Request() req: { user: { id: string } },
-    @Body() dto: JoinOrgDto,
+    @Body(DtoPipe(JoinOrgDto)) dto: JoinOrgDto,
   ) {
     return this.orgsService.join(req.user.id, dto);
   }
@@ -64,7 +70,7 @@ export class OrganizationsController {
   @HttpCode(HttpStatus.OK)
   switchOrg(
     @Request() req: { user: { id: string } },
-    @Body() body: { organizationId: string },
+    @Body(DtoPipe(SwitchOrgDto)) body: SwitchOrgDto,
   ) {
     return this.orgsService.switchOrg(req.user.id, body.organizationId);
   }
@@ -80,7 +86,7 @@ export class OrganizationsController {
   updateMemberRole(
     @Request() req: { user: { id: string } },
     @Param("memberId") memberId: string,
-    @Body() body: { role: "ADMIN" | "MEMBER" },
+    @Body(DtoPipe(UpdateMemberRoleDto)) body: UpdateMemberRoleDto,
   ) {
     return this.orgsService.updateMemberRole(req.user.id, memberId, body.role);
   }
@@ -99,7 +105,7 @@ export class OrganizationsController {
   @Patch("my")
   updateMyOrg(
     @Request() req: { user: { id: string } },
-    @Body() dto: UpdateOrgDto,
+    @Body(DtoPipe(UpdateOrgDto)) dto: UpdateOrgDto,
   ) {
     return this.orgsService.updateMyOrg(req.user.id, dto);
   }
@@ -119,7 +125,7 @@ export class OrganizationsController {
   @Post("my/invite-links")
   createInviteLink(
     @Request() req: { user: { id: string } },
-    @Body() dto: { role?: string; expiresIn?: string; maxUses?: string },
+    @Body(DtoPipe(CreateInviteLinkDto)) dto: CreateInviteLinkDto,
   ) {
     return this.orgsService.createInviteLink(req.user.id, dto);
   }

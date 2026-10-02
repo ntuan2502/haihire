@@ -17,6 +17,7 @@ import { Roles } from "../auth/roles.decorator";
 import { InterviewsService } from "./interviews.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
+import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("interviews")
 @UseGuards(AuthGuard("jwt"))
@@ -65,7 +66,7 @@ export class InterviewsController {
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
   create(
-    @Body() dto: CreateInterviewDto,
+    @Body(DtoPipe(CreateInterviewDto)) dto: CreateInterviewDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.interviewsService.create(dto, req?.user?.organizationId);
@@ -76,7 +77,7 @@ export class InterviewsController {
   @Roles("ADMIN")
   update(
     @Param("id") id: string,
-    @Body() dto: UpdateInterviewDto,
+    @Body(DtoPipe(UpdateInterviewDto)) dto: UpdateInterviewDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.interviewsService.update(id, dto, req?.user?.organizationId);

@@ -9,6 +9,7 @@ import {
   Request,
   Res,
   UseGuards,
+  ValidationPipe,
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import type { Response } from "express";
@@ -42,7 +43,7 @@ export class AuthController {
   @Post("login")
   @HttpCode(HttpStatus.OK)
   async login(
-    @Body() dto: LoginDto,
+    @Body(new ValidationPipe({ transform: true, whitelist: true, expectedType: LoginDto })) dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(dto);
@@ -54,7 +55,7 @@ export class AuthController {
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
   async register(
-    @Body() dto: RegisterDto,
+    @Body(new ValidationPipe({ transform: true, whitelist: true, expectedType: RegisterDto })) dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.register(dto);
@@ -66,7 +67,7 @@ export class AuthController {
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
   async refresh(
-    @Body() dto: RefreshTokenDto,
+    @Body(new ValidationPipe({ transform: true, whitelist: true, expectedType: RefreshTokenDto })) dto: RefreshTokenDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.refreshToken(dto);

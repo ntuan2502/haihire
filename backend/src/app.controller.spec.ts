@@ -29,7 +29,6 @@ describe("AppController", () => {
         postgres: "up",
         redis: "up",
         minio: "up",
-        database: "up",
       },
     };
     const mockService = {
@@ -53,7 +52,6 @@ describe("AppController", () => {
         postgres: "up",
         redis: "down",
         minio: "up",
-        database: "up",
       },
       downServices: ["redis"],
     };

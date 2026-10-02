@@ -1,0 +1,65 @@
+groups:
+  - name: haihire-production-alerts
+    rules:
+      - alert: HaiHireBackendDown
+        expr: up{job="haihire-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HaiHire Backend API instance is down"
+          description: "HaiHire backend instance has been unreachable for more than 1 minute."
+
+      - alert: HaiHirePostgresDown
+        expr: haihire_service_health{service="postgres"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database health check failed"
+          description: "Database connection has failed or timed out for >30s."
+
+      - alert: HaiHireRedisDown
+        expr: haihire_service_health{service="redis"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis cache / queue health check failed"
+          description: "Redis instance ping failed for >30s."
+
+      - alert: HaiHireMinioDown
+        expr: haihire_service_health{service="minio"} == 0
+        for: 1m
+        labels:
+          severity: high
+        annotations:
+          summary: "MinIO S3 storage health check failed"
+          description: "MinIO storage bucket check failed for >1m."
+
+      - alert: HaiHireHighHttp5xxErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 2m
+        labels:
+          severity: high
+        annotations:
+          summary: "High HTTP 5xx error rate (>5%)"
+          description: "HTTP 5xx error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes."
+
+      - alert: HaiHireHighHttpLatencyP95
+        expr: http_request_duration_ms{quantile="0.95"} > 1000
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP request latency (P95 > 1000ms)"
+          description: "95th percentile request latency exceeded 1000ms for 3 minutes."
+
+      - alert: HaiHireHighRateLimit429Rate
+        expr: rate(http_requests_total{status="429"}[5m]) > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High volume of rate-limited requests"
+          description: "Over 50 requests/sec are receiving HTTP 429 Too Many Requests (possible DDoS or brute-force)."

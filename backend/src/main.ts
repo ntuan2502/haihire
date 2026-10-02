@@ -32,8 +32,26 @@ async function bootstrap() {
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self';");
     next();
   });
+
+  // Production HTTPS redirection
+  if (env.NODE_ENV === "production") {
+    app.use((req: IncomingMessage & { secure?: boolean; headers: Record<string, string | string[] | undefined>; url?: string }, res: ServerResponse, next: () => void) => {
+      const forwardedProto = req.headers["x-forwarded-proto"];
+      const isHttps = req.secure || forwardedProto === "https";
+      if (!isHttps) {
+        const host = req.headers.host || "localhost";
+        res.writeHead(301, {
+          Location: `https://${host}${req.url || ""}`,
+        });
+        res.end();
+        return;
+      }
+      next();
+    });
+  }
 
   // Structured Logging & Prometheus Request Recording Middleware (Zero PII leak)
   app.use((req: IncomingMessage & { originalUrl?: string; url?: string; user?: { id?: string; organizationId?: string } }, res: ServerResponse, next: () => void) => {
@@ -104,14 +122,22 @@ async function bootstrap() {
   // Global exception filter handling Rate Limiting (429) and standard HTTP errors
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Graceful shutdown on SIGTERM / SIGINT
+  // Graceful shutdown on SIGTERM / SIGINT with 30s timeout guard
   const gracefulShutdown = async (signal: string) => {
     console.log(`[Lifecycle] Received ${signal}. Starting 30s graceful shutdown drain...`);
+    const forceExitTimer = setTimeout(() => {
+      console.error("[Lifecycle] Graceful shutdown timeout (30s) exceeded. Forcing process exit.");
+      process.exit(1);
+    }, 30000);
+    forceExitTimer.unref?.();
+
     try {
       await app.close();
+      clearTimeout(forceExitTimer);
       console.log("[Lifecycle] HaiHire backend shutdown completed cleanly.");
       process.exit(0);
     } catch (err: unknown) {
+      clearTimeout(forceExitTimer);
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[Lifecycle] Error during shutdown:", msg);
       process.exit(1);

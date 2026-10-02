@@ -55,7 +55,6 @@ describe("AppService", () => {
     expect(health.services.postgres).toBe("up");
     expect(health.services.redis).toBe("up");
     expect(health.services.minio).toBe("up");
-    expect(health.services.database).toBe("up");
     expect(health.downServices).toBeUndefined();
     expect(health.timestamp).toBeDefined();
     expect(health.uptime).toBeGreaterThanOrEqual(0);

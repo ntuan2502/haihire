@@ -1,7 +1,9 @@
 import { Controller, Get, Header, Inject, ServiceUnavailableException } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import { AppService } from "./app.service";
 import { MetricsService } from "./metrics/metrics.service";
 
+@SkipThrottle()
 @Controller()
 export class AppController {
   constructor(

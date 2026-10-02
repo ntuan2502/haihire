@@ -7,8 +7,19 @@ import { APP_ERROR_CODES } from "@haihire/shared";
 
 describe("ApplicationsService - Multi-Tenant Candidate & Application Management", () => {
   let service: ApplicationsService;
-  let mockPrismaService: unknown;
-  let mockMinioService: unknown;
+  let mockPrismaService: {
+    db: {
+      orm: {
+        public: Record<string, unknown>;
+      };
+    };
+  };
+  let mockMinioService: {
+    uploadFile: ReturnType<typeof vi.fn>;
+    deleteFile: ReturnType<typeof vi.fn>;
+    getObjectStream: ReturnType<typeof vi.fn>;
+    extractObjectName: ReturnType<typeof vi.fn>;
+  };
 
   interface MockJob {
     id: string;
@@ -55,23 +66,40 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
   let mockJobs: MockJob[] = [];
   let mockCandidates: MockCandidate[] = [];
   let mockApps: MockApp[] = [];
+  let mockCandidateDocs: Array<Record<string, unknown>> = [];
 
   beforeEach(() => {
+      mockCandidateDocs = [
+        {
+          id: "doc-1",
+          candidateId: "cand-1",
+          organizationId: "org-1",
+          name: "alice.pdf",
+          url: "https://s3.local/resumes/alice.pdf",
+          size: 1024,
+          mimeType: "application/pdf",
+          type: "Resume",
+          createdAt: new Date(),
+        },
+      ];
     mockJobs = [
       {
         id: "job-org1-a",
         title: "Frontend Developer",
         organizationId: "org-1",
+        status: "PUBLISHED",
       },
       {
         id: "job-org1-b",
         title: "Backend Developer",
         organizationId: "org-1",
+        status: "PUBLISHED",
       },
       {
         id: "job-org2-c",
         title: "Competitor Designer",
         organizationId: "org-2", // Belongs to different organization!
+        status: "PUBLISHED",
       },
     ];
 
@@ -168,17 +196,52 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     mockMinioService = {
       uploadFile: vi.fn().mockResolvedValue({
         url: "https://s3.local/resumes/uploaded.pdf",
-        fileName: "uploaded.pdf",
+        originalName: "uploaded.pdf",
         size: 512,
         mimeType: "application/pdf",
       }),
       deleteFile: vi.fn().mockResolvedValue(true),
+      getObjectStream: vi.fn().mockResolvedValue({
+        pipe: vi.fn(),
+      }),
+      extractObjectName: vi.fn().mockImplementation((url: string) => url.split("/").pop() || ""),
     };
 
     mockPrismaService = {
       db: {
         orm: {
           public: {
+            CandidateDocument: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation((predicateFn) => ({
+                  all: vi.fn().mockImplementation(async () => {
+                    return mockCandidateDocs.filter((d) => {
+                      const mockRecord = {
+                        candidateId: { eq: (target: string) => d.candidateId === target },
+                      };
+                      return predicateFn(mockRecord);
+                    });
+                  }),
+                })),
+              })),
+              create: vi.fn().mockImplementation(async (data) => {
+                mockCandidateDocs.push(data);
+                return data;
+              }),
+              where: vi.fn().mockImplementation((predicateFn) => ({
+                delete: vi.fn().mockImplementation(async () => {
+                  const idx = mockCandidateDocs.findIndex((d) => {
+                    const mockRecord = {
+                      id: { eq: (target: string) => d.id === target },
+                      url: { eq: (target: string) => d.url === target },
+                    };
+                    return predicateFn(mockRecord);
+                  });
+                  if (idx !== -1) mockCandidateDocs.splice(idx, 1);
+                  return { count: 1 };
+                }),
+              })),
+            },
             Job: {
               select: vi.fn().mockImplementation((..._fields: string[]) => ({
                 all: vi.fn().mockImplementation(async () => {
@@ -210,11 +273,14 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
               })),
             },
             Candidate: {
-              select: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockImplementation(async () => {
-                  return mockCandidates.map((c) => ({ ...c }));
-                }),
-                where: vi.fn().mockImplementation((predicateFn) => ({
+              create: vi.fn().mockImplementation(async (data) => {
+                const newCand = { id: `cand-${Date.now()}`, ...data, createdAt: new Date(), updatedAt: new Date() };
+                mockCandidates.push(newCand);
+                return newCand;
+              }),
+              select: vi.fn().mockImplementation(() => {
+                const createWhereBuilder = (predicates: Array<(r: Record<string, { eq?: (t: string) => boolean; in?: (a: string[]) => boolean }>) => boolean>) => ({
+                  where: vi.fn().mockImplementation((nextFn) => createWhereBuilder([...predicates, nextFn])),
                   all: vi.fn().mockImplementation(async () => {
                     return mockCandidates.filter((c) => {
                       const mockRecord = {
@@ -225,7 +291,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                         organizationId: { eq: (target: string) => c.organizationId === target },
                         email: { eq: (target: string) => c.email === target },
                       };
-                      return predicateFn(mockRecord);
+                      return predicates.every((fn) => fn(mockRecord));
                     });
                   }),
                   first: vi.fn().mockImplementation(async () => {
@@ -235,12 +301,17 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                         organizationId: { eq: (target: string) => c.organizationId === target },
                         email: { eq: (target: string) => c.email === target },
                       };
-                      return predicateFn(mockRecord);
+                      return predicates.every((fn) => fn(mockRecord));
                     });
                     return match ? { ...match } : null;
                   }),
-                })),
-              })),
+                });
+
+                return {
+                  all: vi.fn().mockImplementation(async () => mockCandidates.map((c) => ({ ...c }))),
+                  where: vi.fn().mockImplementation((predicateFn) => createWhereBuilder([predicateFn])),
+                };
+              }),
               where: vi.fn().mockImplementation((predicateFn) => ({
                 update: vi.fn().mockImplementation(async (updates) => {
                   const target = mockCandidates.find((c) => {
@@ -258,11 +329,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
               })),
             },
             Application: {
-              select: vi.fn().mockImplementation((..._fields: string[]) => ({
-                all: vi.fn().mockImplementation(async () => {
-                  return mockApps.map((a) => ({ ...a }));
-                }),
-                where: vi.fn().mockImplementation((predicateFn) => ({
+              select: vi.fn().mockImplementation((..._fields: string[]) => {
+                const createAppWhereBuilder = (predicates: Array<(r: Record<string, { eq?: (t: string) => boolean; in?: (a: string[]) => boolean }>) => boolean>) => ({
+                  where: vi.fn().mockImplementation((nextFn) => createAppWhereBuilder([...predicates, nextFn])),
                   all: vi.fn().mockImplementation(async () => {
                     return mockApps.filter((a) => {
                       const mockRecord = {
@@ -279,7 +348,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                           in: (arr: string[]) => arr.includes(a.candidateId),
                         },
                       };
-                      return predicateFn(mockRecord);
+                      return predicates.every((fn) => fn(mockRecord));
                     });
                   }),
                   first: vi.fn().mockImplementation(async () => {
@@ -289,12 +358,17 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
                         jobId: { eq: (target: string) => a.jobId === target },
                         candidateId: { eq: (target: string) => a.candidateId === target },
                       };
-                      return predicateFn(mockRecord);
+                      return predicates.every((fn) => fn(mockRecord));
                     });
                     return match ? { ...match } : null;
                   }),
-                })),
-              })),
+                });
+
+                return {
+                  all: vi.fn().mockImplementation(async () => mockApps.map((a) => ({ ...a }))),
+                  where: vi.fn().mockImplementation((predicateFn) => createAppWhereBuilder([predicateFn])),
+                };
+              }),
               create: vi.fn().mockImplementation(async (data) => {
                 const newApp = { id: `app-${Date.now()}`, ...data, createdAt: new Date(), updatedAt: new Date() };
                 mockApps.push(newApp);
@@ -527,6 +601,126 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       const result = await service.remove("app-1");
       expect(result.success).toBe(true);
       await expect(service.findOne("app-1")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("Application Creation & Validations", () => {
+    it("should throw when target job does not exist", async () => {
+      await expect(
+        service.create({
+          jobId: "non-existent-job",
+          candidateName: "Test Candidate",
+          candidateEmail: "test@example.com",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should throw when candidate belongs to different organization than job", async () => {
+      // cand-3 belongs to org-2, job-org1-a belongs to org-1
+      await expect(
+        service.create({
+          jobId: "job-org1-a",
+          candidateId: "cand-3",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should throw when candidate already applied to the same job", async () => {
+      // cand-1 is already applied to job-org1-a via app-1
+      await expect(
+        service.create({
+          jobId: "job-org1-a",
+          candidateId: "cand-1",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should throw when candidateId is missing and name/email are missing", async () => {
+      await expect(
+        service.create({
+          jobId: "job-org1-a",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should create application and new candidate when valid info provided", async () => {
+      const created = await service.create({
+        jobId: "job-org1-a",
+        candidateName: "David Beckham",
+        candidateEmail: "david@example.com",
+        candidatePhone: "0123456789",
+      });
+
+      expect(created).toBeDefined();
+      expect(created.candidateName).toBe("David Beckham");
+      expect(created.jobId).toBe("job-org1-a");
+    });
+  });
+
+  describe("Document Management & Downloads", () => {
+    it("should reject uploadDocument if file is missing", async () => {
+      await expect(
+        service.uploadDocument("app-2", null as never),
+      ).rejects.toThrow();
+    });
+
+    it("should upload document and attach to application and candidate", async () => {
+      const mockFile = {
+        originalname: "portfolio.pdf",
+        mimetype: "application/pdf",
+        size: 2048,
+        buffer: Buffer.from("%PDF-1.4\ntest pdf content\n%%EOF"),
+      } as Express.Multer.File;
+
+      const updated = await service.uploadDocument("app-2", mockFile, "Portfolio");
+      expect(updated).toBeDefined();
+      expect(mockMinioService.uploadFile).toHaveBeenCalled();
+    });
+
+    it("should get candidate documents list", async () => {
+      const docs = await service.getCandidateDocuments("cand-1");
+      expect(docs.length).toBeGreaterThanOrEqual(1);
+      expect(docs[0].name).toBe("alice.pdf");
+    });
+
+    it("should prepare document download stream", async () => {
+      const download = await service.prepareDocumentDownload(
+        "app-2",
+        "https://s3.local/resumes/bob.pdf",
+        "bob.pdf",
+        "org-1",
+        { id: "recruiter-1", name: "Recruiter Bob" },
+      );
+
+      expect(download.cleanFileName).toBe("bob.pdf");
+      expect(download.stream).toBeDefined();
+      expect(mockMinioService.getObjectStream).toHaveBeenCalled();
+    });
+
+    it("should block document download if targetUrl does not belong to application (SSRF guard)", async () => {
+      await expect(
+        service.prepareDocumentDownload(
+          "app-2",
+          "https://s3.local/other-org-bucket/secret.pdf",
+        ),
+      ).rejects.toThrow();
+    });
+
+    it("should delete document and clear resume fields from application", async () => {
+      const result = await service.deleteDocument("app-2", { url: "https://s3.local/resumes/bob.pdf" });
+      expect(result).toBeDefined();
+      expect(result.id).toBe("app-2");
+    });
+  });
+
+  describe("Job Query Guardrails", () => {
+    it("should reject findByJob if job does not exist", async () => {
+      await expect(service.findByJob("unknown-job-id")).rejects.toThrow();
+    });
+
+    it("should reject findByJob if job belongs to another organization", async () => {
+      // job-org2-c belongs to org-2
+      await expect(service.findByJob("job-org2-c", "org-1")).rejects.toThrow();
     });
   });
 });

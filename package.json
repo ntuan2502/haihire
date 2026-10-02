@@ -14,6 +14,7 @@
     "build:backend": "pnpm --filter ./backend run build",
     "build:frontend": "pnpm --filter ./frontend run build",
     "lint": "pnpm --filter ./backend --filter ./frontend --parallel run lint",
+    "lint:dtopipe": "node --no-warnings --experimental-strip-types scripts/check-dtopipe-coverage.ts",
     "typecheck": "pnpm run typecheck:backend && pnpm run typecheck:frontend",
     "typecheck:backend": "pnpm --filter ./backend run typecheck",
     "typecheck:frontend": "pnpm --filter ./frontend run typecheck",

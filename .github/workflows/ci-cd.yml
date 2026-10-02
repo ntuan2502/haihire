@@ -124,6 +124,9 @@ jobs:
       - name: Run linter and type checks
         run: pnpm lint
 
+      - name: Verify Controller DtoPipe Coverage Gate (PROCESS-IVV6-03)
+        run: pnpm lint:dtopipe
+
       - name: Run Unit & Integration Tests with Coverage (IVV3-04)
         run: |
           pnpm --filter ./backend run test --coverage

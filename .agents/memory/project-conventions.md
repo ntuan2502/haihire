@@ -188,13 +188,14 @@ updated: 2026-10-02T10:00
 - **snake_case for Table Names**: All @@map directives in contract.prisma must use snake_case (e.g., organization_members, invite_links, email_templates, activity_logs, candidate_documents, tracking_links, tracking_clicks).
 - **Known Technical Debt (Phase 15B)**: 9 tables currently use camelCase @@map (organizationMember, inviteLink, emailTemplate, emailSetting, emailLog, activityLog, candidateDocument, trackingLink, trackingClick). Migration to snake_case deferred post-launch.
 
-## CI Architecture Gates (5 Total) (MANDATORY)
+## CI Architecture Gates (6 Total) (MANDATORY)
 - **Gate 1**: pnpm lint (ESLint + tsc --noEmit)
 - **Gate 2**: pnpm typecheck (tsc --noEmit)
 - **Gate 3**: pnpm lint:dtopipe (verify 100% @Body() params protected by DtoPipe)
 - **Gate 4**: pnpm lint:error-i18n (verify 100% APP_ERROR_CODES have vi.ts + en.ts translations)
 - **Gate 5**: pnpm lint:api-contract (verify zero JSON.stringify(err) leaks and zero alert() calls in frontend)
-- All 5 gates MUST pass before merge.
+- **Gate 6**: pnpm test:e2e (Playwright E2E 5 critical end-to-end user journeys in headless Chromium)
+- All 6 gates MUST pass before merge.
 
 ## Next.js RSC Mandate for Public Routes (MANDATORY)
 - **Server Components by Default for Public-Facing Routes**: All routes under /careers/* must be React Server Components (RSC) with generateMetadata() for OpenGraph/Twitter cards and JSON-LD schema (JobPosting) for SEO.

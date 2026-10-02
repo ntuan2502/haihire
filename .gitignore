@@ -33,6 +33,8 @@ backups/
 coverage/
 **/coverage/
 .vitest/
+test-results/
+playwright-report/
 
 # Linter & Tooling Cache
 .eslintcache

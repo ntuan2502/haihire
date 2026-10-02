@@ -39,7 +39,7 @@
 - [project] Database Transaction Architecture: Prisma $transaction + Saga Pattern for distributed resources (MinIO + DB), AsyncLocalStorage for nested tx propagation, BullMQ DLQ for compensating delete retries → tech-decisions.md
 - [project] Database Naming Convention: PostgreSQL tables/columns must use snake_case (camelCase @@map is a known technical debt from legacy code, migration deferred to Phase 16B) → project-conventions.md
 - [project] Runtime Infrastructure Baseline: Valkey 8.0.2 (replaces Redis for license compliance), Postgres 17.6-alpine, MinIO pinned by SHA256 digest, Caddy 2.8-alpine → tech-decisions.md
-- [project] CI Architecture Gates (5 total): lint, typecheck, lint:dtopipe, lint:error-i18n, lint:api-contract → project-conventions.md
+- [project] CI Architecture Gates (6 total): lint, typecheck, lint:dtopipe, lint:error-i18n, lint:api-contract, test:e2e → project-conventions.md
 - [project] Next.js RSC Mandate: public-facing routes (/careers/*) must be Server Components; interactive parts isolated in Client Components → project-conventions.md
 - [project] Orphan File Cleanup: nightly cron at 0 4 * * * for MinIO orphan files older than 30 days (safety grace period) → tech-decisions.md
 - [project] Verified-Ship Mindset: every self-claimed "READY" requires independent IV&V verification with raw execution evidence before deployment → user-preferences.md

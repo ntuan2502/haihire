@@ -374,10 +374,14 @@ export function JobDetailsClient({
                   </div>
                   <div className="space-y-1.5">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      {t("careers.applicationSubmittedTitle")}
+                      {t("careers.submitSuccessTitle")}
                     </h3>
                     <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-                      {t("careers.applicationSubmittedDesc")}
+                      {t("careers.submitSuccessDesc", {
+                        name: `${lastName} ${firstName}`.trim(),
+                        jobTitle: job.title,
+                        orgName,
+                      })}
                     </p>
                   </div>
                   <Button

@@ -44,9 +44,12 @@ export class OrganizationsService implements OnModuleInit {
   ) {}
 
   private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
-    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
+    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
     if (typeof p.transaction === "function") {
       return p.transaction(fn);
+    }
+    if (typeof p.executeTx === "function") {
+      return p.executeTx(fn);
     }
     return fn(this.prisma.db);
   }

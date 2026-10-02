@@ -106,6 +106,7 @@ export class MinioService implements OnModuleInit {
       await this.client.removeObject(this.bucketName, fileName);
     } catch (error: unknown) {
       this.logger.error(`Failed to delete file '${fileName}' from MinIO`, error);
+      throw error;
     }
   }
 

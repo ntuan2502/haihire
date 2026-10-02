@@ -201,6 +201,46 @@ services:
     networks:
       - haihire-prod-network
 
+  # ------------------------------------------------------------------------------
+  # 6. MinIO Orphan File Cleanup Cron Service (Runs daily at 04:00 AM)
+  # ------------------------------------------------------------------------------
+  orphan-cleanup:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: haihire-prod-orphan-cleanup
+    restart: unless-stopped
+    command: >
+      /bin/sh -c "
+        echo '0 4 * * * cd /app && node --import tsx scripts/cleanup-orphan-minio.ts >> /var/log/orphan-cleanup.log 2>&1' > /etc/crontabs/root &&
+        crond -f -l 2
+      "
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - haihire-prod-network
+    logging: *prod-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
 volumes:
   postgres_data:
     name: haihire_prod_postgres_data

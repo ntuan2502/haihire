@@ -1,7 +1,10 @@
 import {
   Inject,
   Injectable,
+  Optional,
 } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import type { Queue } from "bullmq";
 import {
   APP_ERROR_CODES,
   SourcingChannel,
@@ -41,12 +44,18 @@ export class ApplicationsService {
     private readonly activitiesService: ActivitiesService,
     @Inject(EmailService)
     private readonly emailService: EmailService,
+    @Optional()
+    @InjectQueue("orphan-cleanup-queue")
+    private readonly orphanCleanupQueue?: Queue,
   ) {}
 
   private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
-    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
+    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
     if (typeof p.transaction === "function") {
       return p.transaction(fn);
+    }
+    if (typeof p.executeTx === "function") {
+      return p.executeTx(fn);
     }
     return fn(this.prisma.db);
   }
@@ -710,13 +719,40 @@ export class ApplicationsService {
     } catch (dbError) {
       // Step 3: Compensating action — rollback MinIO uploaded file
       if (uploadedFileInMinio && (uploadResult.fileName || uploadResult.url)) {
-        try {
-          const objectToDelete = uploadResult.fileName || this.minioService.extractObjectName(uploadResult.url);
-          if (objectToDelete) {
+        const objectToDelete = uploadResult.fileName || this.minioService.extractObjectName(uploadResult.url);
+        if (objectToDelete) {
+          try {
             await this.minioService.deleteFile(objectToDelete);
+          } catch (compensationErr: unknown) {
+            const errMsg = compensationErr instanceof Error ? compensationErr.message : String(compensationErr);
+            if (this.orphanCleanupQueue) {
+              try {
+                await this.orphanCleanupQueue.add(
+                  "cleanup",
+                  {
+                    objectName: objectToDelete,
+                    reason: "transaction-rollback-compensation-failed",
+                    originalError: errMsg,
+                    enqueuedAt: new Date().toISOString(),
+                  },
+                  {
+                    attempts: 5,
+                    backoff: {
+                      type: "exponential",
+                      delay: 1000,
+                    },
+                    removeOnComplete: true,
+                    removeOnFail: false,
+                  },
+                );
+                console.warn(`Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`);
+              } catch (queueErr: unknown) {
+                console.error("Failed to enqueue orphan file to cleanup queue:", queueErr);
+              }
+            } else {
+              console.warn("Failed to delete MinIO file during transaction compensation:", compensationErr);
+            }
           }
-        } catch (compensationErr) {
-          console.warn("Failed to delete MinIO file during transaction compensation:", compensationErr);
         }
       }
       throw dbError;

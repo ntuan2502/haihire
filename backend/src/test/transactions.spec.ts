@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { ApplicationsService } from "../applications/applications.service";
 import { OrganizationsService } from "../organizations/organizations.service";
 import { JobsService } from "../jobs/jobs.service";
@@ -279,23 +280,50 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
     }) as unknown as typeof mockPrisma.db;
 
     const realDb = createDbInterface(mockDbState);
+    const als = new AsyncLocalStorage<typeof realDb>();
 
-    // Mock prisma with atomic transaction rollback simulation
+    // Mock prisma with atomic transaction rollback simulation and ALS propagation
     mockPrisma = {
       db: realDb,
+      client: realDb,
       transaction: vi.fn().mockImplementation(async (txFn: (tx: typeof realDb) => Promise<unknown>) => {
+        const existing = als.getStore();
+        if (existing) {
+          return txFn(existing);
+        }
+
         transactionCalls++;
         // Create an isolated snapshot of state to simulate transaction atomicity & rollback
         const snapshot = JSON.parse(JSON.stringify(mockDbState)) as MockDbState;
         const txDb = createDbInterface(snapshot);
 
         try {
-          const result = await txFn(txDb);
-          // If transaction commits, apply snapshot to real state
-          mockDbState.candidates = snapshot.candidates;
-          mockDbState.applications = snapshot.applications;
-          mockDbState.jobs = snapshot.jobs;
-          mockDbState.users = snapshot.users;
+          const result = await als.run(txDb, () => txFn(txDb));
+          // If transaction commits, merge changes into real state
+          for (const c of snapshot.candidates) {
+            const idx = mockDbState.candidates.findIndex((x) => x.id === c.id);
+            if (idx >= 0) Object.assign(mockDbState.candidates[idx], c);
+            else mockDbState.candidates.push(c);
+          }
+          for (const a of snapshot.applications) {
+            const idx = mockDbState.applications.findIndex((x) => x.id === a.id);
+            if (idx >= 0) Object.assign(mockDbState.applications[idx], a);
+            else mockDbState.applications.push(a);
+          }
+          if (snapshot.applications.length < mockDbState.applications.length) {
+            mockDbState.applications = mockDbState.applications.filter((a) =>
+              snapshot.applications.some((s) => s.id === a.id),
+            );
+          }
+          for (const j of snapshot.jobs) {
+            const idx = mockDbState.jobs.findIndex((x) => x.id === j.id);
+            if (idx >= 0) Object.assign(mockDbState.jobs[idx], j);
+            else mockDbState.jobs.push(j);
+          }
+          for (const u of snapshot.users) {
+            const idx = mockDbState.users.findIndex((x) => x.id === u.id);
+            if (idx >= 0) Object.assign(mockDbState.users[idx], u);
+          }
           mockDbState.members = snapshot.members;
           mockDbState.orgs = snapshot.orgs;
           mockDbState.interviews = snapshot.interviews;
@@ -305,6 +333,9 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
           transactionRollbacks++;
           throw err;
         }
+      }),
+      executeTx: vi.fn().mockImplementation(async (txFn: (tx: typeof realDb) => Promise<unknown>) => {
+        return mockPrisma.transaction(txFn);
       }),
     } as unknown as PrismaService;
 
@@ -489,6 +520,82 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       expect(res.success).toBe(true);
       expect(transactionCalls).toBe(1);
       expect(mockDbState.candidates[0].deletedAt).toBeDefined();
+    });
+  });
+
+  describe("Nested Transaction & AsyncLocalStorage Propagation (Phase 17 Item 1)", () => {
+    it("Test 1: Nested executeTx reuses parent transaction without opening a new one", async () => {
+      let innerRan = false;
+      await mockPrisma.transaction(async (tx1) => {
+        // First level mutation
+        await tx1.orm.public.Job.where((j) => j.id.eq("job-1")).update({ title: "Updated Job Title" });
+
+        // Nested call simulates another service calling executeTx / transaction
+        await mockPrisma.transaction(async (tx2) => {
+          expect(tx2).toBe(tx1); // REUSED EXACT SAME CONTEXT
+          await tx2.orm.public.Candidate.create({
+            id: "cand-nested",
+            organizationId: "org-1",
+            name: "Nested Cand",
+            email: "nested@test.com",
+          });
+          innerRan = true;
+        });
+      });
+
+      expect(innerRan).toBe(true);
+      expect(transactionCalls).toBe(1); // EXACTLY 1 TRANSACTION OPENED!
+      expect(mockDbState.jobs[0].title).toBe("Updated Job Title");
+      expect(mockDbState.candidates.length).toBe(1);
+    });
+
+    it("Test 2: Nested transaction failure rolls back both parent and child operations", async () => {
+      await expect(
+        mockPrisma.transaction(async (tx1) => {
+          await tx1.orm.public.Job.where((j) => j.id.eq("job-1")).update({ title: "Should Be Rolled Back" });
+
+          await mockPrisma.transaction(async (tx2) => {
+            await tx2.orm.public.Candidate.create({
+              id: "cand-fail",
+              organizationId: "org-1",
+              name: "Cand Fail",
+              email: "fail@test.com",
+            });
+            throw new Error("Simulated Inner Business Failure");
+          });
+        }),
+      ).rejects.toThrow("Simulated Inner Business Failure");
+
+      expect(transactionCalls).toBe(1);
+      expect(transactionRollbacks).toBe(1);
+      // Both parent (Job title) and child (Candidate) must be rolled back!
+      expect(mockDbState.jobs[0].title).toBe("Senior Backend Engineer");
+      expect(mockDbState.candidates.length).toBe(0);
+    });
+
+    it("Test 3: Concurrent transactions (non-nested) create separate isolated transactions", async () => {
+      const p1 = mockPrisma.transaction(async (tx1) => {
+        await tx1.orm.public.Candidate.create({
+          id: "cand-concurrent-1",
+          organizationId: "org-1",
+          name: "Concurrent 1",
+          email: "c1@test.com",
+        });
+      });
+
+      const p2 = mockPrisma.transaction(async (tx2) => {
+        await tx2.orm.public.Candidate.create({
+          id: "cand-concurrent-2",
+          organizationId: "org-1",
+          name: "Concurrent 2",
+          email: "c2@test.com",
+        });
+      });
+
+      await Promise.all([p1, p2]);
+
+      expect(transactionCalls).toBe(2); // Exactly 2 separate transactions!
+      expect(mockDbState.candidates.length).toBe(2);
     });
   });
 });

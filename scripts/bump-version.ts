@@ -26,6 +26,15 @@ function bumpSemver(current: string, type: "major" | "minor" | "patch"): string 
   }
 }
 
+function checkTagExists(tag: string): boolean {
+  try {
+    const existing = execSync(`git tag -l "${tag}"`, { encoding: "utf-8" }).trim();
+    return existing.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export function bumpVersion(
   bumpTypeOrVersion = "patch",
   options: { dryRun?: boolean; tag?: boolean } = {}
@@ -44,25 +53,47 @@ export function bumpVersion(
     );
   }
 
+  const tagName = `v${newVersion}`;
+  if (!/^v\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$/.test(tagName)) {
+    throw new Error(`[INVALID TAG FORMAT] Tag '${tagName}' does not conform to 'v{semver}' specification.`);
+  }
+
+  const tagAlreadyExists = checkTagExists(tagName);
+  if (options.tag && tagAlreadyExists) {
+    throw new Error(
+      `[IMMUTABILITY VIOLATION] Git tag '${tagName}' already exists locally! ` +
+      `Release tags are strictly immutable. Never force-push or overwrite an existing release tag. ` +
+      `Please bump to a subsequent patch or minor version instead.`
+    );
+  }
+
   console.log("==================================================================");
   console.log("             HAIHIRE MONOREPO VERSION BUMP TOOL                  ");
   console.log("==================================================================");
   console.log(`Current Version: ${currentVersion}`);
   console.log(`Target Version:  ${newVersion} ${options.dryRun ? "(DRY RUN)" : ""}`);
+  if (options.tag) {
+    console.log(`Release Tag:     ${tagName} (${tagAlreadyExists ? "ALREADY EXISTS!" : "Available"})`);
+  }
   console.log("------------------------------------------------------------------");
 
   syncVersions(newVersion, options.dryRun);
 
-  if (options.tag && !options.dryRun) {
-    const tagName = `v${newVersion}`;
-    console.log("------------------------------------------------------------------");
-    console.log(`Creating Git tag: ${tagName}...`);
-    try {
-      execSync(`git tag -a ${tagName} -m "Release ${tagName}"`, { stdio: "inherit" });
-      console.log(`[SUCCESS] Git tag '${tagName}' created locally.`);
-      console.log(`Tip: To publish tag, run: git push origin ${tagName}`);
-    } catch (err: unknown) {
-      console.error(`[ERROR] Failed to create git tag '${tagName}': ${err instanceof Error ? err.message : String(err)}`);
+  if (options.tag) {
+    if (options.dryRun) {
+      console.log(`[DRY RUN] Would create Git tag: ${tagName} (skipped)`);
+    } else {
+      console.log("------------------------------------------------------------------");
+      console.log(`Creating immutable Git tag: ${tagName}...`);
+      try {
+        // Enforce safe tag creation: never use -f or --force
+        execSync(`git tag -a ${tagName} -m "Release ${tagName}"`, { stdio: "inherit" });
+        console.log(`[SUCCESS] Git tag '${tagName}' created locally.`);
+        console.log(`Tip: To publish tag, run: git push origin ${tagName}`);
+      } catch (err: unknown) {
+        console.error(`[ERROR] Failed to create git tag '${tagName}': ${err instanceof Error ? err.message : String(err)}`);
+        throw err;
+      }
     }
   }
 

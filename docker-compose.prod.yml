@@ -123,7 +123,7 @@ services:
   # 4. NestJS Production Backend Service
   # ------------------------------------------------------------------------------
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-ntuan2502/haihire}/haihire-backend:${IMAGE_TAG:-v1.0.0}
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-backend:${IMAGE_TAG:-v1.0.0}
     container_name: haihire-prod-backend
     restart: unless-stopped
     env_file:
@@ -188,7 +188,7 @@ services:
   # 5. Next.js Production Frontend Service
   # ------------------------------------------------------------------------------
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-ntuan2502/haihire}/haihire-frontend:${IMAGE_TAG:-v1.0.0}
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-frontend:${IMAGE_TAG:-v1.0.0}
     container_name: haihire-prod-frontend
     restart: unless-stopped
     env_file:
@@ -226,7 +226,7 @@ services:
   # 6. MinIO Orphan File Cleanup Cron Service (Runs daily at 04:00 AM)
   # ------------------------------------------------------------------------------
   orphan-cleanup:
-    image: ghcr.io/${GITHUB_REPOSITORY:-ntuan2502/haihire}/haihire-backend:${IMAGE_TAG:-v1.0.0}
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-backend:${IMAGE_TAG:-v1.0.0}
     container_name: haihire-prod-orphan-cleanup
     restart: unless-stopped
     env_file:

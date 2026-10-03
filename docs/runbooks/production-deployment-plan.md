@@ -27,11 +27,11 @@ Before commencing deployment operations, verify each item:
 - [ ] **Container Image Availability on GHCR:**
   Verify immutable production images published by GitHub Actions workflow exist in GitHub Container Registry (GHCR):
   ```bash
-  export GITHUB_REPOSITORY="ntuan2502/haihire"
+  export GITHUB_REPOSITORY_OWNER="ntuan2502"
   export IMAGE_TAG="v1.0.0" # Never use 'latest' in production
 
-  docker pull ghcr.io/${GITHUB_REPOSITORY}/haihire-backend:${IMAGE_TAG}
-  docker pull ghcr.io/${GITHUB_REPOSITORY}/haihire-frontend:${IMAGE_TAG}
+  docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-backend:${IMAGE_TAG}
+  docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-frontend:${IMAGE_TAG}
   ```
 - [ ] **Stakeholder & Tenant Notification:**
   Broadcast scheduled maintenance window notice via platform status dashboard at `status.haihire.com`.
@@ -51,11 +51,11 @@ ssh sre-admin@prod-cluster.haihire.internal
 free -m
 df -h /var/lib/docker
 
-# 1.3 Ensure .env.production has immutable IMAGE_TAG and GITHUB_REPOSITORY set
+# 1.3 Ensure .env.production has immutable IMAGE_TAG and GITHUB_REPOSITORY_OWNER set
 # Example in .env.production:
-# GITHUB_REPOSITORY=ntuan2502/haihire
+# GITHUB_REPOSITORY_OWNER=ntuan2502
 # IMAGE_TAG=v1.0.0
-grep -E "^(GITHUB_REPOSITORY|IMAGE_TAG)=" .env.production
+grep -E "^(GITHUB_REPOSITORY_OWNER|IMAGE_TAG)=" .env.production
 
 # 1.4 Verify production configuration validity
 pnpm docker:prod:config
@@ -75,8 +75,8 @@ pnpm run migrate
 docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend orphan-cleanup
 
 # 3.2 Audit & record image digests for deployment tracking
-docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY:-ntuan2502/haihire}/haihire-backend:${IMAGE_TAG:-v1.0.0}
-docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY:-ntuan2502/haihire}/haihire-frontend:${IMAGE_TAG:-v1.0.0}
+docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-backend:${IMAGE_TAG:-v1.0.0}
+docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-frontend:${IMAGE_TAG:-v1.0.0}
 
 # 3.3 Deploy Backend with zero-build container start
 docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps backend

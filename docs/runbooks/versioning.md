@@ -61,12 +61,14 @@ All container images are built and pushed to **GitHub Container Registry (GHCR)*
 
 ### Image Naming Conventions
 
-* **Backend Service:**
-  `ghcr.io/${GITHUB_REPOSITORY}/haihire-backend:${IMAGE_TAG}`
-* **Frontend Web Application:**
-  `ghcr.io/${GITHUB_REPOSITORY}/haihire-frontend:${IMAGE_TAG}`
+Container images follow the streamlined Open Container Initiative (OCI) naming format on GHCR:
 
-Where `${GITHUB_REPOSITORY}` is the lowercase GitHub repository identifier (e.g., `ntuan2502/haihire`).
+* **Backend Service:**
+  `ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-backend:${IMAGE_TAG}`
+* **Frontend Web Application:**
+  `ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-frontend:${IMAGE_TAG}`
+
+Where `${GITHUB_REPOSITORY_OWNER}` is the lowercase GitHub username or organization (e.g., `ntuan2502`).
 
 ### OCI Metadata Labels
 
@@ -80,21 +82,43 @@ Every container image is tagged with Open Container Initiative (OCI) image speci
 
 ---
 
-## 4. Immutable Tag Policy
+## 4. Immutable Tag & Anti-Force-Push Policy
 
 > [!CAUTION]
-> **NEVER USE `latest` IN PRODUCTION DEPLOYMENTS OR RUNBOOKS.**
+> **STRICT IMMUTABILITY POLICY: NEVER OVERWRITE OR FORCE-PUSH TAGS.**
 >
-> The `:latest` tag is mutable, non-deterministic, and breaks deployment reproducibility. If a broken image is pushed with `:latest`, any node pulling that tag will execute unstable code without traceability.
+> 1. **Never use `:latest` in production.** `:latest` is mutable, non-deterministic, and eliminates deployment reproducibility and rollback guarantees.
+> 2. **Never force-overwrite an existing release tag.** Never run `git tag -f` or `git push --force origin <tag>`. Once a tag is published, it represents a permanent cryptographic snapshot.
+> 3. **If a release contains defects, bump to a new patch version.** For example, if `v1.0.0` has a critical bug, fix the bug and publish `v1.0.1`.
+> 4. **Automated Collision Prevention:** The automated bump tool (`pnpm version:bump`) actively scans existing Git tags and throws an `[IMMUTABILITY VIOLATION]` error if the target release tag already exists.
 
 ### Allowed Tag Formats in Production
 
-1. **Semantic Release Tags:** `v1.0.0`, `v1.0.1`, `v1.1.0` (Recommended for production releases)
-2. **Immutable Commit SHA Tags:** `sha-a1b2c3d` or `a1b2c3d4e5f...` (Recommended for staging and continuous deployment)
+1. **Semantic Release Tags:** `v1.0.0`, `v1.0.1`, `v1.1.0` (Mandatory format: `^v\d+\.\d+\.\d+$`)
+2. **Immutable Commit SHA Tags:** `sha-a1b2c3d` or `a1b2c3d4e5f...` (Used for staging and continuous integration)
 
 ---
 
-## 5. Release Workflow: Step-by-Step
+## 5. GitHub Repository Configuration & Permissions (MANDATORY)
+
+Before triggering the first release, verify the following settings on your GitHub repository:
+
+### 1. Workflow Permissions (GHCR & Release Write Access)
+1. In your GitHub repository, navigate to **Settings** $\rightarrow$ **Actions** $\rightarrow$ **General**.
+2. Scroll to the **Workflow permissions** section:
+   - Select the radio button: **Read and write permissions** (allows `GITHUB_TOKEN` to publish images to GHCR and generate GitHub Releases).
+   - Check the box: **Allow GitHub Actions to create and approve pull requests**.
+3. Click **Save**.
+
+### 2. Frontend Build Variables (Optional / Production URLs)
+Navigate to **Settings** $\rightarrow$ **Secrets and variables** $\rightarrow$ **Actions** $\rightarrow$ **Variables** tab:
+* `NEXT_PUBLIC_API_URL`: Set to your external backend domain (e.g. `https://api.yourcompany.com`) if frontend and backend are deployed to different public domains. **If left empty**, the frontend automatically proxies client requests through Next.js relative `/api` route rewrites.
+* `NEXT_PUBLIC_MINIO_URL`: Set to your public asset storage prefix (default: `/haihire-resumes`).
+
+
+---
+
+## 6. Release Workflow: Step-by-Step
 
 Follow these steps to produce a verified production release:
 
@@ -146,31 +170,31 @@ Pushing tag `v*.*.*` automatically triggers:
 
 ---
 
-## 6. Audit Trail: Recording Image Digests
+## 7. Audit Trail: Recording Image Digests
 
 For SOC 2, ISO 27001, and production audit compliance, every production deployment must record the cryptographic SHA-256 digest of deployed images:
 
 ```bash
 # Inspect and record backend image digest:
 docker inspect --format='{{index .RepoDigests 0}}' \
-  ghcr.io/${GITHUB_REPOSITORY}/haihire-backend:${IMAGE_TAG}
+  ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-backend:${IMAGE_TAG}
 
 # Inspect and record frontend image digest:
 docker inspect --format='{{index .RepoDigests 0}}' \
-  ghcr.io/${GITHUB_REPOSITORY}/haihire-frontend:${IMAGE_TAG}
+  ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-frontend:${IMAGE_TAG}
 ```
 
 Example digest record in deployment log:
 ```
 Deploy Timestamp: 2026-10-03T15:45:00Z
 Target Version: v1.0.0
-Backend Digest: ghcr.io/ntuan2502/haihire/haihire-backend@sha256:d894f280e21a42f6efba8bbcd54784a0c8b0932a76fa8e932ff187515fb2a3db
-Frontend Digest: ghcr.io/ntuan2502/haihire/haihire-frontend@sha256:56ea3bf70e7e3725b8490a0715cf4b643a6d91f163b0632b509efab61f8939b4
+Backend Digest: ghcr.io/ntuan2502/haihire-backend@sha256:d894f280e21a42f6efba8bbcd54784a0c8b0932a76fa8e932ff187515fb2a3db
+Frontend Digest: ghcr.io/ntuan2502/haihire-frontend@sha256:56ea3bf70e7e3725b8490a0715cf4b643a6d91f163b0632b509efab61f8939b4
 ```
 
 ---
 
-## 7. Zero-Build Production Deployment & Rollback
+## 8. Zero-Build Production Deployment & Rollback
 
 ### Production Deployment (Zero Local Build)
 

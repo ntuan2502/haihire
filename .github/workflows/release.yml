@@ -50,8 +50,8 @@ jobs:
 
             ### 📦 Container Registry Deployment (GHCR)
             Pre-built, immutable production container images are available on GitHub Container Registry:
-            - `ghcr.io/${{ github.repository }}/haihire-backend:${{ steps.vars.outputs.TAG_NAME }}`
-            - `ghcr.io/${{ github.repository }}/haihire-frontend:${{ steps.vars.outputs.TAG_NAME }}`
+            - `ghcr.io/${{ github.repository_owner }}/haihire-backend:${{ steps.vars.outputs.TAG_NAME }}`
+            - `ghcr.io/${{ github.repository_owner }}/haihire-frontend:${{ steps.vars.outputs.TAG_NAME }}`
 
             ### ⚙️ Quick Start
             ```bash

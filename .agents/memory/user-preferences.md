@@ -54,6 +54,7 @@ updated: 2026-10-02
 ## Standardized Project Commands & package.json Consistency (MANDATORY)
 - **Check package.json First**: Always check package.json (root and subpackages) to see if a command or script already exists for the task.
 - **No Ad-Hoc Variations**: If a command exists, execute the existing script as defined rather than running one-off CLI commands with custom flags.
+- **Never Use npx**: Strictly forbidden to invoke `npx`. Always use `pnpm dlx` or `pnpx` when executing one-off binaries, and always prioritize project commands defined in `package.json` (`pnpm <script>`).
 - **Propose Standard Scripts**: If a necessary command (e.g., typecheck, lint:frontend, lint:backend) is missing, explain to the user why it is needed and propose adding it to package.json so the entire project maintains a clean, uniform command suite.
 
 ## React Callback Hygiene & SyntheticEvent Safety (MANDATORY)

@@ -133,6 +133,9 @@ jobs:
       - name: Verify API Contract Coverage Gate (Gate 5)
         run: pnpm lint:api-contract
 
+      - name: Verify Environment Synchronization Gate (Gate 7)
+        run: pnpm lint:env-sync
+
       - name: Run Unit & Integration Tests with Coverage (IVV3-04)
         run: |
           pnpm --filter ./backend run test --coverage

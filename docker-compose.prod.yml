@@ -14,6 +14,11 @@ services:
     image: postgres:17.6-alpine
     container_name: haihire-prod-postgres
     restart: unless-stopped
+    env_file:
+      - path: ./.env.production
+        required: false
+      - path: ./.env
+        required: false
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -45,6 +50,11 @@ services:
     image: valkey/valkey:8.0.2-alpine
     container_name: haihire-prod-redis
     restart: unless-stopped
+    env_file:
+      - path: ./.env.production
+        required: false
+      - path: ./.env
+        required: false
     command: >
       /bin/sh -c "
         if [ -n \"$$REDIS_PASSWORD\" ]; then
@@ -81,6 +91,11 @@ services:
     image: alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4
     container_name: haihire-prod-minio
     restart: unless-stopped
+    env_file:
+      - path: ./.env.production
+        required: false
+      - path: ./.env
+        required: false
     command: server /data
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
@@ -113,6 +128,11 @@ services:
       dockerfile: backend/Dockerfile
     container_name: haihire-prod-backend
     restart: unless-stopped
+    env_file:
+      - path: ./.env.production
+        required: false
+      - path: ./.env
+        required: false
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -173,8 +193,15 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${FRONTEND_API_URL:-http://localhost:3001}
     container_name: haihire-prod-frontend
     restart: unless-stopped
+    env_file:
+      - path: ./.env.production
+        required: false
+      - path: ./.env
+        required: false
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -210,6 +237,11 @@ services:
       dockerfile: backend/Dockerfile
     container_name: haihire-prod-orphan-cleanup
     restart: unless-stopped
+    env_file:
+      - path: ./.env.production
+        required: false
+      - path: ./.env
+        required: false
     command: >
       /bin/sh -c "
         echo '0 4 * * * cd /app && node --import tsx scripts/cleanup-orphan-minio.ts >> /var/log/orphan-cleanup.log 2>&1' > /etc/crontabs/root &&
@@ -221,8 +253,8 @@ services:
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
     depends_on:
       postgres:

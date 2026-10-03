@@ -29,6 +29,12 @@ COPY frontend ./frontend
 ENV BACKEND_HOST=backend
 ENV MINIO_HOST=minio
 
+# Build-time public environment variables inlined into client bundle
+ARG NEXT_PUBLIC_API_URL=""
+ARG NEXT_PUBLIC_MINIO_URL="/haihire-resumes"
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_MINIO_URL=$NEXT_PUBLIC_MINIO_URL
+
 # Build shared and Next.js frontend with output: "standalone"
 RUN pnpm --filter @haihire/shared run build && pnpm --filter frontend run build
 

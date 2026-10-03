@@ -40,11 +40,11 @@ const fastOnly = args.includes("--fast") || args.includes("--quick");
 // Core check pipeline
 const steps: Step[] = [
   {
-    id: "check:env",
-    name: "Environment Variables Parity",
-    command: "pnpm check:env",
+    id: "lint:env-sync",
+    name: "Environment Variables Synchronization & Parity",
+    command: "pnpm lint:env-sync",
     category: "env",
-    description: "Verify 100% key parity between .env and .env.example",
+    description: "Verify 100% key parity and Docker compose variable coverage",
   },
   {
     id: "check:i18n",

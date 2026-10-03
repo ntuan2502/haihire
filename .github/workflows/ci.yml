@@ -119,6 +119,9 @@ jobs:
       - name: Check API contract coverage
         run: pnpm lint:api-contract
 
+      - name: Verify Environment Synchronization Gate
+        run: pnpm lint:env-sync
+
       - name: Run linter and type checks
         run: pnpm lint
 

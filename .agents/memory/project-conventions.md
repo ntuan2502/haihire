@@ -17,14 +17,21 @@ updated: 2026-10-02T10:00
 - **Config File Exception**: eslint.config.mjs, postcss.config.mjs, and vitest.config.mts are acceptable as tooling requires ESM config files. These are build/tooling configuration files and do not violate the application code TypeScript mandate.
 - **Scripts**: Any utility or maintenance scripts (e.g., scripts/*.ts) must be authored in TypeScript and executed via native Node 22+ execution (node scripts/<script>.ts) or tsx.
 
-## Environment Variable & Configuration Conventions
+## Environment Variable & Configuration Conventions (5-File Architecture & Sync)
 - **Single Source of Truth**: All environment variables must be declared and validated using Zod in centralized schema files:
   - Backend: backend/src/config/env.ts
   - Frontend: frontend/src/lib/env.ts
+- **5-File Segregated Architecture**:
+  - `.env` / `.env.example`: Root system ports and Docker infra services (Postgres, MinIO, Valkey).
+  - `backend/.env` / `backend/.env.example`: Backend NestJS service credentials and service URLs.
+  - `frontend/.env` / `frontend/.env.example`: Frontend SSR internal URL, client endpoints, and demo seeds.
+  - `.env.production.example`: Production cluster blueprint with mandatory secrets, DB, and mail configurations.
+  - `.env.production`: Real production credentials loaded via `docker compose --env-file .env.production -f docker-compose.prod.yml`.
+- **NEXT_PUBLIC_* Build-Time Inlining**: Variables prefixed with `NEXT_PUBLIC_` are evaluated and baked statically into client JS chunks during `pnpm build` (`next build`). They cannot be altered at runtime in client browsers. Provide build arguments in Dockerfile (`ARG NEXT_PUBLIC_API_URL`) when deploying frontend/backend to distinct public domains.
 - **Zero Fallback Policy**: Never provide fallback defaults for secrets, ports, database URLs, or required configuration keys.
 - **Fail-Fast Startup**: The process must crash immediately (process.exit(1)) with a clean list of missing/invalid variables if .env does not conform to the schema.
 - **Consumer Files**: Never call process.env directly in feature modules, services, or test configs. Always import the validated, type-safe env object.
-- **Synchronization Verification**: Maintain 100% key parity between .env and .env.example across all packages. Verify parity via pnpm run check:env.
+- **Continuous Synchronization Verification**: Maintain 100% key parity between .env and .env.example across all packages, and verify production compose coverage using `pnpm lint:env-sync` (CI Gate 7). Runbook available in `docs/runbooks/env-management.md`.
 
 ## Full-Stack Pagination Conventions
 - **Zero Client-side Array Slicing**: Endpoints providing list views must execute true server-side pagination with database-level skip and take.

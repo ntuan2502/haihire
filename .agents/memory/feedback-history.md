@@ -4,6 +4,14 @@ created: 2026-07-18
 updated: 2026-10-02
 ---
 
+## 2026-10-02 (Part 4): Phase 18/18.1/19 — True Theme Script Resolution via Next.js Script & Unmasked E2E
+- **Feedback**: After Phase 16A migrated `/careers/*` to RSC, `next-themes` inline script triggered React 19 warnings. Phase 18 attempted to suppress the warning via `console.error` monkey-patching (REJECTED: anti-pattern). Phase 18.1 moved the script to `<head>` but still used a raw JSX `<script>` tag, causing the error to recur at `RootLayout (layout.tsx:34:9)`. Phase 19 resolved the root cause by using Next.js official `<Script id="theme-init" strategy="beforeInteractive">`, eliminating raw scripts from JSX reconciler and passing 10/10 Playwright E2E tests unmasked.
+- **Actionable Rule**:
+  1. **Next.js App Router Scripts**: NEVER render raw `<script>` tags inside JSX components or layouts. Always use `<Script>` from `next/script` with a unique `id` and `strategy="beforeInteractive"` for synchronous head execution.
+  2. **Zero Symptom Masking**: Never monkey-patch `console.error` to hide framework warnings. Real E2E tests must capture raw browser console streams and fail if warnings occur.
+  3. **Test-Aware Rate Limiting**: Configure authentication rate limiters to support high iteration during dev and testing (`100/min`) while preserving strict limits in production (`5/min`).
+  4. **Dynamic E2E Entity Discovery**: Avoid hardcoding database UUIDs in tests; dynamically discover active jobs and candidate pipelines to preserve test repeatability.
+
 ## 2026-10-02 (Part 3): Phase 17 Final Cleanup — AsyncLocalStorage, DLQ & Orphan Cron
 - **Feedback**: After Phase 16B confirmed READY TO SHIP with 3 non-blocking findings (P2: nested tx without ALS, P3: compensating delete without DLQ, P3: no orphan cleanup cron), Phase 17 closed all 3 to reach a 100% clean state. The system now has zero P0/P1/P2/P3 findings.
 - **Actionable Rule**:

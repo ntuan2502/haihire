@@ -53,6 +53,7 @@ updated: 2026-10-02T10:00
 - Whenever reference images or mockups contain placeholder logos/names (like Reqcore or ATS), ALWAYS replace with **HaiHire** (or "H" monogram) across all UI components, logos, and copy.
 
 ## Validation & Testing Conventions
+- **Comprehensive Quality Check**: Run `pnpm check:all` to execute the complete verification pipeline (env sync, two-way i18n, lint, typecheck, Gate 3 dtopipe, Gate 4 error-i18n, Gate 5 api-contract, test:diff anti-regression, and all 369 unit/integration tests). Use `pnpm check:all:fast` for quick static audits (~38s) or `pnpm check:all:e2e` to include Playwright E2E.
 - If only frontend UI is modified, only run frontend lint and build (pnpm --filter frontend run build ; pnpm --filter frontend run lint) without running backend tests or full test suites.
 - Always execute commands individually or use ; (not &&) in Windows PowerShell.
 - Always use pnpm or pnpx (NEVER use npx).
@@ -201,6 +202,11 @@ updated: 2026-10-02T10:00
 - **Server Components by Default for Public-Facing Routes**: All routes under /careers/* must be React Server Components (RSC) with generateMetadata() for OpenGraph/Twitter cards and JSON-LD schema (JobPosting) for SEO.
 - **Client Component Isolation**: Interactive elements (apply form, filter, search) must be isolated into separate *-client.tsx components imported by the RSC.
 - **Zero "use client" on Page Level**: The page.tsx file for public routes MUST NOT start with "use client".
+
+## Next.js App Router Script & Theme Conventions (Phase 19 MANDATORY)
+- **Zero Raw `<script>` in JSX**: In React 19 / Next.js App Router, NEVER render raw `<script>` tags inside JSX components or layouts. Always use `<Script>` from `next/script` with a unique `id` and `strategy="beforeInteractive"` for synchronous head scripts.
+- **Zero Symptom Masking**: Never monkey-patch `console.error` to filter or swallow framework warnings. Fix the underlying component or lifecycle contract violation.
+- **Theme Script Architecture**: Synchronous FOUC prevention must use `<Script id="theme-init" strategy="beforeInteractive">` inside `<head>` in `RootLayout`. `next-themes` (version >= 0.4.0) provides client-side theme switching and persistence.
 
 ## Runtime Infrastructure Baseline (MANDATORY)
 - **Cache/Queue**: Valkey 8.0.2-alpine (NOT Redis, for license compliance with RSALv2/SSPLv1).

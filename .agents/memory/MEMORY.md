@@ -41,6 +41,7 @@
 - [project] Runtime Infrastructure Baseline: Valkey 8.0.2 (replaces Redis for license compliance), Postgres 17.6-alpine, MinIO pinned by SHA256 digest, Caddy 2.8-alpine → tech-decisions.md
 - [project] CI Architecture Gates (6 total): lint, typecheck, lint:dtopipe, lint:error-i18n, lint:api-contract, test:e2e → project-conventions.md
 - [project] Next.js RSC Mandate: public-facing routes (/careers/*) must be Server Components; interactive parts isolated in Client Components → project-conventions.md
+- [project] Next.js App Router Scripts: never use raw <script> in JSX; always use <Script> from next/script with strategy beforeInteractive → project-conventions.md
 - [project] Orphan File Cleanup: nightly cron at 0 4 * * * for MinIO orphan files older than 30 days (safety grace period) → tech-decisions.md
 - [project] Verified-Ship Mindset: every self-claimed "READY" requires independent IV&V verification with raw execution evidence before deployment → user-preferences.md
 
@@ -73,6 +74,7 @@
 - [user] Verified-Ship Mindset: every self-claimed "READY" requires independent IV&V verification before deployment → user-preferences.md
 
 ## Feedback
+- [feedback] 2026-10-02 (Part 4): Phase 18/18.1/19 — True Theme Script Resolution via Next.js Script & Unmasked E2E → feedback-history.md
 - [feedback] 2026-10-02 (Part 3): Phase 17 Final Cleanup — AsyncLocalStorage, DLQ & Orphan Cron → feedback-history.md
 - [feedback] 2026-10-02 (Part 2): Phase 16A/16B — Saga Pattern, RSC & IV&V Round 9 → feedback-history.md
 - [feedback] 2026-10-02 (Part 1): Phase 15A/15B/15C — Stack Stabilization & Harsh Audit → feedback-history.md

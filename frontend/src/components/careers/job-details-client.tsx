@@ -318,7 +318,7 @@ export function JobDetailsClient({
               <div className="space-y-4">
                 <h2 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
-                  {t("careers.jobDescriptionTitle")}
+                  {t("careers.jobDescription")}
                 </h2>
                 <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
                   {job.description}
@@ -330,7 +330,7 @@ export function JobDetailsClient({
                 <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
                   <h2 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
-                    {t("careers.requirementsTitle")}
+                    {t("careers.requirements")}
                   </h2>
                   <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line font-normal">
                     {job.requirements}
@@ -363,7 +363,7 @@ export function JobDetailsClient({
                   {t("careers.submitApplication")}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  {t("careers.fillFormDesc")}
+                  {t("careers.applicationFormSubtitle")}
                 </p>
               </div>
 
@@ -406,12 +406,12 @@ export function JobDetailsClient({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                        {t("careers.formLastName")} <span className="text-rose-500">*</span>
+                        {t("careers.lastName")} <span className="text-rose-500">*</span>
                       </label>
                       <Input
                         type="text"
                         required
-                        placeholder={t("careers.formLastNamePlaceholder")}
+                        placeholder={t("careers.placeholders.lastName")}
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
@@ -419,12 +419,12 @@ export function JobDetailsClient({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                        {t("careers.formFirstName")} <span className="text-rose-500">*</span>
+                        {t("careers.firstName")} <span className="text-rose-500">*</span>
                       </label>
                       <Input
                         type="text"
                         required
-                        placeholder={t("careers.formFirstNamePlaceholder")}
+                        placeholder={t("careers.placeholders.firstName")}
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
@@ -435,7 +435,7 @@ export function JobDetailsClient({
                   {/* Email & Phone */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      {t("careers.formEmail")} <span className="text-rose-500">*</span>
+                      {t("careers.email")} <span className="text-rose-500">*</span>
                     </label>
                     <Input
                       type="email"
@@ -449,7 +449,7 @@ export function JobDetailsClient({
 
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      {t("careers.formPhone")}
+                      {t("careers.phone")}
                     </label>
                     <Input
                       type="tel"
@@ -463,7 +463,7 @@ export function JobDetailsClient({
                   {/* Resume Upload Box */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      {t("careers.formResume")} <span className="text-rose-500">*</span>
+                      {t("careers.resume")} <span className="text-rose-500">*</span>
                     </label>
 
                     <input
@@ -509,10 +509,10 @@ export function JobDetailsClient({
                         <UploadCloud className="h-6 w-6 text-slate-400 mx-auto" />
                         <div className="space-y-0.5">
                           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {t("careers.dropCvPrompt")}
+                            {t("careers.dropCvHere")}
                           </p>
                           <p className="text-[10px] text-slate-400">
-                            {t("careers.supportedCvFormats")}
+                            {t("careers.cvFormats")}
                           </p>
                         </div>
                       </div>
@@ -528,11 +528,11 @@ export function JobDetailsClient({
                   {/* Notes / Message */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      {t("careers.formNotes")}
+                      {t("careers.notes")}
                     </label>
                     <textarea
                       rows={3}
-                      placeholder={t("careers.formNotesPlaceholder")}
+                      placeholder={t("careers.placeholders.notes")}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       className="w-full p-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
@@ -554,12 +554,12 @@ export function JobDetailsClient({
                     {applyMutation.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t("careers.submittingApplication")}
+                        {t("careers.submitting")}
                       </>
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4 mr-2" />
-                        {t("careers.submitButton")}
+                        {t("careers.submitApplication")}
                       </>
                     )}
                   </Button>

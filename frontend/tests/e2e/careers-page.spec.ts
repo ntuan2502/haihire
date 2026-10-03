@@ -57,6 +57,33 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
     expect(hydrationErrors).toHaveLength(0);
   });
 
+  test("Phase 19 verification: user-reported URL (senior-technical-recruiter-hr) renders without script tag warning", async ({
+    page,
+  }) => {
+    const rawConsoleLogs: { type: string; text: string }[] = [];
+
+    page.on("console", (msg) => {
+      rawConsoleLogs.push({ type: msg.type(), text: msg.text() });
+    });
+
+    const targetUrl = "/careers/admin/senior-technical-recruiter-hr?ref=lnk-techinasia-fair";
+    const response = await page.goto(targetUrl, {
+      waitUntil: "networkidle",
+    });
+
+    expect(response?.status()).toBe(200);
+
+    const heading = page.locator("h1");
+    await expect(heading.first()).toBeVisible();
+    expect(await heading.first().innerText()).toContain("Senior Technical Recruiter");
+
+    // Verify ZERO script tag warnings from React 19 across all console messages
+    const scriptTagErrors = rawConsoleLogs.filter((log) =>
+      log.text.includes("Encountered a script tag while rendering React component"),
+    );
+    expect(scriptTagErrors).toHaveLength(0);
+  });
+
   test("theme flicker test: dark mode class is applied synchronously before paint (<50ms)", async ({
     page,
   }) => {
@@ -64,8 +91,6 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
     await page.addInitScript(() => {
       localStorage.setItem("theme", "dark");
     });
-
-    const startTime = Date.now();
 
     // Navigate until DOM is parsed and head scripts executed
     await page.goto(CAREER_PAGE_URL, { waitUntil: "domcontentloaded" });

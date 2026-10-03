@@ -5,7 +5,6 @@ const DEMO_PASSWORD =
   process.env.DEMO_SEED_PASSWORD ||
   process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD ||
   "dev-seed-password-2026";
-const TARGET_JOB_ID = "f0a4dcdf-916a-44d7-9faf-189090f731ea";
 
 test.describe("Kanban Drag and Drop E2E Flow", () => {
   test("drag APPLIED -> SCREENING succeeds, drag SCREENING -> APPLIED triggers toast error and blocks API", async ({
@@ -21,9 +20,26 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
 
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 
-    // 2. Navigate to pipeline page for job
-    await page.goto(`/dashboard/jobs/${TARGET_JOB_ID}/pipeline?stage=APPLIED`);
-    await page.waitForLoadState("networkidle");
+    // 2. Discover an active job pipeline with candidates in APPLIED stage
+    const pipelineLinks = page.locator('a[href*="/pipeline"]');
+    await expect(pipelineLinks.first()).toBeVisible({ timeout: 10000 });
+    const hrefs = await pipelineLinks.evaluateAll((links) =>
+      links.map((a) => (a as HTMLAnchorElement).pathname),
+    );
+
+    let candidateCardFound = false;
+    for (const href of hrefs) {
+      if (!href) continue;
+      await page.goto(`${href}?stage=APPLIED`);
+      await page.waitForLoadState("networkidle");
+
+      const candidateCard = page.locator('[data-testid^="candidate-card-"]').first();
+      if (await candidateCard.isVisible({ timeout: 4000 }).catch(() => false)) {
+        candidateCardFound = true;
+        break;
+      }
+    }
+    expect(candidateCardFound).toBe(true);
 
     // Ensure stage pill for APPLIED and SCREENING are visible
     const appliedPill = page.locator('[data-testid="stage-pill-APPLIED"]');

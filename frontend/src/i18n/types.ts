@@ -1439,6 +1439,10 @@ export interface TranslationSchema {
     jobDescription: string;
     requirements: string;
     salaryNegotiable: string;
+    allJobsAt: string;
+    aboutCompany: string;
+    aboutCompanyDesc: string;
+    privacyNotice: string;
     transparentProcessTitle: string;
     transparentProcessDesc: string;
     applicationFormTitle: string;

@@ -77,14 +77,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify Internationalization & No Hardcoded Strings
+        run: pnpm check:i18n
+
+      - name: Run linter and type checks
+        run: pnpm lint
+
+      - name: Verify Controller DtoPipe Coverage Gate (Gate 3)
+        run: pnpm lint:dtopipe
+
+      - name: Verify Error Code i18n Coverage Gate (Gate 4)
+        run: pnpm lint:error-i18n
+
+      - name: Verify API Contract Coverage Gate (Gate 5)
+        run: pnpm lint:api-contract
+
+      - name: Verify Environment Synchronization Gate (Gate 6)
+        run: pnpm lint:env-sync
+
       - name: Create backend .env for CI
         run: |
           cat > backend/.env << 'EOF'
-          NODE_ENV=test
           PORT=3001
           DATABASE_URL=postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
           JWT_SECRET=ci-test-jwt-secret-minimum-16-chars
           ENCRYPTION_SECRET=ci-test-encryption-secret-must-be-32-characters-long
+          DEMO_SEED_PASSWORD=dev-seed-password-2026
           FRONTEND_URL=http://localhost:3000
           MINIO_ENDPOINT=localhost
           MINIO_PORT=9000
@@ -102,41 +120,23 @@ jobs:
           SYSTEM_EMAIL_SMTP_PASS=
           SYSTEM_EMAIL_RESEND_API_KEY=
           SYSTEM_EMAIL_SENDGRID_API_KEY=
-          REDIS_HOST=localhost
           REDIS_PORT=6379
-          REDIS_PASSWORD=
           EOF
 
       - name: Create frontend .env for CI
         run: |
           cat > frontend/.env << 'EOF'
+          PORT=3000
           INTERNAL_API_URL=http://localhost:3001
           NEXT_PUBLIC_API_URL=http://localhost:3001
           NEXT_PUBLIC_MINIO_URL=/haihire-resumes
+          NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
           EOF
-
-      - name: Verify Internationalization & No Hardcoded Strings
-        run: pnpm check:i18n
 
       - name: Audit Test Differences (Anti-Regression IVV3-01)
         run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD || true
 
-      - name: Run linter and type checks
-        run: pnpm lint
-
-      - name: Verify Controller DtoPipe Coverage Gate (PROCESS-IVV6-03)
-        run: pnpm lint:dtopipe
-
-      - name: Verify Error Code i18n Coverage Gate (Gate 4)
-        run: pnpm lint:error-i18n
-
-      - name: Verify API Contract Coverage Gate (Gate 5)
-        run: pnpm lint:api-contract
-
-      - name: Verify Environment Synchronization Gate (Gate 7)
-        run: pnpm lint:env-sync
-
-      - name: Run Unit & Integration Tests with Coverage (IVV3-04)
+      - name: Run Unit & Integration Tests with Coverage (Gate 7)
         run: |
           pnpm --filter ./backend run test --coverage
           pnpm --filter ./frontend run test --coverage

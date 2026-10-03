@@ -141,3 +141,17 @@ The gate script `scripts/check-env-sync.ts` runs automatically during CI (Gate 7
 ### Issue 3: Client calls point to localhost instead of production API
 - **Cause:** `NEXT_PUBLIC_API_URL` was baked during build with a localhost value, or left empty when on a separated domain.
 - **Fix:** Rebuild the frontend container providing `args: NEXT_PUBLIC_API_URL: https://api.yourdomain.com`.
+
+---
+
+## 5. CI Environment Behavior
+
+Because local `.env` files are gitignored and never committed to source control, the `pnpm lint:env-sync` gate behaves adaptively in CI environments (`CI=true` or `GITHUB_ACTIONS=true`):
+
+1. **Graceful Skip for Absent `.env` Files:**
+   - When running on a CI runner without local `.env` files, `scripts/check-env-sync.ts` logs `ℹ️ [SKIP] <file> not present in CI environment` and passes without throwing false positives.
+2. **Strict Production Template Parity Enforced:**
+   - Even in CI, the script strictly validates that 100% of `${VARIABLE}` substitutions in `docker-compose.prod.yml` are documented in `.env.production.example`.
+3. **Local Development Enforcement:**
+   - In local developer workstations (where `CI` is unset), missing `backend/.env` or `frontend/.env` is treated as a fatal configuration error (`❌ Required environment file missing: ...`), guaranteeing developers maintain complete parity before pushing code.
+

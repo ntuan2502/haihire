@@ -78,13 +78,13 @@ const envPairs: EnvPairCheck[] = [
     name: "Backend Service Environment",
     exampleFile: "backend/.env.example",
     targetFile: "backend/.env",
-    requiredTarget: false,
+    requiredTarget: true,
   },
   {
     name: "Frontend Service Environment",
     exampleFile: "frontend/.env.example",
     targetFile: "frontend/.env",
-    requiredTarget: false,
+    requiredTarget: true,
   },
   {
     name: "Production Template Parity",
@@ -93,6 +93,8 @@ const envPairs: EnvPairCheck[] = [
     requiredTarget: false,
   },
 ];
+
+const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 
 for (const pair of envPairs) {
   const examplePath = resolve(process.cwd(), pair.exampleFile);
@@ -107,7 +109,9 @@ for (const pair of envPairs) {
 
   const targetKeys = parseEnvKeys(targetPath);
   if (!targetKeys) {
-    if (pair.requiredTarget) {
+    if (isCI) {
+      console.log(`ℹ️ [SKIP] ${pair.targetFile} not present in CI environment`);
+    } else if (pair.requiredTarget) {
       console.error(`❌ [${pair.name}] Required environment file missing: ${pair.targetFile}`);
       hasError = true;
     } else {

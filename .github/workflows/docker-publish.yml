@@ -103,11 +103,11 @@ jobs:
           EOF
 
           cat > backend/.env << 'EOF'
-          NODE_ENV=test
           PORT=3001
           DATABASE_URL=postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
           JWT_SECRET=ci-test-jwt-secret-minimum-16-chars
           ENCRYPTION_SECRET=ci-test-encryption-secret-must-be-32-characters-long
+          DEMO_SEED_PASSWORD=dev-seed-password-2026
           FRONTEND_URL=http://localhost:3000
           MINIO_ENDPOINT=localhost
           MINIO_PORT=9000
@@ -125,15 +125,15 @@ jobs:
           SYSTEM_EMAIL_SMTP_PASS=
           SYSTEM_EMAIL_RESEND_API_KEY=
           SYSTEM_EMAIL_SENDGRID_API_KEY=
-          REDIS_HOST=localhost
           REDIS_PORT=6379
-          REDIS_PASSWORD=
           EOF
 
           cat > frontend/.env << 'EOF'
+          PORT=3000
           INTERNAL_API_URL=http://localhost:3001
           NEXT_PUBLIC_API_URL=http://localhost:3001
           NEXT_PUBLIC_MINIO_URL=/haihire-resumes
+          NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
           EOF
 
       - name: Run Full CI Verification Pipeline

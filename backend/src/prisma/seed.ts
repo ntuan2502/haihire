@@ -720,7 +720,8 @@ export async function runSeed(): Promise<void> {
 
   for (let i = 0; i < 20; i++) {
     const baseConfig = BASE_JOB_CONFIGS[i % BASE_JOB_CONFIGS.length];
-    const status = statusPool[i];
+    // Guarantee that Job index 1 (Senior Backend Engineer) is ALWAYS PUBLISHED for E2E and public career tests
+    const status = i === 1 ? "PUBLISHED" : statusPool[i];
     statusCounts[status]++;
 
     const workplace = WORKPLACES[Math.floor(Math.random() * WORKPLACES.length)];

@@ -1,0 +1,159 @@
+name: E2E Nightly Verification
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 03:00 UTC every day
+  workflow_dispatch:  # Manual execution trigger
+
+concurrency:
+  group: e2e-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Full Nightly Playwright E2E Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      CI: "true"
+      PLAYWRIGHT_BASE_URL: "http://localhost:13000"
+
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: haihire_test
+          POSTGRES_PASSWORD: haihire_test_password
+          POSTGRES_DB: haihire_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:8.0.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      - name: Install pnpm 12
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup environment files for Nightly E2E
+        run: |
+          cat > .env << 'EOF'
+          NODE_ENV=test
+          BACKEND_PORT=13001
+          FRONTEND_PORT=13000
+          POSTGRES_PORT=5432
+          POSTGRES_USER=haihire_test
+          POSTGRES_PASSWORD=haihire_test_password
+          POSTGRES_DB=haihire_test_db
+          REDIS_PORT=6379
+          EOF
+
+          cat > backend/.env << 'EOF'
+          PORT=13001
+          DATABASE_URL=postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
+          JWT_SECRET=ci-test-jwt-secret-minimum-16-chars
+          ENCRYPTION_SECRET=ci-test-encryption-secret-must-be-32-characters-long
+          DEMO_SEED_PASSWORD=dev-seed-password-2026
+          FRONTEND_URL=http://localhost:13000
+          MINIO_ENDPOINT=localhost
+          MINIO_PORT=9000
+          MINIO_USE_SSL=false
+          MINIO_ACCESS_KEY=minioadmin
+          MINIO_SECRET_KEY=minioadmin
+          MINIO_BUCKET_NAME=haihire-resumes
+          MINIO_PUBLIC_URL=http://localhost:9000
+          SYSTEM_EMAIL_PROVIDER=SIMULATED
+          SYSTEM_EMAIL_FROM_NAME=HaiHire CI
+          SYSTEM_EMAIL_FROM_EMAIL=ci@haihire.test
+          SYSTEM_EMAIL_SMTP_HOST=
+          SYSTEM_EMAIL_SMTP_PORT=587
+          SYSTEM_EMAIL_SMTP_USER=
+          SYSTEM_EMAIL_SMTP_PASS=
+          SYSTEM_EMAIL_RESEND_API_KEY=
+          SYSTEM_EMAIL_SENDGRID_API_KEY=
+          REDIS_PORT=6379
+          EOF
+
+          cat > frontend/.env << 'EOF'
+          PORT=13000
+          INTERNAL_API_URL=http://localhost:13001
+          NEXT_PUBLIC_API_URL=http://localhost:13001
+          NEXT_PUBLIC_MINIO_URL=/haihire-resumes
+          NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
+          EOF
+
+      - name: Initialize Database Schema & Seed Data
+        run: |
+          pnpm --filter ./backend run db:update
+          pnpm --filter ./backend run seed
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pre-build application
+        run: pnpm build
+
+      - name: Pre-start services in background & wait for healthcheck
+        run: |
+          pnpm dev &
+          echo "Waiting for services to become healthy on http://localhost:13000..."
+          timeout 120s bash -c 'until curl -sf http://localhost:13000 > /dev/null; do sleep 2; done'
+          echo "Services are ready!"
+
+      - name: Run Playwright E2E Tests
+        run: pnpm test:e2e
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: 0
+
+      - name: Upload Playwright test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nightly-playwright-report
+          path: playwright-report/

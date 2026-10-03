@@ -253,4 +253,13 @@ updated: 2026-10-02T10:00
   - Always strip path separators with cross-platform regex: `.replace(/^.*[/\\]/, "")`
   - Sanitize remaining characters: `.replace(/[^a-zA-Z0-9._-]/g, "_")`
   - Fallback to safe default (`document`) if empty or composed solely of directory navigation dots (`/^\.+$/`).
-- **All filename sanitization and security logic MUST pass on both Windows and Linux CI.**
+- **All filename sanitization and security logic MUST pass on both Windows and Linux CI.**
+
+## CI/CD Test Strategy (Phase 22.4 MANDATORY)
+- **Static Quality Gates on Every PR**: ESLint, TypeScript typecheck, DtoPipe protection, error code i18n localization, API contract parity, environment variable sync, and unit tests (Vitest - 378 tests) run on **100% of pull requests and pushes**.
+- **Conditional Playwright E2E Execution**: End-to-end browser journeys execute on pull requests **only when critical paths are touched** (e.g. `frontend/src/app/**`, `backend/src/auth/**`, `backend/src/applications/**`, `packages/**`, `package.json`, `pnpm-lock.yaml`).
+- **Zero E2E Waste on Documentation & Typo PRs**: Never run heavy E2E tests for pull requests modifying solely documentation (`docs/**`), comments, or non-critical formatting.
+- **Nightly Scheduled E2E**: The full Playwright test suite executes on a dedicated nightly schedule at `03:00 UTC` (`.github/workflows/e2e-nightly.yml`) to catch subtle external dependency drifts.
+- **Pre-Release Mandatory Gate**: The GHCR release pipeline (`.github/workflows/docker-publish.yml`) enforces a mandatory `test-e2e` job that blocks container publishing if any E2E journey fails.
+- **Playwright Configuration Standards**: 300s timeout in CI (`timeout: process.env.CI ? 300000 : 60000`), piped stdout/stderr, and server reuse (`reuseExistingServer: !process.env.CI`).
+- **Canonical Runbook**: `docs/runbooks/ci-strategy.md`.

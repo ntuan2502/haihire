@@ -15,6 +15,7 @@ docs/
 │   └── overview.md                 # 9 controllers, 77 endpoints, auth, error envelope
 ├── runbooks/                       # Site reliability & operational runbooks
 │   ├── production-deployment-plan.md # 5-phase deployment protocol & rollback
+│   ├── versioning.md               # Monorepo versioning, SemVer, GHCR & immutable release policy
 │   ├── backup-and-restore.md       # PostgreSQL dumps, MinIO hot backup & restore drills
 │   ├── orphan-cleanup.md           # MinIO daily orphan file cleanup cron
 │   ├── env-management.md           # 5-file environment architecture & sync
@@ -41,6 +42,7 @@ docs/
 
 ### For DevOps & Site Reliability Engineers (SRE)
 - 🚀 [**Production Deployment Runbook**](file:///c:/Workspaces/haihire/docs/runbooks/production-deployment-plan.md): Safe 5-phase deployment workflow, smoke verification, and rollback procedures.
+- 📦 [**Versioning & Container Publishing Runbook**](file:///c:/Workspaces/haihire/docs/runbooks/versioning.md): SemVer rules, monorepo alignment, GHCR image publishing, and immutable tag policy.
 - 💾 [**Backup & Disaster Recovery Runbook**](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md): Automated PostgreSQL dual-format dumps, MinIO volume snapshots, and automated restore verification drills.
 - 🧹 [**MinIO Orphan File Cleanup Runbook**](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md): Daily cron purging unreferenced resume files after a 30-day grace period.
 - ⚙️ [**Environment Architecture Runbook**](file:///c:/Workspaces/haihire/docs/runbooks/env-management.md): Segregated 5-file environment management, auto-sync checks, and build-time inlining rules.

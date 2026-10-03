@@ -6,9 +6,12 @@ This directory contains the complete historical audit trajectory of the HaiHire 
 
 ## 1. Audit Trajectory Timeline & Verdicts
 
-### Phase 11 - 20 (Active Production Hardening)
+### Phase 11 - 22 (Active Production Hardening)
 | Phase | Date / Milestone | Focus Area | IV&V Round | Final Verdict | Report Link |
 | :---: | :--- | :--- | :---: | :---: | :--- |
+| **22** | 2026-10-03 | Version Alignment & GHCR Container Publishing | — | 🟢 **PASS** | [phase-22-version-registry-report.md](phase-22-version-registry-report.md) |
+| **21.1**| 2026-10-03 | Quick Verification Before Production Release | — | 🟢 **PASS** | [phase-21.1-verification-report.md](phase-21.1-verification-report.md) |
+| **21** | 2026-10-03 | Documentation Audit & Synchronization | — | 🟢 **PASS** | [phase-21-docs-audit-report.md](phase-21-docs-audit-report.md) |
 | **20** | 2026-10-03 | Environment Architecture & Sync Audit | — | 🟢 **PASS** | [phase-20-env-report.md](phase-20-env-report.md) |
 | **19.2**| 2026-10-03 | Fix P3 Direct process.env Call in Auth Controller | — | 🟢 **PASS** | [phase-19.2-report.md](phase-19.2-report.md) |
 | **19.1**| 2026-10-03 | Independent Verification of Theme Fix & Rate Limit | Round 10 | 🟢 **SHIP WITH COND** | [phase-19.1-ivv-report.md](phase-19.1-ivv-report.md) |

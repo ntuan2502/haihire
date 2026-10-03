@@ -105,6 +105,42 @@ pnpm check:all:e2e
 
 ---
 
+## 📦 Version Management & Release Process
+
+HaiHire maintains lockstep version alignment across all packages (`package.json`, `backend`, `frontend`, `packages/shared`).
+
+### Bumping Versions
+Use the dedicated automation scripts to bump and synchronize versions:
+```bash
+# Preview SemVer bump
+pnpm version:bump patch --dry-run
+pnpm version:bump minor --dry-run
+pnpm version:bump major --dry-run
+
+# Execute SemVer bump across all 4 manifests
+pnpm version:bump patch
+
+# Synchronize manifests if version drift occurred
+pnpm version:sync
+```
+
+### Creating Releases & Publishing Containers
+1. Bump version and create Git tag:
+   ```bash
+   pnpm version:bump patch --tag
+   ```
+2. Update [`CHANGELOG.md`](file:///c:/Workspaces/haihire/CHANGELOG.md) with release notes.
+3. Push commit and tag:
+   ```bash
+   git push origin main
+   git push origin v1.0.1
+   ```
+4. GitHub Actions will automatically verify tests, build multi-stage Docker images, push immutable images to GitHub Container Registry (GHCR), and publish a GitHub Release.
+
+For comprehensive details, refer to [`docs/runbooks/versioning.md`](file:///c:/Workspaces/haihire/docs/runbooks/versioning.md).
+
+---
+
 ## 🚀 Pull Request Checklist
 
 When opening a Pull Request:
@@ -113,3 +149,4 @@ When opening a Pull Request:
 - [ ] All new features include unit/integration tests (`pnpm test`).
 - [ ] No broken markdown links or outdated documentation.
 - [ ] Verified non-leakage of secrets or `.env` files.
+

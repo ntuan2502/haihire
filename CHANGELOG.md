@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.0.0] - Phase 22: Version Alignment & Container Registry Publishing (2026-10-03)
+### Added
+- Monorepo lockstep version synchronization tooling: `scripts/sync-version.ts` and `scripts/bump-version.ts`.
+- Automation commands: `pnpm version:sync` and `pnpm version:bump`.
+- Container publishing GitHub Actions workflow: `.github/workflows/docker-publish.yml` (multi-stage buildx, GHA cache, OCI metadata, GHCR publish, and GitHub release generation).
+- GitHub release and changelog workflow: `.github/workflows/release.yml`.
+- Versioning and container registry runbook: `docs/runbooks/versioning.md`.
+- Production environment variables `GITHUB_REPOSITORY` and `IMAGE_TAG` in `.env.production.example`.
+
+### Changed
+- Synchronized all 4 package manifests (`package.json`, `backend/package.json`, `frontend/package.json`, `packages/shared/package.json`) to `1.0.0`.
+- Updated `docker-compose.prod.yml` to remove local `build:` directives and pull pre-built immutable container images from GHCR.
+- Updated `docs/runbooks/production-deployment-plan.md` to replace local container builds with GHCR pull, digest recording, and immutable tag rollback SOPs.
+- Updated `.github/workflows/ci-cd.yml` to align image naming (`haihire-backend`, `haihire-frontend`) and pull from GHCR during deployment.
+- Updated `CONTRIBUTING.md` and `.agents/memory/project-conventions.md` with versioning and container publishing protocols.
+
+---
+
 ## [Unreleased] - Phase 21: Documentation Audit & Sync (2026-10-03)
 ### Added
 - Root-level repository documentation: `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`.

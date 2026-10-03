@@ -21,12 +21,19 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # Copy source code
 COPY packages/shared ./packages/shared
 COPY backend ./backend
+COPY scripts ./scripts
 
 # Build shared and backend (esbuild produces dist/server.mjs)
 RUN pnpm --filter @haihire/shared run build && pnpm --filter backend run build
 
 # Stage 2: Production lean runtime
 FROM node:26-alpine AS runner
+
+# OCI Image Spec Labels
+LABEL org.opencontainers.image.title="HaiHire Backend Service" \
+      org.opencontainers.image.description="NestJS 12 Enterprise ATS API Service" \
+      org.opencontainers.image.vendor="HaiHire Platform" \
+      org.opencontainers.image.licenses="Proprietary"
 
 RUN apk add --no-cache libc6-compat
 
@@ -51,6 +58,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src
 COPY --chown=node:node --from=builder /app/backend/dist ./backend/dist
 COPY --chown=node:node --from=builder /app/backend/src/prisma ./backend/src/prisma
+COPY --chown=node:node --from=builder /app/scripts ./scripts
 
 WORKDIR /app/backend
 

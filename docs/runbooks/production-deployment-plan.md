@@ -24,14 +24,14 @@ Before commencing deployment operations, verify each item:
   - `pnpm test` and `pnpm test:e2e` reporting 379/379 tests passing (233 Backend + 136 Frontend + 10 E2E).
   - All 7 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
   - `pnpm lint:env-sync` reporting 100% key parity and complete compose variable coverage.
-- [ ] **Container Image Build & Registry Push:**
-  Build immutable production images tagged with Git commit SHA and `:latest`:
+- [ ] **Container Image Availability on GHCR:**
+  Verify immutable production images published by GitHub Actions workflow exist in GitHub Container Registry (GHCR):
   ```bash
-  export IMAGE_TAG=$(git rev-parse --short HEAD)
-  docker build -f backend/Dockerfile -t registry.haihire.internal/haihire-backend:${IMAGE_TAG} -t registry.haihire.internal/haihire-backend:latest .
-  docker build -f frontend/Dockerfile -t registry.haihire.internal/haihire-frontend:${IMAGE_TAG} -t registry.haihire.internal/haihire-frontend:latest .
-  docker push registry.haihire.internal/haihire-backend:${IMAGE_TAG}
-  docker push registry.haihire.internal/haihire-frontend:${IMAGE_TAG}
+  export GITHUB_REPOSITORY="ntuan2502/haihire"
+  export IMAGE_TAG="v1.0.0" # Never use 'latest' in production
+
+  docker pull ghcr.io/${GITHUB_REPOSITORY}/haihire-backend:${IMAGE_TAG}
+  docker pull ghcr.io/${GITHUB_REPOSITORY}/haihire-frontend:${IMAGE_TAG}
   ```
 - [ ] **Stakeholder & Tenant Notification:**
   Broadcast scheduled maintenance window notice via platform status dashboard at `status.haihire.com`.
@@ -51,7 +51,13 @@ ssh sre-admin@prod-cluster.haihire.internal
 free -m
 df -h /var/lib/docker
 
-# 1.3 Verify production configuration validity
+# 1.3 Ensure .env.production has immutable IMAGE_TAG and GITHUB_REPOSITORY set
+# Example in .env.production:
+# GITHUB_REPOSITORY=ntuan2502/haihire
+# IMAGE_TAG=v1.0.0
+grep -E "^(GITHUB_REPOSITORY|IMAGE_TAG)=" .env.production
+
+# 1.4 Verify production configuration validity
 pnpm docker:prod:config
 # or: docker compose --env-file .env.production -f docker-compose.prod.yml config
 ```
@@ -63,19 +69,26 @@ pnpm run migration:status
 pnpm run migrate
 ```
 
-### Step 3: Progressive Rolling Deployment
+### Step 3: Progressive Rolling Deployment (Zero Local Build)
 ```bash
-# 3.1 Pull new container images
-docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend
+# 3.1 Pull verified immutable images from GHCR
+docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend orphan-cleanup
 
-# 3.2 Deploy Backend with graceful drain
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps --build backend
+# 3.2 Audit & record image digests for deployment tracking
+docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY:-ntuan2502/haihire}/haihire-backend:${IMAGE_TAG:-v1.0.0}
+docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${GITHUB_REPOSITORY:-ntuan2502/haihire}/haihire-frontend:${IMAGE_TAG:-v1.0.0}
 
-# 3.3 Verify backend health before updating frontend
+# 3.3 Deploy Backend with zero-build container start
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps backend
+
+# 3.4 Verify backend health before updating frontend
 curl -f -s http://localhost:3001/health | grep '"status":"ok"' || exit 1
 
-# 3.4 Deploy Frontend
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps --build frontend
+# 3.5 Deploy Frontend with zero-build container start
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps frontend
+
+# 3.6 Restart background worker services
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps orphan-cleanup
 ```
 
 ### Step 4: Post-Deployment Smoke Test
@@ -102,11 +115,12 @@ If unrecoverable critical failures occur (P0/P1 bugs, database deadlock, or erro
 
 ### 4.2. Rollback Commands
 ```bash
-# Step 1: Revert container image to N-1 verified release tag
-export PREVIOUS_STABLE_TAG="v0.9.9-stable"
+# Step 1: Revert container image to N-1 verified release tag (Immutable Tag Policy: NEVER use latest)
+export PREVIOUS_STABLE_TAG="v0.9.9"
 
-docker compose -f docker-compose.prod.yml stop backend frontend
-TAG=${PREVIOUS_STABLE_TAG} docker compose -f docker-compose.prod.yml up -d backend frontend
+# Update IMAGE_TAG in .env.production or pass via environment override:
+IMAGE_TAG=${PREVIOUS_STABLE_TAG} docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend
+IMAGE_TAG=${PREVIOUS_STABLE_TAG} docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps backend frontend
 
 # Step 2: In the event of schema incompatibility, restore from pre-deployment snapshot:
 # (Only if migrations made breaking structural changes)

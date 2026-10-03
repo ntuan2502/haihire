@@ -52,6 +52,8 @@
     "docker:infra:up": "docker compose up -d",
     "docker:infra:down": "docker compose down",
     "docker:infra:logs": "docker compose logs -f",
+    "version:sync": "tsx scripts/sync-version.ts",
+    "version:bump": "tsx scripts/bump-version.ts",
     "prepare": "husky"
   },
   "devDependencies": {

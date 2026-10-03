@@ -41,6 +41,12 @@ RUN pnpm --filter @haihire/shared run build && pnpm --filter frontend run build
 # Stage 2: Production ultra-lean runtime (standalone mode)
 FROM node:26-alpine AS runner
 
+# OCI Image Spec Labels
+LABEL org.opencontainers.image.title="HaiHire Frontend Service" \
+      org.opencontainers.image.description="Next.js 16 Enterprise ATS Frontend Portal" \
+      org.opencontainers.image.vendor="HaiHire Platform" \
+      org.opencontainers.image.licenses="Proprietary"
+
 RUN apk add --no-cache libc6-compat
 
 WORKDIR /app

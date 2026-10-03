@@ -229,3 +229,18 @@ updated: 2026-10-02T10:00
 - **Safety Grace Period**: Files must be older than 30 days before deletion to avoid race conditions with in-flight transactions.
 - **Dry-Run First**: Always test with --dry-run flag before enabling live deletion in production.
 - **Runbook**: docs/runbooks/orphan-cleanup.md documents manual invocation and rollback procedure.
+
+## Version Management & Release Process (Phase 22 MANDATORY)
+- **Lockstep Monorepo Versioning**: All 4 package manifests (`package.json`, `backend/package.json`, `frontend/package.json`, `packages/shared/package.json`) must maintain strictly identical SemVer versions.
+- **Automated CLI Tooling**:
+  - `pnpm version:sync [--dry-run]`: Aligns all package versions to root or a target version.
+  - `pnpm version:bump [patch|minor|major] [--tag] [--dry-run]`: Bumps SemVer and optionally tags Git release.
+- **Container Registry Publishing (GHCR)**:
+  - Docker images are compiled and published via `.github/workflows/docker-publish.yml` to GitHub Container Registry.
+  - OCI Image Naming: `ghcr.io/${GITHUB_REPOSITORY}/haihire-backend:${IMAGE_TAG}` and `haihire-frontend:${IMAGE_TAG}`.
+  - Every image includes full OCI metadata labels (version, revision SHA, created timestamp, repository source).
+- **Immutable Tag Policy**:
+  - **NEVER use `latest` in production.** Production deployments and rollback SOPs must reference immutable SemVer tags (`v1.0.0`) or short commit SHAs (`sha-a1b2c3d`).
+  - Deployments must inspect and log SHA-256 repo digests (`docker inspect --format='{{index .RepoDigests 0}}'`) for SOC 2 / audit trail compliance.
+- **Zero Local Build in Production**: Production environments pull pre-built GHCR images using `docker compose pull` without local compiler or asset overhead.
+- **Canonical Runbook**: `docs/runbooks/versioning.md`.

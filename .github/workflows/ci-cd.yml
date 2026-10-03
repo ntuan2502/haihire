@@ -205,8 +205,9 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}/haihire-backend:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/haihire-backend:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository }}/haihire-backend:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -217,8 +218,9 @@ jobs:
           file: frontend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}/haihire-frontend:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/haihire-frontend:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository }}/haihire-frontend:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -234,9 +236,14 @@ jobs:
       name: staging
       url: https://staging.haihire.internal
     steps:
-      - name: Trigger Staging Container Deployment
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull and Deploy Pre-built Images
         run: |
           echo "Deploying commit ${{ github.sha }} to Staging Environment..."
+          echo "Pulling GHCR images without rebuilding..."
+          echo "IMAGE_TAG=sha-${{ github.sha }} docker compose --env-file .env.production -f docker-compose.prod.yml pull"
           echo "Verifying service readiness at /health..."
 
   # ============================================================================
@@ -251,8 +258,13 @@ jobs:
       name: production
       url: https://haihire.com
     steps:
-      - name: Deploy to Production Cluster
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull and Deploy Pre-built Images
         run: |
           echo "Starting zero-downtime rolling update on production cluster..."
-          echo "Image tag: ${{ github.sha }}"
+          echo "Using pre-built GHCR images (zero local rebuild):"
+          echo "IMAGE_TAG=sha-${{ github.sha }} docker compose --env-file .env.production -f docker-compose.prod.yml pull"
+          echo "IMAGE_TAG=sha-${{ github.sha }} docker compose --env-file .env.production -f docker-compose.prod.yml up -d --remove-orphans"
           echo "Executing pre-flight healthcheck and DB backward compatibility validation..."

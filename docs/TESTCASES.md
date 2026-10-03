@@ -48,8 +48,8 @@
 | **AUTH-07** | Đăng xuất (Logout) an toàn | Client & Cookie cleanup | Xóa HttpOnly cookie qua endpoint logout, xóa trạng thái client | 🟢 **Automated Passed** |
 | **AUTH-08** | Khôi phục phiên (/auth/me) | `auth.service.spec.ts` | Tự động khôi phục user profile từ cookie hoặc Bearer header | 🟢 **Automated Passed** |
 | **AUTH-09** | Xử lý token hết hạn | Runtime HTTP | Gửi token hết hạn $\rightarrow$ trả về `401 Unauthorized`, không crash | 🟣 **Runtime Verified** |
-| **AUTH-10** | Chống Brute-Force Rate Limiting | Redis Throttler | Gửi request liên tục vượt ngưỡng $\rightarrow$ trả về `429 Too Many Requests` | 🟣 **Runtime Verified** |
-| **AUTH-11** | Chống Rate Limit Bypass qua Header | IP Spoofing check | Thử chèn `X-Forwarded-For` giả mạo $\rightarrow$ Redis vẫn bắt đúng IP nguồn | 🟣 **Runtime Verified** |
+| **AUTH-10** | Chống Brute-Force Rate Limiting | Valkey / Redis Throttler | Gửi request liên tục vượt ngưỡng $\rightarrow$ trả về `429 Too Many Requests` | 🟣 **Runtime Verified** |
+| **AUTH-11** | Chống Rate Limit Bypass qua Header | IP Spoofing check | Thử chèn `X-Forwarded-For` giả mạo $\rightarrow$ Valkey vẫn bắt đúng IP nguồn | 🟣 **Runtime Verified** |
 | **AUTH-12** | Route Guard Middleware | Next.js Middleware | Bảo vệ các route `/dashboard/*`, tự redirect về `/login` | 🔵 **Build Verified** |
 
 ---

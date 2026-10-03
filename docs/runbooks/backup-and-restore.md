@@ -62,6 +62,11 @@ In the event of hardware failure, catastrophic data corruption, or regional fail
 docker compose -f docker-compose.prod.yml stop backend frontend
 ```
 
+> **Note on Container Names:**
+> - In Production (`docker-compose.prod.yml`): containers are named `haihire-prod-postgres`, `haihire-prod-minio`, and `haihire-prod-redis`.
+> - In Local Development (`docker-compose.yml`): containers are named `haihire-postgres`, `haihire-minio`, and `haihire-valkey`.
+> The examples below use the production container naming convention (`haihire-prod-*`).
+
 ### 3.2. Database Restoration (PostgreSQL)
 
 #### Method A: Custom Archive Restoration (Recommended)
@@ -70,27 +75,27 @@ docker compose -f docker-compose.prod.yml stop backend frontend
 SNAPSHOT="./backups/haihire-db-haihire_db-YYYY-MM-DDTHH-mm-ss-sssZ.dump"
 
 # Copy snapshot into postgres container:
-docker cp "$SNAPSHOT" haihire-postgres:/tmp/restore.dump
+docker cp "$SNAPSHOT" haihire-prod-postgres:/tmp/restore.dump
 
 # Drop and recreate production database:
-docker exec -i haihire-postgres psql -U haihire_user -d postgres -c "DROP DATABASE haihire_db WITH (FORCE);"
-docker exec -i haihire-postgres psql -U haihire_user -d postgres -c "CREATE DATABASE haihire_db OWNER haihire_user;"
+docker exec -i haihire-prod-postgres psql -U haihire_user -d postgres -c "DROP DATABASE haihire_db WITH (FORCE);"
+docker exec -i haihire-prod-postgres psql -U haihire_user -d postgres -c "CREATE DATABASE haihire_db OWNER haihire_user;"
 
 # Execute pg_restore:
-docker exec -i haihire-postgres pg_restore -U haihire_user -d haihire_db --no-owner --no-acl /tmp/restore.dump
+docker exec -i haihire-prod-postgres pg_restore -U haihire_user -d haihire_db --no-owner --no-acl /tmp/restore.dump
 
 # Clean up container file:
-docker exec -i haihire-postgres rm -f /tmp/restore.dump
+docker exec -i haihire-prod-postgres rm -f /tmp/restore.dump
 ```
 
 #### Method B: Plain SQL Restoration
 ```bash
 SNAPSHOT_SQL="./backups/haihire-db-haihire_db-YYYY-MM-DDTHH-mm-ss-sssZ.sql"
-docker cp "$SNAPSHOT_SQL" haihire-postgres:/tmp/restore.sql
-docker exec -i haihire-postgres psql -U haihire_user -d postgres -c "DROP DATABASE haihire_db WITH (FORCE);"
-docker exec -i haihire-postgres psql -U haihire_user -d postgres -c "CREATE DATABASE haihire_db OWNER haihire_user;"
-docker exec -i haihire-postgres psql -U haihire_user -d haihire_db -f /tmp/restore.sql
-docker exec -i haihire-postgres rm -f /tmp/restore.sql
+docker cp "$SNAPSHOT_SQL" haihire-prod-postgres:/tmp/restore.sql
+docker exec -i haihire-prod-postgres psql -U haihire_user -d postgres -c "DROP DATABASE haihire_db WITH (FORCE);"
+docker exec -i haihire-prod-postgres psql -U haihire_user -d postgres -c "CREATE DATABASE haihire_db OWNER haihire_user;"
+docker exec -i haihire-prod-postgres psql -U haihire_user -d haihire_db -f /tmp/restore.sql
+docker exec -i haihire-prod-postgres rm -f /tmp/restore.sql
 ```
 
 ### 3.3. MinIO Object Storage Restoration
@@ -98,12 +103,12 @@ docker exec -i haihire-postgres rm -f /tmp/restore.sql
 MINIO_ARCHIVE="./backups/haihire-minio-YYYY-MM-DDTHH-mm-ss-sssZ.tar.gz"
 
 # Copy archive to container and extract into /data:
-docker cp "$MINIO_ARCHIVE" haihire-minio:/tmp/minio-restore.tar.gz
-docker exec -i haihire-minio tar -xzf /tmp/minio-restore.tar.gz -C /data
-docker exec -i haihire-minio rm -f /tmp/minio-restore.tar.gz
+docker cp "$MINIO_ARCHIVE" haihire-prod-minio:/tmp/minio-restore.tar.gz
+docker exec -i haihire-prod-minio tar -xzf /tmp/minio-restore.tar.gz -C /data
+docker exec -i haihire-prod-minio rm -f /tmp/minio-restore.tar.gz
 
 # Restart MinIO container to ensure metadata re-index:
-docker restart haihire-minio
+docker restart haihire-prod-minio
 ```
 
 ### 3.4. Service Resumption & Verification
@@ -111,9 +116,16 @@ docker restart haihire-minio
 # Restart application stack:
 docker compose -f docker-compose.prod.yml start backend frontend
 
-# Perform health check:
+# Perform health check (Production default: 3001, Dev: 13001):
 curl -i http://localhost:3001/health
 
 # Verify metrics:
 curl -s http://localhost:3001/metrics | grep http_requests_total
 ```
+
+---
+
+## 4. Complementary Maintenance Tasks
+- **Orphan Object Cleanup:** Daily cron purging unreferenced resume files after a 30-day grace period. See [orphan-cleanup.md](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md).
+- **Incident Response Runbook:** Prometheus alerts and SOPs for database/storage downtime. See [alerts.md](file:///c:/Workspaces/haihire/docs/runbooks/alerts.md).
+

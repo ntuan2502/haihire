@@ -9,24 +9,26 @@
 
 ## 🧭 Tổng quan kiến trúc hệ thống (System Architecture)
 
-- **Mô hình**: Monorepo (`pnpm workspaces`) với `@ats/shared` chia sẻ kiểu dữ liệu và codec dùng chung
+- **Mô hình**: Monorepo (`pnpm workspaces`) với `@haihire/shared` chia sẻ kiểu dữ liệu và codec dùng chung
 - **Backend**:
-  - Framework: **NestJS 11** (Modular Architecture) + Express + TypeScript
-  - Database: **PostgreSQL** thông qua **Prisma 8** (Contract-First với `@prisma/composer`, `@prisma/orm-postgres`)
+  - Runtime: **Node.js 26** LTS
+  - Framework: **NestJS 12** (`@nestjs/core` 12.1.2) + Express + TypeScript
+  - Database: **PostgreSQL 17** thông qua **Prisma 8** (Contract-First với `@prisma/composer`, `@prisma/orm-postgres`)
+  - Cache & Queue: **Valkey 8** (tương thích 100% protocol Redis 7 / BullMQ)
   - Storage: **MinIO Object Storage** (S3-compatible) cho tài liệu và hồ sơ ứng viên với phân vùng tenant đa tầng (`tenants/<safeTenant>/...`)
   - Real-time: **Server-Sent Events (SSE)** thông qua RxJS Subject cho đồng bộ dữ liệu tức thì, cách ly hoàn toàn theo `organizationId`
   - Bảo mật:
     - Xác thực kép: **HttpOnly Cookie** (`haihire_token`, SameSite=Lax) kết hợp Authorization Bearer header
     - Mã hóa **AES-256-GCM** cho mật khẩu SMTP & API keys
-    - Rate-limiting qua **Redis Throttler** bảo vệ endpoint nhạy cảm (HTTP 429)
+    - Rate-limiting qua **Valkey / Redis Throttler** bảo vệ endpoint nhạy cảm (HTTP 429)
     - Kiểm định nhị phân sâu (Deep Binary Inspection): Kiểm tra magic bytes header & trailer (PDF `%%EOF`, DOCX EOCD trailer `PK\x05\x06` trong 65,557 bytes cuối)
     - Concurrency Control: **Optimistic Locking** cho bước chuyển trạng thái hồ sơ (HTTP 409 Conflict)
   - Email Service: Multi-provider (Simulated In-App, SMTP Server, Resend API, SendGrid API) + Trigger Hooks tự động
 - **Frontend**:
-  - Framework: **Next.js 15+** (App Router, Server & Client Components) + **React 19**
-  - Styling: **Tailwind CSS**, Lucide Icons, Responsive UI
-  - State & Data Fetching: **TanStack Query (React Query)** với cơ chế `keepPreviousData`
-  - Đa ngôn ngữ (i18n): Hỗ trợ **Tiếng Việt & Tiếng Anh** đồng bộ 100% (1682 / 1682 keys đồng nhất, bảo vệ bởi `check:i18n`)
+  - Framework: **Next.js 16** (App Router, Server & Client Components) + **React 19**
+  - Styling: **Tailwind CSS v4**, Lucide Icons, Responsive UI
+  - State & Data Fetching: **TanStack Query v5** với cơ chế `keepPreviousData`
+  - Đa ngôn ngữ (i18n): Hỗ trợ **Tiếng Việt & Tiếng Anh** đồng bộ 100% (bảo vệ bởi `check:i18n`)
   - Hỗ trợ mạng nội bộ (LAN): Lắng nghe `0.0.0.0`, tự động cấp quyền subnet `/24`, tích hợp Reverse Proxy Next.js cho MinIO & Backend API tránh lỗi CORS và PNA (Private Network Access)
 
 ---
@@ -47,7 +49,7 @@ Hệ thống hiện tại đã hoàn thiện trọn vẹn quy trình tuyển d�
 
 ### 1. Phân hệ Xác thực & Bảo mật Phiên (Authentication & Security)
 - 🟢 **Xác thực Đa tầng**: Hỗ trợ đồng thời HttpOnly Cookie (`haihire_token`) chống XSS và Bearer header cho API client.
-- 🟢 **Bảo vệ Brute-Force & DoS**: Tích hợp Redis Throttler trên các endpoint đăng nhập/đăng ký, trả về HTTP 429 Too Many Requests khi vượt ngưỡng.
+- 🟢 **Bảo vệ Brute-Force & DoS**: Tích hợp Valkey / Redis Throttler trên các endpoint đăng nhập/đăng ký, trả về HTTP 429 Too Many Requests khi vượt ngưỡng.
 - 🟢 **Quick Login**: Chế độ đăng nhập nhanh tài khoản Admin/Member cho môi trường phát triển & kiểm thử nội bộ.
 - 🟢 **Khôi phục phiên (Session Persistence)**: Tự động duy trì đăng nhập qua `/auth/me`, xử lý mượt mà khi token hết hạn.
 - 🟢 **Bảo vệ tuyến đường (Route Guard)**: Middleware Next.js bảo vệ các trang `/dashboard/*`, tự động chuyển hướng người dùng chưa đăng nhập.

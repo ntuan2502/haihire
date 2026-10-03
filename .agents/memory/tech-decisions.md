@@ -69,7 +69,7 @@ updated: 2026-10-02
   - **Rationale**: Eliminates DRIVER.NOT_CONNECTED or CONTRACT.MARKER_READ_FAILED failures when running local Docker environments without cloud credentials.
 
 - **Comprehensive Automated Testing Baseline (Full-Stack Continuous Verification)**:
-  - **Decision**: Enforce a mandatory suite of 350+ automated tests across backend services and frontend components. Current baseline (Phase 17): 369 tests total (233 backend + 136 frontend).
+  - **Decision**: Enforce a mandatory suite of 370+ automated tests across backend services and frontend components. Current baseline (Phase 21): 379 tests total (236 backend + 143 frontend).
   - **Coverage**: Covers auth flows, job wizard, pipeline kanban, interview scheduling, scorecard evaluation, member invitations, tenant isolation, transactions, Saga pattern, RSC metadata.
   - **Verification**: Run pnpm test across the monorepo to guarantee 0 regressions before committing major refactors.
 

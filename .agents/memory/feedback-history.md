@@ -4,6 +4,20 @@ created: 2026-07-18
 updated: 2026-10-02
 ---
 
+## 2026-10-03 (Part 2): Phase 21 — Monorepo Documentation Audit & Synchronization
+- **Feedback**: Across 20 implementation phases, extensive architectural upgrades occurred (Node 26, Valkey 8, Saga pattern, ALS, RSC, 7 CI gates, Playwright E2E). Documentation had experienced slight drift and root-level files (`README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`) were missing or unmaintained. Phase 21 audited the entire documentation corpus, updated stale runbooks, archived legacy Phase 1-10 audits, and established a comprehensive documentation portal (`docs/README.md`, `docs/onboarding.md`, `docs/architecture/system-overview.md`, `docs/api/overview.md`).
+- **Actionable Rule**:
+  1. **Documentation Integrity**: Documentation must be treated as living software. Maintain zero broken markdown links and keep package scripts, ports, and container names synchronized with `package.json` and Docker Compose.
+  2. **Audit Preservation**: Never delete audit verification reports; archive older phases in `docs/audits/archive/` while maintaining current registries in `docs/audits/README.md`.
+  3. **English Documentation Mandate**: All documentation and memory files must be authored strictly in English; conversational communication remains in Vietnamese.
+
+## 2026-10-03 (Part 1): Phase 20 — Environment Architecture Segregation & Auto-Sync
+- **Feedback**: Development, SSR, and production environments required formal segregation to prevent cross-environment port pollution and build-time vs runtime leakage. Phase 20 instituted a 5-file architecture (`.env`, `.env.example`, `backend/.env`, `frontend/.env`, `.env.production`), dynamic host-port auto-synchronization in `backend/src/config/env.ts`, and CI Gate 6 (`pnpm lint:env-sync`).
+- **Actionable Rule**:
+  1. **5-File Environment Segregation**: Root `.env` governs infrastructure and host ports; package `.env` governs service credentials; `.env.production` is strictly injected at deployment.
+  2. **NEXT_PUBLIC_* Immutability**: Variables prefixed with `NEXT_PUBLIC_` are baked at build-time (`next build`); pass build arguments (`ARG NEXT_PUBLIC_API_URL`) when bundling Docker images.
+  3. **Dynamic Host Port Synchronization**: Services running on host dev machines must dynamically read host ports from root `.env` to prevent port drift with Docker Compose.
+
 ## 2026-10-02 (Part 4): Phase 18/18.1/19 — True Theme Script Resolution via Next.js Script & Unmasked E2E
 - **Feedback**: After Phase 16A migrated `/careers/*` to RSC, `next-themes` inline script triggered React 19 warnings. Phase 18 attempted to suppress the warning via `console.error` monkey-patching (REJECTED: anti-pattern). Phase 18.1 moved the script to `<head>` but still used a raw JSX `<script>` tag, causing the error to recur at `RootLayout (layout.tsx:34:9)`. Phase 19 resolved the root cause by using Next.js official `<Script id="theme-init" strategy="beforeInteractive">`, eliminating raw scripts from JSX reconciler and passing 10/10 Playwright E2E tests unmasked.
 - **Actionable Rule**:

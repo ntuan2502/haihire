@@ -21,9 +21,9 @@ Before commencing deployment operations, verify each item:
   ```
   Verify output displays: `Backup & Restore Drill Completed Successfully!`.
 - [ ] **Clean Codebase Verification:**
-  - `pnpm test` $\ge 325$ tests passing.
-  - `pnpm lint` and `pnpm typecheck` reporting 0 errors.
-  - `pnpm lint:dtopipe` reporting 100% controller DTO protection.
+  - `pnpm test` and `pnpm test:e2e` reporting 379/379 tests passing (233 Backend + 136 Frontend + 10 E2E).
+  - All 7 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
+  - `pnpm lint:env-sync` reporting 100% key parity and complete compose variable coverage.
 - [ ] **Container Image Build & Registry Push:**
   Build immutable production images tagged with Git commit SHA and `:latest`:
   ```bash
@@ -50,6 +50,10 @@ ssh sre-admin@prod-cluster.haihire.internal
 # 1.2 Inspect cluster resource headroom (Memory > 4GB free, Disk > 20GB free)
 free -m
 df -h /var/lib/docker
+
+# 1.3 Verify production configuration validity
+pnpm docker:prod:config
+# or: docker compose --env-file .env.production -f docker-compose.prod.yml config
 ```
 
 ### Step 2: Database Migration Check
@@ -62,16 +66,16 @@ pnpm run migrate
 ### Step 3: Progressive Rolling Deployment
 ```bash
 # 3.1 Pull new container images
-docker compose -f docker-compose.prod.yml pull backend frontend
+docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend
 
 # 3.2 Deploy Backend with graceful drain
-docker compose -f docker-compose.prod.yml up -d --no-deps --build backend
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps --build backend
 
 # 3.3 Verify backend health before updating frontend
 curl -f -s http://localhost:3001/health | grep '"status":"ok"' || exit 1
 
 # 3.4 Deploy Frontend
-docker compose -f docker-compose.prod.yml up -d --no-deps --build frontend
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-deps --build frontend
 ```
 
 ### Step 4: Post-Deployment Smoke Test
@@ -124,7 +128,7 @@ Establish continuous SRE observation protocol across four operational milestones
 | Time Window | Monitoring Focus | Verification Actions & Targets |
 | :--- | :--- | :--- |
 | **Hour 1** | Immediate Stability | Watch Prometheus Grafana dashboards: HTTP error rate $< 0.1\%$, Latency p95 $< 120\text{ms}$, Memory RSS steady. |
-| **Hour 6** | Queue & Concurrency | Inspect BullMQ Redis queue depth ($< 10$ backlog), PostgreSQL connection pool saturation ($< 40\%$), MinIO upload success rate $100\%$. |
+| **Hour 6** | Queue & Concurrency | Inspect BullMQ Valkey/Redis queue depth ($< 10$ backlog), PostgreSQL connection pool saturation ($< 40\%$), MinIO upload success rate $100\%$. |
 | **Hour 24** | Daily Business Traffic | Review application error logs (`docker compose logs backend --since 24h \| grep ERROR`), audit trail integrity, email delivery success rate. |
 | **Hour 48** | Final Sign-Off Review | SRE and Engineering leadership review meeting: confirm zero regressions, close deployment ticket, declare production stable. |
 

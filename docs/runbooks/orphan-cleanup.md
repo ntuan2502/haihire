@@ -1,36 +1,40 @@
-# RUNBOOK: MinIO Orphan File Cleanup Operation
-**Hệ thống:** HaiHire Enterprise ATS  
-**Tần suất tự động:** Hàng ngày vào lúc 04:00 AM (`0 4 * * *`)  
-**Mục tiêu:** Quét và loại bỏ các file CV/hồ sơ tồn đọng trên MinIO bucket (`haihire-resumes`) không còn liên kết với bất kỳ bản ghi cơ sở dữ liệu nào (`CandidateDocument`, `Application`, `Candidate`), giải phóng dung lượng lưu trữ an toàn.
+# Runbook: MinIO Orphan Object Cleanup Operation
+
+**System:** HaiHire Enterprise ATS  
+**Automation Schedule:** Daily at 04:00 AM UTC (`0 4 * * *`)  
+**Objective:** Scan and safely purge unreferenced candidate resume files from the MinIO storage bucket (`haihire-resumes`) that lack database references (`CandidateDocument`, `Application`, `Candidate`), reclaiming enterprise storage capacity without risk of data loss.
 
 ---
 
-## 1. NGUYÊN TẮC HOẠT ĐỘNG & NGƯỠNG AN TOÀN (GRACE PERIOD)
+## 1. Operating Principles & Safety Threshold (Grace Period)
 
-1. **Grace Period (30 ngày):**  
-   - Bất kỳ file nào được tạo trong vòng 30 ngày qua (`age < 30 days`) kể cả khi chưa có reference trong DB sẽ **KHÔNG BAO GIỜ BỊ XÓA**.
-   - Điều này đảm bảo an toàn tuyệt đối cho các tác vụ nộp hồ sơ đang xử lý (in-flight uploads), các ứng viên đang điền form, hoặc các transaction đang chờ xử lý.
-2. **Tiêu chí xóa:**
-   - File nằm trong bucket `haihire-resumes/tenants/*/resumes/*`.
-   - Hoàn toàn KHÔNG tồn tại tham chiếu trong DB (`CandidateDocument.url`, `Application.resumeUrl`, `Candidate.resumeUrl`).
-   - Thời gian sửa đổi cuối cùng (`lastModified`) $\ge$ 30 ngày.
+1. **Mandatory 30-Day Grace Period:**
+   - Any storage object uploaded or modified within the past 30 days (`age < 30 days`) is **strictly preserved**, even if no database reference currently exists.
+   - This prevents race conditions with in-flight application submissions, multi-step candidate onboarding, or uncommitted database transactions.
+2. **Deletion Criteria:**
+   - File is located under bucket path `haihire-resumes/tenants/*/resumes/*`.
+   - Zero database references exist across:
+     - `CandidateDocument.url`
+     - `Application.resumeUrl`
+     - `Candidate.resumeUrl`
+   - Object `lastModified` timestamp $\ge$ 30 days old.
 
 ---
 
-## 2. HƯỚNG DẪN THỰC THI THỦ CÔNG (MANUAL EXECUTION)
+## 2. Manual Execution Runbook
 
-### Bước 1: Chạy mô phỏng an toàn (Dry-Run Mode)
-Trước khi xóa thực tế trên production, **luôn luôn** chạy ở chế độ dry-run để xem báo cáo thống kê và danh sách file dự kiến xóa mà không làm mất dữ liệu:
+### Step 1: Safe Simulation (Dry-Run Mode)
+Before initiating any real deletion in production, **always** execute the dry-run mode to audit candidate objects and verify deletion counts without modifying object storage:
 
 ```bash
-# Trên máy trạm hoặc trong container backend
-pnpm --filter backend exec tsx scripts/cleanup-orphan-minio.ts --dry-run
+# Execute dry-run from repo root
+pnpm exec tsx scripts/cleanup-orphan-minio.ts --dry-run
 
-# Hoặc tùy chỉnh ngưỡng ngày (ví dụ kiểm tra các file cũ hơn 60 ngày)
-pnpm --filter backend exec tsx scripts/cleanup-orphan-minio.ts --dry-run --threshold-days=60
+# Or customize threshold days (e.g., audit files older than 60 days)
+pnpm exec tsx scripts/cleanup-orphan-minio.ts --dry-run --threshold-days=60
 ```
 
-**Kỳ vọng kết quả đầu ra:**
+**Expected Sample Output:**
 ```text
 ==================================================================
        HAIHIRE ENTERPRISE ATS: MINIO ORPHAN CLEANUP CRON          
@@ -48,50 +52,51 @@ Storage Space Freed:       4.12 MB (4320140 bytes)
 ==================================================================
 ```
 
-### Bước 2: Thực thi xóa thực tế (Live Execution)
-Sau khi xác nhận danh sách file cần dọn dẹp trong báo cáo Dry-Run:
+### Step 2: Live Deletion Execution
+Once the dry-run summary has been reviewed and verified:
 
 ```bash
-pnpm --filter backend exec tsx scripts/cleanup-orphan-minio.ts --threshold-days=30
+pnpm exec tsx scripts/cleanup-orphan-minio.ts --threshold-days=30
 ```
 
 ---
 
-## 3. CẤU HÌNH CRONJOB TỰ ĐỘNG TRÊN PRODUCTION
+## 3. Production Automated Cron Configuration
 
-Hệ thống đã được đóng gói sẵn cron container `orphan-cleanup` trong [docker-compose.prod.yml](file:///c:/Workspaces/haihire/docker-compose.prod.yml):
-- **Lịch chạy:** `0 4 * * *` (04:00 sáng mỗi ngày theo giờ hệ thống).
-- **Log file:** `/var/log/orphan-cleanup.log`
-- **Kiểm tra logs cron:**
+The automated cleanup container `orphan-cleanup` is defined in [docker-compose.prod.yml](file:///c:/Workspaces/haihire/docker-compose.prod.yml):
+- **Cron Schedule:** `0 4 * * *` (04:00 AM UTC daily).
+- **Log Target:** `/var/log/orphan-cleanup.log`
+- **Inspect Service Logs:**
   ```bash
   docker compose -f docker-compose.prod.yml logs orphan-cleanup --tail=100
   ```
 
 ---
 
-## 4. QUY TRÌNH ROLLBACK / KHÔI PHỤC KHI XÓA NHẦM
+## 4. Disaster Recovery & Rollback Procedure
 
-Trong trường hợp hãn hữu phát hiện file quan trọng bị xóa ngoài ý muốn:
+If a valid file was inadvertently purged:
 
-1. **Ngừng ngay cron job:**
+1. **Halt Automated Cron Service:**
    ```bash
    docker compose -f docker-compose.prod.yml stop orphan-cleanup
    ```
-2. **Khôi phục từ bản sao lưu MinIO gần nhất:**
-   Hệ thống HaiHire thực hiện sao lưu MinIO định kỳ qua script [scripts/backup-production.ts](file:///c:/Workspaces/haihire/scripts/backup-production.ts).
-   Bản snapshot lưu trữ tại thư mục `backups/minio-backup-YYYY-MM-DD.tar.gz`.
-3. **Giải nén và đồng bộ lại tệp cần phục hồi:**
+2. **Locate Latest Verified MinIO Snapshot:**
+   Production MinIO snapshots are generated daily by [scripts/backup-production.ts](file:///c:/Workspaces/haihire/scripts/backup-production.ts) and stored under `backups/haihire-minio-*.tar.gz`.
+3. **Extract & Restore Target Objects:**
    ```bash
-   # Giải nén bản backup
-   tar -xzf backups/minio-backup-YYYY-MM-DD.tar.gz -C /tmp/restore-minio/
+   # Extract snapshot to staging location
+   mkdir -p /tmp/restore-minio
+   tar -xzf backups/haihire-minio-YYYY-MM-DDTHH-mm-ss-sssZ.tar.gz -C /tmp/restore-minio/
 
-   # Copy lại file bị thiếu vào MinIO bucket qua mc (MinIO Client)
+   # Copy restored file back into MinIO via MinIO Client (mc)
    mc cp /tmp/restore-minio/tenants/<orgId>/resumes/<filename>.pdf local-minio/haihire-resumes/tenants/<orgId>/resumes/
    ```
-4. **Kiểm tra tính toàn vẹn (Verification):**
-   - Đăng nhập vào giao diện tuyển dụng.
-   - Truy cập trang chi tiết ứng viên có hồ sơ vừa khôi phục.
-   - Nhấp vào "Tải CV" và xác nhận file PDF tải về nguyên vẹn.
+4. **Data Integrity Verification:**
+   - Log in to the recruiter portal at `http://localhost:13000` (or production domain).
+   - Navigate to the affected candidate profile.
+   - Click "Download Resume" to confirm the PDF downloads and renders correctly.
 
 ---
-**Bộ phận phụ trách:** Senior Backend Engineer + SRE Infrastructure Team
+
+**Responsible Teams:** Senior Backend Engineering + Site Reliability Engineering (SRE)

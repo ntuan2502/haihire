@@ -39,7 +39,7 @@ export class AuthController {
     }
   }
 
-  @Throttle({ default: { limit: process.env.NODE_ENV === "production" ? 5 : 100, ttl: 60000 } })
+  @Throttle({ default: { limit: env.NODE_ENV === "production" ? 5 : 100, ttl: 60000 } })
   @Post("login")
   @HttpCode(HttpStatus.OK)
   async login(
@@ -51,7 +51,7 @@ export class AuthController {
     return result;
   }
 
-  @Throttle({ default: { limit: process.env.NODE_ENV === "production" ? 5 : 100, ttl: 60000 } })
+  @Throttle({ default: { limit: env.NODE_ENV === "production" ? 5 : 100, ttl: 60000 } })
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
   async register(

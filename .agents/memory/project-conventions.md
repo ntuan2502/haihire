@@ -262,4 +262,21 @@ updated: 2026-10-02T10:00
 - **Nightly Scheduled E2E**: The full Playwright test suite executes on a dedicated nightly schedule at `03:00 UTC` (`.github/workflows/e2e-nightly.yml`) to catch subtle external dependency drifts.
 - **Pre-Release Mandatory Gate**: The GHCR release pipeline (`.github/workflows/docker-publish.yml`) enforces a mandatory `test-e2e` job that blocks container publishing if any E2E journey fails.
 - **Playwright Configuration Standards**: 300s timeout in CI (`timeout: process.env.CI ? 300000 : 60000`), piped stdout/stderr, and server reuse (`reuseExistingServer: !process.env.CI`).
-- **Canonical Runbook**: `docs/runbooks/ci-strategy.md`.
+- **Canonical Runbook**: `docs/runbooks/ci-strategy.md`.
+
+## CI/CD Permissions & Action Version Baseline (Phase 22.5 MANDATORY)
+- **Mandatory Permissions for `dorny/paths-filter`**: Every GitHub Actions job utilizing `dorny/paths-filter@v3` on `pull_request` triggers MUST explicitly declare:
+  ```yaml
+  permissions:
+    contents: read
+    pull-requests: read
+  ```
+  Without `pull-requests: read`, GitHub Actions denies access to the Pull Request Files API, throwing `HttpError: Resource not accessible by integration`.
+- **Top-Level Workflow & Job-Level Defense**: Always declare permissions at both the workflow root (`permissions: { contents: read, packages: write, pull-requests: read }`) and at the individual job level (`changes.permissions: { contents: read, pull-requests: read }`) to guarantee non-ambiguous scopes across all runner configurations.
+- **Action Version Baseline (Node 24)**:
+  - `actions/checkout@v5`: Native Node 24 runner, eliminates Node 20 deprecation warnings.
+  - `actions/setup-node@v5`: Modern Node.js setup and cache integration.
+  - `docker/build-push-action@v6`: Upgraded buildx driver with GitHub Actions cache backend.
+  - `dorny/paths-filter@v3`: Standardized path-based conditional execution.
+- **Repository Setting Prerequisite**: Repository administrators must verify that GitHub Repository Settings -> Actions -> General -> Workflow permissions allows GitHub Actions read access to Pull Requests.
+

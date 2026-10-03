@@ -80,11 +80,14 @@ jobs:
   changes:
     name: Detect Changed Paths
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       e2e-critical: ${{ steps.filter.outputs.e2e-critical }}
       docker-critical: ${{ steps.filter.outputs.docker-critical }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -154,3 +157,38 @@ pnpm test:e2e
 # 5. Run full local gate suite including E2E
 pnpm check:all:e2e
 ```
+
+---
+
+## 7. GitHub Actions Permissions Setup
+
+### 7.1 Required Workflow Permissions
+When jobs utilize `dorny/paths-filter@v3` on `pull_request` triggers, GitHub Actions queries the Pull Request File API (`GET /repos/{owner}/{repo}/pulls/{number}/files`). This requires explicit read permissions for both contents and pull-requests:
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: read
+```
+
+Without `pull-requests: read`, the GitHub API rejects the request with:
+```
+HttpError: Resource not accessible by integration
+```
+
+### 7.2 Action Version Baseline (Node 24 Runtime)
+To prevent Node 20 runtime deprecation warnings and benefit from performance improvements, all primary actions are pinned to modern releases:
+- `actions/checkout@v5`: Native Node 24 runtime, faster shallow clones.
+- `actions/setup-node@v5`: High-performance Node version management and caching.
+- `docker/build-push-action@v6`: Container buildkit with GitHub Actions cache backend.
+- `dorny/paths-filter@v3`: Standardized path detection with explicit token authorization.
+
+### 7.3 Repository-Level Settings Configuration
+If workflows continue to encounter `Resource not accessible by integration`, the repository default permissions must be verified:
+
+1. Open the GitHub repository in a browser: `https://github.com/<owner>/<repo>/settings/actions`.
+2. Scroll to **Workflow permissions**.
+3. Select **Read and write permissions** (or ensure read permissions include Pull Requests).
+4. Check **Allow GitHub Actions to create and approve pull requests** (if PR automation is active).
+5. Click **Save**.
+

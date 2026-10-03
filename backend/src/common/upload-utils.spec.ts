@@ -148,6 +148,54 @@ describe("upload-utils resumeFileFilter", () => {
       expect(sanitizeFilename(complexExploit)).toBe("boot.ini");
     });
 
+    describe("Cross-Platform Filename Sanitization & Security Edge Cases", () => {
+      it("should strip deep Windows backslash path traversal", () => {
+        expect(sanitizeFilename("..\\..\\windows\\system32\\boot.ini")).toBe("boot.ini");
+      });
+
+      it("should strip Unix forward slash path traversal", () => {
+        expect(sanitizeFilename("../../etc/passwd")).toBe("passwd");
+      });
+
+      it("should strip mixed Windows and Unix path separators", () => {
+        expect(sanitizeFilename("..\\../..//boot.ini")).toBe("boot.ini");
+      });
+
+      it("should neutralize null bytes and non-printable control characters", () => {
+        expect(sanitizeFilename("boot.ini\0.evil")).toBe("boot.ini_.evil");
+      });
+
+      it("should sanitize non-ASCII Unicode characters", () => {
+        expect(sanitizeFilename("..\\..\\日本語.pdf")).toBe("___.pdf");
+      });
+
+      it("should handle very long paths and enforce maximum filename length limit (255 chars)", () => {
+        const longPath = "/deep/subfolder/".repeat(50) + "resume.pdf";
+        expect(sanitizeFilename(longPath)).toBe("resume.pdf");
+
+        const longName = "a".repeat(1000);
+        const result = sanitizeFilename(longName);
+        expect(result.length).toBe(255);
+        expect(result).toBe("a".repeat(255));
+      });
+
+      it("should fallback to 'document' on empty string", () => {
+        expect(sanitizeFilename("")).toBe("document");
+      });
+
+      it("should fallback to 'document' when input contains only path separators", () => {
+        expect(sanitizeFilename("///")).toBe("document");
+        expect(sanitizeFilename("\\\\\\")).toBe("document");
+        expect(sanitizeFilename("/\\/\\")).toBe("document");
+      });
+
+      it("should fallback to 'document' when input consists solely of dots (directory traversal)", () => {
+        expect(sanitizeFilename("...")).toBe("document");
+        expect(sanitizeFilename("..")).toBe("document");
+        expect(sanitizeFilename(".")).toBe("document");
+      });
+    });
+
     it("should reject malicious file via validateUploadedFile", () => {
       const fakeFile = {
         originalname: "fake_resume.pdf",

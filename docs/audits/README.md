@@ -6,9 +6,10 @@ This directory contains the complete historical audit trajectory of the HaiHire 
 
 ## 1. Audit Trajectory Timeline & Verdicts
 
-### Phase 11 - 22.2 (Active Production Hardening)
+### Phase 11 - 22.3 (Active Production Hardening)
 | Phase | Date / Milestone | Focus Area | IV&V Round | Final Verdict | Report Link |
 | :---: | :--- | :--- | :---: | :---: | :--- |
+| **22.3**| 2026-10-03 | Cross-Platform sanitizeFilename Security Hardening | — | 🟢 **PASS** | [phase-22.3-cross-platform-report.md](phase-22.3-cross-platform-report.md) |
 | **22.2**| 2026-10-03 | CI Workflow Deduplication & env-sync Hardening | — | 🟢 **PASS** | [phase-22.2-ci-fix-report.md](phase-22.2-ci-fix-report.md) |
 | **22.1**| 2026-10-03 | Verify GHCR, Tag Immutability & Release Hardening | — | 🟢 **PASS** | [phase-22.1-verify-report.md](phase-22.1-verify-report.md) |
 | **22** | 2026-10-03 | Version Alignment & GHCR Container Publishing | — | 🟢 **PASS** | [phase-22-version-registry-report.md](phase-22-version-registry-report.md) |

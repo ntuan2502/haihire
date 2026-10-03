@@ -243,4 +243,14 @@ updated: 2026-10-02T10:00
   - **NEVER use `latest` in production.** Production deployments and rollback SOPs must reference immutable SemVer tags (`v1.0.0`) or short commit SHAs (`sha-a1b2c3d`).
   - Deployments must inspect and log SHA-256 repo digests (`docker inspect --format='{{index .RepoDigests 0}}'`) for SOC 2 / audit trail compliance.
 - **Zero Local Build in Production**: Production environments pull pre-built GHCR images using `docker compose pull` without local compiler or asset overhead.
-- **Canonical Runbook**: `docs/runbooks/versioning.md`.
+- **Canonical Runbook**: `docs/runbooks/versioning.md`.
+
+## Cross-Platform Code & Path Sanitization (Phase 22.3 MANDATORY)
+- **NEVER use `path.basename()`, `path.dirname()`, or `path.join()` in filename sanitization or security-critical path parsing.**
+  - These Node.js functions are platform-dependent (Windows `path.win32` treats both `/` and `\` as separators, whereas Linux/Unix `path.posix` treats only `/` as a separator).
+  - Calling `path.basename()` on Linux runners fails to strip Windows-style backslash traversals (`..\..\boot.ini`), introducing security vulnerabilities and CI test failures.
+- **Cross-Platform Path Stripping Standard**:
+  - Always strip path separators with cross-platform regex: `.replace(/^.*[/\\]/, "")`
+  - Sanitize remaining characters: `.replace(/[^a-zA-Z0-9._-]/g, "_")`
+  - Fallback to safe default (`document`) if empty or composed solely of directory navigation dots (`/^\.+$/`).
+- **All filename sanitization and security logic MUST pass on both Windows and Linux CI.**

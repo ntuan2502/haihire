@@ -1,4 +1,4 @@
-import { extname, basename } from "node:path";
+import { extname } from "node:path";
 import { AppBadRequestException } from "./app-exception";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import type { Request } from "express";
@@ -16,12 +16,25 @@ export const ALLOWED_RESUME_EXTENSIONS = new Set([
   ".docx",
 ]);
 
+/**
+ * Sanitize filename to prevent path traversal attacks.
+ * Cross-platform: handles both Windows (\) and Unix (/) separators.
+ *
+ * IMPORTANT: Do NOT use path.basename() — it is platform-dependent and
+ * behaves differently on Windows vs Linux CI runners.
+ */
 export function sanitizeFilename(filename: string): string {
   if (!filename) return "document";
-  // Remove directory traversal paths, control chars, and illegal characters
-  const base = basename(filename).replace(/[/\\?%*:|"<>]/g, "_");
-  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return cleaned || "document";
+  // Strip path separators (both Unix "/" and Windows "\") manually without relying on path.basename()
+  const base = filename.replace(/^.*[/\\]/, "");
+  // Sanitize remaining chars (only allow alphanumeric, dots, underscores, dashes)
+  const sanitized = base.replace(/[^a-zA-Z0-9._-]/g, "_");
+  // Reject filenames composed exclusively of dots (e.g. ".", "..", "...") or empty
+  if (!sanitized || /^\.+$/.test(sanitized)) {
+    return "document";
+  }
+  // Enforce standard filesystem maximum filename length (255 characters)
+  return sanitized.length > 255 ? sanitized.slice(0, 255) : sanitized;
 }
 
 export function validateMagicBytes(buffer: Buffer, ext: string): boolean {

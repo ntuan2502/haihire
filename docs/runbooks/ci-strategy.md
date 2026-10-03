@@ -135,6 +135,29 @@ webServer: {
 - **Accelerates CI Execution**: Tests execute immediately without waiting for Playwright to re-launch duplicate dev processes.
 - **Developer Experience**: Works seamlessly both locally (with or without a running dev server) and in CI runners.
 
+### 4.5 Playwright Browsers Installation & Cache Path Alignment
+To ensure browser binaries are reliably found across GitHub Actions runners:
+- **Never set `PLAYWRIGHT_BROWSERS_PATH: 0`**: Setting `PLAYWRIGHT_BROWSERS_PATH=0` forces Playwright to search inside `node_modules/.pnpm/playwright-core@.../node_modules/playwright-core/.local-browsers/`. This triggers `browserType.launch: Executable doesn't exist` when browsers were cached or installed elsewhere.
+- **Default System Cache Path (`~/.cache/ms-playwright`)**:
+  `pnpm exec playwright install --with-deps chromium` downloads the browser binary to the standard location `~/.cache/ms-playwright`.
+- **1:1 Cache Alignment**:
+  The CI workflow cache step caches `~/.cache/ms-playwright`, perfectly aligning cache storage, CLI installation, and runtime browser discovery:
+  ```yaml
+  - name: Cache Playwright browsers
+    uses: actions/cache@v4
+    with:
+      path: ~/.cache/ms-playwright
+      key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      restore-keys: |
+        playwright-${{ runner.os }}-
+
+  - name: Install Playwright Browsers
+    run: pnpm exec playwright install --with-deps chromium
+
+  - name: Run Playwright E2E Tests
+    run: pnpm test:e2e
+  ```
+
 ---
 
 ## 5. Cost & Time Analysis

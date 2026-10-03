@@ -262,6 +262,7 @@ updated: 2026-10-02T10:00
 - **Nightly Scheduled E2E**: The full Playwright test suite executes on a dedicated nightly schedule at `03:00 UTC` (`.github/workflows/e2e-nightly.yml`) to catch subtle external dependency drifts.
 - **Pre-Release Mandatory Gate**: The GHCR release pipeline (`.github/workflows/docker-publish.yml`) enforces a mandatory `test-e2e` job that blocks container publishing if any E2E journey fails.
 - **Playwright Configuration Standards**: 300s timeout in CI (`timeout: process.env.CI ? 300000 : 60000`), piped stdout/stderr, and unconditional server reuse (`reuseExistingServer: true`).
+- **Playwright Browser Path & Cache Consistency**: Never set `PLAYWRIGHT_BROWSERS_PATH=0` in CI workflows. Rely on default `~/.cache/ms-playwright` to ensure 100% parity between cache, installation (`playwright install --with-deps chromium`), and test execution.
 - **Canonical Runbook**: `docs/runbooks/ci-strategy.md`.
 
 ## CI/CD Permissions & Action Version Baseline (Phase 22.5 MANDATORY)

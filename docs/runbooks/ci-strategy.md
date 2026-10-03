@@ -114,7 +114,26 @@ To avoid `webServer` timeout crashes in CI runners:
    ```bash
    timeout 120s bash -c 'until curl -sf http://localhost:13000 > /dev/null; do sleep 2; done'
    ```
-4. Playwright runs with `reuseExistingServer: !process.env.CI` (true in CI), instantly connecting without double-spawning servers.
+4. Playwright runs with `reuseExistingServer: true`, seamlessly reusing the pre-started server without attempting to bind a duplicate port.
+
+### 4.4 Playwright WebServer Configuration (`reuseExistingServer: true`)
+In `playwright.config.ts`, `webServer.reuseExistingServer` is unconditionally set to `true`:
+```typescript
+webServer: {
+  command: "pnpm dev",
+  url: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:13000",
+  reuseExistingServer: true, // Always reuse if active, spawn if missing
+  timeout: process.env.CI ? 300000 : 120000,
+  stdout: "pipe",
+  stderr: "pipe",
+  env: {
+    NODE_ENV: process.env.NODE_ENV || "test",
+  },
+}
+```
+- **Eliminates Port Collision**: Resolves `Error: http://localhost:13000 is already used, make sure that nothing is running on the port/url or set reuseExistingServer:true in config.webServer`.
+- **Accelerates CI Execution**: Tests execute immediately without waiting for Playwright to re-launch duplicate dev processes.
+- **Developer Experience**: Works seamlessly both locally (with or without a running dev server) and in CI runners.
 
 ---
 

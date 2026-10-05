@@ -210,7 +210,7 @@ jobs:
     needs: [changes, static-gates]
     if: github.event_name == 'push' || needs.changes.outputs.e2e-critical == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       NEXT_TELEMETRY_DISABLED: 1
       CI: "true"
@@ -314,9 +314,26 @@ jobs:
           NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
           EOF
 
-      - name: Start MinIO Object Storage
+      # FIX #1: Đợi MinIO healthy sau khi start container (tránh /health trả 503)
+      - name: Start MinIO Object Storage & Wait for Readiness
         run: |
-          docker run -d --name minio -p 9000:9000 -p 9001:9001 -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4 server /data
+          docker run -d --name minio \
+            -p 9000:9000 -p 9001:9001 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4 \
+            server /data
+
+          echo "Waiting for MinIO to become healthy on http://localhost:9000/minio/health/live ..."
+          timeout 60s bash -c 'until curl -sf http://localhost:9000/minio/health/live > /dev/null; do echo "MinIO not ready yet..."; sleep 2; done'
+          echo "MinIO is ready!"
+
+      # FIX #2: Đợi Redis/Valkey sẵn sàng nhận kết nối (chống race condition với service container)
+      - name: Wait for Redis/Valkey Readiness
+        run: |
+          echo "Waiting for Redis/Valkey to accept connections on port 6379..."
+          timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/6379) 2>/dev/null; do echo "Redis not ready yet..."; sleep 1; done'
+          echo "Redis is accepting connections!"
 
       - name: Run Database Migrations
         run: pnpm --filter ./backend run db:update
@@ -341,11 +358,22 @@ jobs:
       - name: Pre-build application for faster server startup
         run: pnpm build
 
+      # FIX #3: Tăng timeout lên 180s + in payload /health mỗi lần thử để debug rõ ràng
       - name: Pre-start services in background & wait for healthcheck
         run: |
           pnpm dev &
+
           echo "Waiting for services to become healthy on ports 13000 (frontend) and 13001 (backend)..."
-          timeout 120s bash -c 'until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do sleep 2; done'
+          timeout 180s bash -c '
+            until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
+              echo "--- Healthcheck attempt $(date +%T) ---"
+              echo -n "Frontend (13000): "
+              curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:13000 || echo "connection refused"
+              echo -n "Backend  (13001): "
+              curl -s -w " [HTTP %{http_code}]\n" http://localhost:13001/health || echo "connection refused"
+              sleep 3
+            done
+          '
           echo "Services are ready!"
 
       - name: Run Playwright E2E Tests

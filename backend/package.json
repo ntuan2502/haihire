@@ -14,6 +14,7 @@
     "deploy": "pnpm run build && pnpm run composer:deploy",
     "dev": "node --import tsx --watch src/main.ts",
     "seed": "node --import tsx src/prisma/seed.ts",
+    "db:seed": "node --import tsx src/prisma/seed.ts",
     "dev:composer": "pnpm run build && pnpm run composer:dev",
     "lint": "eslint . && tsc --noEmit",
     "typecheck": "tsc --noEmit",

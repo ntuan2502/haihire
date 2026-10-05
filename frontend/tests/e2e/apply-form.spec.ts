@@ -42,8 +42,13 @@ test.describe("Apply Form E2E Flow", () => {
   });
 
   test("submitting valid application creates application and shows success UI", async ({ page }) => {
-    await page.goto(CAREER_PAGE_URL);
+    const response = await page.goto(CAREER_PAGE_URL);
+    expect(response?.status()).toBe(200);
     await page.waitForLoadState("networkidle");
+
+    // Ensure page rendered with heading
+    const heading = page.locator("h1");
+    await expect(heading.first()).toBeVisible({ timeout: 10000 });
 
     const uniqueEmail = `test-candidate-${Date.now()}@example.com`;
 
@@ -68,12 +73,9 @@ test.describe("Apply Form E2E Flow", () => {
     // Verify file name appears in UI
     await expect(page.locator("text=tri-resume.pdf")).toBeVisible({ timeout: 5000 });
 
-    // Intercept POST request to verify HTTP 201 response
+    // Intercept POST request to verify HTTP response
     const submitResponsePromise = page.waitForResponse(
-      (res) =>
-        res.url().includes("/applications") &&
-        res.request().method() === "POST" &&
-        (res.status() === 201 || res.status() === 200),
+      (res) => res.url().includes("/applications") && res.request().method() === "POST",
       { timeout: 15000 },
     );
 

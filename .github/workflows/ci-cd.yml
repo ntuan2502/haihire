@@ -314,10 +314,18 @@ jobs:
           NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
           EOF
 
-      - name: Initialize Database Schema & Seed Data
+      - name: Start MinIO Object Storage
         run: |
-          pnpm --filter ./backend run db:update
-          pnpm --filter ./backend run seed
+          docker run -d --name minio -p 9000:9000 -p 9001:9001 -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin minio/minio server /data
+
+      - name: Run Database Migrations
+        run: pnpm --filter ./backend run db:update
+
+      - name: Seed Test Data for E2E
+        run: pnpm --filter ./backend run db:seed
+        env:
+          DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
+          DEMO_SEED_PASSWORD: dev-seed-password-2026
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -336,8 +344,8 @@ jobs:
       - name: Pre-start services in background & wait for healthcheck
         run: |
           pnpm dev &
-          echo "Waiting for services to become healthy on http://localhost:13000..."
-          timeout 120s bash -c 'until curl -sf http://localhost:13000 > /dev/null; do sleep 2; done'
+          echo "Waiting for services to become healthy on ports 13000 (frontend) and 13001 (backend)..."
+          timeout 120s bash -c 'until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do sleep 2; done'
           echo "Services are ready!"
 
       - name: Run Playwright E2E Tests

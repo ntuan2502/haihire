@@ -29,6 +29,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "seed": "pnpm --filter ./backend run seed",
+    "db:seed": "pnpm --filter ./backend run seed",
     "db:update": "pnpm --filter ./backend run db:update",
     "db:verify": "pnpm --filter ./backend run db:verify",
     "db:setup": "pnpm --filter ./backend run db:update && pnpm --filter ./backend run seed",

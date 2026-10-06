@@ -9,23 +9,41 @@ interface PipelineCandidateCardProps {
   candidate: Application;
   isSelected: boolean;
   onSelect: () => void;
+  canDrag?: boolean;
 }
 
 export function PipelineCandidateCard({
   candidate,
   isSelected,
   onSelect,
+  canDrag = true,
 }: PipelineCandidateCardProps) {
   const { t } = useI18n();
   const displayName = getCandidateDisplayName(candidate);
   const initials = getInitials(displayName);
   const matchScore = (candidate as unknown as { matchScore?: number }).matchScore;
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    try {
+      e.dataTransfer.setData(
+        "application/json",
+        JSON.stringify({ id: candidate.id, stage: candidate.stage }),
+      );
+      e.dataTransfer.setData("text/plain", candidate.id);
+      e.dataTransfer.effectAllowed = "move";
+    } catch {
+      // Ignore
+    }
+  };
+
   return (
     <div
       id={`candidate-card-${candidate.id}`}
+      data-testid={`candidate-card-${candidate.id}`}
       onClick={onSelect}
-      className={`p-3.5 flex items-start gap-3 cursor-pointer transition-colors ${
+      draggable={canDrag}
+      onDragStart={handleDragStart}
+      className={`p-3.5 flex items-start gap-3 cursor-grab active:cursor-grabbing transition-colors ${
         isSelected
           ? "bg-blue-50/80 dark:bg-blue-950/40 border-l-4 border-blue-600 dark:border-blue-400"
           : "hover:bg-slate-50 dark:hover:bg-slate-800/50"

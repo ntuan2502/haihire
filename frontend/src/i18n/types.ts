@@ -84,12 +84,16 @@ export interface TranslationSchema {
     JOB_INVALID_ORGANIZATION: string;
     APPLICATION_NOT_FOUND: string;
     APPLICATION_INVALID_ORGANIZATION: string;
+    APPLICATION_STAGE_CONFLICT: string;
+    APPLICATION_INVALID_STAGE_TRANSITION: string;
     CANDIDATE_INFO_REQUIRED: string;
     CANDIDATE_ORG_MISMATCH: string;
     CANDIDATE_ALREADY_APPLIED: string;
     DOCUMENT_FILE_REQUIRED: string;
     DOCUMENT_NOT_FOUND: string;
     DOCUMENT_RETRIEVE_FAILED: string;
+    UPLOAD_TRUNCATED_FILE: string;
+    TENANT_ID_REQUIRED_FOR_UPLOAD: string;
     CANDIDATE_NOT_FOUND: string;
     CANDIDATE_EMAIL_EXISTS: string;
     CANDIDATE_ORG_REQUIRED: string;
@@ -106,6 +110,8 @@ export interface TranslationSchema {
     FORBIDDEN: string;
     FORBIDDEN_READ_ONLY: string;
     SSE_UNAUTHORIZED: string;
+    TRACKING_LINK_NOT_FOUND: string;
+    TOO_MANY_REQUESTS: string;
     GENERIC_ERROR: string;
     VALIDATION_ERROR: string;
     RESOURCE_NOT_FOUND: string;
@@ -442,6 +448,12 @@ export interface TranslationSchema {
     noCustomProperties: string;
     noCandidatesInStage: string;
     switchStageHint: string;
+    tooltips: {
+      invalidTransition: string;
+      cannotMoveHired: string;
+      cannotMoveRejected: string;
+      dragNotAllowed: string;
+    };
   };
   jobs: {
     title: string;
@@ -1427,6 +1439,10 @@ export interface TranslationSchema {
     jobDescription: string;
     requirements: string;
     salaryNegotiable: string;
+    allJobsAt: string;
+    aboutCompany: string;
+    aboutCompanyDesc: string;
+    privacyNotice: string;
     transparentProcessTitle: string;
     transparentProcessDesc: string;
     applicationFormTitle: string;

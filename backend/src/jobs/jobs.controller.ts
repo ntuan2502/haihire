@@ -18,6 +18,7 @@ import { Roles } from "../auth/roles.decorator";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
+import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("jobs")
 export class JobsController {
@@ -75,14 +76,14 @@ export class JobsController {
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.jobsService.findOne(id, req?.user?.organizationId);
+    return this.jobsService.findOne(id, req?.user?.organizationId, !req?.user);
   }
 
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
   @Roles("ADMIN")
   create(
-    @Body() dto: CreateJobDto,
+    @Body(DtoPipe(CreateJobDto)) dto: CreateJobDto,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
     return this.jobsService.create(
@@ -97,7 +98,7 @@ export class JobsController {
   @Roles("ADMIN")
   update(
     @Param("id") id: string,
-    @Body() dto: UpdateJobDto,
+    @Body(DtoPipe(UpdateJobDto)) dto: UpdateJobDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.jobsService.update(id, dto, req?.user?.organizationId);

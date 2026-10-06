@@ -19,6 +19,7 @@ import {
   Shield,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 export default function GeneralSettingsPage() {
   const router = useRouter();
@@ -83,15 +84,10 @@ export default function GeneralSettingsPage() {
         updateUserOrg(updated);
       }
 
-      setSaveSuccess("Organization profile updated successfully.");
+      setSaveSuccess(t("common.save"));
       setTimeout(() => setSaveSuccess(null), 3000);
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? ((err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message ?? "Failed to update organization profile.")
-          : "Failed to update organization profile.";
-      setSaveError(message);
+      setSaveError(getApiErrorMessage(err, t));
     }
   };
 
@@ -104,7 +100,7 @@ export default function GeneralSettingsPage() {
       router.push("/auth/onboarding");
     } catch (err) {
       console.error("Failed to delete organization:", err);
-      setSaveError(t("errors.generic"));
+      setSaveError(getApiErrorMessage(err, t));
     }
   };
 

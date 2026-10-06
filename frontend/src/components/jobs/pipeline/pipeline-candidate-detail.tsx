@@ -26,7 +26,8 @@ import {
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
 import type { Application, ApplicationStage, CandidateDocument, Interview, Job } from "@/types";
-import { usePipelineStages, type StageConfig } from "@/lib/stages";
+import type { StageConfig } from "@/lib/stages";
+import { StageSelector } from "./stage-selector";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import {
   formatDate,
@@ -103,7 +104,6 @@ export function PipelineCandidateDetail({
   onDeleteApplication,
 }: PipelineCandidateDetailProps) {
   const { t } = useI18n();
-  const pipelineStages = usePipelineStages();
 
   return (
     <section
@@ -125,25 +125,15 @@ export function PipelineCandidateDetail({
             </button>
           </div>
 
-          {/* Quick Stage Transition Buttons (Admins only) */}
+          {/* Quick Stage Transition Buttons (Admins only) with State Machine Prevention */}
           {canEdit && (
             <div className="flex items-center justify-end gap-2 flex-wrap">
-              {pipelineStages.filter(
-                (stage) => stage.id !== selectedCandidate.stage,
-              ).map((stage) => (
-                <button
-                  key={stage.id}
-                  type="button"
-                  onClick={() => onMoveStage(stage.id)}
-                  disabled={isMovingStage}
-                  className={`h-8 px-3.5 rounded-xl ${stage.btnBg} ${stage.btnHover} text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50`}
-                >
-                  <span>{stage.actionLabel}</span>
-                  <span className="h-4 w-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center">
-                    {stage.stepNumber}
-                  </span>
-                </button>
-              ))}
+              <StageSelector
+                currentStage={selectedCandidate.stage}
+                onSelectStage={onMoveStage}
+                disabled={isMovingStage}
+                variant="buttons"
+              />
             </div>
           )}
 

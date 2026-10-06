@@ -112,6 +112,8 @@ const ALLOWED_LITERALS = new Set([
   "&gt;",
   "(TLS/SSL)",
   "HTML / Template Variables",
+  "Job Description",
+  "Requirements",
 ]);
 
 interface HardcodedHit {

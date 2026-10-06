@@ -21,6 +21,8 @@ import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect, MacOsModal } from "@/components/shared";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
 
@@ -140,6 +142,7 @@ export function SendEmailModal({
       }, 900);
     } catch (err) {
       console.error("Failed to send email:", err);
+      toast.error(getApiErrorMessage(err, t));
     }
   };
 

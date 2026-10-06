@@ -16,6 +16,7 @@ import { ActivitiesService } from "../activities/activities.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { fixUtf8String } from "../common/doc-utils";
+import { validateUploadedFile, sanitizeFilename } from "../common/upload-utils";
 import crypto from "node:crypto";
 import { toTimestamp, toInstant } from "../common/date.util";
 
@@ -30,6 +31,17 @@ export class CandidatesService {
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
   ) {}
+
+  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
+    if (typeof p.transaction === "function") {
+      return p.transaction(fn);
+    }
+    if (typeof p.executeTx === "function") {
+      return p.executeTx(fn);
+    }
+    return fn(this.prisma.db);
+  }
 
   async findAll(
     organizationId?: string,
@@ -386,7 +398,8 @@ export class CandidatesService {
     };
 
     if (file) {
-      uploadResult = await this.minioService.uploadFile(file, "resumes");
+      validateUploadedFile(file);
+      uploadResult = await this.minioService.uploadFile(file, "resumes", orgId);
     } else if (dto.resumeUrl) {
       uploadResult = {
         url: dto.resumeUrl,
@@ -482,9 +495,8 @@ export class CandidatesService {
       );
     }
 
-    const cleanOriginalName = fixUtf8String(
-      file.originalname || "document.pdf",
-    );
+    validateUploadedFile(file);
+    const cleanOriginalName = sanitizeFilename(fixUtf8String(file.originalname || "document.pdf"));
 
     let uploadResult: {
       url: string;
@@ -499,7 +511,7 @@ export class CandidatesService {
     };
 
     try {
-      uploadResult = await this.minioService.uploadFile(file, "resumes");
+      uploadResult = await this.minioService.uploadFile(file, "resumes", candidate.organizationId);
       uploadResult.originalName = cleanOriginalName;
     } catch {
       uploadResult = {
@@ -510,7 +522,7 @@ export class CandidatesService {
       };
     }
 
-    const newDocId = `doc-${Date.now()}`;
+    const newDocId = crypto.randomUUID();
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
     try {
@@ -683,9 +695,11 @@ export class CandidatesService {
   async remove(id: string, tenantOrgId?: string | null) {
     await this.findOne(id, tenantOrgId);
 
-    // Soft delete: set deletedAt timestamp (Two-Tier Deletion Protocol)
-    await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update({
-      deletedAt: toInstant(),
+    // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
+    await this.executeTx(async (tx) => {
+      await tx.orm.public.Candidate.where((c) => c.id.eq(id)).update({
+        deletedAt: toInstant(),
+      });
     });
 
     return { success: true, message: `Candidate ${id} deleted successfully` };

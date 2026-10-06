@@ -47,7 +47,11 @@ import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
-import { usePipelineStages } from "@/lib/stages";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
+import { canTransition, getTransitionDisabledReason } from "@/lib/stages";
+import { StageSelector } from "@/components/jobs/pipeline/stage-selector";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   useUpdateStageMutation,
@@ -115,7 +119,7 @@ export function ApplicationsDataTable({
 }: ApplicationsDataTableProps) {
   const router = useRouter();
   const { t } = useI18n();
-  const pipelineStages = usePipelineStages();
+  const queryClient = useQueryClient();
   const { canEdit } = useAuth();
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
@@ -428,6 +432,11 @@ export function ApplicationsDataTable({
 
   const handleStageChange = async (newStage: ApplicationStage) => {
     if (!currentApp) return;
+    if (!canTransition(currentApp.stage, newStage)) {
+      const reason = getTransitionDisabledReason(currentApp.stage, newStage, t);
+      toast.error(reason);
+      return;
+    }
     try {
       await updateStageMutation.mutateAsync({
         id: currentApp.id,
@@ -436,6 +445,9 @@ export function ApplicationsDataTable({
       setSelectedApp((prev) => (prev ? { ...prev, stage: newStage } : null));
     } catch (err) {
       console.error("Failed to update stage:", err);
+      const errorMsg = getApiErrorMessage(err, t);
+      toast.error(errorMsg);
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
     }
   };
 
@@ -450,6 +462,7 @@ export function ApplicationsDataTable({
       setDeleteModalApp(null);
     } catch (err) {
       console.error("Failed to delete application:", err);
+      toast.error(getApiErrorMessage(err, t));
     } finally {
       setIsDeleting(false);
     }
@@ -1031,22 +1044,12 @@ export function ApplicationsDataTable({
                 {/* Stage Action Pipeline Bar */}
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {pipelineStages.filter(
-                      (stage) => stage.id !== currentApp.stage,
-                    ).map((stage) => (
-                      <button
-                        key={stage.id}
-                        type="button"
-                        onClick={() => handleStageChange(stage.id)}
-                        disabled={updateStageMutation.isPending}
-                        className={`h-8 px-3 rounded-lg ${stage.btnBg} ${stage.btnHover} text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap disabled:opacity-50`}
-                      >
-                        <span>{stage.actionLabel}</span>
-                        <span className="h-4 w-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center">
-                          {stage.stepNumber}
-                        </span>
-                      </button>
-                    ))}
+                    <StageSelector
+                      currentStage={currentApp.stage}
+                      onSelectStage={handleStageChange}
+                      disabled={updateStageMutation.isPending}
+                      variant="buttons"
+                    />
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">

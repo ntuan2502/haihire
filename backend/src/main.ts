@@ -3,9 +3,15 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { env } from "./config/env";
+import { GlobalExceptionFilter } from "./common/http-exception.filter";
+import { MetricsService } from "./metrics/metrics.service";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
+
+  const metricsService = app.get(MetricsService, { strict: false });
 
   // Strict CORS whitelist from FRONTEND_URL
   const allowedOrigins = env.FRONTEND_URL
@@ -26,6 +32,61 @@ async function bootstrap() {
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self';");
+    next();
+  });
+
+  // Production HTTPS redirection
+  if (env.NODE_ENV === "production") {
+    app.use((req: IncomingMessage & { secure?: boolean; headers: Record<string, string | string[] | undefined>; url?: string }, res: ServerResponse, next: () => void) => {
+      const forwardedProto = req.headers["x-forwarded-proto"];
+      const isHttps = req.secure || forwardedProto === "https";
+      if (!isHttps) {
+        const host = req.headers.host || "localhost";
+        res.writeHead(301, {
+          Location: `https://${host}${req.url || ""}`,
+        });
+        res.end();
+        return;
+      }
+      next();
+    });
+  }
+
+  // Structured Logging & Prometheus Request Recording Middleware (Zero PII leak)
+  app.use((req: IncomingMessage & { originalUrl?: string; url?: string; user?: { id?: string; organizationId?: string } }, res: ServerResponse, next: () => void) => {
+    const start = Date.now();
+    const rawUrl = req.originalUrl || req.url || "/";
+    const cleanPath = rawUrl.split("?")[0];
+
+    res.on("finish", () => {
+      const durationMs = Date.now() - start;
+      const status = res.statusCode;
+
+      // 1. Record Prometheus metrics
+      if (metricsService) {
+        metricsService.recordRequest(cleanPath, status, durationMs);
+      }
+
+      // 2. Structured JSON logging (skip polling noise on /health and /metrics unless error)
+      if ((cleanPath === "/health" || cleanPath === "/metrics") && status < 400) {
+        return;
+      }
+
+      const logPayload = {
+        level: status >= 500 ? "error" : status >= 400 ? "warn" : "info",
+        timestamp: new Date().toISOString(),
+        type: "HTTP_ACCESS",
+        method: req.method,
+        path: cleanPath,
+        status,
+        latencyMs: durationMs,
+        userId: req.user?.id || "-",
+        orgId: req.user?.organizationId || "-",
+      };
+      console.log(JSON.stringify(logPayload));
+    });
+
     next();
   });
 
@@ -58,6 +119,34 @@ async function bootstrap() {
     }),
   );
 
+  // Global exception filter handling Rate Limiting (429) and standard HTTP errors
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
+  // Graceful shutdown on SIGTERM / SIGINT with 30s timeout guard
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`[Lifecycle] Received ${signal}. Starting 30s graceful shutdown drain...`);
+    const forceExitTimer = setTimeout(() => {
+      console.error("[Lifecycle] Graceful shutdown timeout (30s) exceeded. Forcing process exit.");
+      process.exit(1);
+    }, 30000);
+    forceExitTimer.unref?.();
+
+    try {
+      await app.close();
+      clearTimeout(forceExitTimer);
+      console.log("[Lifecycle] HaiHire backend shutdown completed cleanly.");
+      process.exit(0);
+    } catch (err: unknown) {
+      clearTimeout(forceExitTimer);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[Lifecycle] Error during shutdown:", msg);
+      process.exit(1);
+    }
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
   await app.listen(env.PORT, "0.0.0.0");
   console.log(`HaiHire Backend running at http://0.0.0.0:${env.PORT}`);
 }
@@ -66,3 +155,4 @@ bootstrap().catch((error) => {
   console.error("Failed to start server", error);
   process.exit(1);
 });
+

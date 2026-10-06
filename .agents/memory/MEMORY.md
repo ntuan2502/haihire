@@ -6,18 +6,17 @@
 - [project] Pure TypeScript mandate: all files must use TypeScript formats (.ts, .tsx, .mts, .cts); convert non-TS files to TS equivalents → project-conventions.md
 - [project] Centralized Zod-based environment schemas: zero fallbacks, fail-fast startup → project-conventions.md
 - [project] Full-stack server-side pagination with zero backward-compatibility hacks → project-conventions.md
-- [project] Database-level `onDelete: Cascade` in Prisma contract → tech-decisions.md
+- [project] Database-level onDelete: Cascade in Prisma contract → tech-decisions.md
 - [project] Always create a new dedicated branch for major code changes → project-conventions.md
-- [project] Commit message format: Conventional Commits with scope — `type(scope): description`, English, lowercase, no trailing period → project-conventions.md
-- [project] AG Kit only supports Gemini CLI and Google Antigravity (not other AI coding tools) → project-conventions.md
-- [project] Component metadata uses SemVer while toolkit releases use CalVer → tech-decisions.md
+- [project] Commit message format: Conventional Commits with scope type(scope): description, English, lowercase, no trailing period → project-conventions.md
+- [project] Google Antigravity is the primary AI coding platform for this project (AG Kit supports Gemini CLI and Google Antigravity) → project-conventions.md
 - [project] Prisma 8 Contract-first architecture, scaffolding, and CLI conventions → tech-decisions.md
-- [project] Modern package ecosystem baseline (Next 16, React 19, Prisma 8 / Composer 0.20 orm syntax) → tech-decisions.md
-- [project] Internationalization (i18n): 100% text, placeholders, labels must use translations (`t()`), never hardcoded → project-conventions.md
+- [project] Modern package ecosystem baseline (Node 26, Next 16.3.8, React 19.3, NestJS 12.1.2, Prisma 8 RC, Tailwind v4, TypeScript 6.0.3) → tech-decisions.md
+- [project] Internationalization (i18n): 100% text, placeholders, labels must use translations (t()), never hardcoded → project-conventions.md
 - [project] Component Architecture: 5-layer modular structure (ui, shared, layout, providers, features) with zero loose root files → tech-decisions.md
-- [project] React Import Convention: Always use named imports `{ useState, ReactNode } from "react"`, no `React.x` except inside `components/ui/` → tech-decisions.md
-- [project] Shadcn `cn` Standard: Use official `"cn"` package directly (`from "cn"`), no `clsx` or `tailwind-merge` → tech-decisions.md
-- [project] Strict Typing: Zero `any` policy across frontend, backend, and shared packages → project-conventions.md
+- [project] React Import Convention: Always use named imports { useState, ReactNode } from "react", no React.x except inside components/ui/ → tech-decisions.md
+- [project] Shadcn cn Standard: Use official "cn" package directly (from "cn"), no clsx or tailwind-merge → tech-decisions.md
+- [project] Strict Typing: Zero any policy across frontend, backend, and shared packages → project-conventions.md
 - [project] React SyntheticEvent hygiene: always wrap parameterized callbacks in arrow functions → project-conventions.md
 - [project] Client-side Axios gatekeeper: proactively reject malformed URLs with [object Object] → project-conventions.md
 - [project] Multi-tenant isolation: strict organizationId scoping at DB and Guard layers → project-conventions.md
@@ -31,10 +30,21 @@
 - [project] Background Job Idempotency: deterministic job IDs and Redis deduplication locks → project-conventions.md
 - [project] Safe Email Template Engine: strict HTML escaping, context sanitization, and anti-XSS → project-conventions.md
 - [project] Two-Tier Deletion Protocol: soft-delete on primary entities with 30-day purge cascade → project-conventions.md
-- [project] Frontend Modular Architecture & Anti-Monolith Policy: split by domain (<300-400 lines) with barrel re-exports → project-conventions.md
+- [project] Frontend Modular Architecture & Anti-Monolith Policy: split by domain (under 400 lines) with barrel re-exports → project-conventions.md
 - [project] Node 26+ Tooling Baseline: Corepack removed; install pnpm explicitly via npm in CI/Docker → project-conventions.md
 - [project] Web Security Baseline: HttpOnly cookies for auth, SSE withCredentials, explicit image whitelists, demo account locking → project-conventions.md
 - [project] Quality Gate & Commitlint Enforcement: Conventional Commits enforced via Husky hooks (.husky/commit-msg, pre-commit) → project-conventions.md
+- [project] HaiHire Design System & Layout Conventions: full-width canvas (never max-w-7xl mx-auto), standard tokens (MetricCard, CustomSelect, StageBadge), real tenant URLs, and full 5-parameter UTM suite → project-conventions.md
+- [project] Source Tracking Attribution Architecture: session-scoped hygiene, zero cross-session pollution, deduplicated clicks → tech-decisions.md
+- [project] Database Transaction Architecture: Prisma $transaction + Saga Pattern for distributed resources (MinIO + DB), AsyncLocalStorage for nested tx propagation, BullMQ DLQ for compensating delete retries → tech-decisions.md
+- [project] Database Naming Convention: PostgreSQL tables/columns must use snake_case (camelCase @@map is a known technical debt from legacy code, migration deferred to Phase 16B) → project-conventions.md
+- [project] Runtime Infrastructure Baseline: Valkey 8.0.2 (replaces Redis for license compliance), Postgres 17.6-alpine, MinIO pinned by SHA256 digest, Caddy 2.8-alpine → tech-decisions.md
+- [project] CI Architecture Gates (7 total): lint, typecheck, lint:dtopipe, lint:error-i18n, lint:api-contract, lint:env-sync, test / test:e2e (379 tests baseline) → project-conventions.md
+- [project] Next.js RSC Mandate: public-facing routes (/careers/*) must be Server Components; interactive parts isolated in Client Components → project-conventions.md
+- [project] Next.js App Router Scripts: never use raw <script> in JSX; always use <Script> from next/script with strategy beforeInteractive → project-conventions.md
+- [project] Orphan File Cleanup: nightly cron at 0 4 * * * for MinIO orphan files older than 30 days (safety grace period) → tech-decisions.md
+- [project] Verified-Ship Mindset: every self-claimed "READY" requires independent IV&V verification with raw execution evidence before deployment → user-preferences.md
+- [project] CI/CD Permissions & Action Version Baseline: dorny/paths-filter requires contents: read and pull-requests: read scopes; all actions pinned to Node 24 baseline (checkout@v5, setup-node@v5, build-push-action@v6) → project-conventions.md
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md
@@ -42,10 +52,10 @@
 - [user] Pure TypeScript: All files must be TypeScript (.ts, .tsx, .mts, .cts); convert generated non-TS files to TS equivalents → user-preferences.md
 - [user] Centralized Environment Configuration: Zero fallbacks, fail-fast Zod validation, key sync via check:env → user-preferences.md
 - [user] Full-Stack Pagination: Server-side pagination mandatory, no backward-compatibility hacks or client slicing → user-preferences.md
-- [user] Zero hardcoded text: strictly enforce translation keys across all `.tsx` and `.ts` files → user-preferences.md
-- [user] Named imports for React: never use `import React` or `React.x` (preserve `components/ui/` untouched) → user-preferences.md
+- [user] Zero hardcoded text: strictly enforce translation keys across all .tsx and .ts files → user-preferences.md
+- [user] Named imports for React: never use `import React` or `React.x` (preserve components/ui/ untouched) → user-preferences.md
 - [user] Strict Typing: Strictly forbidden to use `any`; always declare explicit types or interfaces → user-preferences.md
-- [user] Shell Execution: Never chain commands with `&&` in Windows PowerShell; execute each command individually → user-preferences.md
+- [user] Shell Execution: Never chain commands with && in Windows PowerShell; execute each command individually → user-preferences.md
 - [user] Senior Engineering Mindset: Zero "instant-noodle" patches, root-cause analysis first, fail fast & loudly → user-preferences.md
 - [user] Standardized Project Commands: Check package.json first, avoid ad-hoc commands, maintain unified script suite → user-preferences.md
 - [user] Zero raw parameterized callbacks in onClick: wrap in arrow function to avoid MouseEvent leakage → user-preferences.md
@@ -60,12 +70,16 @@
 - [user] Error Contract Discipline: throw domain APP_ERROR_CODES, isolate params, centralized test i18n setup → user-preferences.md
 - [user] Anti-Monolith Architecture: never allow API clients or hooks to become monolithic mega-files → user-preferences.md
 - [user] Node 26+ Tooling Awareness: always install pnpm explicitly, never invoke corepack enable → user-preferences.md
-- [project] HaiHire Design System & Layout Conventions: full-width canvas (never max-w-7xl mx-auto), standard tokens (MetricCard, CustomSelect, StageBadge), real tenant URLs, and full 5-parameter UTM suite → project-conventions.md
-- [project] Source Tracking Attribution Architecture: session-scoped hygiene, zero cross-session pollution, deduplicated clicks → tech-decisions.md
 - [user] Full-width layout mandate: span full width without desktop container boxes; use real public career tracking URLs; support 5 UTM parameters → user-preferences.md
 - [user] Session-Scoped Attribution: prevent sticky attribution pollution, isolate tracking tokens to active sessions with URL link propagation → user-preferences.md
+- [user] Verified-Ship Mindset: every self-claimed "READY" requires independent IV&V verification before deployment → user-preferences.md
 
 ## Feedback
+- [feedback] 2026-10-02 (Part 4): Phase 18/18.1/19 — True Theme Script Resolution via Next.js Script & Unmasked E2E → feedback-history.md
+- [feedback] 2026-10-02 (Part 3): Phase 17 Final Cleanup — AsyncLocalStorage, DLQ & Orphan Cron → feedback-history.md
+- [feedback] 2026-10-02 (Part 2): Phase 16A/16B — Saga Pattern, RSC & IV&V Round 9 → feedback-history.md
+- [feedback] 2026-10-02 (Part 1): Phase 15A/15B/15C — Stack Stabilization & Harsh Audit → feedback-history.md
+- [feedback] 2026-10-02 (Part 0): Phase 12/13/14 — Frontend-Backend Contract Alignment → feedback-history.md
 - [feedback] 2026-09-30 (Part 2): HaiHire Design System Layout Consistency, Full UTM Parameters & Real Public URLs → feedback-history.md
 - [feedback] 2026-09-30: Monolithic Code Splitting, Node 26 Corepack Deprecation & HttpOnly Security → feedback-history.md
 - [feedback] 2026-09-29: Error Contract Standardization, Isolated Dynamic Params & Centralized Test i18n Setup → feedback-history.md
@@ -77,5 +91,3 @@
 - [feedback] 2026-09-18: Full-Stack Pagination & Database Cascade Integrity → feedback-history.md
 - [feedback] 2026-09-17: Memory documentation must be in English → feedback-history.md
 - [feedback] 2026-09-17: Strict i18n and placeholder completeness mandate → feedback-history.md
-
-

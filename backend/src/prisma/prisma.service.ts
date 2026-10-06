@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { OnModuleInit } from "@nestjs/common";
+import { AsyncLocalStorage } from "node:async_hooks";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { connectDatabase, db } from "./db";
@@ -9,6 +10,28 @@ import { toInstant } from "../common/date.util";
 @Injectable()
 export class PrismaService implements OnModuleInit {
   readonly db = db;
+  private readonly als = new AsyncLocalStorage<typeof db>();
+
+  get client(): typeof db {
+    return this.als.getStore() ?? this.db;
+  }
+
+  async transaction<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+    const existing = this.als.getStore();
+    if (existing) {
+      return fn(existing);
+    }
+
+    const client = this.db as unknown as { transaction?: (cb: (tx: typeof db) => Promise<T>) => Promise<T> };
+    if (typeof client.transaction === "function") {
+      return client.transaction((tx) => this.als.run(tx, () => fn(tx)));
+    }
+    return this.als.run(this.db, () => fn(this.db));
+  }
+
+  async executeTx<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+    return this.transaction(fn);
+  }
 
   async onModuleInit() {
     try {

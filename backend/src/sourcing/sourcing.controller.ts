@@ -24,6 +24,7 @@ import { RecordClickDto } from "./dto/record-click.dto";
 import { SourcingFilterDto } from "./dto/sourcing-filter.dto";
 import { AppForbiddenException } from "../common/app-exception";
 import { APP_ERROR_CODES, type TimeRangeFilter } from "@haihire/shared";
+import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("sourcing")
 export class SourcingController {
@@ -97,7 +98,7 @@ export class SourcingController {
   @UseGuards(AuthGuard("jwt"))
   async createLink(
     @Request() req: { user?: { id: string; organizationId?: string | null } },
-    @Body() dto: CreateTrackingLinkDto,
+    @Body(DtoPipe(CreateTrackingLinkDto)) dto: CreateTrackingLinkDto,
   ) {
     const orgId = req.user?.organizationId;
     const userId = req.user?.id;
@@ -115,7 +116,7 @@ export class SourcingController {
   async updateLink(
     @Request() req: { user?: { organizationId?: string | null } },
     @Param("id") id: string,
-    @Body() dto: UpdateTrackingLinkDto,
+    @Body(DtoPipe(UpdateTrackingLinkDto)) dto: UpdateTrackingLinkDto,
   ) {
     const orgId = req.user?.organizationId;
     if (!orgId) {
@@ -175,7 +176,7 @@ export class SourcingController {
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post("public/click")
   async recordClick(
-    @Body() dto: RecordClickDto,
+    @Body(DtoPipe(RecordClickDto)) dto: RecordClickDto,
     @Req() req: ExpressRequest,
   ) {
     const ip = req.ip || req.socket.remoteAddress || undefined;

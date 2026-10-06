@@ -573,9 +573,9 @@ export async function runSeed(): Promise<void> {
   console.log("🏢 2. Seeding Organization & Demo Users...");
   console.log("==================================================");
 
-  const adminUserId = crypto.randomUUID();
-  const adminOrgId = crypto.randomUUID();
-  const memberUserId = crypto.randomUUID();
+  const adminUserId = "00000000-0000-0000-0000-000000000001";
+  const adminOrgId = "00000000-0000-0000-0000-000000000002";
+  const memberUserId = "00000000-0000-0000-0000-000000000003";
 
   // 1. Create Org "Admin"
   await db.orm.public.Organization.upsert({
@@ -616,14 +616,14 @@ export async function runSeed(): Promise<void> {
   // 3. Create Org Member relationship
   await db.orm.public.OrganizationMember.upsert({
     create: {
-      id: crypto.randomUUID(),
+      id: "00000000-0000-0000-0000-000000000011",
       organizationId: adminOrgId,
       userId: adminUserId,
       role: "ADMIN",
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-0000-0000-000000000001" },
+    conflictOn: { id: "00000000-0000-0000-0000-000000000011" },
   });
 
   // 4. Create Member User
@@ -648,19 +648,38 @@ export async function runSeed(): Promise<void> {
 
   await db.orm.public.OrganizationMember.upsert({
     create: {
-      id: crypto.randomUUID(),
+      id: "00000000-0000-0000-0000-000000000012",
       organizationId: adminOrgId,
       userId: memberUserId,
       role: "MEMBER",
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-0000-0000-000000000002" },
+    conflictOn: { id: "00000000-0000-0000-0000-000000000012" },
+  });
+
+  // 5. Seed Email Settings for Admin Organization
+  await db.orm.public.EmailSetting.upsert({
+    create: {
+      id: "00000000-0000-0000-0000-000000000021",
+      organizationId: adminOrgId,
+      provider: "SIMULATED",
+      fromName: "Admin Recruitment Team",
+      fromEmail: "careers@tun.io.vn",
+      updatedAt: toInstant(),
+    },
+    update: {
+      provider: "SIMULATED",
+      fromName: "Admin Recruitment Team",
+      fromEmail: "careers@tun.io.vn",
+    },
+    conflictOn: { organizationId: adminOrgId },
   });
 
   console.log(`- Org: Admin (id: ${adminOrgId})`);
   console.log(`- Admin: ${DEMO_ACCOUNTS.ADMIN.email} (Password: ${DEMO_PASSWORD})`);
   console.log(`- Member: ${DEMO_ACCOUNTS.MEMBER.email} (Password: ${DEMO_PASSWORD})`);
+  console.log(`- Email Settings: SIMULATED (careers@tun.io.vn)`);
 
   console.log("==================================================");
   console.log("💼 3. Seeding Exactly 20 Jobs (Random Statuses & Details)...");
@@ -720,7 +739,13 @@ export async function runSeed(): Promise<void> {
 
   for (let i = 0; i < 20; i++) {
     const baseConfig = BASE_JOB_CONFIGS[i % BASE_JOB_CONFIGS.length];
-    const status = statusPool[i];
+    // Guarantee that Job index 1 (Senior Backend Engineer) & Job index 8 (Senior Technical Recruiter) are ALWAYS PUBLISHED for E2E
+    const isCriticalTestJob =
+      i === 1 ||
+      i === 8 ||
+      baseConfig.title.includes("Senior Backend Engineer") ||
+      baseConfig.title.includes("Senior Technical Recruiter");
+    const status = isCriticalTestJob ? "PUBLISHED" : statusPool[i];
     statusCounts[status]++;
 
     const workplace = WORKPLACES[Math.floor(Math.random() * WORKPLACES.length)];
@@ -729,7 +754,12 @@ export async function runSeed(): Promise<void> {
     const experienceLevel = EXP_LEVELS[Math.floor(Math.random() * EXP_LEVELS.length)];
     const salaryRange = SALARY_RANGES[Math.floor(Math.random() * SALARY_RANGES.length)];
 
-    const jobId = crypto.randomUUID();
+    const jobId =
+      i === 1
+        ? "00000000-0000-0000-0000-000000000101"
+        : i === 8
+          ? "00000000-0000-0000-0000-000000000108"
+          : crypto.randomUUID();
     const jobAgeDays = 5 + Math.floor((i * 3.5) % 45);
     const jobCreatedAt = new Date(Date.now() - jobAgeDays * 86400000);
 
@@ -751,7 +781,11 @@ export async function runSeed(): Promise<void> {
         createdAt: toInstant(jobCreatedAt),
         updatedAt: toInstant(jobCreatedAt),
       },
-      update: {},
+      update: {
+        title: baseConfig.title,
+        status,
+        organizationId: adminOrgId,
+      },
       conflictOn: { id: jobId },
     });
 
@@ -1660,6 +1694,104 @@ export async function runSeed(): Promise<void> {
       }
     }
   }
+
+  // ============================================================================
+  // Deterministic candidates and applications for E2E automated tests
+  // ============================================================================
+  const testCandidateId = "00000000-0000-0000-0000-000000000201";
+  const kanbanCandidateId = "00000000-0000-0000-0000-000000000202";
+
+  candidatesToInsert.push({
+    id: testCandidateId,
+    organizationId: adminOrgId,
+    name: "Nguyen Test Applicant",
+    firstName: "Test Applicant",
+    lastName: "Nguyen",
+    gender: "MALE",
+    dateOfBirth: toInstant(new Date("1995-05-15T00:00:00Z")),
+    email: "test-applicant@tun.io.vn",
+    phone: "0901234567",
+    notes: "Ứng viên mẫu phục vụ automated tests.",
+    resumeUrl: "/haihire-resumes/sample-resume.pdf",
+    resumeFileName: "sample-resume.pdf",
+    resumeFileSize: 102400,
+    resumeMimeType: "application/pdf",
+    createdAt: toInstant(new Date(Date.now() - 10 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 10 * 86400000)),
+  });
+
+  candidatesToInsert.push({
+    id: kanbanCandidateId,
+    organizationId: adminOrgId,
+    name: "Tran Minh Kanban",
+    firstName: "Minh Kanban",
+    lastName: "Tran",
+    gender: "MALE",
+    dateOfBirth: toInstant(new Date("1996-08-20T00:00:00Z")),
+    email: "kanban-candidate@tun.io.vn",
+    phone: "0908765432",
+    notes: "Ứng viên mẫu cho Kanban drag & drop test.",
+    resumeUrl: "/haihire-resumes/sample-resume.pdf",
+    resumeFileName: "sample-resume.pdf",
+    resumeFileSize: 102400,
+    resumeMimeType: "application/pdf",
+    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+  });
+
+  // Guarantee Candidate 2 (Kanban) is in APPLIED stage for Job 1 (Senior Backend Engineer)
+  applicationsToInsert.push({
+    id: "00000000-0000-0000-0000-000000000301",
+    candidateId: kanbanCandidateId,
+    jobId: createdJobIds[1], // Senior Backend Engineer (NestJS / PostgreSQL)
+    stage: "APPLIED",
+    matchScore: 88,
+    resumeUrl: "/haihire-resumes/sample-resume.pdf",
+    resumeFileName: "sample-resume.pdf",
+    resumeFileSize: 102400,
+    resumeMimeType: "application/pdf",
+    notes: "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test.",
+    orderIndex: 0,
+    trackingLinkId: null,
+    sourceChannel: SourcingChannel.DIRECT,
+    sourceDetails: null,
+    referrerDomain: null,
+    utmSource: null,
+    utmMedium: null,
+    utmCampaign: null,
+    utmTerm: null,
+    utmContent: null,
+    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+  });
+  stageStats.APPLIED++;
+
+  // Guarantee Candidate 1 is in SCREENING stage for Job 1 so that both stages are available
+  applicationsToInsert.push({
+    id: "00000000-0000-0000-0000-000000000302",
+    candidateId: testCandidateId,
+    jobId: createdJobIds[1],
+    stage: "SCREENING",
+    matchScore: 82,
+    resumeUrl: "/haihire-resumes/sample-resume.pdf",
+    resumeFileName: "sample-resume.pdf",
+    resumeFileSize: 102400,
+    resumeMimeType: "application/pdf",
+    notes: "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test.",
+    orderIndex: 1,
+    trackingLinkId: null,
+    sourceChannel: SourcingChannel.DIRECT,
+    sourceDetails: null,
+    referrerDomain: null,
+    utmSource: null,
+    utmMedium: null,
+    utmCampaign: null,
+    utmTerm: null,
+    utmContent: null,
+    createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+  });
+  stageStats.SCREENING++;
 
   console.log(`\n⏳ Đang lưu ${candidatesToInsert.length} ứng viên vào cơ sở dữ liệu...`);
   const BATCH_SIZE = 50;

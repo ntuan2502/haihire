@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MinioService } from "./minio.service";
 
 describe("MinioService Security", () => {
@@ -36,6 +36,61 @@ describe("MinioService Security", () => {
     it("should handle empty or whitespace inputs gracefully", () => {
       expect(service.extractObjectName("")).toBe("");
       expect(service.extractObjectName("   ")).toBe("");
+    });
+  });
+
+  describe("uploadFile Tenant Defense", () => {
+    const dummyFile = {
+      originalname: "resume.pdf",
+      mimetype: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"),
+      size: 40,
+    } as Express.Multer.File;
+
+    it("should throw AppBadRequestException when tenantOrgId is null", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", null)).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+
+    it("should throw AppBadRequestException when tenantOrgId is undefined", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", undefined)).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+
+    it("should throw AppBadRequestException when tenantOrgId is empty string", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", "   ")).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+
+    it("should sanitize traversal tenantOrgId '../../../etc/passwd' to 'etcpasswd'", async () => {
+      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(dummyFile, "resumes", "../../../etc/passwd");
+      expect(res.fileName).toContain("tenants/etcpasswd/resumes/");
+      expect(res.fileName).not.toContain("..");
+      putSpy.mockRestore();
+    });
+
+    it("should preserve valid tenantOrgId 'org-abc_123'", async () => {
+      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(dummyFile, "resumes", "org-abc_123");
+      expect(res.fileName).toContain("tenants/org-abc_123/resumes/");
+      putSpy.mockRestore();
+    });
+
+    it("should throw AppBadRequestException when tenantOrgId contains only special characters '!!!@@@###'", async () => {
+      await expect(service.uploadFile(dummyFile, "resumes", "!!!@@@###")).rejects.toThrow(
+        "Tenant organization ID is required",
+      );
+    });
+
+    it("should trim whitespace in tenantOrgId '  abc  ' to 'abc'", async () => {
+      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(dummyFile, "resumes", "  abc  ");
+      expect(res.fileName).toContain("tenants/abc/resumes/");
+      putSpy.mockRestore();
     });
   });
 });

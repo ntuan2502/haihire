@@ -43,6 +43,17 @@ export class OrganizationsService implements OnModuleInit {
     private readonly eventsService?: EventsService,
   ) {}
 
+  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
+    if (typeof p.transaction === "function") {
+      return p.transaction(fn);
+    }
+    if (typeof p.executeTx === "function") {
+      return p.executeTx(fn);
+    }
+    return fn(this.prisma.db);
+  }
+
   async onModuleInit() {
     try {
       await this.backfillMemberships();
@@ -580,22 +591,25 @@ export class OrganizationsService implements OnModuleInit {
       );
     }
 
-    // Unlink users from this org
-    await this.prisma.db.orm.public.User.where((u) =>
-      u.organizationId.eq(orgId),
-    ).update({
-      organizationId: null,
+    // Execute atomic cleanup of users, memberships, and organization inside a single transaction
+    await this.executeTx(async (tx) => {
+      // Unlink users from this org
+      await tx.orm.public.User.where((u) =>
+        u.organizationId.eq(orgId),
+      ).update({
+        organizationId: null,
+      });
+
+      // Clean up all memberships in this org
+      await tx.orm.public.OrganizationMember.where((m) =>
+        m.organizationId.eq(orgId),
+      ).delete();
+
+      // Delete organization
+      await tx.orm.public.Organization.where((o) =>
+        o.id.eq(orgId),
+      ).delete();
     });
-
-    // Clean up all memberships in this org
-    await this.prisma.db.orm.public.OrganizationMember.where((m) =>
-      m.organizationId.eq(orgId),
-    ).delete();
-
-    // Delete organization
-    await this.prisma.db.orm.public.Organization.where((o) =>
-      o.id.eq(orgId),
-    ).delete();
 
     return { success: true, message: "Organization deleted successfully" };
   }

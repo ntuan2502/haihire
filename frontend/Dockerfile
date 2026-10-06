@@ -29,11 +29,23 @@ COPY frontend ./frontend
 ENV BACKEND_HOST=backend
 ENV MINIO_HOST=minio
 
+# Build-time public environment variables inlined into client bundle
+ARG NEXT_PUBLIC_API_URL=""
+ARG NEXT_PUBLIC_MINIO_URL="/haihire-resumes"
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_MINIO_URL=$NEXT_PUBLIC_MINIO_URL
+
 # Build shared and Next.js frontend with output: "standalone"
 RUN pnpm --filter @haihire/shared run build && pnpm --filter frontend run build
 
 # Stage 2: Production ultra-lean runtime (standalone mode)
 FROM node:26-alpine AS runner
+
+# OCI Image Spec Labels
+LABEL org.opencontainers.image.title="HaiHire Frontend Service" \
+      org.opencontainers.image.description="Next.js 16 Enterprise ATS Frontend Portal" \
+      org.opencontainers.image.vendor="HaiHire Platform" \
+      org.opencontainers.image.licenses="Proprietary"
 
 RUN apk add --no-cache libc6-compat
 

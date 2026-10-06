@@ -35,26 +35,52 @@ describe("EventsService - SSE Streaming", () => {
     sub.unsubscribe();
   });
 
-  it("should stream org broadcast events to listeners", async () => {
-    const received: Array<{ type?: string; targetUserId?: string; organizationId?: string; role?: string }> = [];
-    const sub = service.subscribe("usr-admin").subscribe((msg) => {
+  it("should stream org broadcast events only to confirmed members of that org", async () => {
+    const receivedOrgA: Array<{ type?: string; organizationId?: string; role?: string }> = [];
+    const receivedOrgB: Array<{ type?: string; organizationId?: string; role?: string }> = [];
+
+    // User A in Org A, User B in Org B
+    const subA = service.subscribe("usr-admin-a", ["org-A"]).subscribe((msg) => {
       if (msg.data && typeof msg.data === "object") {
-        received.push(msg.data as { type?: string; targetUserId?: string; organizationId?: string; role?: string });
+        receivedOrgA.push(msg.data as { type?: string; organizationId?: string; role?: string });
       }
     });
 
-    service.emit({
-      type: "MEMBER_ROLE_UPDATED",
-      targetUserId: "usr-member",
-      role: "ADMIN",
-      organizationId: "org-1",
+    const subB = service.subscribe("usr-admin-b", ["org-B"]).subscribe((msg) => {
+      if (msg.data && typeof msg.data === "object") {
+        receivedOrgB.push(msg.data as { type?: string; organizationId?: string; role?: string });
+      }
     });
 
-    const appEvents = received.filter((e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT");
-    expect(appEvents.length).toBe(1);
-    expect(appEvents[0].role).toBe("ADMIN");
+    // 1. Emit event for Org A
+    service.emit({
+      type: "MEMBER_ROLE_UPDATED",
+      organizationId: "org-A",
+      role: "ADMIN",
+    });
 
-    sub.unsubscribe();
+    // 2. Emit event for Org B
+    service.emit({
+      type: "ORG_UPDATED",
+      organizationId: "org-B",
+    });
+
+    // Filter out HEARTBEAT / CONNECTED
+    const eventsA = receivedOrgA.filter((e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT");
+    const eventsB = receivedOrgB.filter((e) => e.type !== "CONNECTED" && e.type !== "HEARTBEAT");
+
+    // Org A receives ONLY Org A event
+    expect(eventsA.length).toBe(1);
+    expect(eventsA[0].type).toBe("MEMBER_ROLE_UPDATED");
+    expect(eventsA[0].organizationId).toBe("org-A");
+
+    // Org B receives ONLY Org B event
+    expect(eventsB.length).toBe(1);
+    expect(eventsB[0].type).toBe("ORG_UPDATED");
+    expect(eventsB[0].organizationId).toBe("org-B");
+
+    subA.unsubscribe();
+    subB.unsubscribe();
   });
 
   it("should throw AppUnauthorizedException when no token is provided to subscribeWithToken", () => {

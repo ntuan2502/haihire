@@ -10,7 +10,9 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
-import { ActivitiesService, type CreateActivityDto } from "./activities.service";
+import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActivitiesService } from "./activities.service";
+import { CreateActivityRecordDto } from "./dto/create-activity-record.dto";
 
 @Controller("activities")
 @UseGuards(AuthGuard("jwt"))
@@ -60,7 +62,7 @@ export class ActivitiesController {
 
   @Post()
   create(
-    @Body() dto: Omit<CreateActivityDto, "organizationId" | "actorId" | "actorName">,
+    @Body(DtoPipe(CreateActivityRecordDto)) dto: CreateActivityRecordDto,
     @Request() req: { user: { id: string; name: string; role?: string; organizationId?: string | null } },
   ) {
     return this.activitiesService.createActivity({

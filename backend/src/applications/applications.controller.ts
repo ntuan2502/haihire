@@ -25,6 +25,7 @@ import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { resumeFileFilter } from "../common/upload-utils";
+import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -86,7 +87,7 @@ export class ApplicationsController {
     }),
   )
   create(
-    @Body() dto: CreateApplicationDto,
+    @Body(DtoPipe(CreateApplicationDto)) dto: CreateApplicationDto,
     @UploadedFile() file: Express.Multer.File,
     @Request() req?: { user?: { id?: string; role?: string; organizationId?: string | null } },
   ) {
@@ -98,7 +99,7 @@ export class ApplicationsController {
   @Roles("ADMIN")
   updateStage(
     @Param("id") id: string,
-    @Body() dto: UpdateStageDto,
+    @Body(DtoPipe(UpdateStageDto)) dto: UpdateStageDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.applicationsService.updateStage(id, dto, req?.user?.organizationId);
@@ -109,7 +110,7 @@ export class ApplicationsController {
   @Roles("ADMIN")
   updateCandidate(
     @Param("id") id: string,
-    @Body() dto: UpdateCandidateDto,
+    @Body(DtoPipe(UpdateCandidateDto)) dto: UpdateCandidateDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.applicationsService.updateCandidate(id, dto, req?.user?.organizationId);

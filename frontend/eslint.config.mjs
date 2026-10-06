@@ -12,8 +12,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "eslint.config.mjs",
   ]),
   {
+    settings: {
+      react: {
+        version: "19.3",
+      },
+    },
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
       "react-hooks/set-state-in-effect": "off",

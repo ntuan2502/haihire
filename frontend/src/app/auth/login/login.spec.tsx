@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import LoginPage from "./page";
 import { vi as viLocale } from "@/i18n/locales/vi";
+import { DEMO_PASSWORD } from "@/constants/auth.constants";
 
 const mockLogin = vi.fn();
 const mockPush = vi.fn();
@@ -87,7 +88,7 @@ describe("LoginPage Component Tests", () => {
       fireEvent.click(demoAdminBtn);
 
       await waitFor(() => {
-        expect(mockLogin).toHaveBeenCalledWith("admin@tun.io.vn", "password123");
+        expect(mockLogin).toHaveBeenCalledWith("admin@tun.io.vn", DEMO_PASSWORD);
         expect(mockPush).toHaveBeenCalledWith("/dashboard");
       });
     }

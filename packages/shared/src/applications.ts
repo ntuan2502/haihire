@@ -21,6 +21,15 @@ export const APPLICATION_STAGES = [
   ApplicationStage.REJECTED,
 ] as const;
 
+export const VALID_APPLICATION_STAGE_TRANSITIONS: Record<ApplicationStage, readonly ApplicationStage[]> = {
+  [ApplicationStage.APPLIED]: [ApplicationStage.SCREENING, ApplicationStage.INTERVIEW, ApplicationStage.REJECTED],
+  [ApplicationStage.SCREENING]: [ApplicationStage.INTERVIEW, ApplicationStage.REJECTED],
+  [ApplicationStage.INTERVIEW]: [ApplicationStage.OFFER, ApplicationStage.REJECTED],
+  [ApplicationStage.OFFER]: [ApplicationStage.HIRED, ApplicationStage.REJECTED],
+  [ApplicationStage.HIRED]: [],
+  [ApplicationStage.REJECTED]: [],
+};
+
 export interface Application {
   id: string;
   candidateId: string;

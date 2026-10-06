@@ -1651,7 +1651,7 @@ export const en: TranslationSchema = {
     time90d: "90D",
     timeAll: "All time",
     allJobs: "All jobs",
-    newLink: "+ New Link",
+    newLink: "New Link",
     tabs: {
       overview: "Overview",
       trackingLinks: "Tracking Links",
@@ -1736,6 +1736,7 @@ export const en: TranslationSchema = {
       creatingBtn: "Creating...",
       nameRequired: "Please enter a link name",
       successToast: "Tracking link created successfully!",
+      jobLocked: "Locked to this job",
     },
     channels: {
       LINKEDIN: "LinkedIn",

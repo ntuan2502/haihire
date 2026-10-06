@@ -1736,6 +1736,7 @@ export const vi: TranslationSchema = {
       creatingBtn: "Đang tạo...",
       nameRequired: "Vui lòng nhập tên liên kết",
       successToast: "Đã tạo liên kết theo dõi thành công!",
+      jobLocked: "Cố định cho vị trí này",
     },
     channels: {
       LINKEDIN: "LinkedIn",

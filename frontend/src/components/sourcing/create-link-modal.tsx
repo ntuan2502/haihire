@@ -9,6 +9,8 @@ export interface CreateLinkModalProps {
   onClose: () => void;
   jobs: JobOption[];
   orgSlug?: string;
+  defaultJobId?: string;
+  lockJob?: boolean;
 }
 
 /**
@@ -20,6 +22,8 @@ export function CreateLinkModal({
   onClose,
   jobs,
   orgSlug = "demo",
+  defaultJobId,
+  lockJob,
 }: CreateLinkModalProps) {
   return (
     <TrackingLinkModal
@@ -28,6 +32,8 @@ export function CreateLinkModal({
       mode="create"
       jobs={jobs}
       orgSlug={orgSlug}
+      defaultJobId={defaultJobId}
+      lockJob={lockJob}
     />
   );
 }

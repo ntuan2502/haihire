@@ -1734,6 +1734,7 @@ export interface TranslationSchema {
       creatingBtn: string;
       nameRequired: string;
       successToast: string;
+      jobLocked: string;
     };
     channels: {
       LINKEDIN: string;

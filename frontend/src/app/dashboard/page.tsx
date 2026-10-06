@@ -30,7 +30,7 @@ function DashboardContent() {
     user?.organizationId,
   );
   const { data: applications = [], isLoading: appsLoading } =
-    useAllApplications();
+    useAllApplications(user?.organizationId);
   const createJobMutation = useCreateJobMutation();
 
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");

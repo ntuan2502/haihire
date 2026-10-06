@@ -3,6 +3,7 @@ import { NotFoundException } from "@nestjs/common";
 import { AppBadRequestException, AppForbiddenException } from "../common/app-exception";
 import { toTimestamp } from "../common/date.util";
 import { InterviewsService } from "./interviews.service";
+import { formatInterviewRecord } from "./constants";
 
 describe("InterviewsService", () => {
   let service: InterviewsService;
@@ -384,6 +385,50 @@ describe("InterviewsService", () => {
     const res = await service.remove("intv-1", "org-1");
     expect(res.success).toBe(true);
     expect(mockInterviews).toHaveLength(0);
+  });
+
+  describe("formatInterviewRecord", () => {
+    it("should parse scheduledAt into date and time and parse JSON scorecard", () => {
+      const raw = {
+        id: "intv-test",
+        applicationId: "app-test",
+        scheduledAt: new Date("2026-10-06T09:30:00.000Z"),
+        type: "TECHNICAL",
+        format: "MEET",
+        linkOrLocation: "https://meet.google.com/test",
+        interviewer: "Alice Recruiter",
+        round: 1,
+        scorecard: JSON.stringify({ overallRating: 4, recommendation: "YES" }),
+        notes: "Good candidate",
+      };
+
+      const result = formatInterviewRecord(raw);
+      expect(result.date).toBe("2026-10-06");
+      expect(result.time).toBe("09:30");
+      expect(result.scorecard).toEqual({ overallRating: 4, recommendation: "YES" });
+      expect(result.interviewer).toBe("Alice Recruiter");
+    });
+
+    it("should handle null scorecard and valid fallback time", () => {
+      const raw = {
+        id: "intv-test-2",
+        applicationId: "app-test",
+        scheduledAt: new Date("2026-10-07T14:00:00.000Z"),
+        type: "CULTURE_FIT",
+        format: "OFFICE",
+        linkOrLocation: "Room 101",
+        interviewer: "Bob Manager",
+        round: 2,
+        scorecard: null,
+        notes: null,
+      };
+
+      const result = formatInterviewRecord(raw);
+      expect(result.date).toBe("2026-10-07");
+      expect(result.time).toBe("14:00");
+      expect(result.scorecard).toBeNull();
+      expect(result.notes).toBeNull();
+    });
   });
 });
 

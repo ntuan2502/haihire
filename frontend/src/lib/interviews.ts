@@ -124,8 +124,9 @@ export function getInterviewsFromApplication(
     interviews?: Array<{
       id?: string;
       applicationId?: string;
-      date: string;
-      time: string;
+      scheduledAt?: string | Date;
+      date?: string;
+      time?: string;
       type?: InterviewType | string;
       format?: InterviewFormat | string;
       linkOrLocation: string;
@@ -154,11 +155,21 @@ export function getInterviewsFromApplication(
         }
       }
 
+      let date = inv.date || "";
+      let time = inv.time || "";
+      if ((!date || !time) && inv.scheduledAt) {
+        const dt = new Date(inv.scheduledAt);
+        if (!isNaN(dt.getTime())) {
+          if (!date) date = dt.toISOString().split("T")[0];
+          if (!time) time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
+        }
+      }
+
       return {
         id: inv.id,
         applicationId: inv.applicationId,
-        date: inv.date,
-        time: inv.time,
+        date,
+        time,
         type: normalizeInterviewType(inv.type),
         format: (inv.format as InterviewFormat) || "MEET",
         linkOrLocation: inv.linkOrLocation,

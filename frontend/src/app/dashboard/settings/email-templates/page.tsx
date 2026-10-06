@@ -405,7 +405,7 @@ export default function EmailTemplatesSettingsPage() {
         </div>
       </div>
 
-      {/* Reusable Email Live Preview Modal with macOS Window Bar */}
+      {/* Reusable Email Live Preview Modal */}
       <EmailPreviewModal
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}

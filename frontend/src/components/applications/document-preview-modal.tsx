@@ -3,7 +3,7 @@
 import { Download } from "lucide-react";
 import type { CandidateDocument } from "@/types";
 import { getDocumentUrl } from "@/lib/api";
-import { MacOsModal } from "@/components/shared";
+import { CustomModal } from "@/components/shared";
 import { useI18n } from "@/i18n";
 
 interface DocumentPreviewModalProps {
@@ -24,11 +24,13 @@ export function DocumentPreviewModal({
   const { t } = useI18n();
 
   return (
-    <MacOsModal
+    <CustomModal
       isOpen={Boolean(isOpen && document)}
       onClose={onClose}
       title={document?.name}
       size="xl"
+      height="h-[90vh]"
+      allowMaximize={true}
       headerRight={
         document ? (
           <button
@@ -52,6 +54,6 @@ export function DocumentPreviewModal({
           />
         </div>
       )}
-    </MacOsModal>
+    </CustomModal>
   );
 }

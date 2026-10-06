@@ -1,34 +1,43 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect, type ReactNode } from "react";
+import { X, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "cn";
 
 export type CustomModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "full";
 
 export const CUSTOM_MODAL_SIZES: Record<CustomModalSize, string> = {
-  sm: "sm:max-w-sm",
-  md: "sm:max-w-md",
-  lg: "sm:max-w-lg",
-  xl: "sm:max-w-xl",
-  "2xl": "sm:max-w-2xl",
-  "3xl": "sm:max-w-3xl",
-  "4xl": "sm:max-w-4xl",
-  full: "sm:max-w-[95vw]",
+  sm: "sm:max-w-md",       // ~448px (Alert / Confirmation dialog)
+  md: "sm:max-w-2xl",      // ~672px (Standard dialog / Event lists)
+  lg: "sm:max-w-4xl",      // ~896px (Complex form / Scorecard / Schedule)
+  xl: "sm:max-w-6xl",      // ~1152px (Document Preview / Multi-column workspace)
+  "2xl": "sm:max-w-6xl",
+  "3xl": "sm:max-w-7xl",
+  "4xl": "sm:max-w-[90vw]",
+  full: "sm:max-w-[96vw]", // Full viewport workspace
 };
+
+export interface CustomModalContext {
+  isMaximized: boolean;
+}
 
 export interface CustomModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: ReactNode;
   description?: ReactNode;
+  badge?: ReactNode;
+  headerRight?: ReactNode | ((context: CustomModalContext) => ReactNode);
   size?: CustomModalSize;
   maxWidth?: string;
+  height?: string;
   className?: string;
   panelClassName?: string;
   headerClassName?: string;
-  children: ReactNode;
+  contentClassName?: string;
+  children: ReactNode | ((context: CustomModalContext) => ReactNode);
   showCloseButton?: boolean;
+  allowMaximize?: boolean;
 }
 
 export function CustomModal({
@@ -36,14 +45,21 @@ export function CustomModal({
   onClose,
   title,
   description,
-  size = "3xl",
+  badge,
+  headerRight,
+  size = "md",
   maxWidth,
+  height,
   className,
   panelClassName,
   headerClassName,
+  contentClassName,
   children,
   showCloseButton = true,
+  allowMaximize = false,
 }: CustomModalProps) {
+  const [isMaximized, setIsMaximized] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -63,9 +79,16 @@ export function CustomModal({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setIsMaximized(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const resolvedMaxWidth = maxWidth || CUSTOM_MODAL_SIZES[size] || "sm:max-w-3xl";
+  const resolvedMaxWidth = maxWidth || CUSTOM_MODAL_SIZES[size] || "sm:max-w-2xl";
+  const resolvedHeight = height || "max-h-[92vh]";
 
   return (
     <div
@@ -78,7 +101,7 @@ export function CustomModal({
     >
       {/* Backdrop with native blur */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -86,47 +109,90 @@ export function CustomModal({
       {/* Modal Dialog Surface */}
       <div
         className={cn(
-          "relative z-10 w-full max-h-[92vh] flex flex-col rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-[#fbfbfd] dark:bg-[#1a1a1a] shadow-2xl overflow-hidden duration-150 animate-in zoom-in-95",
-          resolvedMaxWidth,
+          "relative z-10 w-full flex flex-col rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-[#fbfbfd] dark:bg-[#1a1a1a] shadow-2xl overflow-hidden duration-150 animate-in zoom-in-95",
+          isMaximized
+            ? "w-full h-full max-w-none max-h-none rounded-none fixed inset-0 z-50"
+            : cn(resolvedMaxWidth, resolvedHeight),
           panelClassName,
         )}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header (shadcn design aesthetics with zero macos decoration) */}
-        {(title || description || showCloseButton) && (
+        {(title || description || badge || headerRight || showCloseButton || allowMaximize) && (
           <div
             className={cn(
-              "px-6 py-4.5 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] flex items-center justify-between shrink-0",
+              "px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] flex items-center justify-between gap-3 shrink-0",
               headerClassName,
             )}
           >
-            <div className="space-y-1 pr-6">
-              {title && (
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                  {title}
-                </h2>
-              )}
-              {description && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {description}
-                </p>
-              )}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {title && (
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
+                      {title}
+                    </h2>
+                  )}
+                  {badge && (
+                    <div className="inline-flex items-center shrink-0">
+                      {badge}
+                    </div>
+                  )}
+                </div>
+                {description && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {description}
+                  </p>
+                )}
+              </div>
             </div>
 
-            {showCloseButton && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {typeof headerRight === "function"
+                ? headerRight({ isMaximized })
+                : headerRight}
+
+              {allowMaximize && (
+                <button
+                  type="button"
+                  onClick={() => setIsMaximized((prev) => !prev)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  aria-label={isMaximized ? "Restore" : "Maximize"}
+                  title={isMaximized ? "Restore" : "Maximize"}
+                >
+                  {isMaximized ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                </button>
+              )}
+
+              {showCloseButton && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {/* Modal Content */}
-        {children}
+        <div
+          className={cn(
+            "flex-1 min-h-0 overflow-y-auto flex flex-col",
+            contentClassName,
+          )}
+        >
+          {typeof children === "function"
+            ? children({ isMaximized })
+            : children}
+        </div>
       </div>
     </div>
   );

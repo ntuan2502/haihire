@@ -6,7 +6,7 @@ import { cn } from "cn";
 import { useI18n } from "@/i18n";
 import type { EmailDeliveryStatus } from "@/lib/email-templates";
 import {
-  MacOsModal,
+  CustomModal,
   DevicePreviewFrame,
   DevicePreviewSelector,
   type PreviewDeviceType,
@@ -114,13 +114,14 @@ export function EmailPreviewModal({
   );
 
   return (
-    <MacOsModal
+    <CustomModal
       isOpen={isOpen}
       onClose={onClose}
       title={modalTitle}
       badge={statusBadge}
       maxWidth="max-w-6xl"
       height="h-[90vh]"
+      allowMaximize={true}
       headerRight={
         <DevicePreviewSelector
           device={previewDevice}
@@ -261,6 +262,6 @@ export function EmailPreviewModal({
           )}
         </DevicePreviewFrame>
       )}
-    </MacOsModal>
+    </CustomModal>
   );
 }

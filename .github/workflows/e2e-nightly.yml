@@ -30,7 +30,7 @@ jobs:
           POSTGRES_PASSWORD: haihire_test_password
           POSTGRES_DB: haihire_test_db
         ports:
-          - 5432:5432
+          - 15432:5432
         options: >-
           --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
           --health-interval 5s
@@ -40,7 +40,7 @@ jobs:
       redis:
         image: valkey/valkey:8.0.2-alpine
         ports:
-          - 6379:6379
+          - 16379:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s
@@ -64,7 +64,7 @@ jobs:
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -79,27 +79,29 @@ jobs:
           NODE_ENV=test
           BACKEND_PORT=13001
           FRONTEND_PORT=13000
-          POSTGRES_PORT=5432
+          POSTGRES_PORT=15432
           POSTGRES_USER=haihire_test
           POSTGRES_PASSWORD=haihire_test_password
           POSTGRES_DB=haihire_test_db
-          REDIS_PORT=6379
+          REDIS_PORT=16379
+          MINIO_PORT=19000
+          MINIO_CONSOLE_PORT=19001
           EOF
 
           cat > backend/.env << 'EOF'
           PORT=13001
-          DATABASE_URL=postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
+          DATABASE_URL=postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           JWT_SECRET=ci-test-jwt-secret-minimum-16-chars
           ENCRYPTION_SECRET=ci-test-encryption-secret-must-be-32-characters-long
           DEMO_SEED_PASSWORD=dev-seed-password-2026
           FRONTEND_URL=http://localhost:13000
           MINIO_ENDPOINT=localhost
-          MINIO_PORT=9000
+          MINIO_PORT=19000
           MINIO_USE_SSL=false
           MINIO_ACCESS_KEY=minioadmin
           MINIO_SECRET_KEY=minioadmin
           MINIO_BUCKET_NAME=haihire-resumes
-          MINIO_PUBLIC_URL=http://localhost:9000
+          MINIO_PUBLIC_URL=http://localhost:19000
           SYSTEM_EMAIL_PROVIDER=SIMULATED
           SYSTEM_EMAIL_FROM_NAME=HaiHire CI
           SYSTEM_EMAIL_FROM_EMAIL=ci@haihire.test
@@ -109,7 +111,7 @@ jobs:
           SYSTEM_EMAIL_SMTP_PASS=
           SYSTEM_EMAIL_RESEND_API_KEY=
           SYSTEM_EMAIL_SENDGRID_API_KEY=
-          REDIS_PORT=6379
+          REDIS_PORT=16379
           EOF
 
           cat > frontend/.env << 'EOF'
@@ -123,21 +125,33 @@ jobs:
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |
           docker run -d --name minio \
-            -p 9000:9000 -p 9001:9001 \
+            --user 0:0 \
+            -v minio_data:/data \
+            -p 19000:9000 -p 19001:9001 \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
             alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4 \
-            server /data
+            server /data --console-address ":9001"
 
-          echo "Waiting for MinIO to become healthy on http://localhost:9000/minio/health/live ..."
-          timeout 60s bash -c 'until curl -sf http://localhost:9000/minio/health/live > /dev/null; do echo "MinIO not ready yet..."; sleep 2; done'
-          echo "MinIO is ready!"
+          echo "Waiting for MinIO container on http://localhost:19000/minio/health/live ..."
+          timeout 60s bash -c '
+            until curl -sf http://localhost:19000/minio/health/live > /dev/null; do
+              if ! docker ps | grep -q minio; then
+                echo "❌ MinIO container stopped unexpectedly! Outputting container logs:"
+                docker logs minio
+                exit 1
+              fi
+              echo "MinIO not ready yet (probing http://localhost:19000/minio/health/live)..."
+              sleep 2
+            done
+          '
+          echo "MinIO is ready on port 19000!"
 
       - name: Wait for Redis/Valkey Readiness
         run: |
-          echo "Waiting for Redis/Valkey to accept connections on port 6379..."
-          timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/6379) 2>/dev/null; do echo "Redis not ready yet..."; sleep 1; done'
-          echo "Redis is accepting connections!"
+          echo "Waiting for Redis/Valkey to accept connections on port 16379..."
+          timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/16379) 2>/dev/null; do echo "Redis not ready yet..."; sleep 1; done'
+          echo "Redis is accepting connections on port 16379!"
 
       - name: Run Database Migrations
         run: pnpm --filter ./backend run db:update
@@ -145,11 +159,11 @@ jobs:
       - name: Seed Test Data for E2E
         run: pnpm --filter ./backend run db:seed
         env:
-          DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:5432/haihire_test_db?schema=public
+          DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           DEMO_SEED_PASSWORD: dev-seed-password-2026
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -183,8 +197,9 @@ jobs:
         run: pnpm test:e2e
 
       - name: Upload Playwright test report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: nightly-playwright-report
           path: playwright-report/
+          if-no-files-found: ignore

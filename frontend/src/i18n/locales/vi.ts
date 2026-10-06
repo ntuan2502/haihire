@@ -1349,7 +1349,7 @@ export const vi: TranslationSchema = {
       aiConfigurationSub: "Mô hình & khóa API",
       privacyRetention: "Bảo mật & Lưu trữ",
       privacyRetentionSub: "Chính sách lưu trữ dữ liệu",
-      sso: "Đăng nhập một lần",
+      sso: "Đăng nhập một lần (SSO)",
       ssoSub: "SSO cho doanh nghiệp",
       account: "Tài khoản",
       accountSub: "Hồ sơ cá nhân & bảo mật",

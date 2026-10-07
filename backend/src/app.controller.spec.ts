@@ -6,7 +6,7 @@ import { ServiceUnavailableException } from "@nestjs/common";
 
 describe("AppController", () => {
   const mockMetrics = {
-    getMetrics: vi.fn().mockReturnValue("# HELP metrics\n"),
+    getMetrics: vi.fn().mockResolvedValue("# HELP metrics\n"),
   };
 
   it("should return root message", () => {
@@ -76,12 +76,12 @@ describe("AppController", () => {
     }
   });
 
-  it("should return metrics string from MetricsService", () => {
+  it("should return metrics string from MetricsService", async () => {
     const mockService = {};
     const controller = new AppController(
       mockService as unknown as AppService,
       mockMetrics as unknown as MetricsService,
     );
-    expect(controller.getMetrics()).toBe("# HELP metrics\n");
+    expect(await controller.getMetrics()).toBe("# HELP metrics\n");
   });
 });

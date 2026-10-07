@@ -676,9 +676,144 @@ export async function runSeed(): Promise<void> {
     conflictOn: { organizationId: adminOrgId },
   });
 
+  // 6. Seed Demo Org Beta for Multi-Tenant Isolation Verification
+  const betaOrgId = "00000000-0000-0000-0000-0000000000b2";
+  const betaAdminUserId = "00000000-0000-0000-0000-0000000000b1";
+  const betaJobId = "00000000-0000-0000-0000-0000000000b3";
+  const betaCandidateId = "00000000-0000-0000-0000-0000000000b4";
+  const betaAppId = "00000000-0000-0000-0000-0000000000b5";
+  const betaWebhookId = "00000000-0000-0000-0000-0000000000b6";
+
+  await db.orm.public.Organization.upsert({
+    create: {
+      id: betaOrgId,
+      name: "Beta Financials",
+      slug: "beta-financials",
+      ownerId: betaAdminUserId,
+      updatedAt: toInstant(),
+    },
+    update: {
+      name: "Beta Financials",
+      ownerId: betaAdminUserId,
+    },
+    conflictOn: { slug: "beta-financials" },
+  });
+
+  await db.orm.public.User.upsert({
+    create: {
+      id: betaAdminUserId,
+      email: DEMO_ACCOUNTS.BETA_ADMIN.email,
+      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
+      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
+      password: defaultPasswordHash,
+      organizationId: betaOrgId,
+      updatedAt: toInstant(),
+    },
+    update: {
+      password: defaultPasswordHash,
+      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
+      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
+      organizationId: betaOrgId,
+    },
+    conflictOn: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
+  });
+
+  await db.orm.public.OrganizationMember.upsert({
+    create: {
+      id: "00000000-0000-0000-0000-0000000000bb",
+      organizationId: betaOrgId,
+      userId: betaAdminUserId,
+      role: "ADMIN",
+      updatedAt: toInstant(),
+    },
+    update: {},
+    conflictOn: { id: "00000000-0000-0000-0000-0000000000bb" },
+  });
+
+  await db.orm.public.Job.upsert({
+    create: {
+      id: betaJobId,
+      organizationId: betaOrgId,
+      createdById: betaAdminUserId,
+      title: "Beta Lead Quant Trader",
+      department: "Finance & Trading",
+      location: "Singapore / Hybrid",
+      workplace: "HYBRID",
+      type: "FULL_TIME",
+      experienceLevel: "LEAD",
+      status: "PUBLISHED",
+      description: "Proprietary trading algorithms and quantitative strategy execution.",
+      requirements: "Quantitative finance background, 5+ years experience.",
+      salaryRange: "$5,000 - $8,000 / month",
+      updatedAt: toInstant(),
+    },
+    update: {
+      title: "Beta Lead Quant Trader",
+      status: "PUBLISHED",
+    },
+    conflictOn: { id: betaJobId },
+  });
+
+  await db.orm.public.Candidate.upsert({
+    create: {
+      id: betaCandidateId,
+      organizationId: betaOrgId,
+      name: "Tran Beta",
+      firstName: "Beta",
+      lastName: "Tran",
+      email: "candidate@beta.test",
+      phone: "+84988776655",
+      gender: "FEMALE",
+      resumeUrl: "https://minio.test/haihire-resumes/beta-cv.pdf",
+      resumeFileName: "TranBeta_CV.pdf",
+      updatedAt: toInstant(),
+    },
+    update: {
+      name: "Tran Beta",
+    },
+    conflictOn: { id: betaCandidateId },
+  });
+
+  await db.orm.public.Application.upsert({
+    create: {
+      id: betaAppId,
+      jobId: betaJobId,
+      candidateId: betaCandidateId,
+      stage: "SCREENING",
+      orderIndex: 0,
+      resumeUrl: "https://minio.test/haihire-resumes/beta-cv.pdf",
+      resumeFileName: "TranBeta_CV.pdf",
+      updatedAt: toInstant(),
+    },
+    update: {
+      stage: "SCREENING",
+    },
+    conflictOn: { id: betaAppId },
+  });
+
+  await db.orm.public.OrganizationWebhookSetting.upsert({
+    create: {
+      id: betaWebhookId,
+      organizationId: betaOrgId,
+      eventType: "DLQ_ALERT",
+      provider: "DISCORD",
+      webhookUrl: "https://discord.com/api/webhooks/12345/test-token",
+      isEnabled: true,
+      createdBy: betaAdminUserId,
+      updatedBy: betaAdminUserId,
+      updatedAt: toInstant(),
+    },
+    update: {
+      isEnabled: true,
+    },
+    conflictOn: { id: betaWebhookId },
+  });
+
   console.log(`- Org: Admin (id: ${adminOrgId})`);
   console.log(`- Admin: ${DEMO_ACCOUNTS.ADMIN.email} (Password: ${DEMO_PASSWORD})`);
   console.log(`- Member: ${DEMO_ACCOUNTS.MEMBER.email} (Password: ${DEMO_PASSWORD})`);
+  console.log(`- Org Beta: Beta Financials (id: ${betaOrgId})`);
+  console.log(`- Beta Admin: ${DEMO_ACCOUNTS.BETA_ADMIN.email} (Password: ${DEMO_PASSWORD})`);
   console.log(`- Email Settings: SIMULATED (careers@tun.io.vn)`);
 
   console.log("==================================================");

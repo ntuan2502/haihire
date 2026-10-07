@@ -12,7 +12,7 @@
     "db:update": "prisma db update",
     "db:verify": "prisma db verify",
     "deploy": "pnpm run build && pnpm run composer:deploy",
-    "dev": "node --import tsx --watch src/main.ts",
+    "dev": "node --import tsx --watch --watch-path=src src/main.ts",
     "seed": "node --import tsx src/prisma/seed.ts",
     "db:seed": "node --import tsx src/prisma/seed.ts",
     "dev:composer": "pnpm run build && pnpm run composer:dev",

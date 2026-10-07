@@ -13,4 +13,9 @@ export const DEMO_ACCOUNTS = {
     name: "Member",
     role: "MEMBER" as const,
   },
+  BETA_ADMIN: {
+    email: "admin@beta.test",
+    name: "Beta Admin",
+    role: "ADMIN" as const,
+  },
 } as const;

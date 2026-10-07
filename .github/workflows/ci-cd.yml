@@ -145,6 +145,9 @@ jobs:
       - name: Verify Environment Synchronization Gate (Gate 6)
         run: pnpm lint:env-sync
 
+      - name: Verify Prometheus Alert Rules Gate
+        run: pnpm lint:prometheus-rules
+
       - name: Create backend .env for CI
         run: |
           cat > backend/.env << 'EOF'

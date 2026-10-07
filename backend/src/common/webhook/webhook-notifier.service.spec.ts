@@ -4,6 +4,8 @@ import { WebhookProviderFactory } from "./webhook-provider.factory";
 import { Logger } from "@nestjs/common";
 import { env } from "../../config/env";
 import type { WebhookProvider } from "./webhook-provider.interface";
+import type { PrismaService } from "../../prisma/prisma.service";
+import type { EncryptionService } from "../encryption.service";
 
 describe("WebhookNotifierService", () => {
   let service: WebhookNotifierService;
@@ -213,5 +215,262 @@ describe("WebhookNotifierService", () => {
       env.WEBHOOK_SECRET_TOKEN = origSecret;
       env.WEBHOOK_CHAT_ID = origChat;
     }
+  });
+
+  it("Case 10: uses org setting and does NOT use global env when org has active settings", async () => {
+    const mockDbSettings = [
+      {
+        id: "setting-1",
+        organizationId: "org-123",
+        eventType: "DLQ_ALERT",
+        provider: "TELEGRAM",
+        webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
+        secretToken: null,
+        chatId: "-100123",
+        isEnabled: true,
+      },
+    ];
+
+    const mockPrisma = {
+      db: {
+        orm: {
+          public: {
+            OrganizationWebhookSetting: {
+              where: vi.fn().mockReturnThis(),
+              all: vi.fn().mockResolvedValue(mockDbSettings),
+            },
+          },
+        },
+      },
+    };
+
+    const mockEncryption = {
+      decrypt: vi.fn((val: string) => val.replace("enc:", "")),
+    };
+
+    const orgAwareService = new WebhookNotifierService(
+      mockPrisma as unknown as PrismaService,
+      mockEncryption as unknown as EncryptionService,
+    );
+
+    Object.defineProperty(orgAwareService, "globalConfig", {
+      value: {
+        type: "DISCORD",
+        url: "https://discord.com/api/webhooks/global/xyz",
+      },
+      writable: true,
+    });
+
+    const mockProvider: WebhookProvider = {
+      send: vi.fn().mockResolvedValue({ success: true, statusCode: 200 }),
+    };
+    const factorySpy = vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
+
+    await orgAwareService.notifyDlq(sampleDlqPayload, "org-123");
+
+    expect(factorySpy).toHaveBeenCalledWith({
+      type: "TELEGRAM",
+      url: "https://api.telegram.org/bot123/sendMessage",
+      secretToken: undefined,
+      chatId: "-100123",
+    });
+    expect(mockProvider.send).toHaveBeenCalledTimes(1);
+    // Verified global discord was NOT called
+    expect(factorySpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: "DISCORD" }));
+  });
+
+  it("Case 11: decrypts webhookUrl and secretToken before creating provider", async () => {
+    const mockDbSettings = [
+      {
+        id: "setting-gen",
+        organizationId: "org-123",
+        eventType: "DLQ_ALERT",
+        provider: "GENERIC",
+        webhookUrl: "enc:https://custom-webhook.internal/dlq",
+        secretToken: "enc:my-hmac-secret",
+        chatId: null,
+        isEnabled: true,
+      },
+    ];
+
+    const mockPrisma = {
+      db: {
+        orm: {
+          public: {
+            OrganizationWebhookSetting: {
+              where: vi.fn().mockReturnThis(),
+              all: vi.fn().mockResolvedValue(mockDbSettings),
+            },
+          },
+        },
+      },
+    };
+
+    const mockEncryption = {
+      decrypt: vi.fn((val: string) => (val ? val.replace("enc:", "") : null)),
+    };
+
+    const orgAwareService = new WebhookNotifierService(
+      mockPrisma as unknown as PrismaService,
+      mockEncryption as unknown as EncryptionService,
+    );
+
+    const mockProvider: WebhookProvider = {
+      send: vi.fn().mockResolvedValue({ success: true, statusCode: 200 }),
+    };
+    const factorySpy = vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
+
+    await orgAwareService.notifyDlq(sampleDlqPayload, "org-123");
+
+    expect(mockEncryption.decrypt).toHaveBeenCalledWith("enc:https://custom-webhook.internal/dlq");
+    expect(mockEncryption.decrypt).toHaveBeenCalledWith("enc:my-hmac-secret");
+    expect(factorySpy).toHaveBeenCalledWith({
+      type: "GENERIC",
+      url: "https://custom-webhook.internal/dlq",
+      secretToken: "my-hmac-secret",
+      chatId: undefined,
+    });
+  });
+
+  it("Case 12: falls back to global env config when org has no matching settings", async () => {
+    const mockPrisma = {
+      db: {
+        orm: {
+          public: {
+            OrganizationWebhookSetting: {
+              where: vi.fn().mockReturnThis(),
+              all: vi.fn().mockResolvedValue([]),
+            },
+          },
+        },
+      },
+    };
+
+    const mockEncryption = {
+      decrypt: vi.fn(),
+    };
+
+    const orgAwareService = new WebhookNotifierService(
+      mockPrisma as unknown as PrismaService,
+      mockEncryption as unknown as EncryptionService,
+    );
+
+    Object.defineProperty(orgAwareService, "globalConfig", {
+      value: {
+        type: "DISCORD",
+        url: "https://discord.com/api/webhooks/global/abc",
+      },
+      writable: true,
+    });
+
+    const mockProvider: WebhookProvider = {
+      send: vi.fn().mockResolvedValue({ success: true, statusCode: 200 }),
+    };
+    const factorySpy = vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
+
+    await orgAwareService.notifyDlq(sampleDlqPayload, "org-without-settings");
+
+    expect(factorySpy).toHaveBeenCalledWith({
+      type: "DISCORD",
+      url: "https://discord.com/api/webhooks/global/abc",
+    });
+    expect(mockProvider.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("Case 13: sends to multiple providers when org has multiple active settings for DLQ_ALERT", async () => {
+    const mockDbSettings = [
+      {
+        id: "setting-tg",
+        organizationId: "org-multi",
+        eventType: "DLQ_ALERT",
+        provider: "TELEGRAM",
+        webhookUrl: "enc:https://api.telegram.org/bot1/sendMessage",
+        chatId: "123",
+        isEnabled: true,
+      },
+      {
+        id: "setting-dc",
+        organizationId: "org-multi",
+        eventType: "DLQ_ALERT",
+        provider: "DISCORD",
+        webhookUrl: "enc:https://discord.com/api/webhooks/2/xyz",
+        chatId: null,
+        isEnabled: true,
+      },
+    ];
+
+    const mockPrisma = {
+      db: {
+        orm: {
+          public: {
+            OrganizationWebhookSetting: {
+              where: vi.fn().mockReturnThis(),
+              all: vi.fn().mockResolvedValue(mockDbSettings),
+            },
+          },
+        },
+      },
+    };
+
+    const mockEncryption = {
+      decrypt: vi.fn((val: string) => val.replace("enc:", "")),
+    };
+
+    const orgAwareService = new WebhookNotifierService(
+      mockPrisma as unknown as PrismaService,
+      mockEncryption as unknown as EncryptionService,
+    );
+
+    const mockProviderTg: WebhookProvider = {
+      send: vi.fn().mockResolvedValue({ success: true }),
+    };
+    const mockProviderDc: WebhookProvider = {
+      send: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    vi.spyOn(WebhookProviderFactory, "create").mockImplementation((cfg) => {
+      if (cfg.type === "TELEGRAM") return mockProviderTg;
+      return mockProviderDc;
+    });
+
+    await orgAwareService.notifyDlq(sampleDlqPayload, "org-multi");
+
+    expect(mockProviderTg.send).toHaveBeenCalledTimes(1);
+    expect(mockProviderDc.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("Case 14: logs warning and does not crash when org has no settings and global config is null", async () => {
+    const mockPrisma = {
+      db: {
+        orm: {
+          public: {
+            OrganizationWebhookSetting: {
+              where: vi.fn().mockReturnThis(),
+              all: vi.fn().mockResolvedValue([]),
+            },
+          },
+        },
+      },
+    };
+
+    const mockEncryption = { decrypt: vi.fn() };
+
+    const orgAwareService = new WebhookNotifierService(
+      mockPrisma as unknown as PrismaService,
+      mockEncryption as unknown as EncryptionService,
+    );
+
+    Object.defineProperty(orgAwareService, "globalConfig", {
+      value: null,
+      writable: true,
+    });
+
+    const warnSpy = vi.spyOn(Logger.prototype, "warn").mockImplementation(() => {});
+
+    await expect(orgAwareService.notifyDlq(sampleDlqPayload, "org-empty")).resolves.not.toThrow();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("No webhook config available, skipping alert"),
+    );
   });
 });

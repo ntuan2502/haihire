@@ -267,6 +267,7 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         data: {
           objectName: "tenants/org-1/resumes/permanent-orphan.pdf",
           reason: "transaction-rollback-compensation-failed",
+          organizationId: "org-1",
         },
         attemptsMade: 5,
         opts: { attempts: 5 },
@@ -283,15 +284,18 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
 
       // 2. Verify Webhook alert was dispatched with full diagnostic context
       expect(mockWebhookNotifier.notifyDlq).toHaveBeenCalledTimes(1);
-      expect(mockWebhookNotifier.notifyDlq).toHaveBeenCalledWith({
-        queue: "orphan-cleanup-dlq",
-        jobName: "cleanup",
-        objectName: "tenants/org-1/resumes/permanent-orphan.pdf",
-        reason: "transaction-rollback-compensation-failed",
-        attemptsMade: 5,
-        errorMessage: "Bucket Does Not Exist",
-        timestamp: expect.any(String),
-      });
+      expect(mockWebhookNotifier.notifyDlq).toHaveBeenCalledWith(
+        {
+          queue: "orphan-cleanup-dlq",
+          jobName: "cleanup",
+          objectName: "tenants/org-1/resumes/permanent-orphan.pdf",
+          reason: "transaction-rollback-compensation-failed",
+          attemptsMade: 5,
+          errorMessage: "Bucket Does Not Exist",
+          timestamp: expect.any(String),
+        },
+        "org-1",
+      );
     });
 
     it("Test 4b: Worker intermediate retry failure (< 5 attempts) does not trigger DLQ Webhook alert", async () => {

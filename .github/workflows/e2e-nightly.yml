@@ -120,6 +120,7 @@ jobs:
           NEXT_PUBLIC_API_URL=http://localhost:13001
           NEXT_PUBLIC_MINIO_URL=/haihire-resumes
           NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
+          E2E_MULTI_TENANT_ENABLED=true
           EOF
 
       - name: Start MinIO Object Storage & Wait for Readiness

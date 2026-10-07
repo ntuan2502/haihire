@@ -55,12 +55,17 @@ services:
         required: false
       - path: ./.env
         required: false
+    # maxmemory-policy noeviction để đảm bảo BullMQ jobs không bị evict.
+    # Khi memory đầy, Valkey sẽ reject write thay vì mất data.
+    # Monitor memory usage qua metric và alert nếu gần full.
+    # maxmemory 384mb được định kích thước an toàn dưới container limit 512M,
+    # chừa lại 128MB cho Linux Alpine OS, network buffer và background fork snapshot.
     command: >
       /bin/sh -c "
         if [ -n \"$$REDIS_PASSWORD\" ]; then
-          redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes;
+          valkey-server --requirepass \"$$REDIS_PASSWORD\" --maxmemory 384mb --maxmemory-policy noeviction --appendonly yes --appendfsync everysec;
         else
-          redis-server --appendonly yes;
+          valkey-server --maxmemory 384mb --maxmemory-policy noeviction --appendonly yes --appendfsync everysec;
         fi
       "
     environment:

@@ -29,21 +29,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  CustomModal,
+  CustomSelect,
+  type CustomSelectOption,
+} from "@/components/shared";
 import { toast } from "sonner";
 import { cn } from "cn";
 
@@ -98,6 +89,36 @@ export default function IntegrationsSettingsPage() {
     setIsEnabled(setting.isEnabled);
     setIsModalOpen(true);
   };
+
+  const eventTypeOptions: CustomSelectOption<WebhookEventType>[] = [
+    {
+      value: "DLQ_ALERT",
+      label: t("settings.integrations.webhooks.eventTypes.DLQ_ALERT"),
+    },
+    {
+      value: "ORPHAN_SPIKE",
+      label: t("settings.integrations.webhooks.eventTypes.ORPHAN_SPIKE"),
+    },
+    {
+      value: "JOB_POSTED",
+      label: t("settings.integrations.webhooks.eventTypes.JOB_POSTED"),
+    },
+  ];
+
+  const providerOptions: CustomSelectOption<WebhookProviderType>[] = [
+    {
+      value: "TELEGRAM",
+      label: t("settings.integrations.webhooks.providers.TELEGRAM"),
+    },
+    {
+      value: "DISCORD",
+      label: t("settings.integrations.webhooks.providers.DISCORD"),
+    },
+    {
+      value: "GENERIC",
+      label: t("settings.integrations.webhooks.providers.GENERIC"),
+    },
+  ];
 
   const handleSave = async () => {
     if (!webhookUrl.trim()) {
@@ -406,41 +427,32 @@ export default function IntegrationsSettingsPage() {
       )}
 
       {/* Add / Edit Webhook Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {editingId
-                ? t("settings.integrations.webhooks.modal.editTitle")
-                : t("settings.integrations.webhooks.modal.addTitle")}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
+      <CustomModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          resetForm();
+        }}
+        title={
+          editingId
+            ? t("settings.integrations.webhooks.modal.editTitle")
+            : t("settings.integrations.webhooks.modal.addTitle")
+        }
+        size="md"
+      >
+        <div className="flex flex-col">
+          <div className="p-6 space-y-4">
             {/* Event Type Select */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {t("settings.integrations.webhooks.modal.eventType")}
               </label>
-              <Select
+              <CustomSelect<WebhookEventType>
                 value={eventType}
-                onValueChange={(val) => setEventType(val as WebhookEventType)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="DLQ_ALERT">
-                    {t("settings.integrations.webhooks.eventTypes.DLQ_ALERT")}
-                  </SelectItem>
-                  <SelectItem value="ORPHAN_SPIKE">
-                    {t("settings.integrations.webhooks.eventTypes.ORPHAN_SPIKE")}
-                  </SelectItem>
-                  <SelectItem value="JOB_POSTED">
-                    {t("settings.integrations.webhooks.eventTypes.JOB_POSTED")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={(val) => setEventType(val)}
+                options={eventTypeOptions}
+                className="w-full"
+              />
             </div>
 
             {/* Provider Select */}
@@ -448,25 +460,12 @@ export default function IntegrationsSettingsPage() {
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {t("settings.integrations.webhooks.modal.provider")}
               </label>
-              <Select
+              <CustomSelect<WebhookProviderType>
                 value={provider}
-                onValueChange={(val) => setProvider(val as WebhookProviderType)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TELEGRAM">
-                    {t("settings.integrations.webhooks.providers.TELEGRAM")}
-                  </SelectItem>
-                  <SelectItem value="DISCORD">
-                    {t("settings.integrations.webhooks.providers.DISCORD")}
-                  </SelectItem>
-                  <SelectItem value="GENERIC">
-                    {t("settings.integrations.webhooks.providers.GENERIC")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={(val) => setProvider(val)}
+                options={providerOptions}
+                className="w-full"
+              />
             </div>
 
             {/* Webhook URL Input */}
@@ -534,7 +533,7 @@ export default function IntegrationsSettingsPage() {
                 type="checkbox"
                 checked={isEnabled}
                 onChange={(e) => setIsEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
               />
               <label
                 htmlFor="webhook-is-enabled"
@@ -545,14 +544,15 @@ export default function IntegrationsSettingsPage() {
             </div>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+          {/* Modal Footer */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleTestModal}
               disabled={testMutation.isPending}
-              className="mr-auto inline-flex items-center gap-1.5"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
             >
               {testMutation.isPending ? (
                 <>
@@ -566,72 +566,72 @@ export default function IntegrationsSettingsPage() {
                 </>
               )}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsModalOpen(false);
-                resetForm();
-              }}
-            >
-              {t("settings.integrations.webhooks.modal.cancel")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                  <span>{t("settings.integrations.webhooks.modal.saving")}</span>
-                </>
-              ) : (
-                <span>{t("settings.integrations.webhooks.modal.save")}</span>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={Boolean(deletingId)}
-        onOpenChange={(open) => !open && setDeletingId(null)}
+            <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  resetForm();
+                }}
+              >
+                {t("settings.integrations.webhooks.modal.cancel")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSave}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                    <span>{t("settings.integrations.webhooks.modal.saving")}</span>
+                  </>
+                ) : (
+                  <span>{t("settings.integrations.webhooks.modal.save")}</span>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CustomModal>
+
+      {/* Delete Confirmation Modal */}
+      <CustomModal
+        isOpen={Boolean(deletingId)}
+        onClose={() => setDeletingId(null)}
+        title={t("settings.integrations.webhooks.deleteConfirm.title")}
+        size="sm"
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {t("settings.integrations.webhooks.deleteConfirm.title")}
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-slate-500 dark:text-slate-400 py-2">
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {t("settings.integrations.webhooks.deleteConfirm.message")}
           </p>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDeletingId(null)}
-            >
-              {t("settings.integrations.webhooks.deleteConfirm.cancel")}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : null}
-              {t("settings.integrations.webhooks.deleteConfirm.confirm")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDeletingId(null)}
+          >
+            {t("settings.integrations.webhooks.deleteConfirm.cancel")}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : null}
+            {t("settings.integrations.webhooks.deleteConfirm.confirm")}
+          </Button>
+        </div>
+      </CustomModal>
     </div>
   );
 }

@@ -637,5 +637,113 @@ describe("WebhookSettingsService", () => {
         secretToken: "my-hmac-secret",
       });
     });
+
+    it("Case 33: update throws 400 WEBHOOK_PROVIDER_MISMATCH when new webhookUrl violates provider validation", async () => {
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
+        id: "setting-1",
+        organizationId: "org-1",
+        eventType: "DLQ_ALERT",
+        provider: "TELEGRAM",
+        webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
+        chatId: "-100",
+      });
+
+      await expect(
+        service.update("setting-1", "org-1", "user-1", {
+          webhookUrl: "https://invalid-telegram-url.com",
+        }),
+      ).rejects.toThrow(AppBadRequestException);
+    });
+
+    it("Case 34: update provider without webhookUrl throws when existing URL is incompatible with new provider", async () => {
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
+        id: "setting-1",
+        organizationId: "org-1",
+        eventType: "DLQ_ALERT",
+        provider: "GENERIC",
+        webhookUrl: "enc:https://generic-api.com/hooks",
+      });
+
+      // Changing to TELEGRAM requires https://api.telegram.org/bot... and chatId
+      await expect(
+        service.update("setting-1", "org-1", "user-1", {
+          provider: "TELEGRAM",
+        }),
+      ).rejects.toThrow(AppBadRequestException);
+    });
+
+    it("Case 35: update provider without webhookUrl succeeds when existing URL is compatible and handles decrypt error", async () => {
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
+        id: "setting-1",
+        organizationId: "org-1",
+        eventType: "DLQ_ALERT",
+        provider: "GENERIC",
+        webhookUrl: "https://discord.com/api/webhooks/123/xyz",
+      });
+      mockEncryption.decrypt.mockImplementationOnce(() => {
+        throw new Error("Decrypt error");
+      });
+
+      const res = await service.update("setting-1", "org-1", "user-1", {
+        provider: "DISCORD",
+      });
+
+      expect(res.provider).toBe("DISCORD");
+    });
+
+    it("Case 36: create throws 400 when encryptionService fails to encrypt URL", async () => {
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockEncryption.encrypt.mockReturnValueOnce(null);
+
+      await expect(
+        service.create("org-1", "user-1", {
+          eventType: "DLQ_ALERT",
+          provider: "DISCORD",
+          webhookUrl: "https://discord.com/api/webhooks/123/xyz",
+        }),
+      ).rejects.toThrow(AppBadRequestException);
+    });
+
+    it("Case 37: mapToResponse gracefully falls back to raw URL when decrypt throws", async () => {
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
+        id: "setting-fallback",
+        organizationId: "org-1",
+        eventType: "DLQ_ALERT",
+        provider: "GENERIC",
+        webhookUrl: "https://raw-url.com/hook",
+        createdAt: 1775534400000,
+        updatedAt: 1775534400000,
+      });
+      mockEncryption.decrypt.mockImplementationOnce(() => {
+        throw new Error("Key failure");
+      });
+
+      const res = await service.findOne("setting-fallback", "org-1");
+      expect(res.webhookUrl).toBe("https://raw-url.com/***");
+    });
+
+    it("Case 38: update allows provider/eventType change when conflict check returns the same record (self)", async () => {
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first
+        .mockResolvedValueOnce({
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "GENERIC",
+          webhookUrl: "enc:https://example.com/api",
+        })
+        .mockResolvedValueOnce({
+          // conflict query returns same record
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "JOB_POSTED",
+          provider: "GENERIC",
+        });
+
+      const res = await service.update("setting-1", "org-1", "user-1", {
+        eventType: "JOB_POSTED",
+      });
+
+      expect(res).toBeDefined();
+    });
   });
 });

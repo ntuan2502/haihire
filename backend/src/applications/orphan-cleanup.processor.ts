@@ -2,6 +2,7 @@ import { Processor, WorkerHost, OnWorkerEvent, InjectQueue } from "@nestjs/bullm
 import { Job, Queue } from "bullmq";
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { MinioService } from "../minio/minio.service";
+import { WebhookNotifierService } from "../common/webhook/webhook-notifier.service";
 
 export interface OrphanCleanupJobData {
   objectName: string;
@@ -23,6 +24,9 @@ export class OrphanCleanupProcessor extends WorkerHost {
     @Optional()
     @InjectQueue(ORPHAN_CLEANUP_DLQ)
     private readonly dlqQueue?: Queue,
+    @Optional()
+    @Inject(WebhookNotifierService)
+    private readonly webhookNotifier?: WebhookNotifierService,
   ) {
     super();
   }
@@ -64,6 +68,18 @@ export class OrphanCleanupProcessor extends WorkerHost {
           const dlqMsg = dlqErr instanceof Error ? dlqErr.message : String(dlqErr);
           this.logger.error(`[OrphanCleanup] Failed to enqueue to DLQ: ${dlqMsg}`);
         }
+      }
+
+      if (this.webhookNotifier) {
+        await this.webhookNotifier.notifyDlq({
+          queue: "orphan-cleanup-dlq",
+          jobName: job.name,
+          objectName: job.data.objectName,
+          reason: job.data.reason || "Orphan cleanup failure",
+          attemptsMade: job.attemptsMade,
+          errorMessage: err.message,
+          timestamp: new Date().toISOString(),
+        });
       }
     }
   }

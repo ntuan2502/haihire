@@ -38,4 +38,6 @@ export const queryKeys = {
   sourcingLinks: (params?: Record<string, unknown>) => ["sourcing", "links", params] as const,
   sourcingLinkDetail: (id: string, params?: { timeRange?: string }) => ["sourcing", "links", id, params] as const,
   sourcingAttributionLog: (params?: Record<string, unknown>) => ["sourcing", "attribution-log", params] as const,
+  webhookSettings: (orgId?: string | null) => ["webhook-settings", { orgId }] as const,
+  webhookSetting: (id?: string | null) => ["webhook-settings", "detail", id] as const,
 };

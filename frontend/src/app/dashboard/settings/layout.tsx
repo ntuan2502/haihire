@@ -94,7 +94,6 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Integrations",
     sublabel: "Calendar & services",
     icon: Plug,
-    locked: true,
   },
   {
     id: "ai-configuration",

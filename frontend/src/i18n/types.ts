@@ -111,6 +111,9 @@ export interface TranslationSchema {
     FORBIDDEN_READ_ONLY: string;
     SSE_UNAUTHORIZED: string;
     TRACKING_LINK_NOT_FOUND: string;
+    WEBHOOK_SETTING_NOT_FOUND: string;
+    WEBHOOK_TEST_FAILED: string;
+    WEBHOOK_PROVIDER_MISMATCH: string;
     TOO_MANY_REQUESTS: string;
     GENERIC_ERROR: string;
     VALIDATION_ERROR: string;
@@ -1358,6 +1361,67 @@ export interface TranslationSchema {
     placeholders: {
       orgName: string;
       orgSlug: string;
+    };
+    integrations: {
+      title: string;
+      description: string;
+      tabs: {
+        webhooks: string;
+      };
+      webhooks: {
+        addButton: string;
+        table: {
+          eventType: string;
+          provider: string;
+          status: string;
+          lastUpdated: string;
+          actions: string;
+        };
+        modal: {
+          addTitle: string;
+          editTitle: string;
+          eventType: string;
+          provider: string;
+          webhookUrl: string;
+          webhookUrlHint: {
+            telegram: string;
+            discord: string;
+            generic: string;
+          };
+          secretToken: string;
+          secretTokenHint: string;
+          chatId: string;
+          chatIdHint: string;
+          isEnabled: string;
+          testButton: string;
+          testingButton: string;
+          testSuccess: string;
+          testFailed: string;
+          save: string;
+          saving: string;
+          cancel: string;
+        };
+        deleteConfirm: {
+          title: string;
+          message: string;
+          confirm: string;
+          cancel: string;
+        };
+        eventTypes: {
+          DLQ_ALERT: string;
+          ORPHAN_SPIKE: string;
+          JOB_POSTED: string;
+        };
+        providers: {
+          TELEGRAM: string;
+          DISCORD: string;
+          GENERIC: string;
+        };
+        emptyState: string;
+        adminOnly: string;
+        enabled: string;
+        disabled: string;
+      };
     };
   };
   theme: {

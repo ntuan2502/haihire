@@ -6,60 +6,120 @@ groups:
         for: 1m
         labels:
           severity: critical
+          team: sre
         annotations:
           summary: "HaiHire Backend API instance is down"
-          description: "HaiHire backend instance has been unreachable for more than 1 minute."
+          description: "HaiHire backend instance has been unreachable for more than 1 minute. Xem runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHirePostgresDown
         expr: haihire_service_health{service="postgres"} == 0
         for: 30s
         labels:
           severity: critical
+          team: sre
         annotations:
           summary: "PostgreSQL database health check failed"
-          description: "Database connection has failed or timed out for >30s."
+          description: "Database connection has failed or timed out for >30s. Xem runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireRedisDown
         expr: haihire_service_health{service="redis"} == 0
         for: 30s
         labels:
           severity: critical
+          team: sre
         annotations:
           summary: "Redis cache / queue health check failed"
-          description: "Redis instance ping failed for >30s."
+          description: "Redis instance ping failed for >30s. Xem runbook: docs/runbooks/redis-recovery.md"
 
       - alert: HaiHireMinioDown
         expr: haihire_service_health{service="minio"} == 0
         for: 1m
         labels:
           severity: high
+          team: sre
         annotations:
           summary: "MinIO S3 storage health check failed"
-          description: "MinIO storage bucket check failed for >1m."
+          description: "MinIO storage bucket check failed for >1m. Xem runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireHighHttp5xxErrorRate
         expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
         for: 2m
         labels:
           severity: high
+          team: sre
         annotations:
           summary: "High HTTP 5xx error rate (>5%)"
-          description: "HTTP 5xx error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes."
+          description: "HTTP 5xx error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes. Xem runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireHighHttpLatencyP95
         expr: http_request_duration_ms{quantile="0.95"} > 1000
         for: 3m
         labels:
           severity: warning
+          team: sre
         annotations:
           summary: "High HTTP request latency (P95 > 1000ms)"
-          description: "95th percentile request latency exceeded 1000ms for 3 minutes."
+          description: "95th percentile request latency exceeded 1000ms for 3 minutes. Xem runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireHighRateLimit429Rate
         expr: rate(http_requests_total{status="429"}[5m]) > 50
         for: 2m
         labels:
           severity: warning
+          team: sre
         annotations:
           summary: "High volume of rate-limited requests"
-          description: "Over 50 requests/sec are receiving HTTP 429 Too Many Requests (possible DDoS or brute-force)."
+          description: "Over 50 requests/sec are receiving HTTP 429 Too Many Requests (possible DDoS or brute-force). Xem runbook: docs/runbooks/alerts.md"
+
+      - alert: HaiHireBullMqDlqGrowing
+        expr: bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "DLQ đang tích tụ ({{ $value }} jobs)"
+          description: |
+            DLQ orphan-cleanup-dlq có hơn 10 jobs waiting trong 5 phút.
+            Điều tra MinIO connectivity và DLQ worker.
+            Xem runbook: docs/runbooks/dlq-recovery.md
+
+      - alert: HaiHireBullMqDlqCritical
+        expr: bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 100
+        for: 2m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "CRITICAL: DLQ >100 jobs — nguy cơ tràn MinIO storage"
+          description: |
+            DLQ orphan-cleanup-dlq có hơn 100 jobs waiting.
+            Escalate ngay. Kiểm tra MinIO health + trigger manual cleanup.
+            Xem runbook: docs/runbooks/dlq-recovery.md
+
+      - alert: HaiHireEmailQueueBacklog
+        expr: bullmq_queue_depth{queue="email-queue",state="waiting"} > 500
+        for: 10m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Email queue backlog >500 jobs"
+          description: |
+            Email queue có hơn 500 jobs waiting trong 10 phút.
+            Kiểm tra email provider connectivity và worker throughput.
+            Xem runbook: docs/runbooks/email-queue.md
+
+      - alert: HaiHireBullMqRedisDown
+        expr: bullmq_queue_depth{queue="orphan-cleanup-queue",state="waiting"} == -1
+        for: 2m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "CRITICAL: BullMQ không kết nối được Valkey/Redis"
+          description: |
+            Metric bullmq_queue_depth trả về -1, nghĩa là MetricsService
+            không fetch được dữ liệu từ BullMQ Queue trong 2.5s.
+            Kiểm tra Valkey/Redis connectivity ngay.
+            Xem runbook: docs/runbooks/redis-recovery.md

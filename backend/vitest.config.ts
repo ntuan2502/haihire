@@ -5,5 +5,6 @@ import "./src/config/env.ts";
 export default defineConfig({
   test: {
     environment: "node",
+    include: ["src/**/*.{test,spec}.ts", "../monitoring/**/*.{test,spec}.ts"],
   },
 });

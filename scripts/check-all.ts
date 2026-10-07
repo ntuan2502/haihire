@@ -89,6 +89,13 @@ const steps: Step[] = [
     description: "Audit controller coverage, zero error leaks, and zero alert() calls",
   },
   {
+    id: "lint:prometheus-rules",
+    name: "CI Gate 6: Prometheus Alert Rules Audit",
+    command: "pnpm lint:prometheus-rules",
+    category: "gate",
+    description: "Verify syntax, fields, severity, and team: sre labels in alert-rules.yml",
+  },
+  {
     id: "test:diff",
     name: "Test Count Delta & Anti-Regression",
     command: "pnpm test:diff",

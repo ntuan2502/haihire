@@ -132,6 +132,8 @@ Thực thi kiểm tra toàn diện 8 cổng kiến trúc qua `pnpm run check:all
 ## 6. Lịch Sử Commit Chuẩn Hóa (Git Log)
 
 ```
+58ebca7 refactor(frontend): use custom-modal and custom-select in integrations page
+d03a1dd docs(reports): add task 01b per-org webhook settings completion report
 947c3c0 test(webhook-settings): add unit, integration, and e2e tests
 69c55a6 feat(frontend): add integrations settings page with webhook management
 537eaa7 chore(i18n): add integration settings translations

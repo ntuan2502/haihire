@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import { env } from "../../config/env";
 import type {
@@ -46,7 +47,8 @@ export class WebhookNotifierService {
 
     try {
       const provider = WebhookProviderFactory.create(this.globalConfig);
-      const message = this.buildDlqMessage(payload);
+      const eventId = randomUUID();
+      const message = this.buildDlqMessage(payload, eventId);
       const result = await provider.send(message);
       if (!result.success) {
         this.logger.error(`Webhook send failed: ${result.errorMessage || "Unknown error"}`);
@@ -57,8 +59,10 @@ export class WebhookNotifierService {
     }
   }
 
-  buildDlqMessage(payload: DlqAlertPayload): WebhookMessage {
+  buildDlqMessage(payload: DlqAlertPayload, eventId: string = randomUUID()): WebhookMessage {
     return {
+      eventId,
+      eventType: "DLQ_ALERT",
       title: "🚨 HaiHire DLQ Alert",
       severity: payload.attemptsMade >= 5 ? "critical" : "warning",
       fields: [

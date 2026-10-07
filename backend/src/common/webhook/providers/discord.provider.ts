@@ -16,6 +16,10 @@ export class DiscordProvider implements WebhookProvider {
           ? 0xf39c12
           : 0x3498db;
 
+    const shortEventId = message.eventId ? message.eventId.slice(0, 8) : "";
+    const baseFooter = message.footer || "HaiHire Enterprise ATS";
+    const footerText = shortEventId ? `${baseFooter} • Event: ${shortEventId}...` : baseFooter;
+
     const payload = {
       embeds: [
         {
@@ -26,7 +30,7 @@ export class DiscordProvider implements WebhookProvider {
             value: f.value,
             inline: false,
           })),
-          footer: { text: message.footer || "HaiHire Enterprise ATS" },
+          footer: { text: footerText },
           timestamp: message.timestamp,
         },
       ],

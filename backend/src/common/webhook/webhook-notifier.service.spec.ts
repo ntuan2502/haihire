@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { WebhookNotifierService, type DlqAlertPayload } from "./webhook-notifier.service";
 import { WebhookProviderFactory } from "./webhook-provider.factory";
 import { Logger } from "@nestjs/common";
+import { env } from "../../config/env";
 import type { WebhookProvider } from "./webhook-provider.interface";
 
 describe("WebhookNotifierService", () => {
@@ -44,7 +45,7 @@ describe("WebhookNotifierService", () => {
     expect(factorySpy).not.toHaveBeenCalled();
   });
 
-  it("Case 2: when globalConfig is valid, creates provider and dispatches alert message", async () => {
+  it("Case 2: when globalConfig is valid, creates provider and dispatches alert message with eventId and eventType", async () => {
     Object.defineProperty(service, "globalConfig", {
       value: {
         type: "DISCORD",
@@ -68,6 +69,8 @@ describe("WebhookNotifierService", () => {
     expect(mockProvider.send).toHaveBeenCalledTimes(1);
 
     const sentMessage = (mockProvider.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(sentMessage.eventId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    expect(sentMessage.eventType).toBe("DLQ_ALERT");
     expect(sentMessage.title).toBe("🚨 HaiHire DLQ Alert");
     expect(sentMessage.severity).toBe("critical");
     expect(sentMessage.fields).toHaveLength(6);
@@ -134,16 +137,20 @@ describe("WebhookNotifierService", () => {
     );
   });
 
-  it("Case 5: buildDlqMessage sets severity to 'warning' when attemptsMade < 5", () => {
+  it("Case 5: buildDlqMessage sets severity to 'warning' when attemptsMade < 5 and assigns eventType DLQ_ALERT", () => {
     const warningPayload = { ...sampleDlqPayload, attemptsMade: 3 };
     const message = service.buildDlqMessage(warningPayload);
     expect(message.severity).toBe("warning");
+    expect(message.eventType).toBe("DLQ_ALERT");
+    expect(message.eventId).toBeDefined();
   });
 
-  it("Case 6: buildDlqMessage sets severity to 'critical' when attemptsMade >= 5", () => {
+  it("Case 6: buildDlqMessage sets severity to 'critical' when attemptsMade >= 5 and assigns eventId", () => {
     const criticalPayload = { ...sampleDlqPayload, attemptsMade: 5 };
-    const message = service.buildDlqMessage(criticalPayload);
+    const message = service.buildDlqMessage(criticalPayload, "12345678-1234-1234-1234-123456789abc");
     expect(message.severity).toBe("critical");
+    expect(message.eventType).toBe("DLQ_ALERT");
+    expect(message.eventId).toBe("12345678-1234-1234-1234-123456789abc");
   });
 
   it("Case 7: buildDlqMessage truncates error message longer than 500 characters", () => {
@@ -154,5 +161,57 @@ describe("WebhookNotifierService", () => {
     const errorField = message.fields.find((f) => f.label === "Error");
     expect(errorField?.value.length).toBe(500);
     expect(errorField?.value).toBe("Z".repeat(500));
+  });
+
+  it("Case 8: generates unique eventId on each call to notifyDlq", async () => {
+    Object.defineProperty(service, "globalConfig", {
+      value: {
+        type: "GENERIC",
+        url: "https://hooks.example.com",
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    const mockSend = vi.fn().mockResolvedValue({ success: true });
+    vi.spyOn(WebhookProviderFactory, "create").mockReturnValue({ send: mockSend });
+
+    await service.notifyDlq(sampleDlqPayload);
+    await service.notifyDlq(sampleDlqPayload);
+
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    const eventId1 = mockSend.mock.calls[0][0].eventId;
+    const eventId2 = mockSend.mock.calls[1][0].eventId;
+
+    expect(eventId1).toBeDefined();
+    expect(eventId2).toBeDefined();
+    expect(eventId1).not.toBe(eventId2);
+  });
+
+  it("Case 9: constructor initializes globalConfig when WEBHOOK_PROVIDER and WEBHOOK_URL are defined", () => {
+    const origProvider = env.WEBHOOK_PROVIDER;
+    const origUrl = env.WEBHOOK_URL;
+    const origSecret = env.WEBHOOK_SECRET_TOKEN;
+    const origChat = env.WEBHOOK_CHAT_ID;
+
+    env.WEBHOOK_PROVIDER = "DISCORD";
+    env.WEBHOOK_URL = "https://discord.com/api/webhooks/123/abc";
+    env.WEBHOOK_SECRET_TOKEN = "secret-123";
+    env.WEBHOOK_CHAT_ID = "-100111";
+
+    try {
+      const configuredService = new WebhookNotifierService();
+      expect(configuredService["globalConfig"]).toEqual({
+        type: "DISCORD",
+        url: "https://discord.com/api/webhooks/123/abc",
+        secretToken: "secret-123",
+        chatId: "-100111",
+      });
+    } finally {
+      env.WEBHOOK_PROVIDER = origProvider;
+      env.WEBHOOK_URL = origUrl;
+      env.WEBHOOK_SECRET_TOKEN = origSecret;
+      env.WEBHOOK_CHAT_ID = origChat;
+    }
   });
 });

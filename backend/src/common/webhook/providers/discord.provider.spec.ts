@@ -10,6 +10,8 @@ describe("DiscordProvider", () => {
   };
 
   const sampleMessage: WebhookMessage = {
+    eventId: "550e8400-e29b-41d4-a716-446655440000",
+    eventType: "DLQ_ALERT",
     title: "🚨 HaiHire DLQ Alert",
     severity: "critical",
     fields: [
@@ -30,7 +32,7 @@ describe("DiscordProvider", () => {
     vi.restoreAllMocks();
   });
 
-  it("Case 1: formats Discord embed with red color for critical severity and posts JSON", async () => {
+  it("Case 1: formats Discord embed with red color for critical severity and posts JSON with eventId in footer", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 204,
@@ -53,7 +55,7 @@ describe("DiscordProvider", () => {
     expect(embed.color).toBe(0xe74c3c); // Red for critical
     expect(embed.fields).toHaveLength(3);
     expect(embed.fields[0]).toEqual({ name: "Queue", value: "orphan-cleanup-dlq", inline: false });
-    expect(embed.footer).toEqual({ text: "HaiHire Enterprise ATS" });
+    expect(embed.footer).toEqual({ text: "HaiHire Enterprise ATS • Event: 550e8400..." });
     expect(embed.timestamp).toBe("2026-10-07T10:00:00.000Z");
   });
 
@@ -74,12 +76,14 @@ describe("DiscordProvider", () => {
     expect(body.embeds[0].color).toBe(0x3498db);
   });
 
-  it("Case 3: applies default footer when footer is omitted", async () => {
+  it("Case 3: applies default footer with eventId when footer is omitted", async () => {
     const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 204 } as Response);
     globalThis.fetch = mockFetch;
 
     const provider = new DiscordProvider(config);
     const msgWithoutFooter: WebhookMessage = {
+      eventId: "abcdef12-3456-7890-abcd-ef1234567890",
+      eventType: "ORPHAN_SPIKE",
       title: "Alert",
       severity: "info",
       fields: [],
@@ -88,7 +92,7 @@ describe("DiscordProvider", () => {
 
     await provider.send(msgWithoutFooter);
     const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
-    expect(body.embeds[0].footer.text).toBe("HaiHire Enterprise ATS");
+    expect(body.embeds[0].footer.text).toBe("HaiHire Enterprise ATS • Event: abcdef12...");
   });
 
   it("Case 4: returns failure with status code when Discord API responds with error (e.g. 404 / 400)", async () => {
@@ -106,6 +110,21 @@ describe("DiscordProvider", () => {
     expect(result.errorMessage).toContain("Discord webhook returned HTTP 404");
   });
 
+  it("Case 4b: handles HTTP failure when response.text() throws gracefully", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: vi.fn().mockRejectedValue(new Error("Cannot read response stream")),
+    } as unknown as Response);
+
+    const provider = new DiscordProvider(config);
+    const result = await provider.send(sampleMessage);
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(500);
+    expect(result.errorMessage).toBe("Discord webhook returned HTTP 500");
+  });
+
   it("Case 5: returns failure with error message when fetch throws a network exception", async () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("Discord connection reset by peer"));
 
@@ -114,5 +133,15 @@ describe("DiscordProvider", () => {
 
     expect(result.success).toBe(false);
     expect(result.errorMessage).toContain("Discord network error: Discord connection reset");
+  });
+
+  it("Case 6: handles non-Error network exception gracefully", async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue("Fatal discord socket error");
+
+    const provider = new DiscordProvider(config);
+    const result = await provider.send(sampleMessage);
+
+    expect(result.success).toBe(false);
+    expect(result.errorMessage).toBe("Discord network error: Fatal discord socket error");
   });
 });

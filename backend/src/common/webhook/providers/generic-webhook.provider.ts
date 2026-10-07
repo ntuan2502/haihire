@@ -11,11 +11,13 @@ export class GenericWebhookProvider implements WebhookProvider {
 
   async send(message: WebhookMessage): Promise<WebhookSendResult> {
     const payload = {
+      eventId: message.eventId,
+      eventType: message.eventType,
+      source: "haihire-ats",
       title: message.title,
       severity: message.severity,
       fields: message.fields,
       timestamp: message.timestamp,
-      source: "haihire-ats",
     };
 
     const rawBody = JSON.stringify(payload);

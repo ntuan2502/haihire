@@ -55,6 +55,12 @@
   - **Modular Monolith** trên Backend (NestJS chia theo 9 domain modules độc lập, giao tiếp nội bộ).
   - **Distributed Saga Pattern** xử lý giao dịch phân tán giữa MinIO (Object Storage) và PostgreSQL (Database) kèm BullMQ Dead-Letter Queue (DLQ).
   - **AsyncLocalStorage Transaction Propagation:** Quản lý giao dịch lồng nhau xuyên suốt các service mà không cần truyền biến `tx` thủ công (`backend/src/prisma/prisma.service.ts:L13-34`).
+  - **Multi-Channel Webhook Alert Module:**
+    - Vị trí: `backend/src/common/webhook/`
+    - Pattern: Factory + Interface (`WebhookProvider`, `WebhookProviderFactory` tương tự `EmailTransporter`).
+    - Providers hiện có: `TELEGRAM`, `DISCORD`, `GENERIC` (POST JSON kèm HMAC-SHA256 signature, `eventId`, `eventType`).
+    - Global env fallback: `WEBHOOK_PROVIDER` + `WEBHOOK_URL` + `WEBHOOK_CHAT_ID` + `WEBHOOK_SECRET_TOKEN` (chuyển sang cấu hình Per-Organization tại Task #1B).
+    - Tích hợp: Kết nối trực tiếp vào `OrphanCleanupProcessor` để phát cảnh báo khi job rơi vào `orphan-cleanup-dlq`.
   - **Hybrid Next.js Architecture:** Public routes (`/careers/*`) dựng bằng pure **React Server Components (RSC)** tối ưu SEO/GEO (Schema JSON-LD `JobPosting`); Private routes (`/dashboard/*`) là Client SPA tương tác cao với `@tanstack/react-query`.
 - **Sơ đồ thư mục chính:**
 ```text
@@ -252,6 +258,16 @@ Dưới đây là các điểm cần chủ dự án xác nhận trước khi th�
 2. **[CẦN XÁC NHẬN] Migration cơ sở dữ liệu `camelCase @@map` sang `snake_case`:** 9 bảng trong `contract.prisma` vẫn đang map theo tên camelCase (`organizationMember`, `trackingLink`...). Chủ dự án có muốn thực hiện migration dữ liệu để đưa về chuẩn `snake_case` PostgreSQL (`organization_members`, `tracking_links`...) ngay bây giờ không?
 3. **[CẦN XÁC NHẬN] Rà soát quy chuẩn Full-Width Canvas:** Một số màn hình như `wizard-header.tsx:L48` vẫn còn class đóng khung `max-w-7xl mx-auto`. Chủ dự án có muốn dọn dẹp đồng bộ toàn bộ giao diện sang tràn viền (`w-full`) theo đúng chuẩn thiết kế HaiHire không?
 4. **[CẦN XÁC NHẬN] Nhà cung cấp dịch vụ Email thực tế (Production Email Provider):** Biến môi trường hiện tại đang để `SYSTEM_EMAIL_PROVIDER="SIMULATED"`. Khi đưa lên môi trường Production, hệ thống sẽ sử dụng kênh nào làm nhà cung cấp chính thức (`SMTP`, `RESEND`, hay `SENDGRID`) để cấu hình sẵn secret keys?
+
+---
+
+## 9. ROADMAP & KẾ HOẠCH PHÁT TRIỂN TIẾP THEO
+
+### Future providers to add in v1.1.0:
+- Microsoft Teams Incoming Webhook
+- Zalo OA Webhook
+- Lark/Feishu Bot
+- Slack (dùng Block Kit thay vì attachment cũ)
 
 ---
 

@@ -29,6 +29,11 @@ export class TelegramProvider implements WebhookProvider {
       lines.push("", `<i>${escapeHtml(message.footer)}</i>`);
     }
 
+    if (message.eventId) {
+      const shortId = message.eventId.slice(0, 8);
+      lines.push(`Event: ${escapeHtml(shortId)}...`);
+    }
+
     const payload = {
       chat_id: this.config.chatId,
       text: lines.join("\n"),

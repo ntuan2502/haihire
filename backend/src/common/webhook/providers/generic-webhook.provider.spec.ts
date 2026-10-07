@@ -8,6 +8,8 @@ describe("GenericWebhookProvider", () => {
   const baseUrl = "https://hooks.example.com/receiver";
 
   const sampleMessage: WebhookMessage = {
+    eventId: "550e8400-e29b-41d4-a716-446655440000",
+    eventType: "DLQ_ALERT",
     title: "🚨 HaiHire DLQ Alert",
     severity: "critical",
     fields: [
@@ -26,7 +28,7 @@ describe("GenericWebhookProvider", () => {
     vi.restoreAllMocks();
   });
 
-  it("Case 1: sends raw JSON payload with application/json header and source 'haihire-ats'", async () => {
+  it("Case 1: sends raw JSON payload with application/json header, eventId, eventType and source 'haihire-ats'", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -54,6 +56,8 @@ describe("GenericWebhookProvider", () => {
     expect(options.headers["X-HaiHire-Signature"]).toBeUndefined();
 
     const body = JSON.parse(options.body as string);
+    expect(body.eventId).toBe("550e8400-e29b-41d4-a716-446655440000");
+    expect(body.eventType).toBe("DLQ_ALERT");
     expect(body.title).toBe(sampleMessage.title);
     expect(body.severity).toBe(sampleMessage.severity);
     expect(body.fields).toEqual(sampleMessage.fields);
@@ -113,6 +117,26 @@ describe("GenericWebhookProvider", () => {
     expect(result.errorMessage).toContain("Internal Server Error in receiver");
   });
 
+  it("Case 3b: handles HTTP failure when response.text() throws gracefully", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: vi.fn().mockRejectedValue(new Error("Cannot read body stream")),
+    } as unknown as Response);
+
+    const config: WebhookProviderConfig = {
+      type: "GENERIC",
+      url: baseUrl,
+    };
+
+    const provider = new GenericWebhookProvider(config);
+    const result = await provider.send(sampleMessage);
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(502);
+    expect(result.errorMessage).toBe("Generic webhook returned HTTP 502");
+  });
+
   it("Case 4: returns failure with error message when fetch encounters network timeout", async () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("ECONNREFUSED 127.0.0.1:8080"));
 
@@ -126,5 +150,20 @@ describe("GenericWebhookProvider", () => {
 
     expect(result.success).toBe(false);
     expect(result.errorMessage).toContain("Generic webhook network error: ECONNREFUSED");
+  });
+
+  it("Case 5: handles non-Error network exception gracefully", async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue("Fatal network crash");
+
+    const config: WebhookProviderConfig = {
+      type: "GENERIC",
+      url: baseUrl,
+    };
+
+    const provider = new GenericWebhookProvider(config);
+    const result = await provider.send(sampleMessage);
+
+    expect(result.success).toBe(false);
+    expect(result.errorMessage).toBe("Generic webhook network error: Fatal network crash");
   });
 });

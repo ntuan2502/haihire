@@ -1,5 +1,11 @@
 export type WebhookProviderType = "TELEGRAM" | "DISCORD" | "GENERIC";
 
+export type WebhookEventType =
+  | "DLQ_ALERT"
+  | "ORPHAN_SPIKE"
+  | "JOB_POSTED"
+  | (string & {});
+
 export interface WebhookProviderConfig {
   type: WebhookProviderType;
   url: string;           // Telegram: https://api.telegram.org/bot<TOKEN>/sendMessage
@@ -10,6 +16,8 @@ export interface WebhookProviderConfig {
 }
 
 export interface WebhookMessage {
+  eventId: string;
+  eventType: WebhookEventType;
   title: string;
   severity: "info" | "warning" | "critical";
   fields: Array<{ label: string; value: string }>;

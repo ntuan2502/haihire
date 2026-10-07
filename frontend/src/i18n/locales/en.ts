@@ -1329,6 +1329,7 @@ export const en: TranslationSchema = {
     emailAddress: "Email Address",
     proEnterpriseFeature: "Pro & Enterprise Feature",
     proEnterpriseDesc: "This module provides enterprise-level integrations, retention safeguards, and dedicated custom AI models.",
+    enterpriseFeatureDesc: "This module provides enterprise-level integrations, retention safeguards, and dedicated custom AI models.",
     viewUpgradePlans: "View Upgrade Plans",
     tabs: {
       general: "General",

@@ -1327,6 +1327,7 @@ export interface TranslationSchema {
     emailAddress: string;
     proEnterpriseFeature: string;
     proEnterpriseDesc: string;
+    enterpriseFeatureDesc: string;
     viewUpgradePlans: string;
     tabs: {
       general: string;

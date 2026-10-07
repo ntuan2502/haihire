@@ -1329,6 +1329,7 @@ export const vi: TranslationSchema = {
     emailAddress: "Địa chỉ email",
     proEnterpriseFeature: "Tính năng Nâng cao & Doanh nghiệp",
     proEnterpriseDesc: "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
+    enterpriseFeatureDesc: "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
     viewUpgradePlans: "Xem các gói nâng cấp",
     tabs: {
       general: "Chung",

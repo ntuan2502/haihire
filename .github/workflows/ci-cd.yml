@@ -148,6 +148,9 @@ jobs:
       - name: Verify Prometheus Alert Rules Gate
         run: pnpm lint:prometheus-rules
 
+      - name: Verify Tenant Scoping Static Analysis Gate (Gate 10)
+        run: pnpm lint:tenant-scope
+
       - name: Create backend .env for CI
         run: |
           cat > backend/.env << 'EOF'

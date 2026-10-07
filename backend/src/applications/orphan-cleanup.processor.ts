@@ -9,6 +9,7 @@ export interface OrphanCleanupJobData {
   reason?: string;
   originalError?: string;
   enqueuedAt?: string;
+  organizationId?: string;
 }
 
 export const ORPHAN_CLEANUP_QUEUE = "orphan-cleanup-queue";
@@ -71,15 +72,18 @@ export class OrphanCleanupProcessor extends WorkerHost {
       }
 
       if (this.webhookNotifier) {
-        await this.webhookNotifier.notifyDlq({
-          queue: "orphan-cleanup-dlq",
-          jobName: job.name,
-          objectName: job.data.objectName,
-          reason: job.data.reason || "Orphan cleanup failure",
-          attemptsMade: job.attemptsMade,
-          errorMessage: err.message,
-          timestamp: new Date().toISOString(),
-        });
+        await this.webhookNotifier.notifyDlq(
+          {
+            queue: "orphan-cleanup-dlq",
+            jobName: job.name,
+            objectName: job.data.objectName,
+            reason: job.data.reason || "Orphan cleanup failure",
+            attemptsMade: job.attemptsMade,
+            errorMessage: err.message,
+            timestamp: new Date().toISOString(),
+          },
+          job.data.organizationId,
+        );
       }
     }
   }

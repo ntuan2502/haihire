@@ -688,6 +688,7 @@ export class ApplicationsService {
                     reason: "transaction-rollback-compensation-failed",
                     originalError: errMsg,
                     enqueuedAt: new Date().toISOString(),
+                    organizationId: job.organizationId || undefined,
                   },
                   {
                     attempts: 5,

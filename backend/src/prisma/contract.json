@@ -52,6 +52,10 @@
       "model": "OrganizationMember",
       "namespace": "public"
     },
+    "organizationWebhookSetting": {
+      "model": "OrganizationWebhookSetting",
+      "namespace": "public"
+    },
     "trackingClick": {
       "model": "TrackingClick",
       "namespace": "public"
@@ -412,6 +416,40 @@
               {
                 "name": "OTHER",
                 "value": "OTHER"
+              }
+            ]
+          },
+          "WebhookEventType": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "DLQ_ALERT",
+                "value": "DLQ_ALERT"
+              },
+              {
+                "name": "ORPHAN_SPIKE",
+                "value": "ORPHAN_SPIKE"
+              },
+              {
+                "name": "JOB_POSTED",
+                "value": "JOB_POSTED"
+              }
+            ]
+          },
+          "WebhookProviderType": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "TELEGRAM",
+                "value": "TELEGRAM"
+              },
+              {
+                "name": "DISCORD",
+                "value": "DISCORD"
+              },
+              {
+                "name": "GENERIC",
+                "value": "GENERIC"
               }
             ]
           },
@@ -2730,6 +2768,21 @@
                   "model": "User",
                   "namespace": "public"
                 }
+              },
+              "webhookSettings": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "OrganizationWebhookSetting",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -2865,6 +2918,166 @@
               },
               "namespaceId": "public",
               "table": "organizationMember"
+            }
+          },
+          "OrganizationWebhookSetting": {
+            "fields": {
+              "chatId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdBy": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "eventType": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "WebhookEventType",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "isEnabled": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "provider": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "WebhookProviderType",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "secretToken": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedBy": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "webhookUrl": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "chatId": {
+                  "column": "chatId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "createdBy": {
+                  "column": "createdBy"
+                },
+                "eventType": {
+                  "column": "eventType"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "isEnabled": {
+                  "column": "isEnabled"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "provider": {
+                  "column": "provider"
+                },
+                "secretToken": {
+                  "column": "secretToken"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "updatedBy": {
+                  "column": "updatedBy"
+                },
+                "webhookUrl": {
+                  "column": "webhookUrl"
+                }
+              },
+              "namespaceId": "public",
+              "table": "organizationWebhookSetting"
             }
           },
           "TrackingClick": {
@@ -5348,6 +5561,145 @@
               },
               "uniques": []
             },
+            "organizationWebhookSetting": {
+              "checks": [
+                {
+                  "expression": "\"eventType\" IN ('DLQ_ALERT', 'ORPHAN_SPIKE', 'JOB_POSTED')",
+                  "name": "organizationWebhookSetting_eventType_check_ed64d973",
+                  "prefix": "organizationWebhookSetting_eventType_check"
+                },
+                {
+                  "expression": "\"provider\" IN ('TELEGRAM', 'DISCORD', 'GENERIC')",
+                  "name": "organizationWebhookSetting_provider_check_1ade7d69",
+                  "prefix": "organizationWebhookSetting_provider_check"
+                }
+              ],
+              "columns": {
+                "chatId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "createdBy": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "eventType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "WebhookEventType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "isEnabled": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "provider": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "WebhookProviderType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "secretToken": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "updatedBy": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "webhookUrl": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organizationWebhookSetting"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "organizationWebhookSetting_organizationId_idx_2e17ef41",
+                  "prefix": "organizationWebhookSetting_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "eventType",
+                    "provider"
+                  ]
+                }
+              ]
+            },
             "trackingClick": {
               "columns": {
                 "createdAt": {
@@ -5935,6 +6287,22 @@
                 "OTHER"
               ]
             },
+            "WebhookEventType": {
+              "kind": "valueSet",
+              "values": [
+                "DLQ_ALERT",
+                "ORPHAN_SPIKE",
+                "JOB_POSTED"
+              ]
+            },
+            "WebhookProviderType": {
+              "kind": "valueSet",
+              "values": [
+                "TELEGRAM",
+                "DISCORD",
+                "GENERIC"
+              ]
+            },
             "WorkplaceType": {
               "kind": "valueSet",
               "values": [
@@ -5949,10 +6317,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "bfa964564c3810d57f0817f69ffec8f447a2b8a9a7b44dd4291f896556974055"
+    "storageHash": "952429dc1cab0902250b6c767ea589e0f895d4b03cf035d83e148123d889f940"
   },
   "execution": {
-    "executionHash": "db3397098f3171ecc6ae5c859ca2f595e4c88d38adc4d78f1f1a95998bdf0cfa",
+    "executionHash": "b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98",
     "mutations": {
       "defaults": [
         {
@@ -6263,6 +6631,32 @@
           },
           "ref": {
             "entry": "organizationMember",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "organizationWebhookSetting",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "organizationWebhookSetting",
             "field": "updatedAt",
             "namespace": "public"
           }

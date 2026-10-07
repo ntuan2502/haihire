@@ -117,24 +117,37 @@ enum ActivityType {
   NOTE_ADDED
 }
 
+enum WebhookEventType {
+  DLQ_ALERT
+  ORPHAN_SPIKE
+  JOB_POSTED
+}
+
+enum WebhookProviderType {
+  TELEGRAM
+  DISCORD
+  GENERIC
+}
+
 model Organization {
-  id          String               @id @default(uuid())
-  name        String
-  slug        String               @unique
-  ownerId     String?
-  users       User[]
-  jobs        Job[]
-  candidates  Candidate[]
-  inviteLinks InviteLink[]
-  members     OrganizationMember[]
-  emailTemplates EmailTemplate[]
-  emailSettings  EmailSetting?
-  emailLogs      EmailLog[]
-  activityLogs   ActivityLog[]
-  documents      CandidateDocument[]
-  trackingLinks  TrackingLink[]
-  createdAt   DateTime             @default(now())
-  updatedAt   temporal.updatedAt()
+  id              String                      @id @default(uuid())
+  name            String
+  slug            String                      @unique
+  ownerId         String?
+  users           User[]
+  jobs            Job[]
+  candidates      Candidate[]
+  inviteLinks     InviteLink[]
+  members         OrganizationMember[]
+  emailTemplates  EmailTemplate[]
+  emailSettings   EmailSetting?
+  emailLogs       EmailLog[]
+  activityLogs    ActivityLog[]
+  documents       CandidateDocument[]
+  trackingLinks   TrackingLink[]
+  webhookSettings OrganizationWebhookSetting[]
+  createdAt       DateTime                    @default(now())
+  updatedAt       temporal.updatedAt()
 
   @@map("organization")
 }
@@ -451,5 +464,26 @@ model TrackingClick {
   @@index([trackingLinkId, createdAt])
   @@index([referrerDomain])
   @@map("trackingClick")
+}
+
+model OrganizationWebhookSetting {
+  id              String              @id @default(uuid())
+  organizationId  String
+  eventType       WebhookEventType
+  provider        WebhookProviderType
+  webhookUrl      String
+  secretToken     String?
+  chatId          String?
+  isEnabled       Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       temporal.updatedAt()
+  createdBy       String?
+  updatedBy       String?
+
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, eventType, provider])
+  @@index([organizationId])
+  @@map("organizationWebhookSetting")
 }
 

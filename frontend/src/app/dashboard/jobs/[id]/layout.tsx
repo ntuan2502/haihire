@@ -64,6 +64,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
     if (pathname.includes("/pipeline")) return "pipeline";
     if (pathname.includes("/promote")) return "promote";
     if (pathname.includes("/settings")) return "settings";
+    if (pathname.includes("/tracking")) return "tracking";
     return "pipeline";
   }, [pathname]);
 
@@ -86,6 +87,8 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
       router.push(`/dashboard/jobs/${jobId}/table`);
     } else if (tabId === "settings") {
       router.push(`/dashboard/jobs/${jobId}/settings`);
+    } else if (tabId === "tracking") {
+      router.push(`/dashboard/jobs/${jobId}/tracking`);
     } else {
       router.push(`/dashboard/jobs/${jobId}/pipeline`);
     }
@@ -286,7 +289,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
             { id: "inbox", label: t("jobs.tabs.inbox"), icon: Mail, implemented: false },
             { id: "form", label: t("jobs.tabs.applicationForm"), icon: FileText, implemented: false },
             { id: "automation", label: t("jobs.tabs.automation"), icon: Zap, implemented: false },
-            { id: "tracking", label: t("jobs.tabs.sourceTracking"), icon: BarChart2, implemented: false },
+            { id: "tracking", label: t("jobs.tabs.sourceTracking"), icon: BarChart2, implemented: true },
             { id: "ai", label: t("jobs.tabs.aiAnalysis"), icon: Sparkles, implemented: false },
             { id: "settings", label: t("jobs.tabs.settings"), icon: Settings, implemented: true },
           ].map((tab) => {

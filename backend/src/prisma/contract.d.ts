@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'bfa964564c3810d57f0817f69ffec8f447a2b8a9a7b44dd4291f896556974055'>;
+  StorageHashBase<'952429dc1cab0902250b6c767ea589e0f895d4b03cf035d83e148123d889f940'>;
 export type ExecutionHash =
-  ExecutionHashBase<'db3397098f3171ecc6ae5c859ca2f595e4c88d38adc4d78f1f1a95998bdf0cfa'>;
+  ExecutionHashBase<'b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -455,6 +455,20 @@ export type FieldOutputTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly userId: CodecTypes['pg/text@1']['output'];
     };
+    readonly OrganizationWebhookSetting: {
+      readonly chatId: CodecTypes['pg/text@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly createdBy: CodecTypes['pg/text@1']['output'] | null;
+      readonly eventType: 'DLQ_ALERT' | 'ORPHAN_SPIKE' | 'JOB_POSTED';
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly isEnabled: CodecTypes['pg/bool@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly provider: 'TELEGRAM' | 'DISCORD' | 'GENERIC';
+      readonly secretToken: CodecTypes['pg/text@1']['output'] | null;
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly updatedBy: CodecTypes['pg/text@1']['output'] | null;
+      readonly webhookUrl: CodecTypes['pg/text@1']['output'];
+    };
     readonly TrackingClick: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -721,6 +735,20 @@ export type FieldInputTypes = {
       readonly role: 'ADMIN' | 'MEMBER';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly userId: CodecTypes['pg/text@1']['input'];
+    };
+    readonly OrganizationWebhookSetting: {
+      readonly chatId: CodecTypes['pg/text@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly createdBy: CodecTypes['pg/text@1']['input'] | null;
+      readonly eventType: 'DLQ_ALERT' | 'ORPHAN_SPIKE' | 'JOB_POSTED';
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly isEnabled: CodecTypes['pg/bool@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly provider: 'TELEGRAM' | 'DISCORD' | 'GENERIC';
+      readonly secretToken: CodecTypes['pg/text@1']['input'] | null;
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly updatedBy: CodecTypes['pg/text@1']['input'] | null;
+      readonly webhookUrl: CodecTypes['pg/text@1']['input'];
     };
     readonly TrackingClick: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -989,6 +1017,20 @@ export type StorageColumnTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly userId: CodecTypes['pg/text@1']['output'];
     };
+    readonly organizationWebhookSetting: {
+      readonly chatId: CodecTypes['pg/text@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly createdBy: CodecTypes['pg/text@1']['output'] | null;
+      readonly eventType: 'DLQ_ALERT' | 'ORPHAN_SPIKE' | 'JOB_POSTED';
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly isEnabled: CodecTypes['pg/bool@1']['output'];
+      readonly organizationId: CodecTypes['pg/text@1']['output'];
+      readonly provider: 'TELEGRAM' | 'DISCORD' | 'GENERIC';
+      readonly secretToken: CodecTypes['pg/text@1']['output'] | null;
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly updatedBy: CodecTypes['pg/text@1']['output'] | null;
+      readonly webhookUrl: CodecTypes['pg/text@1']['output'];
+    };
     readonly trackingClick: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -1255,6 +1297,20 @@ export type StorageColumnInputTypes = {
       readonly role: 'ADMIN' | 'MEMBER';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly userId: CodecTypes['pg/text@1']['input'];
+    };
+    readonly organizationWebhookSetting: {
+      readonly chatId: CodecTypes['pg/text@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly createdBy: CodecTypes['pg/text@1']['input'] | null;
+      readonly eventType: 'DLQ_ALERT' | 'ORPHAN_SPIKE' | 'JOB_POSTED';
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly isEnabled: CodecTypes['pg/bool@1']['input'];
+      readonly organizationId: CodecTypes['pg/text@1']['input'];
+      readonly provider: 'TELEGRAM' | 'DISCORD' | 'GENERIC';
+      readonly secretToken: CodecTypes['pg/text@1']['input'] | null;
+      readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly updatedBy: CodecTypes['pg/text@1']['input'] | null;
+      readonly webhookUrl: CodecTypes['pg/text@1']['input'];
     };
     readonly trackingClick: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -1563,6 +1619,7 @@ export namespace Models {
     members: public_OrganizationMember[];
     trackingLinks: public_TrackingLink[];
     users: public_User[];
+    webhookSettings: public_OrganizationWebhookSetting[];
     readonly [RelationKeys]?:
       | 'activityLogs'
       | 'candidates'
@@ -1574,7 +1631,8 @@ export namespace Models {
       | 'jobs'
       | 'members'
       | 'trackingLinks'
-      | 'users';
+      | 'users'
+      | 'webhookSettings';
   };
   export type public_OrganizationMember = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -1586,6 +1644,22 @@ export namespace Models {
     organization: public_Organization;
     user: public_User;
     readonly [RelationKeys]?: 'organization' | 'user';
+  };
+  export type public_OrganizationWebhookSetting = {
+    chatId: CodecTypes['pg/text@1']['output'] | null;
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    createdBy: CodecTypes['pg/text@1']['output'] | null;
+    eventType: 'DLQ_ALERT' | 'ORPHAN_SPIKE' | 'JOB_POSTED';
+    id: CodecTypes['pg/text@1']['output'];
+    isEnabled: CodecTypes['pg/bool@1']['output'];
+    organizationId: CodecTypes['pg/text@1']['output'];
+    provider: 'TELEGRAM' | 'DISCORD' | 'GENERIC';
+    secretToken: CodecTypes['pg/text@1']['output'] | null;
+    updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    updatedBy: CodecTypes['pg/text@1']['output'] | null;
+    webhookUrl: CodecTypes['pg/text@1']['output'];
+    organization: public_Organization;
+    readonly [RelationKeys]?: 'organization';
   };
   export type public_TrackingClick = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -1676,6 +1750,7 @@ export declare const models: {
     Job: Models.public_Job;
     Organization: Models.public_Organization;
     OrganizationMember: Models.public_OrganizationMember;
+    OrganizationWebhookSetting: Models.public_OrganizationWebhookSetting;
     TrackingClick: Models.public_TrackingClick;
     TrackingLink: Models.public_TrackingLink;
     User: Models.public_User;
@@ -3105,6 +3180,101 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly organizationWebhookSetting: {
+              columns: {
+                readonly chatId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly createdBy: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly eventType: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly isEnabled: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                };
+                readonly organizationId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly provider: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly secretToken: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly updatedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly updatedBy: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly webhookUrl: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [
+                { readonly columns: readonly ['organizationId', 'eventType', 'provider'] },
+              ];
+              indexes: readonly [
+                {
+                  readonly name: 'organizationWebhookSetting_organizationId_idx_2e17ef41';
+                  readonly prefix: 'organizationWebhookSetting_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'organizationWebhookSetting';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly trackingClick: {
               columns: {
                 readonly createdAt: {
@@ -3556,6 +3726,14 @@ type ContractBase = Omit<
                 'OTHER',
               ];
             };
+            readonly WebhookEventType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['DLQ_ALERT', 'ORPHAN_SPIKE', 'JOB_POSTED'];
+            };
+            readonly WebhookProviderType: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['TELEGRAM', 'DISCORD', 'GENERIC'];
+            };
             readonly WorkplaceType: {
               readonly kind: 'valueSet';
               readonly values: readonly ['ON_SITE', 'HYBRID', 'REMOTE'];
@@ -3606,6 +3784,10 @@ type ContractBase = Omit<
     readonly organizationMember: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'OrganizationMember';
+    };
+    readonly organizationWebhookSetting: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'OrganizationWebhookSetting';
     };
     readonly trackingClick: {
       readonly namespace: 'public' & NamespaceId;
@@ -5002,6 +5184,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['organizationId'];
                 };
               };
+              readonly webhookSettings: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'OrganizationWebhookSetting';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['organizationId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'organization';
@@ -5082,6 +5275,96 @@ type ContractBase = Omit<
                 readonly role: { readonly column: 'role' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
                 readonly userId: { readonly column: 'userId' };
+              };
+            };
+          };
+          readonly OrganizationWebhookSetting: {
+            readonly fields: {
+              readonly chatId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly createdBy: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly eventType: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly isEnabled: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly provider: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly secretToken: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly updatedBy: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly webhookUrl: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'organizationWebhookSetting';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly chatId: { readonly column: 'chatId' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly createdBy: { readonly column: 'createdBy' };
+                readonly eventType: { readonly column: 'eventType' };
+                readonly id: { readonly column: 'id' };
+                readonly isEnabled: { readonly column: 'isEnabled' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly provider: { readonly column: 'provider' };
+                readonly secretToken: { readonly column: 'secretToken' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+                readonly updatedBy: { readonly column: 'updatedBy' };
+                readonly webhookUrl: { readonly column: 'webhookUrl' };
               };
             };
           };
@@ -5580,6 +5863,22 @@ type ContractBase = Omit<
               { readonly name: 'OTHER'; readonly value: 'OTHER' },
             ];
           };
+          readonly WebhookEventType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'DLQ_ALERT'; readonly value: 'DLQ_ALERT' },
+              { readonly name: 'ORPHAN_SPIKE'; readonly value: 'ORPHAN_SPIKE' },
+              { readonly name: 'JOB_POSTED'; readonly value: 'JOB_POSTED' },
+            ];
+          };
+          readonly WebhookProviderType: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'TELEGRAM'; readonly value: 'TELEGRAM' },
+              { readonly name: 'DISCORD'; readonly value: 'DISCORD' },
+              { readonly name: 'GENERIC'; readonly value: 'GENERIC' },
+            ];
+          };
           readonly WorkplaceType: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
@@ -5817,6 +6116,23 @@ type ContractBase = Omit<
           readonly onUpdate: { readonly id: 'instantNow'; readonly kind: 'generator' };
           readonly ref: {
             readonly entry: 'organizationMember';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'uuidv4'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'organizationWebhookSetting';
+            readonly field: 'id';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'instantNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'instantNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'organizationWebhookSetting';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };

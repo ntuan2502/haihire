@@ -41,8 +41,44 @@ const backendEnvSchema = z.object({
   SYSTEM_EMAIL_SMTP_PASS: z.string(),
   SYSTEM_EMAIL_RESEND_API_KEY: z.string(),
   SYSTEM_EMAIL_SENDGRID_API_KEY: z.string(),
+  // Multi-Channel Webhook Configuration (Optional Global Fallback)
+  WEBHOOK_PROVIDER: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.enum(["TELEGRAM", "DISCORD", "GENERIC"]).optional(),
+  ),
+  WEBHOOK_URL: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().url().optional(),
+  ),
+  WEBHOOK_SECRET_TOKEN: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().optional(),
+  ),
+  WEBHOOK_CHAT_ID: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().optional(),
+  ),
 })
 .superRefine((data, ctx) => {
+  if (data.WEBHOOK_PROVIDER) {
+    if (!data.WEBHOOK_URL || !data.WEBHOOK_URL.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["WEBHOOK_URL"],
+        message: "WEBHOOK_URL is required when WEBHOOK_PROVIDER is set",
+      });
+    }
+    if (data.WEBHOOK_PROVIDER === "TELEGRAM") {
+      if (!data.WEBHOOK_CHAT_ID || !data.WEBHOOK_CHAT_ID.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["WEBHOOK_CHAT_ID"],
+          message: "WEBHOOK_CHAT_ID is required when WEBHOOK_PROVIDER is 'TELEGRAM'",
+        });
+      }
+    }
+  }
+
   if (data.SYSTEM_EMAIL_PROVIDER === "SMTP") {
     if (!data.SYSTEM_EMAIL_SMTP_HOST.trim()) {
       ctx.addIssue({

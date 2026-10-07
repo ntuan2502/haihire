@@ -179,22 +179,32 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
           </div>
         )}
 
-        {/* Updates & changelog */}
+        {/* Updates & changelog (Coming Soon) */}
         <div
-          onClick={() => {}}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
+          aria-disabled="true"
+          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed select-none"
         >
-          <Sparkles className="h-4 w-4 text-slate-400" />
-          <span>{t("nav.updatesChangelog")}</span>
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="h-4 w-4 text-slate-400" />
+            <span>{t("nav.updatesChangelog")}</span>
+          </div>
+          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
+            {t("common.soon")}
+          </span>
         </div>
 
-        {/* Report issue */}
+        {/* Report issue (Coming Soon) */}
         <div
-          onClick={() => {}}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
+          aria-disabled="true"
+          className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-500 opacity-60 cursor-not-allowed select-none"
         >
-          <MessageSquareWarning className="h-4 w-4 text-slate-400" />
-          <span>{t("nav.reportIssue")}</span>
+          <div className="flex items-center gap-2.5">
+            <MessageSquareWarning className="h-4 w-4 text-slate-400" />
+            <span>{t("nav.reportIssue")}</span>
+          </div>
+          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80">
+            {t("common.soon")}
+          </span>
         </div>
 
         {/* Divider */}

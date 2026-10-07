@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Building2, Check, Loader2 } from "lucide-react";
 import { useCreateApplicationMutation, useOpenJobs } from "@/hooks/use-queries";
 import { useAuth } from "@/context/auth-context";
-import { MacOsModal } from "@/components/shared";
+import { CustomModal } from "@/components/shared";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage, type AppErrorSource } from "@/lib/api-error";
 import { getJobTypeLabel } from "@/lib/jobs";
@@ -106,7 +106,7 @@ export function ApplyToJobModal({
   };
 
   return (
-    <MacOsModal
+    <CustomModal
       isOpen={isOpen}
       onClose={() => {
         setErrorSource(null);
@@ -189,6 +189,6 @@ export function ApplyToJobModal({
           })
         )}
       </div>
-    </MacOsModal>
+    </CustomModal>
   );
 }

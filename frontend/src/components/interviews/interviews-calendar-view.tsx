@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MacOsModal } from "@/components/shared";
+import { CustomModal } from "@/components/shared";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import {
@@ -565,9 +565,9 @@ export function InterviewsCalendarView({
       )}
 
       {/* ========================================================= */}
-      {/*        DAY DETAILS MODAL (macOS Window Style)             */}
+      {/*        DAY DETAILS MODAL                                  */}
       {/* ========================================================= */}
-      <MacOsModal
+      <CustomModal
         isOpen={Boolean(openDayDetails)}
         onClose={() => setOpenDayDetails(null)}
         title={dayDetailsTitle}
@@ -672,12 +672,12 @@ export function InterviewsCalendarView({
             )}
           </div>
         </div>
-      </MacOsModal>
+      </CustomModal>
 
       {/* ========================================================= */}
-      {/*        CLICKED EVENT DETAIL MODAL (macOS Window Style)    */}
+      {/*        CLICKED EVENT DETAIL MODAL                         */}
       {/* ========================================================= */}
-      <MacOsModal
+      <CustomModal
         isOpen={Boolean(selectedEvent)}
         onClose={() => setSelectedEvent(null)}
         title={selectedEvent ? getCandidateDisplayName(selectedEvent.application) : ""}
@@ -842,7 +842,7 @@ export function InterviewsCalendarView({
             </div>
           </>
         )}
-      </MacOsModal>
+      </CustomModal>
     </div>
   );
 }

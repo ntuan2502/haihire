@@ -28,6 +28,7 @@ import { toTimestamp, toInstant } from "../common/date.util";
 
 import { fixUtf8String } from "../common/doc-utils";
 export { fixUtf8String };
+import { formatInterviewRecord } from "../interviews/constants";
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
@@ -132,22 +133,7 @@ export class ApplicationsService {
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of allInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: Record<string, unknown> | null = null;
-      if (intv.scorecard) {
-        try {
-          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
-        } catch {
-          parsedScorecard = null;
-        }
-      }
-      list.push({
-        ...intv,
-        type: fixUtf8String(intv.type),
-        linkOrLocation: fixUtf8String(intv.linkOrLocation),
-        interviewer: fixUtf8String(intv.interviewer),
-        scorecard: parsedScorecard,
-        notes: intv.notes ? fixUtf8String(intv.notes) : null,
-      });
+      list.push(formatInterviewRecord(intv));
       interviewsByApp.set(intv.applicationId, list);
     }
 
@@ -303,22 +289,7 @@ export class ApplicationsService {
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of allInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: Record<string, unknown> | null = null;
-      if (intv.scorecard) {
-        try {
-          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
-        } catch {
-          parsedScorecard = null;
-        }
-      }
-      list.push({
-        ...intv,
-        type: fixUtf8String(intv.type),
-        linkOrLocation: fixUtf8String(intv.linkOrLocation),
-        interviewer: fixUtf8String(intv.interviewer),
-        scorecard: parsedScorecard,
-        notes: intv.notes ? fixUtf8String(intv.notes) : null,
-      });
+      list.push(formatInterviewRecord(intv));
       interviewsByApp.set(intv.applicationId, list);
     }
 
@@ -435,24 +406,7 @@ export class ApplicationsService {
     const appInterviews = (await this.prisma.db.orm.public.Interview
       .where((i) => i.applicationId.eq(id))
       .all())
-      .map((intv) => {
-        let parsedScorecard: Record<string, unknown> | null = null;
-        if (intv.scorecard) {
-          try {
-            parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
-          } catch {
-            parsedScorecard = null;
-          }
-        }
-        return {
-          ...intv,
-          type: fixUtf8String(intv.type),
-          linkOrLocation: fixUtf8String(intv.linkOrLocation),
-          interviewer: fixUtf8String(intv.interviewer),
-          scorecard: parsedScorecard,
-          notes: intv.notes ? fixUtf8String(intv.notes) : null,
-        };
-      });
+      .map((intv) => formatInterviewRecord(intv));
 
     return {
       ...app,
@@ -734,6 +688,7 @@ export class ApplicationsService {
                     reason: "transaction-rollback-compensation-failed",
                     originalError: errMsg,
                     enqueuedAt: new Date().toISOString(),
+                    organizationId: job.organizationId || undefined,
                   },
                   {
                     attempts: 5,

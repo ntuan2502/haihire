@@ -11,6 +11,8 @@ export interface EditLinkModalProps {
   link: TrackingLinkItem;
   jobs?: JobOption[];
   orgSlug?: string;
+  defaultJobId?: string;
+  lockJob?: boolean;
 }
 
 /**
@@ -23,6 +25,8 @@ export function EditLinkModal({
   link,
   jobs = [],
   orgSlug = "demo",
+  defaultJobId,
+  lockJob,
 }: EditLinkModalProps) {
   return (
     <TrackingLinkModal
@@ -32,6 +36,8 @@ export function EditLinkModal({
       link={link}
       jobs={jobs}
       orgSlug={orgSlug}
+      defaultJobId={defaultJobId}
+      lockJob={lockJob}
     />
   );
 }

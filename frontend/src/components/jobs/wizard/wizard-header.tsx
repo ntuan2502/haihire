@@ -81,7 +81,7 @@ export function WizardHeader({
                   key={step.id}
                   type="button"
                   disabled={!isImplemented}
-                  onClick={() => onStepClick(step.id)}
+                  onClick={() => isImplemented && onStepClick(step.id)}
                   title={
                     !isImplemented
                       ? `${step.label} (${t("jobs.wizard.comingSoon")})`

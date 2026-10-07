@@ -15,6 +15,7 @@ import { ActivitiesModule } from "./activities/activities.module";
 import { EmailModule } from "./email/email.module";
 import { UsersModule } from "./users/users.module";
 import { SourcingModule } from "./sourcing/sourcing.module";
+import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD, Reflector } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -58,6 +59,7 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
     EmailModule,
     UsersModule,
     SourcingModule,
+    WebhookSettingsModule,
   ],
   controllers: [AppController],
   providers: [

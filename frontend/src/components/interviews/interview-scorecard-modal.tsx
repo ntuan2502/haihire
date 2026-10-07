@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MacOsModal } from "@/components/shared";
+import { CustomModal } from "@/components/shared";
 import {
   Star,
   CheckCircle2,
@@ -166,7 +166,7 @@ export function InterviewScorecardModal({
   };
 
   return (
-    <MacOsModal
+    <CustomModal
       isOpen={isOpen}
       onClose={onClose}
       title={t("interviews.scorecardTitle")}
@@ -421,6 +421,6 @@ export function InterviewScorecardModal({
             )}
           </Button>
         </div>
-    </MacOsModal>
+    </CustomModal>
   );
 }

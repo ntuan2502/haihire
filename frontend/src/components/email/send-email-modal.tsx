@@ -20,7 +20,7 @@ import {
 import { useI18n, type TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomSelect, MacOsModal } from "@/components/shared";
+import { CustomSelect, CustomModal } from "@/components/shared";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 
@@ -149,7 +149,7 @@ export function SendEmailModal({
   const isSending = sendEmailMutation.isPending;
 
   return (
-    <MacOsModal
+    <CustomModal
       isOpen={isOpen}
       onClose={isSending ? () => {} : onClose}
       title={t("email.modalTitle")}
@@ -356,6 +356,6 @@ export function SendEmailModal({
           <span>{isSending ? t("email.sendingBtn") : t("email.sendBtn")}</span>
         </Button>
       </div>
-    </MacOsModal>
+    </CustomModal>
   );
 }

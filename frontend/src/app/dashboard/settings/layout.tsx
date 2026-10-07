@@ -32,7 +32,6 @@ interface NavItem {
   sublabel: string;
   icon: ElementType;
   locked?: boolean;
-  beta?: boolean;
 }
 
 const SETTINGS_NAV_ITEMS: NavItem[] = [
@@ -49,6 +48,7 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Localization",
     sublabel: "Names & date formats",
     icon: Globe,
+    locked: true,
   },
   {
     id: "notifications",
@@ -56,6 +56,7 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Notifications",
     sublabel: "Email alerts & digest",
     icon: Bell,
+    locked: true,
   },
   {
     id: "career-page",
@@ -63,6 +64,7 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Career Page",
     sublabel: "Branded public page",
     icon: AppWindow,
+    locked: true,
   },
   {
     id: "email-templates",
@@ -84,6 +86,7 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Billing",
     sublabel: "Plan & payment",
     icon: CreditCard,
+    locked: true,
   },
   {
     id: "integrations",
@@ -91,7 +94,6 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Integrations",
     sublabel: "Calendar & services",
     icon: Plug,
-    locked: true,
   },
   {
     id: "ai-configuration",
@@ -104,7 +106,7 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
   {
     id: "privacy-retention",
     href: "/dashboard/settings/privacy-retention",
-    label: "Privacy & Retent...",
+    label: "Privacy & Retention",
     sublabel: "Retention policy",
     icon: Clock,
     locked: true,
@@ -112,10 +114,9 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
   {
     id: "sso",
     href: "/dashboard/settings/sso",
-    label: "Single Sig...",
+    label: "Single Sign-On (SSO)",
     sublabel: "Enterprise SSO",
     icon: ShieldCheck,
-    beta: true,
     locked: true,
   },
   {
@@ -158,7 +159,7 @@ export default function SettingsLayout({
         <main className="flex-1 w-full px-3 sm:px-6 lg:px-8 xl:px-10 py-4 sm:py-6 overflow-x-hidden">
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start w-full">
             {/* ================= LEFT SIDEBAR ================= */}
-            <aside className="w-full md:w-60 lg:w-64 shrink-0 space-y-3 sm:space-y-4">
+            <aside className="w-full md:w-64 lg:w-72 shrink-0 space-y-3 sm:space-y-4">
               {/* Back to jobs link */}
               <Link
                 href="/dashboard/jobs"
@@ -190,6 +191,20 @@ export default function SettingsLayout({
                     sub: item.sublabel,
                   };
 
+                  if (item.locked) {
+                    return (
+                      <div
+                        key={`mobile-${item.id}`}
+                        aria-disabled="true"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 bg-slate-100/60 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 border border-slate-200/50 dark:border-slate-800/50 opacity-50 cursor-not-allowed select-none"
+                      >
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        <span>{localized.label}</span>
+                        <Lock className="h-3 w-3 shrink-0 opacity-60 ml-0.5" />
+                      </div>
+                    );
+                  }
+
                   return (
                     <Link
                       key={`mobile-${item.id}`}
@@ -203,9 +218,6 @@ export default function SettingsLayout({
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0" />
                       <span>{localized.label}</span>
-                      {item.locked && (
-                        <Lock className="h-3 w-3 shrink-0 opacity-60 ml-0.5" />
-                      )}
                     </Link>
                   );
                 })}
@@ -224,6 +236,32 @@ export default function SettingsLayout({
                     label: item.label,
                     sub: item.sublabel,
                   };
+
+                  if (item.locked) {
+                    return (
+                      <div
+                        key={item.id}
+                        aria-disabled="true"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl text-left select-none opacity-45 cursor-not-allowed text-slate-400 dark:text-slate-500"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold block truncate text-slate-400 dark:text-slate-500">
+                              {localized.label}
+                            </span>
+                            <p className="text-[11px] text-slate-400/80 dark:text-slate-600 truncate">
+                              {localized.sub}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Lock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600 shrink-0 ml-1.5" />
+                      </div>
+                    );
+                  }
 
                   return (
                     <Link
@@ -248,25 +286,14 @@ export default function SettingsLayout({
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-semibold truncate">
-                              {localized.label}
-                            </span>
-                            {item.beta && (
-                              <span className="rounded bg-amber-100 px-1 py-0.2 text-[9px] font-bold uppercase text-amber-700 dark:bg-amber-950/80 dark:text-amber-300">
-                                Beta
-                              </span>
-                            )}
-                          </div>
+                          <span className="text-xs font-semibold block truncate">
+                            {localized.label}
+                          </span>
                           <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                             {localized.sub}
                           </p>
                         </div>
                       </div>
-
-                      {item.locked && (
-                        <Lock className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600 shrink-0 ml-1.5" />
-                      )}
                     </Link>
                   );
                 })}

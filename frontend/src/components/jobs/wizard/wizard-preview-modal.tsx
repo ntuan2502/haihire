@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  MacOsModal,
+  CustomModal,
   DevicePreviewFrame,
   DevicePreviewSelector,
 } from "@/components/shared";
@@ -82,13 +82,14 @@ export function WizardPreviewModal({
   const { t } = useI18n();
 
   return (
-    <MacOsModal
+    <CustomModal
       isOpen={isOpen}
       onClose={onClose}
       title={t("jobs.wizard.previewModalTitle")}
       badge={t("jobs.wizard.previewLiveBadge")}
       maxWidth="max-w-6xl"
       height="h-[90vh]"
+      allowMaximize={true}
       headerRight={
         <DevicePreviewSelector
           device={previewDevice}
@@ -421,6 +422,6 @@ export function WizardPreviewModal({
           </div>
         </DevicePreviewFrame>
       )}
-    </MacOsModal>
+    </CustomModal>
   );
 }

@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { toast } from "sonner";
+import { Lock } from "lucide-react";
+import { cn } from "cn";
 
 export interface JobOption {
   id: string;
@@ -33,6 +35,8 @@ export interface TrackingLinkModalProps {
   link?: TrackingLinkItem;
   jobs: JobOption[];
   orgSlug?: string;
+  defaultJobId?: string;
+  lockJob?: boolean;
 }
 
 const CHANNEL_OPTIONS: SourcingChannel[] = [
@@ -83,6 +87,8 @@ export function TrackingLinkModal({
   mode,
   link,
   jobs,
+  defaultJobId,
+  lockJob = false,
 }: TrackingLinkModalProps) {
   const { t } = useI18n();
   const createMutation = useCreateTrackingLinkMutation();
@@ -110,7 +116,7 @@ export function TrackingLinkModal({
         setName(link.name);
         setSource(link.source);
         setCustomSource(link.customSource || "");
-        setJobId(link.jobId || "ALL");
+        setJobId(lockJob && defaultJobId ? defaultJobId : (link.jobId || "ALL"));
         setUtmSource(link.utmSource || link.source.toLowerCase());
         setUtmMedium(link.utmMedium || link.medium || getDefaultMedium(link.source));
         setUtmCampaign(link.utmCampaign || link.campaign || "");
@@ -120,7 +126,7 @@ export function TrackingLinkModal({
         setName("");
         setSource(SourcingChannel.LINKEDIN);
         setCustomSource("");
-        setJobId("ALL");
+        setJobId(defaultJobId || "ALL");
         setUtmSource("linkedin");
         setUtmMedium("social");
         setUtmCampaign("");
@@ -129,7 +135,7 @@ export function TrackingLinkModal({
       }
       setError(null);
     }
-  }, [isOpen, isEdit, link]);
+  }, [isOpen, isEdit, link, defaultJobId, lockJob]);
 
   const handleChannelChange = (val: string) => {
     const ch = val as SourcingChannel;
@@ -148,6 +154,8 @@ export function TrackingLinkModal({
       return;
     }
 
+    const effectiveJobId = lockJob && defaultJobId ? defaultJobId : jobId;
+
     try {
       if (isEdit && link) {
         await updateMutation.mutateAsync({
@@ -156,7 +164,7 @@ export function TrackingLinkModal({
             name: name.trim(),
             source,
             customSource: source === SourcingChannel.OTHER ? customSource.trim() || null : null,
-            jobId: jobId === "ALL" ? null : jobId,
+            jobId: effectiveJobId === "ALL" ? null : effectiveJobId,
             utmSource: utmSource.trim() || undefined,
             utmMedium: utmMedium.trim() || undefined,
             utmCampaign: utmCampaign.trim() || undefined,
@@ -170,7 +178,7 @@ export function TrackingLinkModal({
           name: name.trim(),
           source,
           customSource: source === SourcingChannel.OTHER ? customSource.trim() || undefined : undefined,
-          jobId: jobId === "ALL" ? undefined : jobId,
+          jobId: effectiveJobId === "ALL" ? undefined : effectiveJobId,
           utmSource: utmSource.trim() || undefined,
           utmMedium: utmMedium.trim() || undefined,
           utmCampaign: utmCampaign.trim() || undefined,
@@ -190,9 +198,15 @@ export function TrackingLinkModal({
     label: (t as (k: string) => string)(`sourcing.channels.${ch}`) || ch,
   }));
 
+  const hasDefaultJob = Boolean(defaultJobId && jobs.some((j) => j.id === defaultJobId));
+  const normalizedJobs =
+    lockJob && defaultJobId && !hasDefaultJob
+      ? [{ id: defaultJobId, title: defaultJobId }, ...jobs]
+      : jobs;
+
   const jobSelectOptions = [
-    { value: "ALL", label: t("sourcing.modal.allJobsOption") },
-    ...jobs.map((j) => ({ value: j.id, label: j.title })),
+    ...(lockJob ? [] : [{ value: "ALL", label: t("sourcing.modal.allJobsOption") }]),
+    ...normalizedJobs.map((j) => ({ value: j.id, label: j.title })),
   ];
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -270,15 +284,28 @@ export function TrackingLinkModal({
 
             {/* Job Scope */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                {t("sourcing.modal.jobLabel")}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {t("sourcing.modal.jobLabel")}
+                </label>
+                {lockJob && (
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    {t("sourcing.modal.jobLocked")}
+                  </span>
+                )}
+              </div>
               <CustomSelect
-                value={jobId}
+                value={lockJob && defaultJobId ? defaultJobId : jobId}
                 options={jobSelectOptions}
                 onChange={setJobId}
+                disabled={lockJob}
+                icon={lockJob ? Lock : undefined}
                 className="w-full"
-                triggerClassName="w-full text-xs h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
+                triggerClassName={cn(
+                  "w-full text-xs h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl",
+                  lockJob && "bg-slate-50/80 dark:bg-slate-800/50 opacity-80 cursor-not-allowed"
+                )}
               />
             </div>
 

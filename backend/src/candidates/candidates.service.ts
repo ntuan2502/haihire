@@ -19,6 +19,7 @@ import { fixUtf8String } from "../common/doc-utils";
 import { validateUploadedFile, sanitizeFilename } from "../common/upload-utils";
 import crypto from "node:crypto";
 import { toTimestamp, toInstant } from "../common/date.util";
+import { formatInterviewRecord } from "../interviews/constants";
 
 @Injectable()
 export class CandidatesService {
@@ -242,22 +243,7 @@ export class CandidatesService {
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of candidateInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: Record<string, unknown> | null = null;
-      if (intv.scorecard) {
-        try {
-          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
-        } catch {
-          parsedScorecard = null;
-        }
-      }
-      list.push({
-        ...intv,
-        type: fixUtf8String(intv.type),
-        linkOrLocation: fixUtf8String(intv.linkOrLocation),
-        interviewer: fixUtf8String(intv.interviewer),
-        scorecard: parsedScorecard,
-        notes: intv.notes ? fixUtf8String(intv.notes) : null,
-      });
+      list.push(formatInterviewRecord(intv));
       interviewsByApp.set(intv.applicationId, list);
     }
 

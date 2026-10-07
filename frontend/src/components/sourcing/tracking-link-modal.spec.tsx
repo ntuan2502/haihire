@@ -90,4 +90,25 @@ describe("TrackingLinkModal (Unified Component)", () => {
     expect(screen.getByDisplayValue("frontend")).toBeDefined();
     expect(screen.getByDisplayValue("banner-ad")).toBeDefined();
   });
+
+  it("locks the job selection when lockJob is true", () => {
+    render(
+      <CreateLinkModal
+        isOpen={true}
+        onClose={vi.fn()}
+        jobs={mockJobs}
+        orgSlug="acme-corp"
+        defaultJobId="job-1"
+        lockJob={true}
+      />
+    );
+
+    // Job lock hint is visible
+    expect(screen.getByText("Cố định cho vị trí này")).toBeDefined();
+
+    // The job dropdown trigger button is disabled
+    const jobButton = screen.getByText("Senior Frontend Engineer").closest("button");
+    expect(jobButton).toBeDefined();
+    expect(jobButton?.hasAttribute("disabled")).toBe(true);
+  });
 });

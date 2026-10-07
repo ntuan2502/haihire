@@ -14,6 +14,7 @@ import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { fixUtf8String } from "../applications/applications.service";
 import { toTimestamp, toInstant } from "../common/date.util";
+import { formatInterviewRecord } from "./constants";
 
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
@@ -228,37 +229,9 @@ export class InterviewsService {
       const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
       const job = app ? jobsMap.get(app.jobId) : undefined;
 
-      const formattedInterviews = appInterviews.map((intv) => {
-        let parsedScorecard: Record<string, unknown> | null = null;
-        if (intv.scorecard) {
-          try {
-            parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
-          } catch {
-            parsedScorecard = null;
-          }
-        }
-        const ms = toTimestamp(intv.scheduledAt);
-        const dt = ms ? new Date(ms) : new Date();
-        const date = dt.toISOString().split("T")[0];
-        const time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
-
-        return {
-          id: intv.id,
-          applicationId: intv.applicationId,
-          scheduledAt: intv.scheduledAt,
-          date,
-          time,
-          type: fixUtf8String(intv.type),
-          format: intv.format,
-          linkOrLocation: fixUtf8String(intv.linkOrLocation),
-          interviewer: fixUtf8String(intv.interviewer),
-          round: intv.round,
-          scorecard: parsedScorecard,
-          notes: intv.notes ? fixUtf8String(intv.notes) : null,
-          createdAt: intv.createdAt,
-          updatedAt: intv.updatedAt,
-        };
-      });
+      const formattedInterviews = appInterviews.map((intv) =>
+        formatInterviewRecord(intv),
+      );
 
       // Sort rounds descending (most recent first)
       formattedInterviews.sort((a, b) => {
@@ -434,30 +407,10 @@ export class InterviewsService {
       );
     }
 
-    let parsedScorecard: Record<string, unknown> | null = null;
-    if (intv.scorecard) {
-      try {
-        parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
-      } catch {
-        parsedScorecard = null;
-      }
-    }
-
-    const ms = toTimestamp(intv.scheduledAt);
-    const dt = ms ? new Date(ms) : new Date();
-    const date = dt.toISOString().split("T")[0];
-    const time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
+    const formatted = formatInterviewRecord(intv);
 
     return {
-      ...intv,
-      date,
-      time,
-      scheduledAt: intv.scheduledAt,
-      type: fixUtf8String(intv.type),
-      linkOrLocation: fixUtf8String(intv.linkOrLocation),
-      interviewer: fixUtf8String(intv.interviewer),
-      scorecard: parsedScorecard,
-      notes: intv.notes ? fixUtf8String(intv.notes) : null,
+      ...formatted,
       organizationId: interviewOrgId,
       application: app
         ? {

@@ -12,9 +12,11 @@ import {
 
 import { ActivitiesModule } from "../activities/activities.module";
 import { EmailModule } from "../email/email.module";
+import { CommonModule } from "../common/common.module";
 
 @Module({
   imports: [
+    CommonModule,
     MinioModule,
     ActivitiesModule,
     EmailModule,

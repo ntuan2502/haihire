@@ -14,6 +14,7 @@ import type { PrismaService } from "../prisma/prisma.service";
 import type { MinioService } from "../minio/minio.service";
 import type { ActivitiesService } from "../activities/activities.service";
 import type { EmailService } from "../email/email.service";
+import type { WebhookNotifierService } from "../common/webhook/webhook-notifier.service";
 
 describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 Items 2 & 3)", () => {
   describe("Item 2 — MinIO Compensating DLQ Queue & Worker", () => {
@@ -253,11 +254,16 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       expect(result.objectName).toBe("tenants/org-1/resumes/failed-cv.pdf");
     });
 
-    it("Test 4: Worker terminal failure — after 5 attempts, moves to Dead-Letter Queue (DLQ) & alerts", async () => {
-      const processor = new OrphanCleanupProcessor(mockMinio, mockDlq);
+    it("Test 4: Worker terminal failure — after 5 attempts, moves to Dead-Letter Queue (DLQ) & alerts via WebhookNotifier", async () => {
+      const mockWebhookNotifier = {
+        notifyDlq: vi.fn().mockResolvedValue(undefined),
+      } as unknown as WebhookNotifierService;
+
+      const processor = new OrphanCleanupProcessor(mockMinio, mockDlq, mockWebhookNotifier);
 
       const terminalJob = {
         id: "job-perm-fail",
+        name: "cleanup",
         data: {
           objectName: "tenants/org-1/resumes/permanent-orphan.pdf",
           reason: "transaction-rollback-compensation-failed",
@@ -268,12 +274,48 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
 
       await processor.onFailed(terminalJob, new Error("Bucket Does Not Exist"));
 
-      // Verify enqueued into Dead-Letter Queue
+      // 1. Verify enqueued into Dead-Letter Queue
       expect(dlqJobs.length).toBe(1);
       expect(dlqJobs[0].name).toBe("dead-letter-cleanup");
       expect(dlqJobs[0].data.objectName).toBe("tenants/org-1/resumes/permanent-orphan.pdf");
       expect(dlqJobs[0].data.finalError).toBe("Bucket Does Not Exist");
       expect(dlqJobs[0].data.totalAttempts).toBe(5);
+
+      // 2. Verify Webhook alert was dispatched with full diagnostic context
+      expect(mockWebhookNotifier.notifyDlq).toHaveBeenCalledTimes(1);
+      expect(mockWebhookNotifier.notifyDlq).toHaveBeenCalledWith({
+        queue: "orphan-cleanup-dlq",
+        jobName: "cleanup",
+        objectName: "tenants/org-1/resumes/permanent-orphan.pdf",
+        reason: "transaction-rollback-compensation-failed",
+        attemptsMade: 5,
+        errorMessage: "Bucket Does Not Exist",
+        timestamp: expect.any(String),
+      });
+    });
+
+    it("Test 4b: Worker intermediate retry failure (< 5 attempts) does not trigger DLQ Webhook alert", async () => {
+      const mockWebhookNotifier = {
+        notifyDlq: vi.fn().mockResolvedValue(undefined),
+      } as unknown as WebhookNotifierService;
+
+      const processor = new OrphanCleanupProcessor(mockMinio, mockDlq, mockWebhookNotifier);
+
+      const retryJob = {
+        id: "job-retry",
+        name: "cleanup",
+        data: {
+          objectName: "tenants/org-1/resumes/retry-orphan.pdf",
+          reason: "transaction-rollback-compensation-failed",
+        },
+        attemptsMade: 3,
+        opts: { attempts: 5 },
+      } as unknown as Job<OrphanCleanupJobData>;
+
+      await processor.onFailed(retryJob, new Error("Temporary S3 Socket Timeout"));
+
+      expect(dlqJobs.length).toBe(0);
+      expect(mockWebhookNotifier.notifyDlq).not.toHaveBeenCalled();
     });
   });
 

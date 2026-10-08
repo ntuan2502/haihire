@@ -36,6 +36,9 @@ export function useUpdateEmailTemplateMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "templates"] });
+    },
   });
 }
 
@@ -62,6 +65,9 @@ export function useUpdateEmailSettingsMutation() {
     mutationFn: (data: Partial<EmailSettings>) =>
       emailApi.updateSettings(data, user?.organizationId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "settings"] });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["email", "settings"] });
     },
   });
@@ -137,6 +143,14 @@ export function useSendEmailMutation() {
       variables?: Record<string, string>;
     }) => emailApi.sendEmail(data, user?.organizationId),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["email", "logs"] });
+      if (variables?.candidateId) {
+        queryClient.invalidateQueries({
+          queryKey: ["activities", "candidate", variables.candidateId],
+        });
+      }
+    },
+    onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["email", "logs"] });
       if (variables?.candidateId) {
         queryClient.invalidateQueries({

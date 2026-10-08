@@ -62,6 +62,9 @@ export function useCreateCandidateMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
   });
 }
 
@@ -81,6 +84,11 @@ export function useUpdateCandidateDetailsMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 
@@ -90,6 +98,11 @@ export function useDeleteCandidateMutation() {
   return useMutation({
     mutationFn: (id: string) => candidatesApi.delete(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
@@ -107,6 +120,10 @@ export function useUploadCandidateDocumentMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
   });
 }
 
@@ -117,6 +134,10 @@ export function useDeleteCandidateDocumentMutation() {
     mutationFn: ({ id, documentId, url }: { id: string; documentId?: string; url?: string }) =>
       candidatesApi.deleteDocument(id, { documentId, url }),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+    onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },

@@ -177,6 +177,10 @@ export function useUpdateJobMutation() {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["jobs", variables.id] });
     },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["jobs", variables.id] });
+    },
   });
 }
 
@@ -190,6 +194,9 @@ export function useCreateJobMutation() {
       // Invalidate all jobs queries to instantly refresh
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
   });
 }
 
@@ -199,6 +206,10 @@ export function useDeleteJobMutation() {
   return useMutation({
     mutationFn: (id: string) => jobsApi.delete(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },

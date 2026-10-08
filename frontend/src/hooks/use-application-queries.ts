@@ -97,6 +97,9 @@ export function useCreateApplicationMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 
@@ -116,6 +119,9 @@ export function useUpdateStageMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 
@@ -133,6 +139,9 @@ export function useUpdateCandidateMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 
@@ -146,6 +155,10 @@ export function useUploadDocumentMutation() {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
   });
 }
 
@@ -155,6 +168,10 @@ export function useDeleteApplicationMutation() {
   return useMutation({
     mutationFn: (id: string) => applicationsApi.delete(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
@@ -177,6 +194,10 @@ export function useDeleteDocumentMutation() {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },

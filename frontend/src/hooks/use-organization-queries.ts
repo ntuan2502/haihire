@@ -32,6 +32,11 @@ export function useSwitchOrgMutation() {
       updateUserOrg(data.organization, data.user?.role);
       queryClient.invalidateQueries();
     },
+    onError: () => {
+      // Defense-in-depth: sync queries on switch failure.
+      // Verified: no infinite loop risk because mutations are strictly user-triggered
+      queryClient.invalidateQueries();
+    },
   });
 }
 
@@ -44,6 +49,9 @@ export function useUpdateMyOrgMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+    },
   });
 }
 
@@ -53,6 +61,9 @@ export function useDeleteMyOrgMutation() {
   return useMutation({
     mutationFn: () => organizationsApi.deleteMyOrg(),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
     },
   });
@@ -100,6 +111,9 @@ export function useCreateInviteLinkMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+    },
   });
 }
 
@@ -109,6 +123,9 @@ export function useRevokeInviteLinkMutation() {
   return useMutation({
     mutationFn: (id: string) => organizationsApi.revokeInviteLink(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
     },
   });
@@ -128,6 +145,9 @@ export function useUpdateMemberRoleMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+    },
   });
 }
 
@@ -137,6 +157,9 @@ export function useRemoveMemberMutation() {
   return useMutation({
     mutationFn: (memberId: string) => organizationsApi.removeMember(memberId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
     },
   });

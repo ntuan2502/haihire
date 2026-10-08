@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect, CustomModal } from "@/components/shared";
@@ -58,6 +59,7 @@ export function ScheduleInterviewModal({
   onInterviewScheduled,
 }: ScheduleInterviewModalProps) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const { data: members = [] } = useOrgMembers();
   const createInterviewMutation = useCreateInterviewMutation();
   const updateInterviewMutation = useUpdateInterviewMutation();
@@ -223,6 +225,12 @@ export function ScheduleInterviewModal({
     } catch (err) {
       console.error("Schedule interview failed:", err);
       setFormError(getApiErrorMessage(err, t));
+      // Defense-in-depth: hooks (useCreateInterviewMutation,
+      // useUpdateInterviewMutation, useUpdateStageMutation) already
+      // invalidate on error. This explicit call is belt-and-suspenders
+      // for legacy safety.
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
     }
   };
 

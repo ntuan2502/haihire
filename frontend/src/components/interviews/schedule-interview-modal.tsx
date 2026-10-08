@@ -101,7 +101,7 @@ export function ScheduleInterviewModal({
     }
 
     if (editingInterview) {
-      // Cập nhật lịch: đẩy toàn bộ dữ liệu của buổi phỏng vấn vào các trường
+      // Update schedule: populate form fields with existing interview data
       const initialJobId = selectedJobId || candidateToUse?.jobId || "";
       setModalJobId(initialJobId);
       setModalCandidateId(editingInterview.applicationId || selectedApplicationId || "");
@@ -113,7 +113,7 @@ export function ScheduleInterviewModal({
       setInterviewerName(editingInterview.interviewer || "");
       setInterviewNotes(editingInterview.notes || "");
     } else {
-      // Lên lịch mới: tất cả các trường bắt đầu rỗng / không điền sẵn
+      // New schedule: initialize form fields empty / unpopulated
       const initialJobId = selectedJobId || candidateToUse?.jobId || "";
       setModalJobId(initialJobId);
       setModalCandidateId(selectedApplicationId || "");
@@ -181,7 +181,7 @@ export function ScheduleInterviewModal({
 
     try {
       if (editingInterview?.id) {
-        // Cập nhật lịch phỏng vấn hiện có
+        // Update existing interview schedule
         await updateInterviewMutation.mutateAsync({
           id: editingInterview.id,
           data: {
@@ -195,7 +195,7 @@ export function ScheduleInterviewModal({
           },
         });
       } else {
-        // Tạo lịch phỏng vấn mới
+        // Create new interview schedule
         await createInterviewMutation.mutateAsync({
           applicationId: candidate.id,
           date: interviewDate,

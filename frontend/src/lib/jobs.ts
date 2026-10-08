@@ -1,7 +1,7 @@
 import type { JobType, WorkplaceType, ExperienceLevel } from "@/types";
 
 /**
- * Returns translated display label for a Job Type / Employment Type (Loại hợp đồng / Hình thức làm việc)
+ * Returns translated display label for a Job Type / Employment Type (Contract type / Work arrangement)
  */
 export function getJobTypeLabel(
   type: JobType | string | null | undefined,
@@ -23,7 +23,7 @@ export function getJobTypeLabel(
 }
 
 /**
- * Returns translated display label for a Workplace / Work Arrangement (Mô hình làm việc)
+ * Returns translated display label for a Workplace / Work Arrangement
  */
 export function getWorkplaceLabel(
   workplace: WorkplaceType | string | null | undefined,
@@ -43,7 +43,7 @@ export function getWorkplaceLabel(
 }
 
 /**
- * Returns translated display label for an Experience Level (Cấp bậc kinh nghiệm)
+ * Returns translated display label for an Experience Level
  */
 export function getExperienceLevelLabel(
   level: ExperienceLevel | string | null | undefined,

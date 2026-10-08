@@ -325,7 +325,7 @@ jobs:
           NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
           EOF
 
-      # FIX #1: Chạy MinIO với user 0:0, mount data volume, và wait readiness trên host port 19000
+      # FIX #1: Run MinIO with user 0:0, mount data volume, and wait for readiness on host port 19000
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |
           docker run -d --name minio \
@@ -351,7 +351,7 @@ jobs:
           '
           echo "MinIO is ready on port 19000!"
 
-      # FIX #2: Đợi Redis/Valkey sẵn sàng nhận kết nối trên port 16379
+      # FIX #2: Wait for Redis/Valkey readiness to accept connections on port 16379
       - name: Wait for Redis/Valkey Readiness
         run: |
           echo "Waiting for Redis/Valkey to accept connections on port 16379..."
@@ -381,7 +381,7 @@ jobs:
       - name: Pre-build application for faster server startup
         run: pnpm build
 
-      # FIX #3: Tăng timeout lên 180s + in payload /health mỗi lần thử để debug rõ ràng
+      # FIX #3: Increase timeout to 180s + print /health payload on each attempt for clear debugging
       - name: Pre-start services in background & wait for healthcheck
         run: |
           pnpm dev &

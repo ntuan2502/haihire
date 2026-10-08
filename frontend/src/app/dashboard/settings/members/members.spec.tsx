@@ -92,7 +92,7 @@ describe("MembersSettingsPage Component", () => {
   it("opens invite member section and allows sending invitation", async () => {
     render(<MembersSettingsPage />);
 
-    // Click "Mời thành viên" button
+    // Click "Invite member" button
     const inviteBtn = screen.getByText("Mời thành viên").closest("button");
     if (inviteBtn) {
       fireEvent.click(inviteBtn);
@@ -121,7 +121,7 @@ describe("MembersSettingsPage Component", () => {
 
     render(<MembersSettingsPage />);
 
-    // Click "+ Tạo liên kết" button to reveal form
+    // Click "+ Create link" button to reveal form
     const openCreateBtn = screen.getByRole("button", { name: /Tạo liên kết/ });
     fireEvent.click(openCreateBtn);
 

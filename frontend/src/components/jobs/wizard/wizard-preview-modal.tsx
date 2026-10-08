@@ -247,7 +247,7 @@ export function WizardPreviewModal({
                   </div>
 
                   <div className="space-y-3.5">
-                    {/* Họ và tên đệm / Tên */}
+                    {/* First name + middle name / Last name */}
                     <div
                       className={cn(
                         "grid gap-3",

@@ -930,10 +930,10 @@ export async function runSeed(): Promise<void> {
     );
   }
 
-  console.log(`\n📊 Thống kê trạng thái 20 vị trí:`);
-  console.log(`   - PUBLISHED (Đang mở): ${statusCounts.PUBLISHED}`);
-  console.log(`   - DRAFT (Bản nháp):    ${statusCounts.DRAFT}`);
-  console.log(`   - CLOSED (Đã đóng):    ${statusCounts.CLOSED}`);
+  console.log(`\n📊 Status statistics for 20 positions:`);
+  console.log(`   - PUBLISHED (Open):    ${statusCounts.PUBLISHED}`);
+  console.log(`   - DRAFT (Draft):       ${statusCounts.DRAFT}`);
+  console.log(`   - CLOSED (Closed):     ${statusCounts.CLOSED}`);
 
   console.log("==================================================");
   console.log("🔗 3.5. Seeding 24 Diverse Tracking Links & Clicks...");
@@ -1477,24 +1477,24 @@ export async function runSeed(): Promise<void> {
     }
   }
 
-  console.log(`✅ Đã tạo thành công ${createdTrackingLinks.length} liên kết theo dõi (đủ 15 kênh nguồn, active/inactive, cụ thể job và toàn công ty).`);
+  console.log(`✅ Successfully created ${createdTrackingLinks.length} tracking links (full 15 source channels, active/inactive, job-specific and company-wide).`);
 
   console.log("==================================================");
   console.log("👥 4. Seeding Exactly 200 Unique Candidates (0-6 jobs each)...");
   console.log("==================================================");
 
   const uniqueCandidates = generate200UniqueCandidates();
-  console.log(`✅ Đã khởi tạo danh sách ${uniqueCandidates.length} ứng viên có họ và tên hoàn toàn khác nhau (không trùng lặp).`);
+  console.log(`✅ Successfully initialized list of ${uniqueCandidates.length} unique candidates with distinct full names.`);
 
-  // Phân bổ số lượng job cho 200 ứng viên (0 đến 6 job):
-  // 0 job: 24 ứng viên (chưa ứng tuyển - Talent Pool)
-  // 1 job: 76 ứng viên
-  // 2 job: 40 ứng viên
-  // 3 job: 30 ứng viên
-  // 4 job: 16 ứng viên
-  // 5 job: 10 ứng viên
-  // 6 job:  4 ứng viên
-  // Tổng = 24 + 76 + 40 + 30 + 16 + 10 + 4 = 200 ứng viên
+  // Job count allocation for 200 candidates (0 to 6 jobs):
+  // 0 jobs: 24 candidates (not yet applied - Talent Pool)
+  // 1 job:  76 candidates
+  // 2 jobs: 40 candidates
+  // 3 jobs: 30 candidates
+  // 4 jobs: 16 candidates
+  // 5 jobs: 10 candidates
+  // 6 jobs:  4 candidates
+  // Total = 24 + 76 + 40 + 30 + 16 + 10 + 4 = 200 candidates
   const jobCountsPool: number[] = [
     ...Array(24).fill(0),
     ...Array(76).fill(1),
@@ -1505,7 +1505,7 @@ export async function runSeed(): Promise<void> {
     ...Array(4).fill(6),
   ];
 
-  // Shuffle pool để phân bổ ngẫu nhiên cho từng ứng viên
+  // Shuffle pool to distribute randomly to each candidate
   for (let i = jobCountsPool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [jobCountsPool[i], jobCountsPool[j]] = [jobCountsPool[j], jobCountsPool[i]];
@@ -1928,7 +1928,7 @@ export async function runSeed(): Promise<void> {
   });
   stageStats.SCREENING++;
 
-  console.log(`\n⏳ Đang lưu ${candidatesToInsert.length} ứng viên vào cơ sở dữ liệu...`);
+  console.log(`\n⏳ Saving ${candidatesToInsert.length} candidates to database...`);
   const BATCH_SIZE = 50;
   for (let b = 0; b < candidatesToInsert.length; b += BATCH_SIZE) {
     const chunk = candidatesToInsert.slice(b, b + BATCH_SIZE);
@@ -1943,7 +1943,7 @@ export async function runSeed(): Promise<void> {
     );
   }
 
-  console.log(`\n⏳ Đang lưu ${applicationsToInsert.length} bản ghi ứng tuyển vào cơ sở dữ liệu (xử lý theo lô)...`);
+  console.log(`\n⏳ Saving ${applicationsToInsert.length} application records to database (batched)...`);
   for (let b = 0; b < applicationsToInsert.length; b += BATCH_SIZE) {
     const chunk = applicationsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
@@ -1955,19 +1955,19 @@ export async function runSeed(): Promise<void> {
         }),
       ),
     );
-    process.stdout.write(`\r   Tiến độ: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} bản ghi`);
+    process.stdout.write(`\r   Progress: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} records`);
   }
 
-  // Kiểm tra nghiêm ngặt tính độc nhất của khung giờ phỏng vấn
+  // Strictly verify uniqueness of interview time slots
   const slotCollisionCheck = new Set<string>();
   for (const intv of interviewsToInsert) {
     const key = intv.scheduledAt.toString();
     if (slotCollisionCheck.has(key)) {
-      throw new Error(`CRITICAL: Trùng khung giờ phỏng vấn: ${key}`);
+      throw new Error(`CRITICAL: Duplicate interview time slot: ${key}`);
     }
     slotCollisionCheck.add(key);
   }
-  console.log(`\n⏳ Đang lưu ${interviewsToInsert.length} lịch phỏng vấn vào cơ sở dữ liệu (đã xác minh 100% khung giờ độc nhất)...`);
+  console.log(`\n⏳ Saving ${interviewsToInsert.length} interview schedules to database (100% unique time slots verified)...`);
   for (let b = 0; b < interviewsToInsert.length; b += BATCH_SIZE) {
     const chunk = interviewsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
@@ -1980,9 +1980,9 @@ export async function runSeed(): Promise<void> {
       ),
     );
   }
-  console.log(`   ✨ Đã lưu thành công: toàn bộ ${interviewsToInsert.length} khung giờ phỏng vấn không hề bị trùng lặp.`);
+  console.log(`   ✨ Successfully saved: all ${interviewsToInsert.length} interview time slots are conflict-free.`);
 
-  console.log(`\n⏳ Đang lưu ${clicksToInsert.length} lượt nhấp (TrackingClick) vào cơ sở dữ liệu...`);
+  console.log(`\n⏳ Saving ${clicksToInsert.length} clicks (TrackingClick) to database...`);
   for (let b = 0; b < clicksToInsert.length; b += BATCH_SIZE) {
     const chunk = clicksToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
@@ -1995,30 +1995,30 @@ export async function runSeed(): Promise<void> {
       ),
     );
   }
-  console.log(`   ✨ Đã lưu thành công ${clicksToInsert.length} lượt nhấp mẫu (TrackingClick).`);
+  console.log(`   ✨ Successfully saved ${clicksToInsert.length} sample clicks (TrackingClick).`);
 
-  console.log(`\n\n✅ Thành công! Đã gieo mầm cố định 200 ứng viên độc nhất (tổng ${applicationsToInsert.length} đơn ứng tuyển):`);
-  console.log(`   - 0 job (Chưa ứng tuyển):  ${jobDistributionStats[0]} ứng viên`);
-  console.log(`   - 1 job:                   ${jobDistributionStats[1]} ứng viên`);
-  console.log(`   - 2 jobs:                  ${jobDistributionStats[2]} ứng viên`);
-  console.log(`   - 3 jobs:                  ${jobDistributionStats[3]} ứng viên`);
-  console.log(`   - 4 jobs:                  ${jobDistributionStats[4]} ứng viên`);
-  console.log(`   - 5 jobs:                  ${jobDistributionStats[5]} ứng viên`);
-  console.log(`   - 6 jobs:                  ${jobDistributionStats[6]} ứng viên`);
+  console.log(`\n\n✅ Success! Seeded fixed 200 unique candidates (total ${applicationsToInsert.length} applications):`);
+  console.log(`   - 0 jobs (Not applied):    ${jobDistributionStats[0]} candidates`);
+  console.log(`   - 1 job:                   ${jobDistributionStats[1]} candidates`);
+  console.log(`   - 2 jobs:                  ${jobDistributionStats[2]} candidates`);
+  console.log(`   - 3 jobs:                  ${jobDistributionStats[3]} candidates`);
+  console.log(`   - 4 jobs:                  ${jobDistributionStats[4]} candidates`);
+  console.log(`   - 5 jobs:                  ${jobDistributionStats[5]} candidates`);
+  console.log(`   - 6 jobs:                  ${jobDistributionStats[6]} candidates`);
   console.log(`   --------------------------------------------------`);
-  console.log(`   - APPLIED (Đã nộp hồ sơ):  ${stageStats.APPLIED} đơn (0 lịch phỏng vấn)`);
-  console.log(`   - SCREENING (Sơ loại):      ${stageStats.SCREENING} đơn (0 lịch phỏng vấn)`);
-  console.log(`   - INTERVIEW (Phỏng vấn):    ${stageStats.INTERVIEW} đơn (0, 1 hoặc nhiều lịch)`);
-  console.log(`   - OFFER (Đề nghị việc làm): ${stageStats.OFFER} đơn (1-3 lịch phỏng vấn)`);
-  console.log(`   - HIRED (Đã tuyển dụng):    ${stageStats.HIRED} đơn (1-3 lịch phỏng vấn)`);
-  console.log(`   - REJECTED (Đã từ chối):    ${stageStats.REJECTED} đơn (0-3 lịch phỏng vấn)`);
+  console.log(`   - APPLIED:                 ${stageStats.APPLIED} applications (0 interviews)`);
+  console.log(`   - SCREENING:               ${stageStats.SCREENING} applications (0 interviews)`);
+  console.log(`   - INTERVIEW:               ${stageStats.INTERVIEW} applications (0, 1 or more interviews)`);
+  console.log(`   - OFFER:                   ${stageStats.OFFER} applications (1-3 interviews)`);
+  console.log(`   - HIRED:                   ${stageStats.HIRED} applications (1-3 interviews)`);
+  console.log(`   - REJECTED:                ${stageStats.REJECTED} applications (0-3 interviews)`);
   console.log(`   --------------------------------------------------`);
   const attributedCount = applicationsToInsert.filter((a) => a.trackingLinkId).length;
-  console.log(`📊 Thống kê Source Tracking (Theo dõi nguồn):`);
-  console.log(`   - Tổng liên kết theo dõi:   ${createdTrackingLinks.length} liên kết (đầy đủ 15 kênh nguồn, 5 UTM, active/inactive)`);
-  console.log(`   - Tổng lượt nhấp chi tiết: ${clicksToInsert.length} lượt nhấp`);
-  console.log(`   - Đã ghi nhận nguồn:       ${attributedCount}/${applicationsToInsert.length} đơn (${Math.round((attributedCount / applicationsToInsert.length) * 100)}%)`);
-  console.log(`   - Trực tiếp / Chưa rõ:      ${applicationsToInsert.length - attributedCount} đơn (${Math.round(((applicationsToInsert.length - attributedCount) / applicationsToInsert.length) * 100)}%)`);
+  console.log(`📊 Source Tracking statistics:`);
+  console.log(`   - Total tracking links:     ${createdTrackingLinks.length} links (full 15 source channels, 5 UTM, active/inactive)`);
+  console.log(`   - Total detailed clicks:    ${clicksToInsert.length} clicks`);
+  console.log(`   - Sourced applications:     ${attributedCount}/${applicationsToInsert.length} applications (${Math.round((attributedCount / applicationsToInsert.length) * 100)}%)`);
+  console.log(`   - Direct / Unattributed:    ${applicationsToInsert.length - attributedCount} applications (${Math.round(((applicationsToInsert.length - attributedCount) / applicationsToInsert.length) * 100)}%)`);
   console.log("==================================================");
 }
 

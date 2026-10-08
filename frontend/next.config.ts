@@ -41,7 +41,7 @@ function getAllowedDevOrigins(): string[] {
         origins.add(ip);
         origins.add(`${ip}:${frontendPort}`);
 
-        // Tự động cho phép toàn bộ dải mạng /24 của card mạng hiện tại
+        // Automatically allow entire /24 subnet of current network interface
         const parts = ip.split(".");
         if (parts.length === 4) {
           const prefix = `${parts[0]}.${parts[1]}.${parts[2]}`;

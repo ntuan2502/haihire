@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ScheduleInterviewModal } from "./schedule-interview-modal";
 import type { Application, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
@@ -53,6 +54,9 @@ vi.mock("@/i18n", () => ({
 }));
 
 describe("ScheduleInterviewModal Component", () => {
+  let queryClient: QueryClient;
+  let invalidateSpy: ReturnType<typeof vi.spyOn>;
+
   const mockJob: Job = {
     id: "job-1",
     title: "Senior Fullstack Engineer",
@@ -75,12 +79,27 @@ describe("ScheduleInterviewModal Component", () => {
     updatedAt: new Date().toISOString(),
   };
 
+  function renderWithClient(ui: React.ReactElement) {
+    return render(
+      <QueryClientProvider client={queryClient}>
+        {ui}
+      </QueryClientProvider>
+    );
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
   });
 
   it("does not render when isOpen is false", () => {
-    render(
+    renderWithClient(
       <ScheduleInterviewModal
         isOpen={false}
         onClose={vi.fn()}
@@ -93,7 +112,7 @@ describe("ScheduleInterviewModal Component", () => {
   });
 
   it("renders modal header and fields when isOpen is true", () => {
-    render(
+    renderWithClient(
       <ScheduleInterviewModal
         isOpen={true}
         onClose={vi.fn()}
@@ -109,7 +128,7 @@ describe("ScheduleInterviewModal Component", () => {
   });
 
   it("validates missing date or time before submitting", async () => {
-    render(
+    renderWithClient(
       <ScheduleInterviewModal
         isOpen={true}
         onClose={vi.fn()}
@@ -143,7 +162,7 @@ describe("ScheduleInterviewModal Component", () => {
       interviewer: "Tran Tech Lead",
     };
 
-    render(
+    renderWithClient(
       <ScheduleInterviewModal
         isOpen={true}
         onClose={handleClose}
@@ -169,6 +188,40 @@ describe("ScheduleInterviewModal Component", () => {
         }),
       });
       expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("invalidates queries on error in catch block (e.g. 409 conflict)", async () => {
+    mockUpdateMutateAsync.mockRejectedValueOnce(new Error("Conflict 409"));
+
+    const existingInterview: ScheduledInterviewInfo = {
+      id: "int-existing",
+      applicationId: "app-1",
+      date: "2026-10-20",
+      time: "15:00",
+      type: "TECHNICAL",
+      format: "MEET",
+      interviewer: "Tran Tech Lead",
+    };
+
+    renderWithClient(
+      <ScheduleInterviewModal
+        isOpen={true}
+        onClose={vi.fn()}
+        jobs={[mockJob]}
+        applications={[mockCandidate]}
+        selectedApplicationId="app-1"
+        selectedJobId="job-1"
+        editingInterview={existingInterview}
+      />
+    );
+
+    const updateBtn = screen.getByRole("button", { name: "Cập nhật lịch phỏng vấn" });
+    fireEvent.click(updateBtn);
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["applications"] });
     });
   });
 });

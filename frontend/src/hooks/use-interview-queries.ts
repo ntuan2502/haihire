@@ -78,6 +78,10 @@ export function useCreateInterviewMutation() {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 
@@ -92,6 +96,11 @@ export function useUpdateInterviewMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.interview(variables.id) });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.interview(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 
@@ -101,6 +110,10 @@ export function useDeleteInterviewMutation() {
   return useMutation({
     mutationFn: (id: string) => interviewsApi.delete(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },

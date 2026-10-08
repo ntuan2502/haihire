@@ -67,6 +67,9 @@ export function useCreateTrackingLinkMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sourcing"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
+    },
   });
 }
 
@@ -79,6 +82,9 @@ export function useUpdateTrackingLinkMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sourcing"] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
+    },
   });
 }
 
@@ -88,6 +94,9 @@ export function useDeleteTrackingLinkMutation() {
   return useMutation({
     mutationFn: (id: string) => sourcingApi.deleteLink(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sourcing"] });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ["sourcing"] });
     },
   });

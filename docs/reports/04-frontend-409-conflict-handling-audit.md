@@ -1,30 +1,30 @@
-# BÁO CÁO XÁC MINH KỸ THUẬT #04: XỬ LÝ LỖI 409 CONFLICT (STAGE CONFLICT) TRÊN FRONTEND
-> **Tài liệu gửi DeepSeek & Chủ Dự Án (Single Source of Truth - Frontend UX & Concurrency Handling)**  
-> **Dự án:** HaiHire Enterprise ATS Platform  
-> **Người lập:** Antigravity (Senior Software Engineer / Lead Maintainer)  
-> **Thời gian:** 2026-10-07  
-> **Mã báo cáo:** `DOCS-REP-04`
+# Technical Verification Report #04: Frontend 409 Conflict Handling (Stage Conflict)
+> **Report for DeepSeek & Project Owner (Single Source of Truth - Frontend UX & Concurrency Handling)**  
+> **Project:** HaiHire Enterprise ATS Platform  
+> **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)  
+> **Date:** 2026-10-07  
+> **Report ID:** `DOCS-REP-04`
 
 ---
 
-## MỤC LỤC BÁO CÁO
-1. [TỔNG QUAN XỬ LÝ 409 TRÊN FRONTEND] Cơ chế ánh xạ mã lỗi qua `getApiErrorMessage`
-2. [THÔNG ĐIỆP I18N HIỂN THỊ] Người dùng thấy thông báo gì khi xung đột stage?
-3. [CHI TIẾT CÁC MÀN HÌNH GỌI API & HÀNH VI REFETCH]
-   - Màn hình 1: Kanban Pipeline Board (`pipeline/page.tsx`)
-   - Màn hình 2: Chi tiết hồ sơ ứng viên (`applications/[id]/page.tsx`)
-   - Màn hình 3: Bảng danh sách ứng viên (`applications-data-table.tsx`)
-   - Màn hình 4: Modal lên lịch phỏng vấn (`schedule-interview-modal.tsx`)
-4. [ĐÁNH GIÁ UX AUDIT] Liệu có xảy ra lỗi "thông báo chung chung"?
-5. [TỔNG KẾT & KHUYẾN NGHỊ NÂNG CẤP] Action Items cho DeepSeek & Đội ngũ Frontend
+## Table of Contents
+1. [FRONTEND 409 HANDLING OVERVIEW] Error code mapping mechanism via `getApiErrorMessage`
+2. [I18N DISPLAY MESSAGING] User-facing messaging during stage conflict
+3. [DETAILED API INVOCATIONS & REFETCH BEHAVIOR ACROSS SCREENS]
+   - Screen 1: Kanban Pipeline Board (`pipeline/page.tsx`)
+   - Screen 2: Application Detail View (`applications/[id]/page.tsx`)
+   - Screen 3: Applications Data Table (`applications-data-table.tsx`)
+   - Screen 4: Schedule Interview Modal (`schedule-interview-modal.tsx`)
+4. [UX AUDIT EVALUATION] Risk of generic notifications
+5. [SUMMARY & ARCHITECTURAL RECOMMENDATIONS] Action items for DeepSeek & Frontend Team
 
 ---
 
-## 1. [TỔNG QUAN XỬ LÝ 409 TRÊN FRONTEND]
+## 1. [FRONTEND 409 HANDLING OVERVIEW]
 
-- **Có xử lý error code `APPLICATION_STAGE_CONFLICT` (409) không?** **CÓ.**
-- **Cơ chế xử lý:**  
-  Khi backend ném ngoại lệ `AppConflictException(APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT)` với HTTP status 409:
+- **Is error code `APPLICATION_STAGE_CONFLICT` (409) handled?** **YES.**
+- **Handling Mechanism:**  
+  When the backend throws `AppConflictException(APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT)` with HTTP status 409:
   ```json
   {
     "statusCode": 409,
@@ -32,27 +32,27 @@
     "message": "Application stage conflict: the application has been modified by another request. Current stage is no longer 'APPLIED'."
   }
   ```
-  Tất cả các lời gọi `updateStage` trên giao diện đều được bọc trong khối `try/catch` và truyền lỗi qua hàm tiện ích chuẩn hóa [`getApiErrorMessage(err, t)`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.ts#L15-L52) tại [`frontend/src/lib/api-error.ts`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.ts).
-- Hàm này tự động trích xuất `payload.code === "APPLICATION_STAGE_CONFLICT"` và ánh xạ trực tiếp sang key dịch thuật `errors.APPLICATION_STAGE_CONFLICT`.
+  All `updateStage` calls across the UI are wrapped in `try/catch` blocks and pass errors through the standardized utility [`getApiErrorMessage(err, t)`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.ts#L15-L52) in [`frontend/src/lib/api-error.ts`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.ts).
+- This function extracts `payload.code === "APPLICATION_STAGE_CONFLICT"` and maps it directly to the translation key `errors.APPLICATION_STAGE_CONFLICT`.
 
 ---
 
-## 2. [THÔNG ĐIỆP I18N HIỂN THỊ] Người dùng thấy gì trên UI?
+## 2. [I18N DISPLAY MESSAGING] What Does the User See?
 
-Hệ thống **KHÔNG hiển thị lỗi chung chung**. Thay vào đó, người dùng nhìn thấy một thông báo lỗi chính xác, mang tính hướng dẫn nghiệp vụ:
+The system **DOES NOT display generic errors**. Instead, users receive an actionable, context-aware notification:
 
-### 2.1 Tiếng Việt ([`frontend/src/i18n/locales/vi.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/vi.ts#L89)):
+### 2.1 Vietnamese ([`frontend/src/i18n/locales/vi.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/vi.ts#L89)):
 ```typescript
 APPLICATION_STAGE_CONFLICT: "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác. Vui lòng tải lại trang để xem trạng thái mới nhất.",
 ```
 
-### 2.2 Tiếng Anh ([`frontend/src/i18n/locales/en.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/en.ts#L89)):
+### 2.2 English ([`frontend/src/i18n/locales/en.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/en.ts#L89)):
 ```typescript
 APPLICATION_STAGE_CONFLICT: "This application was just updated by another user. Please refresh to see the latest status.",
 ```
 
-### 2.3 Kiểm thử đơn vị cho cơ chế dịch lỗi này:
-Đã được kiểm chứng trong bộ test tại [`frontend/src/lib/api-error.spec.ts:L90-110`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.spec.ts#L90-L110) và [`L146-175`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.spec.ts#L146-L175):
+### 2.3 Unit Testing for Error Mapping:
+Verified in the test suite in [`frontend/src/lib/api-error.spec.ts:L90-110`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.spec.ts#L90-L110) and [`L146-175`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.spec.ts#L146-L175):
 ```typescript
 it("translates APPLICATION_STAGE_CONFLICT (HTTP 409) with Vietnamese message", async () => { ... });
 it("translates APPLICATION_INVALID_STAGE_TRANSITION and APPLICATION_STAGE_CONFLICT in English", async () => { ... });
@@ -60,100 +60,100 @@ it("translates APPLICATION_INVALID_STAGE_TRANSITION and APPLICATION_STAGE_CONFLI
 
 ---
 
-## 3. [CHI TIẾT CÁC MÀN HÌNH GỌI API & HÀNH VI REFETCH]
+## 3. [DETAILED API INVOCATIONS & REFETCH BEHAVIOR ACROSS SCREENS]
 
-Khảo sát cả 4 vị trí gọi `updateStageMutation.mutateAsync` trong toàn bộ giao diện:
+Inspected all 4 invocations of `updateStageMutation.mutateAsync` across the frontend:
 
-### 3.1 Màn hình 1: Kanban Pipeline Board (Kéo thả stage ứng viên)
+### 3.1 Screen 1: Kanban Pipeline Board (Drag-and-drop Candidate Stages)
 - **File:** [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx)
-- **Vị trí dòng:** [Dòng 410 đến 418](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx#L410-L418)
-- **Mã nguồn:**
+- **Line Location:** [Lines 410 to 418](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx#L410-L418)
+- **Source Code:**
   ```typescript
   } catch (err) {
     console.error("Failed to move candidate stage", err);
-    // 1. Hiển thị thông báo toast lỗi cụ thể (409 Conflict)
+    // 1. Display specific 409 Conflict toast error
     const errorMsg = getApiErrorMessage(err, t);
     toast.error(errorMsg);
 
-    // 2. TỰ ĐỘNG REFETCH: Invalidate query để đồng bộ thẻ Kanban về stage mới nhất
+    // 2. AUTOMATIC REFETCH: Invalidate queries to sync Kanban card to latest actual stage
     queryClient.invalidateQueries({ queryKey: ["applications"] });
     queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
   }
   ```
-- **Hành vi UX:** Khi Recruiter kéo thẻ nhưng bị xung đột, toast hiển thị thông báo "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác...", đồng thời giao diện **lập tức tự động refetch ngầm** để chuyển thẻ ứng viên về đúng cột trạng thái thực tế mà người khác vừa cập nhật.
+- **UX Behavior:** When a recruiter encounters a conflict while moving a card, the toast displays the conflict notification, while the client **automatically refetches in the background** to place the card in its accurate database stage.
 
 ---
 
-### 3.2 Màn hình 2: Trang chi tiết hồ sơ ứng viên (Application Detail View)
+### 3.2 Screen 2: Application Detail View
 - **File:** [`frontend/src/app/dashboard/applications/[id]/page.tsx`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/applications/%5Bid%5D/page.tsx)
-- **Vị trí dòng:** [Dòng 213 đến 219](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/applications/%5Bid%5D/page.tsx#L213-L219)
-- **Mã nguồn:**
+- **Line Location:** [Lines 213 to 219](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/applications/%5Bid%5D/page.tsx#L213-L219)
+- **Source Code:**
   ```typescript
   } catch (err) {
     console.error("Failed to update stage:", err);
     const errorMsg = getApiErrorMessage(err, t);
     toast.error(errorMsg);
 
-    // TỰ ĐỘNG REFETCH cả danh sách lẫn chi tiết hồ sơ hiện tại
+    // AUTOMATIC REFETCH for both application list and active detail view
     queryClient.invalidateQueries({ queryKey: ["applications"] });
     queryClient.invalidateQueries({ queryKey: ["application", appIdStr] });
   }
   ```
-- **Hành vi UX:** Toast hiển thị thông báo xung đột, giao diện **tự động refetch** lại chi tiết hồ sơ, thanh tiến trình stage tự động nhảy sang trạng thái mới.
+- **UX Behavior:** Toast presents the conflict error, and the view **automatically refetches**, advancing the stage progress bar to the actual remote state.
 
 ---
 
-### 3.3 Màn hình 3: Bảng danh sách ứng viên (Applications Data Table)
+### 3.3 Screen 3: Applications Data Table
 - **File:** [`frontend/src/components/applications/applications-data-table.tsx`](file:///c:/Workspaces/haihire/frontend/src/components/applications/applications-data-table.tsx)
-- **Vị trí dòng:** [Dòng 446 đến 451](file:///c:/Workspaces/haihire/frontend/src/components/applications/applications-data-table.tsx#L446-L451)
-- **Mã nguồn:**
+- **Line Location:** [Lines 446 to 451](file:///c:/Workspaces/haihire/frontend/src/components/applications/applications-data-table.tsx#L446-L451)
+- **Source Code:**
   ```typescript
   } catch (err) {
     console.error("Failed to update stage:", err);
     const errorMsg = getApiErrorMessage(err, t);
     toast.error(errorMsg);
 
-    // TỰ ĐỘNG REFETCH bảng dữ liệu
+    // AUTOMATIC REFETCH for data table
     queryClient.invalidateQueries({ queryKey: ["applications"] });
   }
   ```
-- **Hành vi UX:** Người dùng đổi stage từ dropdown trên table; nếu bị 409 xung đột, toast báo lỗi và table **tự động refetch** lại dòng tương ứng.
+- **UX Behavior:** When changing stage from the table dropdown, conflicts trigger an explanatory toast and the table **automatically refetches** the affected row.
 
 ---
 
-### 3.4 Màn hình 4: Modal lên lịch phỏng vấn (Schedule Interview Modal)
+### 3.4 Screen 4: Schedule Interview Modal
 - **File:** [`frontend/src/components/interviews/schedule-interview-modal.tsx`](file:///c:/Workspaces/haihire/frontend/src/components/interviews/schedule-interview-modal.tsx)
-- **Vị trí dòng:** [Dòng 223 đến 226](file:///c:/Workspaces/haihire/frontend/src/components/interviews/schedule-interview-modal.tsx#L223-L226)
-- **Mã nguồn:**
+- **Line Location:** [Lines 223 to 226](file:///c:/Workspaces/haihire/frontend/src/components/interviews/schedule-interview-modal.tsx#L223-L226)
+- **Source Code:**
   ```typescript
   } catch (err) {
     console.error("Schedule interview failed:", err);
     setFormError(getApiErrorMessage(err, t));
   }
   ```
-- **Hành vi UX:** Khi lên lịch phỏng vấn và tự động nhảy stage sang `INTERVIEW`, nếu gặp lỗi 409 xung đột, lỗi hiển thị inline dưới form modal: "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác...".  
-  *(Điểm lưu ý: Modal này chưa gọi `invalidateQueries` ngay trong catch block, phải đợi đóng modal hoặc màn hình cha cập nhật)*.
+- **UX Behavior:** When scheduling an interview that auto-advances the application to `INTERVIEW`, 409 conflicts render inline within the modal form: "This application was just updated by another user...".  
+  *(Note: This modal relies on parent view invalidation upon closure)*.
 
 ---
 
-## 4. [ĐÁNH GIÁ UX AUDIT]
+## 4. [UX AUDIT EVALUATION]
 
-| Tiêu chí | Đánh giá | Chi tiết kiểm chứng |
+| Criteria | Verdict | Verification Details |
 | :--- | :---: | :--- |
-| **Có bị lỗi thông báo chung chung không?** | **KHÔNG** | 100% các màn hình sử dụng `getApiErrorMessage(err, t)`, trích xuất đúng mã `APPLICATION_STAGE_CONFLICT` và hiển thị câu thông báo chuyên biệt giải thích rõ nguyên nhân. |
-| **Có tự động Refetch dữ liệu không?** | **CÓ (3/4 màn hình chính)** | Cả 3 màn hình nghiệp vụ chính (Kanban board, Detail view, Data table) đều gọi `queryClient.invalidateQueries(...)` ngay trong khối `catch` để tự động khôi phục giao diện về trạng thái thực của server. |
-| **Trải nghiệm kéo thả Kanban:** | **Rất tốt** | Khi kéo thả bị 409, thẻ không bị kẹt ở cột mới mà lập tức được kéo về đúng vị trí thực tế sau khi query invalidate kích hoạt. |
+| **Are generic toasts emitted?** | **NO** | 100% of screens use `getApiErrorMessage(err, t)`, extracting `APPLICATION_STAGE_CONFLICT` and rendering an explanatory message. |
+| **Is automatic refetching performed?** | **YES (3/4 primary screens)** | All 3 primary views (Kanban board, Detail view, Data table) call `queryClient.invalidateQueries(...)` in `catch` blocks to reconcile server truth. |
+| **Kanban drag-and-drop UX:** | **Resilient** | During 409 collisions, cards do not stick to incorrect columns; they resynchronize seamlessly after query invalidation executes. |
 
 ---
 
-## 5. [TỔNG KẾT & KHUYẾN NGHỊ NÂNG CẤP]
+## 5. [SUMMARY & ARCHITECTURAL RECOMMENDATIONS]
 
-### Điểm mạnh:
-- Kiến trúc đồng bộ giữa `APP_ERROR_CODES` (backend), `getApiErrorMessage` và dictionary `vi.ts`/`en.ts` hoạt động chuẩn xác, ngăn chặn hoàn toàn lỗi generic toast.
-- Khối `catch` ở các màn hình chính đều chủ động invalidates TanStack Query cache.
+### Strengths:
+- Synchronized contracts between backend `APP_ERROR_CODES`, `getApiErrorMessage`, and `vi.ts`/`en.ts` dictionaries operate reliably, completely preventing uninformative generic error toasts.
+- Catch blocks across primary views actively invalidate TanStack Query cache.
 
-### Điểm tối ưu đề xuất (Minor Enhancement):
-1. **Bổ sung `invalidateQueries` trong hook `useUpdateStageMutation`:**  
-   Hiện tại trong [`frontend/src/hooks/use-application-queries.ts:L103-120`](file:///c:/Workspaces/haihire/frontend/src/hooks/use-application-queries.ts#L103-L120), `invalidateQueries` chỉ được cấu hình ở `onSuccess`. Nên bổ sung thêm callback `onError: () => queryClient.invalidateQueries(...)` ngay ở cấp độ Hook gốc. Điều này sẽ đảm bảo **mọi component trong tương lai** dù quên viết `invalidateQueries` trong `catch` block thì TanStack Query vẫn tự động đồng bộ lại dữ liệu.
-2. **Nút "Tải lại ngay" trên Toast:**  
-   Toast thông báo hiện tại có nội dung *"Vui lòng tải lại trang để xem trạng thái mới nhất"*. Dù dữ liệu ngầm đã được refetch tự động, có thể bổ sung thêm nút hành động `action: { label: "Tải lại", onClick: () => window.location.reload() }` trên sonner toast để người dùng an tâm tuyệt đối.
+### Recommended Enhancements:
+1. **Add `onError` invalidation to `useUpdateStageMutation` hook:**  
+   In [`frontend/src/hooks/use-application-queries.ts:L103-120`](file:///c:/Workspaces/haihire/frontend/src/hooks/use-application-queries.ts#L103-L120), `invalidateQueries` is currently configured only on `onSuccess`. Adding `onError: () => queryClient.invalidateQueries(...)` at the base hook level guarantees that **all future components** automatically resynchronize even if component authors omit cache invalidation in local catch blocks.
+2. **"Refresh Now" Toast Action:**  
+   While background queries automatically resynchronize state, adding an explicit `action: { label: "Refresh", onClick: () => window.location.reload() }` to the Sonner toast gives users explicit control and reassurance.

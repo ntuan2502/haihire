@@ -1,37 +1,37 @@
-# BÁO CÁO XÁC MINH KỸ THUẬT #05: KIỂM CHỨNG CƠ CHẾ CẬP NHẬT KANBAN PIPELINE (OPTIMISTIC VS PESSIMISTIC UPDATE)
-> **Tài liệu gửi DeepSeek & Chủ Dự Án (Single Source of Truth - Pipeline State Management & Concurrency UX)**  
-> **Dự án:** HaiHire Enterprise ATS Platform  
-> **Người lập:** Antigravity (Senior Software Engineer / Lead Maintainer)  
-> **Thời gian:** 2026-10-07  
-> **Mã báo cáo:** `DOCS-REP-05`
+# Technical Verification Report #05: Kanban Pipeline State Update Verification (Optimistic vs Pessimistic Update)
+> **Report for DeepSeek & Project Owner (Single Source of Truth - Pipeline State Management & Concurrency UX)**  
+> **Project:** HaiHire Enterprise ATS Platform  
+> **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)  
+> **Date:** 2026-10-07  
+> **Report ID:** `DOCS-REP-05`
 
 ---
 
-## MỤC LỤC BÁO CÁO
-1. [KẾT LUẬN TỔNG QUAN] Phân loại kiến trúc cập nhật trạng thái Pipeline
-2. [PHÂN TÍCH CHI TIẾT DÒNG CODE 380-420 `pipeline/page.tsx`]
-3. [KIỂM CHỨNG TẦNG HOOK VÀ QUERY CLIENT] `useUpdateStageMutation`
-4. [HÀNH VI KHI XẢY RA LỖI 409 CONFLICT] Thẻ hiển thị và phản ứng ra sao?
-5. [ĐÁNH GIÁ ĐÁNH ĐỔI KIẾN TRÚC (TRADE-OFF ANALYSIS)] An toàn vs Trải nghiệm người dùng
-6. [TỔNG KẾT & KHUYẾN NGHỊ ĐỒNG HÓA REALTIME]
+## Table of Contents
+1. [EXECUTIVE SUMMARY] Pipeline state update architectural classification
+2. [DETAILED ANALYSIS OF LINES 380-420 IN `pipeline/page.tsx`]
+3. [HOOK AND QUERY CLIENT VERIFICATION] `useUpdateStageMutation`
+4. [BEHAVIOR UPON HTTP 409 CONFLICT] Card presentation and error reaction
+5. [ARCHITECTURAL TRADE-OFF ANALYSIS] Safety vs User Experience
+6. [SUMMARY & REALTIME SYNCHRONIZATION RECOMMENDATIONS]
 
 ---
 
-## 1. [KẾT LUẬN TỔNG QUAN]
+## 1. [EXECUTIVE SUMMARY]
 
-- **Có Optimistic Update (di chuyển thẻ ngay lập tức trước khi gọi API) không?** **KHÔNG.**
-- **Mô hình đang áp dụng:** **Pessimistic Update (Server-Authoritative Pattern)**.
-- **Tóm tắt hành vi:**
-  - Khi người dùng kéo-thả thẻ ứng viên sang Stage mới (hoặc bấm nút chuyển Stage trong chi tiết), giao diện **KHÔNG tự ý di chuyển thẻ trước**.
-  - Client giữ nguyên vị trí thẻ, hiển thị trạng thái `isMovingStage = true` (loading/disabled) và đợi phản hồi HTTP từ server.
-  - Chỉ sau khi server trả về `200 OK`, thẻ mới được chuyển sang Stage mới.
-  - Nếu gặp lỗi HTTP 409 (`APPLICATION_STAGE_CONFLICT`), thẻ không bao giờ bị hiện tượng giật cục (flicker/revert) vì state chưa từng bị thay đổi giả định; đồng thời TanStack Query tự động refetch để đưa thẻ về đúng trạng thái thực tế nhất trên database.
+- **Is there an Optimistic Update (instant card relocation prior to API call)?** **NO.**
+- **Applied Architecture:** **Pessimistic Update (Server-Authoritative Pattern)**.
+- **Behavioral Summary:**
+  - When a user drags and drops a candidate card to a new Stage (or clicks a stage transition button), the UI **DOES NOT preemptively move the card**.
+  - The client maintains the card's original position, displays an `isMovingStage = true` loading/disabled state, and awaits the HTTP response from the server.
+  - Only after the server responds with `200 OK` is the card transitioned to the new Stage.
+  - Upon receiving an HTTP 409 (`APPLICATION_STAGE_CONFLICT`), the card never experiences visual flickering or jumpy rollbacks because state was never speculatively altered; concurrently, TanStack Query automatically refetches to synchronize the card with actual database truth.
 
 ---
 
-## 2. [PHÂN TÍCH CHI TIẾT DÒNG CODE 380-420 `pipeline/page.tsx`]
+## 2. [DETAILED ANALYSIS OF LINES 380-420 IN `pipeline/page.tsx`]
 
-Mã nguồn tại [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx:L383-420`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx#L383-L420):
+Source code in [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx:L383-420`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx#L383-L420):
 
 ```typescript
 383:   const handleMoveCandidateStage = async (
@@ -73,20 +73,20 @@ Mã nguồn tại [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx:L383-
 419:   };
 ```
 
-### Các bằng chứng code chứng minh KHÔNG có Optimistic Update:
-1. **Trước dòng `await updateStageMutation.mutateAsync` (Dòng 383-398):**
-   - Chỉ có bước kiểm tra chuyển dịch hợp lệ qua máy trạng thái cục bộ `canTransition(candidate.stage, newStage)`.
-   - **Không hề có bất kỳ câu lệnh nào can thiệp vào UI state** (không có `setJobApplications`, không có `queryClient.setQueryData`).
-2. **Dòng 399:** Lệnh gọi API được `await`. Toàn bộ luồng thực thi bị tạm dừng cho đến khi nhận được phản hồi từ server.
-3. **Chỉ khi API thành công (Dòng 403-407):**
-   - `setSelectedStage(newStage)` và `router.replace(...)` mới được kích hoạt.
-   - Thẻ và danh sách được đồng bộ thông qua query cache của TanStack Query.
+### Code Evidence Confirming Absence of Optimistic Update:
+1. **Before `await updateStageMutation.mutateAsync` (Lines 383-398):**
+   - Only validates stage transitions via the local state machine check `canTransition(candidate.stage, newStage)`.
+   - **Zero statements mutate UI state** (no `setJobApplications`, no `queryClient.setQueryData`).
+2. **Line 399:** The API call is `await`ed. Execution halts until the server returns.
+3. **Only on API Success (Lines 403-407):**
+   - `setSelectedStage(newStage)` and `router.replace(...)` are triggered.
+   - Cards and lists are synchronized via TanStack Query's cache.
 
 ---
 
-## 3. [KIỂM CHỨNG TẦNG HOOK VÀ QUERY CLIENT]
+## 3. [HOOK AND QUERY CLIENT VERIFICATION]
 
-Kiểm tra hook `useUpdateStageMutation` tại [`frontend/src/hooks/use-application-queries.ts:L103-120`](file:///c:/Workspaces/haihire/frontend/src/hooks/use-application-queries.ts#L103-L120):
+Inspected hook `useUpdateStageMutation` in [`frontend/src/hooks/use-application-queries.ts:L103-120`](file:///c:/Workspaces/haihire/frontend/src/hooks/use-application-queries.ts#L103-L120):
 
 ```typescript
 export function useUpdateStageMutation() {
@@ -109,45 +109,45 @@ export function useUpdateStageMutation() {
 }
 ```
 
-- Hook **hoàn toàn không cài đặt callback `onMutate`** (nơi thường dùng để backup previous state và set optimistic data vào cache).
-- Hook chỉ khai báo `mutationFn` và `onSuccess`.
+- The hook **omits an `onMutate` callback** (typically used to back up previous state and speculatively write optimistic data into cache).
+- The hook exclusively declares `mutationFn` and `onSuccess`.
 
 ---
 
-## 4. [HÀNH VI KHI XẢY RA LỖI 409 CONFLICT]
+## 4. [BEHAVIOR UPON HTTP 409 CONFLICT]
 
-Khi có 2 Recruiter cùng thao tác trên 1 hồ sơ ứng viên (hoặc server từ chối vì xung đột state `APPLICATION_STAGE_CONFLICT`):
+When 2 Recruiters perform conflicting operations on a candidate profile (or the server rejects a stale transition via `APPLICATION_STAGE_CONFLICT`):
 
-1. `await updateStageMutation.mutateAsync` thất bại và ném lỗi (HTTP 409).
-2. Khối lệnh dừng ngay lập tức tại dòng 399 và nhảy vào khối `catch (err)` tại dòng 410.
-3. Các lệnh đổi stage (dòng 403-407) **bị bỏ qua hoàn toàn**.
-4. **Trạng thái thẻ trên màn hình:**
-   - Thẻ vẫn nằm nguyên vẹn ở cột/danh sách ban đầu, không bị "nhảy tạm thời" sang cột mới rồi giật lùi về.
-   - Toast hiển thị: *"Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác. Vui lòng tải lại trang để xem trạng thái mới nhất."* ([`vi.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/vi.ts#L89)).
-   - Dòng 416-417 kích hoạt:
+1. `await updateStageMutation.mutateAsync` rejects with HTTP 409.
+2. Execution halts at line 399 and enters the `catch (err)` block at line 410.
+3. State advancement commands (lines 403-407) **are completely skipped**.
+4. **Visual Card Presentation:**
+   - The card remains stationary in its original column, avoiding visual snapping or erratic rollback animations.
+   - Toast renders localized notice: *"This application was recently modified by another user. Please refresh the page to view the latest status."* ([`vi.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/vi.ts#L89)).
+   - Lines 416-417 execute:
      ```typescript
      queryClient.invalidateQueries({ queryKey: ["applications"] });
      queryClient.invalidateQueries({ queryKey: ["job-applications", jobId] });
      ```
-     Lệnh này lập tức kéo state mới nhất từ PostgreSQL về và render thẻ ở đúng cột mà người dùng trước đó đã cập nhật.
+     This triggers a refetch from PostgreSQL, rendering the card in the correct position updated by the earlier collaborator.
 
 ---
 
-## 5. [ĐÁNH GIÁ ĐÁNH ĐỔI KIẾN TRÚC (TRADE-OFF ANALYSIS)]
+## 5. [ARCHITECTURAL TRADE-OFF ANALYSIS]
 
-| Tiêu chí | Optimistic Update | Pessimistic Update (Hiện tại của HaiHire) |
+| Dimension | Optimistic Update | Pessimistic Update (HaiHire Implementation) |
 | :--- | :--- | :--- |
-| **Cảm giác phản hồi (Perceived Latency)** | Nhanh tức thì (0ms) | Phụ thuộc network (~50 - 150ms) |
-| **Độ an toàn dữ liệu** | Rủi ro desync nếu rollback lỗi | **Tuyệt đối an toàn (Single source of truth)** |
-| **Trải nghiệm khi Conflict (409)** | Thẻ nhảy sang cột mới rồi giật lùi lại (gây hoang mang cho Recruiter) | **Không bị flicker**, thẻ đứng yên và tự đồng bộ lại |
-| **Độ phức tạp code** | Cao (cần lưu snapshot, cancel queries, rollback on error) | **Gọn nhẹ, dễ kiểm thử, không phát sinh race condition client** |
+| **Perceived Latency** | Instantaneous (0ms) | Dependent on network roundtrip (~50 - 150ms) |
+| **Data Integrity** | Desynchronization risk upon failed rollbacks | **Strict Single Source of Truth** |
+| **UX on Conflict (409)** | Card jumps forward then bounces backward (disorienting) | **Zero flicker**, card remains stable and refetches |
+| **Code Complexity** | High (snapshot backups, query cancellations, error rollbacks) | **Clean, testable, zero client race conditions** |
 
-Đối với ứng dụng tuyển dụng doanh nghiệp (Enterprise ATS), việc bảo đảm tính toàn vẹn trạng thái tuyển dụng giữa nhiều thành viên hiring team quan trọng hơn việc tối ưu vài chục mili-giây hiệu ứng kéo thả. Vì vậy cách tiếp cận này là hoàn toàn có chủ đích và an toàn.
+In an Enterprise Applicant Tracking System (ATS), preserving pipeline state integrity across concurrent hiring team actions outweighs shaving tens of milliseconds off drag-and-drop animations. Hence, this design is intentional, deterministic, and resilient.
 
 ---
 
-## 6. [TỔNG KẾT & KHUYẾN NGHỊ ĐỒNG HÓA REALTIME]
+## 6. [SUMMARY & REALTIME SYNCHRONIZATION RECOMMENDATIONS]
 
-1. **Khẳng định:** Thao tác chuyển stage trong `pipeline/page.tsx` là **Pessimistic Update**, an toàn tuyệt đối trước xung đột đồng thời.
-2. **Khuyến nghị nâng cấp tương lai:**  
-   Để vừa giữ được tính an toàn của Pessimistic Update vừa loại bỏ cảm giác chờ đợi của Recruiter, giải pháp tối ưu là tích hợp **Server-Sent Events (SSE)** hoặc WebSocket vào Kanban Pipeline. Khi Recruiter A chuyển thẻ, Kanban của Recruiter B sẽ tự động di chuyển thẻ trong thời gian thực trước cả khi Recruiter B kịp kéo thẻ đó.
+1. **Conclusion:** Stage updates in `pipeline/page.tsx` follow a **Pessimistic Update** strategy, ensuring full resilience against concurrent update conflicts.
+2. **Future Enhancement Recommendation:**  
+   To retain the safety of Pessimistic Updates while eliminating latency perception, integrate **Server-Sent Events (SSE)** or WebSockets into the Kanban Pipeline. When Recruiter A updates a candidate, Recruiter B's pipeline board will synchronize in real time before Recruiter B attempts an overlapping modification.

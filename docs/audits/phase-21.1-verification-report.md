@@ -24,7 +24,7 @@ All 4 verification tracks passed with verifiable raw command evidence. The alleg
 
 ---
 
-## 2. VERIFY 1 — Test Count Thật (Zero Trust Audit)
+## 2. VERIFY 1 — Actual Test Count (Zero Trust Audit)
 
 ### Step 1: Backend Test Suite Raw Execution
 Command: `pnpm --filter backend test`
@@ -75,7 +75,7 @@ Running 10 tests using 7 workers
 - **E2E Spec Files:** 5 files
 - **E2E Tests:** **10 passed** (0 failed, 0 flaky)
 
-### Step 4 & 5: So sánh đối soát Phase 20 vs Phase 21 vs Thực tế
+### Steps 4 & 5: Reconciliation Analysis Phase 20 vs Phase 21 vs Reality
 
 | Layer | Phase 20 Claim | Phase 21 Claim | Raw Actual Output | Mismatch Assessment |
 | :--- | :---: | :---: | :---: | :--- |

@@ -1,111 +1,131 @@
 # DEFINITION OF DONE (DoD) — Release v1.0.0
 
-> Checklist chung cho tất cả PR trong đợt hardening v1.0.0.
-> Mỗi PR phải đạt TẤT CẢ các mục dưới đây trước khi được merge.
+> Universal checklist for all pull requests during the v1.0.0 hardening phase.
+> Every PR must satisfy ALL criteria below prior to merging.
 
-## 1. HYGIENE — Vệ sinh code
+---
 
-- [ ] Branch name đúng convention: `feat/task-NN-<slug>` hoặc `chore/task-NN-<slug>`
-- [ ] Commit message theo Conventional Commits: `type(scope): description`
-  - Chữ thường, tiếng Anh, không dấu chấm cuối câu
-  - Ví dụ: `feat(observability): add DLQ slack webhook alert`
-- [ ] Không có file rác: `console.log` debug, comment-out code, `*.bak`
-- [ ] Không có TODO/FIXME mới (trừ khi có ticket link kèm theo)
-- [ ] Diff gọn gàng: chỉ chứa thay đổi cần thiết cho task, không drive-by refactor
+## 1. HYGIENE — Code Cleanliness
 
-## 2. TESTING — Kiểm thử
+- [ ] Branch name adheres to convention: `feat/task-NN-<slug>` or `chore/task-NN-<slug>`
+- [ ] Commit messages follow Conventional Commits: `type(scope): description`
+  - Lowercase, English, no trailing period
+  - Example: `feat(observability): add DLQ slack webhook alert`
+- [ ] Zero artifacts or noise: no debug `console.log`, commented-out code, or `*.bak` files
+- [ ] No newly introduced TODO/FIXME comments (unless tied to an explicit ticket link)
+- [ ] Clean diff: contains only necessary changes for the task, zero drive-by refactoring
 
-- [ ] Unit test cho logic mới (mỗi function/service method mới có ≥1 test)
-- [ ] Test cho happy path + error path
-- [ ] Test cho edge case (empty input, null/undefined, boundary values)
-- [ ] Integration test nếu task chạm vào module có integration test
-- [ ] Test naming mô tả behavior, không mô tả implementation
+---
+
+## 2. TESTING — Quality & Coverage
+
+- [ ] Unit test for all newly introduced logic (each new function/service method has $\ge 1$ test)
+- [ ] Tests covering both happy path and error paths
+- [ ] Tests for edge cases (empty input, null/undefined, boundary values)
+- [ ] Integration test if task touches modules backed by integration suites
+- [ ] Test names describe behavior, never implementation details
   - ✅ `should not throw when Slack webhook is down`
   - ❌ `test fetch call`
-- [ ] Test coverage không giảm so với baseline
+- [ ] Test coverage does not regress against baseline
 
-## 3. TYPE SAFETY — An toàn kiểu
+---
 
-- [ ] Không có `any` mới (trừ khi có comment giải thích lý do bất khả kháng)
-- [ ] Không có `@ts-ignore` / `@ts-expect-error` mới
-- [ ] `pnpm tsc --noEmit` pass ở cả `backend/` và `frontend/`
-- [ ] Public interface có JSDoc cho function/service quan trọng
-- [ ] Error type cụ thể: throw `AppException` subclass, không throw `new Error()` chung chung
+## 3. TYPE SAFETY — Strict Typing
 
-## 4. SECURITY — Bảo mật
+- [ ] Zero newly introduced `any` types (unless strictly justified via comment explaining technical limitation)
+- [ ] Zero newly introduced `@ts-ignore` / `@ts-expect-error` directives
+- [ ] `pnpm tsc --noEmit` passes cleanly across both `backend/` and `frontend/`
+- [ ] Public interfaces documented with JSDoc for critical functions/services
+- [ ] Explicit error types: throw `AppException` subclasses, never generic `new Error()`
 
-- [ ] Không hardcode secret — mọi config đọc từ `env.ts`
-- [ ] Không log PII — nếu log payload, phải scrub email/phone/name
-- [ ] Không expose internal error ra ngoài — dùng `AppException`, không leak stack trace
-- [ ] Tenant scoping: nếu query DB trong module tenant-scoped → có `organizationId` filter
-- [ ] Input validation: mọi `@Body()` mới phải có `DtoPipe(<Dto>)`
+---
 
-## 5. OBSERVABILITY — Khả năng quan sát
+## 4. SECURITY — Hardening & Scoping
 
-- [ ] Structured logging cho action quan trọng (dùng `this.logger.log/.warn/.error`)
-- [ ] Metrics có `# HELP` và `# TYPE` comment, labels không cardinality cao
-- [ ] Alert rules có `summary` + `description` + `severity` + `team` label
-- [ ] Duration của alert rule hợp lý (for: Xm)
+- [ ] Zero hardcoded secrets — all configuration read via `env.ts`
+- [ ] Zero PII logged — payloads must scrub email/phone/name before logging
+- [ ] Zero internal error exposure — return `AppException`, never leak raw stack traces to clients
+- [ ] Tenant scoping: database queries in tenant-scoped modules must include `organizationId` filter
+- [ ] Input validation: all newly added `@Body()` parameters guarded by `DtoPipe(<Dto>)`
 
-## 6. i18n — Đa ngôn ngữ (Frontend)
+---
 
-- [ ] Không hardcode text trong JSX, dùng `t("key.path")`
-- [ ] Key mới thêm vào cả 3 file: `types.ts`, `vi.ts`, `en.ts`
-- [ ] Error code mới thêm vào `APP_ERROR_CODES` + `vi.ts` + `en.ts`
-- [ ] `pnpm check:i18n` pass
+## 5. OBSERVABILITY — Telemetry & Metrics
 
-## 7. DOCUMENTATION — Tài liệu
+- [ ] Structured logging for significant operations (using `this.logger.log/.warn/.error`)
+- [ ] Prometheus metrics include `# HELP` and `# TYPE` comments; low-cardinality labels
+- [ ] Prometheus alert rules specify `summary` + `description` + `severity` + `team` label
+- [ ] Alert evaluation windows are appropriately tuned (`for: Xm`)
 
-- [ ] Update `PROJECT_CONTEXT.md` nếu có module/service/dependency mới
-- [ ] Update runbook trong `docs/runbooks/` nếu có alert rule mới
-- [ ] Comment WHY, không comment WHAT
+---
+
+## 6. i18n — Localization (Frontend)
+
+- [ ] Zero hardcoded strings in JSX — use `t("key.path")`
+- [ ] New dictionary keys added synchronously to all 3 files: `types.ts`, `vi.ts`, and `en.ts`
+- [ ] New domain error codes registered in `APP_ERROR_CODES` + `vi.ts` + `en.ts`
+- [ ] `pnpm check:i18n` passes with 100% key parity and zero hardcoded text
+
+---
+
+## 7. DOCUMENTATION — Knowledge Integrity
+
+- [ ] Update `PROJECT_CONTEXT.md` when introducing new modules, services, or dependencies
+- [ ] Update runbooks in `docs/runbooks/` when adding alert rules or background jobs
+- [ ] Comment the WHY, never the WHAT
   - ✅ `// Non-throwing: webhook fail must not crash DLQ flow`
   - ❌ `// Call fetch`
 
-## 8. CI GATES — Cổng kiểm tra
+---
 
-- [ ] `pnpm check:all:fast` pass
-- [ ] `pnpm test` pass
-- [ ] `pnpm lint:env-sync` pass (nếu có env mới)
-- [ ] `pnpm lint:dtopipe` pass (nếu có controller mới)
-- [ ] `pnpm lint:error-i18n` pass (nếu có error code mới)
-- [ ] `pnpm test:e2e` pass locally (nếu task là E2E)
-- [ ] Cron chạy manual 1 lần verify output (nếu task là cron)
+## 8. CI GATES — Automated Quality Verification
 
-## 9. ACCEPTANCE CRITERIA — Tiêu chí chấp nhận
+- [ ] `pnpm check:all:fast` passes (all static architecture gates)
+- [ ] `pnpm test` passes
+- [ ] `pnpm lint:env-sync` passes (when modifying environment variables)
+- [ ] `pnpm lint:dtopipe` passes (when adding/modifying controllers)
+- [ ] `pnpm lint:error-i18n` passes (when registering error codes)
+- [ ] `pnpm test:e2e` passes locally (for E2E tasks)
+- [ ] Cron scripts manually executed once to verify runtime output (for cron tasks)
 
-- [ ] Mọi acceptance criteria trong spec của task đều PASS
-- [ ] Có evidence: screenshot / log output / test report
+---
 
-## 10. REPORT — Báo cáo cho DeepSeek & Chủ dự án
+## 9. ACCEPTANCE CRITERIA — Task Verification
 
-Sau khi xong, gửi báo cáo theo format sau:
+- [ ] All acceptance criteria specified in the task prompt PASS
+- [ ] Concrete evidence provided: screenshots / terminal logs / test output
 
-### Task #N: <tên task>
+---
+
+## 10. REPORT — Submission Format for DeepSeek & Project Owner
+
+Upon completion, provide the final technical report using the following standard template:
+
+### Task #N: <task_title>
 
 **1. Summary**
-- Branch: <name>
-- Files created/changed: <list với số dòng>
-- Total diff: +X / -Y
+- Branch: `<name>`
+- Files created/changed: `<list with line counts>`
+- Total diff: `+X / -Y`
 
 **2. Implementation Notes**
-- Deviation from spec: <có/không> — nếu có, giải thích WHY
-- Design decisions: <nếu có điểm cần lưu ý>
+- Deviation from spec: `<yes/no>` — if yes, explain WHY
+- Design decisions: `<notable architectural decisions>`
 
 **3. Test Coverage**
-- Unit tests: <số case>, file: <path>
-- Integration tests: <số case>
-- E2E tests: <số case> (nếu có)
-- Coverage change: X% → Y%
+- Unit tests: `<case count>`, file: `<path>`
+- Integration tests: `<case count>`
+- E2E tests: `<case count>` (if applicable)
+- Coverage change: `X% → Y%`
 
 **4. Verification Evidence**
-- `pnpm check:all:fast`: PASS / FAIL
-- `pnpm test`: PASS / FAIL (X passing, Y failing)
-- Acceptance criteria: <checklist với ✅/❌>
+- `pnpm check:all:fast`: `PASS / FAIL`
+- `pnpm test`: `PASS / FAIL` (X passing, Y failing)
+- Acceptance criteria: `<checklist with ✅/❌>`
 
 **5. Open Questions**
-- <câu hỏi cho DeepSeek nếu có>
-- <điểm cần chủ dự án xác nhận nếu có>
+- `<questions for DeepSeek if any>`
+- `<points requiring project owner confirmation if any>`
 
 **6. Files for Review**
-- <path của file chính cần review kỹ>
+- `<path to primary files requiring in-depth code review>`

@@ -155,3 +155,4 @@ Because local `.env` files are gitignored and never committed to source control,
 3. **Local Development Enforcement:**
    - In local developer workstations (where `CI` is unset), missing `backend/.env` or `frontend/.env` is treated as a fatal configuration error (`❌ Required environment file missing: ...`), guaranteeing developers maintain complete parity before pushing code.
 
+

@@ -1,32 +1,32 @@
-# Báo Cáo Kỹ Thuật: Task #2 — Dynamic BullMQ Metrics
+# Technical Report: Task #2 — Dynamic BullMQ Metrics
 
-**Dự án:** HaiHire Enterprise ATS  
-**Tác giả:** Senior Software Engineer / Antigravity Agent  
-**Ngày thực hiện:** 07/10/2026  
-**Trạng thái:** ✅ HOÀN THÀNH TOÀN DIỆN (APPROVED & VERIFIED)  
+**Project:** HaiHire Enterprise ATS  
+**Author:** Senior Software Engineer / Antigravity Agent  
+**Date:** 2026-10-07  
+**Status:** ✅ FULLY COMPLETED (APPROVED & VERIFIED)  
 **Branch:** `feat/task-02-dynamic-bullmq-metrics`  
-**Tài liệu tham chiếu:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [docs/reports/10-task-01b-followup-and-prep-task-02-report.md](file:///c:/Workspaces/haihire/docs/reports/10-task-01b-followup-and-prep-task-02-report.md)
+**References:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [docs/reports/10-task-01b-followup-and-prep-task-02-report.md](file:///c:/Workspaces/haihire/docs/reports/10-task-01b-followup-and-prep-task-02-report.md)
 
 ---
 
-## 1. Tóm Tắt Kết Quả (Executive Summary)
+## 1. Executive Summary
 
-- **Mục tiêu đạt được:** Đã thay thế hoàn toàn dòng metric hardcode `bullmq_queue_depth 0` trong `MetricsService` bằng hệ thống thu thập động theo thời gian thực (real-time dynamic scraper) từ 3 BullMQ Queues (`orphan-cleanup-queue`, `orphan-cleanup-dlq`, `email-queue`) qua 6 trạng thái công việc (`waiting`, `active`, `completed`, `failed`, `delayed`, `paused`).
-- **Phòng thủ đa tầng (Non-Throwing & Timeout Protection):** Mỗi hàng đợi được bảo vệ độc lập trong khối `try/catch` riêng kết hợp cơ chế `withTimeout(2500ms)`. Khi Redis/Valkey gặp sự cố, scraper không bao giờ treo kết nối hoặc làm sập endpoint `/metrics`, mà ghi nhận lỗi ra NestJS Logger và trả về tín hiệu lỗi `-1` cho Prometheus Alertmanager.
-- **Tối ưu kiến trúc (Modular DI):** Tạo mới `MetricsModule` độc lập, tái sử dụng các Queue provider đã export từ `ApplicationsModule` và `EmailModule`, không mở thêm kết nối Redis dư thừa và tuân thủ nguyên tắc **Zero New Dependencies**.
+- **Objective Achieved:** Completely replaced the hardcoded `bullmq_queue_depth 0` metric in `MetricsService` with a real-time dynamic scraper across 3 BullMQ Queues (`orphan-cleanup-queue`, `orphan-cleanup-dlq`, `email-queue`) tracking 6 job lifecycle states (`waiting`, `active`, `completed`, `failed`, `delayed`, `paused`).
+- **Multi-layer Resilience (Non-Throwing & Timeout Protection):** Each queue is wrapped in an independent `try/catch` block paired with a `withTimeout(2500ms)` guard. When Redis/Valkey experiences degradation or outages, the scraper never hangs or crashes the `/metrics` endpoint; instead, errors are logged via NestJS Logger and emit an error sentinel value of `-1` for Prometheus Alertmanager.
+- **Architectural Optimization (Modular DI):** Introduced a dedicated `MetricsModule`, reusing existing Queue providers exported from `ApplicationsModule` and `EmailModule`, avoiding redundant Redis connections and honoring the **Zero New Dependencies** rule.
 - **Coverage & Test Suite:**
-  - Branch Coverage của `MetricsService`: **100%** (Line **100%**, Stmts **100%**, Funcs **100%**).
-  - 10 test cases chuyên sâu trong [`backend/src/metrics/metrics.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.spec.ts).
-  - Toàn bộ test suite monorepo: **507/507 tests PASSED 100%** (351 backend + 156 frontend).
-  - CI Quality Gates: **8/8 checks PASSED** qua `pnpm check:all:fast`.
-- **Manual Verification thực tế:** Đã kiểm thử trực tiếp trên backend chạy cục bộ ở cả 3 kịch bản: Hoạt động bình thường (28ms), Khi Valkey ngừng hoạt động (trả về `-1` an toàn), và Khi Valkey phục hồi (tự động nhận lại số liệu thực).
+  - Branch Coverage for `MetricsService`: **100%** (Line **100%**, Stmts **100%**, Funcs **100%**).
+  - 10 in-depth unit tests in [`backend/src/metrics/metrics.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.spec.ts).
+  - Monorepo test suite: **507/507 tests PASSED (100%)** (351 backend + 156 frontend).
+  - CI Quality Gates: **8/8 checks PASSED** via `pnpm check:all:fast`.
+- **Live Verification:** Directly validated against a running backend across all 3 scenarios: normal operations (28ms latency), during Valkey downtime (graceful `-1` emission), and following Valkey recovery (automatic resumption of live metrics).
 
 ---
 
-## 2. Chi Tiết Triển Khai Kỹ Thuật (Architecture & Implementation)
+## 2. Technical Implementation Details (Architecture & Implementation)
 
-### 2.1. Cập nhật `MetricsService` ([`backend/src/metrics/metrics.service.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.ts))
-1. **Inject Queues:**
+### 2.1. Updated `MetricsService` ([`backend/src/metrics/metrics.service.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.ts))
+1. **Queue Injection:**
    ```ts
    constructor(
      @InjectQueue(ORPHAN_CLEANUP_QUEUE) private readonly orphanQueue: Queue,
@@ -34,20 +34,20 @@
      @InjectQueue(EMAIL_QUEUE_NAME) private readonly emailQueue: Queue,
    ) {}
    ```
-2. **Hàm `updateBullMqMetrics()` và Cơ chế Timeout:**
-   - Để tránh trường hợp Redis bị sập khiến ioredis ngầm retry vô tận làm Prometheus scraper bị treo timeout (>10-15s), một wrapper `withTimeout(promise, 2500ms)` được tích hợp cho mỗi tác vụ `queue.getJobCounts()`.
-   - **Xử lý TypeScript type:** Trong BullMQ static type union, `JobType` không liệt kê `"paused"`, mặc dù runtime BullMQ Redis engine hỗ trợ đầy đủ. Logic đã ép kiểu an toàn `"paused" as unknown as JobType` để thỏa mãn strict TypeScript checker.
-3. **Format Metric Chuẩn Prometheus:**
+2. **`updateBullMqMetrics()` Method and Timeout Mechanism:**
+   - To prevent ioredis from retrying infinitely and timing out the Prometheus scraper (>10-15s) during Redis outages, a `withTimeout(promise, 2500ms)` wrapper was integrated for each `queue.getJobCounts()` call.
+   - **TypeScript Type Handling:** BullMQ's static `JobType` union type omits `"paused"`, even though runtime BullMQ Redis engine fully supports it. Safely cast as `"paused" as unknown as JobType` to satisfy strict TypeScript checking.
+3. **Prometheus Metric Format:**
    ```text
    # HELP bullmq_queue_depth Number of jobs in each BullMQ queue state
    # TYPE bullmq_queue_depth gauge
    bullmq_queue_depth{queue="orphan-cleanup-queue",state="waiting"} 0
    ...
    ```
-   Khi một queue lỗi, tất cả 6 trạng thái của queue đó được gán `-1`, trong khi các queue khác vẫn hiển thị số liệu thật.
+   If a queue errors out, all 6 states for that queue report `-1`, while other queues continue reporting accurate real-time metrics.
 
-### 2.2. Cập nhật `AppController` ([`backend/src/app.controller.ts`](file:///c:/Workspaces/haihire/backend/src/app.controller.ts))
-Chuyển đổi method `getMetrics()` thành async:
+### 2.2. Updated `AppController` ([`backend/src/app.controller.ts`](file:///c:/Workspaces/haihire/backend/src/app.controller.ts))
+Converted `getMetrics()` to async:
 ```ts
   @Get("metrics")
   @Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
@@ -56,8 +56,8 @@ Chuyển đổi method `getMetrics()` thành async:
   }
 ```
 
-### 2.3. Khởi tạo `MetricsModule` ([`backend/src/metrics/metrics.module.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.module.ts))
-Tạo module chuyên trách, nhập `ApplicationsModule` và `EmailModule`:
+### 2.3. Created `MetricsModule` ([`backend/src/metrics/metrics.module.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.module.ts))
+Created dedicated module importing `ApplicationsModule` and `EmailModule`:
 ```ts
 @Module({
   imports: [ApplicationsModule, EmailModule],
@@ -66,28 +66,28 @@ Tạo module chuyên trách, nhập `ApplicationsModule` và `EmailModule`:
 })
 export class MetricsModule {}
 ```
-Cập nhật [`backend/src/app.module.ts`](file:///c:/Workspaces/haihire/backend/src/app.module.ts) import `MetricsModule`.
+Updated [`backend/src/app.module.ts`](file:///c:/Workspaces/haihire/backend/src/app.module.ts) to import `MetricsModule`.
 
 ---
 
-## 3. Kết Quả Kiểm Thử Đơn Vị (Unit Tests & Coverage)
+## 3. Unit Test Results & Coverage
 
-### 3.1. Danh sách 10 Test Cases trong `metrics.service.spec.ts`
+### 3.1. List of 10 Test Cases in `metrics.service.spec.ts`
 
-| Test Case | Mục Đích Kiểm Thử | Trạng Thái |
+| Test Case | Purpose | Status |
 | :--- | :--- | :---: |
-| **Case 1** | Happy path: Cả 3 queues trả số liệu hợp lệ, xuất đủ 18 dòng metric với label chính xác | ✅ PASS |
-| **Case 2** | Queue đơn lẻ lỗi (Orphan queue throw): 6 dòng của orphan gán `-1`, 12 dòng còn lại giữ số liệu thật | ✅ PASS |
-| **Case 3** | Tất cả 3 queues lỗi: 18 dòng đều gán `-1` mà không gây throw lỗi | ✅ PASS |
-| **Case 4** | Cú pháp Prometheus: Xác minh định dạng nhãn `{queue="...",state="..."}` qua Regex | ✅ PASS |
-| **Case 5** | Bảo toàn các metric khác: `http_requests_total`, `http_request_duration_seconds`, `db_pool_active` hoạt động bình thường | ✅ PASS |
-| **Case 6** | Non-throwing guarantee: Không sập ngay cả khi throw non-Error object (`string`, object) | ✅ PASS |
-| **Case 7** | Ghi log lỗi: Xác minh `Logger.prototype.error` được gọi đúng tên queue và thông điệp lỗi | ✅ PASS |
-| **Case 8** | Lỗi độc lập tại Email Queue: DLQ và Orphan queue không bị ảnh hưởng | ✅ PASS |
-| **Case 9** | Đối tượng queue null/undefined: Xử lý an toàn, không ném exception | ✅ PASS |
-| **Case 10** | Dữ liệu trả về rỗng từ BullMQ: Tự động gán mặc định về `0` cho các trạng thái thiếu | ✅ PASS |
+| **Case 1** | Happy path: All 3 queues return valid data, emitting all 18 metric lines with accurate labels | ✅ PASS |
+| **Case 2** | Isolated queue error (Orphan queue throws): 6 orphan lines set to `-1`, remaining 12 lines maintain real counts | ✅ PASS |
+| **Case 3** | All 3 queues error: All 18 lines set to `-1` without throwing exceptions | ✅ PASS |
+| **Case 4** | Prometheus syntax: Verifies `{queue="...",state="..."}` format via Regex | ✅ PASS |
+| **Case 5** | Preserves other metrics: `http_requests_total`, `http_request_duration_seconds`, `db_pool_active` function normally | ✅ PASS |
+| **Case 6** | Non-throwing guarantee: Does not crash even when throwing non-Error objects (`string`, plain object) | ✅ PASS |
+| **Case 7** | Error logging: Verifies `Logger.prototype.error` is invoked with correct queue name and error message | ✅ PASS |
+| **Case 8** | Isolated failure in Email Queue: DLQ and Orphan queues remain unaffected | ✅ PASS |
+| **Case 9** | Null/undefined queue objects: Handled safely without unhandled exceptions | ✅ PASS |
+| **Case 10** | Empty BullMQ response: Defaults missing states to `0` | ✅ PASS |
 
-### 3.2. Báo cáo V8 Coverage của `MetricsService`
+### 3.2. V8 Coverage Report for `MetricsService`
 ```text
 -------------------|---------|----------|---------|---------|-------------------
 File               | % Stmt  | % Branch | % Funcs | % Lines | Uncovered Line #s 
@@ -96,15 +96,15 @@ backend/src/metrics
  ...cs.service.ts  |     100 |      100 |     100 |     100 |                   
 -------------------|---------|----------|---------|---------|-------------------
 ```
-**Chỉ tiêu Coverage:** Đạt **100% tuyệt đối** (vượt xa mục tiêu $\ge 90\%$).
+**Coverage Outcome:** Achieved **absolute 100%** across Branch, Lines, Statements, and Functions (surpassing the $\ge 90\%$ threshold).
 
 ---
 
-## 4. Kết Quả Manual Verification Thực Tế
+## 4. Live Verification Results
 
-### 4.1. Kịch bản 1: Hệ thống hoạt động bình thường (Valkey Healthy)
-**Thao tác:** Khởi động backend trên cổng `13001` và scrape endpoint `/metrics`.  
-**Dữ liệu thực tế ghi nhận:**
+### 4.1. Scenario 1: Normal Operations (Valkey Healthy)
+**Action:** Launched backend on port `13001` and scraped `/metrics`.  
+**Recorded Payload:**
 ```text
 STATUS: 200
 CONTENT-TYPE: text/plain; charset=utf-8; version=0.0.4
@@ -131,12 +131,12 @@ bullmq_queue_depth{queue="email-queue",state="paused"} 0
 TOTAL LINES: 20
 ```
 
-### 4.2. Kịch bản 2: Valkey bị dừng (`docker stop haihire-redis`)
-**Thao tác:** Tắt container Redis/Valkey, gọi lại endpoint `/metrics`.  
-**Kết quả:**
-- Backend **KHÔNG crash**, HTTP trả về **200 OK**.
-- Scraper hoàn thành trong 7.5s (3 queues × 2.5s timeout).
-- Toàn bộ 18 dòng metric của BullMQ được gán giá trị `-1`:
+### 4.2. Scenario 2: Valkey Down (`docker stop haihire-redis`)
+**Action:** Stopped Redis/Valkey container and re-scraped `/metrics`.  
+**Recorded Outcome:**
+- Backend **DID NOT crash**, HTTP response **200 OK**.
+- Scraper completed in 7.5s (3 queues × 2.5s timeout).
+- All 18 BullMQ metric lines assigned error sentinel value `-1`:
 ```text
 STATUS: 200
 DURATION MS: 7563
@@ -162,33 +162,33 @@ bullmq_queue_depth{queue="email-queue",state="delayed"} -1
 bullmq_queue_depth{queue="email-queue",state="paused"} -1
 TOTAL LINES: 20
 ```
-- **Log Backend ghi nhận lỗi đúng quy định:**
+- **Backend Logs correctly captured error context:**
   ```text
   [Nest] 15100 - ERROR [MetricsService] Failed to collect BullMQ metrics for queue "orphan-cleanup-queue": Timeout fetching job counts after 2500ms
   [Nest] 15100 - ERROR [MetricsService] Failed to collect BullMQ metrics for queue "orphan-cleanup-dlq": Timeout fetching job counts after 2500ms
   [Nest] 15100 - ERROR [MetricsService] Failed to collect BullMQ metrics for queue "email-queue": Timeout fetching job counts after 2500ms
   ```
 
-### 4.3. Kịch bản 3: Valkey phục hồi (`docker start haihire-redis`)
-**Thao tác:** Khởi động lại container Valkey, gửi lại request `/metrics`.  
-**Kết quả:**
-- Thời gian phản hồi: **28ms** (DURATION MS: 28).
-- Trạng thái 18 metric tự động chuyển về số liệu thực (0), hệ thống phục hồi hoàn toàn mà không cần khởi động lại ứng dụng.
+### 4.3. Scenario 3: Valkey Restored (`docker start haihire-redis`)
+**Action:** Restarted Valkey container and queried `/metrics` again.  
+**Recorded Outcome:**
+- Response latency: **28ms** (DURATION MS: 28).
+- All 18 metrics automatically resumed real-time values (0) without requiring an application restart.
 
 ---
 
-## 5. Bảng Đối Soát Acceptance Criteria (DoD)
+## 5. Acceptance Criteria Checklist (DoD)
 
-| Tiêu chí | Yêu Cầu | Kết Quả Thực Tế | Trạng Thái |
+| Criteria | Requirement | Actual Result | Status |
 | :---: | :--- | :--- | :---: |
-| 1 | MetricsService inject 3 queues thành công | Đã inject `orphanQueue`, `dlqQueue`, `emailQueue` qua `MetricsModule` | ✅ PASS |
-| 2 | `getMetrics()` là async | `async getMetrics(): Promise<string>` | ✅ PASS |
-| 3 | Metric `bullmq_queue_depth` có đủ 18 dòng | 3 queues × 6 states (waiting, active, completed, failed, delayed, paused) | ✅ PASS |
-| 4 | Khi 1 queue fail → metric = -1, queue khác OK | Đã kiểm thử qua unit test & timeout wrapper | ✅ PASS |
-| 5 | Khi tất cả queue fail → không throw | Trả về 18 dòng `-1`, HTTP 200 OK | ✅ PASS |
-| 6 | Endpoint `/metrics` giữ Content-Type đúng | `text/plain; version=0.0.4; charset=utf-8` | ✅ PASS |
-| 7 | Giữ nguyên các metric cũ | `http_requests_total`, `http_request_duration_seconds`, `db_pool_active` hoạt động 100% | ✅ PASS |
-| 8 | Coverage MetricsService $\ge 90\%$ | Đạt **100% tuyệt đối** (Branch, Lines, Stmts, Funcs) | ✅ PASS |
-| 9 | `pnpm check:all:fast` pass | **8/8 checks passed** | ✅ PASS |
-| 10 | `pnpm test` pass | **507/507 tests passed** (0 failures) | ✅ PASS |
-| 11 | Không cài dependency mới | 100% không dùng `prom-client`, tuân thủ Zero New Dependencies | ✅ PASS |
+| 1 | MetricsService injects 3 queues | Injected `orphanQueue`, `dlqQueue`, `emailQueue` via `MetricsModule` | ✅ PASS |
+| 2 | `getMetrics()` is async | `async getMetrics(): Promise<string>` | ✅ PASS |
+| 3 | `bullmq_queue_depth` metric produces all 18 lines | 3 queues × 6 states (waiting, active, completed, failed, delayed, paused) | ✅ PASS |
+| 4 | When 1 queue fails → metric = -1, other queues remain OK | Verified via unit tests & timeout wrappers | ✅ PASS |
+| 5 | When all queues fail → does not throw | Returns 18 lines of `-1`, HTTP 200 OK | ✅ PASS |
+| 6 | `/metrics` preserves correct Content-Type header | `text/plain; version=0.0.4; charset=utf-8` | ✅ PASS |
+| 7 | Retains existing metrics | `http_requests_total`, `http_request_duration_seconds`, `db_pool_active` 100% intact | ✅ PASS |
+| 8 | MetricsService coverage $\ge 90\%$ | Achieved **100% absolute** (Branch, Lines, Stmts, Funcs) | ✅ PASS |
+| 9 | `pnpm check:all:fast` passes | **8/8 checks passed** | ✅ PASS |
+| 10 | `pnpm test` passes | **507/507 tests passed** (0 failures) | ✅ PASS |
+| 11 | Zero new dependencies installed | 100% free of `prom-client`, complying with Zero New Dependencies | ✅ PASS |

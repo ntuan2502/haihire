@@ -1,42 +1,42 @@
-# BÁO CÁO THẨM ĐỊNH PHASE 5: SYSTEM HARDENING
-**Dự án:** HaiHire Recruitment Platform  
-**Kỹ sư thực hiện:** Senior Backend Engineer  
-**Ngày hoàn thành:** 01/10/2026  
-**Trạng thái:** HOÀN THÀNH 100% (All Quality Gates Passed)
+# Phase 5 Verification Report: System Hardening
+**Project:** HaiHire Recruitment Platform  
+**Engineer:** Senior Backend Engineer  
+**Completion Date:** 01/10/2026  
+**Status:** 100% COMPLETE (All Quality Gates Passed)
 
 ---
 
-## 1. TỔNG QUAN THỰC HIỆN
+## 1. Executive Summary
 
-Dựa trên kết quả từ cuộc kiểm tra độc lập **Phase 4 IV&V Report** (`docs/phase-4-verification-report.md`), Phase 5 thực hiện đóng triệt để 3 vấn đề cốt lõi:
+Based on the findings from the independent **Phase 4 IV&V Report** (`docs/phase-4-verification-report.md`), Phase 5 thoroughly resolved 3 core issues:
 
-1. **BUG-P4-01 (P2):** Thiếu Optimistic Locking trong Pipeline Stage Machine $\rightarrow$ Race condition giữa các request đồng thời, Last-Write-Wins.
-2. **DESIGN-P4-02 (P3):** Hàm `validateMagicBytes` chỉ kiểm tra header 1024 bytes, bỏ sót PDF truncated/corrupted bị mất trailer `%%EOF`.
-3. **DESIGN-P4-03 (P3):** `minio.service.ts::uploadFile` fallback về root namespace khi `tenantOrgId` là `null`/`undefined`/rỗng.
+1. **BUG-P4-01 (P2):** Missing Optimistic Locking in the Pipeline Stage Machine $\rightarrow$ Race condition between concurrent requests, Last-Write-Wins.
+2. **DESIGN-P4-02 (P3):** `validateMagicBytes` only inspected the initial 1024-byte header, missing truncated/corrupted PDFs lacking the trailing `%%EOF`.
+3. **DESIGN-P4-03 (P3):** `minio.service.ts::uploadFile` fell back to root namespace when `tenantOrgId` was `null`/`undefined`/empty.
 
-### Kết Quả Cốt Lõi:
-* **Toàn bộ 3 bản sửa lỗi (Fixes)** đã được hoàn thiện đúng theo đặc tả.
-* **100% Unit Tests & Integration Tests vượt qua:** **265/265 tests passed** (Backend: 160/160, Frontend: 105/105) — vượt mốc yêu cầu >255 tests.
-* **11/11 kịch bản runtime Phase 3 không hồi quy (Zero Regression):** 100% PASS.
-* **Không sửa bất kỳ file mã nguồn nghiệp vụ nào ngoài 3 khu vực quy định.**
+### Core Outcomes:
+* **All 3 fixes** were fully implemented according to specifications.
+* **100% Unit Tests & Integration Tests Passed:** **265/265 tests passed** (Backend: 160/160, Frontend: 105/105) — exceeding the required threshold of >255 tests.
+* **11/11 Phase 3 runtime scenarios verified without regressions (Zero Regression):** 100% PASS.
+* **Zero changes to production business logic files outside the 3 designated scope areas.**
 
 ---
 
-## 2. BẢNG SO SÁNH BEFORE / AFTER CHO 3 VẤN ĐỀ
+## 2. Before / After Comparison Matrix
 
-| Mã Vấn Đề | Thành Phần | Trước Khi Sửa (Before) | Sau Khi Sửa (After) | Error Code Mới |
+| Issue Code | Component | Before Fix | After Fix | New Error Code |
 | :--- | :--- | :--- | :--- | :--- |
-| **BUG-P4-01** | `applications.service.ts::updateStage` | Chỉ lọc theo `WHERE id = id`. Hai request đồng thời ghi đè nhau (Last-Write-Wins), cả 2 đều nhận `200 OK`. | Lọc đồng thời `WHERE id = id AND stage = oldStage`. Nếu `affectedRows === 0`, ném ngay `AppConflictException` (HTTP 409). | `APPLICATION_STAGE_CONFLICT` |
-| **DESIGN-P4-02** | `upload-utils.ts::validateMagicBytes` & `validateUploadedFile` | Chỉ đọc 1024 bytes đầu tìm `%PDF-`. File bị cắt ngang (truncated 50% hoặc 99%) vẫn được coi là hợp lệ. | Vẫn kiểm tra `%PDF-` đầu file + duyệt ngược tối đa 2048 bytes cuối để tìm trailer `%%EOF`. File thiếu trailer bị từ chối ngay lập tức. | `UPLOAD_TRUNCATED_FILE` |
-| **DESIGN-P4-03** | `minio.service.ts::uploadFile` | Nếu `tenantOrgId` là `null`/`undefined`/empty, tự động fallback lưu vào root namespace `resumes/...`. | Bắt buộc `tenantOrgId` hợp lệ. Nếu thiếu hoặc rỗng $\rightarrow$ ném ngay `AppBadRequestException` (HTTP 400). | `TENANT_ID_REQUIRED_FOR_UPLOAD` |
+| **BUG-P4-01** | `applications.service.ts::updateStage` | Only filtered by `WHERE id = id`. Two concurrent requests overwrote each other (Last-Write-Wins), both receiving `200 OK`. | Filters concurrently by `WHERE id = id AND stage = oldStage`. If `affectedRows === 0`, immediately throws `AppConflictException` (HTTP 409). | `APPLICATION_STAGE_CONFLICT` |
+| **DESIGN-P4-02** | `upload-utils.ts::validateMagicBytes` & `validateUploadedFile` | Only read the first 1024 bytes searching for `%PDF-`. Truncated files (50% or 99% truncated) were still treated as valid. | Inspects `%PDF-` at file start + scans backward across up to the last 2048 bytes for the `%%EOF` trailer. Files lacking the trailer are rejected immediately. | `UPLOAD_TRUNCATED_FILE` |
+| **DESIGN-P4-03** | `minio.service.ts::uploadFile` | If `tenantOrgId` was `null`/`undefined`/empty, automatically fell back to root namespace `resumes/...`. | Requires valid `tenantOrgId`. If missing or empty $\rightarrow$ immediately throws `AppBadRequestException` (HTTP 400). | `TENANT_ID_REQUIRED_FOR_UPLOAD` |
 
 ---
 
-## 3. CHI TIẾT TRIỂN KHAI VÀ BẰNG CHỨNG (RAW EVIDENCE)
+## 3. Implementation Details & Raw Evidence
 
-### 3.1. FIX 1: Optimistic Locking cho Stage Machine (BUG-P4-01)
+### 3.1. FIX 1: Optimistic Locking for Stage Machine (BUG-P4-01)
 
-#### A. Mã Nguồn Thay Đổi (`applications.service.ts`)
+#### A. Source Code Changes (`applications.service.ts`)
 ```typescript
 // backend/src/applications/applications.service.ts
 const updatedRecord = await this.prisma.db.orm.public.Application
@@ -56,7 +56,7 @@ if (!updatedRecord) {
 }
 ```
 
-#### B. Thêm Mã Lỗi Vào `@haihire/shared` (`packages/shared/src/errors.ts`)
+#### B. Error Code Addition in `@haihire/shared` (`packages/shared/src/errors.ts`)
 ```typescript
 export const APP_ERROR_CODES = {
   // ...
@@ -66,8 +66,8 @@ export const APP_ERROR_CODES = {
 } as const;
 ```
 
-#### C. Bằng Chứng Repro Trước Khi Sửa (Before Evidence)
-Khi gửi 2 request đồng thời PATCH `/applications/:id/stage` từ `APPLIED` sang `SCREENING` và `REJECTED`:
+#### C. Pre-Fix Reproduction Evidence (Before Evidence)
+When dispatching two concurrent PATCH `/applications/:id/stage` requests from `APPLIED` to `SCREENING` and `REJECTED`:
 ```json
 REPRO_BEFORE_FIX: {
   "res1Status": 200,
@@ -79,8 +79,8 @@ REPRO_BEFORE_FIX: {
 }
 ```
 
-#### D. Bằng Chứng Runtime Sau Khi Sửa (After Evidence)
-Khi 2 request đồng thời cùng đọc stage `APPLIED`:
+#### D. Post-Fix Runtime Evidence (After Evidence)
+When two concurrent requests read the same initial `APPLIED` stage:
 ```json
 REPRO_AFTER_FIX: {
   "res1Status": 200,
@@ -100,16 +100,16 @@ UPDATE_STAGE_STEP: { id: 'a2624e7f-...', oldStage: 'APPLIED', targetStage: 'REJE
 ```
 
 #### E. Unit Tests (`applications.service.spec.ts`)
-Đã bổ sung 3 unit tests chuyên biệt:
+Added 3 dedicated unit tests:
 1. `should allow sequential valid updates to next stages` $\rightarrow$ PASS.
 2. `should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict` $\rightarrow$ PASS.
 3. `should throw NotFoundException when updating non-existent application` $\rightarrow$ PASS.
 
 ---
 
-### 3.2. FIX 2: PDF Integrity Validation (DESIGN-P4-02)
+## 3.2. FIX 2: PDF Integrity Validation (DESIGN-P4-02)
 
-#### A. Mã Nguồn Thay Đổi (`upload-utils.ts`)
+#### A. Source Code Changes (`upload-utils.ts`)
 ```typescript
 // backend/src/common/upload-utils.ts
 export function validateMagicBytes(buffer: Buffer, extension: string): boolean {
@@ -142,8 +142,8 @@ export function validateUploadedFile(file: Express.Multer.File): void {
 }
 ```
 
-#### B. Bằng Chứng Runtime Qua HTTP API (`POST /applications/apply`)
-Chạy file script xác thực thực tế (`scratch/verify-edge6.ts`):
+#### B. Runtime Evidence via HTTP API (`POST /applications/apply`)
+Executed real verification script (`scratch/verify-edge6.ts`):
 ```
 --- Testing Edge 6: Truncated PDF Upload ---
 Using PUBLISHED job: 086e6926-70f4-44b5-95be-3421ddaca39f Fullstack Engineer
@@ -161,7 +161,7 @@ Valid PDF Result: {
 ```
 
 #### C. Unit Tests (`upload-utils.spec.ts`)
-Bổ sung đầy đủ 5 unit tests theo đặc tả:
+Added 5 comprehensive unit tests:
 1. `should accept valid PDF binary signature %PDF- with %%EOF trailer` $\rightarrow$ PASS.
 2. `should reject PDF truncated 50% (missing %%EOF trailer)` $\rightarrow$ PASS.
 3. `should reject PDF truncated 99% (only missing %%EOF)` $\rightarrow$ PASS.
@@ -170,9 +170,9 @@ Bổ sung đầy đủ 5 unit tests theo đặc tả:
 
 ---
 
-### 3.3. FIX 3: MinIO Tenant Key Defense (DESIGN-P4-03)
+## 3.3. FIX 3: MinIO Tenant Key Defense (DESIGN-P4-03)
 
-#### A. Mã Nguồn Thay Đổi (`minio.service.ts`)
+#### A. Source Code Changes (`minio.service.ts`)
 ```typescript
 // backend/src/minio/minio.service.ts
 async uploadFile(file: Express.Multer.File, folder = "resumes", tenantOrgId?: string | null): Promise<UploadResult> {
@@ -191,12 +191,12 @@ async uploadFile(file: Express.Multer.File, folder = "resumes", tenantOrgId?: st
 }
 ```
 
-#### B. Audit Toàn Bộ 4 Call Sites
-Đã grep toàn bộ codebase xác nhận không có bất kỳ điểm gọi nào bỏ sót `tenantOrgId`:
-1. `candidates.service.ts:391`: Truyền `orgId` (từ authenticated user).
-2. `candidates.service.ts:503`: Truyền `candidate.organizationId`.
-3. `applications.service.ts:510`: Truyền `job.organizationId`.
-4. `applications.service.ts:921`: Truyền `targetOrgId`.
+#### B. Audit of All 4 Call Sites
+Grepped the entire codebase confirming no call site omits `tenantOrgId`:
+1. `candidates.service.ts:391`: Passes `orgId` (from authenticated user).
+2. `candidates.service.ts:503`: Passes `candidate.organizationId`.
+3. `applications.service.ts:510`: Passes `job.organizationId`.
+4. `applications.service.ts:921`: Passes `targetOrgId`.
 
 #### C. Unit Tests (`minio.service.spec.ts`)
 ```typescript
@@ -218,11 +218,11 @@ describe("uploadFile Tenant Defense", () => {
   });
 });
 ```
-Tất cả 3 tests đều **PASS 100%**.
+All 3 tests **100% PASS**.
 
 ---
 
-## 4. KẾT QUẢ KIỂM THỬ TỔNG THỂ (TEST SUITE VERIFICATION)
+## 4. Overall Test Suite Verification
 
 ### 4.1. Backend Vitest Suite
 ```
@@ -244,74 +244,74 @@ Test Files  21 passed (21)
   Duration  14.23s
 ```
 
-**TỔNG CỘNG: 265 / 265 TESTS PASS 100%** (Vượt yêu cầu tối thiểu >255 tests).
+**TOTAL: 265 / 265 TESTS PASS 100%** (Exceeding the threshold requirement of >255 tests).
 
 ---
 
-## 5. TÁI KIỂM CHỨNG RUNTIME (11 PHASE 3 + 10 PHASE 4 EDGE CASES)
+## 5. Runtime Re-Verification (11 Phase 3 + 10 Phase 4 Edge Cases)
 
-### 5.1. 11 Kịch Bản Runtime Phase 3 (Zero-Regression Verification)
-| Kịch Bản | Mục Tiêu Kiểm Thử | Trạng Thái | Raw Verdict |
+### 5.1. 11 Phase 3 Runtime Scenarios (Zero-Regression Verification)
+| Scenario | Verification Target | Status | Raw Verdict |
 | :--- | :--- | :--- | :--- |
-| **Scenario 1** | SSE Tenant Isolation (Cross-tenant event isolation) | **PASS** | Chỉ tenant mục tiêu nhận sự kiện |
-| **Scenario 2** | Public Career Page (Chỉ hiển thị job PUBLISHED) | **PASS** | DRAFT/CLOSED/ARCHIVED trả 404 |
-| **Scenario 3** | JWT HttpOnly Cookie Authentication | **PASS** | Cookie-based auth hoạt động hoàn hảo |
-| **Scenario 4** | Stage State Machine Transitions | **PASS** | Tất cả bước nhảy bất hợp lệ bị 400 |
-| **Scenario 5** | Rate Limiting (Redis Throttle) | **PASS** | Vượt ngưỡng trả HTTP 429, không có 500 |
-| **Scenario 6** | File Magic Bytes Validation (Spoofing defense) | **PASS** | Script bash giả đuôi .pdf bị chặn ngay |
-| **Scenario 7** | Path Traversal Defense trong Filename | **PASS** | Tên file được sanitize sạch ký tự `../` |
-| **Scenario 8** | MinIO Tenant Isolation (Bucket namespace) | **PASS** | Key luôn bắt đầu bằng `tenants/<orgId>/` |
-| **Scenario 9** | Email Organization Name Dynamic Resolution | **PASS** | Tên tổ chức thật, không có 'ATS Recruitment' |
-| **Scenario 10**| Audit Log on Application Deletion | **PASS** | Ghi ActivityLog `APPLICATION_REMOVED` |
-| **Scenario 11**| Không Duplicate Prisma Service Registration | **PASS** | Độc bản PrismaService trong Nest context |
+| **Scenario 1** | SSE Tenant Isolation (Cross-tenant event isolation) | **PASS** | Only target tenant receives events |
+| **Scenario 2** | Public Career Page (Only displays PUBLISHED jobs) | **PASS** | DRAFT/CLOSED/ARCHIVED return 404 |
+| **Scenario 3** | JWT HttpOnly Cookie Authentication | **PASS** | Cookie-based auth functions correctly |
+| **Scenario 4** | Stage State Machine Transitions | **PASS** | All invalid transitions rejected with 400 |
+| **Scenario 5** | Rate Limiting (Redis Throttle) | **PASS** | Throttling returns HTTP 429 without 500 errors |
+| **Scenario 6** | File Magic Bytes Validation (Spoofing defense) | **PASS** | Disguised .pdf shell scripts blocked immediately |
+| **Scenario 7** | Path Traversal Defense in Filename | **PASS** | Filenames sanitized of `../` sequences |
+| **Scenario 8** | MinIO Tenant Isolation (Bucket namespace) | **PASS** | Keys strictly prefixed with `tenants/<orgId>/` |
+| **Scenario 9** | Email Organization Name Dynamic Resolution | **PASS** | Real organization name resolved, no 'ATS Recruitment' |
+| **Scenario 10**| Audit Log on Application Deletion | **PASS** | Emits `APPLICATION_REMOVED` ActivityLog |
+| **Scenario 11**| No Duplicate Prisma Service Registration | **PASS** | Single PrismaService instance in Nest context |
 
-### 5.2. 10 Edge Cases Phase 4
-| Edge Case | Mô Tả | Trạng Thái Sau Phase 5 |
+### 5.2. 10 Phase 4 Edge Cases
+| Edge Case | Description | Post-Phase 5 Status |
 | :--- | :--- | :--- |
-| **Edge 1** | SSE với Token Hết Hạn | **HANDLED** (Trả HTTP 401) |
-| **Edge 2** | Public Career Page với slug không tồn tại | **HANDLED** (Trả HTTP 200, danh sách rỗng) |
-| **Edge 3** | Cookie + Bearer Conflict (Hai token khác nhau) | **HANDLED** (Cookie ưu tiên theo chuẩn) |
-| **Edge 4** | Stage Transition Race (2 PATCH đồng thời) | **RESOLVED / PASS** (1 thắng HTTP 200, 1 thua HTTP 409 `APPLICATION_STAGE_CONFLICT`) |
-| **Edge 5** | Rate Limit Bypass qua X-Forwarded-For | **BLOCKED** (Redis Throttler chặn ở 429) |
-| **Edge 6** | File PDF thật nhưng bị truncate 50% | **RESOLVED / PASS** (Bị reject với HTTP 400 `UPLOAD_TRUNCATED_FILE`) |
-| **Edge 7** | MinIO key khi `tenantOrgId = null` | **RESOLVED / PASS** (Từ chối ngay lập tức với `TENANT_ID_REQUIRED_FOR_UPLOAD`) |
-| **Edge 8** | Email Org Name khi Org bị soft-delete | **DOCUMENTED** (Soft-delete edge case) |
-| **Edge 9** | ActivityLog khi Candidate bị soft-delete | **DOCUMENTED** (Cascade deletion contract) |
-| **Edge 10**| Memory Stability Test (100 requests) | **STABLE** (Heap diff 6.47 MB, không leak) |
+| **Edge 1** | SSE with Expired Token | **HANDLED** (Returns HTTP 401) |
+| **Edge 2** | Public Career Page with Non-Existent Slug | **HANDLED** (Returns HTTP 200, empty list) |
+| **Edge 3** | Cookie + Bearer Conflict (Two differing tokens) | **HANDLED** (Cookie takes precedence per standard) |
+| **Edge 4** | Stage Transition Race (2 concurrent PATCH requests) | **RESOLVED / PASS** (1 succeeds with HTTP 200, 1 receives HTTP 409 `APPLICATION_STAGE_CONFLICT`) |
+| **Edge 5** | Rate Limit Bypass via X-Forwarded-For | **BLOCKED** (Redis Throttler blocks with 429) |
+| **Edge 6** | Genuine PDF truncated by 50% | **RESOLVED / PASS** (Rejected with HTTP 400 `UPLOAD_TRUNCATED_FILE`) |
+| **Edge 7** | MinIO key when `tenantOrgId = null` | **RESOLVED / PASS** (Immediately rejected with `TENANT_ID_REQUIRED_FOR_UPLOAD`) |
+| **Edge 8** | Email Org Name when Organization is soft-deleted | **DOCUMENTED** (Soft-delete edge case) |
+| **Edge 9** | ActivityLog when Candidate is soft-deleted | **DOCUMENTED** (Cascade deletion contract) |
+| **Edge 10**| Memory Stability Test (100 requests) | **STABLE** (Heap delta 6.47 MB, no leaks) |
 
 ---
 
-## 6. PHÁT HIỆN KỸ THUẬT QUAN TRỌNG (DISCOVERED DURING PHASE 5)
+## 6. Critical Technical Finding (Discovered During Phase 5)
 
-Trong quá trình thực hiện Phase 5, một phát hiện kỹ thuật đặc biệt tinh vi đã được tìm thấy và xử lý triệt để:
+During Phase 5 implementation, a nuanced technical nuance was identified and resolved:
 
-### ⚠️ Gotcha: Cú Pháp Của `@prisma/orm-postgres` Trong Multi-Predicate Where
-* **Triệu chứng:** Ban đầu, khi viết:
+### ⚠️ Gotcha: `@prisma/orm-postgres` Syntax in Multi-Predicate Where
+* **Symptom:** Initially, when authored as:
   ```typescript
-  // ❌ LỖI LOGIC DO JAVASCRIPT EVALUATION:
+  // ❌ LOGICAL BUG DUE TO JAVASCRIPT OBJECT EVALUATION:
   this.prisma.db.orm.public.Application.where(
     (a) => a.id.eq(id) && a.stage.eq(oldStage)
   ).update({ ... });
   ```
-  Trong JavaScript / TypeScript, toán tử `&&` giữa 2 biểu thức đối tượng `(expr1 && expr2)` sẽ trả về kết quả của `expr2` (`a.stage.eq(oldStage)`), làm **mất hoàn toàn điều kiện `a.id.eq(id)`**! Hậu quả là Prisma sinh ra truy vấn SQL `WHERE stage = oldStage`, vô tình cập nhật bản ghi đầu tiên trong bảng có stage đó thay vì bản ghi cụ thể theo `id`!
-* **Giải Pháp Đúng Chuẩn (Senior Pattern):**
-  Phải sử dụng phương thức chained `.where()` tuần tự:
+  In JavaScript / TypeScript, the logical `&&` between two object expressions `(expr1 && expr2)` returns `expr2` (`a.stage.eq(oldStage)`), **completely dropping `a.id.eq(id)`**! Consequently, Prisma generated SQL with `WHERE stage = oldStage`, inadvertently updating the first matching record in the table rather than the specific record by `id`!
+* **Robust Pattern:**
+  Chain sequential `.where()` invocations:
   ```typescript
-  // ✅ CHUẨN XÁC:
+  // ✅ CORRECT PATTERN:
   this.prisma.db.orm.public.Application
     .where((a) => a.id.eq(id))
     .where((a) => a.stage.eq(oldStage))
     .update({ ... });
   ```
-  Query Builder của `@prisma/orm-postgres` sẽ thu thập tất cả các bộ lọc và kết hợp lại bằng toán tử `AND` trong mệnh đề SQL: `WHERE "id" = $1 AND "stage" = $2`.
+  The `@prisma/orm-postgres` query builder collects all filters and combines them via `AND` in SQL: `WHERE "id" = $1 AND "stage" = $2`.
 
 ---
 
-## 7. KẾT LUẬN
+## 7. Conclusion
 
-Phase 5 Hardening đã giải quyết triệt để 100% các điểm yếu được chỉ ra trong báo cáo Phase 4 IV&V:
-- **Tính toàn vẹn của State Machine** được bảo vệ bởi Optimistic Locking (HTTP 409).
-- **Tính toàn vẹn của tệp tải lên** được kiểm chứng cả đầu (header) và đuôi (trailer %%EOF).
-- **Tính cô lập dữ liệu đa người thuê (Multi-Tenant Isolation)** trong MinIO được bảo vệ nghiêm ngặt ở tầng dịch vụ.
+Phase 5 Hardening thoroughly resolved 100% of weaknesses identified in the Phase 4 IV&V Report:
+- **State Machine Integrity** is protected by Optimistic Locking (HTTP 409).
+- **Uploaded File Integrity** is verified across both header and trailing `%%EOF` markers.
+- **Multi-Tenant Isolation** within MinIO is strictly enforced at the service boundary.
 
-Hệ thống HaiHire Platform hiện tại đạt trạng thái ổn định, an toàn và sẵn sàng cho môi trường Production.
+The HaiHire platform is stable, secure, and ready for Production.

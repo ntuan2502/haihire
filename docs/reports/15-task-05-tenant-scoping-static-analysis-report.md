@@ -1,10 +1,10 @@
-# Báo Cáo Kỹ Thuật: Task #5 — Tenant Scoping Static Analysis Gate
+# Technical Report: Task #5 — Tenant Scoping Static Analysis Gate
 
-**Dự án:** HaiHire Enterprise ATS  
-**Tác giả:** Senior Software Engineer / Antigravity Agent  
-**Ngày thực hiện:** 07/10/2026  
-**Trạng thái:** ✅ HOÀN THÀNH 100% — SẴN SÀNG CHỜ DEEPSEEK REVIEW  
-**Tài liệu tham chiếu:** [docs/reports/14-task-04-followup-and-task-05-kickoff-survey-report.md](file:///c:/Workspaces/haihire/docs/reports/14-task-04-followup-and-task-05-kickoff-survey-report.md), [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**Project:** HaiHire Enterprise ATS  
+**Author:** Senior Software Engineer / Antigravity Agent  
+**Date:** 2026-10-07  
+**Status:** ✅ 100% COMPLETED — READY FOR DEEPSEEK REVIEW  
+**References:** [docs/reports/14-task-04-followup-and-task-05-kickoff-survey-report.md](file:///c:/Workspaces/haihire/docs/reports/14-task-04-followup-and-task-05-kickoff-survey-report.md), [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
 
 ---
 
@@ -13,76 +13,76 @@
 **1. Summary**
 - **Branch:** `feat/task-05-tenant-scoping-static-analysis`
 - **Commit:** `2b0340c` (`feat(ci): add tenant scoping static analysis gate`)
-- **Remote:** Đã push lên `origin/feat/task-05-tenant-scoping-static-analysis`
+- **Remote:** Pushed to `origin/feat/task-05-tenant-scoping-static-analysis`
 - **Files created/changed:**
-  - `scripts/tenant-scoping.config.ts`: Config 4 danh mục whitelists (+55 lines)
-  - `scripts/check-tenant-scoping.ts`: Engine static analysis và formatter báo cáo (+238 lines)
-  - `scripts/check-tenant-scoping.spec.ts`: Test suite Vitest 9 unit/integration test cases (+224 lines)
-  - `scripts/check-all.ts`: Tích hợp CI Gate #10 (+7 lines)
-  - `package.json`: Thêm lệnh `lint:tenant-scope` (+1 line)
-  - `.github/workflows/ci-cd.yml`: Thêm CI Gate 10 vào pipeline GitHub Actions (+3 lines)
-  - `backend/vitest.config.ts`: Đăng ký `../scripts/**/*.{test,spec}.ts` vào backend test runner (+4 lines)
+  - `scripts/tenant-scoping.config.ts`: Config with 4 categories of whitelists (+55 lines)
+  - `scripts/check-tenant-scoping.ts`: Static analysis engine and report formatter (+238 lines)
+  - `scripts/check-tenant-scoping.spec.ts`: Vitest test suite with 9 unit/integration test cases (+224 lines)
+  - `scripts/check-all.ts`: Integrated CI Gate #10 (+7 lines)
+  - `package.json`: Added `lint:tenant-scope` script (+1 line)
+  - `.github/workflows/ci-cd.yml`: Added CI Gate 10 to GitHub Actions pipeline (+3 lines)
+  - `backend/vitest.config.ts`: Registered `../scripts/**/*.{test,spec}.ts` in backend test runner (+4 lines)
 - **Total diff:** +597 / -1 lines
 
 ---
 
 **2. Implementation Notes**
-- **Deviation from spec:** KHÔNG CÓ sai lệch logic. Engine hỗ trợ linh hoạt cả việc chạy từ root workspace và từ các thư mục con (ví dụ khi Vitest chạy từ `backend/`) nhờ cơ chế tự động định vị repository root `getWorkspaceRoot()`.
-- **Hiệu năng:** Tốc độ thực thi trung bình chỉ **~0.35 giây**, thỏa mãn tuyệt đối tiêu chí fast gate (< 2.0 giây).
-- **Không có phụ thuộc mới:** Sử dụng thuần Node.js `fs`, `path` và regex, không cài bất kỳ thư viện AST hay parser bên thứ ba nào.
-- **Không sửa đổi mã nguồn backend:** Không đụng chạm vào bất kỳ file nào trong `backend/src/`.
+- **Deviation from spec:** NONE. The engine flexibly supports running from the workspace root and subdirectories (e.g., when Vitest executes from `backend/`) via the automatic repository root locator `getWorkspaceRoot()`.
+- **Performance:** Average execution duration is only **~0.35s**, well below the fast-gate requirement (< 2.0s).
+- **Zero new dependencies:** Built with pure Node.js `fs`, `path`, and regex; no external AST libraries or third-party parsers installed.
+- **Zero modifications to backend source:** No files inside `backend/src/` were touched.
 
 ---
 
-**3. Phân Loại Queries & Whitelists**
+**3. Query Classification & Whitelists**
 
-#### 3.1. Thống kê truy vấn
-- **Tổng số service scanned:** 8 files (toàn bộ 8 module tenant-scoped)
-- **Tổng số queries ORM kiểm tra:** **213 queries**
+#### 3.1. Query Statistics
+- **Total services scanned:** 8 files (all 8 tenant-scoped modules)
+- **Total ORM queries inspected:** **213 queries**
 - **Safe queries:** **213 (100%)**
 - **Unsafe queries:** **0**
-- **Chi tiết phân loại:**
-  - `104 queries` có explicit `organizationId` hoặc `targetOrgId` filter trực tiếp trong câu lệnh/context window.
-  - `75 queries` thuộc 4 model vật lý không có cột `organizationId` trong schema (được bảo vệ qua quan hệ cha hoặc PK).
-  - `34 queries` được bảo vệ bằng parent guard ở đầu hàm (`.organizationId !==`, `.organizationId ===`, hoặc `throw new AppForbiddenException`).
-  - `0 queries` không an toàn.
+- **Classification details:**
+  - `104 queries` have an explicit `organizationId` or `targetOrgId` filter directly within the statement/context window.
+  - `75 queries` belong to 4 physical models without an `organizationId` column in the database schema (protected via parent relations or PK).
+  - `34 queries` are protected by a parent guard earlier in the function (`.organizationId !==`, `.organizationId ===`, or `throw new AppForbiddenException`).
+  - `0 queries` are unsafe.
 
-#### 3.2. Danh sách Whitelist Entries & Rationale
+#### 3.2. Whitelist Entries & Rationale
 1. **`MODELS_WITHOUT_ORG_COLUMN`:**
-   - `Interview`: Schema DB không có cột `organizationId`; kế thừa tenant context qua `applicationId -> job.organizationId`.
-   - `Application`: Schema DB không có cột `organizationId`; kế thừa tenant context qua `jobId -> job.organizationId` và `candidateId`.
-   - `TrackingClick`: Schema DB không có cột `organizationId`; kế thừa tenant context qua `trackingLinkId -> trackingLink.organizationId`.
-   - `Organization`: Khóa chính là `id`, truy vấn theo `id: targetOrgId` hoặc `slug: targetOrgSlug`.
+   - `Interview`: Database schema lacks an `organizationId` column; inherits tenant context via `applicationId -> job.organizationId`.
+   - `Application`: Database schema lacks an `organizationId` column; inherits tenant context via `jobId -> job.organizationId` and `candidateId`.
+   - `TrackingClick`: Database schema lacks an `organizationId` column; inherits tenant context via `trackingLinkId -> trackingLink.organizationId`.
+   - `Organization`: Primary key is `id`, queried by `id: targetOrgId` or `slug: targetOrgSlug`.
 2. **`NON_TENANT_SCOPED_FILES`:**
-   - `auth.service.ts`: Chưa có org context khi xác thực danh tính/đăng nhập.
-   - `users.service.ts`: Đọc danh sách người dùng mẫu toàn hệ thống.
-   - Các dịch vụ hạ tầng không mang dữ liệu nghiệp vụ: `app.service.ts`, `common/encryption.service.ts`, `common/webhook/webhook-notifier.service.ts`, `email.service.ts`, `events.service.ts`, `metrics.service.ts`, `minio.service.ts`, `prisma.service.ts`.
-   - `jobs.public.service.ts`: Endpoint công khai cho ứng viên xem tin tuyển dụng không cần đăng nhập.
+   - `auth.service.ts`: No organization context exists during user authentication/login.
+   - `users.service.ts`: Queries global system sample user records.
+   - Infrastructure services without tenant business data: `app.service.ts`, `common/encryption.service.ts`, `common/webhook/webhook-notifier.service.ts`, `email.service.ts`, `events.service.ts`, `metrics.service.ts`, `minio.service.ts`, `prisma.service.ts`.
+   - `jobs.public.service.ts`: Public endpoint for unauthenticated candidates browsing job listings.
 3. **`SAFE_QUERY_PATTERNS`:**
-   - `/findBySlug/`: Query xem tin tuyển dụng công khai theo slug của công ty.
-   - `/healthCheck/`: Liveness probe của hệ thống.
+   - `/findBySlug/`: Public company job listing query by organization slug.
+   - `/healthCheck/`: System liveness probe.
 
 ---
 
 **4. Test Coverage & Negative Test**
-- **Unit & Integration tests:** **9 test cases** trong [`scripts/check-tenant-scoping.spec.ts`](file:///c:/Workspaces/haihire/scripts/check-tenant-scoping.spec.ts)
-  1. `Test 1:` Parse danh mục service chuẩn xác, tìm đúng 8 tenant-scoped files.
-  2. `Test 2:` Phát hiện query có filter `organizationId` -> SAFE.
-  3. `Test 3:` Phát hiện query thiếu `organizationId` trong ngữ cảnh tenant -> UNSAFE.
-  4. `Test 4:` Whitelist model (`Interview`) -> SAFE kể cả khi không có `organizationId`.
-  5. `Test 5:` Whitelist file (`auth.service.ts`, `users.service.ts`) -> bỏ qua.
-  6. `Test 6:` Query sau khi đã verify parent (`.organizationId !==`) -> SAFE.
-  7. `Test 7:` Định dạng output báo cáo khớp chuẩn `[CI GATE PASSED]` và `[CI GATE FAILED]`.
-  8. `Test 8:` Phát hiện vi phạm trả về `compliant: false` và chi tiết lỗi.
+- **Unit & Integration tests:** **9 test cases** in [`scripts/check-tenant-scoping.spec.ts`](file:///c:/Workspaces/haihire/scripts/check-tenant-scoping.spec.ts)
+  1. `Test 1:` Accurately parses service directories, finding exactly 8 tenant-scoped files.
+  2. `Test 2:` Detects queries with `organizationId` filter -> SAFE.
+  3. `Test 3:` Detects queries missing `organizationId` in tenant contexts -> UNSAFE.
+  4. `Test 4:` Whitelisted model (`Interview`) -> SAFE even without `organizationId`.
+  5. `Test 5:` Whitelisted file (`auth.service.ts`, `users.service.ts`) -> skipped.
+  6. `Test 6:` Query executed after verifying parent (`.organizationId !==`) -> SAFE.
+  7. `Test 7:` Formats report output matching `[CI GATE PASSED]` and `[CI GATE FAILED]`.
+  8. `Test 8:` Violation returns `compliant: false` with complete failure details.
   9. `Test 9:` Safe pattern query (`/findBySlug/`) -> SAFE.
-- **Tổng số tests toàn hệ thống:** **524 tests passed** (156 frontend + 368 backend).
+- **Total system test count:** **524 tests passed** (156 frontend + 368 backend).
 
-#### 4.1. Kết quả Negative Test thực tế:
-Tạo file tạm `backend/src/applications/test-unsafe.service.ts` với câu lệnh:
+#### 4.1. Negative Test Evidence:
+Created a temporary test file `backend/src/applications/test-unsafe.service.ts` with:
 ```ts
 return this.prisma.db.orm.public.Candidate.all();
 ```
-Kết quả chạy `pnpm lint:tenant-scope`:
+Running `pnpm lint:tenant-scope`:
 ```text
 ==================================================================
       CI ARCHITECTURE GATE: TENANT SCOPING AUDIT                  
@@ -105,13 +105,13 @@ ACTION REQUIRED:
 ==================================================================
 Command failed with exit code 1.
 ```
--> Script bắt lỗi chính xác 100%, trả về exit code 1 và chỉ rõ dòng mã vi phạm. Sau khi xóa file tạm, script trở lại trạng thái `PASS`.
+-> The script correctly caught the violation, returned exit code 1, and flagged the offending line. After removing the temporary file, the gate returned to `PASS`.
 
 ---
 
 **5. Verification Evidence**
 
-#### 5.1. Raw Output chạy `pnpm lint:tenant-scope`:
+#### 5.1. Raw Output of `pnpm lint:tenant-scope`:
 ```text
 $ tsx scripts/check-tenant-scoping.ts
 ==================================================================
@@ -129,7 +129,7 @@ Unsafe queries: 0
 ==================================================================
 ```
 
-#### 5.2. Raw Output chạy `pnpm check:all:fast` (10 CI Gates):
+#### 5.2. Raw Output of `pnpm check:all:fast` (10 CI Gates):
 ```text
 ==================================================================
                        VERIFICATION SUMMARY                       
@@ -150,18 +150,18 @@ Unsafe queries: 0
 ==================================================================
 ```
 
-#### 5.3. Checklist Acceptance Criteria
-- [x] `scripts/tenant-scoping.config.ts` tạo với 4 mục whitelist/patterns.
-- [x] `scripts/check-tenant-scoping.ts` implement detection logic theo spec.
-- [x] Script pass trên codebase hiện tại (213/213 queries SAFE, 0 unsafe).
-- [x] Script FAIL với exit code 1 khi test file có query thiếu org filter.
-- [x] Output format có `CI GATE PASSED` và `CI GATE FAILED` rõ ràng, actionable.
-- [x] Exit code 0/1 chuẩn hóa.
-- [x] Tích hợp vào `package.json` (`lint:tenant-scope`), `scripts/check-all.ts` (Gate 10), và `.github/workflows/ci-cd.yml`.
-- [x] Test spec `scripts/check-tenant-scoping.spec.ts` pass 9/9 cases.
-- [x] `pnpm check:all:fast` pass 10/10 gates.
-- [x] `pnpm test` pass 524/524 tests.
-- [x] Mọi mục trong `docs/DEFINITION_OF_DONE.md` đều PASS.
+#### 5.3. Acceptance Criteria Checklist
+- [x] `scripts/tenant-scoping.config.ts` created with 4 whitelist/pattern categories.
+- [x] `scripts/check-tenant-scoping.ts` implements detection logic according to spec.
+- [x] Script passes on the existing codebase (213/213 queries SAFE, 0 unsafe).
+- [x] Script FAILS with exit code 1 when a test file omits an organization filter.
+- [x] Output format clearly reports actionable `CI GATE PASSED` and `CI GATE FAILED` blocks.
+- [x] Standardized exit code 0/1.
+- [x] Integrated into `package.json` (`lint:tenant-scope`), `scripts/check-all.ts` (Gate 10), and `.github/workflows/ci-cd.yml`.
+- [x] Test spec `scripts/check-tenant-scoping.spec.ts` passes 9/9 test cases.
+- [x] `pnpm check:all:fast` passes 10/10 gates.
+- [x] `pnpm test` passes 524/524 tests.
+- [x] All items in `docs/DEFINITION_OF_DONE.md` pass.
 
 ---
 

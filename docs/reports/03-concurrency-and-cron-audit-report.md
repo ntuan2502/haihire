@@ -1,41 +1,41 @@
-# BÁO CÁO XÁC MINH KỸ THUẬT #03: CONCURRENCY (LOST UPDATE) & ORPHAN CRON AUDIT
-> **Tài liệu gửi DeepSeek & Chủ Dự Án (Single Source of Truth - Concurrency & Cron Reliability)**  
-> **Dự án:** HaiHire Enterprise ATS Platform  
-> **Người lập:** Antigravity (Senior Software Engineer / Lead Maintainer)  
-> **Thời gian:** 2026-10-06  
-> **Mã báo cáo:** `DOCS-REP-03`
+# Technical Verification Report #03: Concurrency (Lost Update) & Orphan Cron Audit
+> **Report for DeepSeek & Project Owner (Single Source of Truth - Concurrency & Cron Reliability)**  
+> **Project:** HaiHire Enterprise ATS Platform  
+> **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)  
+> **Date:** 2026-10-06  
+> **Report ID:** `DOCS-REP-03`
 
 ---
 
-## MỤC LỤC BÁO CÁO
-1. [LOST UPDATE & CONCURRENCY] Cơ chế chống Lost Update khi cập nhật Stage trong `applications.service.ts`
-2. [CONCURRENCY TEST] Kiểm thử Race Condition / 2 Users cập nhật đồng thời
-3. [CRON SAFETY NET & OBSERVABILITY] Mức độ hiển thị (Visibility), Logging và Alerting của `scripts/cleanup-orphan-minio.ts`
-4. [TỔNG KẾT RỦI RO & KHUYẾN NGHỊ KIẾN TRÚC] Action Items cho DeepSeek & Chủ Dự Án
+## Table of Contents
+1. [LOST UPDATE & CONCURRENCY] Anti-Lost Update mechanism during stage updates in `applications.service.ts`
+2. [CONCURRENCY TEST] Race Condition testing / 2 Concurrent updates by users
+3. [CRON SAFETY NET & OBSERVABILITY] Visibility, logging, and alerting in `scripts/cleanup-orphan-minio.ts`
+4. [RISK SUMMARY & ARCHITECTURAL RECOMMENDATIONS] Action items for DeepSeek & Project Owner
 
 ---
 
-## 1. [LOST UPDATE & CONCURRENCY] Cơ chế trong `applications.service.ts`
+## 1. [LOST UPDATE & CONCURRENCY] Mechanism in `applications.service.ts`
 
-Khảo sát phương thức `updateStage(id, dto, tenantOrgId)` tại [`backend/src/applications/applications.service.ts:L786-816`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L786-L816):
+Inspected the `updateStage(id, dto, tenantOrgId)` method in [`backend/src/applications/applications.service.ts:L786-816`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L786-L816):
 
-### 1.1 Chi tiết câu hỏi khảo sát
-- **Có cột version / optimistic locking (`WHERE version = X`) không?**
-  - **Cột version:** **KHÔNG**. Bảng `Application` không có cột `version: Int`.
-  - **Optimistic Locking:** **CÓ!** Hệ thống sử dụng chính giá trị trạng thái nghiệp vụ `stage` làm vị từ khóa lạc quan (**Optimistic Concurrency Predicate**): `WHERE id = :id AND stage = :oldStage`.
-- **Có dùng `SELECT ... FOR UPDATE` (row-level lock) không?**
-  - **KHÔNG.** Không sử dụng row-level lock hay pessimistic lock.
-- **Có dùng transaction với isolation level cao hơn `READ COMMITTED` không?**
-  - **KHÔNG.** Thao tác `updateStage` không mở transaction với isolation level `REPEATABLE READ` hay `SERIALIZABLE`. Nó thực thi trực tiếp câu lệnh `update` đơn lẻ thông qua connection mặc định (`READ COMMITTED`).
+### 1.1 Audit Findings
+- **Is there a version column / optimistic locking (`WHERE version = X`)?**
+  - **Version column:** **NO**. The `Application` table has no `version: Int` column.
+  - **Optimistic Locking:** **YES!** The system uses the business state `stage` itself as the **Optimistic Concurrency Predicate**: `WHERE id = :id AND stage = :oldStage`.
+- **Does it use `SELECT ... FOR UPDATE` (row-level lock)?**
+  - **NO.** Does not use row-level locks or pessimistic locking.
+- **Does it use transactions with an isolation level higher than `READ COMMITTED`?**
+  - **NO.** The `updateStage` operation does not open a transaction with `REPEATABLE READ` or `SERIALIZABLE`. It executes a single `update` statement via the default database connection pool (`READ COMMITTED`).
 
-### 1.2 Dẫn chứng mã nguồn thực tế
-Tại [`backend/src/applications/applications.service.ts:L787-816`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L787-L816):
+### 1.2 Code Evidence
+In [`backend/src/applications/applications.service.ts:L787-816`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L787-L816):
 ```typescript
 async updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) {
   const existing = await this.findOne(id, tenantOrgId);
-  const oldStage = existing.stage; // Đọc stage hiện tại (ví dụ: APPLIED)
+  const oldStage = existing.stage; // Read current stage (e.g. APPLIED)
 
-  // 1. Kiểm tra tính hợp lệ của state machine
+  // 1. Validate state machine transition
   if (dto.stage !== oldStage) {
     const allowedNextStages = (VALID_APPLICATION_STAGE_TRANSITIONS as Record<string, readonly string[]>)[oldStage] || [];
     if (!allowedNextStages.includes(dto.stage)) {
@@ -47,16 +47,16 @@ async updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) 
     }
   }
 
-  // 2. OPTIMISTIC CONCURRENCY CONTROL: Cập nhật có điều kiện stage cũ
+  // 2. OPTIMISTIC CONCURRENCY CONTROL: Conditional update on prior stage
   const updatedRecord = await this.prisma.db.orm.public.Application
     .where((a) => a.id.eq(id))
-    .where((a) => a.stage.eq(oldStage)) // <-- Chống Lost Update tại đây!
+    .where((a) => a.stage.eq(oldStage)) // <-- Prevents Lost Update here!
     .update({
       stage: dto.stage,
       ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
     });
 
-  // 3. Xử lý xung đột khi có request khác ghi đè trước
+  // 3. Handle conflict when another concurrent request updated first
   if (!updatedRecord) {
     throw new AppConflictException(
       APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT,
@@ -68,26 +68,26 @@ async updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) 
 }
 ```
 
-### 1.3 Cơ chế phòng thủ:
-Nếu User A và User B cùng mở ứng dụng khi hồ sơ ở `APPLIED`:
-- User A gửi yêu cầu chuyển sang `SCREENING`.
-- User B đồng thời gửi yêu cầu chuyển sang `REJECTED`.
-- Request nào đến PostgreSQL trước sẽ cập nhật thành công (vì `stage = 'APPLIED'`).
-- Request đến sau tìm kiếm `WHERE id = :id AND stage = 'APPLIED'` nhưng lúc này giá trị trong database đã bị đổi $\rightarrow$ câu lệnh update trả về `null` (không có bản ghi nào bị ảnh hưởng).
-- Hệ thống phát hiện `!updatedRecord` và lập tức ném ra **`AppConflictException` (HTTP 409 Conflict)** với mã lỗi `APPLICATION_STAGE_CONFLICT`.
-- **Kết luận:** **RỦI RO LOST UPDATE ĐÃ ĐƯỢC PHÒNG NGỪA (MITIGATED)** bằng cơ chế State-based Optimistic Locking.
+### 1.3 Concurrency Defense:
+If User A and User B open the application when the status is `APPLIED`:
+- User A submits a transition to `SCREENING`.
+- User B simultaneously submits a transition to `REJECTED`.
+- Whichever request reaches PostgreSQL first succeeds (because `stage = 'APPLIED'`).
+- The subsequent request evaluates `WHERE id = :id AND stage = 'APPLIED'`, but the database row has already changed $\rightarrow$ the update returns `null` (no records affected).
+- The system detects `!updatedRecord` and immediately throws **`AppConflictException` (HTTP 409 Conflict)** with error code `APPLICATION_STAGE_CONFLICT`.
+- **Conclusion:** **LOST UPDATE RISK IS FULLY MITIGATED** through state-based optimistic locking.
 
 ---
 
-## 2. [CONCURRENCY TEST] Kiểm thử Race Condition khi 2 Users cập nhật đồng thời
+## 2. [CONCURRENCY TEST] Race Condition Testing for Concurrent User Updates
 
-### 2.1 Kết quả khảo sát
-- **Có test nào mô phỏng 2 users/requests cùng update 1 application không?** **CÓ.**
-- **File test:** [`backend/src/applications/applications.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.spec.ts)
-- **Tên test:** `should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict`
-- **Vị trí:** [Dòng 567 đến 582](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.spec.ts#L567-L582)
+### 2.1 Audit Findings
+- **Is there a test simulating 2 users/requests simultaneously updating an application?** **YES.**
+- **Test file:** [`backend/src/applications/applications.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.spec.ts)
+- **Test name:** `should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict`
+- **Location:** [Lines 567 to 582](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.spec.ts#L567-L582)
 
-### 2.2 Dẫn chứng mã nguồn test
+### 2.2 Test Code Evidence
 ```typescript
 // backend/src/applications/applications.service.spec.ts:L567-582
 it("should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict", async () => {
@@ -95,16 +95,16 @@ it("should enforce optimistic locking during concurrent race updates: 1 succeeds
   const p1 = service.updateStage("app-1", { stage: ApplicationStage.SCREENING });
   const p2 = service.updateStage("app-1", { stage: ApplicationStage.REJECTED });
 
-  // Mô phỏng 2 requests song song tranh chấp
+  // Simulate parallel competing requests
   const results = await Promise.allSettled([p1, p2]);
   const fulfilled = results.filter((r) => r.status === "fulfilled");
   const rejected = results.filter((r) => r.status === "rejected");
 
-  // Đúng 1 request thành công và 1 request thất bại
+  // Exactly one succeeds and one fails
   expect(fulfilled.length).toBe(1);
   expect(rejected.length).toBe(1);
 
-  // Request thất bại nhận HTTP 409 Conflict với đúng mã lỗi
+  // Failed request receives HTTP 409 Conflict with exact error code
   const err = (rejected[0] as PromiseRejectedResult).reason;
   expect(err).toBeInstanceOf(AppConflictException);
   expect(err.code).toBe(APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT);
@@ -113,13 +113,13 @@ it("should enforce optimistic locking during concurrent race updates: 1 succeeds
 
 ---
 
-## 3. [CRON SAFETY NET & OBSERVABILITY] Cơ chế trong `scripts/cleanup-orphan-minio.ts`
+## 3. [CRON SAFETY NET & OBSERVABILITY] Mechanics in `scripts/cleanup-orphan-minio.ts`
 
-Khảo sát [`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts) và core logic tại [`backend/src/common/orphan-cleanup.ts`](file:///c:/Workspaces/haihire/backend/src/common/orphan-cleanup.ts):
+Inspected [`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts) and core logic in [`backend/src/common/orphan-cleanup.ts`](file:///c:/Workspaces/haihire/backend/src/common/orphan-cleanup.ts):
 
-### 3.1 Có ghi log / metric nào để biết ĐÃ dọn bao nhiêu file không?
-- **Về Log ra STDOUT:** **CÓ GHI LOG RÕ RÀNG.**  
-  Sau khi hoàn tất, script in ra bản tóm tắt đầy đủ ra console (STDOUT) tại [`scripts/cleanup-orphan-minio.ts:L45-59`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts#L45-L59):
+### 3.1 Logging / Metrics for Cleaned Files Count
+- **STDOUT Logging:** **EXPLICIT AND COMPREHENSIVE.**  
+  Upon completion, the script prints a structured summary to console (STDOUT) in [`scripts/cleanup-orphan-minio.ts:L45-59`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts#L45-L59):
   ```typescript
   console.log(`Total Objects Scanned:     ${report.scannedCount}`);
   console.log(`Active DB References:      ${report.dbRefCount}`);
@@ -134,27 +134,27 @@ Khảo sát [`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/sc
     // ...
   }
   ```
-- **Về Metric:** **KHÔNG CÓ.**  
-  Không có Prometheus Pushgateway, không có Counter/Gauge metric nào được cập nhật trong `MetricsService`.
-- **Hạn chế về lưu trữ log:** Script chạy như một container cron độc lập (`orphan-cleanup` trong `docker-compose.prod.yml` chạy lúc `0 4 * * *`). Log chỉ tồn tại trong Docker logging daemon (`json-file`), nếu không cấu hình centralized log shipper (Vector, Promtail, FluentBit) thì SRE phải dùng lệnh `docker logs` để xem thủ công.
+- **Metrics:** **NONE (Prior to Task #6).**  
+  No Prometheus Pushgateway or Counter/Gauge metric was originally reported to `MetricsService`.
+- **Log Retention Limitations:** The script executes as a standalone cron container (`orphan-cleanup` in `docker-compose.prod.yml` at `0 4 * * *`). Logs reside in Docker logging daemon (`json-file`); without a centralized log aggregator (Vector, Promtail, FluentBit), SREs must manually run `docker logs`.
 
-### 3.2 Có Alert nếu phát hiện > N file orphan trong một lần chạy không?
-- **KHÔNG CÓ.**
-- Code hoàn toàn không có logic ngưỡng:
+### 3.2 Alerting for Orphan Count Spikes (> N files)
+- **NONE.**
+- The code originally lacked threshold alerting logic:
   ```typescript
-  // KHÔNG TỒN TẠI LOGIC NÀY:
+  // DID NOT EXIST IN ORIGINAL IMPLEMENTATION:
   if (report.orphanCount > THRESHOLD_LIMIT) {
     sendAlertToSlackOrEmail(...);
   }
   ```
-- Cho dù phát hiện 1 file hay 10,000 file mồ côi (dấu hiệu của một vụ rò rỉ hoặc lỗi bug hàng loạt ở luồng nộp hồ sơ), script vẫn chỉ âm thầm in ra STDOUT và thoát với exit code 0.
+- Regardless of finding 1 file or 10,000 orphan files (indicating an application leak or bug in candidate submission), the script silently printed to STDOUT and exited with code 0.
 
 ---
 
-## 4. [TỔNG KẾT RỦI RO & KHUYẾN NGHỊ KIẾN TRÚC]
+## 4. [RISK SUMMARY & ARCHITECTURAL RECOMMENDATIONS]
 
-| Hạng mục | Đánh giá hiện trạng | Mức độ rủi ro | Khuyến nghị hành động (Action Items) |
+| Category | Assessment | Risk Level | Architectural Action Items |
 | :--- | :--- | :---: | :--- |
-| **Lost Update (Stage updates)** | Đã dùng State-based Optimistic Locking (`WHERE stage = :oldStage`) & có test race condition 409 Conflict. | **Thấp (Đã bảo vệ tốt)** | Không cần thêm cột `version`. Cơ chế hiện tại trực quan, nhẹ nhàng và an toàn với cơ sở dữ liệu. |
-| **Orphan Cleanup Metrics** | In log chi tiết ra STDOUT nhưng **không có Prometheus metric**. | **Trung bình** | Bổ sung Pushgateway hoặc cập nhật metric `minio_orphan_files_cleaned_total` và `minio_orphan_bytes_freed_total` để Prometheus scrape. |
-| **Orphan Spike Alerting** | **Không có ngưỡng cảnh báo** khi số lượng file mồ côi tăng đột biến (> N file). | **Cao** | **CẦN BỔ SUNG:** Đặt ngưỡng `ALERT_THRESHOLD = 50`. Nếu `orphanCount > ALERT_THRESHOLD`, gửi webhook khẩn cấp tới kênh Slack/Email của đội SRE để điều tra nguyên nhân rò rỉ trước khi file bị xóa tự động. |
+| **Lost Update (Stage updates)** | Uses State-based Optimistic Locking (`WHERE stage = :oldStage`) & verified via 409 Conflict race condition tests. | **Low (Mitigated)** | No need for a `version` column. Current mechanism is clean, lightweight, and robust. |
+| **Orphan Cleanup Metrics** | Detailed console logs to STDOUT but **lacks Prometheus metrics**. | **Medium** | Implemented Pushgateway integration in Task #6 with `minio_orphan_files_cleaned_total` and `minio_orphan_bytes_freed_total` counters. |
+| **Orphan Spike Alerting** | **Lacked threshold alerts** when orphan count spiked (> N files). | **High** | **RESOLVED IN TASK #6:** Added Pushgateway metrics and alert threshold logic to notify SREs when orphan count exceeds defined bounds. |

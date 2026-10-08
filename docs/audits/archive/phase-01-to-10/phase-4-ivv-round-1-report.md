@@ -1,37 +1,37 @@
-# BÁO CÁO KIỂM CHỨNG ĐỘC LẬP (IV&V) - PHASE 4
+# INDEPENDENT VERIFICATION & VALIDATION (IV&V) REPORT - PHASE 4
 **Independent Verification & Validation Report on Phase 3 Fixes & Edge Cases**
 
 ---
 
 ## 1. EXECUTIVE SUMMARY
 
-Được thực hiện bởi kỹ sư Đảm bảo & Kiểm chứng Độc lập (IV&V) vào ngày **01/10/2026**, báo cáo này tiến hành kiểm định khách quan, không định kiến đối với tài liệu `phase-3-verification-report.md`. Quá trình kiểm định kết hợp rà soát mã nguồn tĩnh (Source Code Audit) và thực thi kiểm thử runtime trực tiếp (Live Runtime Verification) trên hạ tầng Docker & dịch vụ thật (PostgreSQL `:15432`, Redis `:16379`, MinIO `:19000`, Backend `:13001`, Frontend `:13000`). Kết quả xác nhận **11/11 (100%) tuyên bố kỹ thuật trong Phase 3 hoàn toàn khớp với mã nguồn thực tế và vượt qua kiểm thử runtime với bằng chứng raw output độc lập**. Không có bất kỳ tuyên bố sai sự thật (FALSE-CLAIM) nào trong 11 hạng mục đã báo cáo. Tuy nhiên, qua đợt kiểm thử mở rộng 10 kịch bản biên sâu (Giai đoạn 3), đội ngũ IV&V đã phát hiện **3 vấn đề kiến trúc tiềm ẩn** gồm: (1) Thiếu khóa lạc quan (Optimistic Locking) khi cập nhật stage đồng thời gây hiện tượng Last-Write-Wins; (2) Magic byte validation chỉ kiểm tra 1024 bytes đầu và bỏ qua tính toàn vẹn thân file PDF; (3) MinIO object key fallback về root khi `tenantOrgId` bằng `null`. Khuyến nghị chung: **KHÔNG ROLLBACK bất kỳ bản vá nào của Phase 3**; hệ thống hiện tại đạt độ tin cậy vận hành rất cao (**Điểm Credibility: 92/100**).
+Conducted by an Independent Verification & Validation (IV&V) Engineer on **10/01/2026**, this report provides an objective, unbiased evaluation of `phase-3-verification-report.md`. The assessment combines static code reviews with live runtime execution across real Docker containers and operational services (PostgreSQL `:15432`, Redis `:16379`, MinIO `:19000`, Backend `:13001`, Frontend `:13000`). Results confirm that **11 out of 11 (100%) technical claims in Phase 3 match active source code and pass live runtime testing backed by independent raw command outputs**. Zero false claims (FALSE-CLAIM) were detected among the 11 audited items. However, extended stress testing across 10 deep edge cases (Stage 3) revealed **3 latent architectural issues**: (1) Missing Optimistic Locking during concurrent stage mutations leading to Last-Write-Wins overwrites; (2) Magic byte validation inspects only the first 1024 bytes and ignores trailing PDF structural integrity; (3) MinIO object key falls back to the bucket root when `tenantOrgId` is `null`. Overall recommendation: **DO NOT ROLLBACK any Phase 3 remediation patch**; the current system demonstrates high operational reliability (**Credibility Score: 92/100**).
 
 ---
 
-## 2. GIAI ĐOẠN 1: BẢNG ĐỐI CHIẾU MÃ NGUỒN THẬT (STATIC CODE AUDIT)
+## 2. STAGE 1: STATIC CODE AUDIT TABLE
 
-Đội ngũ IV&V đã trực tiếp mở các file nguồn trên nhánh `main` (commit `d92ce07`), đối chiếu từng hàm được tuyên bố sửa trong bảng "Changes Made" của Phase 3:
+The IV&V team directly inspected source files on branch `main` (commit `d92ce07`), auditing every function declared in Phase 3's "Changes Made" registry:
 
-| STT | Hạng mục / Claim | File nguồn | Function / Component | Đoạn code thực tế kiểm chứng | Kết luận (Verdict) |
+| No. | Claim / Item | Source File | Function / Component | Audited Code Excerpt | Verdict |
 |---|---|---|---|---|---|
-| **1** | SSE Tenant Isolation: Lọc event theo `allowedOrgIds` & `organizationId` | `backend/src/events/events.service.ts` | `resolveUserOrgIds`, `subscribe` | `const isOrgMatch = Boolean(allowedOrgIds.has(eventOrgId)); return isOrgMatch;` | **CODE-MATCH** |
-| **2** | Public Career Page: Chỉ trả lời `PUBLISHED`, giấu DRAFT/CLOSED/ARCHIVED | `backend/src/jobs/jobs.service.ts` | `findAll`, `findOne` | `const effectiveStatus = isPublic ? JobStatus.PUBLISHED : (options?.status ? ...);` và trong `findOne`: `if (isPublic && job.status !== JobStatus.PUBLISHED) throw new AppNotFoundException(...)` | **CODE-MATCH** |
+| **1** | SSE Tenant Isolation: Filters events via `allowedOrgIds` & `organizationId` | `backend/src/events/events.service.ts` | `resolveUserOrgIds`, `subscribe` | `const isOrgMatch = Boolean(allowedOrgIds.has(eventOrgId)); return isOrgMatch;` | **CODE-MATCH** |
+| **2** | Public Career Page: Returns `PUBLISHED` only, hides DRAFT/CLOSED/ARCHIVED | `backend/src/jobs/jobs.service.ts` | `findAll`, `findOne` | `const effectiveStatus = isPublic ? JobStatus.PUBLISHED : (options?.status ? ...);` and in `findOne`: `if (isPublic && job.status !== JobStatus.PUBLISHED) throw new AppNotFoundException(...)` | **CODE-MATCH** |
 | **3** | JWT Cookie Auth: HttpOnly cookie `haihire_token` fallback Bearer | `backend/src/auth/jwt.strategy.ts` & `auth.controller.ts` | `JwtStrategy.constructor`, `setAuthCookie` | `ExtractJwt.fromExtractors([(req) => req?.cookies?.['haihire_token'] \|\| extractFromHeaderCookie(req), ExtractJwt.fromAuthHeaderAsBearerToken()])` | **CODE-MATCH** |
-| **4** | Application Stage Transitions: Bảng chuyển đổi trạng thái hợp lệ | `packages/shared/src/applications.ts` | `VALID_APPLICATION_STAGE_TRANSITIONS` | `APPLIED: ['SCREENING', 'REJECTED'], SCREENING: ['INTERVIEW', 'REJECTED'], INTERVIEW: ['OFFER', 'REJECTED'], OFFER: ['HIRED', 'REJECTED'], HIRED: [], REJECTED: []` | **CODE-MATCH** |
-| **5** | Stage Enforcement: Chặn bước nhảy vi phạm máy trạng thái | `backend/src/applications/applications.service.ts` | `updateStage` | `if (!allowedNextStages.includes(dto.stage)) { throw new AppBadRequestException(APP_ERROR_CODES.APPLICATION_INVALID_STAGE_TRANSITION, ...); }` | **CODE-MATCH** |
-| **6** | Rate Limiting Exception Filter: Bắt `ThrottlerException` trả HTTP 429 | `backend/src/common/http-exception.filter.ts` | `catch` | `if (exception instanceof ThrottlerException) { return response.status(429).json({ statusCode: 429, errorCode: APP_ERROR_CODES.RATE_LIMIT_EXCEEDED, message: "Too many requests..." }); }` | **CODE-MATCH** |
-| **7** | File Magic Bytes: Kiểm tra header byte thực của PDF/DOC/DOCX | `backend/src/common/upload-utils.ts` | `validateMagicBytes`, `validateUploadedFile` | `if (normalizedExt === ".pdf") { return buffer.subarray(0, 1024).toString("binary").includes("%PDF-"); }` | **CODE-MATCH** |
-| **8** | Path Traversal Sanitization: Loại bỏ `../` và ký tự điều khiển trong tên file | `backend/src/common/upload-utils.ts` | `sanitizeFilename` | `const base = basename(filename).replace(/[/\\?%*:|"<>]/g, "_"); return base.replace(/[^a-zA-Z0-9._-]/g, "_") \|\| "document";` | **CODE-MATCH** |
-| **9** | MinIO Tenant Isolation: Thêm namespace `tenants/{tenantOrgId}/` | `backend/src/minio/minio.service.ts` | `uploadFile` | `const orgPrefix = tenantOrgId ? 'tenants/' + tenantOrgId + '/' : ''; const uniqueFileName = orgPrefix + folder + '/' + Date.now() + '-' + randomUUID() + ext;` | **CODE-MATCH** |
-| **10** | Dynamic Email Org Name: Đọc tên tổ chức từ database thay vì hardcode | `backend/src/interviews/interviews.service.ts` & `applications.service.ts` | `sendInvitationEmail`, `updateStage` | `const org = await this.prisma.db.orm.public.Organization.select("name").where((o) => o.id.eq(orgId)).first(); if (org?.name) orgName = org.name;` | **CODE-MATCH** |
-| **11** | Loại bỏ Duplicate Provider `PrismaService` | `backend/src/app.module.ts` | `@Module({ providers })` | Danh sách providers chỉ chứa `AppService` và `throttlerReflectorToken`. Không còn `PrismaService` thừa trong AppModule. | **CODE-MATCH** |
+| **4** | Application Stage Transitions: Canonical transition matrix | `packages/shared/src/applications.ts` | `VALID_APPLICATION_STAGE_TRANSITIONS` | `APPLIED: ['SCREENING', 'REJECTED'], SCREENING: ['INTERVIEW', 'REJECTED'], INTERVIEW: ['OFFER', 'REJECTED'], OFFER: ['HIRED', 'REJECTED'], HIRED: [], REJECTED: []` | **CODE-MATCH** |
+| **5** | Stage Enforcement: Blocks transitions violating state machine | `backend/src/applications/applications.service.ts` | `updateStage` | `if (!allowedNextStages.includes(dto.stage)) { throw new AppBadRequestException(APP_ERROR_CODES.APPLICATION_INVALID_STAGE_TRANSITION, ...); }` | **CODE-MATCH** |
+| **6** | Rate Limiting Exception Filter: Catches `ThrottlerException` returning HTTP 429 | `backend/src/common/http-exception.filter.ts` | `catch` | `if (exception instanceof ThrottlerException) { return response.status(429).json({ statusCode: 429, errorCode: APP_ERROR_CODES.RATE_LIMIT_EXCEEDED, message: "Too many requests..." }); }` | **CODE-MATCH** |
+| **7** | File Magic Bytes: Verifies real byte signatures for PDF/DOC/DOCX | `backend/src/common/upload-utils.ts` | `validateMagicBytes`, `validateUploadedFile` | `if (normalizedExt === ".pdf") { return buffer.subarray(0, 1024).toString("binary").includes("%PDF-"); }` | **CODE-MATCH** |
+| **8** | Path Traversal Sanitization: Strips `../` and control characters | `backend/src/common/upload-utils.ts` | `sanitizeFilename` | `const base = basename(filename).replace(/[/\\?%*:|"<>]/g, "_"); return base.replace(/[^a-zA-Z0-9._-]/g, "_") \|\| "document";` | **CODE-MATCH** |
+| **9** | MinIO Tenant Isolation: Namespaces paths under `tenants/{tenantOrgId}/` | `backend/src/minio/minio.service.ts` | `uploadFile` | `const orgPrefix = tenantOrgId ? 'tenants/' + tenantOrgId + '/' : ''; const uniqueFileName = orgPrefix + folder + '/' + Date.now() + '-' + randomUUID() + ext;` | **CODE-MATCH** |
+| **10** | Dynamic Email Org Name: Reads org name from database | `backend/src/interviews/interviews.service.ts` & `applications.service.ts` | `sendInvitationEmail`, `updateStage` | `const org = await this.prisma.db.orm.public.Organization.select("name").where((o) => o.id.eq(orgId)).first(); if (org?.name) orgName = org.name;` | **CODE-MATCH** |
+| **11** | Pruned Duplicate Provider `PrismaService` | `backend/src/app.module.ts` | `@Module({ providers })` | Providers list contains only `AppService` and `throttlerReflectorToken`. Redundant `PrismaService` removed from AppModule. | **CODE-MATCH** |
 
 ---
 
-## 3. GIAI ĐOẠN 2: BẢNG ĐỐI CHIẾU 11 KỊCH BẢN RUNTIME (CLAIM VS ACTUAL)
+## 3. STAGE 2: 11 RUNTIME VERIFICATION SCENARIOS (CLAIM VS ACTUAL)
 
-Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng script `ivv-verification.ts` chạy trên môi trường thực tế kết nối trực tiếp cổng Backend `http://127.0.0.1:13001`:
+All 11 runtime scenarios were executed independently via test script `ivv-verification.ts` targeting `http://127.0.0.1:13001`:
 
 ```
 ===============================================================
@@ -39,12 +39,12 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
 ===============================================================
 ```
 
-### Kịch bản 1: SSE Tenant Isolation
-- **Lệnh thực thi:**
+### Scenario 1: SSE Tenant Isolation
+- **Execution Command:**
   ```bash
   fetch http://127.0.0.1:13001/events/sse?token=<UserA_OrgA_Token>
   fetch http://127.0.0.1:13001/events/sse?token=<UserB_OrgB_Token>
-  # Admin A cập nhật role Member A trong Org A
+  # Admin A updates role of Member A in Org A
   PATCH http://127.0.0.1:13001/organizations/my/members/<MemberA_Id>/role
   ```
 - **Raw Evidence:**
@@ -58,12 +58,12 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
     {"type":"CONNECTED"}
   ]
   ```
-- **Verdict:** **PASS** (User A nhận đúng sự kiện của Org A; User B hoàn toàn không bị rò rỉ bất kỳ sự kiện nào từ Org A).
+- **Verdict:** **PASS** (User A receives Org A events; User B receives zero leaked events from Org A).
 
 ---
 
-### Kịch bản 2: Public Career Page
-- **Lệnh thực thi:**
+### Scenario 2: Public Career Page
+- **Execution Command:**
   ```bash
   curl -X GET "http://127.0.0.1:13001/jobs?organizationSlug=pubc-1790834950673"
   curl -X GET "http://127.0.0.1:13001/jobs/<Job_Published_Id>"
@@ -76,12 +76,12 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
   List returned: 1 jobs, statuses: [ 'PUBLISHED' ]
   Details: pub=200, draft=404, closed=404, archived=404
   ```
-- **Verdict:** **PASS** (Chỉ duy nhất job có trạng thái `PUBLISHED` hiển thị trên trang tuyển dụng công khai; các job `DRAFT`, `CLOSED`, `ARCHIVED` trả về mã lỗi HTTP 404 khi truy cập ẩn danh).
+- **Verdict:** **PASS** (Only `PUBLISHED` jobs returned publicly; `DRAFT`, `CLOSED`, `ARCHIVED` return HTTP 404 to guests).
 
 ---
 
-### Kịch bản 3: JWT Cookie Authentication
-- **Lệnh thực thi:**
+### Scenario 3: JWT Cookie Authentication
+- **Execution Command:**
   ```bash
   curl -X GET "http://127.0.0.1:13001/auth/me" -H "Cookie: haihire_token=<VALID_JWT>"
   curl -X GET "http://127.0.0.1:13001/auth/me" -H "Cookie: haihire_token=invalid.jwt.token"
@@ -92,16 +92,16 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
   Cookie only status: 200, user: ckauth_1790834950673@ivv.test
   Bearer status: 200, Invalid cookie status: 401
   ```
-- **Verdict:** **PASS** (Cơ chế xác thực qua Cookie hoạt động độc lập và bảo mật; cookie sai trả 401; Bearer token tiếp tục hoạt động tương thích ngược).
+- **Verdict:** **PASS** (Cookie auth functions independently; invalid cookies yield 401; Bearer headers remain supported).
 
 ---
 
-### Kịch bản 4: Stage State Machine
-- **Lệnh thực thi:** Thử nghiệm 4 bước chuyển đổi trạng thái phi logic qua `PATCH /applications/:id/stage`:
+### Scenario 4: Stage State Machine
+- **Execution Command:** Executed 4 invalid stage transitions via `PATCH /applications/:id/stage`:
   1. `HIRED -> APPLIED`
   2. `REJECTED -> OFFER`
   3. `HIRED -> INTERVIEW`
-  4. `APPLIED -> HIRED` (nhảy cóc giai đoạn)
+  4. `APPLIED -> HIRED`
 - **Raw Evidence:**
   ```
   HIRED->APPLIED: HTTP 400, DB=HIRED
@@ -109,12 +109,12 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
   HIRED->INTV: HTTP 400, DB=HIRED
   APPLIED->HIRED: HTTP 400, DB=APPLIED
   ```
-- **Verdict:** **PASS** (100% các thao tác đổi trạng thái trái phép bị từ chối với HTTP 400; dữ liệu trong CSDL giữ nguyên trạng thái cũ).
+- **Verdict:** **PASS** (100% of illegal transitions rejected with HTTP 400; database state preserved).
 
 ---
 
-### Kịch bản 5: Rate Limiting
-- **Lệnh thực thi:** Gửi 7 request liên tiếp trong 1 giây tới `POST /auth/register` (với cấu hình `@Throttle(limit: 5, ttl: 60000)`):
+### Scenario 5: Rate Limiting
+- **Execution Command:** Dispatched 7 rapid requests within 1s to `POST /auth/register` (guarded by `@Throttle(limit: 5, ttl: 60000)`):
 - **Raw Evidence:**
   ```
   7 requests statuses: 401, 401, 401, 429, 429, 429, 429
@@ -122,14 +122,14 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
   Response body (Request 4):
   {"statusCode":429,"errorCode":"SYS_RATE_LIMIT_EXCEEDED","message":"Too many requests. Please slow down and try again later."}
   ```
-- **Verdict:** **PASS** (Từ request thứ 4/5 trở đi, server trả HTTP 429 với body JSON chuẩn `SYS_RATE_LIMIT_EXCEEDED`. Không còn lỗi HTTP 500 Uncaught Exception).
+- **Verdict:** **PASS** (Requests 4-7 return HTTP 429 with formatted JSON payload `SYS_RATE_LIMIT_EXCEEDED`. Zero HTTP 500 errors).
 
 ---
 
-### Kịch bản 6: File Magic Bytes Validation
-- **Lệnh thực thi:**
-  - File giả mạo: Script bash `#!/bin/bash\necho Malicious` đổi tên thành `fake.pdf`.
-  - File chuẩn: Buffer nhị phân có `%PDF-1.4...`.
+### Scenario 6: File Magic Bytes Validation
+- **Execution Command:**
+  - Spoofed File: Bash script `#!/bin/bash\necho Malicious` renamed to `fake.pdf`.
+  - Valid File: Binary buffer with `%PDF-1.4...`.
 - **Raw Evidence:**
   ```
   Fake PDF (bash script disguised as .pdf) Status: 400
@@ -137,37 +137,37 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
   Response body Fake PDF:
   {"statusCode":400,"errorCode":"VALIDATION_FAILED","message":"File fake.pdf contains invalid magic bytes signature."}
   ```
-- **Verdict:** **PASS** (Hệ thống chặn đứng file giả mạo đuôi mở rộng thông qua kiểm tra signature thực của byte).
+- **Verdict:** **PASS** (Spoofed file rejected via byte signature inspection).
 
 ---
 
-### Kịch bản 7: Path Traversal Attack
-- **Lệnh thực thi:** Nộp hồ sơ với tên file độc hại `../../../../etc/passwd.pdf`.
+### Scenario 7: Path Traversal Attack
+- **Execution Command:** Submitted application with filename `../../../../etc/passwd.pdf`.
 - **Raw Evidence:**
   ```
   Input name: ../../../../etc/passwd.pdf
   Stored name: passwd.pdf
   Contains traversal (.. or / or \\): false
   ```
-- **Verdict:** **PASS** (`sanitizeFilename` khử hoàn toàn đường dẫn tương đối và các ký tự phân cách thư mục).
+- **Verdict:** **PASS** (`sanitizeFilename` strips directory traversal markers).
 
 ---
 
-### Kịch bản 8: MinIO Tenant Namespace Isolation
-- **Lệnh thực thi:** Upload hồ sơ ứng viên thuộc tổ chức `4a904ff3-a9c6-4242-ae43-c7325433017e`.
+### Scenario 8: MinIO Tenant Namespace Isolation
+- **Execution Command:** Uploaded candidate document for organization `4a904ff3-a9c6-4242-ae43-c7325433017e`.
 - **Raw Evidence:**
   ```
   Resume URL: http://localhost:19000/haihire-resumes/tenants/4a904ff3-a9c6-4242-ae43-c7325433017e/resumes/1790834955048-dec6b83c-1e16-40ec-a886-bbb4e220c4a3.pdf
   Has expected prefix 'tenants/4a904ff3-a9c6-4242-ae43-c7325433017e/': true
   MinIO object key found: tenants/4a904ff3-a9c6-4242-ae43-c7325433017e/resumes/1790834955048-dec6b83c-1e16-40ec-a886-bbb4e220c4a3.pdf
   ```
-- **Verdict:** **PASS** (Object key trên MinIO được lưu trữ tách biệt hoàn toàn theo prefix `tenants/<organizationId>/`).
+- **Verdict:** **PASS** (Object key namespaced under `tenants/<organizationId>/`).
 
 ---
 
-### Kịch bản 9: Dynamic Organization Name in Email
-- **Lệnh thực thi:** Tạo ứng viên nộp đơn, xếp lịch phỏng vấn và gửi thông báo từ chối thuộc công ty `emorg Corporation`.
-- **Raw Evidence (Query trực tiếp bảng `EmailLog`):**
+### Scenario 9: Dynamic Organization Name in Email
+- **Execution Command:** Created applicant, scheduled interview, and triggered rejection email under company `emorg Corporation`.
+- **Raw Evidence (Direct query of `EmailLog` table):**
   ```
   Email logs found: 3
     - [APPLICATION_CONFIRMATION]: "[Xác nhận] Hồ sơ ứng tuyển vị trí Staff Architect tại emorg Corporation"
@@ -175,15 +175,15 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
     - [REJECTION]: "Thông báo kết quả ứng tuyển vị trí Staff Architect - emorg Corporation"
   Hardcoded 'ATS Recruitment' present: false
   ```
-- **Verdict:** **PASS** (Tên công ty hiển thị chính xác theo tổ chức; chuỗi hardcode `"ATS Recruitment"` đã bị loại bỏ triệt để).
+- **Verdict:** **PASS** (Company name interpolated dynamically; hardcoded `"ATS Recruitment"` eliminated).
 
 ---
 
-### Kịch bản 10: Audit Log on Application Deletion
-- **Lệnh thực thi:**
+### Scenario 10: Audit Log on Application Deletion
+- **Execution Command:**
   - `DELETE /applications/:id`
   - `GET /applications/:id`
-  - Query bảng `ActivityLog` theo `applicationId`.
+  - Query table `ActivityLog` by `applicationId`.
 - **Raw Evidence:**
   ```
   DELETE status: 200
@@ -191,12 +191,12 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
   Audit log title: "Application Removed: Job For Deletion"
   Audit log description: "Application for Job For Deletion was removed from the system"
   ```
-- **Verdict:** **PASS** (Đơn ứng tuyển bị xóa khỏi pipeline đồng thời để lại vết kiểm toán ghi nhận hành động xóa trong `ActivityLog`).
+- **Verdict:** **PASS** (Application deleted while preserving audit log entry in `ActivityLog`).
 
 ---
 
-### Kịch bản 11: Duplicate Prisma Registration in AppModule
-- **Lệnh thực thi:** Rà soát danh sách providers của `AppModule` trong `app.module.ts`.
+### Scenario 11: Duplicate Prisma Registration in AppModule
+- **Execution Command:** Reviewed provider registry in `backend/src/app.module.ts`.
 - **Raw Evidence:**
   ```
   Providers list: [
@@ -205,76 +205,76 @@ Toàn bộ 11 kịch bản runtime được thực thi độc lập bằng scrip
   ]
   Duplicate PrismaService: false
   ```
-- **Verdict:** **PASS** (Không còn provider trùng lặp; PrismaService chỉ được export duy nhất từ PrismaModule).
+- **Verdict:** **PASS** (Duplicate provider eliminated; PrismaService exported solely from PrismaModule).
 
 ---
 
-## 4. GIAI ĐOẠN 3: KẾT QUẢ 10 EDGE CASES MỚI (STRESS & FUZZ TESTING)
+## 4. STAGE 3: 10 NEW EDGE CASES AUDIT (STRESS & FUZZ TESTING)
 
-10 kịch bản biên nằm ngoài phạm vi Phase 3 đã được thử nghiệm và ghi nhận kết quả:
+10 edge cases evaluated beyond Phase 3 scope:
 
-| Edge Case STT | Kịch bản biên | Thao tác kiểm thử | Kết quả thực tế & Raw Evidence | Đánh giá an toàn |
+| Edge Case | Description | Test Operation | Empirical Output & Evidence | Security Assessment |
 |---|---|---|---|---|
-| **Edge 1** | SSE với token hết hạn giữa chừng | Gửi request `GET /events/sse?token=<EXPIRED_TOKEN>` | Status: `401 Unauthorized`<br>`{"statusCode":401,"message":"Invalid or expired token for SSE stream"}` | **HANDLED** (Chặn stream thành công) |
-| **Edge 2** | Public Career Page với slug không tồn tại | `GET /jobs?organizationSlug=non-existent-slug-xyz` | Status: `200 OK`, Total: `0`, Data: `[]`<br>Không crash server 500. | **HANDLED** (Xử lý an toàn) |
-| **Edge 3** | Xung đột đồng thời cả Cookie và Bearer (2 user khác nhau) | Gửi Header `Cookie: haihire_token=<UserA>` và `Authorization: Bearer <UserB>` | Status: `200 OK`, User: `conflicta@ivv.test` (User A).<br>Cơ chế `ExtractJwt.fromExtractors([cookie, bearer])` ưu tiên Cookie một cách xác định. | **HANDLED** (Ưu tiên Cookie nhất quán) |
-| **Edge 4** | Stage Transition Race: 2 request đồng thời cùng đổi stage | Gửi song song 2 request: Req 1 chuyển `SCREENING`, Req 2 chuyển `REJECTED` | Cả 2 request đều trả về **HTTP 200 OK**!<br>`Res1.stage = "SCREENING"`, `Res2.stage = "REJECTED"`, DB cuối cùng: `"REJECTED"`. | ⚠️ **BUG_FOUND** (Thiếu Optimistic Locking) |
-| **Edge 5** | Bypass Rate Limit bằng cách xoay header `X-Forwarded-For` | Gửi 6 request liên tiếp với `X-Forwarded-For: 192.168.100.1..6` | Các request 4-6 vẫn trả về **HTTP 429 Too Many Requests**.<br>NestJS Throttler neo vào `req.ip` từ kết nối TCP socket. | **BLOCKED** (Chống bypass thành công) |
-| **Edge 6** | Magic bytes: File PDF có header `%PDF-` nhưng bị cắt cụt 50% | File buffer 50 bytes chỉ chứa header `%PDF-1.4\n1 0 obj...` không có `%%EOF` | `validateMagicBytes` trả về `true` và file được chấp nhận upload.<br>Hệ thống chỉ kiểm tra byte header chống file script, không parse toàn vẹn cấu trúc PDF. | ℹ️ **NOTED** (Header signature check only) |
-| **Edge 7** | MinIO Upload với `tenantOrgId = null` | Upload qua hàm `uploadFile(file, 'resumes', null)` | Object key sinh ra là `resumes/<timestamp>-<uuid>.pdf` tại root bucket thay vì `tenants/...`. | ℹ️ **NOTED** (Fallback global namespace) |
-| **Edge 8** | Gửi email khi Organization bị xóa khỏi CSDL | Đổi stage đơn ứng tuyển khi organization đã bị xóa | CSDL PostgreSQL kích hoạt ràng buộc khóa ngoại `candidate_organizationId_fkey` chặn xóa org (SQL 23503). Khi org null, code fallback an toàn về tên `"Company"`. | **HANDLED** (Bảo vệ toàn vẹn dữ liệu) |
-| **Edge 9** | ActivityLog khi Candidate bị xóa (Kiểm tra FK Cascade) | Gọi API xóa ứng viên `DELETE /candidates/:id` | Ứng viên được xóa mềm (`deletedAt = now()`), toàn bộ lịch sử trong `ActivityLog` được giữ nguyên vẹn 100%. | **HANDLED** (Không mất audit trail) |
-| **Edge 10** | Kiểm tra rò rỉ bộ nhớ sau 100 API requests | Chạy 100 request tuần tự qua backend | 100/100 request HTTP 200. Chênh lệch heap memory: **6.48 MB** (ổn định, GC hoạt động bình thường, không leak). | **STABLE** (Hệ thống ổn định) |
+| **Edge 1** | SSE token expires mid-stream | `GET /events/sse?token=<EXPIRED_TOKEN>` | Status: `401 Unauthorized`<br>`{"statusCode":401,"message":"Invalid or expired token for SSE stream"}` | **HANDLED** (Stream rejected) |
+| **Edge 2** | Public Career Page with nonexistent slug | `GET /jobs?organizationSlug=non-existent-slug-xyz` | Status: `200 OK`, Total: `0`, Data: `[]`<br>No 500 error. | **HANDLED** (Graceful empty set) |
+| **Edge 3** | Collision of Cookie & Bearer from 2 different users | `Cookie: haihire_token=<UserA>` and `Authorization: Bearer <UserB>` | Status: `200 OK`, User: `conflicta@ivv.test` (User A).<br>`ExtractJwt.fromExtractors([cookie, bearer])` prioritizes cookie deterministically. | **HANDLED** (Predictable cookie precedence) |
+| **Edge 4** | Stage Transition Race: 2 concurrent updates | Dispatched 2 concurrent requests: Req 1 to `SCREENING`, Req 2 to `REJECTED` | Both return **HTTP 200 OK**!<br>`Res1.stage = "SCREENING"`, `Res2.stage = "REJECTED"`, Final DB: `"REJECTED"`. | ⚠️ **BUG_FOUND** (Missing Optimistic Locking) |
+| **Edge 5** | Rate Limit Bypass via rotated `X-Forwarded-For` | Sent 6 requests rotating `X-Forwarded-For: 192.168.100.1..6` | Requests 4-6 return **HTTP 429 Too Many Requests**.<br>NestJS Throttler anchors to socket `req.ip`. | **BLOCKED** (Bypass prevented) |
+| **Edge 6** | Magic bytes: PDF with valid header `%PDF-` but truncated payload | 50-byte buffer containing `%PDF-1.4\n1 0 obj...` without `%%EOF` | `validateMagicBytes` returns `true` and file accepted.<br>System verifies header signature against scripts, not full PDF syntax. | ℹ️ **NOTED** (Header signature check only) |
+| **Edge 7** | MinIO Upload with `tenantOrgId = null` | Invoked `uploadFile(file, 'resumes', null)` | Object key emitted as `resumes/<timestamp>-<uuid>.pdf` at bucket root. | ℹ️ **NOTED** (Fallback global namespace) |
+| **Edge 8** | Email dispatch when Organization is deleted | Changed stage on application belonging to deleted org | PostgreSQL foreign key `candidate_organizationId_fkey` prevents org deletion (SQL 23503). If null, code falls back to `"Company"`. | **HANDLED** (Referential integrity intact) |
+| **Edge 9** | ActivityLog when Candidate is deleted (FK Cascade) | `DELETE /candidates/:id` | Candidate soft-deleted (`deletedAt = now()`), full history in `ActivityLog` preserved. | **HANDLED** (Audit trail preserved) |
+| **Edge 10** | Memory leak verification after 100 API requests | Dispatched 100 sequential requests | 100/100 return HTTP 200. Heap memory delta: **6.48 MB** (stable GC operation). | **STABLE** (System stable) |
 
 ---
 
-## 5. PHASE 4 BUGS FOUND (CÁC VẤN ĐỀ MỚI PHÁT HIỆN)
+## 5. PHASE 4 BUGS FOUND (NEW OBSERVATIONS)
 
-Dưới góc nhìn kiểm định khắt khe của IV&V, có 3 điểm thiết kế cần lưu ý:
+Under strict IV&V standards, 3 design observations were recorded:
 
-### 1. [BUG-P4-01] Thiếu Optimistic Locking / Atomic Compare-And-Swap trên State Machine
-- **Mô tả:** Trong `applications.service.ts`:
+### 1. [BUG-P4-01] Missing Optimistic Locking on State Machine
+- **Description:** In `applications.service.ts`:
   ```typescript
   const existing = await this.findOne(id, tenantOrgId);
   const oldStage = existing.stage;
   // check transition...
   await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id)).update({ stage: dto.stage });
   ```
-- **Hệ quả:** Nếu hai nhà tuyển dụng cùng mở một hồ sơ và đồng thời kéo sang hai cột khác nhau (ví dụ: một người chọn `SCREENING`, một người chọn `REJECTED`), cả hai thao tác đều thành công trả về `HTTP 200`, và trạng thái của người ghi sau cùng sẽ đè lên người trước (Last-Write-Wins) mà không có lỗi xung đột `HTTP 409 Conflict`.
-- **Mức độ:** **P2 - Medium** (Gây nhầm lẫn trạng thái hồ sơ trong môi trường tuyển dụng đồng thời cao).
-- **Khuyến nghị:** Cập nhật query thành:
+- **Consequence:** If two recruiters simultaneously move a candidate to different stages (`SCREENING` vs `REJECTED`), both succeed with `HTTP 200`, and the trailing write overwrites the earlier write (Last-Write-Wins) without generating `HTTP 409 Conflict`.
+- **Severity:** **P2 - Medium** (Risk in concurrent recruiting environments).
+- **Recommendation:** Implement conditional updates:
   ```typescript
   await this.prisma.db.orm.public.Application.where((a) => a.id.eq(id).and(a.stage.eq(oldStage))).update({ stage: dto.stage });
   ```
-  Nếu không có row nào được cập nhật, trả về `HTTP 409 Conflict` ("Application stage was modified by another user").
+  If zero rows are modified, raise `HTTP 409 Conflict` ("Application stage was modified by another user").
 
-### 2. [DESIGN-P4-02] `validateMagicBytes` chỉ kiểm tra Signature Header mà không kiểm tra Trailer / Payload
-- **Mô tả:** Hàm `validateMagicBytes` trong `upload-utils.ts` cắt `buffer.subarray(0, 1024)` để tìm `%PDF-`.
-- **Hệ quả:** Một file PDF bị hỏng hoặc bị cắt cụt giữa chừng (truncated) vẫn vượt qua bộ lọc magic bytes.
-- **Mức độ:** **P3 - Low** (Mục đích hiện tại của `validateMagicBytes` là ngăn chặn tấn công thực thi file mã độc / Web Shell đổi đuôi `.php/.sh -> .pdf`, mục đích này vẫn được đáp ứng).
+### 2. [DESIGN-P4-02] `validateMagicBytes` Checks Signature Header, Not Trailer / Structure
+- **Description:** `validateMagicBytes` slices `buffer.subarray(0, 1024)` to verify `%PDF-`.
+- **Consequence:** Truncated PDF files pass magic byte checks.
+- **Severity:** **P3 - Low** (Primary objective is blocking executable scripts and Web Shells, which is satisfied).
 
-### 3. [DESIGN-P4-03] MinIO Object Key Fallback Root khi thiếu `tenantOrgId`
-- **Mô tả:** Trong `minio.service.ts`, nếu `tenantOrgId` là `null`, đường dẫn file là `resumes/{filename}`.
-- **Hệ quả:** Nếu có tính năng tương lai gọi upload mà quên truyền `tenantOrgId`, file sẽ bị đưa ra ngoài vùng namespace của tenant.
-- **Mức độ:** **P3 - Low** (Hiện tại ở tất cả các luồng Candidate và Application đều đã truyền `tenantOrgId`).
+### 3. [DESIGN-P4-03] MinIO Object Key Fallback Root When Missing `tenantOrgId`
+- **Description:** In `minio.service.ts`, if `tenantOrgId` is `null`, file path defaults to `resumes/{filename}`.
+- **Consequence:** Future upload features omitting `tenantOrgId` store files outside tenant namespaces.
+- **Severity:** **P3 - Low** (All active Candidate and Application flows supply `tenantOrgId`).
 
 ---
 
-## 6. CREDIBILITY ASSESSMENT CỦA BÁO CÁO PHASE 3
+## 6. PHASE 3 REPORT CREDIBILITY ASSESSMENT
 
-| Tiêu chí đánh giá | Kết quả kiểm chứng IV&V | Nhận định |
+| Evaluation Dimension | IV&V Verification Finding | Assessment |
 |---|---|---|
-| **Tỷ lệ tuyên bố verify được (Verified Claims)** | **11 / 11 (100%)** | Toàn bộ 11 hạng mục đã tuyên bố trong Phase 3 đều được chứng minh bằng code thật và runtime thật. |
-| **Tỷ lệ tuyên bố sai (False Claims)** | **0 / 11 (0%)** | Không phát hiện bất kỳ tuyên bố gian lận hay bịa đặt nào. |
-| **Dấu hiệu "tô hồng" báo cáo (Report Whitewashing)** | **Không đáng kể** | Báo cáo Phase 3 phản ánh trung thực trạng thái sau khi vá lỗi. 255/255 tests thực sự pass (150 backend + 105 frontend). |
-| **Giới hạn của Phase 3** | **Chưa test sâu race condition** | Phase 3 tập trung kiểm tra "Happy path" và vi phạm logic đơn lẻ; chưa thực hiện stress test tranh chấp đồng thời (Concurrency Race). |
-| **ĐIỂM ĐỘ TIN CẬY (CREDIBILITY SCORE)** | **92 / 100** | **XUẤT SẮC** (Độ tin cậy rất cao, code vá chuẩn xác, không có lỗi hồi quy). |
+| **Verifiable Claims Ratio** | **11 / 11 (100%)** | All 11 claimed items in Phase 3 confirmed via code and runtime evidence. |
+| **False Claims Ratio** | **0 / 11 (0%)** | Zero falsified or fraudulent claims detected. |
+| **Report Whitewashing Indicators** | **Negligible** | Phase 3 report accurately reflects post-remediation state. 255/255 tests passing (150 backend + 105 frontend). |
+| **Scope Limitations of Phase 3** | **Did not stress-test race conditions** | Phase 3 verified functional correctness; omitted concurrent race condition stress tests. |
+| **CREDIBILITY SCORE** | **92 / 100** | **EXCELLENT** (High credibility, accurate fixes, zero regressions). |
 
 ---
 
-## 7. RECOMMENDATION & KẾT LUẬN
+## 7. RECOMMENDATIONS & CONCLUSION
 
-1. **Khuyến nghị Rollback:** **KHÔNG CẦN ROLLBACK BẤT KỲ BẢN VÁ NÀO.** Tất cả 11 bản vá trong Phase 3 đều ổn định, an toàn và giải quyết triệt để các lỗ hổng P0/P1 ban đầu.
-2. **Kế hoạch tiếp theo (Hardening):**
-   - Đưa cơ chế kiểm tra phiên bản (Optimistic Locking hoặc conditional update `WHERE id = :id AND stage = :oldStage`) vào backlog nâng cấp tiếp theo để hoàn thiện triệt để máy trạng thái pipeline.
-   - Giữ nguyên cấu hình rate limiting và cookie authentication hiện tại.
+1. **Rollback Directive:** **DO NOT ROLLBACK ANY FIX.** All 11 remediations in Phase 3 are stable, secure, and resolve the targeted P0/P1 defects.
+2. **Hardening Roadmap:**
+   - Incorporate conditional updates (`WHERE id = :id AND stage = :oldStage`) in the upcoming hardening cycle.
+   - Retain current rate limiting and cookie authentication configurations.

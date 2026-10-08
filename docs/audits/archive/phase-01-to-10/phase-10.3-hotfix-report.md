@@ -1,23 +1,23 @@
-# BÁO CÁO KỸ THUẬT PHASE 10.3: HOTFIX SPRINT (PRE-IV&V ROUND 6)
+# Technical Report Phase 10.3: Hotfix Sprint (Pre-IV&V Round 6)
 
-* **Dự án:** HaiHire ATS Enterprise Platform
-* **Vai trò:** Senior Backend Engineer + SRE Engineer
-* **Ngày thực hiện:** 02/10/2026
-* **Mục tiêu:** Khắc phục triệt để 2 Action Items từ Báo cáo IV&V Round 5 (`docs/audits/phase-10.2-ivv-round-5-report.md`), hoàn thiện bộ công cụ sao lưu thảm họa và xác thực toàn diện trước khi bước vào IV&V Round 6 (Final Gate trước Go-Live).
+* **Project:** HaiHire ATS Enterprise Platform
+* **Role:** Senior Backend Engineer + SRE Engineer
+* **Date:** 02/10/2026
+* **Objective:** Fully resolve the 2 Action Items from the IV&V Round 5 Report (`docs/audits/phase-10.2-ivv-round-5-report.md`), finalize disaster recovery tooling, and complete comprehensive verification before advancing to IV&V Round 6 (Final Pre-Go-Live Gate).
 
 ---
 
-## 1. EXECUTIVE SUMMARY
+## 1. Executive Summary
 
-Toàn bộ 2/2 Action Items từ IV&V Round 5 đã được đóng hoàn toàn (**CLOSED**), trải qua đầy đủ chu trình: **Repro Trước Fix → Code Modification → Verify Sau Fix → Live Restore Drill Thật → Regression Kiểm Thử Toàn Diện**.
+All 2/2 Action Items from IV&V Round 5 have been completely resolved (**CLOSED**), progressing through the complete lifecycle: **Pre-Fix Reproduction → Code Modification → Post-Fix Verification → Live Restore Drill → Full Regression Testing**.
 
-### 1.1. Bảng Trạng Thái Action Items
-| ID | Mức Độ | Mô Tả Vấn Đề | Trạng Thái | Kết Quả Nghiệm Thu |
+### 1.1. Action Item Status Matrix
+| ID | Severity | Problem Statement | Status | Acceptance Verdict |
 | :---: | :---: | :--- | :---: | :--- |
-| **Action 1** | **P1** | Vá `DtoPipe` trên `backend/src/email/email.controller.ts` (dòng 125 & 131) | 🟢 **CLOSED** | Chặn đứng payload invalid (HTTP 400), chấp nhận payload valid (HTTP 201), quét toàn bộ 12 controllers đạt **0 unpiped `@Body()`**. |
-| **Action 2** | **P2** | Sửa `scripts/backup-production.ts`, tích hợp MinIO Hot Archival, kiểm tra toàn vẹn TOC và tự động chạy Live Restore Drill thật | 🟢 **CLOSED** | Loại bỏ hoàn toàn TTY `-t` và PowerShell redirection corruption, tích hợp MinIO `.tar.gz`, `pg_restore -l` PASS, Restore Drill vào DB temp `haihire_restore_drill` query thành công 166 records User. |
+| **Action 1** | **P1** | Apply `DtoPipe` to `backend/src/email/email.controller.ts` (lines 125 & 131) | 🟢 **CLOSED** | Intercepts malformed payloads (HTTP 400), accepts valid payloads (HTTP 201), comprehensive scan across 12 controllers confirms **0 unpiped `@Body()`**. |
+| **Action 2** | **P2** | Refactor `scripts/backup-production.ts`, integrate MinIO Hot Archival, verify TOC integrity, and execute live Restore Drill | 🟢 **CLOSED** | Eliminated TTY `-t` and PowerShell redirection corruption, integrated MinIO `.tar.gz`, `pg_restore -l` passed, live Restore Drill into temporary DB `haihire_restore_drill` verified 166 User records. |
 
-### 1.2. Tổng Quan Chỉ Số Chất Lượng & SRE
+### 1.2. Quality & SRE Metrics Overview
 * **Full Test Suite:** **301 / 301 tests PASS (100%)**
   - Backend Vitest: **23 test files, 194 tests PASS**
   - Frontend Vitest: **21 test files, 107 tests PASS**
@@ -27,10 +27,10 @@ Toàn bộ 2/2 Action Items từ IV&V Round 5 đã được đóng hoàn toàn (
 
 ---
 
-## 2. ACTION 1: FIX DTO VALIDATION TRÊN EMAIL CONTROLLER (P1)
+## 2. Action 1: Fix DTO Validation on Email Controller (P1)
 
-### 2.1. Phân Tích & Bằng Chứng Tái Hiện Trước Fix (Repro Before)
-Tại `backend/src/email/email.controller.ts`, 2 endpoint quản trị `/email/system/test` và `/email/system/send` sử dụng decorator `@Body()` nhưng không truyền qua pipe thẩm định `DtoPipe(...)`. Kết quả là payload rác không đúng định dạng email vẫn lọt qua tầng Controller và nhận HTTP 201 Created.
+### 2.1. Root Cause Analysis & Pre-Fix Reproduction Evidence
+In `backend/src/email/email.controller.ts`, 2 administrative endpoints `/email/system/test` and `/email/system/send` used `@Body()` without passing through the `DtoPipe(...)` validation pipe. Consequently, malformed strings bypassing email formatting reached the Controller layer and returned HTTP 201 Created.
 
 * **Raw HTTP Request & Response (Before Fix):**
   ```bash
@@ -39,7 +39,7 @@ Tại `backend/src/email/email.controller.ts`, 2 endpoint quản trị `/email/s
     -H "Content-Type: application/json" \
     -d '{"to": "not-an-email"}'
   ```
-  **Raw Output Trước Fix:**
+  **Raw Output Before Fix:**
   ```json
   HTTP/1.1 201 Created
   Content-Type: application/json; charset=utf-8
@@ -49,10 +49,10 @@ Tại `backend/src/email/email.controller.ts`, 2 endpoint quản trị `/email/s
     "message": "System test email queued for delivery"
   }
   ```
-  *(Thất bại nghiêm trọng: Địa chỉ `"not-an-email"` vẫn được xếp hàng gửi mail thành công).*
+  *(Critical flaw: The address `"not-an-email"` was successfully queued for delivery).*
 
-### 2.2. Code Thay Đổi (Code Modification)
-Cập nhật `backend/src/email/email.controller.ts`:
+### 2.2. Code Modification
+Updated `backend/src/email/email.controller.ts`:
 ```typescript
 // backend/src/email/email.controller.ts
 import { DtoPipe } from "../common/dto-validation.pipe";
@@ -74,12 +74,12 @@ sendSystemEmail(
 }
 ```
 
-Đồng thời, thực hiện mở rộng chuẩn hóa cho toàn bộ controller trong repo:
-1. `backend/src/organizations/organizations.controller.ts`: Tạo `SwitchOrgDto`, `UpdateMemberRoleDto`, `CreateInviteLinkDto` và bọc với `DtoPipe`.
-2. `backend/src/activities/activities.controller.ts`: Tạo `CreateActivityRecordDto` và bọc endpoint `@Post()` với `DtoPipe`.
+Standardization applied across all remaining controllers in the repository:
+1. `backend/src/organizations/organizations.controller.ts`: Created `SwitchOrgDto`, `UpdateMemberRoleDto`, `CreateInviteLinkDto` and wrapped with `DtoPipe`.
+2. `backend/src/activities/activities.controller.ts`: Created `CreateActivityRecordDto` and wrapped the `@Post()` endpoint with `DtoPipe`.
 
-### 2.3. Kiểm Chứng Thực Tế Sau Fix (Verify After - Raw Evidence)
-Chạy kịch bản kiểm chứng tự động `scratch/verify-action1-email-validation.ts`:
+### 2.3. Post-Fix Verification (Raw Evidence)
+Executed automated verification script `scratch/verify-action1-email-validation.ts`:
 ```text
 ==================================================================
        ACTION 1 VERIFICATION: /email/system/test DTO VALIDATION   
@@ -116,57 +116,57 @@ ACTION 1 VERIFICATION RESULT: 100% PASS
 ==================================================================
 ```
 
-### 2.4. Kết Quả Quét Audit Toàn Bộ Controllers (Grep Check)
-* **Phạm vi:** 12 controller files (`backend/src/**/*.controller.ts`).
-* **Tiêu chí:** Mọi handler `@Post()`, `@Put()`, `@Patch()` nhận `@Body()` bắt buộc phải có `DtoPipe(...)`.
-* **Kết quả:** **0 unpiped `@Body()` tồn tại trong toàn bộ codebase**.
+### 2.4. Comprehensive Controller Audit Results (Grep Check)
+* **Scope:** 12 controller files (`backend/src/**/*.controller.ts`).
+* **Criteria:** Every `@Post()`, `@Put()`, `@Patch()` handler accepting `@Body()` must declare `DtoPipe(...)`.
+* **Outcome:** **0 unpiped `@Body()` parameters exist across the codebase**.
 
-### 2.5. Bảng Nghiệm Thu Acceptance Criteria (Action 1)
-- [x] 2 endpoint email có `DtoPipe` (`SendSystemTestEmailDto`, `SendSystemEmailDto`).
-- [x] Payload invalid / rỗng / sai kiểu → HTTP 400 Bad Request.
-- [x] Payload valid → HTTP 201 Created.
-- [x] Grep toàn bộ controllers = 0 `@Body()` thiếu `DtoPipe`.
-- [x] 68 scenarios regression PASS 100%.
+### 2.5. Acceptance Criteria Checklist (Action 1)
+- [x] Both email endpoints utilize `DtoPipe` (`SendSystemTestEmailDto`, `SendSystemEmailDto`).
+- [x] Malformed / empty / invalid types return HTTP 400 Bad Request.
+- [x] Valid payloads return HTTP 201 Created.
+- [x] Global audit across controllers reveals 0 unpiped `@Body()` decorators.
+- [x] 68 regression scenarios maintain 100% PASS.
 
 ---
 
-## 3. ACTION 2: TÁI CẤU TRÚC BACKUP SCRIPT, TÍCH HỢP MINIO & LIVE RESTORE DRILL (P2)
+## 3. Action 2: Refactoring Backup Pipeline, MinIO Integration & Live Restore Drill (P2)
 
-### 3.1. Phân Tích & Bằng Chứng Hỏng Hóc Trước Fix (Repro Before)
-Ở Phase 10.1 và 10.2, lệnh backup:
+### 3.1. Pre-Fix Failure Analysis
+In Phase 10.1 and 10.2, the backup invocation:
 `docker exec -t haihire-postgres pg_dump ... > "${targetPath}"`
-gặp 2 lỗi nghiêm trọng:
-1. Cờ `-t` gán pseudo-TTY, chèn escape sequences vào dữ liệu.
-2. Toán tử redirect `>` của PowerShell lưu file dưới dạng UTF-16LE với BOM (`0xFF 0xFE`).
-Khi cố gắng phục hồi file dump trên container Linux, `psql` báo lỗi:
+suffered from 2 critical flaws:
+1. The `-t` flag allocated a pseudo-TTY, injecting terminal escape sequences into the binary stream.
+2. PowerShell redirection `>` saved output as UTF-16LE with BOM (`0xFF 0xFE`).
+When attempting restoration in the Linux container, `psql` failed:
 ```text
 invalid command \iRsl"
 invalid command \%
 ERROR: invalid byte sequence for encoding "UTF8": 0xff
 ```
-Ngoài ra, đối tượng resume trên MinIO hoàn toàn bị bỏ quên, không có sao lưu.
+Furthermore, candidate resume attachments in MinIO were omitted completely from the backup process.
 
-### 3.2. Code Thay Đổi Cốt Lõi (Architecture & Code Modification)
-File [`scripts/backup-production.ts`](file:///c:/Workspaces/haihire/scripts/backup-production.ts) được tái cấu trúc thành Enterprise Backup Pipeline:
-1. **Loại bỏ TTY & Tránh Redirection Corruption:**
-   - Dùng `docker exec -i` (không dùng cờ `-t`).
-   - `pg_dump` ghi trực tiếp vào filesystem container `-f /tmp/dump.dump` (Custom format `-F c`) và `-f /tmp/dump.sql` (Plain text format `-F p`).
-   - Sử dụng `docker cp` để copy file nhị phân nguyên vẹn ra host, hoàn toàn miễn nhiễm với PowerShell shell redirection.
-2. **Tích hợp Hot Archival Cho MinIO Object Storage:**
-   - Tự động nén toàn bộ volume lưu trữ `/data` của MinIO bên trong container bằng `tar -czf /tmp/minio-backup.tar.gz -C /data .`.
-   - Copy file nén `.tar.gz` ra host và dọn dẹp temp trong container.
-3. **Kiểm Tra Tính Toàn Vẹn TOC (Integrity Verification):**
-   - Chạy `pg_restore -l` trên snapshot để xác nhận TOC Entries, block compression, và format header hợp lệ trước khi công bố thành công.
-4. **Tự Động Chạy Live Restore Drill:**
-   - Khởi tạo database tạm `haihire_restore_drill`.
-   - Restore snapshot qua `pg_restore -U haihire_user -d haihire_restore_drill --no-owner --no-acl /tmp/restore_drill.dump`.
-   - Query kiểm tra tính nguyên vẹn: `SELECT count(*) FROM "user";`.
-   - Xóa `haihire_restore_drill` sau khi test thành công. Nếu thất bại, giữ nguyên file dump trên host để phục vụ điều tra nguyên nhân.
-5. **Cơ Chế File Mutex Lock:**
-   - Thiết lập `.backup.lock` để ngăn chặn xung đột khi có 2 tiến trình sao lưu chạy đồng thời.
+### 3.2. Architecture & Code Modifications
+The [`scripts/backup-production.ts`](file:///c:/Workspaces/haihire/scripts/backup-production.ts) script was re-architected into an Enterprise Backup Pipeline:
+1. **Eliminated TTY & Redirection Corruption:**
+   - Switched to `docker exec -i` (omitting `-t`).
+   - `pg_dump` writes directly to container filesystem `-f /tmp/dump.dump` (Custom format `-F c`) and `-f /tmp/dump.sql` (Plain text `-F p`).
+   - Binary artifacts copied to host via `docker cp`, immune to shell redirection artifacts.
+2. **Integrated Hot Archival for MinIO Object Storage:**
+   - Automatically archives the `/data` volume inside the MinIO container via `tar -czf /tmp/minio-backup.tar.gz -C /data .`.
+   - Copies `.tar.gz` to host and removes container temporary files.
+3. **Automated TOC Integrity Verification:**
+   - Executes `pg_restore -l` verifying Table of Contents entries, block compression, and headers prior to completion.
+4. **Automated Live Restore Drill:**
+   - Creates temporary database `haihire_restore_drill`.
+   - Restores snapshot via `pg_restore -U haihire_user -d haihire_restore_drill --no-owner --no-acl /tmp/restore_drill.dump`.
+   - Executes verification query: `SELECT count(*) FROM "user";`.
+   - Cleans up `haihire_restore_drill` upon validation. In case of failure, preserves artifacts for forensics.
+5. **File Mutex Lock Mechanism:**
+   - Acquires `.backup.lock` to prevent concurrent overlapping executions.
 
-### 3.3. Bằng Chứng Thực Thi Backup Thật & Live Restore Drill (Verify After - Raw Evidence)
-Lệnh thực thi độc lập:
+### 3.3. Live Backup & Restore Drill Evidence (Raw Evidence)
+Executed standalone backup script:
 ```bash
 node --no-warnings --experimental-strip-types scripts/backup-production.ts
 ```
@@ -199,81 +199,81 @@ node --no-warnings --experimental-strip-types scripts/backup-production.ts
 [Backup] ========================================================
 ```
 
-### 3.4. Cập Nhật Runbook Thao Tác Phục Hồi Thảm Họa
-Tài liệu [`docs/runbooks/backup-and-restore.md`](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md) đã được cập nhật chi tiết các phương thức:
-* Hướng dẫn chạy pipeline sao lưu tự động.
-* Khôi phục database PostgreSQL bằng Custom Archive (`pg_restore`) và Plain SQL.
-* Khôi phục dữ liệu MinIO từ archive `.tar.gz`.
-* Quy trình tái lập kết nối và kiểm tra hậu phục hồi (`/health`, `/metrics`).
+### 3.4. Disaster Recovery Runbook Updates
+The [`docs/runbooks/backup-and-restore.md`](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md) runbook was updated to document:
+* Automated backup execution workflow.
+* PostgreSQL database restoration via Custom Archive (`pg_restore`) and Plain SQL.
+* MinIO object storage restoration from `.tar.gz`.
+* Post-recovery verification procedures (`/health`, `/metrics`).
 
-### 3.5. Bảng Nghiệm Thu Acceptance Criteria (Action 2)
-- [x] Backup script chạy thành công 100% với exit code 0.
-- [x] File dump được phục hồi vào DB test thật sự (`pg_restore` PASS).
-- [x] Lưu trữ đồng bộ cả PostgreSQL và MinIO storage (`.tar.gz`).
-- [x] Live Restore Drill tự động PASS (User count = 166).
-- [x] Runbook đã phản ánh chính xác quy trình mới.
+### 3.5. Acceptance Criteria Checklist (Action 2)
+- [x] Backup script executes with exit code 0.
+- [x] Dump restored into clean test database (`pg_restore` PASS).
+- [x] Concurrent backup of PostgreSQL and MinIO storage (`.tar.gz`).
+- [x] Automated live Restore Drill passes (User count = 166).
+- [x] Runbook reflects operational procedures.
 
 ---
 
-## 4. CHI TIẾT BỐN CỔNG XÁC THỰC TOÀN DIỆN (VERIFICATION V1 - V4)
+## 4. Verification Gates (V1 through V4)
 
 ### 4.1. V1 — Full Test Suite Execution
-* **Lệnh:** `pnpm test`
-* **Kết quả:** **301 / 301 tests PASS (100%)**
+* **Command:** `pnpm test`
+* **Result:** **301 / 301 tests PASS (100%)**
   - **Backend Vitest:** 23 test suites, **194 passed** (0 failed).
   - **Frontend Vitest:** 21 test suites, **107 passed** (0 failed).
-  - **Linter & TypeCheck:** `eslint . && tsc --noEmit` hoàn tất với **0 lỗi**.
+  - **Linter & TypeCheck:** `eslint . && tsc --noEmit` clean with **0 errors**.
 
-### 4.2. V2 — 68 Kịch Bản Hồi Quy Độc Lập (Regression Scenarios)
-* **Lệnh:** `node --no-warnings --experimental-strip-types scratch/ivv4-regression-68.ts`
-* **Kết quả:** **68 / 68 scenarios PASSED (100%)**
-* **Trạng thái các kịch bản trọng yếu:**
-  - Health & Metrics Check (#01, #02): **PASS**
+### 4.2. V2 — 68 Independent Regression Scenarios
+* **Command:** `node --no-warnings --experimental-strip-types scratch/ivv4-regression-68.ts`
+* **Result:** **68 / 68 scenarios PASSED (100%)**
+* **Key Scenarios Status:**
+  - Health & Metrics Verification (#01, #02): **PASS**
   - Multi-tenant Isolation (#04, #06, #11): **PASS**
   - Validation Gatekeepers (#13, #14, #20): **PASS**
   - Optimistic Locking Stage Transition (#22, #23): **PASS**
   - SRE Hardening & Security Policies (#57–#68): **PASS**
 
-### 4.3. V3 — Runtime Verification Của 2 Action Items
-1. **Email DtoPipe Verification:** 5 payloads kiểm thử tới `/email/system/test` xác nhận:
+### 4.3. V3 — Runtime Verification of Both Action Items
+1. **Email DtoPipe Verification:** 5 payloads against `/email/system/test` confirmed:
    - Invalid email string → HTTP 400 Bad Request
    - Empty object `{}` → HTTP 400 Bad Request
    - Empty string `""` → HTTP 400 Bad Request
    - Non-string type `12345` → HTTP 400 Bad Request
    - Valid email `"verified@haihire.internal"` → HTTP 201 Created
-2. **Production Backup & Restore Verification:** Chạy thực tế trên Docker daemon, sinh snapshot PostgreSQL (374.26 KB dump + 2240.82 KB sql) và MinIO (3330.93 KB tar.gz). Phục hồi thành công vào `haihire_restore_drill` và xác thực query dữ liệu thực tế.
+2. **Production Backup & Restore Verification:** Generated PostgreSQL snapshot (374.26 KB dump + 2240.82 KB sql) and MinIO archive (3330.93 KB tar.gz). Successfully restored and verified data integrity in `haihire_restore_drill`.
 
-### 4.4. V4 — Kiểm Thử 5 Kịch Bản Biên Mới (Edge Cases)
-Thực thi kiểm chứng độc lập qua `scratch/verify-v4-edge-cases.ts`:
-* **V4-EC1: DtoPipe Audit Trên Toàn Bộ Controllers:**
-  Quét toàn diện 12 controller files (`backend/src/**/*.controller.ts`). Tìm thấy 0 trường hợp `@Body()` không có `DtoPipe`. **Kết quả: PASS**.
+### 4.4. V4 — 5 New Edge Cases Testing
+Executed standalone script `scratch/verify-v4-edge-cases.ts`:
+* **V4-EC1: Comprehensive DtoPipe Audit Across Controllers:**
+  Scanned 12 controller files (`backend/src/**/*.controller.ts`). 0 unpiped `@Body()` decorators found. **Result: PASS**.
 * **V4-EC2: PostgreSQL Container Down:**
-  Thiết lập `POSTGRES_CONTAINER=haihire-postgres-nonexistent`. Script phát hiện sớm tại bước pre-flight, trả về `success: false`, log lỗi rõ ràng và dừng tiến trình an toàn không gây unhandled crash. **Kết quả: PASS**.
+  Configured `POSTGRES_CONTAINER=haihire-postgres-nonexistent`. Pre-flight check intercepted the outage, returning `success: false` and terminating gracefully without an unhandled crash. **Result: PASS**.
 * **V4-EC3: MinIO Container Down:**
-  Thiết lập `MINIO_CONTAINER=haihire-minio-nonexistent`. Script phát hiện và báo lỗi `MinIO pre-flight failed`, dừng tiến trình an toàn. **Kết quả: PASS**.
+  Configured `MINIO_CONTAINER=haihire-minio-nonexistent`. Pre-flight reported `MinIO pre-flight failed`, exiting safely. **Result: PASS**.
 * **V4-EC4: Forensic Artifact Retention:**
-  Khi quá trình restore gặp sự cố, script kích hoạt cơ chế bảo vệ hiện trường: giữ nguyên toàn bộ file snapshot trên host để phục vụ SRE điều tra nguyên nhân. **Kết quả: PASS**.
+  Simulated restore failure; script preserved all snapshot files on the host for debugging. **Result: PASS**.
 * **V4-EC5: Concurrent Backup Lock:**
-  Mô phỏng 2 phiên backup chạy song song. Tiến trình thứ hai phát hiện file lock `.backup.lock`, từ chối chạy đè và thoát an toàn. **Kết quả: PASS**.
+  Simulated 2 simultaneous backup jobs. Secondary instance detected `.backup.lock` and exited without collisions. **Result: PASS**.
 
 ---
 
-## 5. SIGN-OFF DECLARATION
+## 5. Sign-Off Declaration
 
-* Căn cứ kết quả kiểm tra tĩnh, kiểm tra động, và thẩm định thực tế trên môi trường live;
-* Căn cứ tỷ lệ hoàn thành **2/2 Action Items (100% CLOSED)**;
-* Căn cứ kết quả kiểm thử **301/301 Unit/Integration Tests**, **68/68 Regression Scenarios**, và **5/5 Edge Cases**:
+* Based on static analysis, dynamic validation, and live runtime testing;
+* Based on **2/2 Action Items (100% CLOSED)**;
+* Based on **301/301 Unit/Integration Tests**, **68/68 Regression Scenarios**, and **5/5 Edge Cases**:
 
-> ### 🟢 VERDICT: READY FOR IV&V ROUND 6 (FINAL GATE TRƯỚC GO-LIVE)
-> Đội ngũ kỹ thuật tuyên bố hệ thống HaiHire ATS Platform đã giải quyết dứt điểm các lỗi phát hiện tại Round 5, đạt chuẩn Enterprise về tính toàn vẹn dữ liệu, khả năng phòng vệ thảm họa và chất lượng API. Hệ thống chính thức sẵn sàng bước vào vòng kiểm chứng độc lập **IV&V Round 6**.
+> ### 🟢 VERDICT: READY FOR IV&V ROUND 6 (FINAL GATE PRIOR TO GO-LIVE)
+> The engineering team confirms that the HaiHire ATS Platform has resolved all findings from Round 5, satisfying enterprise data integrity, disaster recovery, and API security requirements. The platform is ready to proceed to independent verification in **IV&V Round 6**.
 
 ---
 
-## 6. KHUYẾN NGHỊ CHO IV&V ROUND 6 AUDITOR
+## 6. Recommendations for IV&V Round 6 Auditor
 
-1. **Kiểm tra tính toàn vẹn của MinIO Archive:**
-   Đề xuất IV&V Auditor giải nén file `haihire-minio-*.tar.gz` trên một container MinIO độc lập và verify sự hiện diện của các tệp PDF/DOCX ứng viên.
-2. **Kiểm thử tải đồng thời (Load Test) trên các endpoint quản trị:**
-   Verify rate-limiting và memory allocation khi nhiều request gửi email hàng loạt đồng thời.
-3. **Xác nhận tính năng xoay vòng bản sao lưu (Retention Test):**
-   Kiểm tra logic dọn dẹp các tệp sao lưu cũ hơn 7 ngày trong thư mục `./backups`.
+1. **Verify MinIO Archive Integrity:**
+   Extract `haihire-minio-*.tar.gz` into an isolated container to confirm candidate resumes and portfolios unpack intact.
+2. **Execute Concurrent Load Testing on Admin Endpoints:**
+   Validate rate limits and heap utilization under burst email queue requests.
+3. **Verify Backup Retention Pruning:**
+   Verify automatic cleanup logic for snapshots older than 7 days in `./backups`.

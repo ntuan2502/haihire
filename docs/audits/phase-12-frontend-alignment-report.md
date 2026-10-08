@@ -1,19 +1,19 @@
-# Báo cáo Kiểm chứng & Hoàn tất Phase 12: Frontend State Machine Alignment
+# Phase 12 Verification & Completion Report: Frontend State Machine Alignment
 
-**Mã dự án:** HaiHire ATS  
-**Giai đoạn:** Phase 12 — Frontend State Machine Alignment  
-**Người thực hiện:** Senior Frontend Architect & SRE Auditor (`@frontend-specialist`)  
-**Ngày báo cáo:** 02/10/2026  
-**Trạng thái:** 🟢 **COMPLETED & APPROVED FOR SHIP**
+**Project Code:** HaiHire ATS  
+**Phase:** Phase 12 — Frontend State Machine Alignment  
+**Role:** Senior Frontend Architect & SRE Auditor (`@frontend-specialist`)  
+**Report Date:** 02/10/2026  
+**Status:** 🟢 **COMPLETED & APPROVED FOR SHIP**
 
 ---
 
 ## 1. Executive Summary
 
-### 1.1 Mô tả Bug từ Thực tế & User Evidence
-* **URL phát sinh:** `/dashboard/jobs/[id]/pipeline?stage=SCREENING&applicationId=[appId]`
-* **Hành vi người dùng (User Action):** Người dùng thực hiện thao tác kéo (drag) hoặc click chuyển đổi hồ sơ ứng viên từ cột `SCREENING` (Sàng lọc) quay ngược lại `APPLIED` (Mới nộp / New).
-* **Phản hồi từ Backend:**
+### 1.1 Bug Description & User Evidence
+* **Trigger URL:** `/dashboard/jobs/[id]/pipeline?stage=SCREENING&applicationId=[appId]`
+* **User Action:** User drags or clicks to transition an application from `SCREENING` backwards to `APPLIED`.
+* **Backend Response:**
   ```http
   HTTP 400 Bad Request
   Content-Type: application/json
@@ -28,38 +28,38 @@
     }
   }
   ```
-* **Hiện trạng giao diện (Before Fix):**
-  1. **Thiếu hoàn toàn cơ chế phòng ngừa (Zero Prevention UX):** Giao diện Pipeline Kanban và Drawer vẫn cho phép kéo thả hoặc click vào tất cả các nút stage mà không hề đối chiếu với máy trạng thái (state machine).
-  2. **Raw JSON Leakage:** Khi backend trả về HTTP 400, giao diện hiển thị thông báo lỗi thô dạng chuỗi JSON `{"statusCode": 400, "code": "APPLICATION_INVALID_STAGE_TRANSITION", ...}` mà không thông qua từ điển bản địa hóa đa ngôn ngữ (i18n).
-  3. **Không đồng bộ trạng thái (Out of Sync):** UI không kích hoạt cơ chế `refetch` / `queryClient.invalidateQueries`, dẫn tới trạng thái Kanban trên màn hình bị lệch so với dữ liệu thực tế trong CSDL.
+* **UI State (Pre-fix):**
+  1. **Zero Prevention UX:** Pipeline Kanban and Drawer allowed dragging and clicking across all stage buttons without state machine validation.
+  2. **Raw JSON Leakage:** Upon receiving HTTP 400, the UI leaked raw JSON `{"statusCode": 400, "code": "APPLICATION_INVALID_STAGE_TRANSITION", ...}` rather than localized i18n messages.
+  3. **Out of Sync:** Failed to trigger `queryClient.invalidateQueries`, causing the board to desynchronize from actual database state.
 
-### 1.2 Phạm vi Sửa đổi (Fix Scope)
-* **Single Source of Truth:** Import và dùng trực tiếp ma trận `VALID_APPLICATION_STAGE_TRANSITIONS` từ `@haihire/shared`.
-* **Centralized State Machine Guard:** Xây dựng hàm kiểm tra tập trung `canTransition(from, to): boolean` và `getTransitionDisabledReason(from, to, t): string` tại `frontend/src/lib/stages.ts`.
-* **Component Hóa & Phòng ngừa UX (A3 & A4):**
-  - Tạo mới component `StageSelector` (`frontend/src/components/jobs/pipeline/stage-selector.tsx`) hỗ trợ cả 2 variant: `dropdown` (lọc bỏ các stage không hợp lệ) và `buttons` (disable các nút vi phạm kèm tooltip giải thích lý do, ví dụ: *"Không thể chuyển từ SCREENING sang APPLIED"* hoặc *"Ứng viên đã HIRED không thể quay lại APPLIED"*).
-  - Tích hợp HTML5 Drag & Drop vào `PipelineCandidateCard` và `PipelineStageSelector`: Kiểm tra `canTransition` trước khi gọi API. Nếu vi phạm, lập tức chặn gọi mạng và hiển thị toast cảnh báo.
-* **Xử lý Lỗi Tầng Sâu (Defense-in-Depth):**
-  - Toàn bộ 4 vị trí gọi API `updateStage` trong toàn bộ frontend được refactor: Bắt buộc đi qua `getApiErrorMessage(err, t)` để trích xuất thông điệp chuẩn i18n, đồng thời gọi `queryClient.invalidateQueries` để đồng bộ lại dữ liệu CSDL ngay lập tức.
-  - Tích hợp `<Toaster richColors position="top-right" />` từ `sonner` vào `RootLayout` (`frontend/src/app/layout.tsx`).
-* **Bảo toàn Ràng buộc:** Tuyệt đối không thay đổi backend logic (backend đã hoàn hảo từ Phase 3).
+### 1.2 Remediation Scope
+* **Single Source of Truth:** Directly consume `VALID_APPLICATION_STAGE_TRANSITIONS` matrix from `@haihire/shared`.
+* **Centralized State Machine Guard:** Authored centralized helpers `canTransition(from, to): boolean` and `getTransitionDisabledReason(from, to, t): string` in `frontend/src/lib/stages.ts`.
+* **Componentization & UX Prevention (A3 & A4):**
+  - Created `StageSelector` (`frontend/src/components/jobs/pipeline/stage-selector.tsx`) supporting two variants: `dropdown` (filters out invalid stages) and `buttons` (disables invalid buttons with informative tooltips such as *"Cannot transition from SCREENING to APPLIED"* or *"Candidate is HIRED and cannot transition to APPLIED"*).
+  - Integrated HTML5 Drag & Drop in `PipelineCandidateCard` and `PipelineStageSelector`: Validates `canTransition` pre-flight, intercepting invalid drops with toast alerts.
+* **Defense-in-Depth Error Handling:**
+  - Standardized all 4 `updateStage` API call sites across the frontend: Routed errors through `getApiErrorMessage(err, t)` and invoked `queryClient.invalidateQueries` to resync state immediately.
+  - Added `<Toaster richColors position="top-right" />` from `sonner` into `RootLayout` (`frontend/src/app/layout.tsx`).
+* **Backend Preservation:** Preserved backend logic untouched (already sound since Phase 3).
 
-### 1.3 Test Count & Quality Gate Trước / Sau
-| Tiêu chí | Trước Phase 12 | Sau Phase 12 | Biến thiên |
+### 1.3 Test Count & Quality Gates Before / After
+| Metric | Pre-Phase 12 | Post-Phase 12 | Delta |
 | :--- | :---: | :---: | :---: |
-| **Backend Test Suite** | 218 tests (25 files) | 218 tests (25 files) | Giữ nguyên (100% PASS) |
-| **Frontend Test Suite** | 107 tests (21 files) | **126 tests** (23 files) | **+19 tests mới** (100% PASS) |
-| **Tổng số Unit/Integration Tests** | **325 tests** | **344 tests** | **+19 tests (Vượt ngưỡng $\ge 325$)** |
-| **DtoPipe CI Gate** | 100% pass | 100% pass | 0 regression |
-| **TypeScript Typecheck** | 0 error | 0 error | 0 error |
-| **Monorepo ESLint** | 0 error | 0 error | 0 error |
+| **Backend Test Suite** | 218 tests (25 files) | 218 tests (25 files) | Unchanged (100% PASS) |
+| **Frontend Test Suite** | 107 tests (21 files) | **126 tests** (23 files) | **+19 net new tests** (100% PASS) |
+| **Total Unit/Integration Tests** | **325 tests** | **344 tests** | **+19 tests (Exceeds $\ge 325$ threshold)** |
+| **DtoPipe CI Gate** | 100% pass | 100% pass | 0 regressions |
+| **TypeScript Typecheck** | 0 errors | 0 errors | 0 errors |
+| **Monorepo ESLint** | 0 errors | 0 errors | 0 errors |
 
 ---
 
-## 2. PART A: Phòng ngừa ở Frontend (Prevention)
+## 2. PART A: Frontend Prevention
 
 ### 2.1 Single Source of Truth & Helper Functions
-Toàn bộ logic máy trạng thái chuyển tuyển dụng được tham chiếu trực tiếp từ package `@haihire/shared`:
+Referenced recruitment lifecycle transition matrix directly from `@haihire/shared`:
 
 ```typescript
 // frontend/src/lib/stages.ts
@@ -100,7 +100,7 @@ export function getTransitionDisabledReason(
         if (msg && msg !== "pipeline.tooltips.cannotMoveHired") return msg;
       } catch { /* Fallback */ }
     }
-    return `Ứng viên đã HIRED không thể quay lại ${toStage}`;
+    return `Candidate is HIRED and cannot transition to ${toStage}`;
   }
 
   if (fromStage === "REJECTED") {
@@ -110,7 +110,7 @@ export function getTransitionDisabledReason(
         if (msg && msg !== "pipeline.tooltips.cannotMoveRejected") return msg;
       } catch { /* Fallback */ }
     }
-    return `Ứng viên đã REJECTED không thể chuyển sang ${toStage}`;
+    return `Candidate is REJECTED and cannot transition to ${toStage}`;
   }
 
   if (t) {
@@ -119,17 +119,17 @@ export function getTransitionDisabledReason(
       if (msg && msg !== "pipeline.tooltips.invalidTransition") return msg;
     } catch { /* Fallback */ }
   }
-  return `Không thể chuyển từ ${fromStage} sang ${toStage}`;
+  return `Cannot transition from ${fromStage} to ${toStage}`;
 }
 ```
 
-### 2.2 Component Hóa `StageSelector` Đa Năng
-File mới: `frontend/src/components/jobs/pipeline/stage-selector.tsx`
-- **Variant `dropdown`:** Tự động loại bỏ hoàn toàn các stage không hợp lệ khỏi menu chọn lựa (`<select>`). Khi ứng viên đang ở `SCREENING`, dropdown chỉ hiển thị `INTERVIEW` và `REJECTED`, tuyệt đối không có `APPLIED`.
-- **Variant `buttons`:** Render đầy đủ các stage khác, nhưng các stage không hợp lệ bị vô hiệu hóa (`disabled`), đổi màu xám mờ (`opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800`), đồng thời gắn `title` chứa lý do chi tiết để hiển thị khi người dùng rê chuột (Hover Tooltip).
+### 2.2 Reusable `StageSelector` Component
+New file: `frontend/src/components/jobs/pipeline/stage-selector.tsx`
+- **Variant `dropdown`:** Automatically filters out invalid stages from `<select>`. When in `SCREENING`, only `INTERVIEW` and `REJECTED` are rendered; `APPLIED` is omitted.
+- **Variant `buttons`:** Renders other stages while disabling invalid targets (`opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800`), attaching descriptive hover tooltips.
 
 ```tsx
-// frontend/src/components/jobs/pipeline/stage-selector.tsx (Trích đoạn nút bấm)
+// frontend/src/components/jobs/pipeline/stage-selector.tsx (Buttons excerpt)
 return (
   <div className={`flex items-center gap-2 flex-wrap ${className}`}>
     {stageOptions
@@ -161,10 +161,10 @@ return (
 ```
 
 ### 2.3 HTML5 Kanban Drag & Drop Prevention
-Tích hợp trực tiếp sự kiện kéo thả giữa `PipelineCandidateCard` và `PipelineStageSelector`:
-* Trong `PipelineCandidateCard`: Thiết lập `draggable={canDrag}` và truyền metadata `{ id, stage }` qua `dataTransfer`.
-* Trong `PipelineStageSelector`: Thiết lập `onDragOver` và `onDrop` trên từng pill stage.
-* Trong `page.tsx` (`handleDropCandidate`):
+Integrated drag and drop interaction between `PipelineCandidateCard` and `PipelineStageSelector`:
+* In `PipelineCandidateCard`: Set `draggable={canDrag}` passing metadata `{ id, stage }` via `dataTransfer`.
+* In `PipelineStageSelector`: Handled `onDragOver` and `onDrop` per stage pill.
+* In `page.tsx` (`handleDropCandidate`):
   ```typescript
   const handleDropCandidate = (
     candidateId: string,
@@ -172,7 +172,7 @@ Tích hợp trực tiếp sự kiện kéo thả giữa `PipelineCandidateCard` 
     toStage: ApplicationStage,
   ) => {
     if (fromStage === toStage) return;
-    // Chặn trước khi gọi API
+    // Intercept pre-flight
     if (!canTransition(fromStage, toStage)) {
       const reason = getTransitionDisabledReason(fromStage, toStage, t);
       toast.error(reason);
@@ -186,15 +186,15 @@ Tích hợp trực tiếp sự kiện kéo thả giữa `PipelineCandidateCard` 
 
 ## 3. PART B: Error Handling (Defense in Depth)
 
-### 3.1 Grep Kết quả Toàn bộ Vị trí Gọi `updateStage`
-Kết quả rà soát toàn bộ frontend xác định chính xác 4 vị trí kích hoạt cập nhật stage:
-1. `frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx` (Dòng 380 - Kanban Pipeline Page)
-2. `frontend/src/components/applications/applications-data-table.tsx` (Dòng 434 - Drawer danh sách hồ sơ)
-3. `frontend/src/app/dashboard/applications/[id]/page.tsx` (Dòng 198 - Trang chi tiết ứng viên)
-4. `frontend/src/components/interviews/schedule-interview-modal.tsx` (Dòng 210 - Modal xếp lịch phỏng vấn)
+### 3.1 All `updateStage` Invocations Audited
+Audited all 4 stage update invocation sites across the frontend:
+1. `frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx` (Line 380 - Kanban Pipeline Page)
+2. `frontend/src/components/applications/applications-data-table.tsx` (Line 434 - Applications Drawer)
+3. `frontend/src/app/dashboard/applications/[id]/page.tsx` (Line 198 - Application Details Page)
+4. `frontend/src/components/interviews/schedule-interview-modal.tsx` (Line 210 - Schedule Interview Modal)
 
-### 3.2 Refactor Chuẩn Hóa Qua `getApiErrorMessage` & Refresh State
-Không có bất kỳ vị trí nào sử dụng `JSON.stringify(err)` hoặc in thô `err.message`. Mọi lỗi phát sinh đều được dẫn xuất qua `getApiErrorMessage(err, t)` để hiển thị Toast thông điệp thân thiện và tự động đồng bộ lại cache của TanStack Query:
+### 3.2 Standardized `getApiErrorMessage` & State Refresh
+Eliminated raw `JSON.stringify(err)` and `err.message` output. All errors flow through `getApiErrorMessage(err, t)` and trigger TanStack Query invalidation:
 
 ```typescript
 // Refactored handleMoveCandidateStage in page.tsx
@@ -237,8 +237,8 @@ const handleMoveCandidateStage = async (
 };
 ```
 
-### 3.3 Khai báo Đa ngôn ngữ (i18n Verification)
-Hai mã lỗi và bộ tooltip đã được xác minh đầy đủ trong cả 2 từ điển `vi.ts` và `en.ts`:
+### 3.3 Multilingual i18n Verification
+Error codes and tooltips synchronized in `vi.ts` and `en.ts`:
 * `errors.APPLICATION_INVALID_STAGE_TRANSITION`:
   - **vi:** *"Không thể chuyển hồ sơ sang giai đoạn này. Vui lòng kiểm tra lại quy trình tuyển dụng."*
   - **en:** *"This stage transition is not allowed. Please check the recruitment workflow."*
@@ -253,33 +253,33 @@ Hai mã lỗi và bộ tooltip đã được xác minh đầy đủ trong cả 2
 
 ---
 
-## 4. PART C: Kiểm chứng & Bằng chứng (Evidence)
+## 4. PART C: Verification Evidence
 
-### 4.1 Unit Test cho `canTransition` (C1)
-Tập tin: `frontend/src/lib/stages.spec.ts` (10 tests pass 100%)
-* `APPLIED` $\rightarrow$ `SCREENING`: `true` (Hợp lệ)
-* `APPLIED` $\rightarrow$ `HIRED`: `false` (Bị chặn: không được nhảy cóc)
-* `SCREENING` $\rightarrow$ `APPLIED`: `false` (Bị chặn: không được đi lùi - Bug gốc)
-* `HIRED` $\rightarrow$ `APPLIED`: `false` (Bị chặn: trạng thái kết thúc terminal)
-* `REJECTED` $\rightarrow$ `OFFER`: `false` (Bị chặn: trạng thái kết thúc terminal)
-* `APPLIED` $\rightarrow$ `APPLIED`: `true` (No-op cùng trạng thái)
+### 4.1 Unit Tests for `canTransition` (C1)
+File: `frontend/src/lib/stages.spec.ts` (10 tests, 100% pass)
+* `APPLIED` $\rightarrow$ `SCREENING`: `true` (Valid)
+* `APPLIED` $\rightarrow$ `HIRED`: `false` (Blocked: skipping stages prohibited)
+* `SCREENING` $\rightarrow$ `APPLIED`: `false` (Blocked: backward transition prohibited)
+* `HIRED` $\rightarrow$ `APPLIED`: `false` (Blocked: terminal state)
+* `REJECTED` $\rightarrow$ `OFFER`: `false` (Blocked: terminal state)
+* `APPLIED` $\rightarrow$ `APPLIED`: `true` (No-op identity)
 * `null` / `undefined`: `false` (Fail-safe)
-* `getTransitionDisabledReason`: Trả về thông điệp chi tiết chính xác.
+* `getTransitionDisabledReason`: Returns expected localized reasons.
 
-### 4.2 Component Test cho `StageSelector` (C2)
-Tập tin: `frontend/src/components/jobs/pipeline/stage-selector.spec.tsx` (5 tests pass 100%)
-* Khi `currentStage === "SCREENING"`: Menu dropdown không chứa tùy chọn `APPLIED`.
-* Nhấp vào tùy chọn hợp lệ (`INTERVIEW`): Gọi `onSelectStage("INTERVIEW")`.
-* Variant buttons: Nút `APPLIED` bị `disabled`, có tooltip `title="Không thể chuyển từ SCREENING sang APPLIED"`, click vào không hề gọi callback.
-* Khi ứng viên ở stage `HIRED`: Toàn bộ các nút stage bị vô hiệu hóa với tooltip tương ứng.
+### 4.2 Component Tests for `StageSelector` (C2)
+File: `frontend/src/components/jobs/pipeline/stage-selector.spec.tsx` (5 tests, 100% pass)
+* When `currentStage === "SCREENING"`: Dropdown omits `APPLIED`.
+* Clicking valid option (`INTERVIEW`): Triggers `onSelectStage("INTERVIEW")`.
+* Button variant: `APPLIED` button is `disabled`, includes `title="Cannot transition from SCREENING to APPLIED"`, click events ignored.
+* When candidate is `HIRED`: All buttons disabled with respective tooltips.
 
-### 4.3 Component Test cho Kanban Drag & Drop (C3)
-Tập tin: `frontend/src/components/jobs/pipeline/pipeline-drag-drop.spec.tsx` (3 tests pass 100%)
-* Kéo `APPLIED` $\rightarrow$ `SCREENING`: Thao tác hợp lệ, API được gọi với `{ candidateId, toStage: "SCREENING" }`, không có toast lỗi.
-* Kéo `SCREENING` $\rightarrow$ `APPLIED`: Thao tác vi phạm, API **KHÔNG** được gọi, Toast cảnh báo hiển thị chính xác *"Không thể chuyển từ SCREENING sang APPLIED"*.
-* Kéo `HIRED` $\rightarrow$ `APPLIED`: Thao tác vi phạm terminal, API **KHÔNG** được gọi, Toast cảnh báo hiển thị *"Ứng viên đã HIRED..."*.
+### 4.3 Component Tests for Kanban Drag & Drop (C3)
+File: `frontend/src/components/jobs/pipeline/pipeline-drag-drop.spec.tsx` (3 tests, 100% pass)
+* Drag `APPLIED` $\rightarrow$ `SCREENING`: Valid, API dispatched with `{ candidateId, toStage: "SCREENING" }`, no error toast.
+* Drag `SCREENING` $\rightarrow$ `APPLIED`: Invalid, API **NOT** dispatched, toast alerts *"Cannot transition from SCREENING to APPLIED"*.
+* Drag `HIRED` $\rightarrow$ `APPLIED`: Invalid terminal, API **NOT** dispatched, toast alerts *"Candidate is HIRED..."*.
 
-### 4.4 Kết quả Chạy Toàn bộ Test Suite
+### 4.4 Full Test Suite Execution Results
 ```text
 backend test:  Test Files  25 passed (25)
 backend test:       Tests  218 passed (218)
@@ -294,26 +294,26 @@ TOTAL: 48 test files, 344 passed tests, 0 failed.
 
 ---
 
-## 5. BONUS: Bài học Quy trình (Process Improvement)
+## 5. Process Improvement & Lessons Learned
 
-### 5.1 Nguyên nhân Gốc rễ của Bug
-Vấn đề này xuất hiện do **INTEGRATION GAP**: Trong Phase 3, backend đã cài đặt state machine guard rất chặt chẽ, nhưng frontend chưa được bổ sung lớp phòng ngừa tương ứng tại cùng thời điểm, dẫn tới tình trạng người dùng vẫn có thể tương tác với các hành động không hợp lệ và nhận về mã lỗi HTTP 400.
+### 5.1 Root Cause
+This issue stemmed from an **INTEGRATION GAP**: In Phase 3, backend state machine guards were hardened without corresponding client-side validation, allowing UI actions that generated HTTP 400 errors.
 
-### 5.2 Đề xuất Cải tiến Quy trình (CI Gate Chặn Merge)
-Mọi thay đổi liên quan đến API contract hoặc State Machine trong tương lai bắt buộc phải tuân thủ quy trình khép kín:
-1. **Shared Contract:** Khai báo kiểu dữ liệu, hằng số chuyển trạng thái và mã lỗi trong `@haihire/shared`.
-2. **Backend Enforcement:** Cài đặt guard kiểm tra tại service backend, throw `AppBadRequestException` kèm mã lỗi chuẩn.
-3. **Frontend Alignment:** Nhúng helper kiểm tra trạng thái ngay tại UI để ngăn chặn trước khi người dùng gửi request (Disable buttons, lọc options, hiển thị tooltip giải thích).
-4. **Full-stack Integration Tests:** Bắt buộc có test cả 2 phía: Unit test backend chặn request vi phạm, Component test frontend ngăn chặn người dùng bấm thao tác.
-5. **i18n Coverage:** Bổ sung chuỗi song ngữ vào `vi.ts` và `en.ts` trước khi hoàn tất commit.
+### 5.2 CI Guard Recommendations
+State machine modifications require closed-loop governance:
+1. **Shared Contract:** Define types, transitions, and errors in `@haihire/shared`.
+2. **Backend Enforcement:** Guard service methods, throwing domain `AppBadRequestException`.
+3. **Frontend Alignment:** Integrate pre-flight validation in the UI (disable buttons, filter options, display explanatory tooltips).
+4. **Full-stack Integration Tests:** Unit test backend rejections and component test frontend UI controls.
+5. **i18n Coverage:** Add localized entries to `vi.ts` and `en.ts` prior to committing.
 
 ---
 
-## 6. Sign-Off
+## 6. Sign-Off Checklist
 
-* [x] **Bug đã được khắc phục hoàn toàn:** Không còn khả năng kéo/bấm chuyển từ `SCREENING` về `APPLIED` ở UI.
-* [x] **Không có Raw JSON:** Mọi lỗi nếu xảy ra ở tầng mạng đều được định dạng qua i18n và hiển thị dưới dạng Toast đẹp mắt.
-* [x] **Đồng bộ trạng thái:** Luôn làm mới TanStack query cache khi xảy ra lỗi để giữ UI và CSDL nhất quán.
-* [x] **Test suite tăng trưởng:** Đạt **344 passed tests** (tăng +19 test so với baseline 325).
-* [x] **Không regression:** Backend giữ nguyên 218 test pass, DtoPipe CI Gate đạt 100%, linter 0 error, TypeScript 0 error.
-* [x] **Hệ thống sẵn sàng vận hành sản xuất.**
+* [x] **Bug permanently resolved:** Impossible to drag/click from `SCREENING` to `APPLIED` in the UI.
+* [x] **Zero Raw JSON:** All network errors format cleanly through i18n into toasts.
+* [x] **State synchronization:** TanStack query cache refreshes on error to preserve UI-database parity.
+* [x] **Test suite expanded:** Reached **344 passed tests** (+19 over baseline 325).
+* [x] **Zero regressions:** Backend maintains 218 passes, DtoPipe CI Gate at 100%, linter at 0 errors, TypeScript at 0 errors.
+* [x] **Ready for production deployment.**

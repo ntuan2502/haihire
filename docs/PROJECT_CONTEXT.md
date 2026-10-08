@@ -1,145 +1,145 @@
-# BÁO CÁO CONTEXT DỰ ÁN: HAIHIRE ENTERPRISE ATS
-> **Nguồn Sự Thật Duy Nhất (Single Source of Truth) cho Antigravity, DeepSeek & Chủ Dự Án**  
-> **Phiên bản:** 1.0.0  
-> **Cập nhật ngày:** 2026-10-06  
-> **Tác giả:** Antigravity (Senior Software Engineer / Lead Maintainer)
+# PROJECT CONTEXT REPORT: HAIHIRE ENTERPRISE ATS
+> **Single Source of Truth (SSOT) for Antigravity, DeepSeek & Project Owner**  
+> **Version:** 1.0.0  
+> **Updated:** 2026-10-06  
+> **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)
 
 ---
 
-## 1. TỔNG QUAN
-- **Tên dự án:** HaiHire Enterprise ATS Platform (`haihire-platform`).
-- **Mục đích:** Nền tảng quản lý quy trình tuyển dụng ứng viên (Applicant Tracking System - ATS) đa tổ chức (multi-tenant) thế hệ mới dành cho doanh nghiệp. Hệ thống tối ưu hóa toàn bộ vòng đời tuyển dụng từ tạo tin tuyển dụng, phân phối link tracking đa kênh, tiếp nhận hồ sơ ứng viên (Saga upload CV), quản lý Kanban pipeline kéo thả, chấm điểm phỏng vấn (scorecard), đến gửi email tự động hóa.
-- **Loại dự án:** Full-stack Monorepo (`pnpm workspace`) gồm 3 package cốt lõi:
-  - `backend`: REST API Server xây dựng bằng NestJS 12.
-  - `frontend`: Web Application xây dựng bằng Next.js 16 App Router.
-  - `packages/shared`: Thư viện hợp đồng dữ liệu dùng chung (`@haihire/shared` bao gồm types, enums, `APP_ERROR_CODES`, brand config).
-- **Trạng thái:** **Phiên bản 1.0.0** — Chuẩn bị phát hành Production (Đã hoàn thành 22 Phase hardening, trải qua 10 chu kỳ Independent Verification & Validation - IV&V với điểm độ tin cậy đạt 99.0% - 100%).
-- **Ai là người dùng cuối:**
-  1. *Recruiter / HR / Hiring Manager / Tenant Admin*: Đăng nhập vào cổng nội bộ (`/dashboard`) để quản lý công việc, pipeline ứng viên, lịch phỏng vấn, mẫu email, và link sourcing.
-  2. *Ứng viên (Candidate)*: Truy cập cổng tuyển dụng công khai (`/careers/[orgSlug]/[jobSlug]`) để xem JD và nộp hồ sơ trực tuyến.
+## 1. OVERVIEW
+- **Project Name:** HaiHire Enterprise ATS Platform (`haihire-platform`).
+- **Purpose:** Next-generation enterprise multi-tenant Applicant Tracking System (ATS). Optimizes the end-to-end recruitment lifecycle from job requisition authoring, multi-channel UTM tracking link generation, candidate resume ingestion (distributed Saga CV upload), drag-and-drop Kanban pipeline management, interviewer evaluation scorecards, to automated transactional email notifications.
+- **Project Structure:** Full-stack Monorepo (`pnpm workspace`) comprising 3 core packages:
+  - `backend`: REST API Server powered by NestJS 12.
+  - `frontend`: Web Application built with Next.js 16 App Router.
+  - `packages/shared`: Shared domain contract library (`@haihire/shared` containing types, enums, `APP_ERROR_CODES`, brand config).
+- **Status:** **Version 1.0.0** — Production Release Candidate (Completed 22 hardening phases, audited across 10 Independent Verification & Validation (IV&V) cycles with credibility scores of 99.0% - 100%).
+- **Target End Users:**
+  1. *Recruiter / HR / Hiring Manager / Tenant Admin*: Authenticate into internal dashboard (`/dashboard`) to manage jobs, candidate pipelines, interview schedules, email templates, and sourcing attribution links.
+  2. *Candidate*: Access public career portal (`/careers/[orgSlug]/[jobSlug]`) to view job specifications and submit applications online.
 
 ---
 
 ## 2. TECH STACK
-- **Ngôn ngữ + version:** TypeScript `6.0.3` (Toàn bộ dự án áp dụng chính sách **100% Pure TypeScript**, cấm dùng file `.js` thuần, cấm kiểu `any` — tham chiếu `.agents/memory/project-conventions.md:L13-19`).
-- **Framework chính + version:**
-  - **Backend:** NestJS `12.1.2` (chạy trên Express platform adapter, tham chiếu `backend/package.json:L33-38`).
-  - **Frontend:** Next.js `16.3.8` (App Router, React Server Components kết hợp Client Components) + React `19.3.0` (tham chiếu `frontend/package.json:L30-33`).
+- **Language + Version:** TypeScript `6.0.3` (100% Pure TypeScript mandate; pure `.js` files and `any` types are strictly prohibited — reference `.agents/memory/project-conventions.md:L13-19`).
+- **Primary Frameworks:**
+  - **Backend:** NestJS `12.1.2` (running on Express platform adapter, reference `backend/package.json:L33-38`).
+  - **Frontend:** Next.js `16.3.8` (App Router, React Server Components combined with Client Components) + React `19.3.0` (reference `frontend/package.json:L30-33`).
 - **Runtime:**
   - Node.js: `26.x` Active LTS baseline (Docker image `node:26-alpine`).
-  - Package Engine: `pnpm@12.6.0` (Node 26 đã gỡ bỏ Corepack, cài đặt pnpm trực tiếp qua npm).
-- **Thư viện quan trọng:**
-  - *UI & Styling:* Tailwind CSS `v4`, Base UI (`@base-ui/react ^1.8.0`), Radix UI Primitives (Dialog, Dropdown, Select, Slot), Lucide React (`^1.49.0`), `sonner` (toast notifications), `@dnd-kit` (`^6.3.1` core & sortable cho Kanban board).
-  - *Client State & Cache:* `@tanstack/react-query` `^5.104.0` (quản lý server state với query key factory).
+  - Package Engine: `pnpm@12.6.0` (Node 26 removed Corepack; pnpm installed directly via npm).
+- **Core Libraries:**
+  - *UI & Styling:* Tailwind CSS `v4`, Base UI (`@base-ui/react ^1.8.0`), Radix UI Primitives (Dialog, Dropdown, Select, Slot), Lucide React (`^1.49.0`), `sonner` (toast notifications), `@dnd-kit` (`^6.3.1` core & sortable for Kanban board).
+  - *Client State & Cache:* `@tanstack/react-query` `^5.104.0` (server state management with centralized query key factories).
   - *ORM & Data Access:* Prisma 8 RC (`@prisma/orm-postgres` `8.0.0-rc.13`, `prisma` `8.0.0-rc.19` Contract-first architecture).
   - *Authentication:* Passport.js `^0.7.0`, `passport-jwt` `^4.0.1`, `bcryptjs` `^3.0.3`, HttpOnly JWT Cookies (`haihire_token`).
-  - *Async Queues:* BullMQ `^6.3.11` + `@nestjs/bullmq` `^12.0.0` (quản lý job gửi mail và bù trừ xóa file mồ côi).
+  - *Async Queues:* BullMQ `^6.3.11` + `@nestjs/bullmq` `^12.0.0` (email jobs and orphan file cleanup compensation).
   - *Object Storage SDK:* MinIO Node SDK `^8.0.7` (S3-compatible API).
-  - *Validation:* Zod `^4.6.5` (centralized schemas), `class-validator` `^0.15.1` + `class-transformer` `^0.5.1` thông qua custom pipe `DtoPipe`.
+  - *Validation:* Zod `^4.6.5` (centralized schemas), `class-validator` `^0.15.1` + `class-transformer` `^0.5.1` wrapped via custom `DtoPipe`.
   - *Testing:* Vitest `5.0.3` (unit/integration test), Playwright `1.63.0` (browser E2E), `@testing-library/react` `16.3.3`, `jsdom` `30.1.1`.
 - **Database / Storage / Cache / Queue:**
   - *Database:* PostgreSQL `17.6-alpine` (Host dev port: `15432`, container: `5432`).
-  - *Cache & Queue:* Valkey `8.0.2-alpine` (thay thế Redis nhằm tuân thủ bản quyền RSALv2/SSPLv1; host dev port: `16379`, container: `6379`).
+  - *Cache & Queue:* Valkey `8.0.2-alpine` (open-source Redis replacement complying with RSALv2/SSPLv1 license constraints; host dev port: `16379`, container: `6379`).
   - *Object Storage:* MinIO S3 (`alpine/minio` pinned digest; host dev API port: `19000`, console: `19001`).
 - **DevOps:**
-  - *Docker & Container Registry:* Docker Compose v2 (`docker-compose.yml` cho dev infra, `docker-compose.prod.yml` cho production kéo image từ GitHub Container Registry - GHCR).
-  - *Reverse Proxy:* Caddy `2.8-alpine` (xử lý TLS termination & reverse proxy).
-  - *CI/CD:* GitHub Actions (`.github/workflows/ci-cd.yml`, `docker-publish.yml`, `e2e-nightly.yml`, `release.yml`) với 7 Architecture Quality Gates.
-  - *Monitoring:* Prometheus Metrics endpoint nội bộ tại `/metrics` qua `MetricsService`.
-- **Package Manager:** `pnpm` `12.6.0` (workspace configuration tại `pnpm-workspace.yaml`).
+  - *Docker & Container Registry:* Docker Compose v2 (`docker-compose.yml` for dev infra, `docker-compose.prod.yml` pulling pre-built images from GitHub Container Registry - GHCR).
+  - *Reverse Proxy:* Caddy `2.8-alpine` (TLS termination & reverse proxy).
+  - *CI/CD:* GitHub Actions (`.github/workflows/ci-cd.yml`, `docker-publish.yml`, `e2e-nightly.yml`, `release.yml`) with automated architecture quality gates.
+  - *Monitoring:* Internal Prometheus metrics endpoint at `/metrics` via `MetricsService` and Pushgateway for cron batch metrics.
+- **Package Manager:** `pnpm` `12.6.0` (workspace configuration in `pnpm-workspace.yaml`).
 
 ---
 
-## 3. KIẾN TRÚC
-- **Pattern kiến trúc:**
-  - **Modular Monolith** trên Backend (NestJS chia theo 9 domain modules độc lập, giao tiếp nội bộ).
-  - **Distributed Saga Pattern** xử lý giao dịch phân tán giữa MinIO (Object Storage) và PostgreSQL (Database) kèm BullMQ Dead-Letter Queue (DLQ).
-  - **AsyncLocalStorage Transaction Propagation:** Quản lý giao dịch lồng nhau xuyên suốt các service mà không cần truyền biến `tx` thủ công (`backend/src/prisma/prisma.service.ts:L13-34`).
+## 3. ARCHITECTURE
+- **Architectural Patterns:**
+  - **Modular Monolith** on Backend (NestJS divided into independent domain modules communicating internally).
+  - **Distributed Saga Pattern** coordinating dual writes between MinIO (Object Storage) and PostgreSQL (Relational Database) with BullMQ Dead-Letter Queue (DLQ).
+  - **AsyncLocalStorage Transaction Propagation:** Manages nested service transactions without manual parameter threading (`backend/src/prisma/prisma.service.ts:L13-34`).
   - **Multi-Channel Webhook Alert Module:**
-    - Vị trí: `backend/src/common/webhook/`
-    - Pattern: Factory + Interface (`WebhookProvider`, `WebhookProviderFactory` tương tự `EmailTransporter`).
-    - Providers hiện có: `TELEGRAM`, `DISCORD`, `GENERIC` (POST JSON kèm HMAC-SHA256 signature, `eventId`, `eventType`).
-    - Global env fallback: `WEBHOOK_PROVIDER` + `WEBHOOK_URL` + `WEBHOOK_CHAT_ID` + `WEBHOOK_SECRET_TOKEN` (chuyển sang cấu hình Per-Organization tại Task #1B).
-    - Tích hợp: Kết nối trực tiếp vào `OrphanCleanupProcessor` để phát cảnh báo khi job rơi vào `orphan-cleanup-dlq`.
-  - **Hybrid Next.js Architecture:** Public routes (`/careers/*`) dựng bằng pure **React Server Components (RSC)** tối ưu SEO/GEO (Schema JSON-LD `JobPosting`); Private routes (`/dashboard/*`) là Client SPA tương tác cao với `@tanstack/react-query`.
-- **Sơ đồ thư mục chính:**
+    - Location: `backend/src/common/webhook/`
+    - Pattern: Factory + Interface (`WebhookProvider`, `WebhookProviderFactory` similar to `EmailTransporter`).
+    - Available Providers: `TELEGRAM`, `DISCORD`, `GENERIC` (POST JSON with HMAC-SHA256 signature, `eventId`, `eventType`).
+    - Fallback: Global environment variables with per-organization configuration support.
+    - Integration: Connected directly into `OrphanCleanupProcessor` to emit alerts when jobs enter `orphan-cleanup-dlq`.
+  - **Hybrid Next.js Architecture:** Public routes (`/careers/*`) built with pure **React Server Components (RSC)** for optimal SEO/GEO (JSON-LD `JobPosting` schema); Private routes (`/dashboard/*`) are high-interactivity Client SPA powered by `@tanstack/react-query`.
+- **Directory Layout:**
 ```text
 haihire/
 ├── .agents/                 # AG Kit AI agent rules, memory persistence (MEMORY.md), workflows
-├── .github/workflows/       # 4 GitHub Actions workflows: CI/CD 7-gate, GHCR publish, nightly E2E
+├── .github/workflows/       # GitHub Actions workflows: CI/CD gates, GHCR publish, nightly E2E
 ├── backend/                 # NestJS 12 REST API Server
 │   ├── migrations/          # Prisma database migrations
 │   ├── src/
-│   │   ├── activities/      # Audit trail logging (bất đồng bộ, scrub PII)
-│   │   ├── applications/    # Quản lý hồ sơ ứng viên, nộp đơn, Kanban stage transitions
+│   │   ├── activities/      # Audit trail logging (async, PII-scrubbed)
+│   │   ├── applications/    # Candidate application management, CV upload, Kanban stage transitions
 │   │   ├── auth/            # JWT authentication, HttpOnly cookies, RBAC RolesGuard
-│   │   ├── candidates/      # Talent pool, hồ sơ ứng viên, tài liệu đính kèm
-│   │   ├── common/          # Exceptions chuẩn, custom DtoPipe, date utils, encryption AES-256
+│   │   ├── candidates/      # Talent pool, candidate profiles, attachments
+│   │   ├── common/          # Custom exceptions, DtoPipe, date utils, AES-256 encryption
 │   │   ├── config/          # Centralized fail-fast Zod schema (env.ts)
 │   │   ├── email/           # Email worker (BullMQ), template interpolation, anti-XSS
 │   │   ├── events/          # Internal event emitters & SSE notifications
-│   │   ├── interviews/      # Lịch phỏng vấn, Google/Outlook meet links, scorecards
-│   │   ├── jobs/            # CRUD tin tuyển dụng, public career listings
+│   │   ├── interviews/      # Interview scheduling, Google/Outlook meet links, scorecards
+│   │   ├── jobs/            # Job requisition CRUD, public career listings
 │   │   ├── metrics/         # Prometheus latency & request metrics collector
 │   │   ├── minio/           # S3 client wrapper, magic-byte inspection, presigned URLs
 │   │   ├── organizations/   # Multi-tenant management, memberships, invite links
 │   │   ├── prisma/          # Prisma 8 contract-first ORM, ALS transaction engine, seed.ts
-│   │   ├── sourcing/        # Link tracking UTM 5 tham số, đếm click chống lặp
+│   │   ├── sourcing/        # 5-parameter UTM tracking links, deduplicated click analytics
 │   │   └── main.ts          # Backend bootstrap entry point
 ├── frontend/                # Next.js 16 Web Application
 │   ├── src/
 │   │   ├── app/             # App Router: /auth, /careers (RSC), /dashboard (Kanban, Tables)
 │   │   ├── components/      # 5-layer modular architecture: ui, shared, layout, providers, features
-│   │   ├── context/         # AuthContext (quản lý session, switch organization)
+│   │   ├── context/         # AuthContext (session management, organization switching)
 │   │   ├── hooks/           # Domain TanStack Query hooks (use-*-queries.ts) + query-keys.ts
 │   │   ├── i18n/            # Dual-language engine (vi/en), I18nProvider, translation keys
-│   │   ├── lib/             # Axios client với URL gatekeeper, api-error parser, domain API clients
+│   │   ├── lib/             # Axios client with URL gatekeeper, api-error parser, domain API clients
 │   │   └── types/           # Frontend TypeScript view model definitions
 ├── packages/
 │   └── shared/              # @haihire/shared: APP_ERROR_CODES, enums, DTO contracts, BRAND_CONFIG
-├── docs/                    # Tài liệu kiến trúc (architecture/), API specs (api/), runbooks/, audits/
-├── monitoring/              # Prometheus alert rules và configuration
-└── scripts/                 # Bộ công cụ kiểm định CI (check-all.ts, check-dtopipe, check-env-sync...)
+├── docs/                    # Architecture blueprints, API specs, runbooks, audit history
+├── monitoring/              # Prometheus alert rules and configuration
+└── scripts/                 # CI quality verification scripts (check-all.ts, check-dtopipe...)
 ```
-- **Luồng dữ liệu/request chính:**
-  1. **Public Request (Ứng viên truy cập JD):** Client $\rightarrow$ Caddy Reverse Proxy $\rightarrow$ Next.js Server Component (`/careers/[orgSlug]/[jobSlug]`) $\rightarrow$ Fetch trực tiếp từ Backend nội bộ (`INTERNAL_API_URL`) $\rightarrow$ Render HTML + thẻ JSON-LD `JobPosting` chuẩn SEO $\rightarrow$ Trả về trình duyệt không có API waterfall.
-  2. **Dashboard Request (Recruiter tương tác):** Trình duyệt gọi `/api/*` (được Next.js proxy rewrite về Backend) $\rightarrow$ Axios Interceptor Gatekeeper kiểm tra URL $\rightarrow$ Backend `ThrottlerGuard` (rate limit) $\rightarrow$ `JwtAuthGuard` (đọc HttpOnly cookie `haihire_token`) $\rightarrow$ `TenantGuard` (xác thực `organizationId` của user) $\rightarrow$ Controller $\rightarrow$ `DtoPipe` validation $\rightarrow$ Service.
+- **Primary Data & Request Flows:**
+  1. **Public Request (Candidate views JD):** Client $\rightarrow$ Caddy Reverse Proxy $\rightarrow$ Next.js Server Component (`/careers/[orgSlug]/[jobSlug]`) $\rightarrow$ Direct server fetch from internal Backend (`INTERNAL_API_URL`) $\rightarrow$ Semantic HTML + JSON-LD `JobPosting` schema $\rightarrow$ Rendered directly without client API waterfalls.
+  2. **Dashboard Request (Recruiter interaction):** Browser calls `/api/*` (proxied by Next.js to Backend) $\rightarrow$ Axios Interceptor Gatekeeper validates URL $\rightarrow$ Backend `ThrottlerGuard` (rate limit) $\rightarrow$ `JwtAuthGuard` (reads HttpOnly cookie `haihire_token`) $\rightarrow$ `TenantGuard` (validates `organizationId`) $\rightarrow$ Controller $\rightarrow$ `DtoPipe` validation $\rightarrow$ Service.
   3. **Candidate Application Submission (Saga Workflow):**
-     - *Bước 1 (Upload MinIO):* File CV được kiểm tra magic bytes và upload vào MinIO tại `tenants/${orgId}/resumes/${filename}`.
-     - *Bước 2 (Transactional DB Write):* Gọi `PrismaService.executeTx()`, ghi nguyên tử `Candidate`, `Application`, `CandidateDocument`, `ActivityLog`.
-     - *Bước 3 (Compensating Rollback):* Nếu bước DB lỗi, kích hoạt xóa file vừa upload trên MinIO.
-     - *Bước 4 (DLQ Fallback):* Nếu lệnh xóa MinIO thất bại, đẩy job vào BullMQ `orphan-cleanup-queue` thử lại 5 lần kèm cảnh báo DLQ (`backend/src/applications/applications.service.ts:L673-710`).
-- **Các module/domain chính và quan hệ:**
-  - `Organizations`: Quản lý thực thể Tenant gốc. Mọi dữ liệu tuyển dụng đều bị cô lập bởi `organizationId`.
-  - `Auth` & `Users`: Quản lý tài khoản, phân quyền RBAC (`ADMIN` vs `MEMBER`).
-  - `Jobs`: Tin tuyển dụng thuộc về `Organization`.
-  - `Candidates`: Hồ sơ ứng viên thuộc về `Organization`, duy nhất theo `(organizationId, email)`.
-  - `Applications`: Cầu nối `(Candidate, Job)` theo dõi stage (APPLIED $\rightarrow$ SCREENING $\rightarrow$ INTERVIEW $\rightarrow$ OFFER $\rightarrow$ HIRED/REJECTED).
-  - `Interviews`: Gắn với `Application`, lưu scorecard đánh giá và link họp.
-  - `Sourcing`: Tạo `TrackingLink` (chứa 5 tham số UTM) gắn vào `Application` để đo lường hiệu quả chuyển đổi kênh.
-  - `Activities`: Ghi nhật ký audit trail bất đồng bộ cho mọi biến động của Candidate/Application.
-- **Điểm vào (entry points):**
-  - Backend: `backend/src/main.ts` (khởi động NestJS, CORS, Helmet headers, Global Pipes, Filters, lắng nghe port `PORT=3001`).
-  - Frontend: `frontend/src/app/layout.tsx` (RootLayout, nhúng theme script `beforeInteractive`, bọc `I18nProvider`, `QueryClientProvider`, `AuthProvider`).
+     - *Step 1 (MinIO Upload):* CV file inspected for magic bytes and uploaded to `tenants/${orgId}/resumes/${filename}`.
+     - *Step 2 (Transactional DB Write):* Invokes `PrismaService.executeTx()`, atomically inserting `Candidate`, `Application`, `CandidateDocument`, `ActivityLog`.
+     - *Step 3 (Compensating Rollback):* If DB insert fails, MinIO object deletion is immediately triggered.
+     - *Step 4 (DLQ Fallback):* If MinIO delete fails, job is pushed to BullMQ `orphan-cleanup-queue` with 5 retries and DLQ alerting.
+- **Core Modules & Relationships:**
+  - `Organizations`: Root tenant entity. All recruitment data is strictly scoped by `organizationId`.
+  - `Auth` & `Users`: Account management and RBAC authorization (`ADMIN` vs `MEMBER`).
+  - `Jobs`: Job postings belonging to an `Organization`.
+  - `Candidates`: Candidate profiles scoped by `Organization`, unique on `(organizationId, email)`.
+  - `Applications`: Junction entity `(Candidate, Job)` tracking pipeline stages (APPLIED $\rightarrow$ SCREENING $\rightarrow$ INTERVIEW $\rightarrow$ OFFER $\rightarrow$ HIRED/REJECTED).
+  - `Interviews`: Tied to an `Application`, storing interview scorecards and video meeting links.
+  - `Sourcing`: Generates `TrackingLink` (with 5 UTM parameters) attached to `Application` for channel attribution analytics.
+  - `Activities`: Asynchronous audit trail logging all mutations on Candidates and Applications.
+- **Entry Points:**
+  - Backend: `backend/src/main.ts` (bootstraps NestJS, CORS, Helmet headers, Global Pipes, Filters, listening on `PORT=3001`).
+  - Frontend: `frontend/src/app/layout.tsx` (RootLayout, injecting anti-FOUC theme script `beforeInteractive`, wrapping `I18nProvider`, `QueryClientProvider`, `AuthProvider`).
 
 ---
 
-## 4. CONVENTION & PATTERN (ĐỌC TỪ CODE THỰC TẾ)
+## 4. CONVENTIONS & CODING PATTERNS
 - **Naming Conventions:**
-  - *Tệp tin:* `kebab-case` toàn diện (`wizard-header.tsx`, `dto-validation.pipe.ts`, `query-keys.ts`).
-  - *Biến & Hàm:* `camelCase` (`executeTx`, `getApiErrorMessage`, `downloadAuthenticatedFile`).
+  - *Files:* Strict `kebab-case` (`wizard-header.tsx`, `dto-validation.pipe.ts`, `query-keys.ts`).
+  - *Variables & Functions:* `camelCase` (`executeTx`, `getApiErrorMessage`, `downloadAuthenticatedFile`).
   - *React Components:* `PascalCase` (`WizardHeader`, `MetricCard`, `CustomSelect`).
   - *Classes & DTOs:* `PascalCase` (`CreateJobDto`, `PrismaService`, `GlobalExceptionFilter`).
-  - *Database Schema:* PostgreSQL table name map theo `snake_case` trong `backend/src/prisma/contract.prisma` (ví dụ: `@@map("job")`, `@@map("candidate")`).
-- **Cấu trúc 1 file điển hình:**
+  - *Database Schema:* PostgreSQL tables mapped via `snake_case` in `backend/src/prisma/contract.prisma` (e.g. `@@map("job")`, `@@map("candidate")`).
+- **File Structure Blueprint:**
   - *Frontend Component:*
     ```typescript
-    "use client"; // (Nếu là Client Component)
+    "use client"; // (If Client Component)
     // 1. React / Next.js imports
     import { useState, useMemo } from "react";
     import Link from "next/link";
     // 2. Third-party UI / icons / utilities
-    import { cn } from "cn"; // Chuẩn: import directly from "cn", cấm clsx/tailwind-merge
+    import { cn } from "cn"; // Direct import from "cn" package
     import { ArrowLeft } from "lucide-react";
     // 3. Project components & hooks
     import { Button } from "@/components/ui/button";
@@ -156,7 +156,7 @@ haihire/
     import { Controller, Get, Post, Body, Param, UseGuards, Request } from "@nestjs/common";
     import { AuthGuard } from "@nestjs/passport";
     import { RolesGuard } from "../auth/roles.guard";
-    import { DtoPipe } from "../common/dto-validation.pipe"; // Bắt buộc cho @Body()
+    import { DtoPipe } from "../common/dto-validation.pipe"; // Mandatory for @Body()
     import { CreateJobDto } from "./dto/create-job.dto";
     import { JobsService } from "./jobs.service";
 
@@ -168,116 +168,92 @@ haihire/
       create(@Body(DtoPipe(CreateJobDto)) dto: CreateJobDto, @Request() req: any) { ... }
     }
     ```
-- **Cách quản lý state:**
-  - *Server State:* Quản lý 100% bằng `@tanstack/react-query` v5. Định nghĩa query keys tập trung tại `frontend/src/hooks/query-keys.ts`. Mọi mutation hook bắt buộc phải gọi `queryClient.invalidateQueries({ queryKey: queryKeys.<domain>(...) })` để chống stale state.
-  - *Global Client State:* Dùng React Context chuyên biệt: `AuthContext` (session & tenant), `I18nContext` (ngôn ngữ).
-  - *Local UI State:* Sử dụng React hook chuẩn (`useState`, `useReducer`, `useMemo`).
-- **Cách gọi API:**
-  - Thông qua Axios client singleton tại `frontend/src/lib/api/client.ts` (`api = axios.create({ baseURL: getApiBaseUrl(), withCredentials: true })`).
-  - **Client-Side Gatekeeper:** Có interceptor chủ động chặn các request URL chứa chuỗi `[object Object]` hoặc `%5Bobject` trước khi gửi ra network (`client.ts:L38-45`).
-  - Các hàm API chia theo domain trong `frontend/src/lib/api/<domain>.ts` (tuyệt đối không gộp thành monolithic file).
-- **Cách xử lý error & logging:**
-  - *Backend:* Ném ngoại lệ kế thừa `AppException` với mã lỗi thuộc `APP_ERROR_CODES` (`packages/shared/src/errors.ts`). `GlobalExceptionFilter` bắt toàn bộ lỗi, định dạng envelope chuẩn: `{ statusCode, code, message, params, timestamp, path }`. Logging HTTP ra console dạng structured JSON, tự động ẩn tham số nhạy cảm (PII scrubbing).
-  - *Frontend:* Xử lý lỗi qua `getApiErrorMessage(err, t)` (`frontend/src/lib/api-error.ts`), dịch mã lỗi máy sang ngôn ngữ người dùng (`errors.<CODE>`). **Nghiêm cấm** dùng `alert()` hoặc in `JSON.stringify(err)` ra giao diện (được kiểm tra tự động bởi CI Gate 5).
-- **Cách validation:**
-  - *Backend Request Payload:* Dùng `class-validator` + `class-transformer` nhưng **bắt buộc** phải bọc qua `DtoPipe(<DtoClass>)` ở decorator `@Body()` để tránh hiện tượng esbuild/SWC lược bỏ decorator metadata làm mất validation (`backend/src/common/dto-validation.pipe.ts`).
-  - *Environment Variables:* Schema Zod nghiêm ngặt tại `backend/src/config/env.ts` và `frontend/src/lib/env.ts`. Triết lý **Zero Fallback & Fail Fast** (thiếu biến môi trường hoặc sai định dạng là crash server ngay lập tức với `process.exit(1)`).
-- **Cách viết test:**
-  - *Framework:* Vitest trên cả 2 package; Playwright cho E2E.
-  - *Vị trí & Naming:* Nằm cạnh file thực thi hoặc trong thư mục `tests/` với đuôi `*.spec.ts` hoặc `*.spec.tsx`.
-  - *Pattern:* AAA (Arrange - Act - Assert). Với form HTML5 constraint trong JSDOM, bắt buộc kích hoạt bằng `fireEvent.submit(form)` thay vì click nút submit để tránh JSDOM nuốt event.
-- **Cách đặt tên branch/commit:**
+- **State Management:**
+  - *Server State:* 100% managed by `@tanstack/react-query` v5. Centralized query keys defined in `frontend/src/hooks/query-keys.ts`. Mutations must invoke `queryClient.invalidateQueries({ queryKey: queryKeys.<domain>(...) })`.
+  - *Global Client State:* Dedicated React Context: `AuthContext` (session & tenant), `I18nContext` (language).
+  - *Local UI State:* Standard React hooks (`useState`, `useReducer`, `useMemo`).
+- **API Invocation:**
+  - Singleton Axios client in `frontend/src/lib/api/client.ts` (`api = axios.create({ baseURL: getApiBaseUrl(), withCredentials: true })`).
+  - **Client-Side Gatekeeper:** Active interceptor blocking malformed URLs containing `[object Object]` or `%5Bobject` before network transmission.
+  - Domain-separated API files in `frontend/src/lib/api/<domain>.ts`.
+- **Error Handling & Logging:**
+  - *Backend:* Throw exceptions inheriting `AppException` with codes defined in `APP_ERROR_CODES` (`packages/shared/src/errors.ts`). `GlobalExceptionFilter` standardizes error envelope: `{ statusCode, code, message, params, timestamp, path }`. HTTP logging is structured JSON with PII scrubbing.
+  - *Frontend:* Process errors via `getApiErrorMessage(err, t)` (`frontend/src/lib/api-error.ts`), translating machine codes to user messages (`errors.<CODE>`). Zero `alert()` calls or raw `JSON.stringify(err)` displays permitted.
+- **Validation:**
+  - *Backend Request Payload:* `class-validator` + `class-transformer` wrapped with `DtoPipe(<DtoClass>)` on `@Body()` parameters.
+  - *Environment Variables:* Strict Zod schemas in `backend/src/config/env.ts` and `frontend/src/lib/env.ts`. Fail-fast zero-fallback philosophy.
+- **Testing Standards:**
+  - *Frameworks:* Vitest across monorepo packages; Playwright for E2E browser tests.
+  - *Pattern:* AAA (Arrange - Act - Assert). HTML5 constraint forms in JSDOM must be submitted via `fireEvent.submit(form)`.
+- **Branch & Commit Conventions:**
   - *Branch:* `feature/[task-slug]`, `fix/[bug-slug]`, `refactor/[task-slug]`, `perf/[task-slug]`, `docs/[task-slug]`.
-  - *Commit:* Conventional Commits chuẩn có scope bắt buộc: `type(scope): description` (chữ thường, tiếng Anh, không dấu chấm cuối câu, ví dụ: `feat(jobs): add multi-channel sourcing tracker`). Enforced bởi Husky hook `.husky/commit-msg`.
-- **Linter / Formatter:**
-  - ESLint 10 phẳng (`eslint.config.mjs`).
-  - TypeScript Compiler (`tsc --noEmit`) bật `strict: true`.
+  - *Commit:* Conventional Commits with mandatory scope: `type(scope): description` in lowercase English without trailing periods.
 
 ---
 
-## 5. LỆNH THƯỜNG DÙNG
-| Thao tác | Lệnh thực thi | Ghi chú quan trọng |
+## 5. COMMON DEVELOPER COMMANDS
+| Operation | Command | Notes |
 | :--- | :--- | :--- |
-| **Cài đặt dependencies** | `pnpm install` | Bắt buộc dùng Node >= 26 và pnpm 12. Cấm dùng `corepack enable`. |
-| **Khởi động hạ tầng Docker** | `pnpm docker:infra:up` | Bật PostgreSQL (`15432`), Valkey (`16379`), MinIO (`19000/19001`). |
-| **Khởi tạo Database & Seed** | `pnpm db:setup` | Chạy `prisma db update` và seed tài khoản demo/dữ liệu mẫu. |
-| **Chạy Development** | `pnpm dev` | Chạy song song Backend (`13001`) và Frontend (`13000`). |
-| **Build toàn bộ ứng dụng** | `pnpm build` | Build tuần tự: `@haihire/shared` $\rightarrow$ `backend` (esbuild) $\rightarrow$ `frontend` (Next.js). |
-| **Chạy kiểm thử Unit & Int** | `pnpm test` | Chạy toàn bộ 379 test cases bằng Vitest. |
-| **Chạy End-to-End browser** | `pnpm test:e2e` | Chạy 10 kịch bản Playwright E2E browser journeys. |
-| **Kiểm tra 7 cổng CI đầy đủ** | `pnpm check:all` | Chạy toàn bộ 7 CI Architecture Quality Gates. |
-| **Kiểm tra CI nhanh (Pre-commit)**| `pnpm check:all:fast` | Bỏ qua smoke/load test, chỉ chạy static gates + test diff (~38s). |
-| **Kiểm tra đồng bộ Env** | `pnpm lint:env-sync` | So khớp 100% key parity giữa 5 file `.env` và Docker Compose. |
-| **Kiểm tra i18n & Hardcode** | `pnpm check:i18n` | Đảm bảo không có chữ hardcode trong JSX và đủ key vi/en. |
-| **Kiểm tra DtoPipe Coverage**| `pnpm lint:dtopipe` | Kiểm tra 100% `@Body()` trong controllers có `DtoPipe`. |
-| **Kiểm tra Mã Lỗi i18n** | `pnpm lint:error-i18n` | Đảm bảo mọi mã trong `APP_ERROR_CODES` được dịch trong `vi.ts`/`en.ts`. |
-| **Đồng bộ / Tăng phiên bản** | `pnpm version:sync` / `pnpm version:bump [patch\|minor]` | Đồng bộ lockstep phiên bản trên toàn bộ 4 file `package.json`. |
-| **Khởi chạy Production Docker**| `pnpm docker:prod:up` | Khởi chạy container production với `.env.production`. |
+| **Install dependencies** | `pnpm install` | Requires Node >= 26 and pnpm 12. Do not use `corepack enable`. |
+| **Start Docker infra** | `pnpm docker:infra:up` | Boots PostgreSQL (`15432`), Valkey (`16379`), MinIO (`19000/19001`). |
+| **Initialize DB & Seed** | `pnpm db:setup` | Executes `prisma db update` and populates demo seed data. |
+| **Launch Development** | `pnpm dev` | Starts Backend (`13001`) and Frontend (`13000`) concurrently. |
+| **Build all packages** | `pnpm build` | Builds `@haihire/shared` $\rightarrow$ `backend` $\rightarrow$ `frontend`. |
+| **Run Unit & Int tests** | `pnpm test` | Runs all Vitest test suites. |
+| **Run E2E Browser tests** | `pnpm test:e2e` | Runs Playwright E2E browser journeys. |
+| **Full CI verification** | `pnpm check:all` | Executes full CI quality gates suite. |
+| **Fast CI check (pre-commit)**| `pnpm check:all:fast`| Runs static gates + test diff (~38s). |
+| **Verify Environment sync**| `pnpm lint:env-sync` | Asserts 100% key parity across `.env` templates and Docker Compose. |
+| **Verify i18n parity** | `pnpm check:i18n` | Asserts zero hardcoded strings in JSX and complete dictionary keys. |
+| **Verify DtoPipe coverage**| `pnpm lint:dtopipe` | Verifies 100% of `@Body()` parameters guarded by `DtoPipe`. |
+| **Verify Error code i18n** | `pnpm lint:error-i18n` | Asserts all `APP_ERROR_CODES` exist in `vi.ts` and `en.ts`. |
+| **Version synchronization**| `pnpm version:sync` / `pnpm version:bump [patch\|minor]` | Synchronizes lockstep version across monorepo `package.json` manifests. |
+| **Start Production Docker**| `pnpm docker:prod:up` | Starts production container cluster with `.env.production`. |
 
 ---
 
-## 6. ĐIỂM CẦN LƯU Ý (QUAN TRỌNG NHẤT)
-- **File / Module "nhạy cảm" — Không nên sửa tùy tiện:**
-  1. `backend/src/prisma/contract.prisma` & `contract.json`: Hợp đồng ORM của Prisma 8 RC. Mọi thay đổi schema phải chạy `pnpm contract:emit` và `pnpm db:update`. Sai cú pháp sẽ làm gãy tầng data runtime `@prisma/orm-postgres`.
-  2. `backend/src/common/dto-validation.pipe.ts`: Cầu nối bảo vệ validation pipe không bị esbuild làm rụng metatype. Nếu gỡ bỏ `DtoPipe` ở bất kỳ endpoint nào, `pnpm lint:dtopipe` sẽ báo FAIL ngay lập tức.
-  3. `frontend/src/app/layout.tsx`: Chứa script chống chớp nháy giao diện (FOUC) `<Script id="theme-init" strategy="beforeInteractive">`. Tuyệt đối không thay thế bằng thẻ `<script>` trần của JSX (React 19 sẽ sinh lỗi hydration mismatch).
-  4. `backend/src/applications/applications.service.ts`: Trọng tâm luồng Saga nộp hồ sơ. Logic bù trừ rollback file MinIO và đẩy DLQ BullMQ nằm ở đây; sửa sai sẽ làm tràn ngập file mồ côi không quản lý được.
-- **Nợ kỹ thuật đang tồn tại (Technical Debt):**
-  1. *5 Monolithic "God Files" vượt 400 dòng (có file > 1,000 dòng):*
-     - `frontend/src/components/applications/applications-data-table.tsx` (~1,611 dòng).
-     - `backend/src/applications/applications.service.ts` (~1,188 dòng).
-     - `backend/src/organizations/organizations.service.ts` (~1,170 dòng).
-     - `backend/src/sourcing/sourcing.service.ts` (~988 dòng).
-     - `frontend/src/components/jobs/job-list.tsx` (~900 dòng).
-  2. *Quy ước đặt tên Database table:* Có 9 bảng trong `contract.prisma` đang mang chỉ thị `@@map` theo `camelCase` từ code cũ (`organizationMember`, `inviteLink`, `emailTemplate`, `emailSetting`, `emailLog`, `activityLog`, `candidateDocument`, `trackingLink`, `trackingClick`) thay vì `snake_case`. Kế hoạch migrate đã được hoãn sang giai đoạn bảo trì sau phát hành.
-- **TODO / FIXME / Anti-pattern đáng chú ý:**
-  - Còn 1 chỗ dùng `// eslint-disable-next-line @next/next/no-img-element` tại `frontend/src/app/dashboard/settings/members/page.tsx:L616` để hiển thị avatar thay vì dùng `<Image />`.
-  - Một số component header (như `wizard-header.tsx:L48`) vẫn còn class `max-w-7xl mx-auto` dù quy ước chung của dự án yêu cầu bố cục Full-Width canvas.
-- **Điểm dễ gây bug nếu sửa:**
-  - *React SyntheticEvent Leakage:* Khi truyền callback vào `onClick`, nếu hàm nhận tham số tùy chọn (ví dụ `onDelete(id?: string)`), tuyệt đối **không** viết `onClick={onDelete}` vì React sẽ đẩy sự kiện `MouseEvent` vào tham số đầu tiên, biến ID thành chuỗi `"[object Object]"` dẫn tới URL `/api/candidates/[object%20Object]`. Bắt buộc viết: `onClick={() => onDelete(id)}`.
-  - *Xử lý đường dẫn file giữa Windows và Linux:* Tuyệt đối không dùng `path.basename()` để làm sạch tên file upload. Hàm này không lọc được dấu `\` của Windows khi chạy trên server Linux CI, dẫn đến lỗ hổng path traversal và fail test. Phải dùng regex trung lập: `.replace(/^.*[/\\]/, "")` (`.agents/memory/project-conventions.md:L248-257`).
+## 6. CRITICAL ARCHITECTURAL CONSTRAINTS
+- **Sensitive Files (Do Not Modify Without Caution):**
+  1. `backend/src/prisma/contract.prisma` & `contract.json`: Prisma 8 RC ORM schema contract. Schema changes require `pnpm contract:emit` and `pnpm db:update`.
+  2. `backend/src/common/dto-validation.pipe.ts`: Bridge protecting validation metatypes from bundler tree-shaking.
+  3. `frontend/src/app/layout.tsx`: Anti-FOUC theme script `<Script id="theme-init" strategy="beforeInteractive">`. Do not replace with raw `<script>` tags.
+  4. `backend/src/applications/applications.service.ts`: Core Saga resume upload logic. Houses MinIO compensating deletions and BullMQ DLQ triggers.
+- **Known Technical Debt:**
+  1. *Large Files Exceeding 400 Lines:*
+     - `frontend/src/components/applications/applications-data-table.tsx` (~1.6k lines).
+     - `backend/src/applications/applications.service.ts` (~1.1k lines).
+     - `backend/src/organizations/organizations.service.ts` (~1.1k lines).
+     - `backend/src/sourcing/sourcing.service.ts` (~988 lines).
+     - `frontend/src/components/jobs/job-list.tsx` (~900 lines).
+  2. *Legacy Table Mappings:* 9 tables in `contract.prisma` retain legacy camelCase `@@map` directives (`organizationMember`, `trackingLink`...) pending future migration.
+- **Common Pitfalls to Avoid:**
+  - *React SyntheticEvent Leakage:* When passing callbacks to `onClick`, if the target function accepts optional arguments (`onDelete(id?: string)`), do **not** bind directly `onClick={onDelete}`. React will pass the `MouseEvent` as the first argument, resulting in `"[object Object]"` URL parameters. Always bind via arrow function: `onClick={() => onDelete(id)}`.
+  - *Cross-Platform File Path Sanitization:* Never use `path.basename()` to clean uploaded filenames; it does not strip Windows `\` separators on Linux CI hosts. Always use universal regex: `.replace(/^.*[/\\]/, "")`.
 
 ---
 
-## 7. QUY TẮC BẤT THÀNH VĂN
-Những điều AI khác nếu không đọc kỹ sẽ rất dễ làm sai:
-1. **Không xâu chuỗi lệnh shell bằng `&&` trên Windows PowerShell:** Hệ điều hành máy phát triển là Windows PowerShell. Dùng `&&` có thể gây lỗi cú pháp parser. Phải chạy từng lệnh riêng biệt hoặc dùng dấu chấm phẩy `;`.
-2. **Không bao giờ tự ý chạy `pnpm run seed` (hoặc `pnpm db:setup`):** Script seed sẽ xóa sạch (wipe) toàn bộ database hiện tại và nạp lại dữ liệu demo ban đầu. Luôn luôn phải hỏi người dùng xác nhận trước khi chạy seed.
-3. **Cấm hardcode chuỗi text trên Frontend:** Mọi từ ngữ hiển thị, placeholder, nhãn nút bấm bắt buộc phải lấy qua hook `useI18n()` với hàm `t("key.path")`. Nếu thêm text mới, phải thêm đồng thời vào cả 3 file: `frontend/src/i18n/types.ts`, `frontend/src/i18n/locales/vi.ts` và `frontend/src/i18n/locales/en.ts`. Nếu không, lệnh CI `pnpm check:i18n` sẽ chặn merge.
-4. **Không tạo file proxy trùng tên khi tách thư mục:** Khi modularize mã nguồn (ví dụ thư mục `frontend/src/lib/api/`), file `index.ts` bên trong thư mục là nguồn export duy nhất. Tuyệt đối không tạo thêm file `frontend/src/lib/api.ts` bên ngoài cạnh thư mục đó, vì sẽ gây xung đột module resolution trong Next.js/Vite.
-5. **Cấm sử dụng `corepack enable`:** Node.js 26 đã loại bỏ Corepack. Mọi container hay script CI phải cài đặt pnpm tường minh qua `npm install -g pnpm@12.6.0`.
-6. **Mọi thay đổi `.env` phải cập nhật đồng bộ ở 5 file:** `.env`, `.env.example`, `backend/.env.example`, `frontend/.env.example`, `.env.production.example`. Lệnh `pnpm lint:env-sync` sẽ fail nếu phát hiện lệch biến.
-7. **Không dùng `clsx` hay `tailwind-merge` riêng lẻ:** Dự án chuẩn hóa sử dụng trực tiếp package `cn` (`import { cn } from "cn";`).
+## 7. UNWRITTEN RULES & AGENT DIRECTIVES
+1. **Never chain shell commands with `&&` on Windows PowerShell:** The host OS uses PowerShell. Chaining with `&&` can cause syntax errors. Execute commands sequentially or separate with `;`.
+2. **Never execute `pnpm run seed` or `pnpm db:setup` without user confirmation:** Seeding wipes the existing database and restores default demo state. Always confirm with the user.
+3. **No hardcoded user-facing strings in Frontend:** All text, labels, and placeholders must resolve via `useI18n()` and `t("key.path")`. New strings must be added simultaneously to `types.ts`, `vi.ts`, and `en.ts`.
+4. **No duplicate proxy files when modularizing:** In directories such as `frontend/src/lib/api/`, `index.ts` is the single export source. Never create an adjacent `frontend/src/lib/api.ts` file.
+5. **No `corepack enable`:** Node.js 26 has removed Corepack. Use explicit npm package installation: `npm install -g pnpm@12.6.0`.
+6. **All `.env` changes must be synchronized across 5 files:** `.env`, `.env.example`, `backend/.env.example`, `frontend/.env.example`, `.env.production.example`.
+7. **Do not import `clsx` or `tailwind-merge` directly:** Always import the unified helper from `cn`: `import { cn } from "cn";`.
 
 ---
 
-## 8. CÂU HỎI MỞ
-Dưới đây là các điểm cần chủ dự án xác nhận trước khi thực hiện các bước tiếp theo:
-
-1. **[CẦN XÁC NHẬN] Kế hoạch tái cấu trúc 5 "God Files":** Hiện tại 5 file cốt lõi (`applications-data-table.tsx` 1.6k dòng, `applications.service.ts` 1.1k dòng, `organizations.service.ts` 1.1k dòng, `sourcing.service.ts` 988 dòng, `job-list.tsx` 900 dòng) đang vượt xa trần 400 dòng của kiến trúc chống monolith. Chúng ta nên tiến hành chia tách module ngay trong đợt này hay giữ nguyên trạng để đảm bảo độ ổn định trước khi release v1.0.0?
-2. **[CẦN XÁC NHẬN] Migration cơ sở dữ liệu `camelCase @@map` sang `snake_case`:** 9 bảng trong `contract.prisma` vẫn đang map theo tên camelCase (`organizationMember`, `trackingLink`...). Chủ dự án có muốn thực hiện migration dữ liệu để đưa về chuẩn `snake_case` PostgreSQL (`organization_members`, `tracking_links`...) ngay bây giờ không?
-3. **[CẦN XÁC NHẬN] Rà soát quy chuẩn Full-Width Canvas:** Một số màn hình như `wizard-header.tsx:L48` vẫn còn class đóng khung `max-w-7xl mx-auto`. Chủ dự án có muốn dọn dẹp đồng bộ toàn bộ giao diện sang tràn viền (`w-full`) theo đúng chuẩn thiết kế HaiHire không?
-4. **[CẦN XÁC NHẬN] Nhà cung cấp dịch vụ Email thực tế (Production Email Provider):** Biến môi trường hiện tại đang để `SYSTEM_EMAIL_PROVIDER="SIMULATED"`. Khi đưa lên môi trường Production, hệ thống sẽ sử dụng kênh nào làm nhà cung cấp chính thức (`SMTP`, `RESEND`, hay `SENDGRID`) để cấu hình sẵn secret keys?
+## 8. OPEN ARCHITECTURAL QUESTIONS
+1. **[CONFIRMATION REQUIRED] Refactoring the 5 Large Files:** Modules such as `applications-data-table.tsx` and `applications.service.ts` exceed modular thresholds. Should these be refactored now or maintained as-is to preserve stability for v1.0.0?
+2. **[CONFIRMATION REQUIRED] Database Table Name Migration:** 9 tables currently use camelCase `@@map` names in `contract.prisma`. Should these be migrated to PostgreSQL `snake_case` now or post-release?
+3. **[CONFIRMATION REQUIRED] Full-Width Canvas Alignment:** Several components retain container constraints (`max-w-7xl mx-auto`). Should all pages be standardized to full-width layouts?
+4. **[CONFIRMATION REQUIRED] Production Email Provider:** Current environment defaults to `SYSTEM_EMAIL_PROVIDER="SIMULATED"`. Which provider (`SMTP`, `RESEND`, or `SENDGRID`) will be designated for production release?
 
 ---
 
-## 9. ROADMAP & KẾ HOẠCH PHÁT TRIỂN TIẾP THEO
-
-### Future providers to add in v1.1.0:
+## 9. ROADMAP & FUTURE EXTENSIONS
+### Candidate Providers for v1.1.0:
 - Microsoft Teams Incoming Webhook
 - Zalo OA Webhook
 - Lark/Feishu Bot
-- Slack (dùng Block Kit thay vì attachment cũ)
-
----
-
-## CÁCH CHÚNG TA (Antigravity + DeepSeek + Chủ dự án) SẼ PHỐI HỢP
-
-- **Antigravity (tôi):** Là người đọc code thật, kiểm chứng trực tiếp trên filesystem, chạy lệnh kiểm tra (linter, compiler, test suite) và chịu trách nhiệm 100% về tính chính xác kỹ thuật của mọi file, dòng code và thay đổi thực tế.
-- **DeepSeek (bạn):** Là người tư vấn chiến lược, phân tích logic kiến trúc cấp cao, đề xuất roadmap, review giải pháp và chỉ ra các rủi ro hệ thống — dựa hoàn toàn trên "bản sự thật duy nhất" mà tôi cung cấp.
-- **Chủ dự án:** Người đưa ra yêu cầu nghiệp vụ, chốt định hướng sản phẩm, ra quyết định cuối cùng và giải đáp 4 câu hỏi mở ở mục 8.
-
-### Quy tắc làm việc:
-1. Khi DeepSeek đề xuất bất kỳ giải pháp nào không khớp với thực tế code (ví dụ: đề xuất dùng Tailwind v3, khuyên dùng `corepack`, hoặc gọi API không qua `DtoPipe`/`Gatekeeper`), tôi sẽ lập tức phản hồi kèm bằng chứng (tên file + số dòng cụ thể).
-2. Khi gặp điểm chưa chắc chắn, cả hai chúng ta sẽ gắn thẻ `[CẦN XÁC NHẬN]` để xin chỉ thị của Chủ dự án, tuyệt đối không tự ý suy đoán.
-3. Khi có bất kỳ thay đổi nào làm biến động kiến trúc, tôi sẽ cập nhật lại báo cáo context này.
+- Slack (Block Kit integration)

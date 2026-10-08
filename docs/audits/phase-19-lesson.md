@@ -1,46 +1,46 @@
-# Bài Học Kỹ Thuật Phase 19: Thẻ Script trong React 19 & Kiến Trúc RSC của Next.js App Router
+# Phase 19 Technical Lessons: Script Tags in React 19 & Next.js App Router RSC Architecture
 
-**Giai Đoạn:** Phase 19 — Xử Lý Triệt Để Gốc Rễ & Đúc Kết Bài Học Framework  
-**Vai Trò:** Senior Frontend Engineer + Next.js Specialist  
-**Ngày:** 02/10/2026  
-**Trạng Thái:** ĐÃ LƯU TRỮ & ĐƯỢC MÃ HÓA VÀO BỘ NHỚ HỆ THỐNG (ARCHIVED & CODIFIED IN MEMORY)  
+**Phase:** Phase 19 — Root Cause Remediation & Framework Lessons Learned  
+**Role:** Senior Frontend Engineer + Next.js Specialist  
+**Date:** 02/10/2026  
+**Status:** ARCHIVED & CODIFIED IN PERSISTENT MEMORY  
 
 ---
 
-## 1. Tóm Tắt Tổng Quan: Chu Kỳ Thất Bại Qua 3 Giai Đoạn
+## 1. Overview: The 3-Phase Failure Cycle
 
-Từ Phase 16A đến Phase 18.1, cùng một vấn đề liên quan đến script khởi tạo theme đã tái diễn 3 lần liên tiếp dưới các hình thức khác nhau:
+From Phase 16A through Phase 18.1, the same theme initialization script defect recurred 3 times across different incarnations:
 
 ```
 [Phase 16A]
-Chuyển đổi các public route (/careers/*) sang React Server Components (RSC)
-  ↳ Script inline của next-themes kích hoạt lỗi React 19: "Encountered a script tag while rendering React component"
+Converted public routes (/careers/*) to React Server Components (RSC)
+  ↳ next-themes inline script triggered React 19 error: "Encountered a script tag while rendering React component"
         │
         ▼
-[Phase 18] - PHẢN KHUÔN MẪU (ANTI-PATTERN)
-Nuốt triệu chứng bằng cách monkey-patch `console.error` bên trong ThemeProvider
-  ↳ Test pass giả tạo (false-positive); warning bị nuốt âm thầm trong môi trường dev, nguyên nhân gốc rễ bị phớt lờ
+[Phase 18] - ANTI-PATTERN
+Swallowed symptoms via monkey-patching `console.error` inside ThemeProvider
+  ↳ False-positive test pass; warnings silenced in dev, root cause ignored
         │
         ▼
-[Phase 18.1] - HƯỚNG TIẾP CẬN KIẾN TRÚC THIẾU SÓT
-Gỡ bỏ ghi đè `console.error`; chuyển thẻ `<script>` thô (raw JSX) vào `<head>` trong `RootLayout`
-  ↳ Lỗi tái xuất hiện tại vị trí mới: `at RootLayout (src/app/layout.tsx:34:9) at script`
+[Phase 18.1] - FLAWED ARCHITECTURAL APPROACH
+Removed `console.error` override; moved raw JSX `<script>` into `<head>` in `RootLayout`
+  ↳ Error re-emerged at new stack location: `at RootLayout (src/app/layout.tsx:34:9) at script`
         │
         ▼
-[Phase 19] - XỬ LÝ TRIỆT ĐỂ NGUYÊN NHÂN GỐC RỄ
-Thay thế thẻ `<script>` thô bằng `<Script strategy="beforeInteractive">` chính thức của Next.js
-  ↳ HTML render từ server sạch sẽ, 0 lỗi console, 0 monkey-patching, 10/10 Playwright E2E test đạt tuyệt đối
+[Phase 19] - ROOT CAUSE REMEDIATION
+Replaced raw `<script>` with official Next.js `<Script strategy="beforeInteractive">`
+  ↳ Clean server-rendered HTML, 0 console errors, 0 monkey-patching, 10/10 Playwright E2E tests passing cleanly
 ```
 
 ---
 
-## 2. Phân Tích Chuyên Sâu: Lý Do Từng Phương Án Thất Bại
+## 2. In-Depth Root Cause Analysis: Why Each Attempt Failed
 
-### 2.1 Tại Sao Phase 16A Kích Hoạt Bug
-- Trước Phase 16A, các trang careers hoạt động như Client Components (`"use client"`).
-- Ở Phase 16A, các route careers được chuyển đổi hoàn toàn sang React Server Components (RSC) nhằm tối ưu hóa SEO, sinh thẻ OpenGraph metadata và tăng hiệu năng SSR.
-- Khi `RootLayout` render `ThemeProvider` từ `next-themes`, thư viện `next-themes` đã chèn một thẻ `<script>` inline vào cây component của React.
-- React 19 giới thiệu cơ chế kiểm tra AST và reconciler cực kỳ nghiêm ngặt đối với các thẻ `<script>` nằm bên trong cây component:
+### 2.1 Why Phase 16A Triggered the Bug
+- Prior to Phase 16A, careers pages operated as Client Components (`"use client"`).
+- In Phase 16A, careers routes were converted to React Server Components (RSC) for SEO optimization, OpenGraph metadata generation, and SSR performance.
+- When `RootLayout` rendered `ThemeProvider` from `next-themes`, `next-themes` injected an inline `<script>` into the React component tree.
+- React 19 introduced strict AST and reconciler checks against `<script>` tags within the component tree:
   ```javascript
   case "script":
     didWarnScriptTags || isScriptDataBlock(newProps) || (
@@ -48,18 +48,18 @@ Thay thế thẻ `<script>` thô bằng `<Script strategy="beforeInteractive">` 
       didWarnScriptTags = !0
     );
   ```
-- React 19 cấm các component phát ra JavaScript thực thi thông qua thẻ JSX `<script>` thông thường trong quá trình client hydration.
+- React 19 forbids components from emitting executable JavaScript via standard JSX `<script>` tags during client hydration.
 
-### 2.2 Tại Sao Việc Nuốt Warning Bằng Console Ở Phase 18 Là Một Anti-Pattern
-- Ở Phase 18, `console.error` bị ghi đè cục bộ bên trong `ThemeProvider` ở chế độ development để lọc bỏ chuỗi chứa `"Encountered a script tag"`.
-- **Lý do giải pháp này sai lầm:**
-  1. *Vi Phạm Nguyên Tắc Bộ Nhớ Dự Án:* *"Không bao giờ che giấu triệu chứng; phải sửa triệt để nguyên nhân gốc rễ."*
-  2. *Làm Sai Lệch Tính Toàn Vẹn Của Kiểm Thử:* Các bộ kiểm thử Playwright E2E lắng nghe sự kiện console trình duyệt bị che mắt vì hàm monkey-patch phía client đã chặn đứng cảnh báo trước khi sự kiện tới DevTools.
-  3. *Lỗi Kiến Trúc Của Framework Vẫn Còn Nguyên:* Hành vi vi phạm hợp đồng (contract) của framework vẫn âm thầm tiếp diễn.
+### 2.2 Why Suppressing Warnings in Phase 18 Was an Anti-Pattern
+- In Phase 18, `console.error` was monkey-patched locally within `ThemeProvider` in development mode to filter strings containing `"Encountered a script tag"`.
+- **Why this was flawed:**
+  1. *Violated Project Principles:* *"Never hide symptoms; fix the root cause."*
+  2. *Compromised Test Integrity:* Playwright E2E browser console listeners were blinded because the client-side monkey-patch intercepted warnings before reaching DevTools.
+  3. *Unresolved Framework Architectural Defect:* The underlying contract violation persisted silently.
 
-### 2.3 Tại Sao Phase 18.1 Di Chuyển Script Nhưng Vẫn Bị Lỗi
-- Phase 18.1 đã thực hiện đúng việc xóa bỏ monkey-patch `console.error` và loại bỏ `suppressHydrationWarning` dư thừa trên các thẻ JSON-LD.
-- Tuy nhiên, Phase 18.1 lại chèn script khởi tạo theme vào `<head>` trong `frontend/src/app/layout.tsx` bằng **thẻ JSX `<script>` thô**:
+### 2.3 Why Moving the Script in Phase 18.1 Still Failed
+- Phase 18.1 correctly removed the `console.error` monkey-patch and eliminated redundant `suppressHydrationWarning` flags on JSON-LD tags.
+- However, Phase 18.1 placed the theme initialization script into `<head>` in `frontend/src/app/layout.tsx` using a **raw JSX `<script>` tag**:
   ```tsx
   <head>
     <script
@@ -69,23 +69,23 @@ Thay thế thẻ `<script>` thô bằng `<Script strategy="beforeInteractive">` 
     />
   </head>
   ```
-- **Lý do lỗi vẫn tiếp tục phát sinh:**
-  - Dù `RootLayout` là một RSC, nhưng trong App Router của Next.js, `layout.tsx` vẫn được đối soát (reconcile) và hydrate ở phía client khi người dùng chuyển trang, rơi vào fallback 404, hoặc qua các lượt hydrate.
-  - Client reconciler của React 19 (`completeWork`) duyệt qua cây JSX và chạm vào thẻ `<script>` thô tại vị trí `layout.tsx:34:9`.
-  - Do script này không phải là một khối dữ liệu thụ động (inert data block - hàm `isScriptDataBlock` trả về `false` đối với mã JavaScript thực thi), React 19 lập tức phát cảnh báo:
+- **Why the error re-emerged:**
+  - Even though `RootLayout` is an RSC, in the Next.js App Router `layout.tsx` is still reconciled and hydrated on the client during route transitions, 404 fallbacks, and initial hydration.
+  - React 19's client reconciler (`completeWork`) traversed the JSX tree and encountered the raw `<script>` tag at `layout.tsx:34:9`.
+  - Because this script was executable JavaScript rather than inert data (`isScriptDataBlock` evaluates to `false`), React 19 immediately issued:
     ```
     Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client.
     - at RootLayout (src/app/layout.tsx:34:9)
     - at script
     ```
-  - Việc chuyển thẻ `<script>` thô từ component con lên `<head>` trong cây JSX **không** giúp nó thoát khỏi reconciler của React.
+  - Moving a raw `<script>` tag from a child component to `<head>` within a JSX tree **does not** bypass React's reconciler.
 
 ---
 
-## 3. Kiến Trúc Chuẩn Trong Next.js App Router (Phase 19)
+## 3. Canonical Architecture in Next.js App Router (Phase 19)
 
-### 3.1 Sử Dụng Next.js `<Script>` (`next/script`)
-Next.js cung cấp component `<Script>` chuyên dụng hạng nhất (first-class) được thiết kế riêng để quản lý việc nhúng script trong React 19 và App Router:
+### 3.1 Utilizing Next.js `<Script>` (`next/script`)
+Next.js provides a first-class `<Script>` component designed specifically to manage script injection in React 19 and the App Router:
 
 ```tsx
 import Script from "next/script";
@@ -108,32 +108,32 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-### 3.2 Vì Sao `<Script id="theme-init" strategy="beforeInteractive">` Giải Quyết Triệt Để Vấn Đề
-1. **Chèn Trực Tiếp Phía Server, Không Phải Thao Tác DOM Phía Client:**
-   Next.js trích xuất thẻ `<Script strategy="beforeInteractive">` ngay tại server và chèn trực tiếp vào khối `<head>` của mã HTML trả về trước khi runtime Next.js hay các bundle hydration của React kịp thực thi.
-2. **Tương Thích Tuyệt Đối Với Reconciler:**
-   Reconciler của React 19 nhận diện cơ chế trừu tượng hóa của Next.js Script và không coi đây là một thẻ `<script>` thô tự do nằm trong cây component client.
-3. **Thực Thi Đồng Bộ Trước Khi Vẽ Giao Diện (Triệt Tiêu 100% FOUC):**
-   Trình phân tích cú pháp (parser) của trình duyệt chạy đoạn script đồng bộ ngay trong `<head>` trước khi vẽ thẻ `<body>`. Script kiểm tra `localStorage` và `prefers-color-scheme` để gán class `dark` chỉ trong **<1ms** (thực tế đo đạc qua Playwright navigation timing là 0ms).
+### 3.2 Why `<Script id="theme-init" strategy="beforeInteractive">` Solves the Issue
+1. **Server-Side Injection, Not Client DOM Mutation:**
+   Next.js hoists `<Script strategy="beforeInteractive">` tags on the server and injects them directly into the `<head>` of the server-rendered HTML before the Next.js runtime or React hydration bundles execute.
+2. **Reconciler Compatibility:**
+   React 19's reconciler recognizes the Next.js Script abstraction and does not treat it as an unmanaged raw `<script>` tag in the client tree.
+3. **Synchronous Execution Before Render (Eliminates FOUC):**
+   The browser parser executes the synchronous script in `<head>` before rendering `<body>`. Checking `localStorage` and `prefers-color-scheme` to apply `.dark` takes **<1ms** (measured as 0ms via Playwright navigation timing).
 
 ---
 
-## 4. Bảng Quy Tắc & Mẫu Kiến Trúc Bắt Buộc Cho Next.js App Router + React 19
+## 4. Architectural Rules for Next.js App Router + React 19
 
-| Quy Tắc | Phương Pháp Đúng Chuẩn | Anti-Pattern Cần Tránh |
+| Rule | Canonical Pattern | Anti-Pattern to Avoid |
 | :--- | :--- | :--- |
-| **Nhúng Script trong App Router** | Luôn dùng `import Script from "next/script"` kèm thuộc tính `id` duy nhất. | Tuyệt đối không render thẻ `<script>` thô trong các component JSX. |
-| **Khởi Tạo Theme (Theme Init)** | Dùng `<Script id="theme-init" strategy="beforeInteractive">` bên trong `<head>`. | Tuyệt đối không phụ thuộc vào inline script client thiếu kiểm soát. |
-| **Kỷ Luật Cảnh Báo (Warnings)** | Sửa kiến trúc component để đáp ứng đúng quy ước của framework. | Tuyệt đối không monkey-patch `console.error` để che giấu cảnh báo. |
-| **Kiểm Soát Hydration** | Chỉ dùng `suppressHydrationWarning` duy nhất trên thẻ `<html>`. | Tuyệt đối không rải `suppressHydrationWarning` bừa bãi lên các thẻ script. |
-| **Tính Chân Thực Của E2E Test** | Thu thập sự kiện thô `page.on("console")` không qua bộ lọc và assert độ dài bằng 0. | Không bao giờ test trên môi trường bị che đậy hoặc lọc log giả tạo. |
-| **Độ Nhạy Của Rate Limiting** | Áp dụng ngưỡng throttle linh hoạt theo môi trường (`limit: dev ? 100 : 5`). | Tránh hardcode giới hạn quá thấp gây lỗi 429 khi chạy test E2E song song. |
+| **Script Injection in App Router** | Always import `import Script from "next/script"` with a unique `id`. | Never render raw JSX `<script>` tags in components. |
+| **Theme Initialization** | Use `<Script id="theme-init" strategy="beforeInteractive">` inside `<head>`. | Never rely on uncontrolled client inline scripts. |
+| **Warning Hygiene** | Fix component architecture to comply with framework contracts. | Never monkey-patch `console.error` to hide warnings. |
+| **Hydration Warning Suppression** | Only place `suppressHydrationWarning` on `<html>`. | Never scatter `suppressHydrationWarning` onto script tags. |
+| **E2E Testing Authenticity** | Capture raw `page.on("console")` events without filters and assert zero errors. | Never test in environments with artificial logging filters. |
+| **Rate Limiting Thresholds** | Apply environment-aware throttle limits (`limit: dev ? 100 : 5`). | Avoid excessively low hardcoded limits that cause 429 errors during parallel E2E test runs. |
 
 ---
 
-## 5. Checklist Kiểm Định Cho Các Thay Đổi Tương Lai
-- [x] Không còn bất kỳ thẻ `<script>` JSX thô nào trong `frontend/src/app` (ngoại trừ component `<Script>` từ `next/script`).
-- [x] Không còn bất kỳ đoạn mã ghi đè `console.error =` nào trên toàn bộ codebase frontend.
-- [x] Thuộc tính `suppressHydrationWarning` chỉ xuất hiện duy nhất tại thẻ `<html>` trong `layout.tsx`.
-- [x] Đạt tuyệt đối cả 6 cổng kiểm soát kiến trúc CI (lint, typecheck, dtopipe, error-i18n, api-contract, test:e2e).
-- [x] Bộ test Playwright E2E xác thực log console thô không che đậy trên cả bản build dev lẫn production.
+## 5. Verification Checklist for Future Changes
+- [x] Zero raw JSX `<script>` tags in `frontend/src/app` (excluding `<Script>` from `next/script`).
+- [x] Zero `console.error =` monkey-patches across the frontend codebase.
+- [x] `suppressHydrationWarning` exists exclusively on `<html>` in `layout.tsx`.
+- [x] 100% compliance across all 6 CI architecture gates (lint, typecheck, dtopipe, error-i18n, api-contract, test:e2e).
+- [x] Playwright E2E suite verifies clean raw browser console logs in both dev and production builds.

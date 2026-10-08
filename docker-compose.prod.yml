@@ -253,6 +253,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
+      PUSHGATEWAY_URL: ${PUSHGATEWAY_URL:-http://pushgateway:9091}
     depends_on:
       postgres:
         condition: service_healthy
@@ -269,6 +270,29 @@ services:
         reservations:
           cpus: "0.1"
           memory: 128M
+
+  # ------------------------------------------------------------------------------
+  # 7. Prometheus Pushgateway Service (Metrics for Batch & Cron Jobs)
+  # ------------------------------------------------------------------------------
+  pushgateway:
+    image: prom/pushgateway:v1.10.0
+    container_name: haihire-prod-pushgateway
+    restart: unless-stopped
+    ports:
+      - "${PUSHGATEWAY_PORT:-9091}:9091"
+    networks:
+      - haihire-prod-network
+    logging: *prod-logging
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9091/-/healthy" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:

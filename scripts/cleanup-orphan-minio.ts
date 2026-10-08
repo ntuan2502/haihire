@@ -14,6 +14,100 @@ dotenv.config();
 
 export { cleanupOrphans, extractObjectNameFromUrl, type CleanupOptions, type CleanupReport };
 
+/**
+ * Pushes MinIO orphan cleanup metrics to Prometheus Pushgateway.
+ * Non-throwing: network issues or missing Pushgateway will NOT fail the cron.
+ */
+export async function pushMetrics(report: CleanupReport): Promise<void> {
+  const url = process.env.PUSHGATEWAY_URL;
+  if (!url) {
+    console.log("[INFO] PUSHGATEWAY_URL not set, skipping metrics push");
+    return;
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const isSuccess = 1;
+
+  const metrics = [
+    "# HELP minio_orphan_cleanup_scanned_total Total MinIO objects scanned",
+    "# TYPE minio_orphan_cleanup_scanned_total gauge",
+    `minio_orphan_cleanup_scanned_total ${report.scannedCount}`,
+    "",
+    "# HELP minio_orphan_cleanup_orphans_found_total Total orphan objects found",
+    "# TYPE minio_orphan_cleanup_orphans_found_total gauge",
+    `minio_orphan_cleanup_orphans_found_total ${report.orphanCount}`,
+    "",
+    "# HELP minio_orphan_cleanup_preserved_total Orphan objects preserved (in grace period)",
+    "# TYPE minio_orphan_cleanup_preserved_total gauge",
+    `minio_orphan_cleanup_preserved_total ${report.preservedGraceCount}`,
+    "",
+    "# HELP minio_orphan_cleanup_deleted_total Orphan objects deleted",
+    "# TYPE minio_orphan_cleanup_deleted_total gauge",
+    `minio_orphan_cleanup_deleted_total ${report.deletedCount}`,
+    "",
+    "# HELP minio_orphan_cleanup_bytes_freed_total Bytes freed by cleanup",
+    "# TYPE minio_orphan_cleanup_bytes_freed_total gauge",
+    `minio_orphan_cleanup_bytes_freed_total ${report.bytesFreed}`,
+    "",
+    "# HELP minio_orphan_cleanup_last_run_timestamp_seconds Last run timestamp",
+    "# TYPE minio_orphan_cleanup_last_run_timestamp_seconds gauge",
+    `minio_orphan_cleanup_last_run_timestamp_seconds ${timestamp}`,
+    "",
+    "# HELP minio_orphan_cleanup_success Run status (1=success, 0=failure)",
+    "# TYPE minio_orphan_cleanup_success gauge",
+    `minio_orphan_cleanup_success ${isSuccess}`,
+    "",
+  ].join("\n");
+
+  const pushUrl = `${url.replace(/\/+$/, "")}/metrics/job/minio_orphan_cleanup`;
+
+  try {
+    const response = await fetch(pushUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: metrics,
+    });
+
+    if (!response.ok) {
+      console.error(
+        `[ERROR] Pushgateway returned ${response.status}: ${await response.text()}`,
+      );
+      // Non-throwing: cron still completes normally
+    } else {
+      console.log(`[SUCCESS] Metrics pushed to ${pushUrl}`);
+    }
+  } catch (err) {
+    // Non-throwing: if Pushgateway is down, cron still exits 0
+    console.error(
+      `[ERROR] Failed to push metrics to Pushgateway: ${(err as Error).message}`,
+    );
+  }
+}
+
+/**
+ * Pushes failure status (minio_orphan_cleanup_success 0) to Pushgateway when script fails.
+ */
+export async function pushFailureMetric(): Promise<void> {
+  const url = process.env.PUSHGATEWAY_URL;
+  if (!url) return;
+
+  const failUrl = `${url.replace(/\/+$/, "")}/metrics/job/minio_orphan_cleanup`;
+  try {
+    await fetch(failUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: [
+        "# HELP minio_orphan_cleanup_success Run status (1=success, 0=failure)",
+        "# TYPE minio_orphan_cleanup_success gauge",
+        "minio_orphan_cleanup_success 0",
+        "",
+      ].join("\n"),
+    });
+  } catch {
+    // ignore
+  }
+}
+
 export async function runCli(): Promise<void> {
   const isDryRun = process.argv.includes("--dry-run");
   const thresholdArg = process.argv.find((arg) => arg.startsWith("--threshold-days="));
@@ -57,10 +151,13 @@ export async function runCli(): Promise<void> {
         console.log(`  ... and ${report.deletedFiles.length - 20} more files.`);
       }
     }
+
+    await pushMetrics(report);
     console.log("\n[SUCCESS] MinIO orphan cleanup finished successfully.");
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`\n[ERROR] MinIO orphan cleanup failed: ${msg}`);
+    await pushFailureMetric();
     process.exit(1);
   }
 }

@@ -177,6 +177,8 @@ jobs:
           SYSTEM_EMAIL_RESEND_API_KEY=
           SYSTEM_EMAIL_SENDGRID_API_KEY=
           REDIS_PORT=6379
+          PUSHGATEWAY_PORT=9091
+          PUSHGATEWAY_URL=http://localhost:9091
           EOF
 
       - name: Create frontend .env for CI
@@ -187,6 +189,7 @@ jobs:
           NEXT_PUBLIC_API_URL=http://localhost:13001
           NEXT_PUBLIC_MINIO_URL=/haihire-resumes
           NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
+          PUSHGATEWAY_PORT=9091
           EOF
 
       - name: Audit Test Differences (Anti-Regression IVV3-01)

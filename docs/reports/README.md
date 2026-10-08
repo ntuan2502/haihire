@@ -22,6 +22,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [18 — Task #7: Cron Spike Alert](18-task-07-cron-spike-alert-report.md)
 - [20 — Task #7.5: Language Standardization](20-task-07.5-language-standardization-report.md)
 - [22 — Task #8: Frontend onError Hook Standardization](22-task-08-frontend-onerror-hook-standardization-report.md)
+- [24 — Task #9: Repository Restructure](24-task-09-repo-restructure-completion-report.md)
 
 ## Archived Reports
 

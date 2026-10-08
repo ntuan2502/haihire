@@ -28,9 +28,9 @@ docs/
 │   ├── production-deployment-plan.md # 5-phase deployment protocol & rollback
 │   ├── redis-recovery.md           # Valkey memory exhaustion & failover SOP
 │   └── versioning.md               # Monorepo versioning, SemVer, GHCR & immutable release policy
-├── reports/                        # Hardening Milestone Reports (Tasks #1A -> #8)
+├── reports/                        # Hardening Milestone Reports (Tasks #1A -> #9)
 │   ├── README.md                   # Hardening reports index & milestone summaries
-│   └── [15 milestone reports]     # Primary technical verification evidence
+│   └── [16 milestone reports]     # Primary technical verification evidence
 └── archive/                        # Consolidated Historical Archives
     ├── audits/                     # Historical verification logs (Phases 1 to 22.8)
     │   ├── README.md               # Registry of all 20 phases & verification milestones
@@ -59,6 +59,7 @@ Between Task #1A and Task #8, the platform underwent a comprehensive hardening p
 | 7 | Cron Spike Alert | 3 new alerts for cron | [18](reports/18-task-07-cron-spike-alert-report.md) |
 | 7.5 | Language Standardization | English docs/comments/logs | [20](reports/20-task-07.5-language-standardization-report.md) |
 | 8 | Frontend onError Hook | 30 mutation hooks | [22](reports/22-task-08-frontend-onerror-hook-standardization-report.md) |
+| 9 | Repository Restructure | Archive legacy audits, Gate 11 link check | [24](reports/24-task-09-repo-restructure-completion-report.md) |
 
 **Results:** 563 tests passing, 11 CI architecture gates, zero critical issues.
 

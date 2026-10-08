@@ -41,24 +41,24 @@ This directory contains the complete historical audit trajectory of the HaiHire 
 ---
 
 ### Phase 1 - 10 (Archived Early Foundation)
-Archived in [`archive/phase-01-to-10/`](archive/phase-01-to-10/):
+Archived in [`phase-01-to-10/`](phase-01-to-10/):
 
 | Phase | Milestone Description | Final Verdict | Archive Link |
 | :---: | :--- | :---: | :--- |
-| **1** | Static Code Analysis & Lint Baseline | 🟢 PASS | [archive/phase-01-to-10/phase-1-static-audit-report.md](archive/phase-01-to-10/phase-1-static-audit-report.md) |
-| **2** | Runtime Verification & Local Deployment | 🟢 PASS | [archive/phase-01-to-10/phase-2-runtime-verification-report.md](archive/phase-01-to-10/phase-2-runtime-verification-report.md) |
-| **3** | Initial Bug Fix Verification | 🟢 PASS | [archive/phase-01-to-10/phase-3-fix-verification-report.md](archive/phase-01-to-10/phase-3-fix-verification-report.md) |
-| **4** | IV&V Round 1 Initial Gate | 🟢 PASS | [archive/phase-01-to-10/phase-4-ivv-round-1-report.md](archive/phase-01-to-10/phase-4-ivv-round-1-report.md) |
-| **5** | Platform Hardening & Security Audit | 🟢 PASS | [archive/phase-01-to-10/phase-5-hardening-report.md](archive/phase-01-to-10/phase-5-hardening-report.md) |
-| **6** | IV&V Round 2 Verification | 🟢 PASS | [archive/phase-01-to-10/phase-6-ivv-round-2-report.md](archive/phase-01-to-10/phase-6-ivv-round-2-report.md) |
-| **7** | Final Polish & UI Consistency | 🟢 PASS | [archive/phase-01-to-10/phase-7-final-polish-report.md](archive/phase-01-to-10/phase-7-final-polish-report.md) |
-| **8** | IV&V Round 3 Pre-Flight Gate | 🟢 PASS | [archive/phase-01-to-10/phase-8-ivv-round-3-final-gate.md](archive/phase-01-to-10/phase-8-ivv-round-3-final-gate.md) |
-| **9** | Production Deployment & Smoke Drills | 🟢 PASS | [archive/phase-01-to-10/phase-9-production-deployment-report.md](archive/phase-01-to-10/phase-9-production-deployment-report.md) |
-| **10** | IV&V Round 4 Production Gate | 🟡 Cond PASS | [archive/phase-01-to-10/phase-10-ivv-round-4-final-golive-gate.md](archive/phase-01-to-10/phase-10-ivv-round-4-final-golive-gate.md) |
-| **10.1** | Hotfix 1 Post-Gate | 🟢 PASS | [archive/phase-01-to-10/phase-10.1-hotfix-report.md](archive/phase-01-to-10/phase-10.1-hotfix-report.md) |
-| **10.2** | IV&V Round 5 Verification | 🟢 PASS | [archive/phase-01-to-10/phase-10.2-ivv-round-5-report.md](archive/phase-01-to-10/phase-10.2-ivv-round-5-report.md) |
-| **10.3** | Hotfix 2 Post-Gate | 🟢 PASS | [archive/phase-01-to-10/phase-10.3-hotfix-report.md](archive/phase-01-to-10/phase-10.3-hotfix-report.md) |
-| **10.4** | IV&V Round 6 Final Resolution | 🟢 PASS | [archive/phase-01-to-10/phase-10.4-ivv-round-6-report.md](archive/phase-01-to-10/phase-10.4-ivv-round-6-report.md) |
+| **1** | Static Code Analysis & Lint Baseline | 🟢 PASS | [phase-01-to-10/phase-1-static-audit-report.md](phase-01-to-10/phase-1-static-audit-report.md) |
+| **2** | Runtime Verification & Local Deployment | 🟢 PASS | [phase-01-to-10/phase-2-runtime-verification-report.md](phase-01-to-10/phase-2-runtime-verification-report.md) |
+| **3** | Initial Bug Fix Verification | 🟢 PASS | [phase-01-to-10/phase-3-fix-verification-report.md](phase-01-to-10/phase-3-fix-verification-report.md) |
+| **4** | IV&V Round 1 Initial Gate | 🟢 PASS | [phase-01-to-10/phase-4-ivv-round-1-report.md](phase-01-to-10/phase-4-ivv-round-1-report.md) |
+| **5** | Platform Hardening & Security Audit | 🟢 PASS | [phase-01-to-10/phase-5-hardening-report.md](phase-01-to-10/phase-5-hardening-report.md) |
+| **6** | IV&V Round 2 Verification | 🟢 PASS | [phase-01-to-10/phase-6-ivv-round-2-report.md](phase-01-to-10/phase-6-ivv-round-2-report.md) |
+| **7** | Final Polish & UI Consistency | 🟢 PASS | [phase-01-to-10/phase-7-final-polish-report.md](phase-01-to-10/phase-7-final-polish-report.md) |
+| **8** | IV&V Round 3 Pre-Flight Gate | 🟢 PASS | [phase-01-to-10/phase-8-ivv-round-3-final-gate.md](phase-01-to-10/phase-8-ivv-round-3-final-gate.md) |
+| **9** | Production Deployment & Smoke Drills | 🟢 PASS | [phase-01-to-10/phase-9-production-deployment-report.md](phase-01-to-10/phase-9-production-deployment-report.md) |
+| **10** | IV&V Round 4 Production Gate | 🟡 Cond PASS | [phase-01-to-10/phase-10-ivv-round-4-final-golive-gate.md](phase-01-to-10/phase-10-ivv-round-4-final-golive-gate.md) |
+| **10.1** | Hotfix 1 Post-Gate | 🟢 PASS | [phase-01-to-10/phase-10.1-hotfix-report.md](phase-01-to-10/phase-10.1-hotfix-report.md) |
+| **10.2** | IV&V Round 5 Verification | 🟢 PASS | [phase-01-to-10/phase-10.2-ivv-round-5-report.md](phase-01-to-10/phase-10.2-ivv-round-5-report.md) |
+| **10.3** | Hotfix 2 Post-Gate | 🟢 PASS | [phase-01-to-10/phase-10.3-hotfix-report.md](phase-01-to-10/phase-10.3-hotfix-report.md) |
+| **10.4** | IV&V Round 6 Final Resolution | 🟢 PASS | [phase-01-to-10/phase-10.4-ivv-round-6-report.md](phase-01-to-10/phase-10.4-ivv-round-6-report.md) |
 
 ---
 

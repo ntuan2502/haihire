@@ -1,71 +1,71 @@
-# BÁO CÁO HOÀN TẤT PHASE 16A — TARGETED P0 FIX SPRINT
+# PHASE 16A COMPLETION REPORT — TARGETED P0 FIX SPRINT
 **Enterprise ATS Platform: HaiHire**  
-**Ngày thực hiện:** 02/10/2026  
-**Vai trò:** Senior Backend Engineer + Frontend Engineer  
-**Trạng thái Sprint:** 🟢 **100% THÀNH CÔNG (3/3 ITEMS CLOSED — READY TO SHIP)**
+**Date:** 02/10/2026  
+**Role:** Senior Backend Engineer + Frontend Engineer  
+**Sprint Status:** 🟢 **100% SUCCESS (3/3 ITEMS CLOSED — READY TO SHIP)**
 
 ---
 
 ## 1. EXECUTIVE SUMMARY
 
-Sprint **Phase 16A** được kích hoạt để giải quyết dứt điểm **finding P0 duy nhất** bị coi là blocker trước khi ship từ báo cáo Phase 15C (Zero DB Transactions) cùng với **2 findings P1 quan trọng** (Career Pages SEO và Demo Password Hardcoded).
+Sprint **Phase 16A** was initiated to permanently resolve the **single P0 blocker** flagged in Phase 15C (Zero DB Transactions) alongside **2 critical P1 findings** (Career Pages SEO and Hardcoded Demo Password).
 
-Toàn bộ các mục tiêu trong phạm vi sprint đã được thực hiện triệt để, không cắt góc, tuân thủ nghiêm ngặt nguyên tắc Zero `any`, quy tắc Saga Pattern cho distributed resources (MinIO), kiến trúc Next.js React Server Components (RSC) cho SEO, và cơ chế cấu hình bảo mật chuẩn 12-factor qua biến môi trường.
+All sprint objectives were achieved without shortcuts, adhering strictly to the Zero `any` policy, Saga Pattern rules for distributed resources (MinIO), Next.js React Server Components (RSC) architecture for SEO, and 12-factor configuration security via environment variables.
 
-### Bảng Chỉ Số Đo Lường Chính
+### Key Metrics Summary
 
-| Hạng mục kiểm tra | Trước Phase 16A (Baseline) | Sau Phase 16A (Thực tế) | Trạng thái |
+| Audit Item | Pre-Phase 16A (Baseline) | Post-Phase 16A (Actual) | Status |
 | :--- | :---: | :---: | :---: |
 | **P0 Blockers** | 1 (Zero DB Transactions) | **0** | 🟢 **CLEARED** |
 | **P1 Critical Issues (Scoped)** | 2 (RSC SEO + Plaintext Password) | **0** | 🟢 **CLEARED** |
-| **Tổng số Test Cases** | 349 tests pass | **360 tests pass (+11 net new)** | 🟢 **100% PASS** |
+| **Total Test Cases** | 349 tests pass | **360 tests pass (+11 net new)** | 🟢 **100% PASS** |
 | **Test Files** | 48 files | **50 files (+2 files)** | 🟢 **100% PASS** |
 | **Regression Scenarios** | 68 / 68 PASS | **68 / 68 PASS** | 🟢 **100% PASS** |
 | **CI Quality Gates** | 5/5 PASS | **5/5 PASS (lint, typecheck, dtopipe, i18n, contract)** | 🟢 **PASSED** |
 | **TypeScript / Linter Errors** | 0 error | **0 error, 0 warning (Zero `any`)** | 🟢 **CLEAN** |
-| **Matches cho `"password123"`** | 2 hardcoded files | **0 matches trên toàn repo** | 🟢 **SECURED** |
+| **Matches for `"password123"`** | 2 hardcoded files | **0 matches across entire repository** | 🟢 **SECURED** |
 
 ---
 
 ## 2. ITEM 1: DB TRANSACTIONS & SAGA PATTERN (P0 BLOCKING)
 
-### 2.1. Vấn đề gốc rễ
-Trước Phase 16A, toàn bộ codebase backend không có bất kỳ lệnh gọi transaction nào (`$transaction` hoặc `tx`). Khi ứng viên nộp hồ sơ (`createApplication`) hoặc quản trị viên xóa dữ liệu (ứng viên, job, tổ chức), các lệnh ghi cơ sở dữ liệu và thao tác tải file lên MinIO diễn ra tuần tự, độc lập:
-- Nếu bước 1 tải CV lên MinIO thành công nhưng bước 2 tạo ứng viên trong DB thất bại $\rightarrow$ File CV bị mồ côi (orphan storage leak) vĩnh viễn trên MinIO.
-- Nếu tạo Candidate thành công nhưng tạo Application thất bại $\rightarrow$ Candidate mồ côi trong DB.
-- Khi xóa Organization: lệnh cập nhật user, xóa membership, xóa organization không nguyên tử $\rightarrow$ nếu lỗi giữa chừng, hệ thống rơi vào trạng thái tham chiếu hỏng (inconsistent relational integrity).
+### 2.1 Root Cause
+Prior to Phase 16A, the backend codebase lacked transaction orchestration (`$transaction` or `tx`). When applicants submitted applications (`createApplication`) or administrators deleted records (candidates, jobs, organizations), database writes and MinIO file uploads executed sequentially and independently:
+- If Step 1 (MinIO upload) succeeded but Step 2 (DB candidate creation) crashed $\rightarrow$ The CV file was permanently orphaned on MinIO storage.
+- If Candidate creation succeeded but Application creation failed $\rightarrow$ Orphaned candidate persisted in the database.
+- Organization deletion updated users, deleted memberships, and deleted organizations non-atomically $\rightarrow$ Intermittent failures caused broken relational integrity.
 
-### 2.2. Kiến trúc giải pháp (Saga Pattern + Atomic Interactive Transaction)
+### 2.2 Solution Architecture (Saga Pattern + Atomic Interactive Transactions)
 1. **Core Transaction Engine:**  
-   Bổ sung phương thức `transaction<T>(fn: (tx: typeof db) => Promise<T>)` vào `PrismaService` (`backend/src/prisma/prisma.service.ts`).
-2. **Saga Pattern cho `ApplicationsService::create`:**
-   - **Bước 1 (Ngoài Transaction):** Tải file CV lên MinIO object storage trước. Thu được `resumeUrl` và `objectName`.
-   - **Bước 2 (Trong Transaction Nguyên Tử):** Chạy `this.executeTx(async (tx) => { ... })`. Trong cùng một transaction:
-     - Tạo hoặc tìm kiếm `Candidate`.
-     - Tạo `CandidateDocument` lưu trữ file CV.
-     - Tạo `Application` liên kết với `Job` và `Candidate`.
-     - Cập nhật số liệu `Job.totalApplicants` và ghi nhận hoạt động.
-   - **Bước 3 (Compensating Action trên Rollback):** Nếu bất kỳ thao tác DB nào trong transaction bị ném ngoại lệ $\rightarrow$ Khối `catch` tự động kích hoạt lệnh bồi hoàn: `await this.minioService.deleteFile(objectName)` để dọn sạch file đã upload lên MinIO, sau đó re-throw lỗi gốc.
+   Added `transaction<T>(fn: (tx: typeof db) => Promise<T>)` to `PrismaService` (`backend/src/prisma/prisma.service.ts`).
+2. **Saga Pattern for `ApplicationsService::create`:**
+   - **Step 1 (Pre-transaction):** Upload CV file to MinIO object storage. Obtain `resumeUrl` and `objectName`.
+   - **Step 2 (Atomic Interactive Transaction):** Execute `this.executeTx(async (tx) => { ... })`. Within a single atomic transaction:
+     - Find or create `Candidate`.
+     - Create `CandidateDocument` referencing the CV.
+     - Create `Application` linking `Job` and `Candidate`.
+     - Increment `Job.totalApplicants` and record activity log.
+   - **Step 3 (Compensating Action on Rollback):** If any DB operation fails $\rightarrow$ The `catch` block triggers a compensating action: `await this.minioService.deleteFile(objectName)` purging the uploaded MinIO file before re-throwing the original error.
 3. **Atomic Cascade Deletions:**
-   - `applications.service.ts::remove`: Xóa đồng thời `Interview` và `Application` trong cùng transaction.
-   - `jobs.service.ts::remove`: Đánh dấu `deletedAt` (Soft Delete) nguyên tử bên trong transaction.
-   - `candidates.service.ts::remove`: Đánh dấu `deletedAt` (Soft Delete) nguyên tử bên trong transaction.
-   - `organizations.service.ts::deleteMyOrg`: Gỡ `organizationId = null` của toàn bộ users, xóa toàn bộ `OrganizationMember`, và xóa `Organization` nguyên tử trong cùng transaction.
+   - `applications.service.ts::remove`: Deletes `Interview` and `Application` atomically in a transaction.
+   - `jobs.service.ts::remove`: Sets `deletedAt` (Soft Delete) atomically within transaction.
+   - `candidates.service.ts::remove`: Sets `deletedAt` (Soft Delete) atomically within transaction.
+   - `organizations.service.ts::deleteMyOrg`: Nulls `organizationId` across users, purges `OrganizationMember` records, and deletes `Organization` atomically in one transaction.
 
-### 2.3. Danh sách Files đã sửa đổi (Diff summary)
-- `backend/src/prisma/prisma.service.ts`: Thêm `transaction()` wrapper hỗ trợ interactive transaction.
-- `backend/src/applications/applications.service.ts`: Triển khai Saga Pattern (MinIO upload $\rightarrow$ DB Transaction $\rightarrow$ Compensating delete) và atomic `remove`.
-- `backend/src/candidates/candidates.service.ts`: Bọc `remove` trong `executeTx`.
-- `backend/src/jobs/jobs.service.ts`: Bọc `remove` trong `executeTx`.
-- `backend/src/organizations/organizations.service.ts`: Bọc `deleteMyOrg` trong `executeTx`.
-- `backend/src/test/transactions.spec.ts`: File integration test mới (6 test cases).
+### 2.3 Modified Files (Diff summary)
+- `backend/src/prisma/prisma.service.ts`: Added `transaction()` wrapper supporting interactive transactions.
+- `backend/src/applications/applications.service.ts`: Implemented Saga Pattern (MinIO upload $\rightarrow$ DB Transaction $\rightarrow$ Compensating delete) and atomic `remove`.
+- `backend/src/candidates/candidates.service.ts`: Wrapped `remove` in `executeTx`.
+- `backend/src/jobs/jobs.service.ts`: Wrapped `remove` in `executeTx`.
+- `backend/src/organizations/organizations.service.ts`: Wrapped `deleteMyOrg` in `executeTx`.
+- `backend/src/test/transactions.spec.ts`: Integration test suite (6 test cases).
 
-### 2.4. Kết quả Integration Test & Repro Chứng Minh Rollback
-File kiểm thử chuyên biệt `backend/src/test/transactions.spec.ts` được thiết kế để kiểm chứng cả Happy Path lẫn Failure Repro:
-- **Repro Failure Test:** Cố ý tiêm lỗi giả lập sập DB ngay tại bước `Application.create`.
-- **Bằng chứng kiểm chứng (Evidence):**
-  - Transaction bị hủy và rollback hoàn toàn: `mockDbState.applications.length === 0` và `mockDbState.candidates.length === 0` (Zero orphan records).
-  - Lệnh bồi hoàn MinIO được kích hoạt ngay lập tức: `minioDeletedFiles.length === 1`, file vừa upload đã bị xóa sạch khỏi storage bucket.
+### 2.4 Integration Test Results & Rollback Evidence
+The test suite `backend/src/test/transactions.spec.ts` verifies both Happy Path and Failure Repro:
+- **Repro Failure Test:** Intentionally injected a DB failure at `Application.create`.
+- **Evidence:**
+  - Transaction aborted and fully rolled back: `mockDbState.applications.length === 0` and `mockDbState.candidates.length === 0` (Zero orphan records).
+  - MinIO compensation triggered immediately: `minioDeletedFiles.length === 1`, file purged from bucket.
 
 ```
  ✓ src/test/transactions.spec.ts (6 tests) 563ms
@@ -82,43 +82,43 @@ File kiểm thử chuyên biệt `backend/src/test/transactions.spec.ts` đượ
        ✓ soft deletes candidate inside atomic transaction 1ms
 ```
 
-### 2.5. Acceptance Checklist Item 1
-- [x] `createApplication` dùng transaction nguyên tử.
-- [x] Tất cả phương thức `remove` (`applications`, `candidates`, `jobs`, `organizations`) dùng transaction.
-- [x] MinIO upload có Saga compensating action (xóa file khi DB transaction fail).
-- [x] Integration test đạt 6/6 tests PASS.
-- [x] Repro failure path kiểm chứng rollback DB và dọn dẹp storage thành công 100%.
+### 2.5 Acceptance Checklist Item 1
+- [x] `createApplication` uses atomic transactions.
+- [x] All `remove` methods (`applications`, `candidates`, `jobs`, `organizations`) use transactions.
+- [x] MinIO upload has Saga compensating delete on DB failure.
+- [x] Integration tests pass 6/6 cases.
+- [x] Failure repro proves DB rollback and storage purge operate 100% reliably.
 
 ---
 
 ## 3. ITEM 2: CAREER PAGES RSC (P1 SEO CRITICAL)
 
-### 3.1. Vấn đề gốc rễ
-Hai trang tuyển dụng công khai (`frontend/src/app/careers/[orgSlug]/page.tsx` và `frontend/src/app/careers/[orgSlug]/[jobSlug]/page.tsx`) trước đây được khai báo directive `"use client"` ở dòng đầu tiên. Điều này khiến toàn bộ trang biến thành Client-Side Rendered (CSR):
-- Bot tìm kiếm (Googlebot, LinkedIn crawler, Facebook crawler) cào trang chỉ nhận được một khung HTML rỗng không có nội dung công việc.
-- Không thể tạo dynamic OpenGraph / Twitter Cards meta tags theo từng vị trí tuyển dụng.
+### 3.1 Root Cause
+Public job pages (`frontend/src/app/careers/[orgSlug]/page.tsx` and `frontend/src/app/careers/[orgSlug]/[jobSlug]/page.tsx`) originally declared `"use client"` at line 1, making them Client-Side Rendered (CSR):
+- Search engine bots (Googlebot, LinkedIn, Facebook crawlers) received empty HTML shells lacking job content.
+- Dynamic OpenGraph / Twitter Cards meta tags could not be rendered per job posting.
 
-### 3.2. Kiến trúc giải pháp (Server-Client Component Separation)
-Đã tái cấu trúc theo mô hình chuẩn của Next.js App Router:
+### 3.2 Solution Architecture (Server-Client Component Separation)
+Restructured per Next.js App Router conventions:
 1. **Server Components (`page.tsx`):**
-   - Loại bỏ hoàn toàn directive `"use client"`.
-   - Thực hiện `fetchOrg` và `fetchJobs` trực tiếp trên server với `cache: "no-store"`.
-   - Triển khai hàm `generateMetadata({ params })` trả về đầy đủ: `title`, `description`, `openGraph` (`type`, `url`, `siteName`), `twitter` (`card: "summary_large_image"`).
-   - Trang chi tiết công việc (`[jobSlug]/page.tsx`) nhúng cấu trúc dữ liệu schema chuẩn Google Jobs: `<script type="application/ld+json">` (`JobPosting`).
-   - Kết xuất server HTML tĩnh ngữ nghĩa (`<h1>`, `<p>`, `<ul>`, `<section>`) chứa toàn bộ thông tin công ty và mô tả tuyển dụng để bots/crawlers lập chỉ mục ngay lập tức.
+   - Removed `"use client"`.
+   - Executed `fetchOrg` and `fetchJobs` directly on the server with `cache: "no-store"`.
+   - Implemented `generateMetadata({ params })` returning: `title`, `description`, `openGraph` (`type`, `url`, `siteName`), `twitter` (`card: "summary_large_image"`).
+   - Job detail page (`[jobSlug]/page.tsx`) embeds Google Jobs schema: `<script type="application/ld+json">` (`JobPosting`).
+   - Renders semantic server-side HTML (`<h1>`, `<p>`, `<ul>`, `<section>`) containing complete job details for immediate crawler indexation.
 2. **Client Components (`*-client.tsx`):**
-   - `frontend/src/components/careers/org-careers-client.tsx`: Chịu trách nhiệm về tìm kiếm thời gian thực, bộ lọc phòng ban, và chia sẻ liên kết.
-   - `frontend/src/components/careers/job-details-client.tsx`: Chịu trách nhiệm về modal nộp đơn ứng tuyển, validate form, upload file CV và gửi API.
+   - `frontend/src/components/careers/org-careers-client.tsx`: Real-time search, department filtering, and link sharing.
+   - `frontend/src/components/careers/job-details-client.tsx`: Application modals, form validation, CV uploads, and submission API calls.
 
-### 3.3. Danh sách Files đã tạo mới & sửa đổi
-- `frontend/src/app/careers/[orgSlug]/page.tsx` (Chuyển đổi thành RSC)
-- `frontend/src/app/careers/[orgSlug]/[jobSlug]/page.tsx` (Chuyển đổi thành RSC)
-- `frontend/src/components/careers/org-careers-client.tsx` (Client component mới)
-- `frontend/src/components/careers/job-details-client.tsx` (Client component mới)
-- `frontend/src/app/careers/careers-rsc.spec.tsx` (Unit test RSC & Metadata)
+### 3.3 Created & Modified Files
+- `frontend/src/app/careers/[orgSlug]/page.tsx` (Converted to RSC)
+- `frontend/src/app/careers/[orgSlug]/[jobSlug]/page.tsx` (Converted to RSC)
+- `frontend/src/components/careers/org-careers-client.tsx` (New client component)
+- `frontend/src/components/careers/job-details-client.tsx` (New client component)
+- `frontend/src/app/careers/careers-rsc.spec.tsx` (RSC & Metadata unit tests)
 
-### 3.4. Bằng chứng Build & Kiểm Chứng Runtime
-Lệnh `pnpm --filter frontend build` chứng minh cả hai tuyến đường được Next.js biên dịch thành Dynamic Server-Rendered on demand (`ƒ`):
+### 3.4 Build Verification & Runtime Evidence
+`pnpm --filter frontend build` confirms both routes compile to Dynamic Server-Rendered on demand (`ƒ`):
 ```
 Route (app)
 ├ ○ /careers
@@ -128,7 +128,7 @@ Route (app)
 ƒ  (Dynamic)  server-rendered on demand
 ```
 
-Kết quả kiểm thử chuyên biệt `frontend/src/app/careers/careers-rsc.spec.tsx`:
+Unit tests in `frontend/src/app/careers/careers-rsc.spec.tsx`:
 ```
  ✓ src/app/careers/careers-rsc.spec.tsx (5 tests) 51ms
    ✓ Career Pages React Server Components (RSC) Audit (Phase 16A) (5)
@@ -141,40 +141,40 @@ Kết quả kiểm thử chuyên biệt `frontend/src/app/careers/careers-rsc.sp
        ✓ renders server-side HTML with full job description and structured schema script 11ms
 ```
 
-### 3.5. Acceptance Checklist Item 2
-- [x] Cả hai trang `page.tsx` không còn chỉ thị `"use client"`.
-- [x] HTML render trên server có đầy đủ nội dung bài đăng tuyển dụng và thông tin công ty.
-- [x] Thẻ OpenGraph và Twitter Card metadata được tạo động theo từng slug công ty/công việc.
-- [x] Schema `JobPosting` (JSON-LD) được tích hợp phục vụ Google Search for Jobs.
-- [x] Toàn bộ tính năng tương tác (form ứng tuyển, search/filter) vẫn hoạt động trơn tru trong client components.
+### 3.5 Acceptance Checklist Item 2
+- [x] Both `page.tsx` files omit `"use client"`.
+- [x] Server-rendered HTML includes full job descriptions and company information.
+- [x] OpenGraph and Twitter Card metadata generated dynamically per company/job slug.
+- [x] `JobPosting` (JSON-LD) schema integrated for Google Search for Jobs.
+- [x] Interactive UI features (application form, search/filter) function properly in client components.
 
 ---
 
-## 4. ITEM 3: DEMO PASSWORD HARDCODED (P1 SECURITY)
+## 4. ITEM 3: HARDCODED DEMO PASSWORD (P1 SECURITY)
 
-### 4.1. Vấn đề gốc rễ
-Giá trị mật khẩu mặc định `"password123"` được hardcode dạng plain-text tại:
+### 4.1 Root Cause
+Default plain-text password `"password123"` was hardcoded in:
 - `frontend/src/constants/auth.constants.ts`
 - `backend/src/auth/constants.ts`
 
-### 4.2. Khắc phục & Đồng bộ Môi trường
-1. Xóa bỏ giá trị hardcode plain-text `"password123"`.
-2. Thay thế bằng cơ chế đọc biến môi trường fail-safe:
+### 4.2 Remediation & Environment Parity
+1. Removed plain-text `"password123"`.
+2. Replaced with fail-safe environment variable lookup:
    - Backend: `process.env.DEMO_SEED_PASSWORD || ""`
    - Frontend: `process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD || ""`
-3. Cập nhật và đồng bộ đầy đủ các file môi trường:
+3. Updated and synchronized environment files:
    - `backend/.env` & `backend/.env.example`
    - `frontend/.env` & `frontend/.env.example`
-4. Cập nhật seed logic và unit test liên quan (`frontend/src/app/auth/login/login.spec.tsx`).
-5. Dọn dẹp các tài liệu audit cũ có chứa chuỗi mẫu thành `[REDACTED_DEMO_PASSWORD]`.
+4. Updated seed scripts and tests (`frontend/src/app/auth/login/login.spec.tsx`).
+5. Redacted past audit logs containing the string to `[REDACTED_DEMO_PASSWORD]`.
 
-### 4.3. Bằng chứng kiểm tra Grep & Check-Env
-Chạy grep tìm kiếm chính xác từ khóa `"password123"` trên toàn bộ workspace:
+### 4.3 Grep & Env Verification Evidence
+Workspace-wide case-sensitive search for `"password123"`:
 ```
-Kết quả Grep: 0 matches found!
+Grep output: 0 matches found!
 ```
 
-Chạy `pnpm check:env` để kiểm chứng tính đồng bộ cấu hình môi trường:
+Ran `pnpm check:env` to verify configuration parity:
 ```
 =================================================
 🔍 Checking Environment Variables Synchronization
@@ -185,11 +185,11 @@ Chạy `pnpm check:env` để kiểm chứng tính đồng bộ cấu hình môi
 ✨ All environment variables are completely synchronized and documented!
 ```
 
-### 4.4. Acceptance Checklist Item 3
-- [x] 0 matches cho `"password123"` trên toàn bộ codebase.
-- [x] Đọc mật khẩu thông qua biến môi trường `DEMO_SEED_PASSWORD` / `NEXT_PUBLIC_DEMO_SEED_PASSWORD`.
-- [x] Database seed và init script sử dụng biến môi trường.
-- [x] File `.env.example` ở cả backend và frontend đã được ghi chép đầy đủ.
+### 4.4 Acceptance Checklist Item 3
+- [x] 0 matches for `"password123"` across the codebase.
+- [x] Password retrieved via `DEMO_SEED_PASSWORD` / `NEXT_PUBLIC_DEMO_SEED_PASSWORD`.
+- [x] Database seed and init scripts read environment variables.
+- [x] Documented in `.env.example` for backend and frontend.
 
 ---
 
@@ -205,8 +205,8 @@ frontend test:  Test Files  24 passed (24)
 frontend test:       Tests  136 passed (136)
 frontend test:    Duration  26.13s
 
-TỔNG CỘNG: 50 test files passed (50/50), 360 tests passed (360/360).
-Vượt mốc chỉ tiêu ban đầu (>= 349 tests). Net new: +11 tests.
+TOTAL: 50 test files passed (50/50), 360 tests passed (360/360).
+Surpassed baseline threshold (>= 349 tests). Net new: +11 tests.
 ```
 
 ### V2. 68 Regression Scenarios
@@ -220,7 +220,7 @@ Vượt mốc chỉ tiêu ban đầu (>= 349 tests). Net new: +11 tests.
 - Email Template & Simulation: 8/8 PASS
 - Tenant Isolation (Multi-tenant): 6/6 PASS
 ------------------------------------------------------------------
-TỔNG CỘNG: 68 / 68 PASS (100%)
+TOTAL: 68 / 68 PASS (100%)
 ==================================================================
 ```
 
@@ -259,26 +259,26 @@ TỔNG CỘNG: 68 / 68 PASS (100%)
    ```
 
 ### V4. Runtime Verification Summary
-- **DB Transactions & Rollback:** Xác thực qua integration test `backend/src/test/transactions.spec.ts` (6/6 pass, có mô phỏng DB crash và kiểm chứng MinIO file bồi hoàn).
-- **RSC Rendering:** Biên dịch thành công với `next build` thành Dynamic Server Components (`ƒ`), test RSC suite xác nhận đầy đủ tags OpenGraph, Twitter và JSON-LD.
-- **Demo Password Search:** Grep case-sensitive `"password123"` cho kết quả 0 matches.
+- **DB Transactions & Rollback:** Verified via `backend/src/test/transactions.spec.ts` (6/6 pass with simulated crash and MinIO compensation assertions).
+- **RSC Rendering:** Successfully compiled via `next build` into Dynamic Server Components (`ƒ`); test suite confirmed OpenGraph, Twitter, and JSON-LD tags.
+- **Demo Password Search:** Case-sensitive search for `"password123"` yielded 0 matches.
 
 ---
 
 ## 6. SIGN-OFF & DEFERRED ITEMS
 
-### 6.1. Kết luận Sign-Off
+### 6.1 Sign-Off Conclusion
 - **3/3 ITEMS CLOSED.**
-- **BLOCKER P0 ĐÃ ĐƯỢC GIẢI QUYẾT TRIỆT ĐỂ.**
-- Hệ thống đã đạt đầy đủ tiêu chuẩn tin cậy, nguyên tử hóa dữ liệu, SEO công khai và an ninh thông tin cấu hình.
+- **P0 BLOCKER FULLY RESOLVED.**
+- System satisfies reliability, atomic transactions, public SEO, and configuration security requirements.
 - **VERDICT: 🟢 READY TO SHIP.**
 
-### 6.2. Danh sách Deferred Items (Chuyển sang Phase 16B - Sau khi Ship)
-Theo đúng chỉ thị ràng buộc phạm vi của Sprint 16A, các hạng mục không blocking sau được chuyển sang Phase 16B:
-1. **Refactoring God-Files:** Chia tách `applications.service.ts` (1,200 LOC) và `organizations.service.ts` (1,350 LOC) thành các service nhỏ chuyên biệt (`ApplicationStageService`, `OrganizationMembershipService`).
-2. **Database Naming Conventions:** Đổi tên bảng PascalCase sang snake_case (yêu cầu migration chiến lược có downtime hoặc shadow table).
-3. **Ghost Dependencies Cleanup:** Dọn dẹp các thư viện npm thừa trong `package.json` đã được ghi nhận ở Phase 15B.
+### 6.2 Deferred Items (Moved to Post-Ship Phase 16B)
+Per Phase 16A scoping boundaries, non-blocking items are scheduled for Phase 16B:
+1. **Refactoring God-Files:** Splitting `applications.service.ts` (1,200 LOC) and `organizations.service.ts` (1,350 LOC) into focused sub-services (`ApplicationStageService`, `OrganizationMembershipService`).
+2. **Database Naming Conventions:** Renaming PascalCase tables to snake_case (requires migration strategy with shadow tables or maintenance downtime).
+3. **Ghost Dependencies Cleanup:** Pruning unused npm dependencies in `package.json` flagged in Phase 15B.
 
 ---
-**Báo cáo được lập bởi:** Senior Backend Engineer + Frontend Engineer  
-**Chữ ký kỹ thuật:** *Phase 16A Complete — HaiHire Enterprise ATS*
+**Report Authored By:** Senior Backend Engineer + Frontend Engineer  
+**Sign-off:** *Phase 16A Complete — HaiHire Enterprise ATS*

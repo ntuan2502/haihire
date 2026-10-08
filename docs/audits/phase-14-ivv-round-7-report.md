@@ -1,45 +1,46 @@
-# BÁO CÁO ĐỘC LẬP IV&V ROUND 7 — FINAL GATE TRƯỚC GO-LIVE
-**Tài liệu:** `docs/audits/phase-14-ivv-round-7-report.md`  
-**Dự án:** HaiHire ATS Platform  
-**Phiên bản kiểm toán:** Phase 14 (Kiểm định độc lập kết quả Phase 13)  
-**Vai trò:** Independent Verification & Validation (IV&V) Engineer  
-**Triết lý:** Zero Trust — Chủ động tìm mọi lý do kỹ thuật để xem xét lệnh BLOCK GO-LIVE  
-**Thời gian thực hiện:** Ngày 02 tháng 10 năm 2026  
+# Independent IV&V Round 7 Report — Final Gate Prior to Go-Live
+
+**Document:** `docs/audits/phase-14-ivv-round-7-report.md`  
+**Project:** HaiHire ATS Platform  
+**Audit Version:** Phase 14 (Independent Verification & Validation of Phase 13 Outcomes)  
+**Role:** Independent Verification & Validation (IV&V) Engineer  
+**Philosophy:** Zero Trust — Proactively discover every technical ground to justify a BLOCK GO-LIVE order  
+**Execution Date:** October 02, 2026  
 
 ---
 
 ## 1. EXECUTIVE SUMMARY
 
-### 1.1. Quyết định (Verdict)
+### 1.1. Verdict
 ```
 ╔═════════════════════════════════════════════════════════════════════════════╗
 ║                                                                             ║
 ║                     FINAL GATE VERDICT: [ GO ]                              ║
 ║                                                                             ║
-║        HỆ THỐNG ĐẠT 100% TIÊU CHUẨN AN TOÀN ĐỂ TIẾN HÀNH GO-LIVE           ║
+║      THE SYSTEM SATISFIES 100% OF SAFETY CRITERIA TO PROCEED TO GO-LIVE     ║
 ║                                                                             ║
 ╚═════════════════════════════════════════════════════════════════════════════╝
 ```
-- **Mức độ vi phạm P0 (Blocker):** `0`
-- **Mức độ vi phạm P1 (Critical):** `0`
-- **Mức độ vi phạm P2 (Major):** `0`
-- **Ghi nhận quan sát P3 (Minor / Informational):** `2` (Đã được xác định là chủ đích thiết kế kiến trúc)
+- **P0 Violations (Blocker):** `0`
+- **P1 Violations (Critical):** `0`
+- **P2 Violations (Major):** `0`
+- **P3 Observations (Minor / Informational):** `2` (Validated as intentional architectural design)
 
-### 1.2. Tóm tắt kết quả 3 điểm nghi vấn trọng tâm
-1. **Nghi vấn 1 (CI Gate Negative Testing):** Đã kiểm thử cưỡng bức negative test cases cho cả 2 script CI `check-error-code-i18n.ts` và `check-api-contract-coverage.ts`. Cả 2 script đều phát hiện chính xác lỗi cố ý tạo (missing i18n code, rò rỉ `JSON.stringify`, sử dụng `alert()`) và trả về `exit code 1` với thông báo lỗi cụ thể. Kiểm thử false positive đạt 100% (chạy trên mã nguồn thực tế trả về exit code 0 không có báo động giả).
-2. **Nghi vấn 2 (`withCredentials` & Auth Token Strategy):** Xác minh thực tế tại runtime: Axios instance kích hoạt `withCredentials: true`. Endpoint `/auth/login` sinh cookie `haihire_token` với cờ `HttpOnly; SameSite=Lax`. Khi gửi request chỉ có Cookie (không có header Authorization), server NestJS xác thực thành công 200 OK. Khi gửi chỉ có Bearer token, server xác thực thành công 200 OK. Khi có cả Cookie và Bearer không hợp lệ, Cookie có độ ưu tiên cao hơn do thứ tự cấu hình trong `ExtractJwt.fromExtractors`.
-3. **Nghi vấn 3 (Audit Gap thứ 13):** Quét toàn diện 34 mutation endpoints trên 12 controllers backend. 100% các thao tác nghiệp vụ trên giao diện (Job, Candidate, Application Stage, Interview, Organization, Email) đều được bọc bởi React Query mutations kèm `toast.error(getApiErrorMessage(err, t))`. Không phát hiện gap nào gây vỡ giao diện hoặc hiển thị raw error JSON cho người dùng cuối.
+### 1.2. Summary of 3 Core Investigation Inquiries
+1. **Inquiry 1 (CI Gate Negative Testing):** Executed forced negative test cases against both CI scripts `check-error-code-i18n.ts` and `check-api-contract-coverage.ts`. Both scripts accurately intercepted deliberate defects (missing i18n code, leaking `JSON.stringify`, invocations of `alert()`) and terminated with `exit code 1` and explicit error diagnostic logs. False-positive testing yielded 100% accuracy (running across real production code exited with code 0 without false alarms).
+2. **Inquiry 2 (`withCredentials` & Auth Token Strategy):** Verified live runtime behavior: Axios instance initializes `withCredentials: true`. Endpoint `/auth/login` sets cookie `haihire_token` flagged with `HttpOnly; SameSite=Lax`. When dispatching requests containing only the Cookie (without an Authorization header), the NestJS backend authenticates successfully with 200 OK. When dispatching requests containing only Bearer token, authentication succeeds with 200 OK. When presenting both Cookie and an invalid Bearer token, Cookie takes precedence per the extractor order in `ExtractJwt.fromExtractors`.
+3. **Inquiry 3 (13th Gap Audit):** Comprehensively scanned 34 mutation endpoints across 12 backend controllers. 100% of user-facing business operations (Job, Candidate, Application Stage, Interview, Organization, Email) are encapsulated in React Query mutations accompanied by `toast.error(getApiErrorMessage(err, t))`. No unhandled mutations causing broken UI states or exposing raw error JSON to end-users were detected.
 
 ---
 
-## 2. PART A: VERIFICATION 3 NGHI VẤN CHÍNH (EVIDENCE-BASED)
+## 2. PART A: VERIFICATION OF 3 CORE INQUIRIES (EVIDENCE-BASED)
 
-### 2.1. NGHI VẤN 1 — CI Gate Negative Tests & False Positives
+### 2.1. INQUIRY 1 — CI Gate Negative Tests & False Positives
 
-#### A. Kiểm thử Negative Case cho `check-error-code-i18n.ts`
-- **Kịch bản:** Bơm 1 mã lỗi giả `FAKE_UNTRANSLATED_CODE_P14` vào contract `packages/shared/src/errors.ts` mà không khai báo bản dịch trong `frontend/src/i18n/locales/vi.ts` và `en.ts`.
-- **Kỳ vọng:** Script phát hiện mã lỗi thiếu, in danh sách lỗi ra console, và thoát với **exit code 1**.
-- **Kết quả thực thi (Raw Stderr & Exit Code):**
+#### A. Negative Case Testing for `check-error-code-i18n.ts`
+- **Scenario:** Injected mock error code `FAKE_UNTRANSLATED_CODE_P14` into shared contract `packages/shared/src/errors.ts` without declaring translation strings in `frontend/src/i18n/locales/vi.ts` or `en.ts`.
+- **Expectation:** Script intercepts missing code, prints missing entries to console, and terminates with **exit code 1**.
+- **Execution Output (Raw Stderr & Exit Code):**
 ```text
 $ tsx scripts/check-error-code-i18n.ts
 =================================================
@@ -51,11 +52,11 @@ Missing in en.ts (1): [ 'FAKE_UNTRANSLATED_CODE_P14' ]
 [FAIL] Error code i18n coverage check failed!
 Command exited with code: 1
 ```
-*(Sau kiểm thử, file contract đã được dọn sạch về trạng thái ban đầu).*
+*(Following test completion, the contract file was cleaned up back to its pristine state).*
 
-#### B. Kiểm thử Negative Case cho `check-api-contract-coverage.ts`
-- **Kịch bản 1:** Tạo file tạm `frontend/src/temp-leak.ts` chứa mẫu vi phạm `JSON.stringify(error)`.
-- **Kết quả thực thi:**
+#### B. Negative Case Testing for `check-api-contract-coverage.ts`
+- **Scenario 1:** Created scratch file `frontend/src/temp-leak.ts` containing the violating pattern `JSON.stringify(error)`.
+- **Execution Output:**
 ```text
 $ tsx scripts/check-api-contract-coverage.ts
 ==================================================================
@@ -71,21 +72,21 @@ Endpoints with @Body(): 3
 Command exited with code: 1
 ```
 
-- **Kịch bản 2:** Tạo file tạm `frontend/src/temp-alert.ts` chứa `alert("Error!")`.
-- **Kết quả thực thi:**
+- **Scenario 2:** Created scratch file `frontend/src/temp-alert.ts` containing `alert("Error!")`.
+- **Execution Output:**
 ```text
 $ tsx scripts/check-api-contract-coverage.ts
 [FAIL] Found 1 file(s) using blocking alert() instead of localized toast / inline error.
   - frontend/src/temp-alert.ts
 Command exited with code: 1
 ```
-*(Các file tạm được xóa ngay sau khi xác thực).*
+*(Scratch test files were deleted immediately after verification).*
 
-#### C. Kiểm thử False Positive (Chạy trên Production Codebase)
-- **Lệnh thực thi:**
+#### C. False Positive Testing (Production Codebase Execution)
+- **Commands Executed:**
   - `pnpm lint:error-i18n`
   - `pnpm lint:api-contract`
-- **Kết quả thực tế:**
+- **Actual Results:**
 ```text
 $ tsx scripts/check-error-code-i18n.ts
 =================================================
@@ -109,13 +110,13 @@ Endpoints with @Body(): 3
 ==================================================================
 [CI GATE PASSED] API Contract and Frontend Coverage Validated. (Exit Code: 0)
 ```
-**Kết luận Nghi vấn 1:** Cả 2 CI gates hoạt động nghiêm ngặt, có khả năng chặn đứng các commit vi phạm hợp đồng i18n hoặc rò rỉ mã lỗi thô.
+**Inquiry 1 Conclusion:** Both CI gates operate with strict precision, capable of halting commits that violate i18n contracts or leak unformatted error codes.
 
 ---
 
-### 2.2. NGHI VẤN 2 — `withCredentials` & Authentication Flow Runtime Test
+## 2.2. INQUIRY 2 — `withCredentials` & Authentication Flow Runtime Test
 
-#### A. Kiểm tra cấu hình tĩnh
+#### A. Static Configuration Verification
 File [frontend/src/lib/api/client.ts](file:///c:/Workspaces/haihire/frontend/src/lib/api/client.ts#L31):
 ```typescript
 export const apiClient = axios.create({
@@ -128,19 +129,19 @@ export const apiClient = axios.create({
 });
 ```
 
-#### B. Runtime Test 1: Đăng nhập nhận `Set-Cookie`
-- **Request:** `POST http://127.0.0.1:13001/auth/login` với `{ email: "admin@tun.io.vn", password: "[REDACTED_DEMO_PASSWORD]" }`
+#### B. Runtime Test 1: Login Receives `Set-Cookie`
+- **Request:** `POST http://127.0.0.1:13001/auth/login` with `{ email: "admin@tun.io.vn", password: "[REDACTED_DEMO_PASSWORD]" }`
 - **Response Headers:**
 ```http
 HTTP/1.1 200 OK
 Set-Cookie: haihire_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; Max-Age=604800; Path=/; HttpOnly; SameSite=Lax
 Access-Control-Allow-Credentials: true
 ```
-- **Xác nhận:** Cookie được thiết lập đầy đủ cờ bảo mật `HttpOnly` và `SameSite=Lax`.
+- **Confirmation:** Cookie sets full security attributes `HttpOnly` and `SameSite=Lax`.
 
-#### C. Runtime Test 2: Xác thực chỉ bằng Cookie (Không gửi Bearer Token)
+#### C. Runtime Test 2: Authentication Exclusively via Cookie (No Bearer Header)
 - **Request:** `GET http://127.0.0.1:13001/auth/me`  
-  - Headers: `Cookie: haihire_token=eyJhbGciOiJIUzI1NiIsIn...` (Không có header `Authorization`)
+  - Headers: `Cookie: haihire_token=eyJhbGciOiJIUzI1NiIsIn...` (No `Authorization` header present)
 - **Response:**
 ```http
 HTTP/1.1 200 OK
@@ -153,11 +154,11 @@ Content-Type: application/json; charset=utf-8
   "role": "ADMIN"
 }
 ```
-- **Xác nhận:** Session cookie hoạt động hoàn hảo và tự động được nhận diện bởi backend.
+- **Confirmation:** Session cookie functions seamlessly and is automatically accepted by the backend.
 
-#### D. Runtime Test 3: Xác thực chỉ bằng Bearer Token (Không gửi Cookie)
+#### D. Runtime Test 3: Authentication Exclusively via Bearer Token (No Cookie)
 - **Request:** `GET http://127.0.0.1:13001/auth/me`  
-  - Headers: `Authorization: Bearer eyJhbGciOiJIUzI1NiIsIn...` (Không có header `Cookie`)
+  - Headers: `Authorization: Bearer eyJhbGciOiJIUzI1NiIsIn...` (No `Cookie` header present)
 - **Response:**
 ```http
 HTTP/1.1 200 OK
@@ -169,103 +170,103 @@ HTTP/1.1 200 OK
 }
 ```
 
-#### E. Runtime Test 4: Xung đột Cookie & Bearer (Cookie hợp lệ + Bearer Token rác)
-- **Cơ chế Backend:** Trong [backend/src/auth/jwt.strategy.ts](file:///c:/Workspaces/haihire/backend/src/auth/jwt.strategy.ts#L17):
+#### E. Runtime Test 4: Cookie & Bearer Collision (Valid Cookie + Invalid Bearer Token)
+- **Backend Architecture:** In [backend/src/auth/jwt.strategy.ts](file:///c:/Workspaces/haihire/backend/src/auth/jwt.strategy.ts#L17):
 ```typescript
 jwtFromRequest: ExtractJwt.fromExtractors([
   (req) => req.cookies?.["haihire_token"] || req.headers.cookie,
   ExtractJwt.fromAuthHeaderAsBearerToken(),
 ])
 ```
-- **Kiểm thử:** Gửi request kèm Cookie hợp lệ và `Authorization: Bearer invalid_garbage_token`.
-- **Kết quả:** Trả về **HTTP 200 OK**. Do hàm trích xuất cookie đứng trước trong mảng extractors, NestJS ưu tiên Cookie hợp lệ để xác thực session người dùng trên trình duyệt.
+- **Test:** Dispatched request bearing valid Cookie alongside `Authorization: Bearer invalid_garbage_token`.
+- **Result:** Returns **HTTP 200 OK**. Because the cookie extractor precedes the bearer extractor in the array, NestJS prioritizes the valid Cookie to authenticate browser sessions.
 
-#### F. Runtime Test 5: Không có token / Anonymous
-- **Request:** `GET http://127.0.0.1:13001/auth/me` không kèm bất kỳ thông tin xác thực nào.
-- **Kết quả:** Trả về **HTTP 401 Unauthorized** kèm `{"statusCode":401,"message":"Unauthorized"}`.
+#### F. Runtime Test 5: Anonymous Request Without Credentials
+- **Request:** `GET http://127.0.0.1:13001/auth/me` without any credential headers.
+- **Result:** Returns **HTTP 401 Unauthorized** with `{"statusCode":401,"message":"Unauthorized"}`.
 
-**Kết luận Nghi vấn 2:** Cơ chế `withCredentials` và JWT Strategy hoàn toàn chuẩn xác, hỗ trợ đồng thời cả Browser Cookie Session và API Bearer Token mà không gây xung đột.
+**Inquiry 2 Conclusion:** The `withCredentials` mechanism and JWT Strategy are architecturally sound, concurrently supporting Browser Cookie Sessions and API Bearer Tokens without collisions.
 
 ---
 
-### 2.3. NGHI VẤN 3 — Audit Toàn Diện Mutation Endpoints (Tìm Gap Thứ 13)
+## 2.3. INQUIRY 3 — Comprehensive Mutation Endpoints Audit (Scanning for 13th Gap)
 
-Đã trích xuất và rà soát toàn bộ **34 Mutation Endpoints (POST / PUT / PATCH / DELETE)** thuộc 12 controllers backend đối chiếu với frontend API client, React Query hooks và UI components:
+Audited all **34 Mutation Endpoints (POST / PUT / PATCH / DELETE)** across 12 backend controllers cross-checked against frontend API clients, React Query hooks, and UI components:
 
-| Endpoint | Controller | Frontend Caller Hook / Component | Catch? | Toast? | Localized Error? | Trạng thái |
+| Endpoint | Controller | Frontend Caller Hook / Component | Catch? | Toast? | Localized Error? | Status |
 | :--- | :--- | :--- | :---: | :---: | :---: | :--- |
-| `POST /auth/register` | `auth.controller.ts` | `useAuth().register` (`app/auth/register`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /auth/login` | `auth.controller.ts` | `useAuth().login` (`app/auth/login`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /auth/logout` | `auth.controller.ts` | `useAuth().logout` (Navbar / Settings) | ✅ Có | — | Clean state | Aligned |
-| `POST /applications` | `applications.controller.ts` | `useCreateApplicationMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `PATCH /applications/:id/stage` | `applications.controller.ts` | `useUpdateApplicationStageMutation` (Kanban / Modal) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `PATCH /applications/:id` | `applications.controller.ts` | `useUpdateApplicationMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /applications/:id` | `applications.controller.ts` | `useDeleteApplicationMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /applications/:id/documents` | `applications.controller.ts` | `useUploadCandidateDocumentMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /applications/:id/documents` | `applications.controller.ts` | `useDeleteCandidateDocumentMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /candidates` | `candidates.controller.ts` | `useCreateCandidateMutation` (`candidates/new`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `PUT /candidates/:id` | `candidates.controller.ts` | `useUpdateCandidateDetailsMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /candidates/:id` | `candidates.controller.ts` | `useDeleteCandidateMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /candidates/:id/documents` | `candidates.controller.ts` | `useUploadCandidateDocumentMutation` (Drawer) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /candidates/:id/documents` | `candidates.controller.ts` | `useDeleteCandidateDocumentMutation` (Drawer) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /interviews` | `interviews.controller.ts` | `useCreateInterviewMutation` (ScheduleModal) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `PUT /interviews/:id` | `interviews.controller.ts` | `useUpdateInterviewMutation` (ScheduleModal) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /interviews/:id/scorecard` | `interviews.controller.ts` | `useSubmitScorecardMutation` (ScorecardModal) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /interviews/:id/cancel` | `interviews.controller.ts` | `useCancelInterviewMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /jobs` | `jobs.controller.ts` | `useCreateJobMutation` (`jobs/new`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `PUT /jobs/:id` | `jobs.controller.ts` | `useUpdateJobMutation` (`jobs/[id]/edit`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /jobs/:id` | `jobs.controller.ts` | `useDeleteJobMutation` (Jobs List) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /organizations` | `organizations.controller.ts` | `useCreateOrganizationMutation` (`onboarding`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /organizations/join` | `organizations.controller.ts` | `useJoinOrganizationMutation` (`auth/join`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /organizations/switch` | `organizations.controller.ts` | `useSwitchOrganizationMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `PUT /organizations/my` | `organizations.controller.ts` | `useUpdateOrganizationMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /organizations/my` | `organizations.controller.ts` | `useDeleteOrganizationMutation` | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `PATCH /organizations/my/members/:id/role` | `organizations.controller.ts` | `useUpdateMemberRoleMutation` (`settings/members`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /organizations/my/members/:id` | `organizations.controller.ts` | `useRemoveMemberMutation` (`settings/members`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /organizations/my/invite-links` | `organizations.controller.ts` | `useCreateInviteLinkMutation` (`settings/members`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /organizations/my/invite-links/:id` | `organizations.controller.ts` | `useRevokeInviteLinkMutation` (`settings/members`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /email/send` | `email.controller.ts` | `useSendCandidateEmailMutation` (`send-email-modal`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /email/settings` | `email.controller.ts` | `useUpdateEmailSettingsMutation` (`settings/email`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `POST /sourcing/links` | `sourcing.controller.ts` | `useCreateTrackingLinkMutation` (`sourcing`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
-| `DELETE /sourcing/links/:id` | `sourcing.controller.ts` | `useDeleteTrackingLinkMutation` (`sourcing`) | ✅ Có | ✅ Có | ✅ `getApiErrorMessage` | Aligned |
+| `POST /auth/register` | `auth.controller.ts` | `useAuth().register` (`app/auth/register`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /auth/login` | `auth.controller.ts` | `useAuth().login` (`app/auth/login`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /auth/logout` | `auth.controller.ts` | `useAuth().logout` (Navbar / Settings) | ✅ Yes | — | Clean state | Aligned |
+| `POST /applications` | `applications.controller.ts` | `useCreateApplicationMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `PATCH /applications/:id/stage` | `applications.controller.ts` | `useUpdateApplicationStageMutation` (Kanban / Modal) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `PATCH /applications/:id` | `applications.controller.ts` | `useUpdateApplicationMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /applications/:id` | `applications.controller.ts` | `useDeleteApplicationMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /applications/:id/documents` | `applications.controller.ts` | `useUploadCandidateDocumentMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /applications/:id/documents` | `applications.controller.ts` | `useDeleteCandidateDocumentMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /candidates` | `candidates.controller.ts` | `useCreateCandidateMutation` (`candidates/new`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `PUT /candidates/:id` | `candidates.controller.ts` | `useUpdateCandidateDetailsMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /candidates/:id` | `candidates.controller.ts` | `useDeleteCandidateMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /candidates/:id/documents` | `candidates.controller.ts` | `useUploadCandidateDocumentMutation` (Drawer) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /candidates/:id/documents` | `candidates.controller.ts` | `useDeleteCandidateDocumentMutation` (Drawer) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /interviews` | `interviews.controller.ts` | `useCreateInterviewMutation` (ScheduleModal) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `PUT /interviews/:id` | `interviews.controller.ts` | `useUpdateInterviewMutation` (ScheduleModal) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /interviews/:id/scorecard` | `interviews.controller.ts` | `useSubmitScorecardMutation` (ScorecardModal) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /interviews/:id/cancel` | `interviews.controller.ts` | `useCancelInterviewMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /jobs` | `jobs.controller.ts` | `useCreateJobMutation` (`jobs/new`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `PUT /jobs/:id` | `jobs.controller.ts` | `useUpdateJobMutation` (`jobs/[id]/edit`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /jobs/:id` | `jobs.controller.ts` | `useDeleteJobMutation` (Jobs List) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /organizations` | `organizations.controller.ts` | `useCreateOrganizationMutation` (`onboarding`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /organizations/join` | `organizations.controller.ts` | `useJoinOrganizationMutation` (`auth/join`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /organizations/switch` | `organizations.controller.ts` | `useSwitchOrganizationMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `PUT /organizations/my` | `organizations.controller.ts` | `useUpdateOrganizationMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /organizations/my` | `organizations.controller.ts` | `useDeleteOrganizationMutation` | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `PATCH /organizations/my/members/:id/role` | `organizations.controller.ts` | `useUpdateMemberRoleMutation` (`settings/members`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /organizations/my/members/:id` | `organizations.controller.ts` | `useRemoveMemberMutation` (`settings/members`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /organizations/my/invite-links` | `organizations.controller.ts` | `useCreateInviteLinkMutation` (`settings/members`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /organizations/my/invite-links/:id` | `organizations.controller.ts` | `useRevokeInviteLinkMutation` (`settings/members`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /email/send` | `email.controller.ts` | `useSendCandidateEmailMutation` (`send-email-modal`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /email/settings` | `email.controller.ts` | `useUpdateEmailSettingsMutation` (`settings/email`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `POST /sourcing/links` | `sourcing.controller.ts` | `useCreateTrackingLinkMutation` (`sourcing`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
+| `DELETE /sourcing/links/:id` | `sourcing.controller.ts` | `useDeleteTrackingLinkMutation` (`sourcing`) | ✅ Yes | ✅ Yes | ✅ `getApiErrorMessage` | Aligned |
 
-#### Các endpoints đặc thù được thẩm định riêng:
-1. `POST /email/system/test` & `POST /email/system/send`: Là endpoints dành cho SRE/CLI health check và admin testing nội bộ từ server terminal, không có UI cho người dùng thông thường. (Phân loại P3-Informational).
-2. `POST /sourcing/public/click`: Endpoint telemetry thống kê lượt nhấp link tuyển dụng công khai. Frontend gọi với `catch(() => {})` (fire-and-forget). Đây là thiết kế chuẩn xác để đảm bảo ứng viên được chuyển tiếp tức thì mà không bị gián đoạn nếu mạng telemetry chập chờn.
-3. **SSE Connection (`GET /notifications/sse`):** Được quản lý bởi `EventSource` trong context notification, có cơ chế tự động reconnect với exponential backoff.
-4. **File Upload / Download:** Cả 2 luồng đều kiểm tra MIME type, kích thước tối đa 10MB và được bảo vệ bằng JWT Guard.
+#### Specialized Endpoints Individually Assessed:
+1. `POST /email/system/test` & `POST /email/system/send`: SRE/CLI endpoints for health checks and admin tests executed from server terminals, lacking regular user UI. (Categorized as P3-Informational).
+2. `POST /sourcing/public/click`: Telemetry endpoint logging clicks on public job links. Frontend invokes this with `catch(() => {})` (fire-and-forget). This is correct design ensuring candidate redirects are instantaneous and not blocked by flaky telemetry connections.
+3. **SSE Connection (`GET /notifications/sse`):** Managed by `EventSource` within the notification context, including exponential backoff auto-reconnect.
+4. **File Upload / Download:** Both streams enforce MIME types, 10MB limits, and JWT Guard protection.
 
-**Kết luận Nghi vấn 3:** **KHÔNG CÓ GAP THỨ 13 NÀO GÂY LỖI.** Toàn bộ 34 mutation endpoints đều được đồng bộ chặt chẽ với frontend.
+**Inquiry 3 Conclusion:** **ZERO MISSING 13TH GAPS DETECTED.** All 34 mutation endpoints are synchronized with frontend components.
 
 ---
 
 ## 3. PART B: 10 EDGE CASE AUDIT & TEST RESULTS
 
-| Mã | Tình huống kiểm thử (Edge Case) | Cơ chế xử lý hiện tại | Kết quả thẩm định |
+| Code | Edge Case Test Scenario | Active Handling Mechanism | Assessment Result |
 | :--- | :--- | :--- | :---: |
-| **EC1** | Cookie hết hạn giữa session | Axios interceptor nhận `401 Unauthorized` -> `auth-context.tsx` kích hoạt hàm `logout()` dọn dẹp state và chuyển hướng về `/auth/login`. | **PASS** |
-| **EC2** | Bearer token hết hạn | Backend trả về mã lỗi `USER_SESSION_EXPIRED` (401). Frontend dịch thành: *"Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại."* | **PASS** |
-| **EC3** | 2 tabs đăng nhập 2 user khác nhau | Cookie `haihire_token` có domain-scoped. Khi Tab B đăng nhập user mới, cookie bị ghi đè. Lần gọi API tiếp theo của Tab A sẽ nhận dữ liệu theo cookie mới hoặc kích hoạt đồng bộ qua SSE. | **PASS** |
-| **EC4** | Error code lạ không có trong shared | `getApiErrorMessage` có cơ chế fallback nhiều tầng: `payload.message` -> dịch theo HTTP status code (400, 401, 403, 404, 409, 429, 500) -> fallback string mặc định. Không bao giờ hiển thị `undefined` hay rỗng. | **PASS** |
-| **EC5** | Mạng bị ngắt (Offline) | Axios ném lỗi `Network Error`. `getApiErrorMessage` nhận diện và dịch thành `errors.networkError`: *"Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại đường truyền."* | **PASS** |
-| **EC6** | Request bị timeout (Quá 10s) | Axios kích hoạt mã lỗi `ECONNABORTED`. Giao diện hiển thị thông báo lỗi timeout thân thiện, không làm treo ứng dụng. | **PASS** |
-| **EC7** | Nhiều validation errors cùng lúc | NestJS trả về mảng `message: string[]`. `getApiErrorMessage` duyệt qua mảng và nối các lỗi bằng dấu `; ` giúp người dùng thấy toàn bộ các trường chưa đạt. | **PASS** |
-| **EC8** | Nested error object từ server | `getApiErrorMessage` bọc `try/catch` với hàm phân tích dữ liệu phòng thủ (defensive parsing), xử lý cả trường hợp response là chuỗi JSON chưa parse hoặc đối tượng lồng nhau. | **PASS** |
-| **EC9** | Error message quá dài | Component thông báo Toast (Sonner) cấu hình `max-w-md` và `break-words`, cho phép xem chi tiết mà không làm vỡ bố cục giao diện. | **PASS** |
-| **EC10** | Error message chứa mã HTML/Script | Toàn bộ error message được render dưới dạng primitive string text node bởi React DOM (tự động escape HTML entities), ngăn chặn triệt để nguy cơ XSS Injection. | **PASS** |
+| **EC1** | Cookie expires mid-session | Axios interceptor receives `401 Unauthorized` -> `auth-context.tsx` triggers `logout()` clearing state and redirecting to `/auth/login`. | **PASS** |
+| **EC2** | Bearer token expires | Backend returns error code `USER_SESSION_EXPIRED` (401). Frontend renders: *"Session has expired. Please log in again."* | **PASS** |
+| **EC3** | 2 tabs logged in as different users | Cookie `haihire_token` is domain-scoped. When Tab B authenticates a new user, cookie is overwritten. Tab A's subsequent requests reflect new session or trigger SSE resync. | **PASS** |
+| **EC4** | Unrecognized error code missing in shared contract | `getApiErrorMessage` implements multi-tiered fallback: `payload.message` -> translation by HTTP status (400, 401, 403, 404, 409, 429, 500) -> default fallback string. Never renders `undefined` or empty. | **PASS** |
+| **EC5** | Network disconnection (Offline) | Axios throws `Network Error`. `getApiErrorMessage` catches and translates to `errors.networkError`: *"Cannot connect to server. Please check your internet connection."* | **PASS** |
+| **EC6** | Request timeout (>10s) | Axios triggers code `ECONNABORTED`. UI presents friendly timeout notification without application freeze. | **PASS** |
+| **EC7** | Multiple validation errors simultaneously | NestJS outputs array `message: string[]`. `getApiErrorMessage` iterates and joins errors with `; ` allowing users to view all failing fields. | **PASS** |
+| **EC8** | Nested error object from server | `getApiErrorMessage` wraps extraction in `try/catch` with defensive parsing, handling unparsed JSON strings or nested structures. | **PASS** |
+| **EC9** | Excessively long error message | Toast notification component (Sonner) styled with `max-w-md` and `break-words`, displaying diagnostics without breaking layout. | **PASS** |
+| **EC10** | Error message containing HTML/Script | All error messages render as primitive string text nodes via React DOM (auto-escaping HTML entities), eliminating XSS Injection risks. | **PASS** |
 
 ---
 
 ## 4. PART C: FULL TEST SUITE & REGRESSION VERIFICATION
 
-### 4.1. Kết quả kiểm thử tự động toàn diện (`pnpm test`)
-- **Backend Test Suite:** `25/25` test files PASS, **218 tests PASS** (Thời gian: ~41.77s)
-- **Frontend Test Suite:** `23/23` test files PASS, **131 tests PASS** (Thời gian: ~47.31s)
-- **Tổng số tests PASS:** **349 / 349 tests (100% PASS)**  
-  *(Đáp ứng trọn vẹn tiêu chí: "Kỳ vọng: ≥ 349 tests PASS")*
+### 4.1. Automated Test Suite Results (`pnpm test`)
+- **Backend Test Suite:** `25/25` test files PASS, **218 tests PASS** (Execution duration: ~41.77s)
+- **Frontend Test Suite:** `23/23` test files PASS, **131 tests PASS** (Execution duration: ~47.31s)
+- **Total Tests PASS:** **349 / 349 tests (100% PASS)**  
+  *(Meets gate requirement: "Expected: ≥ 349 tests PASS")*
 
-### 4.2. Kết quả 68 kịch bản hồi quy (Regression Scenarios)
-- 100% 68 kịch bản hồi quy cốt lõi từ Phase 3 đến Phase 13 đã được thực thi và xác nhận:
+### 4.2. Results of 68 Regression Scenarios
+- 100% of 68 core regression scenarios from Phase 3 through Phase 13 were executed and confirmed:
   - Auth, Session & Role Isolation (ADMIN / MEMBER)
   - Job Lifecycle (DRAFT -> PUBLISHED -> ARCHIVED)
   - Kanban Stage Transitions & Validation Guardrails
@@ -274,41 +275,41 @@ jwtFromRequest: ExtractJwt.fromExtractors([
   - Public Career Portal Application Flow
   - Redis Rate Limiter & Throttler Protection
 
-### 4.3. Kết quả các cổng kiểm soát chất lượng (CI Quality Gates)
-1. `pnpm lint:dtopipe`: **PASS (Exit 0)** — 100% (25/25) @Body parameters được bảo vệ bởi `DtoPipe`.
-2. `pnpm lint:error-i18n`: **PASS (Exit 0)** — 100% (51/51) mã lỗi được định nghĩa song ngữ trong `vi.ts` và `en.ts`.
-3. `pnpm lint:api-contract`: **PASS (Exit 0)** — 0 rò rỉ `JSON.stringify(err)`, 0 lệnh `alert()`.
-4. `pnpm check:i18n`: **PASS (Exit 0)** — 1690/1690 khóa bản dịch khớp nhau tuyệt đối giữa Tiếng Việt và Tiếng Anh.
+### 4.3. CI Quality Gates Verification
+1. `pnpm lint:dtopipe`: **PASS (Exit 0)** — 100% (25/25) @Body parameters guarded by `DtoPipe`.
+2. `pnpm lint:error-i18n`: **PASS (Exit 0)** — 100% (51/51) error codes defined bilingually in `vi.ts` and `en.ts`.
+3. `pnpm lint:api-contract`: **PASS (Exit 0)** — 0 leaking `JSON.stringify(err)`, 0 `alert()` calls.
+4. `pnpm check:i18n`: **PASS (Exit 0)** — 1690/1690 translation keys matched between Vietnamese and English.
 5. `pnpm lint`: **PASS (Exit 0)** — 0 errors.
-6. `pnpm typecheck`: **PASS (Exit 0)** — 0 errors trên toàn bộ backend và frontend.
+6. `pnpm typecheck`: **PASS (Exit 0)** — 0 errors across backend and frontend workspaces.
 
 ---
 
 ## 5. PART D: CREDIBILITY ASSESSMENT PHASE 13
 
-| Tiêu chí đánh giá | Điểm số | Nhận xét chi tiết của IV&V |
+| Evaluation Metric | Score | IV&V Detailed Assessment |
 | :--- | :---: | :--- |
-| **1. Tỷ lệ tuyên bố verify được** | 98 / 100 | Mọi tuyên bố về việc bọc toast, sửa 12 gaps và bổ sung kiểm tra i18n đều được tìm thấy thực tế trong mã nguồn. |
-| **2. Tỷ lệ tuyên bố sai (False Claims)** | 0 / 100 | Không phát hiện bất kỳ báo cáo khống hay tuyên bố sai lệch nào. |
-| **3. Chất lượng bằng chứng (Evidence Quality)** | 95 / 100 | Các log và kiểm thử được ghi lại cụ thể; có script CI gate đi kèm. |
-| **4. Test coverage cho 12 gaps** | 95 / 100 | 12 gaps đều có unit test hoặc component test đi kèm trong `frontend/src/lib/api-error.spec.ts` và các pipeline specs. |
-| **5. CI Gate Quality** | 98 / 100 | Script CI gate được thiết kế chuyên sâu, đã vượt qua kiểm thử negative case khắt khe. |
-| **TỔNG ĐIỂM CREDIBILITY PHASE 13** | **96.8 / 100** | **XUẤT SẮC** (Tăng trưởng tích cực từ mức 94.2/100 tại Phase 10.4). |
+| **1. Verifiable Claims Ratio** | 98 / 100 | All claims regarding toast wrappers, 12 gaps fixed, and i18n checks verified in source code. |
+| **2. False Claims Ratio** | 0 / 100 | Zero inflated or false claims detected. |
+| **3. Evidence Quality** | 95 / 100 | Logs and tests meticulously documented; automated CI gate scripts provided. |
+| **4. Test Coverage for 12 Gaps** | 95 / 100 | 12 gaps backed by unit tests or component tests in `frontend/src/lib/api-error.spec.ts` and pipeline specs. |
+| **5. CI Gate Quality** | 98 / 100 | CI gate scripts rigorously designed, having passed demanding negative tests. |
+| **PHASE 13 CREDIBILITY SCORE** | **96.8 / 100** | **EXCELLENT** (Positive improvement over 94.2/100 recorded in Phase 10.4). |
 
 ---
 
 ## 6. PART E: FINDINGS & OBSERVATIONS (IV&V ROUND 7)
 
-Không phát hiện lỗi ở mức P0, P1, hay P2. Dưới đây là 2 quan sát mức P3 phục vụ lưu ý vận hành:
+Zero P0, P1, or P2 defects found. Two P3 observations are noted for operational awareness:
 
-### FINDING-IVV7-01 (P3 — Informational): Endpoints hệ thống không gắn UI
-- **Mô tả:** Các endpoints `/email/system/test` và `/email/system/send` trong `email.controller.ts` không có frontend UI caller.
-- **Đánh giá rủi ro:** Không có rủi ro người dùng. Các endpoint này được tạo phục vụ kiểm thử tích hợp SRE từ dòng lệnh hoặc scripts bảo trì.
-- **Khuyến nghị:** Duy trì trạng thái hiện tại hoặc thêm ghi chú `@ApiExcludeEndpoint()` trong Swagger documentation.
+### FINDING-IVV7-01 (P3 — Informational): System Endpoints Without UI Caller
+- **Description:** Endpoints `/email/system/test` and `/email/system/send` in `email.controller.ts` have no frontend UI caller.
+- **Risk Assessment:** No end-user risk. These endpoints exist for SRE CLI integration testing and terminal maintenance scripts.
+- **Recommendation:** Retain as-is or document with `@ApiExcludeEndpoint()` in Swagger documentation.
 
-### FINDING-IVV7-02 (P3 — Informational): Fire-and-forget Telemetry Sourcing
-- **Mô tả:** Endpoint `/sourcing/public/click` ghi nhận lượt click của ứng viên được xử lý ngầm và bắt lỗi không hiển thị thông báo.
-- **Đánh giá rủi ro:** Hợp lý. Việc không hiển thị toast lỗi giúp trải nghiệm ứng viên mượt mà khi ứng tuyển từ mạng xã hội.
+### FINDING-IVV7-02 (P3 — Informational): Fire-and-Forget Sourcing Telemetry
+- **Description:** Endpoint `/sourcing/public/click` logging candidate clicks executes asynchronously with suppressed notifications.
+- **Risk Assessment:** Reasonable design. Suppressing toast errors ensures frictionless candidate application flows from social networks.
 
 ---
 
@@ -317,13 +318,13 @@ Không phát hiện lỗi ở mức P0, P1, hay P2. Dưới đây là 2 quan sá
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                              ║
-║           CHỨNG NHẬN ĐỘC LẬP IV&V ROUND 7 — CHÍNH THỨC PHÊ DUYỆT             ║
+║           INDEPENDENT IV&V ROUND 7 CERTIFICATION — OFFICIALLY APPROVED       ║
 ║                                                                              ║
-║   Hệ thống HaiHire ATS đã hoàn thành toàn diện các thử nghiệm Negative,     ║
-║   Xác minh Runtime Session Cookie, Khảo sát 34 Endpoints, và Vượt qua       ║
-║   100% các cổng chất lượng nghiêm ngặt nhất.                                 ║
+║   HaiHire ATS has successfully passed all Negative Tests, Runtime Session   ║
+║   Cookie Verifications, 34 Mutation Endpoint Audits, and 100% of the         ║
+║   strictest automated Quality Gates.                                         ║
 ║                                                                              ║
-║                      QUYẾT ĐỊNH: CHO PHÉP GO-LIVE (GO)                       ║
+║                    DECISION: AUTHORIZED FOR PRODUCTION GO-LIVE (GO)          ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
@@ -332,12 +333,12 @@ Không phát hiện lỗi ở mức P0, P1, hay P2. Dưới đây là 2 quan sá
 
 ## 8. PRODUCTION GO-LIVE FINAL CHECKLIST
 
-Trước khi chuyển đổi lưu lượng truy cập sang môi trường Production, đội ngũ DevOps/SRE cần đối chiếu lần cuối:
+Before routing production traffic, DevOps and SRE teams must verify the final checklist:
 
-- [x] **1. Cơ sở dữ liệu:** PostgreSQL migrations đã chạy đồng bộ (`pnpm prisma migrate deploy`).
-- [x] **2. Sao lưu dự phòng:** Kịch bản sao lưu `scripts/backup-production.ts` đã được kiểm tra try/catch và phân quyền thư mục.
-- [x] **3. Lưu trữ tệp tin:** MinIO bucket `haihire-resumes` và chính sách CORS cho phép truy xuất tài liệu an toàn.
-- [x] **4. Bộ nhớ đệm & Rate Limiting:** Redis service sẵn sàng cho Throttler và session caching.
-- [x] **5. Hợp đồng API & Ngôn ngữ:** 51/51 mã lỗi sẵn sàng bản dịch Tiếng Việt và Tiếng Anh.
-- [x] **6. Kiểm thử tự động:** Toàn bộ 349 unit/integration tests vượt qua với exit code 0.
-- [x] **7. Bảo mật Client:** Axios instance bật `withCredentials: true`, sẵn sàng cho HttpOnly cookies trên production domain.
+- [x] **1. Database:** PostgreSQL migrations deployed in sync (`pnpm prisma migrate deploy`).
+- [x] **2. Backups:** Backup script `scripts/backup-production.ts` verified with try/catch and directory permissions.
+- [x] **3. Object Storage:** MinIO bucket `haihire-resumes` and CORS policies configured for secure document retrieval.
+- [x] **4. In-Memory Cache & Rate Limiting:** Redis service operational for Throttler and session caching.
+- [x] **5. API Contract & Localization:** 51/51 error codes translated and verified in Vietnamese and English.
+- [x] **6. Automated Tests:** All 349 unit/integration tests passing with exit code 0.
+- [x] **7. Client Security:** Axios instance configured with `withCredentials: true`, prepared for HttpOnly cookies on the production domain.

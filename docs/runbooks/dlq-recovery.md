@@ -1,58 +1,58 @@
-# Runbook: Phục Hồi Hàng Đợi Chết (BullMQ DLQ Recovery)
+# Runbook: BullMQ Dead-Letter Queue Recovery (DLQ Recovery)
 
 **System:** HaiHire Enterprise ATS  
-**Tài liệu liên quan:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml), [`docs/runbooks/orphan-cleanup.md`](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md)  
+**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml), [`docs/runbooks/orphan-cleanup.md`](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md)  
 **Alert Rules:** `HaiHireBullMqDlqGrowing` (Warning), `HaiHireBullMqDlqCritical` (Critical)  
-**Phụ trách:** Đội ngũ SRE & Backend Engineering (team: sre)
+**Responsible Teams:** SRE & Backend Engineering (`team: sre`)
 
 ---
 
-## Khi nào alert này fire
+## Alert Triggers & Conditions
 
 - **`HaiHireBullMqDlqGrowing` (Warning):**
-  > DLQ `orphan-cleanup-dlq` có hơn 10 jobs ở trạng thái `waiting` trong hơn 5 phút.  
-  > Điều tra MinIO connectivity và DLQ worker.
+  > Dead-Letter Queue `orphan-cleanup-dlq` has $> 10$ jobs in `waiting` state for $> 5$ minutes.  
+  > Investigate MinIO connectivity and DLQ worker status.
 - **`HaiHireBullMqDlqCritical` (Critical):**
-  > DLQ `orphan-cleanup-dlq` có hơn 100 jobs ở trạng thái `waiting` trong hơn 2 phút.  
-  > Nguy cơ rò rỉ dung lượng MinIO và nghẽn hàng đợi dọn dẹp file mồ côi. Cần escalate xử lý khẩn cấp.
+  > Dead-Letter Queue `orphan-cleanup-dlq` has $> 100$ jobs in `waiting` state for $> 2$ minutes.  
+  > Risk of storage leakage in MinIO and backlog in orphan file purge worker. Immediate escalation required.
 
 ---
 
-## Bước 1: Verify (Xác Minh Sự Cố)
+## Step 1: Verify Incident
 
-Kiểm tra số lượng jobs thực tế trong DLQ qua endpoint Prometheus Metrics:
+Inspect actual queue depth in DLQ via the Prometheus Metrics endpoint:
 
 ```bash
-# Kiểm tra số lượng job đang chờ trong DLQ (Production)
+# Check waiting job count in DLQ (Production)
 curl -s http://localhost:3001/metrics | grep bullmq_queue_depth | grep orphan-cleanup-dlq
 
-# Kiểm tra trên môi trường Development
+# Check on Development environment
 curl -s http://localhost:13001/metrics | grep bullmq_queue_depth | grep orphan-cleanup-dlq
 ```
 
-Kiểm tra trực tiếp log của backend service để tìm dấu hiệu job thất bại:
+Inspect backend service logs directly for failed job traces:
 
 ```bash
-# Xem log processor của orphan cleanup
+# View orphan cleanup processor and DLQ logs
 docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "OrphanCleanup|DLQ"
 ```
 
 ---
 
-## Bước 2: Diagnose (Chẩn Đoán Nguyên Nhân)
+## Step 2: Diagnose Root Cause
 
-1. **Kiểm tra trạng thái MinIO Object Storage:**
+1. **Check MinIO Object Storage Health:**
    ```bash
-   # Kiểm tra container MinIO còn sống không
+   # Check if MinIO container is running
    docker ps --filter "name=minio"
 
-   # Kiểm tra healthcheck của MinIO
+   # Probe MinIO live health check
    curl -I http://localhost:9000/minio/health/live
    ```
 
-2. **Kiểm tra kết nối và bucket MinIO:**
+2. **Verify MinIO Connectivity and Target Bucket:**
    ```bash
-   # Kiểm tra thông số bucket haihire-resumes
+   # Check haihire-resumes bucket reachability
    docker exec -it haihire-prod-backend node -e "
      const { Client } = require('minio');
      const client = new Client({
@@ -63,55 +63,55 @@ docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "Orp
        secretKey: process.env.MINIO_SECRET_KEY,
      });
      client.bucketExists(process.env.MINIO_BUCKET_NAME || 'haihire-resumes', (err, exists) => {
-       if (err) console.error('Lỗi MinIO:', err.message);
-       else console.log('Bucket tồn tại:', exists);
+       if (err) console.error('MinIO Error:', err.message);
+       else console.log('Bucket exists:', exists);
      });
    "
    ```
 
-3. **Kiểm tra nguyên nhân thất bại của job trong DLQ:**
-   - Các nguyên nhân thường gặp:
-     - `S3 NoSuchKey` / `NoSuchBucket`: File đã bị xóa trước khi job xử lý hoặc bucket bị đổi tên.
-     - `MinIO Connection Refused` / `Socket Timeout`: MinIO bị quá tải IOPS hoặc đầy ổ đĩa.
-     - `Invalid Access Key / Secret Key`: Sai credentials MinIO sau khi cập nhật biến môi trường.
+3. **Identify Failure Cause of Jobs in DLQ:**
+   - Common causes:
+     - `S3 NoSuchKey` / `NoSuchBucket`: File was purged prior to processing or bucket was renamed.
+     - `MinIO Connection Refused` / `Socket Timeout`: MinIO experiencing IOPS saturation or disk exhaustion.
+     - `Invalid Access Key / Secret Key`: Mismatched MinIO credentials following environment updates.
 
 ---
 
-## Bước 3: Mitigate (Xử Lý Ngắn Hạn)
+## Step 3: Mitigate (Short-Term Action)
 
-1. **Khởi động lại kết nối MinIO nếu bị treo:**
+1. **Restart MinIO Container if Unresponsive:**
    ```bash
    docker compose -f docker-compose.prod.yml restart minio
    ```
 
-2. **Khởi động lại backend container để tái kết nối Worker:**
+2. **Restart Backend Container to Reconnect Workers:**
    ```bash
    docker compose -f docker-compose.prod.yml restart backend
    ```
 
-3. **Tạm thời giải phóng job tồn đọng hoặc chạy kịch bản quét bù:**
+3. **Trigger Manual Orphan Cleanup Scan to Reclaim Storage:**
    ```bash
-   # Chạy script cleanup orphan thủ công để giải phóng rác MinIO
+   # Run manual orphan cleanup script
    docker exec -it haihire-prod-backend node --import tsx scripts/cleanup-orphan-minio.ts
    ```
 
 ---
 
-## Bước 4: Resolve (Khắc Phục Dài Hạn)
+## Step 4: Resolve (Long-Term Fix)
 
-1. **Sửa lỗi cấu hình và thông tin xác thực:**
-   - Đảm bảo `MINIO_ACCESS_KEY` và `MINIO_SECRET_KEY` trong `.env.production` khớp hoàn toàn với cấu hình máy chủ MinIO.
-2. **Tăng kích thước volume MinIO nếu ổ đĩa đầy:**
-   - Kiểm tra dung lượng volume: `df -h /var/lib/docker/volumes/haihire_minio_data`
-   - Mở rộng ổ cứng nếu dung lượng > 90%.
-3. **Điều chỉnh concurrency và retry backoff của BullMQ:**
-   - Nếu worker bị quá tải bởi số lượng file upload lớn, tăng `concurrency` trong `OrphanCleanupProcessor`.
+1. **Fix Configuration & Credentials:**
+   - Ensure `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY` in `.env.production` match MinIO server configuration.
+2. **Expand MinIO Volume Capacity:**
+   - Inspect volume usage: `df -h /var/lib/docker/volumes/haihire_minio_data`
+   - Expand volume disk if utilization exceeds 90%.
+3. **Tune BullMQ Worker Concurrency and Retry Backoff:**
+   - If workers are overwhelmed by high upload volume, adjust `concurrency` in `OrphanCleanupProcessor`.
 
 ---
 
-## Bước 5: Post-Mortem (Kiểm Tra & Đóng Sự Cố)
+## Step 5: Post-Mortem & Incident Closure
 
-- [ ] Metric `bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"}` giảm về `0` hoặc `< 5`.
-- [ ] Alert `HaiHireBullMqDlqGrowing` và `HaiHireBullMqDlqCritical` đã chuyển trạng thái thành `RESOLVED`.
-- [ ] Chạy lệnh đếm file mồ côi: `node --import tsx scripts/cleanup-orphan-minio.ts --dry-run` để xác nhận không còn tồn đọng rác.
-- [ ] Ghi chép root cause và hành động khắc phục vào kênh sự cố nội bộ.
+- [ ] Metric `bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"}` drops to `0` or $< 5$.
+- [ ] Alerts `HaiHireBullMqDlqGrowing` and `HaiHireBullMqDlqCritical` transition to `RESOLVED`.
+- [ ] Run dry-run scan: `node --import tsx scripts/cleanup-orphan-minio.ts --dry-run` to verify zero lingering orphan files.
+- [ ] Document root cause and remediation steps in internal post-incident review.

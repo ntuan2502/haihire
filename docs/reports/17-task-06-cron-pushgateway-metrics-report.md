@@ -1,10 +1,10 @@
-# Báo Cáo Kỹ Thuật: Task #6 — Cron Pushgateway Metrics
+# Technical Report: Task #6 — Cron Pushgateway Metrics
 
-**Dự án:** HaiHire Enterprise ATS  
-**Tác giả:** Senior Software Engineer / Antigravity Agent  
-**Ngày thực hiện:** 08/10/2026  
-**Trạng thái:** ✅ HOÀN THÀNH 100% — SẴN SÀNG CHỜ DEEPSEEK REVIEW  
-**Tài liệu tham chiếu:** [docs/reports/16-task-05-followup-and-task-06-kickoff-report.md](file:///c:/Workspaces/haihire/docs/reports/16-task-05-followup-and-task-06-kickoff-report.md), [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**Project:** HaiHire Enterprise ATS  
+**Author:** Senior Software Engineer / Antigravity Agent  
+**Date:** 2026-10-08  
+**Status:** ✅ 100% COMPLETED — READY FOR DEEPSEEK REVIEW  
+**Reference Documentation:** [`docs/reports/16-task-05-followup-and-task-06-kickoff-report.md`](file:///c:/Workspaces/haihire/docs/reports/16-task-05-followup-and-task-06-kickoff-report.md), [`docs/DEFINITION_OF_DONE.md`](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
 
 ---
 
@@ -13,39 +13,39 @@
 **1. Summary**
 - **Branch:** `feat/task-06-cron-pushgateway-metrics`
 - **Commit:** `291094a` (`feat(monitoring): push orphan cleanup metrics to pushgateway`)
-- **Remote:** Đã push lên `origin/feat/task-06-cron-pushgateway-metrics`
+- **Remote:** Pushed to `origin/feat/task-06-cron-pushgateway-metrics`
 - **Files created/changed:**
-  - `docker-compose.prod.yml`: Thêm `pushgateway` service và biến `PUSHGATEWAY_URL` cho container `orphan-cleanup` (+24 lines)
-  - `.env.example`: Thêm `PUSHGATEWAY_PORT` và `PUSHGATEWAY_URL` (+6 lines)
-  - `.env.production.example`: Thêm cấu hình Pushgateway (+6 lines)
-  - `backend/.env.example`: Thêm cấu hình Pushgateway (+6 lines)
-  - `frontend/.env.example`: Thêm `PUSHGATEWAY_PORT` (+5 lines)
-  - `.github/workflows/ci-cd.yml`: Đồng bộ biến môi trường Pushgateway cho CI runner (+3 lines)
-  - `scripts/cleanup-orphan-minio.ts`: Thêm `pushMetrics()` và `pushFailureMetric()` (+97 lines)
-  - `scripts/cleanup-orphan-minio.spec.ts`: Unit test suite kiểm thử toàn diện 7 kịch bản (+186 lines - TẠO MỚI)
+  - `docker-compose.prod.yml`: Added `pushgateway` service and `PUSHGATEWAY_URL` env variable for `orphan-cleanup` container (+24 lines)
+  - `.env.example`: Added `PUSHGATEWAY_PORT` and `PUSHGATEWAY_URL` (+6 lines)
+  - `.env.production.example`: Added Pushgateway configuration (+6 lines)
+  - `backend/.env.example`: Added Pushgateway configuration (+6 lines)
+  - `frontend/.env.example`: Added `PUSHGATEWAY_PORT` (+5 lines)
+  - `.github/workflows/ci-cd.yml`: Synchronized Pushgateway env variables for CI runner (+3 lines)
+  - `scripts/cleanup-orphan-minio.ts`: Added `pushMetrics()` and `pushFailureMetric()` (+97 lines)
+  - `scripts/cleanup-orphan-minio.spec.ts`: Unit test suite verifying all 7 scenarios (+186 lines - NEW)
 - **Total diff:** +333 / -0 lines
 
 ---
 
 **2. Implementation Notes**
-- **Không cài thêm SDK bên thứ ba:** Sử dụng `fetch()` HTTP POST có sẵn trong runtime Node.js, tuân thủ nghiêm ngặt định dạng Prometheus exposition text format.
-- **Khả năng chịu lỗi cao (Non-throwing Resiliency):** 
-  - Toàn bộ thao tác gửi metric trong `pushMetrics()` và `pushFailureMetric()` đều được bọc trong `try/catch`. 
-  - Trong trường hợp Pushgateway bị tắt, sập mạng hoặc trả về mã lỗi HTTP 5xx, cron log ra console cảnh báo và **vẫn kết thúc với exit code 0 bình thường**, không làm crash luồng dọn dẹp orphan files.
-- **Xử lý trạng thái thất bại (Failure status push):**
-  - Khi script dọn dẹp gặp lỗi nghiêm trọng (ném ngoại lệ trong `runCli()`), hàm `pushFailureMetric()` sẽ gửi metric `minio_orphan_cleanup_success 0` lên Pushgateway trước khi gọi `process.exit(1)`.
-- **Đủ 7 metrics theo đặc tả:**
-  1. `minio_orphan_cleanup_scanned_total` (gauge): Tổng số đối tượng MinIO được quét.
-  2. `minio_orphan_cleanup_orphans_found_total` (gauge): Tổng số file orphan phát hiện (chuẩn bị dữ liệu cho Task #7).
-  3. `minio_orphan_cleanup_preserved_total` (gauge): Số file orphan còn trong thời gian ân hạn (grace period).
-  4. `minio_orphan_cleanup_deleted_total` (gauge): Số file orphan đã xóa vĩnh viễn.
-  5. `minio_orphan_cleanup_bytes_freed_total` (gauge): Dung lượng dung lượng byte giải phóng.
-  6. `minio_orphan_cleanup_last_run_timestamp_seconds` (gauge): Unix timestamp thời điểm chạy gần nhất.
-  7. `minio_orphan_cleanup_success` (gauge): Trạng thái hoàn thành (1 = thành công, 0 = thất bại).
+- **Zero Third-Party SDK Dependency:** Implemented via native Node.js `fetch()` HTTP POST, strictly complying with Prometheus exposition text format.
+- **Non-throwing Resiliency:** 
+  - All metric emission operations in `pushMetrics()` and `pushFailureMetric()` are safely wrapped in `try/catch`. 
+  - If Pushgateway is offline, network fails, or returns HTTP 5xx errors, the cron logs a console error and **still exits with code 0**, preventing monitoring failures from crashing orphan file purges.
+- **Failure Status Reporting:**
+  - When the cleanup script encounters critical unhandled exceptions in `runCli()`, `pushFailureMetric()` emits `minio_orphan_cleanup_success 0` to Pushgateway prior to calling `process.exit(1)`.
+- **Complete 7-Metric Emission:**
+  1. `minio_orphan_cleanup_scanned_total` (gauge): Total MinIO objects scanned.
+  2. `minio_orphan_cleanup_orphans_found_total` (gauge): Total orphan objects discovered (paves way for Task #7 alert rules).
+  3. `minio_orphan_cleanup_preserved_total` (gauge): Orphan objects preserved within the 30-day grace period.
+  4. `minio_orphan_cleanup_deleted_total` (gauge): Orphan objects permanently purged.
+  5. `minio_orphan_cleanup_bytes_freed_total` (gauge): Storage capacity freed in bytes.
+  6. `minio_orphan_cleanup_last_run_timestamp_seconds` (gauge): Unix timestamp of most recent run.
+  7. `minio_orphan_cleanup_success` (gauge): Run status (1 = success, 0 = failure).
 
 ---
 
-**3. Diff Docker Compose Service**
+**3. Docker Compose Service Diff**
 
 ```diff
 --- a/docker-compose.prod.yml
@@ -90,36 +90,36 @@
 
 **4. Test Coverage**
 - **Unit test file:** [`scripts/cleanup-orphan-minio.spec.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.spec.ts)
-- **Số lượng test cases:** **7 test cases** (+7 net new tests)
-  1. `Test 1:` Gửi metrics hợp lệ lên Pushgateway khi có `report` đầy đủ (kiểm tra URL và HTTP POST method).
-  2. `Test 2:` Kiểm tra nội dung body chứa chính xác 7 định nghĩa HELP/TYPE và giá trị metric tương ứng.
-  3. `Test 3:` Bỏ qua gửi metrics và ghi log info nếu không cấu hình `PUSHGATEWAY_URL`, không gọi `fetch`.
-  4. `Test 4:` Xử lý khi Pushgateway trả về lỗi HTTP 500 một cách êm thấm (không throw exception).
-  5. `Test 5:` Xử lý khi `fetch()` throw ngoại lệ mạng (Network Error/Fetch Failed) mà không làm crash cron.
-  6. `Test 6:` Xác nhận metric `minio_orphan_cleanup_success 1` được đẩy lên khi chạy thành công.
-  7. `Test 7:` Xác nhận metric `minio_orphan_cleanup_success 0` được đẩy lên khi tác vụ gặp lỗi thất bại.
-- **Tổng số kiểm thử hệ thống:** **531/531 tests PASSED** (156 frontend + 375 backend).
+- **New test cases:** **7 test cases** (+7 net new tests)
+  1. `Test 1:` Pushes valid metrics to Pushgateway when complete report provided (verifies URL and HTTP POST method).
+  2. `Test 2:` Verifies payload body contains exact 7 HELP/TYPE definitions and corresponding metric values.
+  3. `Test 3:` Skips metric push and logs info when `PUSHGATEWAY_URL` is omitted, without invoking `fetch`.
+  4. `Test 4:` Handles Pushgateway HTTP 500 responses gracefully without throwing exceptions.
+  5. `Test 5:` Handles network exceptions (Network Error / Fetch Failed) without crashing the cron.
+  6. `Test 6:` Confirms metric `minio_orphan_cleanup_success 1` emitted upon successful run.
+  7. `Test 7:` Confirms metric `minio_orphan_cleanup_success 0` emitted upon fatal job failure.
+- **Overall System Test Suite:** **531/531 tests PASSED** (156 frontend + 375 backend).
 
 ---
 
 **5. Verification Evidence**
 
 #### 5.1. CI Gates & Lint
-- `pnpm check:all:fast`: **10/10 CỔNG KIỂM TRA ĐẠT TUYỆT ĐỐI (PASS)** trong 71.07s.
+- `pnpm check:all:fast`: **10/10 GATES PASSED** in 71.07s.
 - `pnpm test`: **531 passing** (0 failing).
-- `pnpm lint:env-sync`: **PASS** (100% đồng bộ key trên 5 file `.env.example` và compose file).
+- `pnpm lint:env-sync`: **PASS** (100% key parity across all 5 `.env.example` templates and compose files).
 
-#### 5.2. Manual Verification với Container Thật (`prom/pushgateway:v1.10.0`)
-1. **Khởi chạy Pushgateway container:**
+#### 5.2. Live Container Manual Verification (`prom/pushgateway:v1.10.0`)
+1. **Start Pushgateway container:**
    ```bash
    docker run -d -p 9091:9091 --name test-pushgateway prom/pushgateway:v1.10.0
    ```
-2. **Chạy script với biến môi trường:**
+2. **Execute cleanup script with Pushgateway target:**
    ```bash
    $env:PUSHGATEWAY_URL = "http://localhost:9091"; pnpm tsx scripts/cleanup-orphan-minio.ts --dry-run
    ```
-   **Output ghi nhận:**
-   ```
+   **Recorded Output:**
+   ```text
    ==================================================================
           HAIHIRE ENTERPRISE ATS: MINIO ORPHAN CLEANUP CRON          
    ==================================================================
@@ -139,7 +139,7 @@
    [SUCCESS] MinIO orphan cleanup finished successfully.
    ```
 
-3. **Truy vấn endpoint `curl http://localhost:9091/metrics`:**
+3. **Query Endpoint `curl http://localhost:9091/metrics`:**
    ```prometheus
    # HELP minio_orphan_cleanup_bytes_freed_total Bytes freed by cleanup
    # TYPE minio_orphan_cleanup_bytes_freed_total gauge
@@ -169,47 +169,47 @@
    # TYPE minio_orphan_cleanup_success gauge
    minio_orphan_cleanup_success{instance="",job="minio_orphan_cleanup"} 1
    ```
-   *(Xác nhận: Toàn bộ 7 metric xuất hiện đầy đủ với giá trị thực tế).*
+   *(Confirmed: All 7 metrics present with actual runtime values).*
 
-4. **Xác nhận cron exit 0 khi Pushgateway down:**
-   - Đã dừng container: `docker stop test-pushgateway`
-   - Chạy lại script dọn dẹp.
-   - **Output ghi nhận:**
-     ```
+4. **Verify Non-Throwing Behavior When Pushgateway Down:**
+   - Stopped container: `docker stop test-pushgateway`
+   - Re-executed script.
+   - **Recorded Output:**
+     ```text
      [ERROR] Failed to push metrics to Pushgateway: fetch failed
      [SUCCESS] MinIO orphan cleanup finished successfully.
      ```
-   - **Mã thoát (Exit Code):** `0` (cron hoàn thành bình thường, không crash hệ thống).
-   - Đã xóa container tạm: `docker rm test-pushgateway`.
+   - **Exit Code:** `0` (Script gracefully finished, no process crash).
+   - Cleaned up container: `docker rm test-pushgateway`.
 
 ---
 
 **6. Acceptance Criteria Checklist**
 
-| Tiêu chí | Trạng thái |
+| Criterion | Status |
 | :--- | :---: |
-| Pushgateway service thêm vào `docker-compose.prod.yml` | ✅ PASS |
-| `PUSHGATEWAY_PORT` env trong 5 file `.env.example` và local env | ✅ PASS |
-| `PUSHGATEWAY_URL` env trong các file `.env` | ✅ PASS |
-| Script `pushMetrics()` push 7 metrics đúng format Prometheus | ✅ PASS |
-| Non-throwing: Pushgateway down -> script exit 0 | ✅ PASS |
-| Script fail -> push `minio_orphan_cleanup_success 0` trước khi exit 1 | ✅ PASS |
-| Test spec `cleanup-orphan-minio.spec.ts` pass (≥6 cases, thực tế: 7 cases) | ✅ PASS |
-| Manual verify với Pushgateway thật pass | ✅ PASS |
-| `pnpm check:all:fast` pass (10/10 gates) | ✅ PASS |
-| `pnpm test` pass (531 tests) | ✅ PASS |
-| `pnpm lint:env-sync` pass | ✅ PASS |
-| Mọi mục trong `docs/DEFINITION_OF_DONE.md` đều PASS | ✅ PASS |
+| Pushgateway service added to `docker-compose.prod.yml` | ✅ PASS |
+| `PUSHGATEWAY_PORT` env in 5 `.env.example` templates and local env | ✅ PASS |
+| `PUSHGATEWAY_URL` env configured in `.env` files | ✅ PASS |
+| `pushMetrics()` emits 7 metrics in valid Prometheus exposition format | ✅ PASS |
+| Non-throwing: Pushgateway down -> script exits 0 | ✅ PASS |
+| Script error -> emits `minio_orphan_cleanup_success 0` before exit 1 | ✅ PASS |
+| Test spec `cleanup-orphan-minio.spec.ts` passes ($\ge 6$ cases, actual: 7) | ✅ PASS |
+| Manual verification with live Pushgateway container passes | ✅ PASS |
+| `pnpm check:all:fast` passes (10/10 gates) | ✅ PASS |
+| `pnpm test` passes (531 tests) | ✅ PASS |
+| `pnpm lint:env-sync` passes | ✅ PASS |
+| All criteria in `docs/DEFINITION_OF_DONE.md` PASS | ✅ PASS |
 
 ---
 
-**7. Open Questions & Bước Kế Tiếp**
-- **Sẵn sàng cho Task #7:** Metric `minio_orphan_cleanup_orphans_found_total` và `minio_orphan_cleanup_preserved_total` đã sẵn sàng để cấu hình Prometheus Alert Rule phát hiện bất thường trong cron dọn dẹp orphan MinIO.
-- **Review:** Kính gửi DeepSeek và chủ dự án thẩm định PR của branch `feat/task-06-cron-pushgateway-metrics`.
+**7. Open Questions & Next Steps**
+- **Ready for Task #7:** Metrics `minio_orphan_cleanup_orphans_found_total` and `minio_orphan_cleanup_preserved_total` are available on Pushgateway, ready for configuring Prometheus Alert Rules detecting orphan cleanup anomalies in Task #7.
+- **Review:** Ready for DeepSeek and project owner code review on branch `feat/task-06-cron-pushgateway-metrics`.
 
 ---
 
 **8. Files for Review**
-1. [`docker-compose.prod.yml`](file:///c:/Workspaces/haihire/docker-compose.prod.yml) (Service `pushgateway` và env `PUSHGATEWAY_URL`)
-2. [`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts) (Hàm `pushMetrics`, `pushFailureMetric`, xử lý non-throwing)
-3. [`scripts/cleanup-orphan-minio.spec.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.spec.ts) (7 test cases kiểm thử Vitest)
+1. [`docker-compose.prod.yml`](file:///c:/Workspaces/haihire/docker-compose.prod.yml) (`pushgateway` service and `PUSHGATEWAY_URL` env)
+2. [`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts) (`pushMetrics`, `pushFailureMetric`, non-throwing error handling)
+3. [`scripts/cleanup-orphan-minio.spec.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.spec.ts) (7 Vitest test cases)

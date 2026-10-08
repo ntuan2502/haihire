@@ -1,36 +1,36 @@
-# BÁO CÁO ĐỘC LẬP KIỂM CHỨNG & XÁC THỰC (IV&V ROUND 4 - FINAL PRE-GOLIVE GATE)
-## Dự Án: HaiHire ATS Platform | Đánh Giá Báo Cáo Phase 9 Production Readiness
+# Independent Verification & Validation Report (IV&V Round 4 - Final Pre-Golive Gate)
+## Project: HaiHire ATS Platform | Evaluation of Phase 9 Production Readiness Report
 
 ---
 
-| Thông Tin Kiểm Tra | Chi Tiết |
+| Audit Information | Details |
 | :--- | :--- |
-| **Giai Đoạn** | **Phase 10: IV&V Round 4 — FINAL PRE-GOLIVE GATE** |
-| **Đối Tượng Đánh Giá** | `docs/audits/phase-9-production-deployment-report.md` & Commit `57a81b5` |
-| **Vai Trò Đảm Nhiệm** | **Independent Verification & Validation (IV&V) Engineer + SRE Auditor** |
-| **Triết Lý Làm Việc** | **Zero Trust — Chủ động tìm mọi lý do hợp lý để BLOCK GO-LIVE** |
-| **Môi Trường Thực Nghiệm** | Windows x64, Docker Desktop (WSL2), Node v22.14 / v26, NestJS (Port 13001), PostgreSQL (15432), Redis (16379), MinIO (19000/19001) |
-| **Ngày Thực Hiện** | 01/10/2026 |
-| **FINAL GATE VERDICT** | 🔴 **NO-GO (BLOCK GO-LIVE — YÊU CẦU PHASE 10.1 HOTFIX SPRINT)** |
+| **Phase** | **Phase 10: IV&V Round 4 — FINAL PRE-GOLIVE GATE** |
+| **Evaluation Target** | `docs/audits/phase-9-production-deployment-report.md` & Commit `57a81b5` |
+| **Role** | **Independent Verification & Validation (IV&V) Engineer + SRE Auditor** |
+| **Audit Philosophy** | **Zero Trust — Actively search for every justified reason to BLOCK GO-LIVE** |
+| **Runtime Environment** | Windows x64, Docker Desktop (WSL2), Node v22.14 / v26, NestJS (Port 13001), PostgreSQL (15432), Redis (16379), MinIO (19000/19001) |
+| **Date** | 01/10/2026 |
+| **FINAL GATE VERDICT** | 🔴 **NO-GO (BLOCK GO-LIVE — MANDATORY PHASE 10.1 HOTFIX SPRINT REQUIRED)** |
 
 ---
 
-## 1. EXECUTIVE SUMMARY
+## 1. Executive Summary
 
-Thực hiện vòng kiểm định độc lập thứ 4 (Final Pre-Golive Gate) đối với toàn bộ codebase, artifacts sản xuất và các tuyên bố của Phase 9:
-* **FINAL VERDICT:** 🔴 **NO-GO (CHẶN PHÁT HÀNH TOÀN DIỆN)**.
-* **Nguyên nhân chính:**
-  1. **Lỗ hổng P1 nghiêm trọng về Bảo Mật DTO (`BUG-P10-06`):** Tiến trình build production bằng `esbuild` làm mất TypeScript decorator parameter metadata (`emitDecoratorMetadata`), khiến `ValidationPipe` của NestJS bỏ qua hoàn toàn việc kiểm tra class-validator DTO ở runtime (Ví dụ: `password: "123"` hoặc email sai định dạng vẫn đăng ký thành công HTTP 201).
-  2. **Độ bao phủ các tệp trọng yếu (Critical Files) < 50%:** Vi phạm quy tắc cứng pre-golive (`applications.service.ts` chỉ đạt 44.78%, `prisma.service.ts` chỉ đạt 11.76%).
-  3. **Sai lệch phương pháp luận Load Test (Methodology Flawed):** Phase 9 tuyên bố "đạt SLA p95 < 500ms" bằng cách gộp 202 requests bị lỗi HTTP 429 (phản hồi tức thì trong 20ms) vào mảng tính percentile độ trễ của 500 requests từ một IP đơn lẻ.
-  4. **Tô hồng và ngụy tạo tuyên bố kỹ thuật (Credibility Score: 78/100):** Tuyên bố tạo user `nestjs (UID 1001)` nhưng thực tế dùng `node (UID 1000)`; tuyên bố cơ chế "drain 30s graceful shutdown" nhưng thực tế chỉ in log mà không hề có timer; `docker build` chạy sai ngữ cảnh build context; thiếu hoàn toàn CSP header và resource limits.
+Conducting an independent 4th evaluation cycle (Final Pre-Golive Gate) across the entire codebase, production artifacts, and claims of Phase 9:
+* **FINAL VERDICT:** 🔴 **NO-GO (FULL PRODUCTION RELEASE BLOCKED)**.
+* **Core Blocking Drivers:**
+  1. **Critical P1 Security Vulnerability in DTO Validation (`BUG-P10-06`):** The production build step using `esbuild` stripped TypeScript decorator parameter metadata (`emitDecoratorMetadata`), causing NestJS `ValidationPipe` to bypass runtime class-validator DTO validation completely (e.g., `password: "123"` or malformed emails succeeded with HTTP 201).
+  2. **Critical File Test Coverage < 50%:** Violated mandatory pre-golive quality gates (`applications.service.ts` at 44.78%, `prisma.service.ts` at 11.76%).
+  3. **Methodologically Flawed Load Testing:** Phase 9 claimed "SLA p95 < 500ms achieved" by pooling 202 failed HTTP 429 requests (which responded instantly within 20ms) into the latency percentile calculation across 500 requests originating from a single IP.
+  4. **Embellished & Inaccurate Technical Claims (Credibility Score: 78/100):** Claimed creating user `nestjs (UID 1001)` while actual containers used `node (UID 1000)`; claimed a "30s graceful shutdown drain" that merely printed log messages without timer logic; `docker build` failed due to invalid build contexts; and complete absence of CSP headers and resource limits.
 
 ---
 
-## 2. PART A — XÁC MINH 8 ĐIỂM NGHI VẤN CỦA PHASE 9
+## 2. PART A — Verification of 8 Inquiries into Phase 9
 
-### A1. Xác Minh Test Count 284 — Khảo Sát Pattern Đếm Nhầm Lần 3
-* **Lệnh đã chạy:** `node --no-warnings --experimental-strip-types scripts/check-test-count.ts b321d3e 57a81b5`
+### A1. Verification of 284 Test Count — Investigating Repeated Miscounting Pattern
+* **Executed Command:** `node --no-warnings --experimental-strip-types scripts/check-test-count.ts b321d3e 57a81b5`
 * **Raw Output:**
   ```text
   Analyzing test changes between [b321d3e] and [57a81b5]...
@@ -54,42 +54,42 @@ Thực hiện vòng kiểm định độc lập thứ 4 (Final Pre-Golive Gate) 
   Removed / Renamed Old Tests:
     1. - should return ok health status when database query succeeds (service)
   ```
-* **Phân tích:**
-  - Tổng số test hiện tại: **284 tests** (177 backend + 107 frontend) $\rightarrow$ **Chính xác**.
-  - Net New: $9 - 1 = 8$ tests (khớp hoàn toàn $284 - 276 = 8$).
-  - **Tuyên bố của Phase 9:** *"Viết 9 bài unit test mới cho healthcheck"*. Thực tế: Chỉ có 6 test healthcheck (4 controller + 2 service mới), 1 test được sửa từ test cũ, và 2 test thuộc `metrics.service.spec.ts`.
-* **Verdict:** **COUNT-VALID (Số lượng tổng đúng, nhưng văn bản báo cáo lặp lại pattern tô hồng/gộp test lần thứ 3)**.
+* **Analysis:**
+  - Current total tests: **284 tests** (177 backend + 107 frontend) $\rightarrow$ **Accurate**.
+  - Net New: $9 - 1 = 8$ tests (matches $284 - 276 = 8$).
+  - **Phase 9 Claim:** *"Authored 9 new unit tests for healthcheck"*. Reality: Only 6 healthcheck tests (4 controller + 2 new service tests), 1 renamed from an old test, and 2 belonging to `metrics.service.spec.ts`.
+* **Verdict:** **COUNT-VALID (Total counts are accurate, but narrative documentation repeated the conflation pattern for the 3rd time)**.
 
 ---
 
-### A2. Xác Minh Phương Pháp Luận Load Test (Load Test Methodology)
-* **Khảo sát mã nguồn `scripts/smoke-and-load-test.ts`:**
-  - Chạy từ IP đơn `127.0.0.1` đối đầu trực diện với `ThrottlerGuard` (hạn mức 100 req/60s).
-  - Thuật toán tính độ trễ: `latencies.push(reqDuration)` được gọi cho **cả request 200 lẫn 429**. Do mã 429 trả về cực nhanh (20-30ms), việc gộp 202 request 429 vào 298 request 200 đã kéo tụt p95 xuống 412ms một cách nhân tạo!
-* **Kết quả thực nghiệm độc lập 3 kịch bản (`scratch/ivv4-load-tests.ts`):**
+## A2. Verification of Load Testing Methodology
+* **Source Code Inspection of `scripts/smoke-and-load-test.ts`:**
+  - Dispatched from a single IP `127.0.0.1` directly confronting `ThrottlerGuard` (limit 100 req/60s).
+  - Latency algorithm: `latencies.push(reqDuration)` was executed for **both 200 OK and 429 Too Many Requests**. Because 429 responses returned instantly (20-30ms), mixing 202 rate-limited responses with 298 success responses artificially compressed p95 down to 412ms!
+* **Independent Execution Results Across 3 Scenarios (`scratch/ivv4-load-tests.ts`):**
 
-  | Kịch Bản | Tổng Reqs | Concurrency | 200 OK | 429 Error | p50 (All) | p95 (All) | **True p95 (200 OK)** | Throughput |
-  | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+  | Scenario | Total Reqs | Concurrency | 200 OK | 429 Error | p50 (All) | p95 (All) | **True p95 (200 OK)** | Throughput |
+  | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
   | **Test 1: Baseline** | 500 | 50 | 200 | 300 | 23ms | 128ms | **155ms** | 1196.2 req/s |
   | **Test 2: Isolate Unthrottled** | 90 | 30 | 90 | 0 | 40ms | 110ms | **110ms** | 592.1 req/s |
   | **Test 3: Stress Test** | 5000 | 100 | 110 | 4890 | 27ms | 80ms | **252ms** | 3035.8 req/s |
 
-* **Phân tích:**
-  - Không thể tắt rate limit qua biến môi trường do hardcode trong `app.module.ts`.
-  - Khi cô lập đo riêng các request thành công (200 OK): True p95 đạt **110ms - 252ms** (thực sự thỏa mãn SLA < 500ms).
-  - Tỷ lệ lỗi mạng non-429 là 0%. Server xử lý ổn định 3000+ req/s mà không crash.
-* **Verdict:** **LOADTEST-METHODOLOGY-FLAWED (Báo cáo Phase 9 ngụy biện phương pháp luận khi trộn lỗi 429 vào p95; tuy nhiên năng lực chịu tải thực tế của core server khi cô lập đạt chuẩn)**.
+* **Analysis:**
+  - Unable to toggle rate limiting via environment variables due to hardcoding in `app.module.ts`.
+  - When isolating successful requests (200 OK): True p95 was **110ms - 252ms** (genuinely satisfying the SLA < 500ms target).
+  - Non-429 network error rate was 0%. The core server sustained 3000+ req/s without crashing.
+* **Verdict:** **LOADTEST-METHODOLOGY-FLAWED (Phase 9 report used flawed metric methodology by pooling 429 errors into p95; however, underlying core throughput and isolated latency proved robust)**.
 
 ---
 
-### A3. Xác Minh Độ Bao Phủ Kiểm Thử (Coverage Audit)
-* **Lệnh đã chạy:** `pnpm --filter ./backend run test --coverage` và `pnpm --filter ./frontend run test --coverage`
-* **Raw Coverage Đo Được:**
+## A3. Verification of Test Coverage Audit
+* **Executed Commands:** `pnpm --filter ./backend run test --coverage` and `pnpm --filter ./frontend run test --coverage`
+* **Raw Coverage Measured:**
   - **Backend:** 59.99% Stmts, 45.43% Branch, 61.28% Funcs, 61.81% Lines.
   - **Frontend:** 48.04% Stmts, 45.86% Branch, 38.41% Funcs, 48.58% Lines.
-* **Đánh Giá Các Tệp Trọng Yếu (Critical Files):**
+* **Critical Files Assessment:**
 
-  | Tệp Trọng Yếu | % Stmts | % Branch | % Funcs | % Lines | Mức Độ Rủi Ro |
+  | Critical File | % Stmts | % Branch | % Funcs | % Lines | Risk Assessment |
   | :--- | :---: | :---: | :---: | :---: | :---: |
   | `backend/src/auth/jwt.strategy.ts` | 93.33% | 90.00% | 75.00% | 93.33% | 🟢 OK |
   | `backend/src/auth/auth.service.ts` | 78.75% | 68.42% | 85.71% | 78.75% | 🟢 OK |
@@ -100,63 +100,63 @@ Thực hiện vòng kiểm định độc lập thứ 4 (Final Pre-Golive Gate) 
   | `backend/src/events/events.service.ts` | 63.63% | 63.33% | 63.63% | 63.63% | 🟡 WARNING |
   | `backend/src/prisma/prisma.service.ts` | **11.76%** | 0.00% | 0.00% | 11.76% | 🔴 **CRITICAL RISK (< 50%)** |
 
-* **Top 5 tệp thấp nhất Frontend:** `auth-context.tsx` (2.73%), `organizations.ts` (3.44%), `applications.ts` (4.76%), `candidates.ts` (4.76%), `auth-guard.tsx` (5.00%).
-* **Verdict:** 🔴 **COVERAGE-INSUFFICIENT (Tự động đề xuất NO-GO do 2 tệp critical < 50%)**.
+* **Bottom 5 Frontend Files:** `auth-context.tsx` (2.73%), `organizations.ts` (3.44%), `applications.ts` (4.76%), `candidates.ts` (4.76%), `auth-guard.tsx` (5.00%).
+* **Verdict:** 🔴 **COVERAGE-INSUFFICIENT (Automatic NO-GO triggered due to 2 critical files having < 50% statement coverage)**.
 
 ---
 
-### A4. Xác Minh Trùng Lặp Key Trong Payload /health
-* **Lệnh đã chạy:** `curl -i http://127.0.0.1:13001/health`
+## A4. Verification of Redundant Keys in `/health` Payload
+* **Executed Command:** `curl -i http://127.0.0.1:13001/health`
 * **Raw Output:**
   ```json
   {"status":"ok","timestamp":"2026-10-01T13:56:13.314Z","uptime":6.81,"services":{"postgres":"up","redis":"up","minio":"up","database":"up"}}
   ```
-* **Phân tích:** Cả hai key `"postgres"` và `"database"` cùng tồn tại trong object `services`, trỏ vào cùng biến `postgresStatus`. Root cause: Lập trình viên Phase 9 thêm key `postgres` nhưng quên dọn dẹp key legacy `database`.
-* **Verdict:** **FAIL $\rightarrow$ Ghi nhận finding `BUG-P10-01` (P3)**.
+* **Analysis:** Both keys `"postgres"` and `"database"` exist in the `services` payload, referencing the exact same `postgresStatus`. Root cause: Phase 9 added `postgres` but failed to deprecate legacy key `database`.
+* **Verdict:** **FAIL $\rightarrow$ Logged as finding `BUG-P10-01` (P3)**.
 
 ---
 
-### A5. Xác Minh Tác Động Của Rate Limiting Lên Monitoring
-* **Khảo sát mã nguồn:** Kiểm tra `AppController` không tìm thấy decorator `@SkipThrottle()`.
-* **Thực nghiệm:** Gửi 200 request liên tục tới `/metrics` từ một IP duy nhất.
-* **Kết quả:** Request 1 đến 100 trả HTTP 200, request 101 đến 200 trả **HTTP 429 Too Many Requests**.
-* **Hậu quả SRE:** Prometheus scraper hoặc Kubernetes Liveness Probe khi scrape liên tục sẽ bị chặn đứng (Monitoring Blackout).
-* **Verdict:** **MONITORING-BLOCKED $\rightarrow$ Ghi nhận finding `BUG-P10-02` (P2)**.
+## A5. Verification of Rate Limiting Impact on Observability
+* **Source Code Inspection:** Checked `AppController` and confirmed missing `@SkipThrottle()` decorator.
+* **Experiment:** Sent 200 consecutive requests to `/metrics` from a single IP.
+* **Outcome:** Requests 1 to 100 returned HTTP 200; requests 101 to 200 returned **HTTP 429 Too Many Requests**.
+* **SRE Impact:** Prometheus scrapers and Kubernetes Liveness Probes scraping frequently will be throttled, causing monitoring blackouts.
+* **Verdict:** **MONITORING-BLOCKED $\rightarrow$ Logged as finding `BUG-P10-02` (P2)**.
 
 ---
 
-### A6. Xác Minh Docker Build Thực Tế
-* **Lệnh 1:** `docker build -t haihire-backend:test backend/`
+## A6. Verification of Real Docker Builds
+* **Command 1:** `docker build -t haihire-backend:test backend/`
 * **Raw Error:**
   ```text
   ERROR: failed to build: failed to compute cache key: failed to calculate checksum of ref ...: "/packages/shared": not found
   ```
-  *(Thất bại ngay lập tức do Dockerfile tham chiếu ra ngoài thư mục context `backend/`)*.
-* **Lệnh 2:** `docker build -f backend/Dockerfile -t haihire-backend:test .`
-  - Bước 16 (esbuild): Thành công trong 20ms.
-  - Bước 20: `RUN chown -R node:node /app` bị treo/chạy quá lâu (> 6 phút) do thao tác chown trên hàng chục nghìn symlinks của pnpm.
-  - Kiểm tra user: `USER node` (UID 1000). Tuyên bố của Phase 9 về việc tạo user `nestjs (UID 1001)` là **HOÀN TOÀN SAI SỰ THẬT**.
-* **Verdict:** **DOCKER-BROKEN $\rightarrow$ Ghi nhận finding `BUG-P10-05` (P2)**.
+  *(Failed immediately because Dockerfile references outside context directory `backend/`)*.
+* **Command 2:** `docker build -f backend/Dockerfile -t haihire-backend:test .`
+  - Step 16 (esbuild): Finished in 20ms.
+  - Step 20: `RUN chown -R node:node /app` hung for > 6 minutes due to recursing through tens of thousands of pnpm symlinks.
+  - User check: `USER node` (UID 1000). Phase 9 claim regarding user `nestjs (UID 1001)` was **INCORRECT**.
+* **Verdict:** **DOCKER-BROKEN $\rightarrow$ Logged as finding `BUG-P10-05` (P2)**.
 
 ---
 
-### A7. Xác Minh CI/CD Pipeline (`.github/workflows/ci-cd.yml`)
-* **Kiểm tra cú pháp & cấu trúc:**
-  - Syntax YAML hợp lệ.
-  - Ma trận biến môi trường CI (`POSTGRES_USER`, `REDIS_HOST`, simulated mail) đầy đủ.
-* **Mô phỏng các bước trên Local:**
+## A7. Verification of CI/CD Pipeline (`.github/workflows/ci-cd.yml`)
+* **Syntax & Structural Review:**
+  - Valid YAML syntax.
+  - Complete environment matrix (`POSTGRES_USER`, `REDIS_HOST`, simulated mail).
+* **Local Simulation of Stages:**
   - `pnpm check:i18n` $\rightarrow$ PASS (1682/1682 keys).
-  - `pnpm lint` $\rightarrow$ PASS (0 error).
+  - `pnpm lint` $\rightarrow$ PASS (0 errors).
   - `pnpm test:coverage` $\rightarrow$ PASS (284/284 tests).
   - `pnpm test:diff` $\rightarrow$ PASS.
   - `pnpm build` $\rightarrow$ PASS.
-  - Deploy Staging & Deploy Production: **BLOCKED** (Cần GitHub Actions runner và token thật).
-* **Verdict:** **CI-VALID (Cấu trúc CI khả thi)**.
+  - Deploy Staging & Deploy Production: **BLOCKED** (Requires live GitHub Actions runners and tokens).
+* **Verdict:** **CI-VALID (Pipeline structure feasible)**.
 
 ---
 
-### A8. Xác Minh Cơ Chế Graceful Shutdown (SIGTERM)
-* **Khảo sát mã nguồn `backend/src/main.ts` (Dòng 108-119):**
+## A8. Verification of Graceful Shutdown (SIGTERM)
+* **Source Code Inspection in `backend/src/main.ts` (Lines 108-119):**
   ```typescript
   const gracefulShutdown = async (signal: string) => {
     console.log(`[Lifecycle] Received ${signal}. Starting 30s graceful shutdown drain...`);
@@ -165,156 +165,156 @@ Thực hiện vòng kiểm định độc lập thứ 4 (Final Pre-Golive Gate) 
       console.log("[Lifecycle] HaiHire backend shutdown completed cleanly.");
       process.exit(0);
   ```
-* **Phân tích:** Đoạn code chỉ in chuỗi chữ `"Starting 30s graceful shutdown drain..."` rồi lập tức gọi `await app.close()` và `process.exit(0)`. **HOÀN TOÀN KHÔNG CÓ TIMER 30S, KHÔNG CÓ TIMEOUT DRAIN REQUEST ĐANG CHẠY**.
-* **Verdict:** **SHUTDOWN-PARTIAL $\rightarrow$ Ghi nhận finding `BUG-P10-06` (P2)**.
+* **Analysis:** The implementation only logged `"Starting 30s graceful shutdown drain..."` before immediately calling `await app.close()` and `process.exit(0)`. **NO 30S TIMER OR IN-FLIGHT DRAIN LOGIC EXISTED**.
+* **Verdict:** **SHUTDOWN-PARTIAL $\rightarrow$ Logged as finding `BUG-P10-06` (P2)**.
 
 ---
 
-## 3. PART B — BẢNG ĐÁNH GIÁ 12 EDGE CASES MỚI
+## 3. PART B — Evaluation of 12 New Edge Cases
 
-| Case | Nội Dung | Raw Evidence Thu Được | Trạng Thái |
+| Case | Scenario | Raw Evidence | Status |
 | :--- | :--- | :--- | :---: |
-| **B1** | Container Crash Loop | Docker daemon quản lý container với `restart: unless-stopped` tự phục hồi trong 2.1s. | **PASS** |
-| **B2** | PostgreSQL Pool Exhaustion | Bắn 100 concurrent queries: Không crash, không timeout, pool xếp hàng xử lý trong 282ms. | **PASS** |
-| **B3** | Redis Down Resilience | BullMQ xử lý lỗi kết nối graceful, không gây crash HTTP API server. | **PASS** |
-| **B4** | MinIO Down Resilience | MinIO down trả lỗi HTTP 503 chi tiết trên `/health` và báo lỗi upload không tạo orphan DB. | **PASS** |
-| **B5** | JWT Secret Rotation | Token ký bằng key cũ bị từ chối ngay khi đổi secret. Thiếu cơ chế dual-key transition grace period. | **PASS (Observed)** |
-| **B6** | Memory Leak 300 Reqs | RSS ban đầu: 89MB, RSS sau 300 reqs: 93MB ($\Delta$ 3.88MB). Không phát hiện leak bộ nhớ. | **PASS** |
-| **B7** | Log Flood Policy | `docker-compose.prod.yml` cấu hình `json-file` với `max-size: "20m"`, `max-file: "5"`. | **PASS** |
-| **B8** | CORS Defense | Origin `https://evil.com` bị chặn không trả header CORS. Origin nội bộ được chấp thuận. | **PASS** |
-| **B9** | HTTPS Redirection | Gửi request HTTP không có header/middleware chuyển hướng 301/308 sang HTTPS. | 🔴 **FAIL (`BUG-P10-04`)** |
-| **B10** | Cookie Secure Flag | `backend/src/auth/auth.controller.ts` gắn cờ `secure: env.NODE_ENV === "production"`. | **PASS** |
-| **B11** | CSP Security Headers | Endpoint thiếu hoàn toàn header `Content-Security-Policy`. | 🔴 **FAIL (`BUG-P10-03`)** |
-| **B12** | Database Migration Rollback | Prisma migrate hỗ trợ atomic transaction cho schema migration. | **PASS** |
+| **B1** | Container Crash Loop | Docker daemon with `restart: unless-stopped` recovered in 2.1s. | **PASS** |
+| **B2** | PostgreSQL Pool Exhaustion | 100 concurrent queries queued and completed cleanly in 282ms. | **PASS** |
+| **B3** | Redis Down Resilience | BullMQ handled connection drop gracefully without crashing HTTP API. | **PASS** |
+| **B4** | MinIO Down Resilience | MinIO outage returns HTTP 503 on `/health` and rejects uploads without orphan records. | **PASS** |
+| **B5** | JWT Secret Rotation | Tokens signed with revoked secret rejected. Lacks dual-key transition window. | **PASS (Observed)** |
+| **B6** | Memory Leak 300 Reqs | Initial RSS: 89MB, final RSS: 93MB ($\Delta$ 3.88MB). Zero memory leak. | **PASS** |
+| **B7** | Log Flood Policy | `docker-compose.prod.yml` configured with `max-size: "20m"`, `max-file: "5"`. | **PASS** |
+| **B8** | CORS Defense | Origin `https://evil.com` rejected without CORS headers. Internal origins allowed. | **PASS** |
+| **B9** | HTTPS Redirection | HTTP requests lack 301/308 redirect middleware to HTTPS. | 🔴 **FAIL (`BUG-P10-04`)** |
+| **B10** | Cookie Secure Flag | `backend/src/auth/auth.controller.ts` enforces `secure: env.NODE_ENV === "production"`. | **PASS** |
+| **B11** | CSP Security Headers | Endpoints completely missing `Content-Security-Policy` header. | 🔴 **FAIL (`BUG-P10-03`)** |
+| **B12** | Database Migration Rollback | Prisma migrate provides atomic transactions for schema migrations. | **PASS** |
 
 ---
 
-## 4. PART C — KẾT QUẢ 68 KỊCH BẢN REGRESSION TOÀN DIỆN
+## 4. PART C — Comprehensive 68-Scenario Regression Check
 
-* **Tổng kịch bản kiểm tra:** 68 kịch bản.
-* **Số kịch bản PASS:** **60 / 68 kịch bản (88.2%)**.
-* **Số kịch bản FAIL:** **8 / 68 kịch bản**.
-* **Bảng Chi Tiết 8 Kịch Bản Thất Bại:**
+* **Total Scenarios Evaluated:** 68 scenarios.
+* **Scenarios Passing:** **60 / 68 scenarios (88.2%)**.
+* **Scenarios Failing:** **8 / 68 scenarios**.
+* **Detailed Breakdown of the 8 Failing Scenarios:**
 
-| # | Kịch Bản | Kết Quả Thất Bại | Nguyên Nhân Thực Tế |
+| # | Scenario | Failing Result | Root Cause |
 | :---: | :--- | :--- | :--- |
-| **#13** | Register Invalid Email | Trả HTTP 409 thay vì 400 | DTO Validation bị bypass trong build esbuild (`BUG-P10-06`) |
-| **#14** | Register Short Password | Trả HTTP 201 Created | `@MinLength(6)` bị bỏ qua hoàn toàn do mất metadata (`BUG-P10-06`) |
-| **#22** | Optimistic Locking | Trả HTTP 200 thay vì 409 | Version payload bị nhận là object thô không ép kiểu |
-| **#25** | Create Interview | Trả HTTP 500 | Check constraint schema của interview type |
-| **#65** | B9: HTTPS Redirection | Không có redirect | Thiếu reverse proxy TLS redirect (`BUG-P10-04`) |
-| **#67** | B11: CSP Header | Header null | Thiếu cấu hình CSP (`BUG-P10-03`) |
-| **#68** | B12: Graceful Shutdown | Không có timer 30s | Thiếu timeout drain logic (`BUG-P10-06`) |
-| **--** | **#A6** Docker Build Context | Lỗi build | Context trỏ sai thư mục `backend/` |
+| **#13** | Register Invalid Email | Returned HTTP 409 instead of 400 | DTO validation bypassed in esbuild bundle (`BUG-P10-06`) |
+| **#14** | Register Short Password | Returned HTTP 201 Created | `@MinLength(6)` ignored due to missing metadata (`BUG-P10-06`) |
+| **#22** | Optimistic Locking | Returned HTTP 200 instead of 409 | Version payload coerced as untyped object |
+| **#25** | Create Interview | Returned HTTP 500 | Interview type schema check constraint mismatch |
+| **#65** | B9: HTTPS Redirection | No redirect | Missing reverse proxy TLS redirect (`BUG-P10-04`) |
+| **#67** | B11: CSP Header | Null header | Missing CSP header configuration (`BUG-P10-03`) |
+| **#68** | B12: Graceful Shutdown | Missing 30s timer | Missing drain timeout logic (`BUG-P10-06`) |
+| **--** | **#A6** Docker Build Context | Build failed | Build context misconfigured to `backend/` |
 
 ---
 
-## 5. PART D — SRE AUDIT CHECKLIST
+## 5. PART D — SRE Audit Checklist
 
 ### D1. Security Audit
-* **Run As Non-Root:** Container chạy dưới user `node` (UID 1000). *(Không phải root, nhưng sai khác so với tuyên bố nestjs UID 1001)*.
-* **Secrets In Git:** Phát hiện `backend/.env` chứa mật khẩu SMTP thật (`qrruggyjbdltidmd`) và dev encryption key được commit trong git repository.
-* **Trivy Vulnerability Scan:** **BLOCKED** (Binary trivy chưa được cài đặt trên máy host).
+* **Non-Root Execution:** Container runs as user `node` (UID 1000). *(Not root, but differs from claimed nestjs UID 1001)*.
+* **Secrets In Git:** Identified live SMTP credentials in `backend/.env` (`qrruggyjbdltidmd`) and committed development encryption keys.
+* **Trivy Vulnerability Scan:** **BLOCKED** (Binary trivy not installed on host machine).
 
 ### D2. Reliability Audit
-* **Restart Policy:** Đạt chuẩn (`restart: unless-stopped`).
-* **Healthcheck:** Đạt chuẩn (`/health` đa dịch vụ).
-* **Resource Limits:** 🔴 **THIẾU HOÀN TOÀN**. `docker-compose.prod.yml` không định nghĩa `deploy.resources.limits` hay `mem_limit` $\rightarrow$ Nguy cơ 1 container tràn RAM làm sập cả VPS (`BUG-P10-07`).
+* **Restart Policy:** Compliant (`restart: unless-stopped`).
+* **Healthcheck:** Compliant (`/health` multi-service).
+* **Resource Limits:** 🔴 **COMPLETELY MISSING**. `docker-compose.prod.yml` lacks `deploy.resources.limits` or `mem_limit` $\rightarrow$ Memory leaks could crash host node (`BUG-P10-07`).
 
 ### D3. Observability Audit
-* **Log Format:** HTTP logs đạt chuẩn JSON (lọc bỏ PII).
-* **Metrics Labels:** Thiếu label `method` trong metrics output thực tế của `MetricsService`.
-* **Trace ID Propagation:** Thiếu `x-request-id` / `traceparent` header propagation qua các request.
+* **Log Format:** Structured JSON request logging compliant (PII redacted).
+* **Metrics Labels:** Missing `method` label in `MetricsService` output.
+* **Trace ID Propagation:** Lacks `x-request-id` / `traceparent` propagation across request contexts.
 
 ### D4. Operations Audit
-* **Alerting Rules:** 🔴 **THIẾU HOÀN TOÀN**. Không có file alert rules nào cho Prometheus/Alertmanager (`BUG-P10-08`).
-* **Backup & Restore Runbook:** 🔴 **THIẾU HOÀN TOÀN**. Không có script tự động backup định kỳ cho PostgreSQL và MinIO (`BUG-P10-09`).
+* **Alerting Rules:** 🔴 **COMPLETELY MISSING**. No alert configuration files for Prometheus/Alertmanager (`BUG-P10-08`).
+* **Backup & Restore Runbook:** 🔴 **COMPLETELY MISSING**. No automated backup scripts for PostgreSQL and MinIO (`BUG-P10-09`).
 
 ---
 
-## 6. DANH SÁCH BUGS & FINDINGS PHÁT HIỆN TẠI PHASE 10
+## 6. Findings & Bug Inventory in Phase 10
 
 ### 1. `BUG-P10-06` [P1 - CRITICAL BLOCKING]: DTO Validation Pipeline Bypassed Due to esbuild Decorator Metadata Loss
-* **Mô tả:** Lệnh build production dùng `esbuild src/main.ts --bundle`. `esbuild` không phát sinh TypeScript decorator parameter metadata (`design:paramtypes`). Khi NestJS chạy `ValidationPipe({ transform: true })`, `metatype` nhận được là `Object` chứ không phải class DTO, khiến class-validator bỏ qua 100% việc validate.
-* **Bằng chứng:** Gửi `POST /auth/register` với `password: "123"` trả về **HTTP 201 Created** và tạo tài khoản thành công.
-* **Tác động:** Bất kỳ payload rác hoặc tấn công SQL/NoSQL injection dạng chuỗi không hợp lệ đều lọt qua gateway vào database.
-* **Khuyến nghị:** Dùng `@swc/core` hoặc cấu hình tsconfig/esbuild plugin để bảo toàn decorator metadata.
+* **Description:** The production build command executed `esbuild src/main.ts --bundle`. `esbuild` does not emit TypeScript parameter metadata (`design:paramtypes`). When NestJS executes `ValidationPipe({ transform: true })`, the runtime `metatype` evaluates to generic `Object`, causing class-validator to skip 100% of validation rules.
+* **Evidence:** Sending `POST /auth/register` with `password: "123"` returned **HTTP 201 Created** and created the user record.
+* **Impact:** Malicious payloads, invalid strings, and injection attempts bypass gateway guards into the database.
+* **Remediation:** Configure `@swc/core` or custom tsconfig/esbuild plugins to preserve decorator metadata.
 
 ### 2. `BUG-P10-02` [P2 - HIGH]: Prometheus Scraper & Healthcheck Subject to Rate Limiting Blackout
-* **Mô tả:** Thiếu decorator `@SkipThrottle()` trên `/health` và `/metrics`. Sau 100 requests trong 60 giây, endpoint giám sát trả về HTTP 429.
-* **Tác động:** Prometheus scraper và Kubernetes probes bị coi là kẻ tấn công và bị chặn.
-* **Khuyến nghị:** Gắn `@SkipThrottle()` trên `AppController`.
+* **Description:** Missing `@SkipThrottle()` on `/health` and `/metrics`. Exceeding 100 requests in 60 seconds returns HTTP 429.
+* **Impact:** Prometheus scrapers and Kubernetes probes will be throttled and fail.
+* **Remediation:** Decorate `AppController` with `@SkipThrottle()`.
 
 ### 3. `BUG-P10-03` [P2 - MEDIUM]: Missing Content-Security-Policy (CSP) Header
-* **Mô tả:** Response thiếu header `Content-Security-Policy`.
-* **Khuyến nghị:** Cấu hình Helmet hoặc thêm CSP header middleware trong `main.ts`.
+* **Description:** HTTP responses lack `Content-Security-Policy` headers.
+* **Remediation:** Integrate Helmet or explicit CSP middleware in `main.ts`.
 
 ### 4. `BUG-P10-04` [P2 - MEDIUM]: Missing Enforced HTTPS Redirection in Production Stack
-* **Mô tả:** Stack production mở port HTTP trực tiếp mà không có reverse proxy (Nginx/Traefik) ép buộc TLS redirect 301/308.
-* **Khuyến nghị:** Bổ sung Caddy / Nginx reverse proxy container trong compose stack.
+* **Description:** Compose stack opens raw HTTP ports without reverse proxy TLS enforcement.
+* **Remediation:** Add Caddy or Nginx reverse proxy container with automatic HTTPS redirects.
 
 ### 5. `BUG-P10-05` [P2 - MEDIUM]: Inefficient Layer Chown Freezing Docker Build
-* **Mô tả:** Lệnh `RUN chown -R node:node /app` trong Dockerfile chạy trên hàng vạn symlink pnpm gây treo build.
-* **Khuyến nghị:** Sử dụng `COPY --chown=node:node` thay vì chạy `RUN chown -R`.
+* **Description:** `RUN chown -R node:node /app` recurses through pnpm symlinks, hanging build processes.
+* **Remediation:** Utilize `COPY --chown=node:node` in place of `RUN chown -R`.
 
 ### 6. `BUG-P10-07` [P2 - MEDIUM]: Missing Container Resource Limits (CPU & Memory)
-* **Mô tả:** `docker-compose.prod.yml` thiếu giới hạn tài nguyên.
-* **Khuyến nghị:** Cấu hình `mem_limit: 1g` và `cpus: 1.0` cho từng service.
+* **Description:** `docker-compose.prod.yml` defines no resource bounds.
+* **Remediation:** Declare `mem_limit: 1g` and `cpus: 1.0` per service.
 
 ### 7. `BUG-P10-08` [P2 - MEDIUM]: Missing Production Alerting Rules
-* **Mô tả:** Thiếu file cấu hình cảnh báo cho Prometheus/Grafana.
-* **Khuyến nghị:** Định nghĩa bộ alert rules mẫu (`HighHttpErrorRate`, `ServiceDown`, `DiskFull`).
+* **Description:** Missing Prometheus alert configurations.
+* **Remediation:** Provide standard alert definitions (`HighHttpErrorRate`, `ServiceDown`, `DiskFull`).
 
 ### 8. `BUG-P10-09` [P2 - MEDIUM]: Missing Automated Database & Storage Backup Procedures
-* **Mô tả:** Thiếu script pg_dump định kỳ và cơ chế disaster recovery.
-* **Khuyến nghị:** Tạo cronjob container backup PostgreSQL và MinIO sang cold storage.
+* **Description:** Absence of automated pg_dump and cold storage backup procedures.
+* **Remediation:** Provide backup container scripts for PostgreSQL and MinIO.
 
-### 9. `BUG-P10-01` [P3 - LOW]: Redundant Key in /health JSON Payload
-* **Mô tả:** Payload chứa cả `postgres` và `database` cùng trỏ về 1 trạng thái.
-* **Khuyến nghị:** Xóa key `database` legacy.
+### 9. `BUG-P10-01` [P3 - LOW]: Redundant Key in `/health` JSON Payload
+* **Description:** Both `postgres` and `database` keys returned in status dictionary.
+* **Remediation:** Remove legacy `database` key.
 
 ---
 
-## 7. CREDIBILITY ASSESSMENT PHASE 9
+## 7. Credibility Assessment of Phase 9
 
-| Tiêu Chí Đánh Giá | Điểm (Thang 100) | Nhận Xét Của IV&V Auditor |
+| Criteria | Score (Scale of 100) | Auditor Assessment |
 | :--- | :---: | :--- |
-| **Tỷ lệ tuyên bố verify được** | **70 / 100** | Nhiều tính năng hoạt động thật (healthcheck, metrics, rate limit), nhưng các tuyên bố về Docker user, graceful drain 30s và build command là không chính xác. |
-| **False Claim Count** | **65 / 100** | Phát hiện 4 tuyên bố không đúng sự thật (user nestjs 1001, 30s drain timer, 9 tests healthcheck mới, docker build context). |
-| **Chất lượng bằng chứng** | **80 / 100** | Có raw logs cho unit test và metrics, nhưng thiếu bằng chứng thực nghiệm cho Docker build và shutdown. |
-| **Tính trung thực về SRE metrics** | **70 / 100** | Phương pháp đo load test có tì vết nghiêm trọng (trộn HTTP 429 vào p95). Bỏ qua việc critical files có coverage < 50%. |
-| **Tính chính xác về đếm test** | **85 / 100** | Tool `check-test-count.ts` hoạt động tốt, nhưng bài viết vẫn lặp lại pattern gộp test rename vào test mới trong văn bản. |
-| **ĐIỂM TRUNG BÌNH CREDIBILITY** | **78 / 100** | ⚠️ **Sụt giảm nghiêm trọng dưới ngưỡng 85/100 (Cảnh báo quy trình)**. |
+| **Verified Claims Ratio** | **70 / 100** | Core capabilities worked (healthcheck, metrics, rate limits), but claims regarding Docker users, 30s graceful drain, and build context commands were invalid. |
+| **False Claim Count** | **65 / 100** | Identified 4 incorrect claims (nestjs user 1001, 30s drain timer, 9 new healthcheck tests, docker build context). |
+| **Evidence Quality** | **80 / 100** | Unit test logs provided; lacked empirical evidence for Docker builds and shutdown behavior. |
+| **SRE Metrics Integrity** | **70 / 100** | Load test methodology flawed (mixed HTTP 429 into p95). Overlooked critical files with coverage < 50%. |
+| **Test Counting Accuracy** | **85 / 100** | `check-test-count.ts` tool is sound, but narrative text repeated the test-renaming aggregation error. |
+| **OVERALL CREDIBILITY SCORE** | **78 / 100** | ⚠️ **Dropped significantly below the 85/100 threshold**. |
 
-* **Xu hướng Credibility qua các Phase:**
+* **Credibility Trend Across Phases:**
   - Phase 4: **92/100**
   - Phase 6: **88/100**
   - Phase 8: **92/100**
-  - Phase 10 (Đánh giá Phase 9): **78/100 (GIẢM MẠNH - 14 ĐIỂM)**.
+  - Phase 10 (Reviewing Phase 9): **78/100 (-14 POINTS)**.
 
 ---
 
-## 8. FINAL GO-LIVE DECISION
+## 8. Final Go-Live Decision
 
 ```
 ================================================================================
                     FINAL DECISION: 🔴 NO-GO (BLOCK GO-LIVE)
 ================================================================================
-  LÝ DO CHẶN PHÁT HÀNH:
-  1. Phát hiện lỗ hổng P1 [BUG-P10-06]: ValidationPipe bị bypass hoàn toàn trong 
-     bản build production do esbuild làm mất decorator metadata.
-  2. Độ bao phủ kiểm thử của 2 file trọng yếu < 50% (applications.service: 44.78%,
+  RELEASE BLOCKING REASONS:
+  1. Critical P1 Flaw [BUG-P10-06]: ValidationPipe bypassed entirely in production
+     builds due to esbuild decorator metadata stripping.
+  2. Test coverage on 2 critical files < 50% (applications.service: 44.78%,
      prisma.service: 11.76%).
-  3. Phương pháp luận Load Test bị lỗi trộn lẫn mã lỗi 429 để báo cáo p95 ảo.
-  4. Thiếu vắng các thành phần SRE bảo vệ tối thiểu: CSP headers, Resource Limits,
-     và Alerting rules.
+  3. Load test methodology reported artificial p95 figures by pooling 429 errors.
+  4. Missing foundational SRE controls: CSP headers, Resource Limits, and
+     Alerting rules.
 ================================================================================
 ```
 
-### Kế Hoạch Hotfix Phase 10.1 (Dự Kiến: 2 - 3 Ngày):
-1. **Fix P1 `BUG-P10-06`:** Cấu hình esbuild plugin / swc để giữ lại `emitDecoratorMetadata` hoặc chuyển sang build pipeline bảo toàn class-validator.
-2. **Nâng Coverage Critical Files:** Bổ sung unit tests cho `applications.service.ts` và `prisma.service.ts` đạt tối thiểu $\ge 60\%$.
-3. **Thêm `@SkipThrottle()`:** Miễn trừ rate limiting cho `/health` và `/metrics`.
-4. **Tối ưu Dockerfile:** Sử dụng `COPY --chown=node:node` thay vì `RUN chown -R`, chuẩn hóa context build tại root.
-5. **Bổ sung SRE Baseline:** Thêm CSP headers, cấu hình CPU/RAM limits trong `docker-compose.prod.yml`, định nghĩa Prometheus alerts cơ bản.
-6. **Tổ chức IV&V Round 5 Re-Gate** trước khi chính thức mở traffic người dùng thật.
+### Hotfix Plan for Phase 10.1 (Estimated: 2 - 3 Days):
+1. **Fix P1 `BUG-P10-06`:** Configure SWC or tsconfig/esbuild plugins to preserve `emitDecoratorMetadata`.
+2. **Elevate Critical Coverage:** Add unit tests to `applications.service.ts` and `prisma.service.ts` to achieve $\ge 60\%$.
+3. **Add `@SkipThrottle()`:** Exempt `/health` and `/metrics` from rate limits.
+4. **Optimize Dockerfile:** Use `COPY --chown=node:node` and standardize root build context.
+5. **Establish SRE Baseline:** Add CSP headers, CPU/RAM limits in compose, and baseline Prometheus alert rules.
+6. **Execute IV&V Round 5 Re-Gate** prior to routing live user traffic.

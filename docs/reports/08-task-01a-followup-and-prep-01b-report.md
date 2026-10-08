@@ -1,19 +1,19 @@
-# BÁO CÁO HOÀN THÀNH: FOLLOW-UP TASK #1A & CHUẨN BỊ TASK #1B
-> **Người thực hiện:** Antigravity (Senior Software Engineer / Lead Maintainer)  
-> **Người nhận:** DeepSeek (Kiến trúc sư hệ thống) & Chủ dự án  
-> **Thời gian:** 2026-10-07  
+# COMPLETION REPORT: TASK #1A FOLLOW-UP & TASK #1B PREPARATION
+> **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)  
+> **Recipient:** DeepSeek (System Architect) & Project Owner  
+> **Date:** 2026-10-07  
 > **Branch:** `feat/task-01a-multi-channel-webhook`  
-> **Tiêu chuẩn:** Tuân thủ 100% `docs/DEFINITION_OF_DONE.md`
+> **Standard:** 100% compliance with `docs/DEFINITION_OF_DONE.md`
 
 ---
 
 ## 1. Summary
 - **Branch:** `feat/task-01a-multi-channel-webhook`
-- **Nội dung:**
-  1. Chia nhỏ và commit 6 atomic commits cho Task #1A theo đúng chuẩn Conventional Commits.
-  2. Bổ sung `eventId` (UUID v4) và `eventType` ("DLQ_ALERT") vào Generic Webhook payload, Discord embed footer, và Telegram message.
-  3. Xử lý triệt để 4.35% uncovered lines, nâng coverage toàn bộ module `common/webhook` lên **100% Statements & Lines**.
-  4. Cập nhật `docs/PROJECT_CONTEXT.md` (Module Architecture & Roadmap v1.1.0).
+- **Scope:**
+  1. Split and commit 6 atomic commits for Task #1A following Conventional Commits standards.
+  2. Add `eventId` (UUID v4) and `eventType` ("DLQ_ALERT") to Generic Webhook payload, Discord embed footer, and Telegram message.
+  3. Thoroughly resolve 4.35% uncovered lines, raising test coverage for the entire `common/webhook` module to **100% Statements & Lines**.
+  4. Update `docs/PROJECT_CONTEXT.md` (Module Architecture & Roadmap v1.1.0).
 - **Files created/changed:**
   - `backend/src/common/webhook/webhook-provider.interface.ts`
   - `backend/src/common/webhook/webhook-notifier.service.ts`
@@ -44,9 +44,9 @@
 
 ---
 
-## 3. Test Coverage & Phân Tích 4.35% Uncovered Code
+## 3. Test Coverage & 4.35% Uncovered Code Analysis
 
-### Kết quả đo kiểm Vitest V8 Coverage (`src/common/webhook`):
+### Vitest V8 Coverage Results (`src/common/webhook`):
 ```text
 -------------------|---------|----------|---------|---------|-------------------
 File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
@@ -61,40 +61,40 @@ File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
 -------------------|---------|----------|---------|---------|-------------------
 ```
 
-### Phân tích và khắc phục 4.35% uncovered lines cũ:
-1. **`webhook-notifier.service.ts` dòng 26-31 (Constructor initialization):**
-   - *Nguyên nhân chưa cover:* Trong unit test cũ, `new WebhookNotifierService()` được khởi tạo khi `WEBHOOK_PROVIDER` và `WEBHOOK_URL` chưa set trong `.env`, sau đó test gán đè mock config qua property setter nên nhánh constructor khởi tạo config từ env không bao giờ chạy.
-   - *Khắc phục:* Viết thêm `Case 9: constructor initializes globalConfig when WEBHOOK_PROVIDER and WEBHOOK_URL are defined` trong `webhook-notifier.service.spec.ts`.
+### Analysis and Remediation of Previous 4.35% Uncovered Lines:
+1. **`webhook-notifier.service.ts` lines 26-31 (Constructor initialization):**
+   - *Cause of uncoverage:* In older unit tests, `new WebhookNotifierService()` was instantiated when `WEBHOOK_PROVIDER` and `WEBHOOK_URL` were not set in `.env`, and tests subsequently overrode mock configs via property setters. Consequently, the constructor branch initializing config from env was never executed.
+   - *Remediation:* Added `Case 9: constructor initializes globalConfig when WEBHOOK_PROVIDER and WEBHOOK_URL are defined` in `webhook-notifier.service.spec.ts`.
 2. **Provider Network / Parsing Fallback Branches:**
-   - *Khắc phục:* Viết thêm test cases cho tình huống `response.text()` bị lỗi đọc stream, cũng như khi network error ném ra đối tượng không phải instance của `Error` (string / raw error).
-   - *Kết quả:* Line coverage đạt **100% tuyệt đối** (0 dòng uncovered).
+   - *Remediation:* Added test cases for stream reading errors on `response.text()`, as well as when network errors threw non-`Error` instances (string / raw error).
+   - *Result:* Line coverage reached **absolute 100%** (0 uncovered lines).
 
 ---
 
 ## 4. Verification Evidence
-- **`pnpm check:all:fast`:** 🟢 **PASSED (8/8 Gates)** — Thời gian: 27.23s
-  1. `lint:env-sync` [PASS] (100% key parity trên 5 files `.env`)
-  2. `check:i18n` [PASS] (1696 keys, zero hardcode JSX)
+- **`pnpm check:all:fast`:** 🟢 **PASSED (8/8 Gates)** — Duration: 27.23s
+  1. `lint:env-sync` [PASS] (100% key parity across 5 `.env` files)
+  2. `check:i18n` [PASS] (1696 keys, zero hardcoded JSX)
   3. `lint` [PASS] (ESLint + TypeScript `tsc --noEmit`)
   4. `typecheck` [PASS]
-  5. `lint:dtopipe` [PASS] (100% `@Body()` có DtoPipe)
+  5. `lint:dtopipe` [PASS] (100% `@Body()` have DtoPipe)
   6. `lint:error-i18n` [PASS] (51/51 error codes translated)
   7. `lint:api-contract` [PASS] (9/9 controller API clients mapped)
   8. `test:diff` [PASS] (+15 added tests, net new +8 tests)
 - **`pnpm test`:** 🟢 **429/429 tests PASSED**
-  - Backend: 279 passed (tăng từ 271 lên 279, +8 tests mới)
+  - Backend: 279 passed (increased from 271 to 279, +8 new tests)
   - Frontend: 150 passed
 
 ### Acceptance Criteria Checklist:
-- [x] `WebhookMessage` interface có `eventId` và `eventType`
-- [x] Mỗi lần `notifyDlq` được gọi $\rightarrow$ sinh `eventId` unique (UUID v4)
-- [x] Generic payload có đủ 2 fields mới (`eventId`, `eventType`)
-- [x] Discord embed footer hiển thị `Event: <first-8-chars>...`
-- [x] Telegram message hiển thị dòng cuối `Event: <first-8-chars>...`
-- [x] Test coverage không giảm, đạt **100% Statements / Lines** trên module webhook
-- [x] `pnpm check:all:fast` pass (8/8 gates)
-- [x] `pnpm test` pass (429/429 tests)
-- [x] `docs/PROJECT_CONTEXT.md` đã cập nhật Webhook Module & Roadmap v1.1.0
+- [x] `WebhookMessage` interface contains `eventId` and `eventType`
+- [x] Every time `notifyDlq` is called $\rightarrow$ generate unique `eventId` (UUID v4)
+- [x] Generic payload contains both new fields (`eventId`, `eventType`)
+- [x] Discord embed footer displays `Event: <first-8-chars>...`
+- [x] Telegram message displays trailing line `Event: <first-8-chars>...`
+- [x] Test coverage maintained with **100% Statements / Lines** on webhook module
+- [x] `pnpm check:all:fast` passes (8/8 gates)
+- [x] `pnpm test` passes (429/429 tests)
+- [x] `docs/PROJECT_CONTEXT.md` updated with Webhook Module & Roadmap v1.1.0
 
 ---
 

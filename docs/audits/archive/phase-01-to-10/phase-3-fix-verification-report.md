@@ -1,113 +1,113 @@
 # Phase 3 Final Verification Report
 
-> **Trạng thái thực thi:** HOÀN TẤT TOÀN DIỆN (FIX → REGRESSION TEST → FULL RUNTIME RE-VERIFICATION)  
-> **Môi trường xác minh:** Local Runtime Live (PostgreSQL :15432, Redis :16379, MinIO :19000, NestJS Backend :13001, Next.js Frontend :13000)  
-> **Thời điểm xác minh:** 01/10/2026
+> **Execution Status:** COMPREHENSIVELY COMPLETED (FIX → REGRESSION TEST → FULL RUNTIME RE-VERIFICATION)  
+> **Verification Environment:** Local Live Runtime (PostgreSQL :15432, Redis :16379, MinIO :19000, NestJS Backend :13001, Next.js Frontend :13000)  
+> **Verification Date:** 10/01/2026  
 
 ---
 
-## 1. Changes Made (Danh sách tệp & hàm thay đổi)
+## 1. Changes Made (List of Modified Files & Functions)
 
-| File | Functions / Components | Thay đổi chính |
+| File | Functions / Components | Primary Modifications |
 | :--- | :--- | :--- |
-| `backend/src/events/events.service.ts` | `resolveUserOrgIds`, `createSseStream`, `emitToOrg` | Xác thực quan hệ tenant từ User + OrganizationMember; chặn triệt để cross-tenant SSE event leak; hỗ trợ global events chính thống. |
-| `backend/src/events/events.service.spec.ts` | Unit tests | Thêm bộ test cách ly Tenant SSE: Org A nhận event, Org B bị chặn. |
-| `backend/src/jobs/jobs.service.ts` | `findAll`, `findOne` | Ép buộc lọc `effectiveStatus = 'PUBLISHED'` cho public career page; cấm rò rỉ candidate PII và metrics cho khách vãng lai; `findOne` trả 404 cho DRAFT/CLOSED/ARCHIVED nếu unauthenticated. |
-| `backend/src/jobs/jobs.controller.ts` | `findOne` | Truyền cờ `isPublic: !req?.user` để service layer phân biệt quyền truy cập. |
-| `backend/src/jobs/jobs.service.spec.ts` | Unit tests | Bổ sung 6 test cases mới cho Public Career Page và multi-tenant isolation. |
-| `backend/src/auth/jwt.strategy.ts` | `constructor` | Bổ sung extractor đọc JWT từ HttpOnly Cookie (`haihire_token`), fallback về `Authorization: Bearer`. |
-| `backend/src/auth/jwt.strategy.spec.ts` | Unit tests | Tạo mới bộ test xác thực qua cookie, bearer token và header precedence. |
-| `packages/shared/src/errors.ts` | `APP_ERROR_CODES` | Thêm mã lỗi chuẩn `APPLICATION_INVALID_STAGE_TRANSITION`. |
-| `packages/shared/src/applications.ts` | `VALID_APPLICATION_STAGE_TRANSITIONS` | Định nghĩa ma trận state machine chuyển đổi stage chuẩn: APPLIED → SCREENING/INTERVIEW/REJECTED; SCREENING → INTERVIEW/REJECTED; INTERVIEW → OFFER/REJECTED; OFFER → HIRED/REJECTED; HIRED & REJECTED là terminal states. |
-| `backend/src/applications/applications.service.ts` | `updateStage`, `create`, `uploadDocument`, `remove` | Enforce state machine (HTTP 400 nếu chuyển stage sai); tích hợp magic-byte validation; cách ly tenant MinIO key; gán UUID cho document; ghi ActivityLog `NOTE_ADDED` kiểm toán trước khi xóa application; cập nhật tên tổ chức thực tế từ DB vào email. |
-| `backend/src/applications/applications.service.spec.ts` | Unit tests | Bổ sung test state machine (chuyển hợp lệ vs bất hợp lệ) và kiểm toán xóa hồ sơ. |
-| `backend/src/common/http-exception.filter.ts` | `GlobalExceptionFilter` | Bắt `ThrottlerException` và trả về chuẩn `HTTP 429 Too Many Requests` với format `AppErrorResponse` thống nhất. |
-| `backend/src/main.ts` | Bootstrap | Đăng ký `GlobalExceptionFilter` toàn cục. |
-| `backend/src/common/upload-utils.ts` | `validateMagicBytes`, `sanitizeFilename`, `validateUploadedFile` | Kiểm tra byte signature chuẩn xác (PDF: `%PDF-`, DOCX/ZIP: `PK\x03\x04`, DOC: `\xD0\xCF\x11\xE0`, PNG, JPG); khử path traversal trong tên file. |
-| `backend/src/common/upload-utils.spec.ts` | Unit tests | Tạo mới 11 test cases xác minh magic bytes, extension mismatch, traversal attack. |
-| `backend/src/minio/minio.service.ts` | `uploadFile` | Đưa `tenantOrgId` vào object key: `tenants/${tenantOrgId}/${folder}/${timestamp}-${uuid}.${ext}`. |
-| `backend/src/candidates/candidates.service.ts` | `uploadDocument`, `removeDocument`, `findAll` | Ứng dụng `validateUploadedFile`, `sanitizeFilename`, MinIO tenant keying, và UUID cho tài liệu đính kèm. |
-| `backend/src/interviews/interviews.service.ts` | `create` | Thay thế chuỗi cứng `"ATS Recruitment"` bằng tên `organization.name` truy vấn từ database. |
-| `backend/src/app.module.ts` | `providers` | Loại bỏ đăng ký trùng lặp `PrismaService` (đã được export từ `PrismaModule`). |
+| `backend/src/events/events.service.ts` | `resolveUserOrgIds`, `createSseStream`, `emitToOrg` | Validate tenant relationship from User + OrganizationMember; eliminate cross-tenant SSE event leaks; support authorized global events. |
+| `backend/src/events/events.service.spec.ts` | Unit tests | Added tenant isolation SSE test suite: Org A receives events, Org B blocked. |
+| `backend/src/jobs/jobs.service.ts` | `findAll`, `findOne` | Enforce `effectiveStatus = 'PUBLISHED'` filtering on public career pages; prevent candidate PII and metrics leakage to anonymous visitors; `findOne` returns 404 for DRAFT/CLOSED/ARCHIVED for unauthenticated guests. |
+| `backend/src/jobs/jobs.controller.ts` | `findOne` | Pass `isPublic: !req?.user` flag allowing service layer to discriminate access privileges. |
+| `backend/src/jobs/jobs.service.spec.ts` | Unit tests | Added 6 new test cases for Public Career Page filtering and multi-tenant isolation. |
+| `backend/src/auth/jwt.strategy.ts` | `constructor` | Added extractor reading JWT from HttpOnly Cookie (`haihire_token`), falling back to `Authorization: Bearer`. |
+| `backend/src/auth/jwt.strategy.spec.ts` | Unit tests | Created test suite verifying authentication via cookie, bearer token, and header precedence. |
+| `packages/shared/src/errors.ts` | `APP_ERROR_CODES` | Added standardized error code `APPLICATION_INVALID_STAGE_TRANSITION`. |
+| `packages/shared/src/applications.ts` | `VALID_APPLICATION_STAGE_TRANSITIONS` | Defined canonical stage transition state machine matrix: APPLIED → SCREENING/INTERVIEW/REJECTED; SCREENING → INTERVIEW/REJECTED; INTERVIEW → OFFER/REJECTED; OFFER → HIRED/REJECTED; HIRED & REJECTED are terminal states. |
+| `backend/src/applications/applications.service.ts` | `updateStage`, `create`, `uploadDocument`, `remove` | Enforce state machine (HTTP 400 on invalid transitions); integrate magic-byte validation; tenant-scope MinIO keys; assign UUIDs to documents; record audit ActivityLog `NOTE_ADDED` before application deletion; pass real org name from DB to email contexts. |
+| `backend/src/applications/applications.service.spec.ts` | Unit tests | Added state machine tests (valid vs invalid transitions) and application deletion audit trails. |
+| `backend/src/common/http-exception.filter.ts` | `GlobalExceptionFilter` | Intercept `ThrottlerException` and return standard `HTTP 429 Too Many Requests` in unified `AppErrorResponse` format. |
+| `backend/src/main.ts` | Bootstrap | Registered `GlobalExceptionFilter` globally. |
+| `backend/src/common/upload-utils.ts` | `validateMagicBytes`, `sanitizeFilename`, `validateUploadedFile` | Verify header byte signatures (PDF: `%PDF-`, DOCX/ZIP: `PK\x03\x04`, DOC: `\xD0\xCF\x11\xE0`, PNG, JPG); neutralize path traversal in filenames. |
+| `backend/src/common/upload-utils.spec.ts` | Unit tests | Created 11 test cases verifying magic bytes, extension mismatches, and traversal attacks. |
+| `backend/src/minio/minio.service.ts` | `uploadFile` | Embed `tenantOrgId` in object keys: `tenants/${tenantOrgId}/${folder}/${timestamp}-${uuid}.${ext}`. |
+| `backend/src/candidates/candidates.service.ts` | `uploadDocument`, `removeDocument`, `findAll` | Apply `validateUploadedFile`, `sanitizeFilename`, MinIO tenant keying, and UUIDs for candidate documents. |
+| `backend/src/interviews/interviews.service.ts` | `create` | Replace hardcoded `"ATS Recruitment"` with dynamic `organization.name` queried from database. |
+| `backend/src/app.module.ts` | `providers` | Remove duplicate `PrismaService` registration (already exported by `PrismaModule`). |
 
 ---
 
-## 2. Security Fixes (Bảo mật & Rò rỉ dữ liệu)
+## 2. Security Fixes (Security & Data Leakage)
 
 1. **SSE Tenant Isolation (P0):**
-   - *Nguyên nhân gốc:* Kiểm tra lỏng lẻo `if (event.organizationId) return true;` khiến mọi user có token nhận toàn bộ sự kiện nội bộ của các tenant khác.
-   - *Khắc phục:* `events.service.ts` phân giải `allowedOrgIds` qua membership thực tế của user trong CSDL. Chỉ broadcast cho client nếu client sở hữu membership tương ứng hoặc sự kiện được gắn nhãn explicit `isGlobal: true`.
-   - *Kết quả:* User A thuộc Org A nhận đầy đủ event `MEMBER_ROLE_UPDATED`. User B thuộc Org B nhận **0 event của Org A**.
+   - *Root Cause:* Loose condition `if (event.organizationId) return true;` caused all authenticated users to receive internal events from other tenants.
+   - *Remediation:* `events.service.ts` resolves `allowedOrgIds` from actual database memberships. Broadcasts to clients only if client possesses matching membership or event is explicitly flagged `isGlobal: true`.
+   - *Verification:* User A in Org A receives full `MEMBER_ROLE_UPDATED` events. User B in Org B receives **zero events from Org A**.
 
 2. **Public Career Page Data Leak (P0):**
-   - *Nguyên nhân gốc:* Service không lọc trạng thái `PUBLISHED` ở backend và trả về toàn bộ trường ứng viên nhạy cảm (`candidateCount`, `applications`) cho người dùng chưa đăng nhập.
-   - *Khắc phục:* Bắt buộc áp dụng `effectiveStatus = 'PUBLISHED'` cho request công khai tại database/service layer; ẩn hoàn toàn chi tiết ứng viên; `findOne` trả `HTTP 404 Not Found` khi khách truy cập tin DRAFT, CLOSED, ARCHIVED.
+   - *Root Cause:* Service failed to filter `PUBLISHED` status on backend, exposing candidate metrics (`candidateCount`, `applications`) to unauthenticated visitors.
+   - *Remediation:* Enforced `effectiveStatus = 'PUBLISHED'` for public queries at database/service layer; stripped candidate details; `findOne` returns `HTTP 404 Not Found` for DRAFT, CLOSED, ARCHIVED jobs accessed by guests.
 
 3. **JWT HttpOnly Cookie Authentication (P0):**
-   - *Nguyên nhân gốc:* `JwtStrategy` chỉ trích xuất từ header `Authorization: Bearer`, bỏ qua cookie `haihire_token` mà endpoint `/auth/login` thiết lập.
-   - *Khắc phục:* Thiết lập cookie extractor làm việc song song, ưu tiên Bearer header và fallback sang cookie `haihire_token`.
-   - *Kết quả:* Request gửi qua Header `Cookie: haihire_token=...` được xác thực thành công (HTTP 200). Bearer token và refresh/logout vẫn hoạt động chuẩn xác.
+   - *Root Cause:* `JwtStrategy` extracted credentials exclusively from `Authorization: Bearer`, ignoring cookie `haihire_token` set by `/auth/login`.
+   - *Remediation:* Configured dual extractor prioritizing Bearer headers with fallback to `haihire_token` cookies.
+   - *Verification:* Requests sending `Cookie: haihire_token=...` authenticate with HTTP 200. Bearer token, refresh, and logout flows operate seamlessly.
 
 4. **File Magic Bytes & Path Traversal (P2):**
-   - *Nguyên nhân gốc:* Hệ thống chỉ tin cậy mimetype và extension do client khai báo, không kiểm tra nội dung binary thực tế; tên file upload giữ nguyên chuỗi người dùng gửi.
-   - *Khắc phục:* Thêm `validateMagicBytes` thẩm tra header byte signature thực tế; hàm `sanitizeFilename` loại bỏ hoàn toàn các chuỗi traversal `../`, `..\\`.
-   - *Kết quả:* File bash script giả dạng `.pdf` bị từ chối ngay với HTTP 400. Tên file `../../../../etc/passwd.pdf` được làm sạch thành `passwd.pdf`.
+   - *Root Cause:* System trusted client-declared mime types and extensions without inspecting binary content; uploaded filenames preserved raw client strings.
+   - *Remediation:* Added `validateMagicBytes` checking byte signatures; `sanitizeFilename` strips traversal sequences (`../`, `..\\`).
+   - *Verification:* Renamed bash scripts disguised as `.pdf` rejected with HTTP 400. Filename `../../../../etc/passwd.pdf` sanitized to `passwd.pdf`.
 
-5. **Tenant Isolation trong MinIO Object Storage (P2):**
-   - *Nguyên nhân gốc:* File resume và candidate document lưu chung vào thư mục gốc `resumes/` hoặc `candidate-documents/` mà không phân cấp tenant.
-   - *Khắc phục:* Mọi file upload đều được định tuyến vào namespace `tenants/${tenantOrgId}/...`.
+5. **Tenant Isolation in MinIO Object Storage (P2):**
+   - *Root Cause:* Resume files and documents uploaded to flat root directories `resumes/` or `candidate-documents/` without tenant segregation.
+   - *Remediation:* All uploads routed into namespace `tenants/${tenantOrgId}/...`.
 
 ---
 
-## 3. Business Logic Fixes (Logic Nghiệp Vụ)
+## 3. Business Logic Fixes
 
 1. **Application Stage State Machine (P1):**
-   - *Nguyên nhân gốc:* Tuyến API `PATCH /applications/:id/stage` cho phép cập nhật tự do bất kỳ stage nào, không kiểm tra ràng buộc chu trình tuyển dụng.
-   - *Khắc phục:* Thiết lập bảng chuyển dịch trạng thái hợp lệ trong `@haihire/shared`:
+   - *Root Cause:* API route `PATCH /applications/:id/stage` permitted arbitrary stage jumps without workflow validation.
+   - *Remediation:* Established valid transition matrix in `@haihire/shared`:
      - `APPLIED` → `SCREENING`, `INTERVIEW`, `REJECTED`
      - `SCREENING` → `INTERVIEW`, `REJECTED`
      - `INTERVIEW` → `OFFER`, `REJECTED`
      - `OFFER` → `HIRED`, `REJECTED`
-     - `HIRED` → Terminal (không thể quay lui)
-     - `REJECTED` → Terminal (không thể quay lui)
-   - *Kết quả:* Chuyển đổi sai quy trình (`HIRED -> APPLIED`, `REJECTED -> OFFER`, `HIRED -> INTERVIEW`, `APPLIED -> HIRED`) lập tức bị chặn với `HTTP 400 Bad Request`, mã lỗi `APPLICATION_INVALID_STAGE_TRANSITION`, không làm biến đổi CSDL và không kích hoạt activity/email sai lệch.
+     - `HIRED` → Terminal (immutable)
+     - `REJECTED` → Terminal (immutable)
+   - *Verification:* Invalid transitions (`HIRED -> APPLIED`, `REJECTED -> OFFER`, `HIRED -> INTERVIEW`, `APPLIED -> HIRED`) rejected with `HTTP 400 Bad Request` and `APPLICATION_INVALID_STAGE_TRANSITION`, preserving database state.
 
 2. **Rate Limiting HTTP 429 Status (P1):**
-   - *Nguyên nhân gốc:* `ThrottlerException` mặc định ném ra trong NestJS không đi qua unified exception envelope, gây lỗi 500 không đồng nhất.
-   - *Khắc phục:* `GlobalExceptionFilter` bắt cụ thể `ThrottlerException` và phản hồi chuẩn xác `HTTP 429 Too Many Requests` với message `"Quá nhiều yêu cầu. Vui lòng thử lại sau."` và headers rate limit tương ứng.
+   - *Root Cause:* Default `ThrottlerException` bypassed unified exception envelopes, triggering unformatted 500 errors.
+   - *Remediation:* `GlobalExceptionFilter` intercepts `ThrottlerException` and outputs `HTTP 429 Too Many Requests` with `"Too many requests. Please try again later."` alongside rate-limit headers.
 
 3. **Application Deletion & Audit Trail (P1):**
-   - *Nguyên nhân gốc:* Xóa application thực hiện xóa cứng (hard delete) trực tiếp, dẫn đến mất dấu vết kiểm toán của hồ sơ.
-   - *Khắc phục:* Trước khi xóa Application, hệ thống tự động ghi nhận một bản ghi `ActivityLog` phân loại `NOTE_ADDED` ("Application Removed: [Job Title]") gắn với Candidate và Organization để duy trì lịch sử tuyển dụng vĩnh viễn.
+   - *Root Cause:* Direct hard deletion purged audit history for applications.
+   - *Remediation:* Preceding deletion, system records `ActivityLog` of type `NOTE_ADDED` ("Application Removed: [Job Title]") associated with Candidate and Organization.
 
-4. **Dynamic Organization Name trong Email (P2):**
-   - *Nguyên nhân gốc:* Email phỏng vấn (`INTERVIEW_INVITATION`) và xác nhận hồ sơ (`APPLICATION_CONFIRMATION`) sử dụng giá trị hardcoded `"ATS Recruitment"` hoặc fallback tĩnh `"Company"`.
-   - *Khắc phục:* Hệ thống truy vấn tên thực tế của tổ chức từ bảng `Organization` theo `organizationId` và tiêm vào context template email.
-   - *Kết quả:* Email ứng tuyển và phỏng vấn hiển thị chính xác tên công ty (ví dụ: "Email Test Org").
-
----
-
-## 4. Performance Fixes (Hiệu Năng & Mã Nguồn)
-
-1. **Loại bỏ Duplicate PrismaService Provider (P3):**
-   - Loại bỏ khai báo trùng lặp `PrismaService` tại `app.module.ts`, tránh khởi tạo thừa connection pool và tiết kiệm tài nguyên.
-2. **Cấu trúc lại Pagination (P3):**
-   - Giữ nguyên contract phân trang chuẩn `{ data, total, page, limit, totalPages }`.
-   - Truy vấn database phân cấp chính xác theo tenant và điều kiện soft-delete.
+4. **Dynamic Organization Name in Email (P2):**
+   - *Root Cause:* Interview and confirmation emails hardcoded `"ATS Recruitment"` or static `"Company"`.
+   - *Remediation:* Queried actual organization name from `Organization` table and injected into template context.
+   - *Verification:* Emails render actual organization name (e.g. "Email Test Org").
 
 ---
 
-## 5. Tests Added (Danh sách kiểm thử bổ sung)
+## 4. Performance Fixes
 
-1. `backend/src/events/events.service.spec.ts`: 5 unit tests (Tenant A receive, Tenant B blocked, Global event broadcast, Unauthenticated reject).
-2. `backend/src/jobs/jobs.service.spec.ts`: Bổ sung 6 unit tests cho Public Career Page (status filtering, detail status restriction, PII hiding).
-3. `backend/src/auth/jwt.strategy.spec.ts`: 5 unit tests (Bearer token extraction, Cookie extraction, Header precedence, Malformed/Missing cookie handling).
-4. `backend/src/common/upload-utils.spec.ts`: 11 unit tests (PDF magic bytes, DOCX zip header, binary DOC header, fake script rejection, path traversal sanitization).
-5. `backend/src/applications/applications.service.spec.ts`: Bổ sung 3 unit tests cho Application stage state transitions và deletion activity trail.
+1. **Pruned Duplicate PrismaService Provider (P3):**
+   - Removed redundant provider declaration in `app.module.ts`, preventing duplicate connection pool allocation.
+2. **Refactored Pagination Architecture (P3):**
+   - Preserved contract `{ data, total, page, limit, totalPages }`.
+   - Scoped queries with tenant filters and soft-delete conditions.
 
 ---
 
-## 6. Full Test Result (Kết quả chạy Test Suite)
+## 5. Tests Added
+
+1. `backend/src/events/events.service.spec.ts`: 5 unit tests (Tenant A receives, Tenant B blocked, Global broadcast, Unauthenticated reject).
+2. `backend/src/jobs/jobs.service.spec.ts`: 6 unit tests for Public Career Pages (status filtering, detail restrictions, PII sanitization).
+3. `backend/src/auth/jwt.strategy.spec.ts`: 5 unit tests (Bearer token extraction, Cookie extraction, Header precedence, Malformed cookies).
+4. `backend/src/common/upload-utils.spec.ts`: 11 unit tests (PDF magic bytes, DOCX zip headers, binary DOC headers, fake script rejections, path traversal).
+5. `backend/src/applications/applications.service.spec.ts`: 3 unit tests for stage transitions and deletion audit trails.
+
+---
+
+## 6. Full Test Results
 
 ### Backend Test Suite (Vitest)
 ```
@@ -172,35 +172,35 @@
 
 ---
 
-## 7. Runtime Verification (Bảng đối chiếu Trước & Sau)
+## 7. Runtime Verification (Before vs After)
 
-| Tính năng / Kịch bản | Trước khi sửa (Before) | Sau khi sửa (After) | Kết quả kiểm chứng thực tế |
+| Feature / Scenario | Before Remediation | After Remediation | Empirical Verification Result |
 | :--- | :--- | :--- | :--- |
-| **SSE Tenant Isolation** | Client Org B nhận được toàn bộ sự kiện nội bộ của Org A | `events.service.ts` chặn toàn bộ event không cùng tenant | **FIXED** (Runtime Test: User A nhận 2 events, User B nhận 0 event leak) |
-| **Public Career Page** | Tin DRAFT, CLOSED, ARCHIVED bị lộ ra ngoài qua query; rò rỉ candidate PII | Chỉ tin `PUBLISHED` hiển thị; DRAFT/CLOSED trả 404 cho guest; ẩn hoàn toàn candidate PII | **FIXED** (Runtime Test: `09-career-page.ts` chỉ trả về đúng 1 tin PUBLISHED, 3 tin còn lại trả 404) |
-| **JWT Cookie Auth** | Endpoint chỉ đọc Bearer header, request chỉ có cookie bị 401 Unauthorized | Hỗ trợ song song Cookie `haihire_token` + Bearer | **FIXED** (Runtime Test: `03-auth-tests.ts` gửi cookie-only đạt HTTP 200) |
-| **Stage State Machine** | Chuyển stage tự do (`HIRED -> APPLIED`, `APPLIED -> HIRED`, `REJECTED -> OFFER`) đều trả 200 | Bị chặn bởi `APPLICATION_INVALID_STAGE_TRANSITION` với HTTP 400 | **FIXED** (Runtime Test: `05-pipeline-transitions.ts` trả 400 cho cả 4 kịch bản sai; CSDL giữ nguyên trạng thái) |
-| **Rate Limiting Status** | Vượt giới hạn request trả HTTP 500 không đồng nhất | Phản hồi chuẩn HTTP 429 Too Many Requests | **FIXED** (Runtime Test: `11-rate-limiting.ts` nhận HTTP 429 từ request thứ 5 trở đi) |
-| **File Magic Bytes Check** | Đổi tên file bash script thành `.pdf` được hệ thống chấp nhận upload | Kiểm tra magic bytes `%PDF-`, từ chối file giả lập | **FIXED** (Runtime Test: `06-minio-files.ts` trả HTTP 400 cho file fake pdf) |
-| **Path Traversal Attack** | Tên file chứa `../../../../etc/passwd.pdf` được đưa vào hệ thống | Hàm `sanitizeFilename` khử sạch ký tự nguy hiểm | **FIXED** (Runtime Test: `06-minio-files.ts` sanitize an toàn) |
-| **MinIO Tenant Namespace** | Các tenant upload chung vào thư mục gốc `resumes/` | Tệp lưu theo cấu trúc `tenants/${orgId}/resumes/...` | **FIXED** (Runtime Test: `02-business-flow.ts` tạo key `tenants/3c60a8b0.../resumes/...`) |
-| **Email Org Name** | Tên công ty bị hardcode là `"ATS Recruitment"` hoặc `"Company"` | Truy vấn tên tổ chức thực tế từ CSDL | **FIXED** (Runtime Test: `07-email-system.ts` gửi email với subject chứa `"Email Test Org"`) |
-| **Audit Log khi Xóa App** | Xóa cứng Application làm mất lịch sử | Tự động tạo bản ghi `NOTE_ADDED` trước khi xóa | **FIXED** (Runtime Test: `test-app-delete.ts` kiểm chứng ActivityLog tồn tại) |
-| **Duplicate Prisma Service**| Khai báo trùng lặp ở `app.module.ts` | Gỡ bỏ khai báo thừa | **FIXED** (Clean architecture) |
+| **SSE Tenant Isolation** | Org B client received all internal events of Org A | `events.service.ts` filters out cross-tenant events | **FIXED** (Runtime Test: User A receives 2 events, User B receives 0 leaked events) |
+| **Public Career Page** | DRAFT, CLOSED, ARCHIVED jobs exposed; candidate PII leaked | Only `PUBLISHED` jobs returned; DRAFT/CLOSED return 404 to guests; candidate PII hidden | **FIXED** (Runtime Test: `09-career-page.ts` returns 1 PUBLISHED job, other 3 return 404) |
+| **JWT Cookie Auth** | Endpoint only read Bearer header; cookie-only returned 401 | Dual support for `haihire_token` Cookie + Bearer | **FIXED** (Runtime Test: `03-auth-tests.ts` cookie-only dispatches succeed with HTTP 200) |
+| **Stage State Machine** | Unchecked transitions (`HIRED -> APPLIED`, `APPLIED -> HIRED`, `REJECTED -> OFFER`) returned 200 | Intercepted with `APPLICATION_INVALID_STAGE_TRANSITION` and HTTP 400 | **FIXED** (Runtime Test: `05-pipeline-transitions.ts` returns 400 for 4 invalid transitions; DB state preserved) |
+| **Rate Limiting Status** | Exceeding limits threw unhandled HTTP 500 | Formatted response HTTP 429 Too Many Requests | **FIXED** (Runtime Test: `11-rate-limiting.ts` receives HTTP 429 from request 5 onwards) |
+| **File Magic Bytes Check** | Renamed bash scripts uploaded as `.pdf` accepted | Inspects magic bytes `%PDF-`, rejects fake files | **FIXED** (Runtime Test: `06-minio-files.ts` returns HTTP 400 for fake pdf) |
+| **Path Traversal Attack** | Filename `../../../../etc/passwd.pdf` stored raw | `sanitizeFilename` strips malicious sequences | **FIXED** (Runtime Test: `06-minio-files.ts` sanitizes cleanly) |
+| **MinIO Tenant Namespace** | Tenants uploaded to flat `resumes/` directory | Files stored as `tenants/${orgId}/resumes/...` | **FIXED** (Runtime Test: `02-business-flow.ts` creates keys `tenants/3c60a8b0.../resumes/...`) |
+| **Email Org Name** | Organization hardcoded as `"ATS Recruitment"` or `"Company"` | Queries real organization name from DB | **FIXED** (Runtime Test: `07-email-system.ts` dispatches email with subject `"Email Test Org"`) |
+| **Audit Log on App Deletion** | Hard deleting Application dropped history | Automatically logs `NOTE_ADDED` audit entry prior to deletion | **FIXED** (Runtime Test: `test-app-delete.ts` verifies ActivityLog created) |
+| **Duplicate Prisma Service**| Declared twice in `app.module.ts` | Removed duplicate registration | **FIXED** (Clean architecture) |
 
 ---
 
-## 8. Remaining Issues (Vấn đề còn tồn đọng)
+## 8. Remaining Issues
 
-- Không có issue P0 hoặc P1 nào còn tồn đọng.
-- Tất cả các lỗi an ninh, rò rỉ dữ liệu đa tổ chức, trạng thái ứng viên và xác thực cookie đã được khắc phục hoàn toàn và kiểm chứng runtime.
+- Zero P0 or P1 issues remain.
+- All security vulnerabilities, multi-tenant leaks, candidate lifecycle gaps, and cookie auth defects have been resolved and verified at runtime.
 
 ---
 
-## 9. Not Verified (Hạng mục chưa kiểm chứng)
+## 9. Not Verified
 
-- **Production SMTP Server Thực Tế:** Hệ thống hiện tại đang kiểm chứng qua `SimulatedTransporter` (giả lập gửi email nội bộ và kiểm tra log hàng đợi BullMQ). Việc kết nối tới máy chủ SMTP thực tế (SendGrid, AWS SES) cần cấu hình credentials ngoài môi trường kiểm thử.
-- **Production SSL/HTTPS Cookie:** Trong môi trường local dev (`http://127.0.0.1:13001`), cờ `secure` của cookie đang tắt để chạy trên HTTP. Khi triển khai production, biến `NODE_ENV=production` sẽ tự động kích hoạt `secure: true`.
+- **Live Production SMTP Server:** Verified using `SimulatedTransporter` (simulating dispatches and inspecting BullMQ queues). Connecting to external production SMTP providers (SendGrid, AWS SES) requires external credentials.
+- **Production SSL/HTTPS Cookie:** In local dev (`http://127.0.0.1:13001`), cookie `secure` flag is disabled for HTTP. Setting `NODE_ENV=production` automatically activates `secure: true`.
 
 ---
 
@@ -245,7 +245,7 @@ graph TD
 
 ## 11. Git Diff Summary
 
-### Tệp đã sửa đổi (Modified Files):
+### Modified Files:
 - `package.json`
 - `packages/shared/src/errors.ts`
 - `packages/shared/src/applications.ts`
@@ -265,13 +265,13 @@ graph TD
 - `backend/src/events/events.service.ts`
 - `backend/src/events/events.service.spec.ts`
 
-### Tệp tạo mới (Added Files):
+### Added Files:
 - `backend/src/common/http-exception.filter.ts`
 - `backend/src/auth/jwt.strategy.spec.ts`
 - `scratch/test-sse-leak.ts`
 - `scratch/test-app-delete.ts`
 
-### Thống kê kiểm thử:
+### Test Statistics:
 - **Backend Tests:** 20 test files, **150/150 passed (100%)**
 - **Frontend Tests:** 21 test files, **105/105 passed (100%)**
-- **Runtime Verification Scripts:** 10 scripts passed in actual execution.
+- **Runtime Verification Scripts:** 10 live execution scripts passed.

@@ -1,23 +1,23 @@
-# Runbook: Xử Lý Nghẽn Hàng Đợi Email (Email Queue Backlog)
+# Runbook: Email Queue Backlog Remediation
 
 **System:** HaiHire Enterprise ATS  
-**Tài liệu liên quan:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)  
+**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)  
 **Alert Rule:** `HaiHireEmailQueueBacklog` (Warning)  
-**Phụ trách:** Đội ngũ SRE & Backend Engineering (team: sre)
+**Responsible Teams:** SRE & Backend Engineering (`team: sre`)
 
 ---
 
-## Khi nào alert này fire
+## Alert Triggers & Conditions
 
 - **`HaiHireEmailQueueBacklog` (Warning):**
-  > Email queue `email-queue` có hơn 500 jobs ở trạng thái `waiting` trong hơn 10 phút.  
-  > Tốc độ gửi thư của hệ thống (lời mời phỏng vấn, thư từ chối, thư xác thực) bị chậm trễ nghiêm trọng.
+  > Email queue `email-queue` has $> 500$ jobs in `waiting` state for $> 10$ minutes.  
+  > Email delivery throughput (interview invitations, rejection letters, verification notices) is experiencing severe delays.
 
 ---
 
-## Bước 1: Verify (Xác Minh Sự Cố)
+## Step 1: Verify Incident
 
-Kiểm tra trực tiếp độ dài hàng đợi email trên Prometheus metrics:
+Inspect email queue depth directly on the Prometheus metrics endpoint:
 
 ```bash
 # Production
@@ -27,7 +27,7 @@ curl -s http://localhost:3001/metrics | grep bullmq_queue_depth | grep email-que
 curl -s http://localhost:13001/metrics | grep bullmq_queue_depth | grep email-queue
 ```
 
-Kiểm tra log của EmailProcessor:
+Inspect `EmailProcessor` application logs:
 
 ```bash
 docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "EmailProcessor|EmailService"
@@ -35,55 +35,54 @@ docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "Ema
 
 ---
 
-## Bước 2: Diagnose (Chẩn Đoán Nguyên Nhân)
+## Step 2: Diagnose Root Cause
 
-1. **Kiểm tra trạng thái của bên cung cấp dịch vụ Email (Email Provider):**
-   - **SMTP:** Kiểm tra kết nối tới máy chủ SMTP:
+1. **Verify Email Provider Status:**
+   - **SMTP:** Test TCP reachability to SMTP host:
      ```bash
      nc -zv smtp.gmail.com 587
      ```
-   - **Resend / SendGrid:** Kiểm tra trang trạng thái hệ thống:
+   - **Resend / SendGrid:** Check external provider status dashboards:
      - Resend Status: https://status.resend.com
      - SendGrid Status: https://status.sendgrid.com
-2. **Kiểm tra hạn mức (Rate Limits / Quota Exceeded):**
-   - Tìm kiếm các lỗi HTTP `429 Too Many Requests` hoặc `Daily sending quota exceeded` trong log.
-3. **Kiểm tra thông tin xác thực Email:**
-   - Xác minh API key hoặc app password trong biến môi trường:
-     `SYSTEM_EMAIL_PROVIDER`, `SYSTEM_EMAIL_SMTP_PASS`, `SYSTEM_EMAIL_RESEND_API_KEY`.
+2. **Check Provider Quota & Rate Limits:**
+   - Search logs for HTTP `429 Too Many Requests` or `Daily sending quota exceeded`.
+3. **Verify Email Credentials & Secrets:**
+   - Check environment variables: `SYSTEM_EMAIL_PROVIDER`, `SYSTEM_EMAIL_SMTP_PASS`, `SYSTEM_EMAIL_RESEND_API_KEY`.
 
 ---
 
-## Bước 3: Mitigate (Xử Lý Ngắn Hạn)
+## Step 3: Mitigate (Short-Term Action)
 
-1. **Nếu Provider gặp sự cố diện rộng (Outage):**
-   - Chuyển đổi tạm thời sang provider dự phòng (ví dụ chuyển từ SMTP sang Resend hoặc ngược lại) trong file `.env.production`:
+1. **If Primary Provider Experiences Outage:**
+   - Temporarily failover to secondary provider (e.g. switch from SMTP to Resend or vice versa) in `.env.production`:
      ```env
      SYSTEM_EMAIL_PROVIDER="RESEND"
      SYSTEM_EMAIL_RESEND_API_KEY="re_..."
      ```
-   - Khởi động lại backend container để áp dụng:
+   - Restart backend container to apply configuration:
      ```bash
      docker compose -f docker-compose.prod.yml restart backend
      ```
-2. **Nếu hệ thống bị nghẽn do chiến dịch gửi thư hàng loạt:**
-   - Tăng tạm thời worker concurrency trong cấu hình NestJS (nếu tài nguyên CPU/RAM cho phép).
+2. **If Backlog is Due to Mass Candidate Campaign:**
+   - Temporarily scale up worker `concurrency` in NestJS BullMQ module (provided host CPU/RAM allows).
 
 ---
 
-## Bước 4: Resolve (Khắc Phục Dài Hạn)
+## Step 4: Resolve (Long-Term Fix)
 
-1. Nâng cấp gói cước tài khoản nhà cung cấp Email nếu chạm trần dung lượng gửi thư hàng ngày.
-2. Bổ sung cơ chế Rate Limiter và Exponential Backoff thích ứng cho từng tenant khi gửi email số lượng lớn.
-3. Đảm bảo cấu hình SPF, DKIM, DMARC hợp lệ trên tên miền gửi thư để không bị mail server chặn kết nối.
+1. Upgrade provider billing tier if daily sending quotas were exhausted.
+2. Implement adaptive tenant-level rate limiting and exponential backoff for batch email dispatches.
+3. Validate domain SPF, DKIM, and DMARC DNS records to prevent connection drops by destination MX servers.
 
 ---
 
-## Bước 5: Post-Mortem (Kiểm Tra & Đóng Sự Cố)
+## Step 5: Post-Mortem & Incident Closure
 
-- [ ] Metric `bullmq_queue_depth{queue="email-queue",state="waiting"}` giảm về `< 50`.
-- [ ] Alert `HaiHireEmailQueueBacklog` đã chuyển trạng thái `RESOLVED`.
-- [ ] Kiểm tra bảng `EmailLog` trong database để đếm số thư gửi thất bại:
+- [ ] Metric `bullmq_queue_depth{queue="email-queue",state="waiting"}` drops to $< 50$.
+- [ ] Alert `HaiHireEmailQueueBacklog` transitions to `RESOLVED`.
+- [ ] Query database `EmailLog` table to inspect failure counts:
   ```bash
   docker exec -it haihire-prod-postgres psql -U haihire_user -d haihire_db -c "SELECT status, COUNT(*) FROM \"EmailLog\" WHERE \"createdAt\" > NOW() - INTERVAL '2 hours' GROUP BY status;"
   ```
-- [ ] Gửi thông báo tới các tổ chức bị trễ thư (nếu có yêu cầu).
+- [ ] Notify affected tenant organizations if critical notices were delayed.

@@ -11,7 +11,7 @@ updated: 2026-10-02
 
 ## Communication Language vs Code / Env Comments (MANDATORY)
 - **Vietnamese for all user-facing communication & artifacts**: Chat responses, user-facing artifacts including implementation_plan.md and walkthrough.md, must be written in Vietnamese so the user can easily read and review them.
-- **English exclusively for code & configuration**: All code, code comments, docstrings, variable/function/class names, commit messages, and comments inside .env and .env.example files must be written exclusively in English.
+- **English exclusively for code, configuration, logs, and docs**: All code, code comments, docstrings, variable/function/class names, commit messages, comments inside .env/.env.example files, runtime logs, and documentation/reports/runbooks must be written exclusively in English. User prefers English for all docs, comments, and logs (Task #7.5 convention).
 
 ## Internationalization (i18n)
 - **Zero hardcoded text**: All UI text, placeholders, labels, select values, tooltips, success/error messages must always be managed through the i18n system (useI18n() / t(...)). Never initialize or hardcode text directly in .tsx / .ts files.

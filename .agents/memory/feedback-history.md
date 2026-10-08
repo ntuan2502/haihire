@@ -4,11 +4,17 @@ created: 2026-07-18
 updated: 2026-10-02
 ---
 
+## 2026-10-08: Task #9 — Repository Restructure & Hardening Verification for v1.0.0
+- **Feedback**: Following the 10 post-Phase 22 hardening tasks (#1A through #8), historical audits and transitional reports accumulated. Restructured documentation to separate active living docs from historical archives, consolidated all 41 audits into `docs/archive/audits/`, added CI Gate 11 (`pnpm lint:doc-links`), and aligned all memory records to the 563-test production baseline.
+- **Actionable Rule**:
+  1. **Archive Consolidation**: Preserve historical audit trails in `docs/archive/audits/` and transitional kickoff surveys in `docs/archive/reports/hardening-transitional/`.
+  2. **Zero Broken Links Gate**: Enforce `pnpm lint:doc-links` in CI Gate 11 to prevent dead documentation hyperlinks across all markdown files.
+
 ## 2026-10-03 (Part 2): Phase 21 — Monorepo Documentation Audit & Synchronization
 - **Feedback**: Across 20 implementation phases, extensive architectural upgrades occurred (Node 26, Valkey 8, Saga pattern, ALS, RSC, 7 CI gates, Playwright E2E). Documentation had experienced slight drift and root-level files (`README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`) were missing or unmaintained. Phase 21 audited the entire documentation corpus, updated stale runbooks, archived legacy Phase 1-10 audits, and established a comprehensive documentation portal (`docs/README.md`, `docs/onboarding.md`, `docs/architecture/system-overview.md`, `docs/api/overview.md`).
 - **Actionable Rule**:
   1. **Documentation Integrity**: Documentation must be treated as living software. Maintain zero broken markdown links and keep package scripts, ports, and container names synchronized with `package.json` and Docker Compose.
-  2. **Audit Preservation**: Never delete audit verification reports; archive older phases in `docs/audits/archive/` while maintaining current registries in `docs/audits/README.md`.
+  2. **Audit Preservation**: Never delete audit verification reports; archive historical audits in `docs/archive/audits/` while maintaining current registries in `docs/archive/audits/README.md`.
   3. **English Documentation Mandate**: All documentation and memory files must be authored strictly in English; conversational communication remains in Vietnamese.
 
 ## 2026-10-03 (Part 1): Phase 20 — Environment Architecture Segregation & Auto-Sync

@@ -39,7 +39,8 @@
 - [project] Database Transaction Architecture: Prisma $transaction + Saga Pattern for distributed resources (MinIO + DB), AsyncLocalStorage for nested tx propagation, BullMQ DLQ for compensating delete retries → tech-decisions.md
 - [project] Database Naming Convention: PostgreSQL tables/columns must use snake_case (camelCase @@map is a known technical debt from legacy code, migration deferred to Phase 16B) → project-conventions.md
 - [project] Runtime Infrastructure Baseline: Valkey 8.0.2 (replaces Redis for license compliance), Postgres 17.6-alpine, MinIO pinned by SHA256 digest, Caddy 2.8-alpine → tech-decisions.md
-- [project] CI Architecture Gates (7 total): lint, typecheck, lint:dtopipe, lint:error-i18n, lint:api-contract, lint:env-sync, test / test:e2e (379 tests baseline) → project-conventions.md
+- [project] CI Architecture Gates (11 total): lint:env-sync, check:i18n, lint, typecheck, lint:dtopipe, lint:error-i18n, lint:api-contract, lint:prometheus-rules, lint:tenant-scope, lint:doc-links, test:diff (563 tests baseline) → project-conventions.md
+- [project] Hardening & Restructure: Tasks #1A through #8 complete (webhooks, alerts, tenant scoping, cron metrics, hook standardization); repository restructured for v1.0.0 with audits archived in docs/archive/audits/ → project-conventions.md
 - [project] Next.js RSC Mandate: public-facing routes (/careers/*) must be Server Components; interactive parts isolated in Client Components → project-conventions.md
 - [project] Next.js App Router Scripts: never use raw <script> in JSX; always use <Script> from next/script with strategy beforeInteractive → project-conventions.md
 - [project] Orphan File Cleanup: nightly cron at 0 4 * * * for MinIO orphan files older than 30 days (safety grace period) → tech-decisions.md

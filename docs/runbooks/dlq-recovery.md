@@ -2,8 +2,56 @@
 
 **System:** HaiHire Enterprise ATS  
 **Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml), [`docs/runbooks/orphan-cleanup.md`](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md)  
-**Alert Rules:** `HaiHireBullMqDlqGrowing` (Warning), `HaiHireBullMqDlqCritical` (Critical)  
+**Alert Rules:** `HaiHireBullMqDlqGrowing` (Warning), `HaiHireBullMqDlqCritical` (Critical), `HaiHireOrphanCleanupSpikeWarning` (Warning), `HaiHireOrphanCleanupSpikeCritical` (Critical), `HaiHireOrphanCleanupCronMissing` (Critical)  
 **Responsible Teams:** SRE & Backend Engineering (`team: sre`)
+
+---
+
+## Khi Orphan Cleanup Spike (HaiHireOrphanCleanupSpikeWarning/Critical)
+
+### Verify
+```bash
+curl -s http://pushgateway:9091/metrics | grep minio_orphan_cleanup
+```
+
+Xem:
+- `orphans_found_total`: số file orphan phát hiện
+- `preserved_total`: số file trong grace period
+- `last_run_timestamp_seconds`: lần chạy cuối
+
+### Diagnose
+1. Nếu `orphans_found` > 50 đột ngột → có thể do:
+   - Bug ở luồng upload CV (Saga rollback không xóa file).
+   - MinIO connectivity issue → upload thành công nhưng DB write fail.
+   - Test data được upload không đúng cách.
+2. Kiểm tra log backend gần đây:
+   ```bash
+   docker logs haihire-prod-backend --since 24h | grep -i "orphan\|minio"
+   ```
+3. Kiểm tra DLQ có tích tụ job không:
+   ```bash
+   curl -s localhost:3001/metrics | grep bullmq_queue_depth
+   ```
+
+### Mitigate
+1. Nếu spike nhỏ (<100 files): theo dõi thêm 1-2 ngày.
+2. Nếu spike lớn (>100 files): 
+   - Tạm dừng cron cleanup (để giữ file làm evidence).
+   - Điều tra root cause.
+   - Sau khi fix → chạy manual cleanup:
+     ```bash
+     docker exec -it haihire-prod-orphan-cleanup node --import tsx scripts/cleanup-orphan-minio.ts
+     ```
+
+### Resolve
+1. Fix root cause (Saga logic, MinIO config).
+2. Verify no new orphans trong 24h tiếp theo.
+3. Chạy manual cleanup để dọn file orphan tích tụ.
+
+### Post-mortem
+- Đếm chính xác số file orphan đã dọn.
+- Verify không có file hợp lệ bị xóa nhầm.
+- Update monitoring nếu cần thêm metric.
 
 ---
 

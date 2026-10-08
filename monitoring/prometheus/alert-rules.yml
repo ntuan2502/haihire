@@ -123,3 +123,46 @@ groups:
             không fetch được dữ liệu từ BullMQ Queue trong 2.5s.
             Kiểm tra Valkey/Redis connectivity ngay.
             Xem runbook: docs/runbooks/redis-recovery.md
+
+      - alert: HaiHireOrphanCleanupSpikeWarning
+        expr: minio_orphan_cleanup_orphans_found_total > 50
+        for: 0m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "Orphan cleanup phát hiện {{ $value }} file orphan"
+          description: |
+            Cron cleanup phát hiện hơn 50 file orphan trong lần chạy gần nhất.
+            Điều tra nguyên nhân rò rỉ trước khi grace period 30 ngày kết thúc.
+            Có thể do bug ở luồng upload hoặc MinIO connectivity issue.
+            Xem runbook: docs/runbooks/dlq-recovery.md
+
+      - alert: HaiHireOrphanCleanupSpikeCritical
+        expr: minio_orphan_cleanup_orphans_found_total > 500
+        for: 0m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "CRITICAL: {{ $value }} file orphan — có thể có bug ở luồng upload"
+          description: |
+            Cron cleanup phát hiện hơn 500 file orphan trong lần chạy gần nhất.
+            Escalate ngay. Kiểm tra MinIO connectivity + Saga rollback logic.
+            Có thể có sự cố production đang xảy ra.
+            Xem runbook: docs/runbooks/dlq-recovery.md
+
+      - alert: HaiHireOrphanCleanupCronMissing
+        expr: time() - minio_orphan_cleanup_last_run_timestamp_seconds > 90000
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "Cron orphan cleanup không chạy hơn 25 giờ"
+          description: |
+            Timestamp lần chạy cuối của cron cleanup đã hơn 25 giờ (90000s).
+            Cron được schedule chạy hàng ngày lúc 4:00 AM. Nếu không chạy →
+            file orphan tích tụ không được dọn dẹp.
+            Kiểm tra container "orphan-cleanup" có đang chạy không.
+            Xem runbook: docs/runbooks/dlq-recovery.md

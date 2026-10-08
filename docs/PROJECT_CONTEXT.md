@@ -257,3 +257,27 @@ haihire/
 - Zalo OA Webhook
 - Lark/Feishu Bot
 - Slack (Block Kit integration)
+
+---
+
+## 10. LANGUAGE CONVENTION
+
+All documentation, code comments, commit messages, alert descriptions, and log messages MUST be in English.
+
+Vietnamese is ONLY allowed in:
+- `frontend/src/i18n/locales/vi.ts` — UI text for Vietnamese users
+- Mock data and seed data (realistic Vietnamese names, sample email templates)
+
+### Exceptions
+
+Historical artifacts that are preserved as-is:
+- `docs/audits/*.md` — Phase 1-18 audit records (may contain Vietnamese, preserved for historical integrity)
+- Git commit history (already in English via Conventional Commits)
+
+### Rationale
+
+- International team scalability
+- Industry standard for technical documentation
+- Consistent search/grep across codebase
+- Separation of concerns: content vs localization
+

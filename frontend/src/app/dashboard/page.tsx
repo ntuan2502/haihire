@@ -166,19 +166,19 @@ function DashboardContent() {
 
                     {/* Main 3-Column Equal Dashboard Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-                      {/* COLUMN 1: QUY TRÌNH TUYỂN DỤNG (Hiring Pipeline) */}
+                      {/* COLUMN 1: HIRING PIPELINE */}
                       <DashboardPipeline
                         pipelineJobs={pipelineJobs}
                         applications={applications}
                       />
 
-                      {/* COLUMN 2: HỒ SƠ ỨNG TUYỂN GẦN ĐÂY (Recent Applications) */}
+                      {/* COLUMN 2: RECENT APPLICATIONS */}
                       <DashboardRecentApplications
                         applications={recentApplications}
                         jobs={jobs}
                       />
 
-                      {/* COLUMN 3: LỊCH PHỎNG VẤN SẮP TỚI (Upcoming Interviews) */}
+                      {/* COLUMN 3: UPCOMING INTERVIEWS */}
                       <DashboardUpcomingInterviews
                         upcomingInterviews={upcomingInterviews}
                       />

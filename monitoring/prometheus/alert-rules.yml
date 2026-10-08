@@ -78,11 +78,11 @@ groups:
           severity: warning
           team: sre
         annotations:
-          summary: "DLQ đang tích tụ ({{ $value }} jobs)"
+          summary: "DLQ is accumulating ({{ $value }} jobs)"
           description: |
-            DLQ orphan-cleanup-dlq có hơn 10 jobs waiting trong 5 phút.
-            Điều tra MinIO connectivity và DLQ worker.
-            Xem runbook: docs/runbooks/dlq-recovery.md
+            DLQ orphan-cleanup-dlq has more than 10 waiting jobs for 5 minutes.
+            Investigate MinIO connectivity and DLQ worker status.
+            See runbook: docs/runbooks/dlq-recovery.md
 
       - alert: HaiHireBullMqDlqCritical
         expr: bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 100
@@ -91,11 +91,11 @@ groups:
           severity: critical
           team: sre
         annotations:
-          summary: "CRITICAL: DLQ >100 jobs — nguy cơ tràn MinIO storage"
+          summary: "CRITICAL: DLQ >100 jobs — risk of MinIO storage leakage"
           description: |
-            DLQ orphan-cleanup-dlq có hơn 100 jobs waiting.
-            Escalate ngay. Kiểm tra MinIO health + trigger manual cleanup.
-            Xem runbook: docs/runbooks/dlq-recovery.md
+            DLQ orphan-cleanup-dlq has more than 100 waiting jobs.
+            Escalate immediately. Check MinIO health and trigger manual cleanup.
+            See runbook: docs/runbooks/dlq-recovery.md
 
       - alert: HaiHireEmailQueueBacklog
         expr: bullmq_queue_depth{queue="email-queue",state="waiting"} > 500
@@ -106,9 +106,9 @@ groups:
         annotations:
           summary: "Email queue backlog >500 jobs"
           description: |
-            Email queue có hơn 500 jobs waiting trong 10 phút.
-            Kiểm tra email provider connectivity và worker throughput.
-            Xem runbook: docs/runbooks/email-queue.md
+            Email queue has more than 500 waiting jobs for 10 minutes.
+            Check email provider connectivity and worker throughput.
+            See runbook: docs/runbooks/email-queue.md
 
       - alert: HaiHireBullMqRedisDown
         expr: bullmq_queue_depth{queue="orphan-cleanup-queue",state="waiting"} == -1
@@ -117,12 +117,12 @@ groups:
           severity: critical
           team: sre
         annotations:
-          summary: "CRITICAL: BullMQ không kết nối được Valkey/Redis"
+          summary: "CRITICAL: BullMQ cannot connect to Valkey/Redis"
           description: |
-            Metric bullmq_queue_depth trả về -1, nghĩa là MetricsService
-            không fetch được dữ liệu từ BullMQ Queue trong 2.5s.
-            Kiểm tra Valkey/Redis connectivity ngay.
-            Xem runbook: docs/runbooks/redis-recovery.md
+            Metric bullmq_queue_depth returned -1, indicating MetricsService
+            failed to fetch BullMQ queue data within 2.5s.
+            Inspect Valkey/Redis connectivity immediately.
+            See runbook: docs/runbooks/redis-recovery.md
 
       - alert: HaiHireOrphanCleanupSpikeWarning
         expr: minio_orphan_cleanup_orphans_found_total > 50
@@ -131,12 +131,12 @@ groups:
           severity: warning
           team: sre
         annotations:
-          summary: "Orphan cleanup phát hiện {{ $value }} file orphan"
+          summary: "Orphan cleanup detected {{ $value }} orphan files"
           description: |
-            Cron cleanup phát hiện hơn 50 file orphan trong lần chạy gần nhất.
-            Điều tra nguyên nhân rò rỉ trước khi grace period 30 ngày kết thúc.
-            Có thể do bug ở luồng upload hoặc MinIO connectivity issue.
-            Xem runbook: docs/runbooks/dlq-recovery.md
+            Cron cleanup detected over 50 orphan files in its last run.
+            Investigate root cause before the 30-day grace period expires.
+            Could be due to upload flow bug or MinIO connectivity issue.
+            See runbook: docs/runbooks/dlq-recovery.md
 
       - alert: HaiHireOrphanCleanupSpikeCritical
         expr: minio_orphan_cleanup_orphans_found_total > 500
@@ -145,12 +145,12 @@ groups:
           severity: critical
           team: sre
         annotations:
-          summary: "CRITICAL: {{ $value }} file orphan — có thể có bug ở luồng upload"
+          summary: "CRITICAL: {{ $value }} orphan files — possible upload flow regression"
           description: |
-            Cron cleanup phát hiện hơn 500 file orphan trong lần chạy gần nhất.
-            Escalate ngay. Kiểm tra MinIO connectivity + Saga rollback logic.
-            Có thể có sự cố production đang xảy ra.
-            Xem runbook: docs/runbooks/dlq-recovery.md
+            Cron cleanup detected over 500 orphan files in its last run.
+            Escalate immediately. Check MinIO connectivity and Saga rollback logic.
+            Possible production incident occurring.
+            See runbook: docs/runbooks/dlq-recovery.md
 
       - alert: HaiHireOrphanCleanupCronMissing
         expr: time() - minio_orphan_cleanup_last_run_timestamp_seconds > 90000
@@ -159,10 +159,10 @@ groups:
           severity: critical
           team: sre
         annotations:
-          summary: "Cron orphan cleanup không chạy hơn 25 giờ"
+          summary: "Orphan cleanup cron has not run in over 25 hours"
           description: |
-            Timestamp lần chạy cuối của cron cleanup đã hơn 25 giờ (90000s).
-            Cron được schedule chạy hàng ngày lúc 4:00 AM. Nếu không chạy →
-            file orphan tích tụ không được dọn dẹp.
-            Kiểm tra container "orphan-cleanup" có đang chạy không.
-            Xem runbook: docs/runbooks/dlq-recovery.md
+            Last run timestamp of orphan cleanup cron exceeds 25 hours (90000s).
+            Cron is scheduled to run daily at 4:00 AM. If not running,
+            orphan files accumulate without being purged.
+            Check if the orphan-cleanup container is running.
+            See runbook: docs/runbooks/dlq-recovery.md

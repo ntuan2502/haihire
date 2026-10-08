@@ -7,51 +7,59 @@
 
 ---
 
-## Khi Orphan Cleanup Spike (HaiHireOrphanCleanupSpikeWarning/Critical)
+## When Orphan Cleanup Spike Occurs
+
+Triggered by: `HaiHireOrphanCleanupSpikeWarning` / `HaiHireOrphanCleanupSpikeCritical`
 
 ### Verify
+
+Run:
 ```bash
 curl -s http://pushgateway:9091/metrics | grep minio_orphan_cleanup
 ```
 
-Xem:
-- `orphans_found_total`: số file orphan phát hiện
-- `preserved_total`: số file trong grace period
-- `last_run_timestamp_seconds`: lần chạy cuối
+Check:
+- `orphans_found_total`: Number of orphan files detected
+- `preserved_total`: Number of files in grace period
+- `last_run_timestamp_seconds`: Last run timestamp
 
 ### Diagnose
-1. Nếu `orphans_found` > 50 đột ngột → có thể do:
-   - Bug ở luồng upload CV (Saga rollback không xóa file).
-   - MinIO connectivity issue → upload thành công nhưng DB write fail.
-   - Test data được upload không đúng cách.
-2. Kiểm tra log backend gần đây:
+
+1. If `orphans_found` > 50 suddenly → possible causes:
+   - Bug in CV upload flow (Saga rollback did not delete file)
+   - MinIO connectivity issue → upload succeeded but DB write failed
+   - Test data uploaded incorrectly
+2. Check backend logs:
    ```bash
    docker logs haihire-prod-backend --since 24h | grep -i "orphan\|minio"
    ```
-3. Kiểm tra DLQ có tích tụ job không:
+3. Check DLQ backlog:
    ```bash
    curl -s localhost:3001/metrics | grep bullmq_queue_depth
    ```
 
 ### Mitigate
-1. Nếu spike nhỏ (<100 files): theo dõi thêm 1-2 ngày.
-2. Nếu spike lớn (>100 files): 
-   - Tạm dừng cron cleanup (để giữ file làm evidence).
-   - Điều tra root cause.
-   - Sau khi fix → chạy manual cleanup:
+
+1. If spike is small (<100 files): monitor for 1-2 more days.
+2. If spike is large (>100 files):
+   - Pause cron cleanup (to preserve files as evidence)
+   - Investigate root cause
+   - After fix → run manual cleanup:
      ```bash
      docker exec -it haihire-prod-orphan-cleanup node --import tsx scripts/cleanup-orphan-minio.ts
      ```
 
 ### Resolve
-1. Fix root cause (Saga logic, MinIO config).
-2. Verify no new orphans trong 24h tiếp theo.
-3. Chạy manual cleanup để dọn file orphan tích tụ.
+
+1. Fix root cause (Saga logic, MinIO config)
+2. Verify no new orphans for next 24h
+3. Run manual cleanup to clear accumulated orphans
 
 ### Post-mortem
-- Đếm chính xác số file orphan đã dọn.
-- Verify không có file hợp lệ bị xóa nhầm.
-- Update monitoring nếu cần thêm metric.
+
+- Count exactly how many orphan files were cleaned
+- Verify no valid files were accidentally deleted
+- Update monitoring if additional metrics are needed
 
 ---
 

@@ -79,7 +79,7 @@ describe("useTableParams hook", () => {
     vi.useFakeTimers();
     const { result } = renderHook(() => useTableParams({ debounceMs: 100 }));
 
-    // User types "Đức " with a trailing space
+    // User enters search string with a trailing space
     act(() => {
       result.current.setSearchInput("Đức ");
     });

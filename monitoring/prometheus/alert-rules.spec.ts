@@ -34,11 +34,11 @@ describe("Prometheus Alert Rules Specification", () => {
   const parsed = parse(yamlContent) as PrometheusAlertConfig;
   const allRules: PrometheusRule[] = parsed.groups.flatMap((g) => g.rules);
 
-  it("Case 1: Parses YAML successfully and contains at least 11 rules (7 existing + 4 new)", () => {
+  it("Case 1: Parses YAML successfully and contains at least 14 rules (7 existing + 4 BullMQ + 3 cron spike)", () => {
     expect(parsed).toBeDefined();
     expect(parsed.groups).toBeInstanceOf(Array);
     expect(parsed.groups.length).toBeGreaterThan(0);
-    expect(allRules.length).toBe(11);
+    expect(allRules.length).toBe(14);
   });
 
   it("Case 2: Every rule has all mandatory top-level fields (alert, expr, for, labels, annotations)", () => {
@@ -123,5 +123,34 @@ describe("Prometheus Alert Rules Specification", () => {
         ).toBe(true);
       }
     }
+  });
+
+  it("Case 9: 3 new orphan cleanup cron spike and missing alert rules match specified PromQL expressions, durations and severities", () => {
+    const ruleMap = new Map(allRules.map((r) => [r.alert, r]));
+
+    // 1. HaiHireOrphanCleanupSpikeWarning
+    const spikeWarning = ruleMap.get("HaiHireOrphanCleanupSpikeWarning");
+    expect(spikeWarning).toBeDefined();
+    expect(spikeWarning?.expr.trim()).toBe("minio_orphan_cleanup_orphans_found_total > 50");
+    expect(spikeWarning?.for).toBe("0m");
+    expect(spikeWarning?.labels.severity).toBe("warning");
+    expect(spikeWarning?.labels.team).toBe("sre");
+
+    // 2. HaiHireOrphanCleanupSpikeCritical
+    const spikeCritical = ruleMap.get("HaiHireOrphanCleanupSpikeCritical");
+    expect(spikeCritical).toBeDefined();
+    expect(spikeCritical?.expr.trim()).toBe("minio_orphan_cleanup_orphans_found_total > 500");
+    expect(spikeCritical?.for).toBe("0m");
+    expect(spikeCritical?.labels.severity).toBe("critical");
+    expect(spikeCritical?.labels.team).toBe("sre");
+
+    // 3. HaiHireOrphanCleanupCronMissing
+    const cronMissing = ruleMap.get("HaiHireOrphanCleanupCronMissing");
+    expect(cronMissing).toBeDefined();
+    expect(cronMissing?.expr.trim()).toBe("time() - minio_orphan_cleanup_last_run_timestamp_seconds > 90000");
+    expect(cronMissing?.expr).toContain("time()");
+    expect(cronMissing?.for).toBe("5m");
+    expect(cronMissing?.labels.severity).toBe("critical");
+    expect(cronMissing?.labels.team).toBe("sre");
   });
 });

@@ -103,6 +103,13 @@ const steps: Step[] = [
     description: "Assert 100% of Prisma queries in tenant-scoped modules are properly isolated",
   },
   {
+    id: "lint:doc-links",
+    name: "CI Gate 11: Documentation Markdown Link Integrity",
+    command: "pnpm lint:doc-links",
+    category: "gate",
+    description: "Verify zero broken markdown links across all docs and memory indexes",
+  },
+  {
     id: "test:diff",
     name: "Test Count Delta & Anti-Regression",
     command: "pnpm test:diff",
@@ -118,7 +125,7 @@ if (!fastOnly) {
     name: "Unit & Integration Test Suite",
     command: "pnpm test",
     category: "test",
-    description: "Run all 369 unit and integration tests across backend and frontend",
+    description: "Run all 563 unit and integration tests across backend and frontend",
   });
 }
 

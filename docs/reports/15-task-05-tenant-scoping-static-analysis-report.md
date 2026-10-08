@@ -4,7 +4,7 @@
 **Author:** Senior Software Engineer / Antigravity Agent  
 **Date:** 2026-10-07  
 **Status:** ✅ 100% COMPLETED — READY FOR DEEPSEEK REVIEW  
-**References:** [docs/reports/14-task-04-followup-and-task-05-kickoff-survey-report.md](file:///c:/Workspaces/haihire/docs/reports/14-task-04-followup-and-task-05-kickoff-survey-report.md), [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**References:** [docs/archive/reports/hardening-transitional/14-task-04-followup-and-task-05-kickoff-survey-report.md](file:///c:/Workspaces/haihire/docs/archive/reports/hardening-transitional/14-task-04-followup-and-task-05-kickoff-survey-report.md), [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
 
 ---
 

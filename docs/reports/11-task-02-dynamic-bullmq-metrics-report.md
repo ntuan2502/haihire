@@ -5,7 +5,7 @@
 **Date:** 2026-10-07  
 **Status:** ✅ FULLY COMPLETED (APPROVED & VERIFIED)  
 **Branch:** `feat/task-02-dynamic-bullmq-metrics`  
-**References:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [docs/reports/10-task-01b-followup-and-prep-task-02-report.md](file:///c:/Workspaces/haihire/docs/reports/10-task-01b-followup-and-prep-task-02-report.md)
+**References:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [docs/archive/reports/hardening-transitional/10-task-01b-followup-and-prep-task-02-report.md](file:///c:/Workspaces/haihire/docs/archive/reports/hardening-transitional/10-task-01b-followup-and-prep-task-02-report.md)
 
 ---
 

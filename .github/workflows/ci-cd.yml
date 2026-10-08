@@ -151,6 +151,9 @@ jobs:
       - name: Verify Tenant Scoping Static Analysis Gate (Gate 10)
         run: pnpm lint:tenant-scope
 
+      - name: Verify Documentation Markdown Links Gate (Gate 11)
+        run: pnpm lint:doc-links
+
       - name: Create backend .env for CI
         run: |
           cat > backend/.env << 'EOF'

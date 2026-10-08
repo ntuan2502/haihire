@@ -10,7 +10,7 @@
 - **Backend Architecture:** NestJS 12.1.2 modular monolith with Saga transaction orchestration, compensations, AsyncLocalStorage request context tracking, and DLQ-backed BullMQ processing.
 - **Frontend Architecture:** Next.js 16.3.8 with React 19 Server Components (RSC), `@tanstack/react-query` v5 client caching, Base UI / Radix UI primitives, Tailwind CSS v4, and dual-language internationalization (vi / en).
 - **Data & Storage:** PostgreSQL 17.6 managed via Prisma 8 ORM, Valkey 8.0.2 for distributed caching / rate limiting, and MinIO S3 object storage for candidate resumes.
-- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 7 comprehensive CI gates, and 379 verified automated tests.
+- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 11 comprehensive CI gates, and 563 verified automated tests.
 
 ---
 
@@ -93,9 +93,9 @@ pnpm dev
 | :--- | :--- |
 | `pnpm dev` | Start backend (`13001`) and frontend (`13000`) concurrently in watch mode |
 | `pnpm build` | Build shared package, backend bundle (`dist/server.mjs`), and Next.js frontend |
-| `pnpm check:all` | Run complete 7-gate CI verification (lint, typecheck, tests, env sync, contracts) |
+| `pnpm check:all` | Run complete 11-gate CI verification (lint, typecheck, tests, env sync, contracts, alerts, tenant scope, doc links) |
 | `pnpm check:all:fast` | Run rapid pre-commit verification (skip long-running smoke/load tests) |
-| `pnpm test` | Run full unit & integration test suite (379 tests across backend & frontend) |
+| `pnpm test` | Run full unit & integration test suite (563 tests across backend & frontend) |
 | `pnpm test:e2e` | Run Playwright end-to-end browser tests |
 | `pnpm db:setup` | Push Prisma schema changes and execute database seeds |
 | `pnpm docker:prod:up` | Launch production container stack (`docker-compose.prod.yml`) |
@@ -114,7 +114,7 @@ Comprehensive system documentation is maintained under the [`docs/`](file:///c:/
 - 💾 [**Backup & Disaster Recovery**](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md): Automated PostgreSQL dumps, MinIO hot backup, and restore drills.
 - 🧹 [**MinIO Orphan Cleanup**](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md): Daily cron purging unreferenced files with a 30-day grace period.
 - 🚨 [**Monitoring & Alerting Runbook**](file:///c:/Workspaces/haihire/docs/runbooks/alerts.md): Prometheus alert catalog and emergency SOPs.
-- 🛡️ [**Audit Reports Archive**](file:///c:/Workspaces/haihire/docs/audits/README.md): Historical verification reports and cross-phase synthesis.
+- 🛡️ [**Audit Reports Archive**](docs/archive/audits/README.md): Historical verification reports and cross-phase synthesis.
 
 ---
 

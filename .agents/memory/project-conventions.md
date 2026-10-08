@@ -8,7 +8,8 @@ updated: 2026-10-02T10:00
 
 ## Documentation & Memory Language (MANDATORY)
 - **All memory files (.agents/memory/*) must be written in English only.** Never write memory files in Vietnamese or any other language.
-- **Comments in code, .env, and .env.example must be written in English only.** Vietnamese is reserved exclusively for conversational dialogue with the user.
+- **Comments in code, .env, and .env.example must be written in English only.**
+- **All documentation, technical reports, operational runbooks, and changelogs must be authored in English only (Task #7.5 convention).** Vietnamese is reserved exclusively for conversational dialogue with the user and UI localized strings (vi.ts).
 
 ## Pure TypeScript & Scripting Conventions (MANDATORY)
 - **100% TypeScript Repository**: No manually written plain .js, .mjs, or .cjs files are allowed. All code must be in TypeScript (.ts, .tsx, .mts, .cts).
@@ -196,15 +197,19 @@ updated: 2026-10-02T10:00
 - **snake_case for Table Names**: All @@map directives in contract.prisma must use snake_case (e.g., organization_members, invite_links, email_templates, activity_logs, candidate_documents, tracking_links, tracking_clicks).
 - **Known Technical Debt (Phase 15B)**: 9 tables currently use camelCase @@map (organizationMember, inviteLink, emailTemplate, emailSetting, emailLog, activityLog, candidateDocument, trackingLink, trackingClick). Migration to snake_case deferred post-launch.
 
-## CI Architecture Gates (7 Total) (MANDATORY)
-- **Gate 1**: `pnpm lint` (ESLint + tsc --noEmit)
-- **Gate 2**: `pnpm typecheck` (tsc --noEmit)
-- **Gate 3**: `pnpm lint:dtopipe` (verify 100% @Body() params protected by DtoPipe)
-- **Gate 4**: `pnpm lint:error-i18n` (verify 100% APP_ERROR_CODES have vi.ts + en.ts translations)
-- **Gate 5**: `pnpm lint:api-contract` (verify zero JSON.stringify(err) leaks and zero alert() calls in frontend)
-- **Gate 6**: `pnpm lint:env-sync` (verify 100% key parity across all 5 .env files and Docker Compose coverage)
-- **Gate 7**: `pnpm test` / `pnpm test:e2e` (execute all 379 unit/integration tests and Playwright E2E browser journeys)
-- All 7 gates MUST pass before merge. Run `pnpm check:all` to execute the full pipeline.
+## CI Architecture Gates (11 Total) (MANDATORY)
+- **Gate 1**: `pnpm lint:env-sync` (verify 100% key parity across all 5 .env files and Docker Compose coverage)
+- **Gate 2**: `pnpm check:i18n` (verify dictionary keys consistency and assert zero hardcoded strings in JSX)
+- **Gate 3**: `pnpm lint` (ESLint static quality across backend and frontend)
+- **Gate 4**: `pnpm typecheck` (tsc --noEmit type safety across backend and frontend)
+- **Gate 5**: `pnpm lint:dtopipe` (verify 100% @Body() params protected by DtoPipe in controllers)
+- **Gate 6**: `pnpm lint:error-i18n` (verify 100% of 51 APP_ERROR_CODES have vi.ts + en.ts translations)
+- **Gate 7**: `pnpm lint:api-contract` (verify zero JSON.stringify(err) leaks and zero alert() calls in frontend)
+- **Gate 8**: `pnpm lint:prometheus-rules` (verify Prometheus alert rules syntax, fields, severity, and labels in alert-rules.yml)
+- **Gate 9**: `pnpm lint:tenant-scope` (verify static query isolation across all tenant-scoped modules)
+- **Gate 10**: `pnpm lint:doc-links` (verify zero broken markdown links across all docs/ and memory files)
+- **Gate 11**: `pnpm test:diff` (audit test count changes against git history to prevent test regressions)
+- All 11 gates MUST pass before merge. Run `pnpm check:all` (or `pnpm check:all:fast` in development) to execute the pipeline. Baseline: 563 automated unit/integration tests.
 
 ## Next.js RSC Mandate for Public Routes (MANDATORY)
 - **Server Components by Default for Public-Facing Routes**: All routes under /careers/* must be React Server Components (RSC) with generateMetadata() for OpenGraph/Twitter cards and JSON-LD schema (JobPosting) for SEO.

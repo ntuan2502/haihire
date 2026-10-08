@@ -5,7 +5,7 @@
 **Date:** 2026-10-08  
 **Status:** ✅ 100% COMPLETED — ALL 10 CI GATES & 563 TESTS PASSED  
 **Branch:** `feat/task-08-frontend-onerror-hook`  
-**Reference Documentation:** [`docs/reports/04-frontend-409-conflict-handling-audit.md`](file:///c:/Workspaces/haihire/docs/reports/04-frontend-409-conflict-handling-audit.md), [`docs/reports/21-task-08-frontend-onerror-hook-audit-report.md`](file:///c:/Workspaces/haihire/docs/reports/21-task-08-frontend-onerror-hook-audit-report.md), [`docs/PROJECT_CONTEXT.md`](file:///c:/Workspaces/haihire/docs/PROJECT_PROJECT_CONTEXT.md), [`docs/DEFINITION_OF_DONE.md`](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**Reference Documentation:** [`docs/reports/04-frontend-409-conflict-handling-audit.md`](file:///c:/Workspaces/haihire/docs/reports/04-frontend-409-conflict-handling-audit.md), [`docs/archive/reports/hardening-transitional/21-task-08-frontend-onerror-hook-audit-report.md`](file:///c:/Workspaces/haihire/docs/archive/reports/hardening-transitional/21-task-08-frontend-onerror-hook-audit-report.md), [`docs/PROJECT_CONTEXT.md`](file:///c:/Workspaces/haihire/docs/PROJECT_CONTEXT.md), [`docs/DEFINITION_OF_DONE.md`](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
 
 ---
 

@@ -171,3 +171,25 @@ updated: 2026-10-02
 - **Verified-Ship Mindset (Post Phase 15-17)**:
   - **Decision**: Every "READY TO SHIP" self-assessment requires independent IV&V verification with raw execution evidence before deployment. Every phase's claim must be backed by raw execution evidence, not summary text.
   - **Rationale**: Across 10 IV&V rounds, 7 self-claimed "READY" were later found to have issues (Phase 3, 5, 10.1, 15A, etc.). Independent verification catches false claims (e.g., Phase 15B auditor inflated numbers by 6-15%, Phase 9 claimed "deploy ready" but had 9 bugs including P1 DTO validation bypass). Verified-ship mindset is the process discipline that prevents production incidents.
+
+- **Multi-Channel Tenant Webhooks & Secret Encryption (Tasks #1A & #1B)**:
+  - **Decision**:
+    1. Tenant webhook settings are scoped per-organization with encrypted secrets using AES-256-GCM (`ENCRYPTION_SECRET`).
+    2. Multi-channel dispatch adapter architecture supports Generic HTTP webhooks, Discord embeds, and Telegram HTML messaging.
+    3. Failure backoff with DLQ dead-letter forwarding ensures delivery resilience without blocking transactional execution.
+  - **Rationale**: Enables enterprise organizations to stream real-time recruitment events to external messaging and orchestration tools securely.
+
+- **Dynamic BullMQ Metrics & Pushgateway Cron Telemetry (Tasks #2, #3, #6, #7)**:
+  - **Decision**:
+    1. Dynamic BullMQ Prometheus gauges calculate active/waiting/delayed/failed/paused depth per tenant queue.
+    2. Nightly orphan cleanup scripts push batch job completion metrics and duration to Prometheus Pushgateway.
+    3. Dedicated Prometheus alert rules (14 rules) trigger P1/P2 paging for queue backlogs, memory exhaustion, and cleanup spikes.
+  - **Rationale**: Real-time observability and proactive incident alerting for asynchronous queues and cron workloads.
+
+- **Static Tenant Isolation Analysis CI Gate (Task #5)**:
+  - **Decision**: AST-based static analysis gate (`pnpm lint:tenant-scope`, CI Gate 9) enforces that 100% of Prisma queries in tenant-scoped backend modules explicitly pass `organizationId` where clause filters.
+  - **Rationale**: Eliminates cross-tenant data leak vulnerabilities at compile/CI time before code reaches production.
+
+- **Frontend Mutation Error Standardization (Task #8)**:
+  - **Decision**: All 30 TanStack Query mutation hooks in `frontend/src/hooks/` implement centralized `onError` callbacks that trigger `queryClient.invalidateQueries` for associated entity queries.
+  - **Rationale**: Prevents stale cache desynchronization on 409 Conflict or unexpected mutation errors across all recruitment pipeline screens.

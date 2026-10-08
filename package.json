@@ -18,6 +18,7 @@
     "lint:error-i18n": "tsx scripts/check-error-code-i18n.ts",
     "lint:api-contract": "tsx scripts/check-api-contract-coverage.ts",
     "lint:prometheus-rules": "tsx scripts/check-prometheus-rules.ts",
+    "lint:tenant-scope": "tsx scripts/check-tenant-scoping.ts",
     "typecheck": "pnpm run typecheck:backend && pnpm run typecheck:frontend",
     "typecheck:backend": "pnpm --filter ./backend run typecheck",
     "typecheck:frontend": "pnpm --filter ./frontend run typecheck",

@@ -96,6 +96,13 @@ const steps: Step[] = [
     description: "Verify syntax, fields, severity, and team: sre labels in alert-rules.yml",
   },
   {
+    id: "lint:tenant-scope",
+    name: "CI Gate 10: Tenant Scoping Static Analysis",
+    command: "pnpm lint:tenant-scope",
+    category: "gate",
+    description: "Assert 100% of Prisma queries in tenant-scoped modules are properly isolated",
+  },
+  {
     id: "test:diff",
     name: "Test Count Delta & Anti-Regression",
     command: "pnpm test:diff",

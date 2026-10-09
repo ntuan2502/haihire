@@ -180,7 +180,7 @@ image: valkey/valkey:8.0.2-alpine
 
 ## 6. VERIFY 5 — GitHub Repository Permissions
 
-Authored complete instructions in [`docs/runbooks/versioning.md`](file:///c:/Workspaces/haihire/docs/runbooks/versioning.md) (Section 5):
+Authored complete instructions in [`docs/runbooks/versioning.md`](../../runbooks/versioning.md) (Section 5):
 
 1. **Workflow Permissions:**
    - Path: GitHub Repository $\rightarrow$ **Settings** $\rightarrow$ **Actions** $\rightarrow$ **General** $\rightarrow$ **Workflow permissions**.

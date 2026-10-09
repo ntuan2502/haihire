@@ -17,7 +17,7 @@
 
 ## 1. [LOST UPDATE & CONCURRENCY] Mechanism in `applications.service.ts`
 
-Inspected the `updateStage(id, dto, tenantOrgId)` method in [`backend/src/applications/applications.service.ts:L786-816`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L786-L816):
+Inspected the `updateStage(id, dto, tenantOrgId)` method in [`backend/src/applications/applications.service.ts:L786-816`](../../backend/src/applications/applications.service.ts#L786-L816):
 
 ### 1.1 Audit Findings
 - **Is there a version column / optimistic locking (`WHERE version = X`)?**
@@ -29,7 +29,7 @@ Inspected the `updateStage(id, dto, tenantOrgId)` method in [`backend/src/applic
   - **NO.** The `updateStage` operation does not open a transaction with `REPEATABLE READ` or `SERIALIZABLE`. It executes a single `update` statement via the default database connection pool (`READ COMMITTED`).
 
 ### 1.2 Code Evidence
-In [`backend/src/applications/applications.service.ts:L787-816`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L787-L816):
+In [`backend/src/applications/applications.service.ts:L787-816`](../../backend/src/applications/applications.service.ts#L787-L816):
 ```typescript
 async updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) {
   const existing = await this.findOne(id, tenantOrgId);
@@ -83,9 +83,9 @@ If User A and User B open the application when the status is `APPLIED`:
 
 ### 2.1 Audit Findings
 - **Is there a test simulating 2 users/requests simultaneously updating an application?** **YES.**
-- **Test file:** [`backend/src/applications/applications.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.spec.ts)
+- **Test file:** [`backend/src/applications/applications.service.spec.ts`](../../backend/src/applications/applications.service.spec.ts)
 - **Test name:** `should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict`
-- **Location:** [Lines 567 to 582](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.spec.ts#L567-L582)
+- **Location:** [Lines 567 to 582](../../backend/src/applications/applications.service.spec.ts#L567-L582)
 
 ### 2.2 Test Code Evidence
 ```typescript
@@ -115,11 +115,11 @@ it("should enforce optimistic locking during concurrent race updates: 1 succeeds
 
 ## 3. [CRON SAFETY NET & OBSERVABILITY] Mechanics in `scripts/cleanup-orphan-minio.ts`
 
-Inspected [`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts) and core logic in [`backend/src/common/orphan-cleanup.ts`](file:///c:/Workspaces/haihire/backend/src/common/orphan-cleanup.ts):
+Inspected [`scripts/cleanup-orphan-minio.ts`](../../scripts/cleanup-orphan-minio.ts) and core logic in [`backend/src/common/orphan-cleanup.ts`](../../backend/src/common/orphan-cleanup.ts):
 
 ### 3.1 Logging / Metrics for Cleaned Files Count
 - **STDOUT Logging:** **EXPLICIT AND COMPREHENSIVE.**  
-  Upon completion, the script prints a structured summary to console (STDOUT) in [`scripts/cleanup-orphan-minio.ts:L45-59`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts#L45-L59):
+  Upon completion, the script prints a structured summary to console (STDOUT) in [`scripts/cleanup-orphan-minio.ts:L45-59`](../../scripts/cleanup-orphan-minio.ts#L45-L59):
   ```typescript
   console.log(`Total Objects Scanned:     ${report.scannedCount}`);
   console.log(`Active DB References:      ${report.dbRefCount}`);

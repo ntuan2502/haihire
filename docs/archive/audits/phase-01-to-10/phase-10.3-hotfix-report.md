@@ -147,7 +147,7 @@ ERROR: invalid byte sequence for encoding "UTF8": 0xff
 Furthermore, candidate resume attachments in MinIO were omitted completely from the backup process.
 
 ### 3.2. Architecture & Code Modifications
-The [`scripts/backup-production.ts`](file:///c:/Workspaces/haihire/scripts/backup-production.ts) script was re-architected into an Enterprise Backup Pipeline:
+The [`scripts/backup-production.ts`](../../../../scripts/backup-production.ts) script was re-architected into an Enterprise Backup Pipeline:
 1. **Eliminated TTY & Redirection Corruption:**
    - Switched to `docker exec -i` (omitting `-t`).
    - `pg_dump` writes directly to container filesystem `-f /tmp/dump.dump` (Custom format `-F c`) and `-f /tmp/dump.sql` (Plain text `-F p`).
@@ -200,7 +200,7 @@ node --no-warnings --experimental-strip-types scripts/backup-production.ts
 ```
 
 ### 3.4. Disaster Recovery Runbook Updates
-The [`docs/runbooks/backup-and-restore.md`](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md) runbook was updated to document:
+The [`docs/runbooks/backup-and-restore.md`](../../../runbooks/backup-and-restore.md) runbook was updated to document:
 * Automated backup execution workflow.
 * PostgreSQL database restoration via Custom Archive (`pg_restore`) and Plain SQL.
 * MinIO object storage restoration from `.tar.gz`.

@@ -63,7 +63,7 @@ pnpm exec tsx scripts/cleanup-orphan-minio.ts --threshold-days=30
 
 ## 3. Production Automated Cron Configuration
 
-The automated cleanup container `orphan-cleanup` is defined in [docker-compose.prod.yml](file:///c:/Workspaces/haihire/docker-compose.prod.yml):
+The automated cleanup container `orphan-cleanup` is defined in [docker-compose.prod.yml](../../docker-compose.prod.yml):
 - **Cron Schedule:** `0 4 * * *` (04:00 AM UTC daily).
 - **Log Target:** `/var/log/orphan-cleanup.log`
 - **Inspect Service Logs:**
@@ -82,7 +82,7 @@ If a valid file was inadvertently purged:
    docker compose -f docker-compose.prod.yml stop orphan-cleanup
    ```
 2. **Locate Latest Verified MinIO Snapshot:**
-   Production MinIO snapshots are generated daily by [scripts/backup-production.ts](file:///c:/Workspaces/haihire/scripts/backup-production.ts) and stored under `backups/haihire-minio-*.tar.gz`.
+   Production MinIO snapshots are generated daily by [scripts/backup-production.ts](../../scripts/backup-production.ts) and stored under `backups/haihire-minio-*.tar.gz`.
 3. **Extract & Restore Target Objects:**
    ```bash
    # Extract snapshot to staging location

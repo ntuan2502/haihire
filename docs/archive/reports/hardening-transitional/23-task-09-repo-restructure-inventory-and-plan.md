@@ -5,7 +5,7 @@
 **Date:** 2026-10-08  
 **Status:** 📋 PHASE 1 INVENTORY & PLAN COMPLETE — PENDING DEEPSEEK & PROJECT OWNER APPROVAL  
 **Branch:** `chore/task-09-repo-restructure`  
-**Reference Documentation:** [`docs/PROJECT_CONTEXT.md`](file:///c:/Workspaces/haihire/docs/PROJECT_CONTEXT.md), [`docs/DEFINITION_OF_DONE.md`](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [`docs/README.md`](file:///c:/Workspaces/haihire/docs/README.md)
+**Reference Documentation:** [`docs/PROJECT_CONTEXT.md`](../../../PROJECT_CONTEXT.md), [`docs/DEFINITION_OF_DONE.md`](../../../DEFINITION_OF_DONE.md), [`docs/README.md`](../../../README.md)
 
 ---
 

@@ -12,7 +12,7 @@ Target Services:
 ## 2. Automated Enterprise Backup Pipeline
 
 The production backup automation is maintained at:
-[`scripts/backup-production.ts`](file:///c:/Workspaces/haihire/scripts/backup-production.ts)
+[`scripts/backup-production.ts`](../../scripts/backup-production.ts)
 
 ### Execution Command:
 ```bash
@@ -126,7 +126,7 @@ curl -s http://localhost:3001/metrics | grep http_requests_total
 ---
 
 ## 4. Complementary Maintenance Tasks
-- **Orphan Object Cleanup:** Daily cron purging unreferenced resume files after a 30-day grace period. See [orphan-cleanup.md](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md).
-- **Incident Response Runbook:** Prometheus alerts and SOPs for database/storage downtime. See [alerts.md](file:///c:/Workspaces/haihire/docs/runbooks/alerts.md).
+- **Orphan Object Cleanup:** Daily cron purging unreferenced resume files after a 30-day grace period. See [orphan-cleanup.md](orphan-cleanup.md).
+- **Incident Response Runbook:** Prometheus alerts and SOPs for database/storage downtime. See [alerts.md](alerts.md).
 
 

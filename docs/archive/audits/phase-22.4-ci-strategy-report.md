@@ -147,8 +147,8 @@ e2e-critical:
 
 ## 7. Documentation & Memory Synchronization
 
-1. **Runbook Published:** Created [`docs/runbooks/ci-strategy.md`](file:///c:/Workspaces/haihire/docs/runbooks/ci-strategy.md) detailing test pyramid, execution matrix, critical paths, and developer workflow.
-2. **Memory Conventions Updated:** Added section `## CI/CD Test Strategy (Phase 22.4 MANDATORY)` to [`.agents/memory/project-conventions.md`](file:///c:/Workspaces/haihire/.agents/memory/project-conventions.md).
+1. **Runbook Published:** Created [`docs/runbooks/ci-strategy.md`](../../runbooks/ci-strategy.md) detailing test pyramid, execution matrix, critical paths, and developer workflow.
+2. **Memory Conventions Updated:** Added section `## CI/CD Test Strategy (Phase 22.4 MANDATORY)` to [`.agents/memory/project-conventions.md`](../../../.agents/memory/project-conventions.md).
 3. **Database Seed Hardened:** Updated `backend/src/prisma/seed.ts` ensuring Job 2 (`Senior Backend Engineer`) is deterministically published for public career portal and application testing.
 
 ---

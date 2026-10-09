@@ -55,12 +55,12 @@
 
 **3. Test Coverage**
 - **New unit tests:** 26 test cases with a 100% pass rate:
-  - [`telegram.provider.spec.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/telegram.provider.spec.ts): 6 test cases (HTML formatting, HTML escaping against injection, HTTP 4xx, HTTP 5xx, network error, message footer).
-  - [`discord.provider.spec.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/discord.provider.spec.ts): 5 test cases (severity-based embed colors, payload JSON format, default footer, HTTP errors, network error).
-  - [`generic-webhook.provider.spec.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/generic-webhook.provider.spec.ts): 4 test cases (raw JSON format, HMAC-SHA256 signature verification, HTTP 500 failure, network timeout).
-  - [`webhook-provider.factory.spec.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/webhook-provider.factory.spec.ts): 4 test cases (TELEGRAM, DISCORD, GENERIC instances, unknown provider error).
-  - [`webhook-notifier.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/webhook-notifier.service.spec.ts): 7 test cases (unconfigured env warning, dispatch message, provider error result, non-throwing exception handling, severity threshold logic <5 vs >=5, error message truncation at 500 chars).
-- **New integration tests:** 2 test cases in [`orphan-cleanup.spec.ts`](file:///c:/Workspaces/haihire/backend/src/test/orphan-cleanup.spec.ts):
+  - [`telegram.provider.spec.ts`](../../backend/src/common/webhook/providers/telegram.provider.spec.ts): 6 test cases (HTML formatting, HTML escaping against injection, HTTP 4xx, HTTP 5xx, network error, message footer).
+  - [`discord.provider.spec.ts`](../../backend/src/common/webhook/providers/discord.provider.spec.ts): 5 test cases (severity-based embed colors, payload JSON format, default footer, HTTP errors, network error).
+  - [`generic-webhook.provider.spec.ts`](../../backend/src/common/webhook/providers/generic-webhook.provider.spec.ts): 4 test cases (raw JSON format, HMAC-SHA256 signature verification, HTTP 500 failure, network timeout).
+  - [`webhook-provider.factory.spec.ts`](../../backend/src/common/webhook/webhook-provider.factory.spec.ts): 4 test cases (TELEGRAM, DISCORD, GENERIC instances, unknown provider error).
+  - [`webhook-notifier.service.spec.ts`](../../backend/src/common/webhook/webhook-notifier.service.spec.ts): 7 test cases (unconfigured env warning, dispatch message, provider error result, non-throwing exception handling, severity threshold logic <5 vs >=5, error message truncation at 500 chars).
+- **New integration tests:** 2 test cases in [`orphan-cleanup.spec.ts`](../../backend/src/test/orphan-cleanup.spec.ts):
   - *Test 4:* When job fails after 5 retries and enters DLQ -> `webhookNotifier.notifyDlq` is called with diagnostic payload.
   - *Test 4b:* When job fails intermediately (< 5 retries) -> `notifyDlq` is not called.
 - **Coverage Metrics (V8 report):**
@@ -99,11 +99,11 @@
 2. *For Generic Webhook, the payload currently includes `title`, `severity`, `fields`, `timestamp`, `source`. When rolling out Task #1B (per-org), should additional system-level metadata be attached (such as `environment: "production"`, `eventId: string`, `retryCount: number`) to simplify webhook routing on n8n/Make?*
 
 **6. Files for Review**
-- [`backend/src/common/webhook/webhook-provider.interface.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/webhook-provider.interface.ts)
-- [`backend/src/common/webhook/providers/telegram.provider.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/telegram.provider.ts)
-- [`backend/src/common/webhook/providers/discord.provider.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/discord.provider.ts)
-- [`backend/src/common/webhook/providers/generic-webhook.provider.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/generic-webhook.provider.ts)
-- [`backend/src/common/webhook/webhook-provider.factory.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/webhook-provider.factory.ts)
-- [`backend/src/common/webhook/webhook-notifier.service.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/webhook-notifier.service.ts)
-- [`backend/src/applications/orphan-cleanup.processor.ts`](file:///c:/Workspaces/haihire/backend/src/applications/orphan-cleanup.processor.ts)
-- [`backend/src/test/orphan-cleanup.spec.ts`](file:///c:/Workspaces/haihire/backend/src/test/orphan-cleanup.spec.ts)
+- [`backend/src/common/webhook/webhook-provider.interface.ts`](../../backend/src/common/webhook/webhook-provider.interface.ts)
+- [`backend/src/common/webhook/providers/telegram.provider.ts`](../../backend/src/common/webhook/providers/telegram.provider.ts)
+- [`backend/src/common/webhook/providers/discord.provider.ts`](../../backend/src/common/webhook/providers/discord.provider.ts)
+- [`backend/src/common/webhook/providers/generic-webhook.provider.ts`](../../backend/src/common/webhook/providers/generic-webhook.provider.ts)
+- [`backend/src/common/webhook/webhook-provider.factory.ts`](../../backend/src/common/webhook/webhook-provider.factory.ts)
+- [`backend/src/common/webhook/webhook-notifier.service.ts`](../../backend/src/common/webhook/webhook-notifier.service.ts)
+- [`backend/src/applications/orphan-cleanup.processor.ts`](../../backend/src/applications/orphan-cleanup.processor.ts)
+- [`backend/src/test/orphan-cleanup.spec.ts`](../../backend/src/test/orphan-cleanup.spec.ts)

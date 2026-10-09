@@ -261,7 +261,7 @@ The repository has undergone 10 rounds of IV&V scrutiny and 21 implementation ph
 ## 7. Production Deployment Checklist
 
 Before triggering production cluster release:
-1. Ensure `.env.production` is populated with real production secrets (JWT, DB password, SMTP/Resend API keys) per [env-management.md](file:///c:/Workspaces/haihire/docs/runbooks/env-management.md).
+1. Ensure `.env.production` is populated with real production secrets (JWT, DB password, SMTP/Resend API keys) per [env-management.md](../../runbooks/env-management.md).
 2. Validate production Docker Compose syntax:
    ```bash
    pnpm docker:prod:config
@@ -274,4 +274,4 @@ Before triggering production cluster release:
    ```bash
    pnpm docker:prod:up
    ```
-5. Follow the 48-hour observation window outlined in [production-deployment-plan.md](file:///c:/Workspaces/haihire/docs/runbooks/production-deployment-plan.md).
+5. Follow the 48-hour observation window outlined in [production-deployment-plan.md](../../runbooks/production-deployment-plan.md).

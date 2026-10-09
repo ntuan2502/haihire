@@ -148,7 +148,7 @@ IMAGE_TAG=v1.0.0
 ```
 
 ### Production Deployment Plan Updates
-[`docs/runbooks/production-deployment-plan.md`](file:///c:/Workspaces/haihire/docs/runbooks/production-deployment-plan.md):
+[`docs/runbooks/production-deployment-plan.md`](../../runbooks/production-deployment-plan.md):
 - Replaced local container builds (`pnpm docker:prod:up --build`) with pre-built image pulls:
   `docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend orphan-cleanup`
 - Added mandatory image digest audit commands:

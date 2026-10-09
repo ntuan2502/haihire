@@ -4,7 +4,7 @@
 **Author:** Senior Software Engineer / Antigravity Agent  
 **Date:** 2026-10-07  
 **Status:** ✅ READY FOR DEEPSEEK REVIEW & TASK #5 SPEC RELEASE  
-**References:** [docs/reports/13-task-04-e2e-cross-tenant-valkey-report.md](file:///c:/Workspaces/haihire/docs/reports/13-task-04-e2e-cross-tenant-valkey-report.md), [backend/src/prisma/contract.prisma](file:///c:/Workspaces/haihire/backend/src/prisma/contract.prisma)
+**References:** [docs/reports/13-task-04-e2e-cross-tenant-valkey-report.md](../../../reports/13-task-04-e2e-cross-tenant-valkey-report.md), [backend/src/prisma/contract.prisma](../../../../backend/src/prisma/contract.prisma)
 
 ---
 
@@ -21,13 +21,13 @@ In Task #4, 4 cross-tenant rejection scenarios utilized 4 distinct error codes:
 Audit of the backend codebase confirms:
 `ORG_FORBIDDEN_ACTION` is not tied to a single entity because it represents a **System-Level Organization Guard Error**.
 
-- **Directly used in `TenantGuard` ([`backend/src/common/guards/tenant.guard.ts:L44, L54`](file:///c:/Workspaces/haihire/backend/src/common/guards/tenant.guard.ts#L44-L54)):**
+- **Directly used in `TenantGuard` ([`backend/src/common/guards/tenant.guard.ts:L44, L54`](../../../../backend/src/common/guards/tenant.guard.ts#L44-L54)):**
   Whenever an incoming HTTP request carries an `organizationId` (via query, body, or route param) and the user lacks membership in that organization, the guard rejects the request with `AppForbiddenException(APP_ERROR_CODES.ORG_FORBIDDEN_ACTION)`.
 - **Shared across organization-level administrative services:**
-  - [`backend/src/organizations/organizations.service.ts`](file:///c:/Workspaces/haihire/backend/src/organizations/organizations.service.ts): Membership, invitations, cross-org administration (L431, L589, L751, L854, L962, L1141).
-  - [`backend/src/webhook-settings/webhook-settings.service.ts`](file:///c:/Workspaces/haihire/backend/src/webhook-settings/webhook-settings.service.ts): Per-org webhook settings (L118, L222, L368, L414).
-  - [`backend/src/activities/activities.service.ts`](file:///c:/Workspaces/haihire/backend/src/activities/activities.service.ts): Activity log access verification (L72, L111).
-  - [`backend/src/email/email.service.ts`](file:///c:/Workspaces/haihire/backend/src/email/email.service.ts): Org email dispatch permissions (L82).
+  - [`backend/src/organizations/organizations.service.ts`](../../../../backend/src/organizations/organizations.service.ts): Membership, invitations, cross-org administration (L431, L589, L751, L854, L962, L1141).
+  - [`backend/src/webhook-settings/webhook-settings.service.ts`](../../../../backend/src/webhook-settings/webhook-settings.service.ts): Per-org webhook settings (L118, L222, L368, L414).
+  - [`backend/src/activities/activities.service.ts`](../../../../backend/src/activities/activities.service.ts): Activity log access verification (L72, L111).
+  - [`backend/src/email/email.service.ts`](../../../../backend/src/email/email.service.ts): Org email dispatch permissions (L82).
 
 **Conclusion:** `ORG_FORBIDDEN_ACTION` serves a broad, cross-cutting purpose (shared guard / organization context). Preserving this error code is architecturally sound.
 
@@ -59,7 +59,7 @@ Actual messages rendered to end-users:
   - **Option 2 (Unified phrasing):** If a single consolidated phrase is preferred:
     - VI: `"Bạn không có quyền truy cập dữ liệu của tổ chức khác."`
     - EN: `"You do not have permission to access data from another organization."`
-- **Documentation:** Documented this two-tier model (**Tier 1:** Entity-Level Isolation & **Tier 2:** Organization-Guard Isolation) in [`docs/PROJECT_CONTEXT.md`](file:///c:/Workspaces/haihire/docs/PROJECT_CONTEXT.md).
+- **Documentation:** Documented this two-tier model (**Tier 1:** Entity-Level Isolation & **Tier 2:** Organization-Guard Isolation) in [`docs/PROJECT_CONTEXT.md`](../../../PROJECT_CONTEXT.md).
 
 ---
 
@@ -71,15 +71,15 @@ Actual messages rendered to end-users:
 There are **18 service files** in total:
 
 #### A. Tenant-Scoped Services (8 business services holding multi-tenant data):
-1. [`backend/src/activities/activities.service.ts`](file:///c:/Workspaces/haihire/backend/src/activities/activities.service.ts)
-2. [`backend/src/applications/applications.service.ts`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts)
-3. [`backend/src/candidates/candidates.service.ts`](file:///c:/Workspaces/haihire/backend/src/candidates/candidates.service.ts)
-4. [`backend/src/interviews/interviews.service.ts`](file:///c:/Workspaces/haihire/backend/src/interviews/interviews.service.ts)
-5. [`backend/src/jobs/jobs.service.ts`](file:///c:/Workspaces/haihire/backend/src/jobs/jobs.service.ts)
-6. [`backend/src/organizations/organizations.service.ts`](file:///c:/Workspaces/haihire/backend/src/organizations/organizations.service.ts)
-7. [`backend/src/sourcing/sourcing.service.ts`](file:///c:/Workspaces/haihire/backend/src/sourcing/sourcing.service.ts)
-8. [`backend/src/webhook-settings/webhook-settings.service.ts`](file:///c:/Workspaces/haihire/backend/src/webhook-settings/webhook-settings.service.ts)
-*(Note: [`backend/src/users/users.service.ts`](file:///c:/Workspaces/haihire/backend/src/users/users.service.ts) reads mock demo user accounts)*
+1. [`backend/src/activities/activities.service.ts`](../../../../backend/src/activities/activities.service.ts)
+2. [`backend/src/applications/applications.service.ts`](../../../../backend/src/applications/applications.service.ts)
+3. [`backend/src/candidates/candidates.service.ts`](../../../../backend/src/candidates/candidates.service.ts)
+4. [`backend/src/interviews/interviews.service.ts`](../../../../backend/src/interviews/interviews.service.ts)
+5. [`backend/src/jobs/jobs.service.ts`](../../../../backend/src/jobs/jobs.service.ts)
+6. [`backend/src/organizations/organizations.service.ts`](../../../../backend/src/organizations/organizations.service.ts)
+7. [`backend/src/sourcing/sourcing.service.ts`](../../../../backend/src/sourcing/sourcing.service.ts)
+8. [`backend/src/webhook-settings/webhook-settings.service.ts`](../../../../backend/src/webhook-settings/webhook-settings.service.ts)
+*(Note: [`backend/src/users/users.service.ts`](../../../../backend/src/users/users.service.ts) reads mock demo user accounts)*
 
 #### B. Non-Tenant-Scoped Services (9 infrastructure / system services):
 1. `backend/src/app.service.ts` — System health check (Health & Service Status).
@@ -117,7 +117,7 @@ Automated static scanner results:
 
 ### Question 3: Whitelist Categories for Queries Lacking `organizationId`
 
-Inspecting the schema in [`backend/src/prisma/contract.prisma`](file:///c:/Workspaces/haihire/backend/src/prisma/contract.prisma) identified 4 valid categories:
+Inspecting the schema in [`backend/src/prisma/contract.prisma`](../../../../backend/src/prisma/contract.prisma) identified 4 valid categories:
 
 #### Category 1: Models Without an `organizationId` Column in Schema
 1. **Model `Interview`:** Table contains `id`, `applicationId`, `scheduledAt`, etc. **Lacks an `organizationId` column**. Queries filter by `applicationId` (or `id`).

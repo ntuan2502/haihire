@@ -5,8 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
-## [1.0.0] - Phase 22: Version Alignment & Container Registry Publishing (2026-10-03)
+## [1.0.0] - Production Hardening & Release (2026-10-08)
 ### Added
+- Task #1A: Multi-channel webhook notifications (Telegram, Discord, Generic HMAC).
+- Task #1B: Per-organization encrypted webhook settings with AES-256-GCM and UI management.
+- Task #2: Dynamic BullMQ Prometheus metrics collector for queue depth tracking.
+- Task #3: 4 new Prometheus alert rules (`HaiHireBullMqDlqGrowing`, `HaiHireBullMqDlqCritical`, `HaiHireEmailQueueBacklog`, `HaiHireBullMqRedisDown`).
+- Task #4: End-to-end cross-tenant security isolation test suite (`tenant-security.spec.ts`).
+- Task #5: Tenant scoping AST static analysis CI gate (`pnpm lint:tenant-scope`).
+- Task #6: Pushgateway telemetry metrics for MinIO orphan cleanup nightly cron.
+- Task #7: 3 new Prometheus alert rules for orphan cleanup spikes and missing cron runs.
+- Task #7.5: Repository-wide English language standardization across documentation, comments, and runtime logs.
+- Task #8: Frontend mutation `onError` hook standardization across all 35 hooks for robust cache invalidation.
+- Task #9: Repository restructuring, legacy audits archival to `docs/archive/audits/`, and CI Gate 10 link check.
+- Task #10: Memory and documentation consistency audit, Single Source of Truth (`docs/PROJECT_METRICS.md`), and metric synchronization across 563 tests and 11 gates.
 - Monorepo lockstep version synchronization tooling: `scripts/sync-version.ts` and `scripts/bump-version.ts`.
 - Automation commands: `pnpm version:sync` and `pnpm version:bump`.
 - Container publishing GitHub Actions workflow: `.github/workflows/docker-publish.yml` (multi-stage buildx, GHA cache, OCI metadata, GHCR publish, and GitHub release generation).
@@ -31,8 +43,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Prometheus alerting and incident triage runbook: `docs/runbooks/alerts.md`.
 - Developer onboarding guide: `docs/onboarding.md`.
 - Documentation index portal: `docs/README.md`.
-- Audit reports registry and cross-phase synthesis: `docs/audits/README.md` and `docs/audits/SUMMARY.md`.
-- Archive structure for historical audits: `docs/audits/archive/phase-01-to-10/`.
+- Audit reports registry and cross-phase synthesis: `docs/archive/audits/README.md` and `docs/archive/audits/SUMMARY.md`.
+- Archive structure for historical audits: `docs/archive/audits/phase-01-to-10/`.
 - Package README for shared library: `packages/shared/README.md`.
 
 ### Changed

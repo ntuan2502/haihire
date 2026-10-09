@@ -46,6 +46,7 @@
 - [project] Orphan File Cleanup: nightly cron at 0 4 * * * for MinIO orphan files older than 30 days (safety grace period) → tech-decisions.md
 - [project] Verified-Ship Mindset: every self-claimed "READY" requires independent IV&V verification with raw execution evidence before deployment → user-preferences.md
 - [project] CI/CD Permissions & Action Version Baseline: dorny/paths-filter requires contents: read and pull-requests: read scopes; all actions pinned to Node 24 baseline (checkout@v5, setup-node@v5, build-push-action@v6) → project-conventions.md
+- [metrics] Project metrics (single source of truth) → docs/PROJECT_METRICS.md
 
 ## User Preferences
 - [user] Memory files must always be written in English, never in Vietnamese → user-preferences.md

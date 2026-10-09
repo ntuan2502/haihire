@@ -15,7 +15,7 @@
 | **Docker Compose Prod (Part C)** | 🟢 **FIXED** | Resolved missing variables and warnings in `docker-compose.prod.yml`; added `env_file:` and `args: NEXT_PUBLIC_API_URL`. |
 | **Build-time vs Runtime Semantics** | 🟢 **VERIFIED** | Experimentally demonstrated `NEXT_PUBLIC_*` inlining into `.next/static` client bundles; configured build args in Dockerfile. |
 | **New CI Gate (Part D)** | 🟢 **ACTIVATED** | Deployed `pnpm lint:env-sync` (`scripts/check-env-sync.ts`), integrated as Gate 7 in CI workflow and `pnpm check:all`. |
-| **Documentation & Runbook (Part E)**| 🟢 **COMPLETED** | Published [docs/runbooks/env-management.md](file:///c:/Workspaces/haihire/docs/runbooks/env-management.md) and updated persistent memory conventions. |
+| **Documentation & Runbook (Part E)**| 🟢 **COMPLETED** | Published [docs/runbooks/env-management.md](../../runbooks/env-management.md) and updated persistent memory conventions. |
 | **Empirical Verification V1-V5** | 🟢 **5/5 PASS** | V1 (Dev health 200), V2 (Next build inlining), V3 (Prod compose 0 warnings), V4 (CI Gate PASS), V5 (Negative test FAIL & exit 1). |
 | **Final Sign-off Status** | 🟢 **READY TO SHIP** | Enterprise-grade configuration achieved: zero secret leaks, 100% runtime protection against missing variables. |
 
@@ -146,8 +146,8 @@ Integrated into both `.github/workflows/ci.yml` and `.github/workflows/ci-cd.yml
 
 ## 6. PART E: Documentation & Persistent Memory Updates
 
-1. **Operational Runbook**: Published [docs/runbooks/env-management.md](file:///c:/Workspaces/haihire/docs/runbooks/env-management.md) covering development workflows through production deployment.
-2. **Persistent Conventions**: Updated *Environment Variable & Configuration Conventions* in [.agents/memory/project-conventions.md](file:///c:/Workspaces/haihire/.agents/memory/project-conventions.md).
+1. **Operational Runbook**: Published [docs/runbooks/env-management.md](../../runbooks/env-management.md) covering development workflows through production deployment.
+2. **Persistent Conventions**: Updated *Environment Variable & Configuration Conventions* in [.agents/memory/project-conventions.md](../../../.agents/memory/project-conventions.md).
 
 ---
 

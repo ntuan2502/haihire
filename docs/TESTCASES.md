@@ -2,9 +2,10 @@
 
 > **Comprehensive classification and verification tracking matrix for the HaiHire Enterprise ATS platform.**  
 > **Version:** `v1.0.0` (Production-Ready)  
-> **Updated:** 2026-10-06  
-> **Automated Test Suites:** **100% Passed** (Vitest unit/integration suites)  
-> **Independent Verification & Validation (IV&V):** **100% Passed** (Zero Trust runtime audit)
+> **Updated:** 2026-10-08  
+> **Automated Test Suites:** **563 Passed** (376 backend + 187 frontend unit/integration tests)  
+> **Independent Verification & Validation (IV&V):** **100% Passed** (Zero Trust runtime audit)  
+> **Single Source of Truth:** See [`docs/PROJECT_METRICS.md`](PROJECT_METRICS.md)
 
 ---
 
@@ -19,7 +20,7 @@
 
 ## 📊 Test Summary Matrix
 
-| Domain / Module | Automated Tests (`vitest`) | Runtime Scenarios (IV&V) | Pass Rate | Status |
+| Domain / Module | Core Functional Scenarios | Runtime Scenarios (IV&V) | Pass Rate | Status |
 | :--- | :---: | :---: | :---: | :---: |
 | **1. Authentication & Security Hardening** | 23 | 4 | 100% | 🟢 **PASSED** |
 | **2. Organization & Multi-Tenancy (SSE)** | 27 | 3 | 100% | 🟢 **PASSED** |
@@ -31,7 +32,7 @@
 | **8. Email Engine & Activity Audit Trail** | 35 | 4 | 100% | 🟢 **PASSED** |
 | **9. LAN, Network & Proxy Architecture** | 18 | 2 | 100% | 🟢 **PASSED** |
 | **10. i18n & Error Handling System** | 41 | 1 | 100% | 🟢 **PASSED** |
-| **TOTAL** | **High-Density Coverage** | **31 Scenarios** | **100%** | 🚀 **READY TO SHIP** |
+| **TOTAL** | **276 Scenarios (563 Tests)** | **31 Scenarios** | **100%** | 🚀 **READY TO SHIP** |
 
 ---
 

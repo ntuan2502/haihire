@@ -21,8 +21,8 @@ Before commencing deployment operations, verify each item:
   ```
   Verify output displays: `Backup & Restore Drill Completed Successfully!`.
 - [ ] **Clean Codebase Verification:**
-  - `pnpm test` and `pnpm test:e2e` reporting 379/379 tests passing (233 Backend + 136 Frontend + 10 E2E).
-  - All 7 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
+  - `pnpm test` reporting 563/563 tests passing (376 Backend + 187 Frontend) and `pnpm test:e2e` reporting 100% green.
+  - All 11 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
   - `pnpm lint:env-sync` reporting 100% key parity and complete compose variable coverage.
 - [ ] **Container Image Availability on GHCR:**
   Verify immutable production images published by GitHub Actions workflow exist in GitHub Container Registry (GHCR):
@@ -150,7 +150,7 @@ Establish continuous SRE observation protocol across four operational milestones
 
 ## 6. Critical Alert Rules To Watch (Prometheus / Grafana)
 
-The following Prometheus alert rules (maintained in [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)) must remain green:
+The following Prometheus alert rules (maintained in [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)) must remain green:
 
 ```yaml
 - alert: HighHttpErrorRate

@@ -1,7 +1,7 @@
 # Runbook: Valkey / Redis Recovery & Queue Restoration
 
 **System:** HaiHire Enterprise ATS  
-**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)  
+**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)  
 **Alert Rules:** `HaiHireRedisDown` (Critical), `HaiHireBullMqRedisDown` (Critical)  
 **Responsible Teams:** SRE & Infrastructure Engineering (`team: sre`)
 

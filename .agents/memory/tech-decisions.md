@@ -69,7 +69,7 @@ updated: 2026-10-02
   - **Rationale**: Eliminates DRIVER.NOT_CONNECTED or CONTRACT.MARKER_READ_FAILED failures when running local Docker environments without cloud credentials.
 
 - **Comprehensive Automated Testing Baseline (Full-Stack Continuous Verification)**:
-  - **Decision**: Enforce a mandatory suite of 370+ automated tests across backend services and frontend components. Current baseline (Phase 21): 379 tests total (236 backend + 143 frontend).
+  - **Decision**: Enforce a mandatory suite of automated tests across backend services and frontend components. Current baseline (v1.0.0): 563 tests total (376 backend + 187 frontend). Master metrics tracked in `docs/PROJECT_METRICS.md`.
   - **Coverage**: Covers auth flows, job wizard, pipeline kanban, interview scheduling, scorecard evaluation, member invitations, tenant isolation, transactions, Saga pattern, RSC metadata.
   - **Verification**: Run pnpm test across the monorepo to guarantee 0 regressions before committing major refactors.
 
@@ -191,5 +191,5 @@ updated: 2026-10-02
   - **Rationale**: Eliminates cross-tenant data leak vulnerabilities at compile/CI time before code reaches production.
 
 - **Frontend Mutation Error Standardization (Task #8)**:
-  - **Decision**: All 30 TanStack Query mutation hooks in `frontend/src/hooks/` implement centralized `onError` callbacks that trigger `queryClient.invalidateQueries` for associated entity queries.
+  - **Decision**: All 35 TanStack Query mutation hooks in `frontend/src/hooks/` (30 standardized in Task #8 + 5 pre-existing) implement centralized `onError` callbacks that trigger `queryClient.invalidateQueries` for associated entity queries.
   - **Rationale**: Prevents stale cache desynchronization on 409 Conflict or unexpected mutation errors across all recruitment pipeline screens.

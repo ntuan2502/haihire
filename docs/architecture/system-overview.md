@@ -27,7 +27,7 @@ flowchart TB
 
     subgraph BackendCluster["NestJS 12.1.2 API Server (Port 13001 / 3001)"]
         GuardLayer["Security Guards\n• JwtAuthGuard (HttpOnly Cookie)\n• TenantGuard (Org Isolation)\n• ThrottlerGuard (Rate Limiting)"]
-        Controllers["9 Core Domain Controllers\n• Auth, Jobs, Candidates, Applications\n• Interviews, Email, Sourcing, Orgs"]
+        Controllers["13 Controllers (9 Core Domains + 4 Infra/Utility)\n• Auth, Jobs, Candidates, Applications\n• Interviews, Email, Sourcing, Orgs, Activities\n• Webhooks, Users, Metrics, Health"]
         SagaService["Application Saga Coordinator\n• MinIO Upload -> Prisma TX -> DLQ"]
         ALS["AsyncLocalStorage Transaction Manager\n• PrismaService.executeTx()"]
         EmailWorker["BullMQ Email Processor\n• Deterministic Idempotency Keys"]

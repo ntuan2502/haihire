@@ -4,7 +4,7 @@
 **Author:** Senior Software Engineer / Antigravity Agent  
 **Date:** 2026-10-08  
 **Status:** ✅ 100% COMPLETED — READY FOR DEEPSEEK REVIEW  
-**Reference Documentation:** [`docs/archive/reports/hardening-transitional/16-task-05-followup-and-task-06-kickoff-report.md`](file:///c:/Workspaces/haihire/docs/archive/reports/hardening-transitional/16-task-05-followup-and-task-06-kickoff-report.md), [`docs/DEFINITION_OF_DONE.md`](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**Reference Documentation:** [`docs/archive/reports/hardening-transitional/16-task-05-followup-and-task-06-kickoff-report.md`](../archive/reports/hardening-transitional/16-task-05-followup-and-task-06-kickoff-report.md), [`docs/DEFINITION_OF_DONE.md`](../DEFINITION_OF_DONE.md)
 
 ---
 
@@ -89,7 +89,7 @@
 ---
 
 **4. Test Coverage**
-- **Unit test file:** [`scripts/cleanup-orphan-minio.spec.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.spec.ts)
+- **Unit test file:** [`scripts/cleanup-orphan-minio.spec.ts`](../../scripts/cleanup-orphan-minio.spec.ts)
 - **New test cases:** **7 test cases** (+7 net new tests)
   1. `Test 1:` Pushes valid metrics to Pushgateway when complete report provided (verifies URL and HTTP POST method).
   2. `Test 2:` Verifies payload body contains exact 7 HELP/TYPE definitions and corresponding metric values.
@@ -210,6 +210,6 @@
 ---
 
 **8. Files for Review**
-1. [`docker-compose.prod.yml`](file:///c:/Workspaces/haihire/docker-compose.prod.yml) (`pushgateway` service and `PUSHGATEWAY_URL` env)
-2. [`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts) (`pushMetrics`, `pushFailureMetric`, non-throwing error handling)
-3. [`scripts/cleanup-orphan-minio.spec.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.spec.ts) (7 Vitest test cases)
+1. [`docker-compose.prod.yml`](../../docker-compose.prod.yml) (`pushgateway` service and `PUSHGATEWAY_URL` env)
+2. [`scripts/cleanup-orphan-minio.ts`](../../scripts/cleanup-orphan-minio.ts) (`pushMetrics`, `pushFailureMetric`, non-throwing error handling)
+3. [`scripts/cleanup-orphan-minio.spec.ts`](../../scripts/cleanup-orphan-minio.spec.ts) (7 Vitest test cases)

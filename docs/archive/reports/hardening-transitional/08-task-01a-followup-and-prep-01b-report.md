@@ -99,9 +99,9 @@ File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
 ---
 
 ## 5. Files for Review
-- [`backend/src/common/webhook/webhook-provider.interface.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/webhook-provider.interface.ts)
-- [`backend/src/common/webhook/webhook-notifier.service.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/webhook-notifier.service.ts)
-- [`backend/src/common/webhook/providers/generic-webhook.provider.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/generic-webhook.provider.ts)
-- [`backend/src/common/webhook/providers/discord.provider.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/discord.provider.ts)
-- [`backend/src/common/webhook/providers/telegram.provider.ts`](file:///c:/Workspaces/haihire/backend/src/common/webhook/providers/telegram.provider.ts)
-- [`docs/PROJECT_CONTEXT.md`](file:///c:/Workspaces/haihire/docs/PROJECT_CONTEXT.md)
+- [`backend/src/common/webhook/webhook-provider.interface.ts`](../../../../backend/src/common/webhook/webhook-provider.interface.ts)
+- [`backend/src/common/webhook/webhook-notifier.service.ts`](../../../../backend/src/common/webhook/webhook-notifier.service.ts)
+- [`backend/src/common/webhook/providers/generic-webhook.provider.ts`](../../../../backend/src/common/webhook/providers/generic-webhook.provider.ts)
+- [`backend/src/common/webhook/providers/discord.provider.ts`](../../../../backend/src/common/webhook/providers/discord.provider.ts)
+- [`backend/src/common/webhook/providers/telegram.provider.ts`](../../../../backend/src/common/webhook/providers/telegram.provider.ts)
+- [`docs/PROJECT_CONTEXT.md`](../../../PROJECT_CONTEXT.md)

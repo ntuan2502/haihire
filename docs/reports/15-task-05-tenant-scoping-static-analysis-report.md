@@ -4,7 +4,7 @@
 **Author:** Senior Software Engineer / Antigravity Agent  
 **Date:** 2026-10-07  
 **Status:** ✅ 100% COMPLETED — READY FOR DEEPSEEK REVIEW  
-**References:** [docs/archive/reports/hardening-transitional/14-task-04-followup-and-task-05-kickoff-survey-report.md](file:///c:/Workspaces/haihire/docs/archive/reports/hardening-transitional/14-task-04-followup-and-task-05-kickoff-survey-report.md), [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**References:** [docs/archive/reports/hardening-transitional/14-task-04-followup-and-task-05-kickoff-survey-report.md](../archive/reports/hardening-transitional/14-task-04-followup-and-task-05-kickoff-survey-report.md), [docs/DEFINITION_OF_DONE.md](../DEFINITION_OF_DONE.md)
 
 ---
 
@@ -65,7 +65,7 @@
 ---
 
 **4. Test Coverage & Negative Test**
-- **Unit & Integration tests:** **9 test cases** in [`scripts/check-tenant-scoping.spec.ts`](file:///c:/Workspaces/haihire/scripts/check-tenant-scoping.spec.ts)
+- **Unit & Integration tests:** **9 test cases** in [`scripts/check-tenant-scoping.spec.ts`](../../scripts/check-tenant-scoping.spec.ts)
   1. `Test 1:` Accurately parses service directories, finding exactly 8 tenant-scoped files.
   2. `Test 2:` Detects queries with `organizationId` filter -> SAFE.
   3. `Test 3:` Detects queries missing `organizationId` in tenant contexts -> UNSAFE.
@@ -166,9 +166,9 @@ Unsafe queries: 0
 ---
 
 **6. Files for Review**
-- [`scripts/tenant-scoping.config.ts`](file:///c:/Workspaces/haihire/scripts/tenant-scoping.config.ts)
-- [`scripts/check-tenant-scoping.ts`](file:///c:/Workspaces/haihire/scripts/check-tenant-scoping.ts)
-- [`scripts/check-tenant-scoping.spec.ts`](file:///c:/Workspaces/haihire/scripts/check-tenant-scoping.spec.ts)
-- [`scripts/check-all.ts`](file:///c:/Workspaces/haihire/scripts/check-all.ts)
-- [`.github/workflows/ci-cd.yml`](file:///c:/Workspaces/haihire/.github/workflows/ci-cd.yml)
-- [`package.json`](file:///c:/Workspaces/haihire/package.json)
+- [`scripts/tenant-scoping.config.ts`](../../scripts/tenant-scoping.config.ts)
+- [`scripts/check-tenant-scoping.ts`](../../scripts/check-tenant-scoping.ts)
+- [`scripts/check-tenant-scoping.spec.ts`](../../scripts/check-tenant-scoping.spec.ts)
+- [`scripts/check-all.ts`](../../scripts/check-all.ts)
+- [`.github/workflows/ci-cd.yml`](../../.github/workflows/ci-cd.yml)
+- [`package.json`](../../package.json)

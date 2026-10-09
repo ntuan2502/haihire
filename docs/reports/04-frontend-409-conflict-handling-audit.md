@@ -32,7 +32,7 @@
     "message": "Application stage conflict: the application has been modified by another request. Current stage is no longer 'APPLIED'."
   }
   ```
-  All `updateStage` calls across the UI are wrapped in `try/catch` blocks and pass errors through the standardized utility [`getApiErrorMessage(err, t)`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.ts#L15-L52) in [`frontend/src/lib/api-error.ts`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.ts).
+  All `updateStage` calls across the UI are wrapped in `try/catch` blocks and pass errors through the standardized utility [`getApiErrorMessage(err, t)`](../../frontend/src/lib/api-error.ts#L15-L52) in [`frontend/src/lib/api-error.ts`](../../frontend/src/lib/api-error.ts).
 - This function extracts `payload.code === "APPLICATION_STAGE_CONFLICT"` and maps it directly to the translation key `errors.APPLICATION_STAGE_CONFLICT`.
 
 ---
@@ -41,18 +41,18 @@
 
 The system **DOES NOT display generic errors**. Instead, users receive an actionable, context-aware notification:
 
-### 2.1 Vietnamese ([`frontend/src/i18n/locales/vi.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/vi.ts#L89)):
+### 2.1 Vietnamese ([`frontend/src/i18n/locales/vi.ts:L89`](../../frontend/src/i18n/locales/vi.ts#L89)):
 ```typescript
 APPLICATION_STAGE_CONFLICT: "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác. Vui lòng tải lại trang để xem trạng thái mới nhất.",
 ```
 
-### 2.2 English ([`frontend/src/i18n/locales/en.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/en.ts#L89)):
+### 2.2 English ([`frontend/src/i18n/locales/en.ts:L89`](../../frontend/src/i18n/locales/en.ts#L89)):
 ```typescript
 APPLICATION_STAGE_CONFLICT: "This application was just updated by another user. Please refresh to see the latest status.",
 ```
 
 ### 2.3 Unit Testing for Error Mapping:
-Verified in the test suite in [`frontend/src/lib/api-error.spec.ts:L90-110`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.spec.ts#L90-L110) and [`L146-175`](file:///c:/Workspaces/haihire/frontend/src/lib/api-error.spec.ts#L146-L175):
+Verified in the test suite in [`frontend/src/lib/api-error.spec.ts:L90-110`](../../frontend/src/lib/api-error.spec.ts#L90-L110) and [`L146-175`](../../frontend/src/lib/api-error.spec.ts#L146-L175):
 ```typescript
 it("translates APPLICATION_STAGE_CONFLICT (HTTP 409) with Vietnamese message", async () => { ... });
 it("translates APPLICATION_INVALID_STAGE_TRANSITION and APPLICATION_STAGE_CONFLICT in English", async () => { ... });
@@ -65,8 +65,8 @@ it("translates APPLICATION_INVALID_STAGE_TRANSITION and APPLICATION_STAGE_CONFLI
 Inspected all 4 invocations of `updateStageMutation.mutateAsync` across the frontend:
 
 ### 3.1 Screen 1: Kanban Pipeline Board (Drag-and-drop Candidate Stages)
-- **File:** [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx)
-- **Line Location:** [Lines 410 to 418](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx#L410-L418)
+- **File:** [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx`](../../frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx)
+- **Line Location:** [Lines 410 to 418](../../frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx#L410-L418)
 - **Source Code:**
   ```typescript
   } catch (err) {
@@ -85,8 +85,8 @@ Inspected all 4 invocations of `updateStageMutation.mutateAsync` across the fron
 ---
 
 ### 3.2 Screen 2: Application Detail View
-- **File:** [`frontend/src/app/dashboard/applications/[id]/page.tsx`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/applications/%5Bid%5D/page.tsx)
-- **Line Location:** [Lines 213 to 219](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/applications/%5Bid%5D/page.tsx#L213-L219)
+- **File:** [`frontend/src/app/dashboard/applications/[id]/page.tsx`](../../frontend/src/app/dashboard/applications/[id]/page.tsx)
+- **Line Location:** [Lines 213 to 219](../../frontend/src/app/dashboard/applications/[id]/page.tsx#L213-L219)
 - **Source Code:**
   ```typescript
   } catch (err) {
@@ -104,8 +104,8 @@ Inspected all 4 invocations of `updateStageMutation.mutateAsync` across the fron
 ---
 
 ### 3.3 Screen 3: Applications Data Table
-- **File:** [`frontend/src/components/applications/applications-data-table.tsx`](file:///c:/Workspaces/haihire/frontend/src/components/applications/applications-data-table.tsx)
-- **Line Location:** [Lines 446 to 451](file:///c:/Workspaces/haihire/frontend/src/components/applications/applications-data-table.tsx#L446-L451)
+- **File:** [`frontend/src/components/applications/applications-data-table.tsx`](../../frontend/src/components/applications/applications-data-table.tsx)
+- **Line Location:** [Lines 446 to 451](../../frontend/src/components/applications/applications-data-table.tsx#L446-L451)
 - **Source Code:**
   ```typescript
   } catch (err) {
@@ -122,8 +122,8 @@ Inspected all 4 invocations of `updateStageMutation.mutateAsync` across the fron
 ---
 
 ### 3.4 Screen 4: Schedule Interview Modal
-- **File:** [`frontend/src/components/interviews/schedule-interview-modal.tsx`](file:///c:/Workspaces/haihire/frontend/src/components/interviews/schedule-interview-modal.tsx)
-- **Line Location:** [Lines 223 to 226](file:///c:/Workspaces/haihire/frontend/src/components/interviews/schedule-interview-modal.tsx#L223-L226)
+- **File:** [`frontend/src/components/interviews/schedule-interview-modal.tsx`](../../frontend/src/components/interviews/schedule-interview-modal.tsx)
+- **Line Location:** [Lines 223 to 226](../../frontend/src/components/interviews/schedule-interview-modal.tsx#L223-L226)
 - **Source Code:**
   ```typescript
   } catch (err) {
@@ -154,6 +154,6 @@ Inspected all 4 invocations of `updateStageMutation.mutateAsync` across the fron
 
 ### Recommended Enhancements:
 1. **Add `onError` invalidation to `useUpdateStageMutation` hook:**  
-   In [`frontend/src/hooks/use-application-queries.ts:L103-120`](file:///c:/Workspaces/haihire/frontend/src/hooks/use-application-queries.ts#L103-L120), `invalidateQueries` is currently configured only on `onSuccess`. Adding `onError: () => queryClient.invalidateQueries(...)` at the base hook level guarantees that **all future components** automatically resynchronize even if component authors omit cache invalidation in local catch blocks.
+   In [`frontend/src/hooks/use-application-queries.ts:L103-120`](../../frontend/src/hooks/use-application-queries.ts#L103-L120), `invalidateQueries` is currently configured only on `onSuccess`. Adding `onError: () => queryClient.invalidateQueries(...)` at the base hook level guarantees that **all future components** automatically resynchronize even if component authors omit cache invalidation in local catch blocks.
 2. **"Refresh Now" Toast Action:**  
    While background queries automatically resynchronize state, adding an explicit `action: { label: "Refresh", onClick: () => window.location.reload() }` to the Sonner toast gives users explicit control and reassurance.

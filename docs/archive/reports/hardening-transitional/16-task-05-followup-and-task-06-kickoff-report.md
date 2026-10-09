@@ -4,14 +4,14 @@
 **Author:** Senior Software Engineer / Antigravity Agent  
 **Date:** 2026-10-07  
 **Status:** ✅ READY FOR DEEPSEEK REVIEW & TASK #6 SPEC RELEASE  
-**References:** [docs/reports/15-task-05-tenant-scoping-static-analysis-report.md](file:///c:/Workspaces/haihire/docs/reports/15-task-05-tenant-scoping-static-analysis-report.md), [scripts/cleanup-orphan-minio.ts](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts), [docker-compose.prod.yml](file:///c:/Workspaces/haihire/docker-compose.prod.yml)
+**References:** [docs/reports/15-task-05-tenant-scoping-static-analysis-report.md](../../../reports/15-task-05-tenant-scoping-static-analysis-report.md), [scripts/cleanup-orphan-minio.ts](../../../../scripts/cleanup-orphan-minio.ts), [docker-compose.prod.yml](../../../../docker-compose.prod.yml)
 
 ---
 
 ## PART A: RECONCILING THE 213 vs 214 QUERIES DISCREPANCY
 
 ### 1. Which Query Was the Discrepancy? File and Line Location
-- **Discrepant Query:** [`backend/src/users/users.service.ts:L30-L37`](file:///c:/Workspaces/haihire/backend/src/users/users.service.ts#L30-L37)
+- **Discrepant Query:** [`backend/src/users/users.service.ts:L30-L37`](../../../../backend/src/users/users.service.ts#L30-L37)
   ```ts
   const allUsers = await db.orm.public.User.select(
     "id", "email", "name", "role", "avatarUrl", "createdAt"
@@ -21,7 +21,7 @@
 ### 2. Root Cause of the Discrepancy
 - **Prior Survey (Report #14):** Scanned all service files across the codebase and tallied **214 queries** spanning 9 files (8 tenant-scoped files = 213 queries + 1 file `users.service.ts` = 1 query).
 - **Task #5 Implementation:** In accordance with DeepSeek's specification in **Section 1.2 (Whitelisted Non-Scanned Files)**:
-  `users.service.ts` provides system-wide mock/demo user records, and was explicitly placed in `NON_TENANT_SCOPED_FILES` within [`scripts/tenant-scoping.config.ts`](file:///c:/Workspaces/haihire/scripts/tenant-scoping.config.ts).
+  `users.service.ts` provides system-wide mock/demo user records, and was explicitly placed in `NON_TENANT_SCOPED_FILES` within [`scripts/tenant-scoping.config.ts`](../../../../scripts/tenant-scoping.config.ts).
 - When `check-tenant-scoping.ts` executes, it skips `users.service.ts` and inspects the 8 tenant-scoped service files containing exactly **213 queries**.
 - **Conclusion:**
   - The regex **DID NOT miss** any queries.
@@ -101,7 +101,7 @@ Survey for integrating Prometheus Pushgateway with the MinIO orphan cleanup scri
 - **Existing Structure:**
   - Defines `runCli()`, executing automatically when invoked via CLI (`process.argv[1]` ends with `cleanup-orphan-minio.ts`).
   - Supports `--dry-run` and `--threshold-days=N` (defaults to 30 days).
-  - Connects to MinIO client and calls `cleanupOrphans()` from [`backend/src/common/orphan-cleanup.ts`](file:///c:/Workspaces/haihire/backend/src/common/orphan-cleanup.ts).
+  - Connects to MinIO client and calls `cleanupOrphans()` from [`backend/src/common/orphan-cleanup.ts`](../../../../backend/src/common/orphan-cleanup.ts).
 - **Data in Report Object (`CleanupReport`):**
   Comprehensive quantitative data, ideal for Prometheus metrics:
   - `report.scannedCount`: Total MinIO objects scanned.
@@ -111,7 +111,7 @@ Survey for integrating Prometheus Pushgateway with the MinIO orphan cleanup scri
   - `report.deletedCount`: Files deleted (or eligible for deletion in `--dry-run`).
   - `report.bytesFreed`: Total storage space freed (bytes).
 - **Execution Model:**
-  Configured as an independent Cron container in [`docker-compose.prod.yml`](file:///c:/Workspaces/haihire/docker-compose.prod.yml) (service `orphan-cleanup`):
+  Configured as an independent Cron container in [`docker-compose.prod.yml`](../../../../docker-compose.prod.yml) (service `orphan-cleanup`):
   ```bash
   echo '0 4 * * * cd /app && node --import tsx scripts/cleanup-orphan-minio.ts >> /var/log/orphan-cleanup.log 2>&1' > /etc/crontabs/root && crond -f -l 2
   ```

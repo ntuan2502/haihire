@@ -1,7 +1,7 @@
 # Runbook: BullMQ Dead-Letter Queue Recovery (DLQ Recovery)
 
 **System:** HaiHire Enterprise ATS  
-**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml), [`docs/runbooks/orphan-cleanup.md`](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md)  
+**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml), [`docs/runbooks/orphan-cleanup.md`](orphan-cleanup.md)  
 **Alert Rules:** `HaiHireBullMqDlqGrowing` (Warning), `HaiHireBullMqDlqCritical` (Critical), `HaiHireOrphanCleanupSpikeWarning` (Warning), `HaiHireOrphanCleanupSpikeCritical` (Critical), `HaiHireOrphanCleanupCronMissing` (Critical)  
 **Responsible Teams:** SRE & Backend Engineering (`team: sre`)
 

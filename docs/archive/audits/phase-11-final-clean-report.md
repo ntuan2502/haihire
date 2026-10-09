@@ -28,7 +28,7 @@ All 3/3 P3 findings are completely resolved and **CLOSED**, enhancing pipeline r
 ## 2. PART A — DETAILS OF THE 3 REMEDIATIONS
 
 ### 2.1. A1: Fix BUG-IVV6-01 — Wrap `fs.mkdirSync` in try/catch
-* **Root Cause:** At lines 43-45 in [`scripts/backup-production.ts`](file:///c:/Workspaces/haihire/scripts/backup-production.ts), `fs.mkdirSync(config.backupDir, { recursive: true })` ran raw outside the `try/catch` block. If the target disk partition was missing, out of space, or read-only, Node.js threw unhandled `ENOENT / EACCES` errors crashing the backup process.
+* **Root Cause:** At lines 43-45 in [`scripts/backup-production.ts`](../../../scripts/backup-production.ts), `fs.mkdirSync(config.backupDir, { recursive: true })` ran raw outside the `try/catch` block. If the target disk partition was missing, out of space, or read-only, Node.js threw unhandled `ENOENT / EACCES` errors crashing the backup process.
 * **Code Modification:**
   ```typescript
   // scripts/backup-production.ts
@@ -54,11 +54,11 @@ All 3/3 P3 findings are completely resolved and **CLOSED**, enhancing pipeline r
 
 ### 2.2. A2: Fix TECH-DEBT-IVV6-02 — Unit Tests for 4 New DTOs
 * **New Spec Files Created:**
-  1. [`backend/src/organizations/dto/org-actions.dto.spec.ts`](file:///c:/Workspaces/haihire/backend/src/organizations/dto/org-actions.dto.spec.ts) (17 test cases)
+  1. [`backend/src/organizations/dto/org-actions.dto.spec.ts`](../../../backend/src/organizations/dto/org-actions.dto.spec.ts) (17 test cases)
      - `SwitchOrgDto`: 5 cases (valid, missing fields, empty strings, invalid number types, nested objects).
      - `UpdateMemberRoleDto`: 6 cases (ADMIN, MEMBER, missing fields, invalid enums, XSS scripts, invalid number types).
      - `CreateInviteLinkDto`: 6 cases (all options, valid empty, partial payload, invalid role type, invalid boolean expiresIn, invalid object maxUses).
-  2. [`backend/src/activities/dto/create-activity-record.dto.spec.ts`](file:///c:/Workspaces/haihire/backend/src/activities/dto/create-activity-record.dto.spec.ts) (7 test cases)
+  2. [`backend/src/activities/dto/create-activity-record.dto.spec.ts`](../../../backend/src/activities/dto/create-activity-record.dto.spec.ts) (7 test cases)
      - `CreateActivityRecordDto`: complete payload, omitted optional fields, missing candidateId, invalid ActivityType enum, XSS script injection, missing title/description, candidateId invalid number type.
 * **Post-Fix Verification (Raw Evidence):**
   Ran `pnpm --filter ./backend run test`:
@@ -74,13 +74,13 @@ All 3/3 P3 findings are completely resolved and **CLOSED**, enhancing pipeline r
 
 ### 2.3. A3: Fix PROCESS-IVV6-03 — CI Gate for DtoPipe Coverage
 * **Architectural Solution:**
-  1. Authored script [`scripts/check-dtopipe-coverage.ts`](file:///c:/Workspaces/haihire/scripts/check-dtopipe-coverage.ts) automatically scanning `backend/src/**/*.controller.ts`.
+  1. Authored script [`scripts/check-dtopipe-coverage.ts`](../../../scripts/check-dtopipe-coverage.ts) automatically scanning `backend/src/**/*.controller.ts`.
   2. Immediately errors when finding route handlers accepting `@Body()` without `DtoPipe`.
-  3. Registered script in [`package.json`](file:///c:/Workspaces/haihire/package.json):
+  3. Registered script in [`package.json`](../../../package.json):
      ```json
      "lint:dtopipe": "node --no-warnings --experimental-strip-types scripts/check-dtopipe-coverage.ts"
      ```
-  4. Integrated directly into CI/CD pipeline in [`.github/workflows/ci-cd.yml`](file:///c:/Workspaces/haihire/.github/workflows/ci-cd.yml):
+  4. Integrated directly into CI/CD pipeline in [`.github/workflows/ci-cd.yml`](../../../.github/workflows/ci-cd.yml):
      ```yaml
      - name: Run linter and type checks
        run: pnpm lint
@@ -137,7 +137,7 @@ All 3/3 P3 findings are completely resolved and **CLOSED**, enhancing pipeline r
 
 ## 4. PART C — PRODUCTION DEPLOYMENT PLAN
 
-Detailed plan authored and stored at [`docs/runbooks/production-deployment-plan.md`](file:///c:/Workspaces/haihire/docs/runbooks/production-deployment-plan.md), including:
+Detailed plan authored and stored at [`docs/runbooks/production-deployment-plan.md`](../../runbooks/production-deployment-plan.md), including:
 1. **Maintenance Window:** 02:00 - 04:00 UTC (lowest traffic window).
 2. **Deployment Procedure:** Pre-release backup $\rightarrow$ Rolling update backend container $\rightarrow$ Verify `/health` $\rightarrow$ Deploy frontend $\rightarrow$ Synthetic smoke tests.
 3. **Rollback Plan:** Defined trigger thresholds (HTTP errors > 1%, p95 latency > 500ms), recovery commands for N-1 image tags and DB snapshots.

@@ -22,10 +22,10 @@ $$\text{MAJOR}.\text{MINOR}.\text{PATCH}$$
 
 To eliminate cross-package drift and ensure deterministic production builds, all packages in the HaiHire monorepo share a unified version in lockstep:
 
-1. **Root Manifest:** [`package.json`](file:///c:/Workspaces/haihire/package.json)
-2. **Backend Service:** [`backend/package.json`](file:///c:/Workspaces/haihire/backend/package.json)
-3. **Frontend Application:** [`frontend/package.json`](file:///c:/Workspaces/haihire/frontend/package.json)
-4. **Shared Library:** [`packages/shared/package.json`](file:///c:/Workspaces/haihire/packages/shared/package.json)
+1. **Root Manifest:** [`package.json`](../../package.json)
+2. **Backend Service:** [`backend/package.json`](../../backend/package.json)
+3. **Frontend Application:** [`frontend/package.json`](../../frontend/package.json)
+4. **Shared Library:** [`packages/shared/package.json`](../../packages/shared/package.json)
 
 ### Automated Version Synchronization Scripts
 
@@ -136,7 +136,7 @@ pnpm version:bump patch
 ```
 
 ### Step 3: Document Changes in CHANGELOG.md
-Update [`CHANGELOG.md`](file:///c:/Workspaces/haihire/CHANGELOG.md) moving items from `[Unreleased]` into the new release header:
+Update [`CHANGELOG.md`](../../CHANGELOG.md) moving items from `[Unreleased]` into the new release header:
 ```markdown
 ## [1.0.1] - 2026-10-03
 ### Added
@@ -160,12 +160,12 @@ git push origin v1.0.1
 
 ### Step 5: Automated Workflow Execution
 Pushing tag `v*.*.*` automatically triggers:
-1. [`.github/workflows/docker-publish.yml`](file:///c:/Workspaces/haihire/.github/workflows/docker-publish.yml):
+1. [`.github/workflows/docker-publish.yml`](../../.github/workflows/docker-publish.yml):
    - Runs full test suite
    - Builds multi-stage optimized Docker images with Buildx and GitHub Actions cache
    - Publishes backend & frontend images to GHCR tagged with `v1.0.1` and `sha-...`
    - Generates official GitHub Release with release notes and deployment commands
-2. [`.github/workflows/release.yml`](file:///c:/Workspaces/haihire/.github/workflows/release.yml):
+2. [`.github/workflows/release.yml`](../../.github/workflows/release.yml):
    - Updates release notes and sends optional release notification webhook
 
 ---

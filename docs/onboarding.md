@@ -101,13 +101,13 @@ Once running, access your local services:
 ## 💻 4. Common Developer Commands
 
 ```bash
-# Run full 7-gate CI verification pipeline
+# Run full 11-gate CI verification pipeline
 pnpm check:all
 
 # Run quick static checks before committing
 pnpm check:all:fast
 
-# Run all unit & integration tests (379 tests)
+# Run all unit & integration tests (563 tests)
 pnpm test
 
 # Run frontend tests only
@@ -157,6 +157,6 @@ pnpm contract:emit
 ---
 
 ## 📚 6. Next Steps
-- Read [System Architecture Overview](file:///c:/Workspaces/haihire/docs/architecture/system-overview.md) to understand data flows and design patterns.
-- Read [REST API Overview](file:///c:/Workspaces/haihire/docs/api/overview.md) to review endpoints, auth, and error codes.
-- Read [Contributing Guide](file:///c:/Workspaces/haihire/CONTRIBUTING.md) for branch naming, commit conventions, and CI quality gates.
+- Read [System Architecture Overview](architecture/system-overview.md) to understand data flows and design patterns.
+- Read [REST API Overview](api/overview.md) to review endpoints, auth, and error codes.
+- Read [Contributing Guide](../CONTRIBUTING.md) for branch naming, commit conventions, and CI quality gates.

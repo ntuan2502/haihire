@@ -62,7 +62,7 @@ cp backend/.env.example backend/.env
 # Frontend runtime configuration
 cp frontend/.env.example frontend/.env
 ```
-> For complete environment segregation details, read the [Environment Management Runbook](file:///c:/Workspaces/haihire/docs/runbooks/env-management.md).
+> For complete environment segregation details, read the [Environment Management Runbook](docs/runbooks/env-management.md).
 
 ### 3. Spin Up Infrastructure Containers
 Start PostgreSQL, Valkey, and MinIO in the background:
@@ -105,15 +105,16 @@ pnpm dev
 
 ## 📂 Documentation Directory
 
-Comprehensive system documentation is maintained under the [`docs/`](file:///c:/Workspaces/haihire/docs/) directory:
+Comprehensive system documentation is maintained under the [`docs/`](docs/) directory:
 
-- 📖 [**Developer Onboarding Guide**](file:///c:/Workspaces/haihire/docs/onboarding.md): Step-by-step onboarding for new team members.
-- 🏛️ [**System Architecture Overview**](file:///c:/Workspaces/haihire/docs/architecture/system-overview.md): High-level topology, Mermaid diagrams, and design patterns.
-- 🔌 [**REST API Overview**](file:///c:/Workspaces/haihire/docs/api/overview.md): Controller mappings, 77 REST endpoints, auth, and error contracts.
-- 🚀 [**Production Deployment Plan**](file:///c:/Workspaces/haihire/docs/runbooks/production-deployment-plan.md): 5-phase production release protocol.
-- 💾 [**Backup & Disaster Recovery**](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md): Automated PostgreSQL dumps, MinIO hot backup, and restore drills.
-- 🧹 [**MinIO Orphan Cleanup**](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md): Daily cron purging unreferenced files with a 30-day grace period.
-- 🚨 [**Monitoring & Alerting Runbook**](file:///c:/Workspaces/haihire/docs/runbooks/alerts.md): Prometheus alert catalog and emergency SOPs.
+- 📊 [**Project Metrics (Single Source of Truth)**](docs/PROJECT_METRICS.md): Master metrics, verification counts, and architectural baseline.
+- 📖 [**Developer Onboarding Guide**](docs/onboarding.md): Step-by-step onboarding for new team members.
+- 🏛️ [**System Architecture Overview**](docs/architecture/system-overview.md): High-level topology, Mermaid diagrams, and design patterns.
+- 🔌 [**REST API Overview**](docs/api/overview.md): Controller mappings, 83 REST endpoints, auth, and error contracts.
+- 🚀 [**Production Deployment Plan**](docs/runbooks/production-deployment-plan.md): 5-phase production release protocol.
+- 💾 [**Backup & Disaster Recovery**](docs/runbooks/backup-and-restore.md): Automated PostgreSQL dumps, MinIO hot backup, and restore drills.
+- 🧹 [**MinIO Orphan Cleanup**](docs/runbooks/orphan-cleanup.md): Daily cron purging unreferenced files with a 30-day grace period.
+- 🚨 [**Monitoring & Alerting Runbook**](docs/runbooks/alerts.md): Prometheus alert catalog and emergency SOPs.
 - 🛡️ [**Audit Reports Archive**](docs/archive/audits/README.md): Historical verification reports and cross-phase synthesis.
 
 ---

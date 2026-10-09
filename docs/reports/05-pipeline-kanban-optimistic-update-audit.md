@@ -31,7 +31,7 @@
 
 ## 2. [DETAILED ANALYSIS OF LINES 380-420 IN `pipeline/page.tsx`]
 
-Source code in [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx:L383-420`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/jobs/%5Bid%5D/pipeline/page.tsx#L383-L420):
+Source code in [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx:L383-420`](../../frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx#L383-L420):
 
 ```typescript
 383:   const handleMoveCandidateStage = async (
@@ -86,7 +86,7 @@ Source code in [`frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx:L383-420
 
 ## 3. [HOOK AND QUERY CLIENT VERIFICATION]
 
-Inspected hook `useUpdateStageMutation` in [`frontend/src/hooks/use-application-queries.ts:L103-120`](file:///c:/Workspaces/haihire/frontend/src/hooks/use-application-queries.ts#L103-L120):
+Inspected hook `useUpdateStageMutation` in [`frontend/src/hooks/use-application-queries.ts:L103-120`](../../frontend/src/hooks/use-application-queries.ts#L103-L120):
 
 ```typescript
 export function useUpdateStageMutation() {
@@ -123,7 +123,7 @@ When 2 Recruiters perform conflicting operations on a candidate profile (or the 
 3. State advancement commands (lines 403-407) **are completely skipped**.
 4. **Visual Card Presentation:**
    - The card remains stationary in its original column, avoiding visual snapping or erratic rollback animations.
-   - Toast renders localized notice: *"This application was recently modified by another user. Please refresh the page to view the latest status."* ([`vi.ts:L89`](file:///c:/Workspaces/haihire/frontend/src/i18n/locales/vi.ts#L89)).
+   - Toast renders localized notice: *"This application was recently modified by another user. Please refresh the page to view the latest status."* ([`vi.ts:L89`](../../frontend/src/i18n/locales/vi.ts#L89)).
    - Lines 416-417 execute:
      ```typescript
      queryClient.invalidateQueries({ queryKey: ["applications"] });

@@ -438,6 +438,14 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       await expect(service.findBySlug("acme-corp", "job-2")).rejects.toThrow();
     });
 
+    it("should allow public access to a CLOSED job via findBySlug without leaking applicant data", async () => {
+      const job = await service.findBySlug("acme-corp", "job-closed");
+      expect(job).toBeDefined();
+      expect(job.status).toBe("CLOSED");
+      expect(job.applications).toEqual([]);
+      expect(job.applicationsCount).toBe(0);
+    });
+
     it("should not leak applicant applications data to public career viewers", async () => {
       const job = await service.findBySlug("acme-corp", "job-1");
       expect(job).toBeDefined();

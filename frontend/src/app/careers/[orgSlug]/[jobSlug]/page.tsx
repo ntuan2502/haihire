@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JobDetailsClient } from "@/components/careers/job-details-client";
+import { JobClosed } from "./job-closed";
 import type { Job, Organization } from "@/types";
 
 interface PageProps {
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { orgSlug, jobSlug } = await params;
   const [job, org] = await Promise.all([fetchJob(orgSlug, jobSlug), fetchOrg(orgSlug)]);
 
-  if (!job) {
+  if (!job || job.status === "DRAFT") {
     return {
       title: "Job Not Found | HaiHire Careers",
       description: "The requested job opening could not be found or has expired.",
@@ -48,14 +49,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const orgName = org?.name || orgSlug;
-  const title = `${job.title} at ${orgName} | HaiHire Careers`;
+  const isClosed = job.status === "CLOSED";
+  const title = isClosed
+    ? `[Closed] ${job.title} at ${orgName} | HaiHire Careers`
+    : `${job.title} at ${orgName} | HaiHire Careers`;
   const cleanDescription = (job.description || "").slice(0, 160).replace(/\s+/g, " ").trim();
 
   return {
     title,
     description: cleanDescription,
     openGraph: {
-      title: `${job.title} - ${orgName}`,
+      title: isClosed ? `[Closed] ${job.title} - ${orgName}` : `${job.title} - ${orgName}`,
       description: cleanDescription,
       type: "article",
       url: `/careers/${orgSlug}/${jobSlug}`,
@@ -63,7 +67,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: "summary_large_image",
-      title: `${job.title} at ${orgName}`,
+      title,
       description: cleanDescription,
     },
   };
@@ -75,6 +79,14 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
 
   if (!job) {
     notFound();
+  }
+
+  if (job.status === "DRAFT") {
+    notFound();
+  }
+
+  if (job.status === "CLOSED") {
+    return <JobClosed job={job} org={org} orgSlug={orgSlug} />;
   }
 
   const orgName = org?.name || orgSlug;

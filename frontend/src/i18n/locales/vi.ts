@@ -1485,8 +1485,6 @@ export const vi: TranslationSchema = {
     orgNotFoundDesc: "Tổ chức \"{slug}\" không tồn tại hoặc chưa kích hoạt trang nghề nghiệp công khai.",
     jobNotFound: "Không tìm thấy vị trí tuyển dụng",
     jobNotFoundDesc: "Vị trí này có thể không tồn tại hoặc đường dẫn không còn chính xác.",
-    jobClosed: "Vị trí đã đóng tuyển dụng",
-    jobClosedDesc: "Vị trí này hiện không còn nhận thêm hồ sơ ứng tuyển mới. Bạn có thể tham khảo các vị trí khác của công ty.",
     backToHome: "Về trang chủ",
     backToJobList: "Về danh sách việc làm",
     backToOrgJobs: "Tất cả vị trí tại {name}",
@@ -1545,6 +1543,11 @@ export const vi: TranslationSchema = {
       email: "nguyenvana@example.com",
       phone: "0912 345 678",
       notes: "Chia sẻ thêm về bản thân, thời gian có thể bắt đầu làm việc, hoặc lý do bạn quan tâm đến vị trí này...",
+    },
+    jobClosed: {
+      title: "Vị trí này đã đóng",
+      description: "Vị trí tuyển dụng này hiện đã ngừng tiếp nhận hồ sơ ứng tuyển mới. Bạn có thể tham khảo các cơ hội nghề nghiệp khác tại tổ chức.",
+      viewOtherJobs: "Xem các vị trí khác",
     },
   },
   email: {

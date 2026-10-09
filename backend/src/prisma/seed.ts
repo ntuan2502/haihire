@@ -874,13 +874,27 @@ export async function runSeed(): Promise<void> {
 
   for (let i = 0; i < 20; i++) {
     const baseConfig = BASE_JOB_CONFIGS[i % BASE_JOB_CONFIGS.length];
-    // Guarantee that Job index 1 (Senior Backend Engineer) & Job index 8 (Senior Technical Recruiter) are ALWAYS PUBLISHED for E2E
-    const isCriticalTestJob =
+    // Guarantee deterministic job statuses for E2E tests:
+    // - Senior Backend Engineer & Senior Technical Recruiter: PUBLISHED
+    // - Information Security & SecOps Specialist: CLOSED
+    // - Customer Success Lead: DRAFT
+    const isCriticalPublishedJob =
       i === 1 ||
       i === 8 ||
       baseConfig.title.includes("Senior Backend Engineer") ||
       baseConfig.title.includes("Senior Technical Recruiter");
-    const status = isCriticalTestJob ? "PUBLISHED" : statusPool[i];
+    const isCriticalClosedJob =
+      baseConfig.title.includes("Information Security & SecOps Specialist");
+    const isCriticalDraftJob =
+      baseConfig.title.includes("Customer Success Lead");
+
+    const status = isCriticalPublishedJob
+      ? "PUBLISHED"
+      : isCriticalClosedJob
+        ? "CLOSED"
+        : isCriticalDraftJob
+          ? "DRAFT"
+          : statusPool[i];
     statusCounts[status]++;
 
     const workplace = WORKPLACES[Math.floor(Math.random() * WORKPLACES.length)];

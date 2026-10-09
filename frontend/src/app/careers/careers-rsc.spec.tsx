@@ -15,6 +15,15 @@ vi.mock("@/components/careers/job-details-client", () => ({
   JobDetailsClient: (props: unknown) => <div data-testid="job-details-client">{JSON.stringify(props)}</div>,
 }));
 
+vi.mock("./[orgSlug]/[jobSlug]/job-closed", () => ({
+  JobClosed: (props: { job: { title: string; status: string } }) => (
+    <div data-testid="job-closed">
+      <h1>{props.job.title}</h1>
+      <span>{props.job.status}</span>
+    </div>
+  ),
+}));
+
 describe("Career Pages React Server Components (RSC) Audit (Phase 16A)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -171,6 +180,84 @@ describe("Career Pages React Server Components (RSC) Audit (Phase 16A)", () => {
       const schemaData = JSON.parse(scriptTag?.textContent || "{}");
       expect(schemaData["@type"]).toBe("JobPosting");
       expect(schemaData.title).toBe("Staff Platform Engineer");
+    });
+
+    it("renders JobClosed component without calling notFound when status is CLOSED", async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/organizations/public/techcorp")) {
+          return {
+            ok: true,
+            json: async () => ({ id: "org-1", name: "TechCorp Global", slug: "techcorp" }),
+          };
+        }
+        if (url.includes("/jobs/careers/")) {
+          return {
+            ok: true,
+            json: async () => ({
+              id: "job-secops",
+              title: "Information Security & SecOps Specialist",
+              slug: "information-security-secops-specialist",
+              department: "Security",
+              location: "Remote",
+              type: "FULL_TIME",
+              status: "CLOSED",
+              description: "Maintain security compliance and penetration testing.",
+            }),
+          };
+        }
+        return { ok: false };
+      });
+
+      const meta = await genJobMeta({
+        params: Promise.resolve({ orgSlug: "techcorp", jobSlug: "information-security-secops-specialist" }),
+      });
+      expect(meta.title).toBe("[Closed] Information Security & SecOps Specialist at TechCorp Global | HaiHire Careers");
+
+      const element = await JobDetailPage({
+        params: Promise.resolve({ orgSlug: "techcorp", jobSlug: "information-security-secops-specialist" }),
+      });
+      const { container } = render(element);
+
+      expect(container.innerHTML).toContain("job-closed");
+      expect(container.innerHTML).toContain("Information Security &amp; SecOps Specialist");
+    });
+
+    it("triggers notFound when job status is DRAFT", async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/organizations/public/techcorp")) {
+          return {
+            ok: true,
+            json: async () => ({ id: "org-1", name: "TechCorp Global", slug: "techcorp" }),
+          };
+        }
+        if (url.includes("/jobs/careers/")) {
+          return {
+            ok: true,
+            json: async () => ({
+              id: "job-draft",
+              title: "Customer Success Lead",
+              slug: "customer-success-lead",
+              department: "Customer Success",
+              location: "Remote",
+              type: "FULL_TIME",
+              status: "DRAFT",
+              description: "Draft role description.",
+            }),
+          };
+        }
+        return { ok: false };
+      });
+
+      const meta = await genJobMeta({
+        params: Promise.resolve({ orgSlug: "techcorp", jobSlug: "customer-success-lead" }),
+      });
+      expect(meta.title).toBe("Job Not Found | HaiHire Careers");
+
+      await expect(
+        JobDetailPage({
+          params: Promise.resolve({ orgSlug: "techcorp", jobSlug: "customer-success-lead" }),
+        }),
+      ).rejects.toThrow();
     });
   });
 });

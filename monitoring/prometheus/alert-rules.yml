@@ -9,7 +9,7 @@ groups:
           team: sre
         annotations:
           summary: "HaiHire Backend API instance is down"
-          description: "HaiHire backend instance has been unreachable for more than 1 minute. Xem runbook: docs/runbooks/alerts.md"
+          description: "HaiHire backend instance has been unreachable for more than 1 minute. See runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHirePostgresDown
         expr: haihire_service_health{service="postgres"} == 0
@@ -19,7 +19,7 @@ groups:
           team: sre
         annotations:
           summary: "PostgreSQL database health check failed"
-          description: "Database connection has failed or timed out for >30s. Xem runbook: docs/runbooks/alerts.md"
+          description: "Database connection has failed or timed out for >30s. See runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireRedisDown
         expr: haihire_service_health{service="redis"} == 0
@@ -29,7 +29,7 @@ groups:
           team: sre
         annotations:
           summary: "Redis cache / queue health check failed"
-          description: "Redis instance ping failed for >30s. Xem runbook: docs/runbooks/redis-recovery.md"
+          description: "Redis instance ping failed for >30s. See runbook: docs/runbooks/redis-recovery.md"
 
       - alert: HaiHireMinioDown
         expr: haihire_service_health{service="minio"} == 0
@@ -39,7 +39,7 @@ groups:
           team: sre
         annotations:
           summary: "MinIO S3 storage health check failed"
-          description: "MinIO storage bucket check failed for >1m. Xem runbook: docs/runbooks/alerts.md"
+          description: "MinIO storage bucket check failed for >1m. See runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireHighHttp5xxErrorRate
         expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
@@ -49,7 +49,7 @@ groups:
           team: sre
         annotations:
           summary: "High HTTP 5xx error rate (>5%)"
-          description: "HTTP 5xx error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes. Xem runbook: docs/runbooks/alerts.md"
+          description: "HTTP 5xx error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes. See runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireHighHttpLatencyP95
         expr: http_request_duration_ms{quantile="0.95"} > 1000
@@ -59,7 +59,7 @@ groups:
           team: sre
         annotations:
           summary: "High HTTP request latency (P95 > 1000ms)"
-          description: "95th percentile request latency exceeded 1000ms for 3 minutes. Xem runbook: docs/runbooks/alerts.md"
+          description: "95th percentile request latency exceeded 1000ms for 3 minutes. See runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireHighRateLimit429Rate
         expr: rate(http_requests_total{status="429"}[5m]) > 50
@@ -69,7 +69,7 @@ groups:
           team: sre
         annotations:
           summary: "High volume of rate-limited requests"
-          description: "Over 50 requests/sec are receiving HTTP 429 Too Many Requests (possible DDoS or brute-force). Xem runbook: docs/runbooks/alerts.md"
+          description: "Over 50 requests/sec are receiving HTTP 429 Too Many Requests (possible DDoS or brute-force). See runbook: docs/runbooks/alerts.md"
 
       - alert: HaiHireBullMqDlqGrowing
         expr: bullmq_queue_depth{queue="orphan-cleanup-dlq",state="waiting"} > 10

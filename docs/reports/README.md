@@ -29,6 +29,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [28 — Task #11 Phase 1: Environment Architecture Audit & Proposal](28-task-11-env-architecture-audit-proposal.md)
 - [29 — Task #11 Phase 2: Environment Architecture Unification Completion Report](29-task-11-phase-2-env-architecture-unification-report.md)
 - [30 — Task #12 Phase 1: package.json & Dev Script Audit and Refactoring Proposal](30-task-12-package-json-dev-script-audit-proposal.md)
+- [31 — Task #12 Phase 2: package.json Standardization & Dev Warning Fix Completion Report](31-task-12-phase-2-package-json-standardization-report.md)
 
 ## Archived Reports
 

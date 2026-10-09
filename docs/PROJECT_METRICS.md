@@ -14,7 +14,7 @@
   - Frontend: 187 passing (Vitest + JSDOM, 30 test suites)
 - **CI Architecture Gates:** 11 gates (`scripts/check-all.ts`)
   1. `lint:env-sync` — Env Variables Synchronization & Parity
-  2. `check:i18n` — Two-Way i18n & Zero Hardcoded Strings
+  2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings
   3. `lint` — ESLint Code Quality (Backend + Frontend)
   4. `typecheck` — Strict TypeScript Typecheck (`tsc --noEmit`)
   5. `lint:dtopipe` — DtoPipe Validation Coverage

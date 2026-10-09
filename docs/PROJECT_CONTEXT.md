@@ -204,7 +204,7 @@ haihire/
 | **Full CI verification** | `pnpm check:all` | Executes full CI quality gates suite. |
 | **Fast CI check (pre-commit)**| `pnpm check:all:fast`| Runs static gates + test diff (~38s). |
 | **Verify Environment sync**| `pnpm lint:env-sync` | Asserts 100% key parity across `.env` templates and Docker Compose. |
-| **Verify i18n parity** | `pnpm check:i18n` | Asserts zero hardcoded strings in JSX and complete dictionary keys. |
+| **Verify i18n parity** | `pnpm lint:i18n` | Asserts zero hardcoded strings in JSX and complete dictionary keys. |
 | **Verify DtoPipe coverage**| `pnpm lint:dtopipe` | Verifies 100% of `@Body()` parameters guarded by `DtoPipe`. |
 | **Verify Error code i18n** | `pnpm lint:error-i18n` | Asserts all `APP_ERROR_CODES` exist in `vi.ts` and `en.ts`. |
 | **Version synchronization**| `pnpm version:sync` / `pnpm version:bump [patch\|minor]` | Synchronizes lockstep version across monorepo `package.json` manifests. |

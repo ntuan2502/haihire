@@ -91,22 +91,18 @@ services:
     container_name: haihire-backend
     restart: unless-stopped
     env_file:
-      - path: ./backend/.env
+      - path: ./.env
         required: false
     environment:
       PORT: 3001
       DATABASE_URL: postgresql://${POSTGRES_USER:-haihire_user}:${POSTGRES_PASSWORD:-haihire_password}@postgres:5432/${POSTGRES_DB:-haihire_db}?schema=public
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
-      MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
       MINIO_PUBLIC_URL: http://localhost:${MINIO_PORT:-9000}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      JWT_SECRET: ${JWT_SECRET:-haihire_super_secret_jwt_key_development_only_change_in_prod}
       FRONTEND_URL: http://localhost:${FRONTEND_PORT:-3000}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
@@ -137,7 +133,7 @@ services:
     container_name: haihire-frontend
     restart: unless-stopped
     env_file:
-      - path: ./frontend/.env
+      - path: ./.env
         required: false
     environment:
       PORT: 3000

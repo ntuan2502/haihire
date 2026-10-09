@@ -44,9 +44,9 @@ A recursive filesystem scan (`find . -maxdepth 3 -name ".env*"`) confirmed exact
 | [`.env.example`](../../.env.example) | ✅ Yes | ❌ No | 2,301 | 52 | System-level template used by `docker-compose.yml` and dev scripts. |
 | [`.env.production.example`](../../.env.production.example) | ✅ Yes | ❌ No | 4,746 | 101 | Production deployment template for secure runners (chmod 600 notice). |
 | `backend/.env` | ❌ No | ✅ Yes | 4,814 | 115 | Active backend local environment (database, storage, auth secrets, email). |
-| [`backend/.env.example`](../../backend/.env.example) | ✅ Yes | ❌ No | 5,498 | 117 | Backend environment template with strict fail-fast Zod validation rules. |
+| `backend/.env.example` | Removed (Phase 2) | ❌ No | 5,498 | 117 | Backend environment template with strict fail-fast Zod validation rules. |
 | `frontend/.env` | ❌ No | ✅ Yes | 2,392 | 49 | Active frontend local environment (Next.js internal API URL, client variables). |
-| [`frontend/.env.example`](../../frontend/.env.example) | ✅ Yes | ❌ No | 2,597 | 50 | Frontend environment template for Next.js SSR and client browser builds. |
+| `frontend/.env.example` | Removed (Phase 2) | ❌ No | 2,597 | 50 | Frontend environment template for Next.js SSR and client browser builds. |
 
 *Verification Evidence:* Git tracking verified via `git ls-files`. Gitignore verified via root `.gitignore` (line 12), `backend/.gitignore` (line 3), and `frontend/.gitignore` (line 34).
 

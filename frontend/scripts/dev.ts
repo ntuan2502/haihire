@@ -6,14 +6,18 @@ import net from "node:net";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load root and frontend env files if present using Node's built-in env loader
+// Load single source: root .env
 const rootEnv = path.resolve(__dirname, "../../.env");
 if (fs.existsSync(rootEnv)) {
   process.loadEnvFile(rootEnv);
+} else {
+  console.error("Root .env not found at", rootEnv);
+  process.exit(1);
 }
-const localEnv = path.resolve(__dirname, "../.env");
-if (fs.existsSync(localEnv)) {
-  process.loadEnvFile(localEnv);
+
+// Set PORT for Next.js from FRONTEND_PORT (if not already set)
+if (!process.env.PORT && process.env.FRONTEND_PORT) {
+  process.env.PORT = process.env.FRONTEND_PORT;
 }
 
 const backendHost = process.env.BACKEND_HOST || "127.0.0.1";

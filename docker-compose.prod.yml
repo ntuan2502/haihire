@@ -139,29 +139,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
+      # Docker network overrides (internal service discovery)
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
-      MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET}
-      FRONTEND_URL: ${FRONTEND_URL}
-      SYSTEM_EMAIL_PROVIDER: ${SYSTEM_EMAIL_PROVIDER:-SMTP}
-      SYSTEM_EMAIL_FROM_NAME: ${SYSTEM_EMAIL_FROM_NAME}
-      SYSTEM_EMAIL_FROM_EMAIL: ${SYSTEM_EMAIL_FROM_EMAIL}
-      SYSTEM_EMAIL_SMTP_HOST: ${SYSTEM_EMAIL_SMTP_HOST:-}
-      SYSTEM_EMAIL_SMTP_PORT: ${SYSTEM_EMAIL_SMTP_PORT:-587}
-      SYSTEM_EMAIL_SMTP_USER: ${SYSTEM_EMAIL_SMTP_USER:-}
-      SYSTEM_EMAIL_SMTP_PASS: ${SYSTEM_EMAIL_SMTP_PASS:-}
-      SYSTEM_EMAIL_RESEND_API_KEY: ${SYSTEM_EMAIL_RESEND_API_KEY:-}
-      SYSTEM_EMAIL_SENDGRID_API_KEY: ${SYSTEM_EMAIL_SENDGRID_API_KEY:-}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     depends_on:
@@ -204,7 +187,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      NEXT_PUBLIC_API_URL: ${FRONTEND_API_URL:-http://localhost:3001}
+      # Docker network overrides (internal service discovery)
       INTERNAL_API_URL: http://backend:3001
       BACKEND_HOST: backend
       BACKEND_PORT: 3001
@@ -249,10 +232,6 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
-      MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-haihire-resumes}
       PUSHGATEWAY_URL: ${PUSHGATEWAY_URL:-http://pushgateway:9091}
     depends_on:
       postgres:

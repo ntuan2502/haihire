@@ -3,13 +3,12 @@ import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
 
-const rootEnv = path.resolve(process.cwd(), "..", ".env");
+const repoRoot = process.cwd().endsWith("frontend")
+  ? path.resolve(process.cwd(), "..")
+  : process.cwd();
+const rootEnv = path.resolve(repoRoot, ".env");
 if (fs.existsSync(rootEnv)) {
   process.loadEnvFile(rootEnv);
-}
-const localEnv = path.resolve(process.cwd(), ".env");
-if (fs.existsSync(localEnv)) {
-  process.loadEnvFile(localEnv);
 }
 
 const frontendPort = process.env.FRONTEND_PORT || process.env.PORT || "3000";

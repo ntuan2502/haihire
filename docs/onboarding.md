@@ -31,20 +31,15 @@ Install all workspace dependencies using `pnpm`:
 pnpm install
 ```
 
-### Step 2.3: Configure Environment Files
-HaiHire uses a strictly segregated 5-file environment architecture. Create your local development environment files by copying the templates:
+### Step 2.3: Configure Environment
+HaiHire uses a unified single-source-of-truth environment architecture. Create your local development environment by copying the root template:
 
 ```bash
-# 1. Root environment (controls host ports and Docker infra)
 cp .env.example .env
-
-# 2. Backend environment (service secrets, DB connection, mailers)
-cp backend/.env.example backend/.env
-
-# 3. Frontend environment (SSR internal URL, client endpoints)
-cp frontend/.env.example frontend/.env
 ```
-*(On Windows PowerShell, use `Copy-Item .env.example .env`, etc.)*
+*(On Windows PowerShell, use `Copy-Item .env.example .env`)*
+
+All services (Backend, Frontend, Prisma CLI, and Docker Compose) read directly from this single root `.env` file. No package-level `.env` files are required.
 
 ### Step 2.4: Spin Up Infrastructure Containers
 Start the local PostgreSQL database, Valkey cache/queue, and MinIO S3 object storage:

@@ -28,7 +28,7 @@ Task #10 establishes a **Single Source of Truth** for all metrics, strips duplic
 
 ## 2. Single Source of Truth Establishment
 
-Prior to Task #10, key project metrics were duplicated with slight variations across 10+ markdown files. Task #10 consolidated all authoritative values into a dedicated canonical specification: [`docs/PROJECT_METRICS.md`](file:///c:/Workspaces/haihire/docs/PROJECT_METRICS.md).
+Prior to Task #10, key project metrics were duplicated with slight variations across 10+ markdown files. Task #10 consolidated all authoritative values into a dedicated canonical specification: [`docs/PROJECT_METRICS.md`](../PROJECT_METRICS.md).
 
 ```markdown
 # Project Metrics (Single Source of Truth)
@@ -51,7 +51,7 @@ Prior to Task #10, key project metrics were duplicated with slight variations ac
 - **God Files:** 5 files >400 LOC tracked for post-v1.0.0 modularization.
 - **Infrastructure:** Node.js 26-alpine, PostgreSQL 17.6-alpine, Valkey 8.0.2-alpine, MinIO (SHA256 pinned), Caddy 2.8-alpine.
 
-Pointer integrated in [`.agents/memory/MEMORY.md`](file:///c:/Workspaces/haihire/.agents/memory/MEMORY.md):
+Pointer integrated in [`.agents/memory/MEMORY.md`](../../.agents/memory/MEMORY.md):
 ```markdown
 - [metrics] Project metrics (single source of truth) → docs/PROJECT_METRICS.md
 ```
@@ -61,7 +61,7 @@ Pointer integrated in [`.agents/memory/MEMORY.md`](file:///c:/Workspaces/haihire
 ## 3. Memory Deduplication Analysis
 
 ### User Preferences vs Project Conventions
-The audit identified that [`.agents/memory/user-preferences.md`](file:///c:/Workspaces/haihire/.agents/memory/user-preferences.md) had become bloated with technical implementation rules duplicating [`.agents/memory/project-conventions.md`](file:///c:/Workspaces/haihire/.agents/memory/project-conventions.md).
+The audit identified that [`.agents/memory/user-preferences.md`](../../.agents/memory/user-preferences.md) had become bloated with technical implementation rules duplicating [`.agents/memory/project-conventions.md`](../../.agents/memory/project-conventions.md).
 
 | Category | Initial Section Count | Final Section Count | Resolution Action |
 | :--- | :---: | :---: | :--- |
@@ -104,7 +104,7 @@ The audit identified that [`.agents/memory/user-preferences.md`](file:///c:/Work
 
 ## 5. Alert Rules Cleanup & English Standardization
 
-In [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml), 7 alert rules contained legacy Vietnamese text (`Xem runbook:`):
+In [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml), 7 alert rules contained legacy Vietnamese text (`Xem runbook:`):
 - `HaiHireBackendDown`
 - `HaiHirePostgresDown`
 - `HaiHireRedisDown`
@@ -134,7 +134,7 @@ node -e "
 
 ---
 
-## 6. Runbook Expansion: [`docs/runbooks/alerts.md`](file:///c:/Workspaces/haihire/docs/runbooks/alerts.md)
+## 6. Runbook Expansion: [`docs/runbooks/alerts.md`](../runbooks/alerts.md)
 
 The incident triage runbook was expanded from 7 rules to cover all **14 Prometheus Alert Rules**:
 
@@ -211,7 +211,7 @@ All changes have been committed with conventional commits conforming to `@commit
 
 With the completion of Task #10 Phase 2:
 - Documentation across all layers is 100% consistent with the active codebase.
-- A canonical Single Source of Truth exists in [`docs/PROJECT_METRICS.md`](file:///c:/Workspaces/haihire/docs/PROJECT_METRICS.md).
+- A canonical Single Source of Truth exists in [`docs/PROJECT_METRICS.md`](../PROJECT_METRICS.md).
 - AI agent memory is clean, deduplicated, and strictly segregated between user interaction preferences and project conventions.
 - Alert rules and operational runbooks are completely standardized in English with full coverage for all 14 Prometheus alerts.
 - The repository is fully pre-flight verified and ready for production release tagging (`v1.0.0`).

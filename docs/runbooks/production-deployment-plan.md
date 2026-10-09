@@ -150,7 +150,7 @@ Establish continuous SRE observation protocol across four operational milestones
 
 ## 6. Critical Alert Rules To Watch (Prometheus / Grafana)
 
-The following Prometheus alert rules (maintained in [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)) must remain green:
+The following Prometheus alert rules (maintained in [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)) must remain green:
 
 ```yaml
 - alert: HighHttpErrorRate

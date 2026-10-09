@@ -5,7 +5,7 @@
 **Date:** 2026-10-07  
 **Status:** ✅ FULLY COMPLETED (APPROVED & VERIFIED)  
 **Branch:** `feat/task-02-dynamic-bullmq-metrics`  
-**References:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [docs/archive/reports/hardening-transitional/10-task-01b-followup-and-prep-task-02-report.md](file:///c:/Workspaces/haihire/docs/archive/reports/hardening-transitional/10-task-01b-followup-and-prep-task-02-report.md)
+**References:** [docs/DEFINITION_OF_DONE.md](../DEFINITION_OF_DONE.md), [docs/archive/reports/hardening-transitional/10-task-01b-followup-and-prep-task-02-report.md](../archive/reports/hardening-transitional/10-task-01b-followup-and-prep-task-02-report.md)
 
 ---
 
@@ -16,7 +16,7 @@
 - **Architectural Optimization (Modular DI):** Introduced a dedicated `MetricsModule`, reusing existing Queue providers exported from `ApplicationsModule` and `EmailModule`, avoiding redundant Redis connections and honoring the **Zero New Dependencies** rule.
 - **Coverage & Test Suite:**
   - Branch Coverage for `MetricsService`: **100%** (Line **100%**, Stmts **100%**, Funcs **100%**).
-  - 10 in-depth unit tests in [`backend/src/metrics/metrics.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.spec.ts).
+  - 10 in-depth unit tests in [`backend/src/metrics/metrics.service.spec.ts`](../../backend/src/metrics/metrics.service.spec.ts).
   - Monorepo test suite: **507/507 tests PASSED (100%)** (351 backend + 156 frontend).
   - CI Quality Gates: **8/8 checks PASSED** via `pnpm check:all:fast`.
 - **Live Verification:** Directly validated against a running backend across all 3 scenarios: normal operations (28ms latency), during Valkey downtime (graceful `-1` emission), and following Valkey recovery (automatic resumption of live metrics).
@@ -25,7 +25,7 @@
 
 ## 2. Technical Implementation Details (Architecture & Implementation)
 
-### 2.1. Updated `MetricsService` ([`backend/src/metrics/metrics.service.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.ts))
+### 2.1. Updated `MetricsService` ([`backend/src/metrics/metrics.service.ts`](../../backend/src/metrics/metrics.service.ts))
 1. **Queue Injection:**
    ```ts
    constructor(
@@ -46,7 +46,7 @@
    ```
    If a queue errors out, all 6 states for that queue report `-1`, while other queues continue reporting accurate real-time metrics.
 
-### 2.2. Updated `AppController` ([`backend/src/app.controller.ts`](file:///c:/Workspaces/haihire/backend/src/app.controller.ts))
+### 2.2. Updated `AppController` ([`backend/src/app.controller.ts`](../../backend/src/app.controller.ts))
 Converted `getMetrics()` to async:
 ```ts
   @Get("metrics")
@@ -56,7 +56,7 @@ Converted `getMetrics()` to async:
   }
 ```
 
-### 2.3. Created `MetricsModule` ([`backend/src/metrics/metrics.module.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.module.ts))
+### 2.3. Created `MetricsModule` ([`backend/src/metrics/metrics.module.ts`](../../backend/src/metrics/metrics.module.ts))
 Created dedicated module importing `ApplicationsModule` and `EmailModule`:
 ```ts
 @Module({
@@ -66,7 +66,7 @@ Created dedicated module importing `ApplicationsModule` and `EmailModule`:
 })
 export class MetricsModule {}
 ```
-Updated [`backend/src/app.module.ts`](file:///c:/Workspaces/haihire/backend/src/app.module.ts) to import `MetricsModule`.
+Updated [`backend/src/app.module.ts`](../../backend/src/app.module.ts) to import `MetricsModule`.
 
 ---
 

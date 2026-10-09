@@ -206,7 +206,7 @@ To: `@Throttle({ default: { limit: process.env.NODE_ENV === "production" ? 5 : 1
 - **Justification:** In automated E2E suites, 7 parallel Playwright workers log in rapidly, exceeding 5 req/min. Relaxing the dev/test ceiling to 100 req/min prevents random 429 flakiness.
 - **Production Safety:** Production maintains the strict 5 req/min limit, as verified in VERIFY 1.
 - **Convention Finding (P3):**
-  In [.agents/memory/project-conventions.md](file:///c:/Workspaces/haihire/.agents/memory/project-conventions.md):
+  In [.agents/memory/project-conventions.md](../../../.agents/memory/project-conventions.md):
   > *"Consumer Files: Never call process.env directly in feature modules, services, or test configs. Always import the validated, type-safe env object."*
   
   `auth.controller.ts` accesses `process.env.NODE_ENV` directly on lines 42 and 54 instead of `env.NODE_ENV`.

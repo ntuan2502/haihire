@@ -1,7 +1,7 @@
 # Runbook: HaiHire Production Monitoring & Alert Incident Response
 
 **System:** HaiHire Enterprise ATS  
-**Alert Rules Source:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)  
+**Alert Rules Source:** [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)  
 **Metrics Endpoint:** `http://localhost:3001/metrics` (Production) / `http://localhost:13001/metrics` (Development)  
 **Health Check Endpoint:** `http://localhost:3001/health` (Production) / `http://localhost:13001/health` (Development)
 
@@ -91,7 +91,7 @@ The backend health check reported database connectivity failure or timeout for >
   ```bash
   df -h /var/lib/docker/volumes
   ```
-- **If corrupt data:** Initiate disaster recovery restoration from the latest verified snapshot per [backup-and-restore.md](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md).
+- **If corrupt data:** Initiate disaster recovery restoration from the latest verified snapshot per [backup-and-restore.md](backup-and-restore.md).
 
 ---
 
@@ -171,7 +171,7 @@ HTTP 5xx server errors exceed 5% of total requests over a sustained 2-minute win
 
 ### Remediation
 - Identify failing controller/service through correlation IDs in logs (`reqId`).
-- If caused by unhandled exceptions in a new release, execute rollback procedure per [production-deployment-plan.md](file:///c:/Workspaces/haihire/docs/runbooks/production-deployment-plan.md).
+- If caused by unhandled exceptions in a new release, execute rollback procedure per [production-deployment-plan.md](production-deployment-plan.md).
 
 ---
 

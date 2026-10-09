@@ -35,8 +35,8 @@ Across 6 independent verification cycles (IV&V Rounds 1 through 6), the Phase 10
 * **Inquiry:** Phase 10.2 only requested fixing 2 email endpoints (lines 125, 131). Phase 10.3 expanded scope to include `organizations.controller` + `activities.controller` and created 4 new DTOs (`SwitchOrgDto`, `UpdateMemberRoleDto`, `CreateInviteLinkDto`, `CreateActivityRecordDto`).
 * **Independent Verification:**
   1. **DTO File Verification:** Inspected source code directly:
-     - [`backend/src/organizations/dto/org-actions.dto.ts`](file:///c:/Workspaces/haihire/backend/src/organizations/dto/org-actions.dto.ts): Contains `SwitchOrgDto`, `UpdateMemberRoleDto`, `CreateInviteLinkDto` with `@IsString()`, `@IsIn()`, and `@IsOptional()`.
-     - [`backend/src/activities/dto/create-activity-record.dto.ts`](file:///c:/Workspaces/haihire/backend/src/activities/dto/create-activity-record.dto.ts): Contains `CreateActivityRecordDto` with `@IsIn([...ActivityTypes])`.
+     - [`backend/src/organizations/dto/org-actions.dto.ts`](../../../../backend/src/organizations/dto/org-actions.dto.ts): Contains `SwitchOrgDto`, `UpdateMemberRoleDto`, `CreateInviteLinkDto` with `@IsString()`, `@IsIn()`, and `@IsOptional()`.
+     - [`backend/src/activities/dto/create-activity-record.dto.ts`](../../../../backend/src/activities/dto/create-activity-record.dto.ts): Contains `CreateActivityRecordDto` with `@IsIn([...ActivityTypes])`.
   2. **DtoPipe Binding Verification:** All 4 endpoints in `organizations.controller.ts` (lines 73, 88, 126) and `activities.controller.ts` (line 65) are protected by `DtoPipe(...)`.
   3. **Runtime Execution with Malformed Payloads:** Executed `scratch/p10.4/verify-nghi-van-1.ts`:
      ```text
@@ -53,7 +53,7 @@ Across 6 independent verification cycles (IV&V Rounds 1 through 6), the Phase 10
 ## 2.2. Inquiry 2: Backup Script Architecture vs Over-Engineering
 * **Inquiry:** Phase 10.2 requested 4 basic modifications. Phase 10.3 added 5 features: MinIO Hot Archival, TOC Integrity, Live Restore Drill, File Mutex Lock, and Forensic Artifact Retention. Did this introduce unnecessary complexity?
 * **Independent Verification:**
-  1. **Line Count:** [`scripts/backup-production.ts`](file:///c:/Workspaces/haihire/scripts/backup-production.ts) comprises **304 lines**.
+  1. **Line Count:** [`scripts/backup-production.ts`](../../../../scripts/backup-production.ts) comprises **304 lines**.
   2. **Feature Assessment:**
      - **MinIO Hot Archival (`tar -czf`):** *Essential*. HaiHire stores resumes in MinIO. Losing MinIO corresponds to total loss of candidate portfolios.
      - **TOC Integrity (`pg_restore -l`):** *Essential*. Ensures archive headers are uncorrupted prior to storage.
@@ -213,7 +213,7 @@ Phase 10.3(Hotfix):[===========================] 94.2/ 100 (RECOVERED & PEAKED)
 Zero P0/P1/P2 defects identified. Logged 3 **P3 (Non-blocking)** items:
 
 1. **BUG-IVV6-01 (P3 - Minor Ops):**
-   - *Location:* [`scripts/backup-production.ts`](file:///c:/Workspaces/haihire/scripts/backup-production.ts) lines 43-45.
+   - *Location:* [`scripts/backup-production.ts`](../../../../scripts/backup-production.ts) lines 43-45.
    - *Detail:* `fs.mkdirSync(config.backupDir, { recursive: true })` sits outside the main `try/catch` block. If `BACKUP_DIR` initialization fails due to mount or permissions issues, the script throws an unhandled error rather than returning `{ success: false, error: ... }`.
 2. **TECH-DEBT-IVV6-02 (P3 - Quality/Testing):**
    - *Location:* `backend/src/**/*.spec.ts`.

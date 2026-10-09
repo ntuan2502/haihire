@@ -5,7 +5,7 @@
 **Date:** 2026-10-08  
 **Status:** 📋 PHASE 1 AUDIT COMPLETE — PENDING DEEPSEEK & PROJECT OWNER APPROVAL  
 **Branch:** `feat/task-08-frontend-onerror-hook`  
-**Reference Documentation:** [`docs/reports/04-frontend-409-conflict-handling-audit.md`](file:///c:/Workspaces/haihire/docs/reports/04-frontend-409-conflict-handling-audit.md), [`docs/PROJECT_CONTEXT.md`](file:///c:/Workspaces/haihire/docs/PROJECT_CONTEXT.md), [`docs/DEFINITION_OF_DONE.md`](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**Reference Documentation:** [`docs/reports/04-frontend-409-conflict-handling-audit.md`](../../../reports/04-frontend-409-conflict-handling-audit.md), [`docs/PROJECT_CONTEXT.md`](../../../PROJECT_CONTEXT.md), [`docs/DEFINITION_OF_DONE.md`](../../../DEFINITION_OF_DONE.md)
 
 ---
 

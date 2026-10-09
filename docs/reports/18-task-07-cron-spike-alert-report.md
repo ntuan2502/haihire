@@ -4,7 +4,7 @@
 **Author:** Senior Software Engineer / Antigravity Agent  
 **Date:** 2026-10-08  
 **Status:** ✅ 100% COMPLETED — READY FOR DEEPSEEK REVIEW  
-**Reference Documentation:** [`docs/reports/17-task-06-cron-pushgateway-metrics-report.md`](file:///c:/Workspaces/haihire/docs/reports/17-task-06-cron-pushgateway-metrics-report.md), [`docs/DEFINITION_OF_DONE.md`](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md)
+**Reference Documentation:** [`docs/reports/17-task-06-cron-pushgateway-metrics-report.md`](17-task-06-cron-pushgateway-metrics-report.md), [`docs/DEFINITION_OF_DONE.md`](../DEFINITION_OF_DONE.md)
 
 ---
 
@@ -235,7 +235,7 @@ Check:
 ---
 
 **7. Files for Review**
-- [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml#L127-L168)
-- [`monitoring/prometheus/alert-rules.spec.ts`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.spec.ts#L37-L43)
-- [`docs/runbooks/dlq-recovery.md`](file:///c:/Workspaces/haihire/docs/runbooks/dlq-recovery.md#L9-L56)
-- [`docs/reports/18-task-07-cron-spike-alert-report.md`](file:///c:/Workspaces/haihire/docs/reports/18-task-07-cron-spike-alert-report.md)
+- [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml#L127-L168)
+- [`monitoring/prometheus/alert-rules.spec.ts`](../../monitoring/prometheus/alert-rules.spec.ts#L37-L43)
+- [`docs/runbooks/dlq-recovery.md`](../runbooks/dlq-recovery.md#L9-L56)
+- [`docs/reports/18-task-07-cron-spike-alert-report.md`](18-task-07-cron-spike-alert-report.md)

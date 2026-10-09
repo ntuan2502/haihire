@@ -20,9 +20,9 @@
 ## 1. [EMAIL ADAPTER] Abstraction Structure in `backend/src/email/`
 
 ### 1.1 Audit Findings
-- **Is there an abstract interface?** **YES**. The project defines the [`IEmailTransporter`](file:///c:/Workspaces/haihire/backend/src/email/transporters/transporter.interface.ts#L15-L17) interface in [`backend/src/email/transporters/transporter.interface.ts`](file:///c:/Workspaces/haihire/backend/src/email/transporters/transporter.interface.ts).
-- **What is `SIMULATED`?** `SIMULATED` is a **concrete implementation** ([`SimulatedTransporter`](file:///c:/Workspaces/haihire/backend/src/email/transporters/simulated.transporter.ts)) that implements `IEmailTransporter`.
-- **Implementation Pattern:** Applies the **Factory Pattern** via [`EmailTransporterFactory`](file:///c:/Workspaces/haihire/backend/src/email/transporters/transporter.factory.ts#L7-L21) in [`backend/src/email/transporters/transporter.factory.ts`](file:///c:/Workspaces/haihire/backend/src/email/transporters/transporter.factory.ts). The primary service ([`EmailService`](file:///c:/Workspaces/haihire/backend/src/email/email.service.ts)) calls the factory to instantiate transporters dynamically based on Organization or System settings.
+- **Is there an abstract interface?** **YES**. The project defines the [`IEmailTransporter`](../../backend/src/email/transporters/transporter.interface.ts#L15-L17) interface in [`backend/src/email/transporters/transporter.interface.ts`](../../backend/src/email/transporters/transporter.interface.ts).
+- **What is `SIMULATED`?** `SIMULATED` is a **concrete implementation** ([`SimulatedTransporter`](../../backend/src/email/transporters/simulated.transporter.ts)) that implements `IEmailTransporter`.
+- **Implementation Pattern:** Applies the **Factory Pattern** via [`EmailTransporterFactory`](../../backend/src/email/transporters/transporter.factory.ts#L7-L21) in [`backend/src/email/transporters/transporter.factory.ts`](../../backend/src/email/transporters/transporter.factory.ts). The primary service ([`EmailService`](../../backend/src/email/email.service.ts)) calls the factory to instantiate transporters dynamically based on Organization or System settings.
 
 ### 1.2 Email Module Directory Tree
 ```text
@@ -46,7 +46,7 @@ backend/src/email/
 ```
 
 ### 1.3 Code Evidence
-Interface excerpt from [`transporter.interface.ts`](file:///c:/Workspaces/haihire/backend/src/email/transporters/transporter.interface.ts#L15-L20):
+Interface excerpt from [`transporter.interface.ts`](../../backend/src/email/transporters/transporter.interface.ts#L15-L20):
 ```typescript
 export interface IEmailTransporter {
   send(payload: EmailSendPayload): Promise<EmailSendResult>;
@@ -61,7 +61,7 @@ export interface TransporterConfig {
 }
 ```
 
-Factory excerpt from [`transporter.factory.ts`](file:///c:/Workspaces/haihire/backend/src/email/transporters/transporter.factory.ts#L7-L21):
+Factory excerpt from [`transporter.factory.ts`](../../backend/src/email/transporters/transporter.factory.ts#L7-L21):
 ```typescript
 export class EmailTransporterFactory {
   static create(config: TransporterConfig): IEmailTransporter {
@@ -85,7 +85,7 @@ export class EmailTransporterFactory {
 ## 2. [DLQ MONITORING] Status of Prometheus Alert Rules for BullMQ & DLQ
 
 ### 2.1 Audit Findings
-- **In alert rules file:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml) originally contained exactly **7 alert rules**:
+- **In alert rules file:** [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml) originally contained exactly **7 alert rules**:
   1. `HaiHireBackendDown` (Lines 4-11): Detects unreachable NestJS instance (>1m).
   2. `HaiHirePostgresDown` (Lines 13-20): Failed Postgres database healthcheck (>30s).
   3. `HaiHireRedisDown` (Lines 22-29): Failed Valkey/Redis ping (>30s).
@@ -94,7 +94,7 @@ export class EmailTransporterFactory {
   6. `HaiHireHighHttpLatencyP95` (Lines 49-56): P95 HTTP latency exceeds 1000ms over 3m.
   7. `HaiHireHighRateLimit429Rate` (Lines 58-65): Rate-limited requests exceed 50 req/s.
 - ⚠️ **HISTORICAL FINDING:** **Originally lacked alert rules for BullMQ queue depth and Dead-Letter Queue (DLQ) size.** (Resolved in Task #3).
-- **In metrics service:** In [`backend/src/metrics/metrics.service.ts:L49-51`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.ts#L49-L51), the `bullmq_queue_depth` metric was originally declared as a **static gauge reporting 0**, not connected to live queues (`orphan-cleanup-queue`, `email-queue`). (Resolved in Task #2).
+- **In metrics service:** In [`backend/src/metrics/metrics.service.ts:L49-51`](../../backend/src/metrics/metrics.service.ts#L49-L51), the `bullmq_queue_depth` metric was originally declared as a **static gauge reporting 0**, not connected to live queues (`orphan-cleanup-queue`, `email-queue`). (Resolved in Task #2).
 
 ```typescript
 // backend/src/metrics/metrics.service.ts:L49-51 (prior to Task #2)
@@ -112,7 +112,7 @@ The project features a dedicated test suite simulating two organizations (`org-a
 
 ### 3.2 Test Files & Test Cases
 
-#### Primary File: [`backend/src/test/tenant-isolation.spec.ts`](file:///c:/Workspaces/haihire/backend/src/test/tenant-isolation.spec.ts) (3 test cases)
+#### Primary File: [`backend/src/test/tenant-isolation.spec.ts`](../../backend/src/test/tenant-isolation.spec.ts) (3 test cases)
 - **Mock Data Setup (Lines 21-39):**
   - Instantiates two organizations: `org-alpha` ("Alpha Tech Corp") and `org-beta` ("Beta Financials").
   - Instantiates two admins: `usr-alpha` (belonging to Org Alpha) and `usr-beta` (belonging to Org Beta).
@@ -132,7 +132,7 @@ The project features a dedicated test suite simulating two organizations (`org-a
   - `candidatesService.findAll(undefined)` returns `{ data: [], total: 0 }`, preventing global data leakage.
 
 #### Domain Service Cross-Tenant Tests:
-- **File: [`backend/src/interviews/interviews.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/interviews/interviews.service.spec.ts):**
+- **File: [`backend/src/interviews/interviews.service.spec.ts`](../../backend/src/interviews/interviews.service.spec.ts):**
   - Line 321: `should throw AppForbiddenException when scheduling interview across different organizations`.
   - Lines 349-350: `should throw AppForbiddenException when accessing an interview belonging to another organization` (calling `service.findOne("intv-1", "other-org")` $\rightarrow$ assert `AppForbiddenException`).
   - Lines 368-377: `should throw AppForbiddenException when updating an interview from another organization`.
@@ -147,18 +147,18 @@ Prisma 8 RC is pinned using **EXACT VERSIONS (no caret `^` or tilde `~`)** unifo
 
 ### 4.2 Code Line Evidence
 
-1. **[`backend/package.json`](file:///c:/Workspaces/haihire/backend/package.json):**
+1. **[`backend/package.json`](../../backend/package.json):**
    - Line 40: `"@prisma/composer": "0.25.0"` (exact)
    - Line 41: `"@prisma/composer-prisma-cloud": "0.25.0"` (exact)
    - Line 42: `"@prisma/orm-postgres": "8.0.0-rc.13"` (exact, **no `^`**)
    - Line 69: `"prisma": "8.0.0-rc.19"` (exact, **no `^`**)
 
-2. **[`pnpm-workspace.yaml`](file:///c:/Workspaces/haihire/pnpm-workspace.yaml):**
+2. **[`pnpm-workspace.yaml`](../../pnpm-workspace.yaml):**
    - Line 11: `minimumReleaseAgeExclude: - "@prisma/*"` (excludes Prisma from pnpm automated aging hold)
    - Line 26: `minimumReleaseAgeExclude: - prisma@8.0.0-rc.19`
    - Line 29: `overrides: "@prisma/cli-engine": "0.6.1"` (enforces pinned CLI engine)
 
-3. **[`pnpm-lock.yaml`](file:///c:/Workspaces/haihire/pnpm-lock.yaml):**
+3. **[`pnpm-lock.yaml`](../../pnpm-lock.yaml):**
    - Line 9: `overrides: '@prisma/cli-engine': 0.6.1`
    - Lines 66-67:
      ```yaml
@@ -183,9 +183,9 @@ Both test scenarios (MinIO rollback upon DB failure, and DLQ enqueue upon MinIO 
 ### 5.2 Test Files & Test Cases
 
 #### Scenario 1: MinIO upload OK $\rightarrow$ DB write FAIL $\rightarrow$ Assert MinIO file deleted
-- **File:** [`backend/src/test/transactions.spec.ts`](file:///c:/Workspaces/haihire/backend/src/test/transactions.spec.ts)
+- **File:** [`backend/src/test/transactions.spec.ts`](../../backend/src/test/transactions.spec.ts)
 - **Test name:** `Failure Scenario & Repro: DB failure triggers transaction rollback AND MinIO compensating delete`
-- **Location:** [Lines 407 to 461](file:///c:/Workspaces/haihire/backend/src/test/transactions.spec.ts#L407-L461)
+- **Location:** [Lines 407 to 461](../../backend/src/test/transactions.spec.ts#L407-L461)
 - **Execution Mechanism:**
   - Line 421: Mocks database write failure: `Application.create = vi.fn().mockRejectedValue(new Error("Simulated DB Crash on Application write"))`.
   - Lines 440-449: Invokes `appService.create(...)`, asserts caught DB Crash error.
@@ -199,9 +199,9 @@ Both test scenarios (MinIO rollback upon DB failure, and DLQ enqueue upon MinIO 
   ```
 
 #### Scenario 2: MinIO delete FAIL $\rightarrow$ Assert job enqueued to DLQ with 5 attempts
-- **File:** [`backend/src/test/orphan-cleanup.spec.ts`](file:///c:/Workspaces/haihire/backend/src/test/orphan-cleanup.spec.ts)
+- **File:** [`backend/src/test/orphan-cleanup.spec.ts`](../../backend/src/test/orphan-cleanup.spec.ts)
 - **Test name:** `Test 2: When compensating delete fails (MinIO down), file is pushed to DLQ queue with 5 attempts`
-- **Location:** [Lines 186 to 225](file:///c:/Workspaces/haihire/backend/src/test/orphan-cleanup.spec.ts#L186-L225)
+- **Location:** [Lines 186 to 225](../../backend/src/test/orphan-cleanup.spec.ts#L186-L225)
 - **Execution Mechanism:**
   - Lines 196-197: Mocks DB transaction crash, while MinIO `deleteFile` throws `503 Service Unavailable`.
   - Line 216: Confirms attempt to call `minio.deleteFile`.
@@ -215,7 +215,7 @@ Both test scenarios (MinIO rollback upon DB failure, and DLQ enqueue upon MinIO 
   expect(enqueuedJobs[0].opts?.attempts).toBe(5);
   expect(enqueuedJobs[0].opts?.backoff?.type).toBe("exponential");
   ```
-- **Supplementary Test (Test 4 - DLQ Terminal Failure):** In [Lines 256-277](file:///c:/Workspaces/haihire/backend/src/test/orphan-cleanup.spec.ts#L256-L277) (`Test 4: Worker terminal failure — after 5 attempts, moves to Dead-Letter Queue (DLQ) & alerts`), verifies that after 5 failed retries, the job transitions into the Dead-Letter Queue `dead-letter-cleanup`.
+- **Supplementary Test (Test 4 - DLQ Terminal Failure):** In [Lines 256-277](../../backend/src/test/orphan-cleanup.spec.ts#L256-L277) (`Test 4: Worker terminal failure — after 5 attempts, moves to Dead-Letter Queue (DLQ) & alerts`), verifies that after 5 failed retries, the job transitions into the Dead-Letter Queue `dead-letter-cleanup`.
 
 ---
 

@@ -5,21 +5,21 @@
 **Date:** 2026-10-07  
 **Status:** ✅ FULLY COMPLETED (APPROVED & VERIFIED)  
 **Branch:** `feat/task-03-prometheus-alert-rules`  
-**References:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [monitoring/prometheus/alert-rules.yml](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)
+**References:** [docs/DEFINITION_OF_DONE.md](../DEFINITION_OF_DONE.md), [monitoring/prometheus/alert-rules.yml](../../monitoring/prometheus/alert-rules.yml)
 
 ---
 
 ## 1. Executive Summary
 
-- **Closing the final observability gap:** Added 4 new Prometheus alert rules specifically for BullMQ async job queues and DLQ into [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml).
+- **Closing the final observability gap:** Added 4 new Prometheus alert rules specifically for BullMQ async job queues and DLQ into [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml).
 - **Comprehensive standardization:** All 11 rules (7 existing + 4 new) are standardized with the mandatory `team: sre` label, severity classification (`critical` / `high` / `warning`), and actionable runbook documentation links in annotations.
 - **Complete operational documentation (3 new runbooks):** Authored 3 actionable SRE runbooks covering all 5 standard steps (When alert fires, Verify, Diagnose, Mitigate, Resolve, Post-mortem):
-  1. [`docs/runbooks/dlq-recovery.md`](file:///c:/Workspaces/haihire/docs/runbooks/dlq-recovery.md)
-  2. [`docs/runbooks/email-queue.md`](file:///c:/Workspaces/haihire/docs/runbooks/email-queue.md)
-  3. [`docs/runbooks/redis-recovery.md`](file:///c:/Workspaces/haihire/docs/runbooks/redis-recovery.md)
-- **CI Architecture Gate 6:** Created automated PromQL syntax and schema verification script [`scripts/check-prometheus-rules.ts`](file:///c:/Workspaces/haihire/scripts/check-prometheus-rules.ts). Integrated into `package.json` (`lint:prometheus-rules`), `scripts/check-all.ts`, and GitHub Actions `.github/workflows/ci-cd.yml`.
+  1. [`docs/runbooks/dlq-recovery.md`](../runbooks/dlq-recovery.md)
+  2. [`docs/runbooks/email-queue.md`](../runbooks/email-queue.md)
+  3. [`docs/runbooks/redis-recovery.md`](../runbooks/redis-recovery.md)
+- **CI Architecture Gate 6:** Created automated PromQL syntax and schema verification script [`scripts/check-prometheus-rules.ts`](../../scripts/check-prometheus-rules.ts). Integrated into `package.json` (`lint:prometheus-rules`), `scripts/check-all.ts`, and GitHub Actions `.github/workflows/ci-cd.yml`.
 - **Test Suite & Verification:**
-  - Added test suite [`monitoring/prometheus/alert-rules.spec.ts`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.spec.ts) (8 test cases).
+  - Added test suite [`monitoring/prometheus/alert-rules.spec.ts`](../../monitoring/prometheus/alert-rules.spec.ts) (8 test cases).
   - `pnpm check:all:fast`: 🟢 **9/9 CI Gates PASSED**.
   - `pnpm test`: 🟢 **515/515 Unit Tests PASSED** (359 backend & monitoring + 156 frontend).
 
@@ -38,7 +38,7 @@
 
 ## 3. List of 11 Standardized Alert Rules
 
-The total number of rules in [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml) is **11 rules**:
+The total number of rules in [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml) is **11 rules**:
 
 ```yaml
 groups:
@@ -64,15 +64,15 @@ groups:
 
 ## 4. Summary of 3 New Operational Runbooks
 
-1. **[`docs/runbooks/dlq-recovery.md`](file:///c:/Workspaces/haihire/docs/runbooks/dlq-recovery.md):**  
+1. **[`docs/runbooks/dlq-recovery.md`](../runbooks/dlq-recovery.md):**  
    - Instructions for verifying MinIO connectivity, validating bucket permissions, and debugging S3 `NoSuchKey` errors.
    - Verification command: `curl -s localhost:3001/metrics | grep bullmq_queue_depth | grep orphan-cleanup-dlq`.
    - Manual orphan purge command: `docker exec -it haihire-prod-backend node --import tsx scripts/cleanup-orphan-minio.ts`.
-2. **[`docs/runbooks/email-queue.md`](file:///c:/Workspaces/haihire/docs/runbooks/email-queue.md):**  
+2. **[`docs/runbooks/email-queue.md`](../runbooks/email-queue.md):**  
    - Instructions for checking SMTP port 587, Resend/SendGrid API availability, and HTTP 429 quota limits.
    - Verification command: `curl -s localhost:3001/metrics | grep bullmq_queue_depth | grep email-queue`.
    - Database query: `SELECT status, COUNT(*) FROM "EmailLog" WHERE "createdAt" > NOW() - INTERVAL '2 hours' GROUP BY status;`.
-3. **[`docs/runbooks/redis-recovery.md`](file:///c:/Workspaces/haihire/docs/runbooks/redis-recovery.md):**  
+3. **[`docs/runbooks/redis-recovery.md`](../runbooks/redis-recovery.md):**  
    - Instructions for diagnosing container crashes, OOMKiller events, and AOF/RDB file storage exhaustion.
    - Verification commands: `redis-cli -p 16379 ping`, `docker stats --no-stream haihire-prod-redis`.
    - Short-term mitigation and long-term `maxmemory-policy volatile-lru` configuration recommendations.
@@ -101,7 +101,7 @@ Total alert rules inspected: 11
 
 ## 6. Automated Unit Test Results
 
-The test file [`monitoring/prometheus/alert-rules.spec.ts`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.spec.ts) contains 8 test cases:
+The test file [`monitoring/prometheus/alert-rules.spec.ts`](../../monitoring/prometheus/alert-rules.spec.ts) contains 8 test cases:
 1. `Case 1: Parses YAML successfully and contains at least 11 rules (7 existing + 4 new)` (✅ PASS)
 2. `Case 2: Every rule has all mandatory top-level fields (alert, expr, for, labels, annotations)` (✅ PASS)
 3. `Case 3: Every rule has a valid severity label (critical, high, or warning)` (✅ PASS)

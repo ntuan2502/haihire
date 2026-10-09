@@ -4,7 +4,7 @@
 **Author:** Senior Software Engineer / Antigravity Agent  
 **Date:** 2026-10-07  
 **Status:** ✅ FULLY COMPLETED (APPROVED & VERIFIED)  
-**References:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [docs/reports/09-task-01b-per-org-webhook-settings-report.md](file:///c:/Workspaces/haihire/docs/reports/09-task-01b-per-org-webhook-settings-report.md)
+**References:** [docs/DEFINITION_OF_DONE.md](../../../DEFINITION_OF_DONE.md), [docs/reports/09-task-01b-per-org-webhook-settings-report.md](../../../reports/09-task-01b-per-org-webhook-settings-report.md)
 
 ---
 
@@ -13,11 +13,11 @@
 1. **Part A — Branch Coverage for `webhook-settings.service.ts`:**
    - Baseline: Line 92.95%, Branch 82.17%.
    - Audited uncovered branches, classifying into defensive guards vs missing test scenarios.
-   - Added 6 in-depth test cases (Cases 33 to 38) in [`backend/src/webhook-settings/webhook-settings.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/webhook-settings/webhook-settings.service.spec.ts).
+   - Added 6 in-depth test cases (Cases 33 to 38) in [`backend/src/webhook-settings/webhook-settings.service.spec.ts`](../../../../backend/src/webhook-settings/webhook-settings.service.spec.ts).
    - **Updated Coverage:** Line **100%**, Branch **90.69%** (exceeds $\ge 90\%$ target), Functions **100%**, Statements **99.31%**.
 2. **Part B — Clarification & Verification of `custom-modal` & `custom-select`:**
-   - Pre-existing Design System components in [`frontend/src/components/shared/`](file:///c:/Workspaces/haihire/frontend/src/components/shared/), established since September 2026.
-   - Refactor commit `58ebca7` only modified [`frontend/src/app/dashboard/settings/integrations/page.tsx`](file:///c:/Workspaces/haihire/frontend/src/app/dashboard/settings/integrations/page.tsx).
+   - Pre-existing Design System components in [`frontend/src/components/shared/`](../../../../frontend/src/components/shared), established since September 2026.
+   - Refactor commit `58ebca7` only modified [`frontend/src/app/dashboard/settings/integrations/page.tsx`](../../../../frontend/src/app/dashboard/settings/integrations/page.tsx).
    - **Zero side-effects:** Shared component files untouched, other pages unaffected, 100% of 156 frontend unit tests passed.
 3. **Part C — Readiness Survey for Task #2 (Dynamic BullMQ Metrics):**
    - Audited `MetricsService`, `AppController`, `ApplicationsModule`, `EmailModule`, test coverage, and Prometheus scrape conventions. Ready for DeepSeek technical specification.
@@ -74,17 +74,17 @@ All files          |   98.61 |    92.93 |     100 |   99.04 |
 ## PART B: Verification of `custom-modal` and `custom-select`
 
 ### 1. Component Classification
-`custom-modal` and `custom-select` are **preexisting shared design system components** located in [`frontend/src/components/shared/`](file:///c:/Workspaces/haihire/frontend/src/components/shared/), centrally exported via [`frontend/src/components/shared/index.ts`](file:///c:/Workspaces/haihire/frontend/src/components/shared/index.ts). They were **NOT** created during Task #1B.
+`custom-modal` and `custom-select` are **preexisting shared design system components** located in [`frontend/src/components/shared/`](../../../../frontend/src/components/shared), centrally exported via [`frontend/src/components/shared/index.ts`](../../../../frontend/src/components/shared/index.ts). They were **NOT** created during Task #1B.
 
 ### 2. Git History & Creation Background
 
 - **`CustomSelect`**:
-  - **Path:** [`frontend/src/components/shared/custom-select.tsx`](file:///c:/Workspaces/haihire/frontend/src/components/shared/custom-select.tsx)
+  - **Path:** [`frontend/src/components/shared/custom-select.tsx`](../../../../frontend/src/components/shared/custom-select.tsx)
   - **Git Commits:**
     - `988ae5b` (2026-09-17): *refactor(frontend): unify dropdown components with CustomSelect across all forms and lists*
     - `164ac08` (2026-09-23): *fix(settings): resolve mobile layout overflows and remove redundant menu items*
 - **`CustomModal`**:
-  - **Path:** [`frontend/src/components/shared/custom-modal.tsx`](file:///c:/Workspaces/haihire/frontend/src/components/shared/custom-modal.tsx)
+  - **Path:** [`frontend/src/components/shared/custom-modal.tsx`](../../../../frontend/src/components/shared/custom-modal.tsx)
   - **Git Commits:**
     - `853792b` (2026-09-29): *feat(frontend): enhance table quick actions and introduce shared custom modal*
     - `0d1fb12` (2026-10-06): *refactor(ui): replace macos modal with unified custom modal across application*
@@ -134,7 +134,7 @@ The initial specification for Task #1B referenced generic primitives (`dialog.ts
 
 - **How is `/metrics` served?**  
   There is **no `metrics.controller.ts`**.  
-  The `/metrics` endpoint is served directly by [`backend/src/app.controller.ts`](file:///c:/Workspaces/haihire/backend/src/app.controller.ts) at lines 30–34:
+  The `/metrics` endpoint is served directly by [`backend/src/app.controller.ts`](../../../../backend/src/app.controller.ts) at lines 30–34:
   ```ts
   @Get("metrics")
   @Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
@@ -148,14 +148,14 @@ The initial specification for Task #1B referenced generic primitives (`dialog.ts
 ### 3. In `backend/src/applications/applications.module.ts` (and `email.module.ts`)
 
 - **Are BullMQ queues properly registered?**  
-  **YES**. In [`backend/src/applications/applications.module.ts`](file:///c:/Workspaces/haihire/backend/src/applications/applications.module.ts) (lines 23–26):
+  **YES**. In [`backend/src/applications/applications.module.ts`](../../../../backend/src/applications/applications.module.ts) (lines 23–26):
   ```ts
   BullModule.registerQueue(
     { name: ORPHAN_CLEANUP_QUEUE },
     { name: ORPHAN_CLEANUP_DLQ },
   )
   ```
-  And in [`backend/src/email/email.module.ts`](file:///c:/Workspaces/haihire/backend/src/email/email.module.ts) (lines 13–15):
+  And in [`backend/src/email/email.module.ts`](../../../../backend/src/email/email.module.ts) (lines 13–15):
   ```ts
   BullModule.registerQueue({
     name: "email-queue",
@@ -169,7 +169,7 @@ The initial specification for Task #1B referenced generic primitives (`dialog.ts
 ### 4. `MetricsService` Test Suite
 
 - **Current test status:** **TESTED**.
-- **File location:** [`backend/src/metrics/metrics.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/metrics/metrics.service.spec.ts).
+- **File location:** [`backend/src/metrics/metrics.service.spec.ts`](../../../../backend/src/metrics/metrics.service.spec.ts).
 - **Test case count:** **2 test cases**:
   1. `should return valid Prometheus initial format when no requests recorded`.
   2. `should record requests and format counters and summaries accurately`.
@@ -177,9 +177,9 @@ The initial specification for Task #1B referenced generic primitives (`dialog.ts
 ### 5. Prometheus Configuration in `monitoring/prometheus/`
 
 - **Existing files:**  
-  Only [`alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml) (7 production alert rules). No `prometheus.yml` in repository.
+  Only [`alert-rules.yml`](../../../../monitoring/prometheus/alert-rules.yml) (7 production alert rules). No `prometheus.yml` in repository.
 - **Metrics endpoint path & Port:**  
-  Per [`docs/runbooks/alerts.md`](file:///c:/Workspaces/haihire/docs/runbooks/alerts.md) and `docs/onboarding.md`:
+  Per [`docs/runbooks/alerts.md`](../../../runbooks/alerts.md) and `docs/onboarding.md`:
   - **Production:** `http://localhost:3001/metrics` (or `http://backend:3001/metrics` via docker network).
   - **Development:** `http://localhost:13001/metrics`.
 - **Scrape Interval:**  

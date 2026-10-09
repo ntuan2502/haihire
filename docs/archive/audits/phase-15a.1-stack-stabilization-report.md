@@ -120,7 +120,7 @@ CONTAINER ID   IMAGE                        COMMAND                  STATUS     
    - Both `redis-cli ping` and `valkey-cli ping` return `PONG` via symlinks in `valkey/valkey:8.0.2-alpine`.
 
 ### 3.2 Independent ioredis + BullMQ Verification
-Authored dedicated test script [`scripts/archive/test-valkey-bullmq.ts`](file:///c:/Workspaces/haihire/scripts/archive/test-valkey-bullmq.ts):
+Authored dedicated test script [`scripts/archive/test-valkey-bullmq.ts`](../../../scripts/archive/test-valkey-bullmq.ts):
 ```bash
 $ pnpm --filter backend exec tsx ../scripts/test-valkey-bullmq.ts
 ==================================================================
@@ -143,7 +143,7 @@ $ pnpm --filter backend exec tsx ../scripts/test-valkey-bullmq.ts
 ```
 
 ### 3.3 Rate Limiter Verification (ThrottlerGuard)
-Executed load test with 500 requests at 50 concurrency via [`scripts/smoke-and-load-test.ts`](file:///c:/Workspaces/haihire/scripts/smoke-and-load-test.ts):
+Executed load test with 500 requests at 50 concurrency via [`scripts/smoke-and-load-test.ts`](../../../scripts/smoke-and-load-test.ts):
 ```
 Status Code Distribution:
   HTTP 200: 434 responses

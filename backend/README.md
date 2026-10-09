@@ -86,4 +86,4 @@ pnpm run seed
 4. **Saga Compensations:** File upload workflows that fail database persistence must trigger compensating deletes against MinIO S3.
 5. **HttpOnly Cookie Auth:** Never expose raw JWT access tokens in response bodies.
 
-For detailed REST API specifications, refer to [API Overview](file:///c:/Workspaces/haihire/docs/api/overview.md).
+For detailed REST API specifications, refer to [API Overview](../docs/api/overview.md).

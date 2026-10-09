@@ -117,7 +117,7 @@ Endpoints with @Body(): 3
 ## 2.2. INQUIRY 2 — `withCredentials` & Authentication Flow Runtime Test
 
 #### A. Static Configuration Verification
-File [frontend/src/lib/api/client.ts](file:///c:/Workspaces/haihire/frontend/src/lib/api/client.ts#L31):
+File [frontend/src/lib/api/client.ts](../../../frontend/src/lib/api/client.ts#L31):
 ```typescript
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -171,7 +171,7 @@ HTTP/1.1 200 OK
 ```
 
 #### E. Runtime Test 4: Cookie & Bearer Collision (Valid Cookie + Invalid Bearer Token)
-- **Backend Architecture:** In [backend/src/auth/jwt.strategy.ts](file:///c:/Workspaces/haihire/backend/src/auth/jwt.strategy.ts#L17):
+- **Backend Architecture:** In [backend/src/auth/jwt.strategy.ts](../../../backend/src/auth/jwt.strategy.ts#L17):
 ```typescript
 jwtFromRequest: ExtractJwt.fromExtractors([
   (req) => req.cookies?.["haihire_token"] || req.headers.cookie,

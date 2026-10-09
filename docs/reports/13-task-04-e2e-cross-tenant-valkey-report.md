@@ -5,22 +5,22 @@
 **Date:** 2026-10-07  
 **Status:** ✅ FULLY COMPLETED (APPROVED & VERIFIED)  
 **Branch:** `feat/task-04-e2e-cross-tenant-test`  
-**References:** [docs/DEFINITION_OF_DONE.md](file:///c:/Workspaces/haihire/docs/DEFINITION_OF_DONE.md), [playwright.config.ts](file:///c:/Workspaces/haihire/playwright.config.ts), [docker-compose.prod.yml](file:///c:/Workspaces/haihire/docker-compose.prod.yml)
+**References:** [docs/DEFINITION_OF_DONE.md](../DEFINITION_OF_DONE.md), [playwright.config.ts](../../playwright.config.ts), [docker-compose.prod.yml](../../docker-compose.prod.yml)
 
 ---
 
 ## 1. Executive Summary
 
 1. **Playwright & Multi-Tenant Survey (Part A.1):** Inspected existing test structure, Next.js `/api` proxy rewrites to NestJS backend, and database seed data. The survey identified that `seed.ts` originally only seeded 1 organization (Admin), lacking Org Beta.
-2. **Added Org Beta to Seed Data:** Updated [`backend/src/auth/constants.ts`](file:///c:/Workspaces/haihire/backend/src/auth/constants.ts) and [`backend/src/prisma/seed.ts`](file:///c:/Workspaces/haihire/backend/src/prisma/seed.ts) to seed a deterministic Org Beta (`Beta Financials`), Admin Beta (`admin@beta.test`), alongside isolated Job, Candidate, Application, and Webhook Setting records with invariant UUIDs.
+2. **Added Org Beta to Seed Data:** Updated [`backend/src/auth/constants.ts`](../../backend/src/auth/constants.ts) and [`backend/src/prisma/seed.ts`](../../backend/src/prisma/seed.ts) to seed a deterministic Org Beta (`Beta Financials`), Admin Beta (`admin@beta.test`), alongside isolated Job, Candidate, Application, and Webhook Setting records with invariant UUIDs.
 3. **E2E Cross-Tenant Test Suite (Parts A.2 & A.3):**
-   - Created fixture helper [`frontend/tests/e2e/fixtures/seed-helpers.ts`](file:///c:/Workspaces/haihire/frontend/tests/e2e/fixtures/seed-helpers.ts).
-   - Created real HTTP test suite [`frontend/tests/e2e/tenant-security.spec.ts`](file:///c:/Workspaces/haihire/frontend/tests/e2e/tenant-security.spec.ts) with 6 test cases: 1 control test (200), 4 cross-tenant rejection tests (GET, PATCH, DELETE, Webhook PATCH -> 403), and 1 edge-case test (query without orgId -> fetches only own tenant data).
+   - Created fixture helper [`frontend/tests/e2e/fixtures/seed-helpers.ts`](../../frontend/tests/e2e/fixtures/seed-helpers.ts).
+   - Created real HTTP test suite [`frontend/tests/e2e/tenant-security.spec.ts`](../../frontend/tests/e2e/tenant-security.spec.ts) with 6 test cases: 1 control test (200), 4 cross-tenant rejection tests (GET, PATCH, DELETE, Webhook PATCH -> 403), and 1 edge-case test (query without orgId -> fetches only own tenant data).
    - Playwright test run: 🟢 **6/6 passed (6.6s)**.
 4. **Valkey Config Risk Analysis & Hardening (Part B):**
    - Discovered `docker-compose.prod.yml` previously lacked `--maxmemory` and `--maxmemory-policy`, creating severe operational risks: 512MB container memory limits without application-level caps could trigger Linux Kernel OOMKiller, while `volatile-lru` would discard delayed BullMQ jobs.
    - Updated `docker-compose.prod.yml`: added `--maxmemory 384mb`, `--maxmemory-policy noeviction`, `--appendonly yes`, `--appendfsync everysec`.
-5. **CI Nightly Integration (Part C):** Configured `E2E_MULTI_TENANT_ENABLED=true` in [`.github/workflows/e2e-nightly.yml`](file:///c:/Workspaces/haihire/.github/workflows/e2e-nightly.yml) to ensure nightly execution of the tenant security suite.
+5. **CI Nightly Integration (Part C):** Configured `E2E_MULTI_TENANT_ENABLED=true` in [`.github/workflows/e2e-nightly.yml`](../../.github/workflows/e2e-nightly.yml) to ensure nightly execution of the tenant security suite.
 6. **Overall Quality Checks:**
    - `pnpm check:all:fast`: 🟢 **9/9 CI Gates PASSED** (20.49s).
    - `pnpm test`: 🟢 **515/515 Unit Tests PASSED** (359 backend + 156 frontend).
@@ -36,7 +36,7 @@
    - `webServer`: `pnpm dev`, port `13000`, automatically starts both backend and frontend.
    - Global setup/teardown: No per-test teardown hooks (relies on pre-seeded database).
 3. **Login Helper / Fixture:**
-   - Prior to Task #4, no shared API login fixture existed. Existing UI tests logged in via form inputs or mocked routes. Created [`frontend/tests/e2e/fixtures/seed-helpers.ts`](file:///c:/Workspaces/haihire/frontend/tests/e2e/fixtures/seed-helpers.ts) with `loginAsAdmin` sending `POST /api/auth/login` and extracting the `haihire_token` cookie.
+   - Prior to Task #4, no shared API login fixture existed. Existing UI tests logged in via form inputs or mocked routes. Created [`frontend/tests/e2e/fixtures/seed-helpers.ts`](../../frontend/tests/e2e/fixtures/seed-helpers.ts) with `loginAsAdmin` sending `POST /api/auth/login` and extracting the `haihire_token` cookie.
 4. **Backend Endpoint `/api/auth/login`:**
    - Operates reliably through Next.js rewrite rules (`/api/:path*` -> `http://127.0.0.1:3001/:path*`). Returns HTTP 200, JWT accessToken, and header `Set-Cookie: haihire_token=...; HttpOnly; SameSite=Lax`.
 5. **Demo Organizations in Seed Data:**

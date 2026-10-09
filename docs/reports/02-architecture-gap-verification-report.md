@@ -22,19 +22,19 @@ Inspected the entire `backend/src/` codebase to evaluate coupling to Prisma Engi
 
 | Prisma Feature | Actual Status | Details & Codebase Evidence |
 | :--- | :---: | :--- |
-| **`$extends` (Prisma Client Extensions)** | **NOT USED** | Scanning `backend/src/` yields **0 matches**. The system uses Prisma 8 RC (`@prisma/orm-postgres/runtime`) under a Contract-first architecture with the client initialized in [`backend/src/prisma/db.ts:L23-25`](file:///c:/Workspaces/haihire/backend/src/prisma/db.ts#L23-L25). Conventional Prisma Client runtime extensions are not used. |
-| **Complex Nested Writes (`create: { ... create: { ... } }`)** | **NOT USED** | Prisma 8 RC contract-first uses **flat queries**. All multi-table write operations (e.g. Candidate + Application + CandidateDocument) are split into sequential, isolated queries within `executeTx(async tx => ...)` ([`applications.service.ts:L537`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L537) & [`L654`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L654)). |
-| **`transaction({ isolationLevel: ... })`** | **NOT USED** | Transaction management in [`backend/src/prisma/prisma.service.ts:L19-34`](file:///c:/Workspaces/haihire/backend/src/prisma/prisma.service.ts#L19-L34) takes a callback `fn: (tx) => Promise<T>`, with **no option arguments or `isolationLevel`**. Transactions execute under PostgreSQL's default isolation level (`READ COMMITTED`). |
-| **Catching `P2002` (Unique constraint)** | **NOT USED** | Scanning yields **0 matches**. HaiHire does not catch `P2002` error codes upon query crash; instead, it enforces **Proactive Pre-flight Checks**: inspecting collisions prior to insertion (e.g. email checks in [`applications.service.ts:L529-536`](file:///c:/Workspaces/haihire/backend/src/applications/applications.service.ts#L529-L536) and [`auth.service.ts:L186-193`](file:///c:/Workspaces/haihire/backend/src/auth/auth.service.ts#L186-L193)), throwing domain exceptions `AppBadRequestException` or `AppConflictException`. |
+| **`$extends` (Prisma Client Extensions)** | **NOT USED** | Scanning `backend/src/` yields **0 matches**. The system uses Prisma 8 RC (`@prisma/orm-postgres/runtime`) under a Contract-first architecture with the client initialized in [`backend/src/prisma/db.ts:L23-25`](../../backend/src/prisma/db.ts#L23-L25). Conventional Prisma Client runtime extensions are not used. |
+| **Complex Nested Writes (`create: { ... create: { ... } }`)** | **NOT USED** | Prisma 8 RC contract-first uses **flat queries**. All multi-table write operations (e.g. Candidate + Application + CandidateDocument) are split into sequential, isolated queries within `executeTx(async tx => ...)` ([`applications.service.ts:L537`](../../backend/src/applications/applications.service.ts#L537) & [`L654`](../../backend/src/applications/applications.service.ts#L654)). |
+| **`transaction({ isolationLevel: ... })`** | **NOT USED** | Transaction management in [`backend/src/prisma/prisma.service.ts:L19-34`](../../backend/src/prisma/prisma.service.ts#L19-L34) takes a callback `fn: (tx) => Promise<T>`, with **no option arguments or `isolationLevel`**. Transactions execute under PostgreSQL's default isolation level (`READ COMMITTED`). |
+| **Catching `P2002` (Unique constraint)** | **NOT USED** | Scanning yields **0 matches**. HaiHire does not catch `P2002` error codes upon query crash; instead, it enforces **Proactive Pre-flight Checks**: inspecting collisions prior to insertion (e.g. email checks in [`applications.service.ts:L529-536`](../../backend/src/applications/applications.service.ts#L529-L536) and [`auth.service.ts:L186-193`](../../backend/src/auth/auth.service.ts#L186-L193)), throwing domain exceptions `AppBadRequestException` or `AppConflictException`. |
 
 ---
 
 ## 2. [DLQ WORKER] Dead-Letter Queue Mechanics & Alert Channels
 
 ### 2.1 Worker and Consumer Architecture
-- **Queue Registration:** In [`backend/src/applications/applications.module.ts:L21-25`](file:///c:/Workspaces/haihire/backend/src/applications/applications.module.ts#L21-L25), both `orphan-cleanup-queue` and `orphan-cleanup-dlq` are registered with BullMQ.
-- **Worker Processing:** Only [`OrphanCleanupProcessor`](file:///c:/Workspaces/haihire/backend/src/applications/orphan-cleanup.processor.ts#L16-L18) consumes the primary queue `orphan-cleanup-queue`.
-- **Failure Behavior:** When a job fails 5 times (`job.attemptsMade >= 5`), the `@OnWorkerEvent("failed")` handler ([`orphan-cleanup.processor.ts:L47-68`](file:///c:/Workspaces/haihire/backend/src/applications/orphan-cleanup.processor.ts#L47-L68)) logs the error and moves the job into `orphan-cleanup-dlq` named `dead-letter-cleanup`.
+- **Queue Registration:** In [`backend/src/applications/applications.module.ts:L21-25`](../../backend/src/applications/applications.module.ts#L21-L25), both `orphan-cleanup-queue` and `orphan-cleanup-dlq` are registered with BullMQ.
+- **Worker Processing:** Only [`OrphanCleanupProcessor`](../../backend/src/applications/orphan-cleanup.processor.ts#L16-L18) consumes the primary queue `orphan-cleanup-queue`.
+- **Failure Behavior:** When a job fails 5 times (`job.attemptsMade >= 5`), the `@OnWorkerEvent("failed")` handler ([`orphan-cleanup.processor.ts:L47-68`](../../backend/src/applications/orphan-cleanup.processor.ts#L47-L68)) logs the error and moves the job into `orphan-cleanup-dlq` named `dead-letter-cleanup`.
 - ⚠️ **CONSUMER FINDING:** **Zero workers consume the `dead-letter-cleanup` (`orphan-cleanup-dlq`) queue.**
 
 ### 2.2 Alert Destination
@@ -49,22 +49,22 @@ Inspected the entire `backend/src/` codebase to evaluate coupling to Prisma Engi
 
 ### 2.3 Is the DLQ a "Graveyard" or a "Safety Net"?
 - **Original Status (Graveyard):** Failed jobs remain in Valkey/Redis awaiting manual inspection by SRE engineers via CLI or UI tools.
-- **Storage Safety Net:** The system features a nightly 4:00 AM cron script ([`scripts/cleanup-orphan-minio.ts`](file:///c:/Workspaces/haihire/scripts/cleanup-orphan-minio.ts)) reconciling database state against MinIO. Orphan files older than 30 days (grace period) are automatically purged.
+- **Storage Safety Net:** The system features a nightly 4:00 AM cron script ([`scripts/cleanup-orphan-minio.ts`](../../scripts/cleanup-orphan-minio.ts)) reconciling database state against MinIO. Orphan files older than 30 days (grace period) are automatically purged.
 
 ---
 
 ## 3. [E2E TENANT] Status of Real HTTP Cross-Tenant Testing
 
 - **Historical Status:** **NOT IMPLEMENTED PRIOR TO TASK #4.**
-- **Preexisting Playwright Tests:** The directory [`frontend/tests/e2e/`](file:///c:/Workspaces/haihire/frontend/tests/e2e/) contained 5 browser scenarios:
+- **Preexisting Playwright Tests:** The directory [`frontend/tests/e2e/`](../../frontend/tests/e2e) contained 5 browser scenarios:
   1. `apply-form.spec.ts`: Public candidate job application.
   2. `careers-page.spec.ts`: Public job descriptions and UTM link tracking.
   3. `kanban-drag-drop.spec.ts`: Kanban candidate stage drag-and-drop.
   4. `login-flow.spec.ts`: Login & HttpOnly cookie validation.
   5. `theme-toggle.spec.ts`: Dark/Light theme switching.
 - **Audit Findings:** Multi-tenant isolation was initially only tested at Unit & Integration levels within NestJS:
-  - [`backend/src/test/tenant-isolation.spec.ts`](file:///c:/Workspaces/haihire/backend/src/test/tenant-isolation.spec.ts) (3 cases - mock ExecutionContext).
-  - [`backend/src/interviews/interviews.service.spec.ts`](file:///c:/Workspaces/haihire/backend/src/interviews/interviews.service.spec.ts) (4 cases - direct service method invocation).
+  - [`backend/src/test/tenant-isolation.spec.ts`](../../backend/src/test/tenant-isolation.spec.ts) (3 cases - mock ExecutionContext).
+  - [`backend/src/interviews/interviews.service.spec.ts`](../../backend/src/interviews/interviews.service.spec.ts) (4 cases - direct service method invocation).
   - **No tests started a real HTTP server, logged in User A, and issued real HTTP requests with cookies to User B's endpoints asserting HTTP 403 Forbidden.** (Resolved in Task #4).
 
 ---

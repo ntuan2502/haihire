@@ -136,7 +136,7 @@ pnpm version:sync
    ```bash
    pnpm version:bump patch --tag
    ```
-2. Update [`CHANGELOG.md`](file:///c:/Workspaces/haihire/CHANGELOG.md) with release notes.
+2. Update [`CHANGELOG.md`](CHANGELOG.md) with release notes.
 3. Push commit and tag:
    ```bash
    git push origin main
@@ -144,7 +144,7 @@ pnpm version:sync
    ```
 4. GitHub Actions will automatically verify tests, build multi-stage Docker images, push immutable images to GitHub Container Registry (GHCR), and publish a GitHub Release.
 
-For comprehensive details, refer to [`docs/runbooks/versioning.md`](file:///c:/Workspaces/haihire/docs/runbooks/versioning.md).
+For comprehensive details, refer to [`docs/runbooks/versioning.md`](docs/runbooks/versioning.md).
 
 ---
 

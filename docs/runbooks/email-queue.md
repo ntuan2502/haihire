@@ -1,7 +1,7 @@
 # Runbook: Email Queue Backlog Remediation
 
 **System:** HaiHire Enterprise ATS  
-**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](file:///c:/Workspaces/haihire/monitoring/prometheus/alert-rules.yml)  
+**Related Documentation:** [`monitoring/prometheus/alert-rules.yml`](../../monitoring/prometheus/alert-rules.yml)  
 **Alert Rule:** `HaiHireEmailQueueBacklog` (Warning)  
 **Responsible Teams:** SRE & Backend Engineering (`team: sre`)
 

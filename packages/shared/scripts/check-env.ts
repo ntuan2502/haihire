@@ -26,14 +26,9 @@ function parseEnvKeys(filePath: string): Set<string> | null {
 
 const checks: EnvCheckTarget[] = [
   {
-    name: "Backend Environment",
-    exampleFile: "backend/.env.example",
-    targetFile: "backend/.env",
-  },
-  {
-    name: "Frontend Environment",
-    exampleFile: "frontend/.env.example",
-    targetFile: "frontend/.env",
+    name: "Unified Environment",
+    exampleFile: ".env.example",
+    targetFile: ".env",
   },
 ];
 

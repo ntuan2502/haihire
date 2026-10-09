@@ -12,7 +12,7 @@ const clientEnvSchema = z.object({
 const serverEnvSchema = z.object({
   INTERNAL_API_URL: z
     .string()
-    .min(1, "INTERNAL_API_URL is required in frontend/.env for Server-Side API communication"),
+    .min(1, "INTERNAL_API_URL is required in .env for Server-Side API communication"),
 });
 
 export interface FrontendEnv {
@@ -45,7 +45,7 @@ if (isServer) {
     console.error("===========================================================");
     console.error(parsedServer.error.format());
     console.error("===========================================================\n");
-    throw new Error("Missing INTERNAL_API_URL in frontend/.env for server-side communication.");
+    throw new Error("Missing INTERNAL_API_URL in .env for server-side communication.");
   }
   internalApiUrl = parsedServer.data.INTERNAL_API_URL;
 }

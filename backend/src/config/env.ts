@@ -2,9 +2,12 @@ import { z } from "zod";
 import dotenv from "dotenv";
 import path from "node:path";
 
-// Load backend .env
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-dotenv.config({ path: path.resolve(process.cwd(), "backend/.env") });
+// Load root .env regardless of CWD (works from root or from backend/)
+const repoRoot = process.cwd().endsWith("backend")
+  ? path.resolve(process.cwd(), "..")
+  : process.cwd();
+const rootEnvPath = path.resolve(repoRoot, ".env");
+dotenv.config({ path: rootEnvPath });
 dotenv.config();
 
 const backendEnvSchema = z.object({
@@ -163,7 +166,7 @@ if (!parsed.success) {
   console.error("\n===========================================================");
   console.error("❌ CRITICAL CONFIGURATION ERROR: Invalid / Missing Environment!");
   console.error("===========================================================");
-  console.error("The following errors were detected in backend/.env:\n");
+  console.error("The following errors were detected in .env:\n");
 
   const formattedErrors = parsed.error.format();
   for (const [key, val] of Object.entries(formattedErrors)) {
@@ -175,7 +178,7 @@ if (!parsed.success) {
   }
 
   console.error(
-    "\nPlease check your backend/.env (refer to backend/.env.example) and populate all required variables.",
+    "\nPlease check your .env (refer to .env.example) and populate all required variables.",
   );
   console.error("===========================================================\n");
   process.exit(1);

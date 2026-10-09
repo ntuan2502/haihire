@@ -50,19 +50,15 @@ cd haihire
 pnpm install
 ```
 
-### 2. Configure Environment Files
-Copy the environment templates into their respective locations:
+### 2. Configure Environment
+HaiHire utilizes a unified Single Source of Truth environment architecture. Copy the template:
 ```bash
-# Root infrastructure ports template
 cp .env.example .env
-
-# Backend runtime configuration
-cp backend/.env.example backend/.env
-
-# Frontend runtime configuration
-cp frontend/.env.example frontend/.env
 ```
-> For complete environment segregation details, read the [Environment Management Runbook](docs/runbooks/env-management.md).
+*(On Windows PowerShell: `Copy-Item .env.example .env`)*
+
+All services (Backend, Frontend, Prisma CLI, and Docker Compose) read directly from this single root `.env` file.
+> For complete architecture details, read the [Environment Management Runbook](docs/runbooks/env-management.md).
 
 ### 3. Spin Up Infrastructure Containers
 Start PostgreSQL, Valkey, and MinIO in the background:

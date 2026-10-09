@@ -66,35 +66,21 @@ console.log("=================================================================="
 
 let hasError = false;
 
-// 1. Audit pairwise parity (.env vs .env.example)
+// 1. Audit pairwise parity (.env vs .env.example, .env.production vs .env.production.example)
 const envPairs: EnvPairCheck[] = [
   {
-    name: "Root System Ports & Infrastructure",
+    name: "Development Environment Single Source of Truth",
     exampleFile: ".env.example",
     targetFile: ".env",
-    requiredTarget: false, // in CI, .env might be generated dynamically
+    requiredTarget: false, // in CI without local setup, .env is tested if generated
   },
   {
-    name: "Backend Service Environment",
-    exampleFile: "backend/.env.example",
-    targetFile: "backend/.env",
-    requiredTarget: true,
-  },
-  {
-    name: "Frontend Service Environment",
-    exampleFile: "frontend/.env.example",
-    targetFile: "frontend/.env",
-    requiredTarget: true,
-  },
-  {
-    name: "Production Template Parity",
+    name: "Production Environment Template Parity",
     exampleFile: ".env.production.example",
     targetFile: ".env.production",
     requiredTarget: false,
   },
 ];
-
-const isCI = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 
 for (const pair of envPairs) {
   const examplePath = resolve(process.cwd(), pair.exampleFile);
@@ -109,14 +95,7 @@ for (const pair of envPairs) {
 
   const targetKeys = parseEnvKeys(targetPath);
   if (!targetKeys) {
-    if (isCI) {
-      console.log(`ℹ️ [SKIP] ${pair.targetFile} not present in CI environment`);
-    } else if (pair.requiredTarget) {
-      console.error(`❌ [${pair.name}] Required environment file missing: ${pair.targetFile}`);
-      hasError = true;
-    } else {
-      console.log(`ℹ️ [${pair.name}] Target ${pair.targetFile} not present (skipping key comparison)`);
-    }
+    console.log(`ℹ️ [${pair.name}] Target ${pair.targetFile} not present (skipping key comparison)`);
     continue;
   }
 
@@ -169,42 +148,32 @@ if (unprovidedComposeVars.length > 0) {
   console.log(`✅ All ${prodComposeVars.size} variables in docker-compose.prod.yml are documented in .env.production.example`);
 }
 
-// 3. Cross-file consistency checks (Dev mode alignment)
+// 3. Local .env Internal Coherence Check
 console.log("\n------------------------------------------------------------------");
-console.log("🔗 Verifying Cross-File Port & Host Consistency (Dev Alignment)");
+console.log("🔗 Verifying Internal Port & URL Coherence in Local .env");
 console.log("------------------------------------------------------------------");
 
 const rootEnv = parseEnvKeyValueMap(resolve(process.cwd(), ".env"));
-const backendEnv = parseEnvKeyValueMap(resolve(process.cwd(), "backend/.env"));
-const frontendEnv = parseEnvKeyValueMap(resolve(process.cwd(), "frontend/.env"));
 
-if (rootEnv.size > 0 && backendEnv.size > 0 && frontendEnv.size > 0) {
-  const rootBackendPort = rootEnv.get("BACKEND_PORT");
-  const backendPort = backendEnv.get("PORT");
-  const rootFrontendPort = rootEnv.get("FRONTEND_PORT");
-  const frontendPort = frontendEnv.get("PORT");
-  const rootPostgresPort = rootEnv.get("POSTGRES_PORT");
-  const backendDbUrl = backendEnv.get("DATABASE_URL") || "";
+if (rootEnv.size > 0) {
+  const backendPort = rootEnv.get("BACKEND_PORT");
+  const frontendPort = rootEnv.get("FRONTEND_PORT");
+  const internalApiUrl = rootEnv.get("INTERNAL_API_URL") || "";
+  const frontendUrl = rootEnv.get("FRONTEND_URL") || "";
 
-  if (rootBackendPort && backendPort && rootBackendPort !== backendPort) {
-    console.warn(`⚠️ Port discrepancy: root BACKEND_PORT (${rootBackendPort}) != backend PORT (${backendPort}). Note: backend/src/config/env.ts will automatically prioritize root BACKEND_PORT.`);
+  if (backendPort && internalApiUrl && !internalApiUrl.includes(`:${backendPort}`)) {
+    console.warn(`⚠️ Warning: INTERNAL_API_URL (${internalApiUrl}) does not match BACKEND_PORT (${backendPort})`);
   } else {
-    console.log(`✅ Backend port aligned: ${backendPort || rootBackendPort}`);
+    console.log(`✅ Internal API URL correctly targets backend port ${backendPort}`);
   }
 
-  if (rootFrontendPort && frontendPort && rootFrontendPort !== frontendPort) {
-    console.warn(`⚠️ Port discrepancy: root FRONTEND_PORT (${rootFrontendPort}) != frontend PORT (${frontendPort}).`);
+  if (frontendPort && frontendUrl && !frontendUrl.includes(`:${frontendPort}`)) {
+    console.warn(`⚠️ Warning: FRONTEND_URL (${frontendUrl}) does not match FRONTEND_PORT (${frontendPort})`);
   } else {
-    console.log(`✅ Frontend port aligned: ${frontendPort || rootFrontendPort}`);
-  }
-
-  if (rootPostgresPort && !backendDbUrl.includes(`:${rootPostgresPort}/`)) {
-    console.warn(`⚠️ Database port note: backend DATABASE_URL doesn't explicitly mention host port ${rootPostgresPort}. Note: backend/src/config/env.ts overrides host port dynamically.`);
-  } else {
-    console.log(`✅ Database port aligned with host: ${rootPostgresPort}`);
+    console.log(`✅ Frontend URL correctly targets frontend port ${frontendPort}`);
   }
 } else {
-  console.log("ℹ️ Cross-file dev alignment skipped (one or more local .env files absent in CI environment).");
+  console.log("ℹ️ Internal coherence check skipped (local .env not present)");
 }
 
 console.log("==================================================================");

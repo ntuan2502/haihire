@@ -59,3 +59,12 @@
   - MinIO (SHA256 pinned)
   - Caddy 2.8-alpine
   - Node.js 26-alpine
+
+---
+
+## Environment Architecture
+
+- **Single Source of Truth:** Root `.env` file (gitignored).
+- **Template:** `.env.example` (tracked, 10-section standardized).
+- **Production Template:** `.env.production.example` (tracked).
+- **NO** per-package env files (`backend/.env` and `frontend/.env` removed in Task #11).

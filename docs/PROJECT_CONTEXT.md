@@ -238,7 +238,7 @@ haihire/
 3. **No hardcoded user-facing strings in Frontend:** All text, labels, and placeholders must resolve via `useI18n()` and `t("key.path")`. New strings must be added simultaneously to `types.ts`, `vi.ts`, and `en.ts`.
 4. **No duplicate proxy files when modularizing:** In directories such as `frontend/src/lib/api/`, `index.ts` is the single export source. Never create an adjacent `frontend/src/lib/api.ts` file.
 5. **No `corepack enable`:** Node.js 26 has removed Corepack. Use explicit npm package installation: `npm install -g pnpm@12.6.0`.
-6. **All `.env` changes must be synchronized across 5 files:** `.env`, `.env.example`, `backend/.env.example`, `frontend/.env.example`, `.env.production.example`.
+6. **Environment architecture is Single Source of Truth:** All local development and Docker services use root `.env` (derived from `.env.example`). Production deployments use `.env.production` (derived from `.env.production.example`). Per-package `.env` files (`backend/.env*`, `frontend/.env*`) have been removed (Task #11).
 7. **Do not import `clsx` or `tailwind-merge` directly:** Always import the unified helper from `cn`: `import { cn } from "cn";`.
 
 ---

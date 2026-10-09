@@ -1485,8 +1485,6 @@ export const en: TranslationSchema = {
     orgNotFoundDesc: "Organization \"{slug}\" does not exist or has not enabled its public careers portal.",
     jobNotFound: "Job opening not found",
     jobNotFoundDesc: "This position may no longer be available or the link is incorrect.",
-    jobClosed: "Position is closed",
-    jobClosedDesc: "This position is no longer accepting new applications. Please explore other open roles at the company.",
     backToHome: "Back to Home",
     backToJobList: "Back to Job Openings",
     backToOrgJobs: "All open roles at {name}",
@@ -1545,6 +1543,11 @@ export const en: TranslationSchema = {
       email: "john.doe@example.com",
       phone: "+1 (555) 123-4567",
       notes: "Share more about yourself, your availability, or why you are interested in this position...",
+    },
+    jobClosed: {
+      title: "This position is closed",
+      description: "This job opening is no longer accepting new applications. You can explore other open positions at this organization.",
+      viewOtherJobs: "View other positions",
     },
   },
   email: {

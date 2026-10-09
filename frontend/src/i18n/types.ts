@@ -1483,8 +1483,6 @@ export interface TranslationSchema {
     orgNotFoundDesc: string;
     jobNotFound: string;
     jobNotFoundDesc: string;
-    jobClosed: string;
-    jobClosedDesc: string;
     backToHome: string;
     backToJobList: string;
     backToOrgJobs: string;
@@ -1543,6 +1541,11 @@ export interface TranslationSchema {
       email: string;
       phone: string;
       notes: string;
+    };
+    jobClosed: {
+      title: string;
+      description: string;
+      viewOtherJobs: string;
     };
   };
   email: {

@@ -205,15 +205,15 @@ export function JobDetailsClient({
         <div className="h-14 w-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("careers.jobClosed")}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("careers.jobClosed.title")}</h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md leading-relaxed">
-          {t("careers.jobClosedDesc")}
+          {t("careers.jobClosed.description")}
         </p>
         <Button
           onClick={() => router.push(`/careers/${orgSlug}`)}
           className="mt-6 h-9 rounded-xl text-xs font-semibold cursor-pointer"
         >
-          {t("careers.viewOtherJobs")}
+          {t("careers.jobClosed.viewOtherJobs")}
         </Button>
       </div>
     );

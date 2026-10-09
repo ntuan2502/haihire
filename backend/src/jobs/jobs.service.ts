@@ -254,7 +254,7 @@ export class JobsService {
       );
     }
 
-    if (isPublic && job.status !== "PUBLISHED") {
+    if (isPublic && job.status !== "PUBLISHED" && job.status !== "CLOSED") {
       throw new AppNotFoundException(
         APP_ERROR_CODES.JOB_NOT_FOUND,
         `Job with ID ${id} not found`,
@@ -411,7 +411,9 @@ export class JobsService {
       .where((j) => j.organizationId.eq(org.id))
       .all();
 
-    const activeJobs = jobs.filter((j) => !j.deletedAt && j.status === "PUBLISHED");
+    const activeJobs = jobs.filter(
+      (j) => !j.deletedAt && (j.status === "PUBLISHED" || j.status === "CLOSED"),
+    );
 
     const slugify = (str: string) =>
       str

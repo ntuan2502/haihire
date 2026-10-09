@@ -28,6 +28,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [27 — Task #10.5: Absolute file:/// Links Remediation](27-task-10.5-absolute-file-links-fix-report.md)
 - [28 — Task #11 Phase 1: Environment Architecture Audit & Proposal](28-task-11-env-architecture-audit-proposal.md)
 - [29 — Task #11 Phase 2: Environment Architecture Unification Completion Report](29-task-11-phase-2-env-architecture-unification-report.md)
+- [30 — Task #12 Phase 1: package.json & Dev Script Audit and Refactoring Proposal](30-task-12-package-json-dev-script-audit-proposal.md)
 
 ## Archived Reports
 

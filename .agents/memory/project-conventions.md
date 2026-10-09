@@ -61,7 +61,7 @@ updated: 2026-10-02T10:00
 - Whenever reference images or mockups contain placeholder logos/names (like Reqcore or ATS), ALWAYS replace with **HaiHire** (or "H" monogram) across all UI components, logos, and copy.
 
 ## Validation & Testing Conventions
-- **Comprehensive Quality Check**: Run `pnpm check:all` to execute the complete verification pipeline (env sync, two-way i18n, lint, typecheck, Gate 3 dtopipe, Gate 4 error-i18n, Gate 5 api-contract, test:diff anti-regression, and all 369 unit/integration tests). Use `pnpm check:all:fast` for quick static audits (~38s) or `pnpm check:all:e2e` to include Playwright E2E.
+- **Comprehensive Quality Check**: Run `pnpm check:all` to execute the complete verification pipeline (env sync, two-way i18n, lint, typecheck, Gate 3 dtopipe, Gate 4 error-i18n, Gate 5 api-contract, test:diff anti-regression, and all 563 unit/integration tests). Use `pnpm check:all:fast` for quick static audits (~38s) or `pnpm check:all:e2e` to include Playwright E2E.
 - If only frontend UI is modified, only run frontend lint and build (pnpm --filter frontend run build ; pnpm --filter frontend run lint) without running backend tests or full test suites.
 - Always execute commands individually or use ; (not &&) in Windows PowerShell.
 - Always use pnpm or pnpx (NEVER use npx).
@@ -85,6 +85,11 @@ updated: 2026-10-02T10:00
 - **Layout Components (frontend/src/components/layout/)**: Application shell and navigation.
 - **Application Context Providers (frontend/src/components/providers/)**: App-level state providers.
 - **Zero Loose Root Components**: Never place loose .tsx files directly at frontend/src/components/ root.
+
+## React Named Imports Convention (MANDATORY)
+- **Always use named imports from "react"**: e.g., `import { useState, useEffect, type ReactNode } from "react"`.
+- **Forbidden in application code**: Do NOT use default `import React from "react"`, wildcard `import * as React from "react"`, or namespace syntax like `React.useState`, `React.ReactNode`, etc.
+- **Strict Exception**: The `frontend/src/components/ui/` directory is exclusively reserved for pristine Shadcn CLI primitives and must NEVER be modified.
 
 ## Strict Typing & Zero `any` Policy (MANDATORY)
 - **Zero `any` in application code**: The use of `any` is strictly prohibited across backend, frontend, and shared packages.
@@ -261,7 +266,7 @@ updated: 2026-10-02T10:00
 - **All filename sanitization and security logic MUST pass on both Windows and Linux CI.**
 
 ## CI/CD Test Strategy (Phase 22.4 MANDATORY)
-- **Static Quality Gates on Every PR**: ESLint, TypeScript typecheck, DtoPipe protection, error code i18n localization, API contract parity, environment variable sync, and unit tests (Vitest - 378 tests) run on **100% of pull requests and pushes**.
+- **Static Quality Gates on Every PR**: ESLint, TypeScript typecheck, DtoPipe protection, error code i18n localization, API contract parity, environment variable sync, and unit tests (Vitest - 563 tests) run on **100% of pull requests and pushes**.
 - **Conditional Playwright E2E Execution**: End-to-end browser journeys execute on pull requests **only when critical paths are touched** (e.g. `frontend/src/app/**`, `backend/src/auth/**`, `backend/src/applications/**`, `packages/**`, `package.json`, `pnpm-lock.yaml`).
 - **Zero E2E Waste on Documentation & Typo PRs**: Never run heavy E2E tests for pull requests modifying solely documentation (`docs/**`), comments, or non-critical formatting.
 - **Nightly Scheduled E2E**: The full Playwright test suite executes on a dedicated nightly schedule at `03:00 UTC` (`.github/workflows/e2e-nightly.yml`) to catch subtle external dependency drifts.

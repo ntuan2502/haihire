@@ -66,7 +66,7 @@ All client applications translate `code` through localized dictionaries (`vi.ts`
 
 ---
 
-## 3. Core Domain Controller Map (77 Endpoints Across 9 Controllers)
+## 3. Domain Controller Map (83 Endpoints Across 13 Controllers)
 
 | Controller | Base Route | Core Capabilities |
 | :--- | :--- | :--- |
@@ -79,6 +79,10 @@ All client applications translate `code` through localized dictionaries (`vi.ts`
 | **EmailController** | `/email` | System email settings (SMTP / Resend / SendGrid), template customization, async BullMQ email dispatch, delivery logs. |
 | **SourcingController** | `/sourcing` | Multi-channel tracking link generator (5 UTM parameters), deduplicated click analytics, source attribution logs. |
 | **ActivitiesController** | `/activities` | Comprehensive audit trail logs for candidate and application mutations (PII-scrubbed). |
+| **WebhookSettingsController** | `/webhook-settings` | Per-organization multi-channel notification webhook configurations (Telegram, Discord, Generic HMAC). |
+| **UsersController** | `/users` | User profile management and account preferences. |
+| **MetricsController** | `/metrics` | Prometheus scraper endpoint exposing HTTP latency and BullMQ queue gauges. |
+| **AppController** | `/` | Health check probe (`/health`) and service status endpoint. |
 
 ---
 

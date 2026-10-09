@@ -21,8 +21,8 @@ Before commencing deployment operations, verify each item:
   ```
   Verify output displays: `Backup & Restore Drill Completed Successfully!`.
 - [ ] **Clean Codebase Verification:**
-  - `pnpm test` and `pnpm test:e2e` reporting 379/379 tests passing (233 Backend + 136 Frontend + 10 E2E).
-  - All 7 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
+  - `pnpm test` reporting 563/563 tests passing (376 Backend + 187 Frontend) and `pnpm test:e2e` reporting 100% green.
+  - All 11 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
   - `pnpm lint:env-sync` reporting 100% key parity and complete compose variable coverage.
 - [ ] **Container Image Availability on GHCR:**
   Verify immutable production images published by GitHub Actions workflow exist in GitHub Container Registry (GHCR):

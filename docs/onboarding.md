@@ -101,13 +101,13 @@ Once running, access your local services:
 ## 💻 4. Common Developer Commands
 
 ```bash
-# Run full 7-gate CI verification pipeline
+# Run full 11-gate CI verification pipeline
 pnpm check:all
 
 # Run quick static checks before committing
 pnpm check:all:fast
 
-# Run all unit & integration tests (379 tests)
+# Run all unit & integration tests (563 tests)
 pnpm test
 
 # Run frontend tests only

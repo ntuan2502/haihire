@@ -56,9 +56,9 @@ git commit -m "feat(jobs): add multi-channel sourcing tracker"
 
 ---
 
-## 🛡️ The 7 CI Quality Gates
+## 🛡️ The 11 CI Architecture Gates
 
-Before submitting any Pull Request or merging code, all 7 automated CI verification gates must pass:
+Before submitting any Pull Request or merging code, all 11 automated CI verification gates must pass:
 
 ```bash
 # Execute the complete quality pipeline:
@@ -73,13 +73,20 @@ pnpm check:all:e2e
 
 | Gate | Command | Description |
 | :---: | :--- | :--- |
-| **Gate 1** | `pnpm lint` | ESLint rules & static checks across backend and frontend |
-| **Gate 2** | `pnpm typecheck` | Strict TypeScript compiler check (`tsc --noEmit`) |
-| **Gate 3** | `pnpm lint:dtopipe` | Verifies 100% `@Body()` controller parameters use `DtoPipe` validation |
-| **Gate 4** | `pnpm lint:error-i18n` | Verifies 100% `APP_ERROR_CODES` are localized in `vi.ts` & `en.ts` |
-| **Gate 5** | `pnpm lint:api-contract` | Ensures zero `JSON.stringify(err)` leaks and zero `alert()` calls |
-| **Gate 6** | `pnpm lint:env-sync` | Audits key parity across all 5 `.env` files and Docker Compose |
-| **Gate 7** | `pnpm test` | Executes all 379 backend and frontend unit/integration tests |
+| **Gate 1** | `pnpm lint:env-sync` | Audits key parity across all 5 `.env` files and Docker Compose |
+| **Gate 2** | `pnpm check:i18n` | Asserts two-way i18n dictionary completeness & zero hardcoded strings |
+| **Gate 3** | `pnpm lint` | ESLint rules & static checks across backend and frontend |
+| **Gate 4** | `pnpm typecheck` | Strict TypeScript compiler check (`tsc --noEmit`) |
+| **Gate 5** | `pnpm lint:dtopipe` | Verifies 100% `@Body()` controller parameters use `DtoPipe` validation |
+| **Gate 6** | `pnpm lint:error-i18n` | Verifies 100% `APP_ERROR_CODES` (51 codes) are localized in `vi.ts` & `en.ts` |
+| **Gate 7** | `pnpm lint:api-contract` | Audits 83 endpoints, zero `JSON.stringify(err)` leaks, zero `alert()` calls |
+| **Gate 8** | `pnpm lint:prometheus-rules` | Verifies 14 Prometheus alert rules syntax, fields, and SRE labels |
+| **Gate 9** | `pnpm lint:tenant-scope` | AST static analysis enforcing query isolation across tenant-scoped modules |
+| **Gate 10** | `pnpm lint:doc-links` | Verifies zero broken markdown links across all documentation |
+| **Gate 11** | `pnpm test:diff` | Audits test count changes against git history to detect test regression |
+
+> **Unit & Integration Test Suite:** All 11 architecture gates are followed by the automated test suite (`pnpm test`), executing all 563 tests across backend and frontend packages.  
+> Refer to [Project Metrics (Single Source of Truth)](docs/PROJECT_METRICS.md) for live metrics.
 
 ---
 
@@ -145,7 +152,7 @@ For comprehensive details, refer to [`docs/runbooks/versioning.md`](file:///c:/W
 
 When opening a Pull Request:
 - [ ] Created dedicated feature branch (`feature/*`, `fix/*`).
-- [ ] Ran `pnpm check:all` locally and verified all 7 gates passed.
+- [ ] Ran `pnpm check:all` locally and verified all 11 gates passed.
 - [ ] All new features include unit/integration tests (`pnpm test`).
 - [ ] No broken markdown links or outdated documentation.
 - [ ] Verified non-leakage of secrets or `.env` files.

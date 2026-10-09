@@ -105,11 +105,12 @@ pnpm dev
 
 ## 📂 Documentation Directory
 
-Comprehensive system documentation is maintained under the [`docs/`](file:///c:/Workspaces/haihire/docs/) directory:
+Comprehensive system documentation is maintained under the [`docs/`](docs/) directory:
 
-- 📖 [**Developer Onboarding Guide**](file:///c:/Workspaces/haihire/docs/onboarding.md): Step-by-step onboarding for new team members.
+- 📊 [**Project Metrics (Single Source of Truth)**](docs/PROJECT_METRICS.md): Master metrics, verification counts, and architectural baseline.
+- 📖 [**Developer Onboarding Guide**](docs/onboarding.md): Step-by-step onboarding for new team members.
 - 🏛️ [**System Architecture Overview**](file:///c:/Workspaces/haihire/docs/architecture/system-overview.md): High-level topology, Mermaid diagrams, and design patterns.
-- 🔌 [**REST API Overview**](file:///c:/Workspaces/haihire/docs/api/overview.md): Controller mappings, 77 REST endpoints, auth, and error contracts.
+- 🔌 [**REST API Overview**](docs/api/overview.md): Controller mappings, 83 REST endpoints, auth, and error contracts.
 - 🚀 [**Production Deployment Plan**](file:///c:/Workspaces/haihire/docs/runbooks/production-deployment-plan.md): 5-phase production release protocol.
 - 💾 [**Backup & Disaster Recovery**](file:///c:/Workspaces/haihire/docs/runbooks/backup-and-restore.md): Automated PostgreSQL dumps, MinIO hot backup, and restore drills.
 - 🧹 [**MinIO Orphan Cleanup**](file:///c:/Workspaces/haihire/docs/runbooks/orphan-cleanup.md): Daily cron purging unreferenced files with a 30-day grace period.

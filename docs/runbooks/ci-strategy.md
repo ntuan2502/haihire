@@ -13,7 +13,7 @@ HaiHire adopts a strictly stratified Testing Pyramid to ensure rapid developer f
 ```
           / \
          /   \       End-to-End (E2E) UI Tests
-        / E2E \      Playwright Chromium • 10 journeys
+        / E2E \      Playwright Chromium • 10 journeys (19 specs, 6 cross-tenant)
        /───────\     Critical Paths Only • Nightly • Pre-release
       /         \
      /Integration\   Integration & Contract Tests
@@ -21,14 +21,14 @@ HaiHire adopts a strictly stratified Testing Pyramid to ensure rapid developer f
    /───────────────\ DtoPipe Protection • i18n Dictionary Parity
   /                 \
  /    Unit Tests     \ Unit Test Matrix
-/  (Backend+Frontend) \ Vitest • 378 unit tests • 51 suites • <15s
+/  (Backend+Frontend) \ Vitest • 563 tests • 68 suites • <15s
 /─────────────────────\ 100% PR execution • Fast fail
 ```
 
 ### Layer Rationale
-1. **Unit Tests (Vitest - 378 tests):** Fast execution (<15 seconds), zero external service dependencies (pure mock/in-memory), execute on **100% of pull requests and commits**.
-2. **Static Architecture Gates (8 Gates):** Lint, typecheck, DtoPipe coverage, error code i18n localization, API contract sync, environment parity, test count diff. Total runtime ~20s.
-3. **End-to-End (E2E) Tests (Playwright - 10 tests):** Real browser journeys (Careers SEO & themes, candidate applications, multi-step ATS login, Kanban drag-and-drop). Heavyweight requirement with PostgreSQL, Valkey, and MinIO services. Triggered **smartly & conditionally**.
+1. **Unit & Integration Tests (Vitest - 563 tests):** Fast execution (<15 seconds), zero external service dependencies (pure mock/in-memory), execute on **100% of pull requests and commits**.
+2. **Static Architecture Gates (11 Gates):** Env sync, i18n parity, ESLint, typecheck, DtoPipe, error code i18n, API contracts, Prometheus rules, tenant scoping, doc links, test count diff. Total runtime ~20s.
+3. **End-to-End (E2E) Tests (Playwright - 19 specs across 10 critical user journeys):** Real browser journeys (including 6 cross-tenant security tests, Careers SEO & themes, candidate applications, multi-step ATS login, Kanban drag-and-drop). Heavyweight requirement with PostgreSQL, Valkey, and MinIO services. Triggered **smartly & conditionally**.
 
 ---
 
@@ -36,8 +36,8 @@ HaiHire adopts a strictly stratified Testing Pyramid to ensure rapid developer f
 
 | Test Layer | Local Dev (`check:all`) | Pull Request (Docs/Typo) | Pull Request (Critical Path) | Push to `main`/`develop` | Nightly (`03:00 UTC`) | Tagged Release (GHCR) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Static Gates (1-6)** | ✅ Runs | ✅ Runs | ✅ Runs | ✅ Runs | — | ✅ Runs |
-| **Unit Tests (Gate 7)** | ✅ Runs | ✅ Runs | ✅ Runs | ✅ Runs | — | ✅ Runs |
+| **Static Gates (1-11)** | ✅ Runs | ✅ Runs | ✅ Runs | ✅ Runs | — | ✅ Runs |
+| **Unit Tests (`pnpm test`)** | ✅ Runs | ✅ Runs | ✅ Runs | ✅ Runs | — | ✅ Runs |
 | **Next.js Package Build** | ✅ Runs | ✅ Runs | ✅ Runs | ✅ Runs | — | ✅ Runs |
 | **Playwright E2E Tests** | Optional (`test:e2e`) | ⏭️ **SKIPPED** | 🟢 **RUNS** | 🟢 **RUNS** | 🟢 **RUNS (Full)** | 🟢 **MANDATORY GATE** |
 | **Docker Build & Push** | Optional | ⏭️ Skipped | ⏭️ Skipped | 🟢 Runs | ⏭️ Skipped | 🟢 Runs |
@@ -184,7 +184,7 @@ To ensure browser binaries are reliably found across GitHub Actions runners:
 
 ### Running Tests Locally
 ```powershell
-# 1. Run quick static checks (8 gates, unit tests skipped)
+# 1. Run quick static checks (11 architecture gates, unit tests skipped)
 pnpm check:all:fast
 
 # 2. Run unit tests only

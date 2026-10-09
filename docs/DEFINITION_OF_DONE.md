@@ -64,7 +64,7 @@
 - [ ] Zero hardcoded strings in JSX — use `t("key.path")`
 - [ ] New dictionary keys added synchronously to all 3 files: `types.ts`, `vi.ts`, and `en.ts`
 - [ ] New domain error codes registered in `APP_ERROR_CODES` + `vi.ts` + `en.ts`
-- [ ] `pnpm check:i18n` passes with 100% key parity and zero hardcoded text
+- [ ] `pnpm lint:i18n` passes with 100% key parity and zero hardcoded text
 
 ---
 

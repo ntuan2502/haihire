@@ -47,9 +47,9 @@ const steps: Step[] = [
     description: "Verify 100% key parity and Docker compose variable coverage",
   },
   {
-    id: "check:i18n",
-    name: "Two-Way i18n & Zero Hardcoded Strings",
-    command: "pnpm check:i18n",
+    id: "lint:i18n",
+    name: "Two-Way i18n & Zero Hardcoded Strings (pnpm lint:i18n)",
+    command: "pnpm lint:i18n",
     category: "lint",
     description: "Verify dictionary keys consistency and assert zero hardcoded strings in JSX",
   },

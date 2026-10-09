@@ -121,7 +121,7 @@ pnpm build
 pnpm lint:env-sync
 
 # Verify i18n translation key parity
-pnpm check:i18n
+pnpm lint:i18n
 ```
 
 ---
@@ -141,7 +141,7 @@ Get-NetTCPConnection -LocalPort 13001, 15432 -ErrorAction SilentlyContinue
 ```bash
 pnpm lint:env-sync
 ```
-Ensure that `.env`, `backend/.env`, and `frontend/.env` have been populated from their respective `.env.example` templates.
+Ensure that root `.env` has been populated from `.env.example`.
 
 ### Issue: "Prisma client or contract types are out of sync"
 **Solution:** Re-emit the Prisma contract bindings:

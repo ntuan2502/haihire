@@ -74,7 +74,7 @@ pnpm check:all:e2e
 | Gate | Command | Description |
 | :---: | :--- | :--- |
 | **Gate 1** | `pnpm lint:env-sync` | Audits key parity across all 5 `.env` files and Docker Compose |
-| **Gate 2** | `pnpm check:i18n` | Asserts two-way i18n dictionary completeness & zero hardcoded strings |
+| **Gate 2** | `pnpm lint:i18n` | Asserts two-way i18n dictionary completeness & zero hardcoded strings |
 | **Gate 3** | `pnpm lint` | ESLint rules & static checks across backend and frontend |
 | **Gate 4** | `pnpm typecheck` | Strict TypeScript compiler check (`tsc --noEmit`) |
 | **Gate 5** | `pnpm lint:dtopipe` | Verifies 100% `@Body()` controller parameters use `DtoPipe` validation |

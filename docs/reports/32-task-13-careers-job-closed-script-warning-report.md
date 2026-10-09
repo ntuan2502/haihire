@@ -48,14 +48,14 @@ In `backend/src/jobs/jobs.service.ts`:
 2. Updated `findBySlug`: Filtered `activeJobs` for both `PUBLISHED` and `CLOSED` statuses so public URLs resolve gracefully.
 3. Seed Determinism in `backend/src/prisma/seed.ts`: Explicitly seeded `Information Security & SecOps Specialist` as `CLOSED` and `Customer Success Lead` as `DRAFT` for 100% deterministic testing.
 
-### 3.3 Frontend Component Architecture
-1. **`JobClosed` Component (`frontend/src/app/careers/[orgSlug]/[jobSlug]/job-closed.tsx`)**:
-   - Renders company branding via `CareersHeader` (theme toggle, locale switch, org portal link).
-   - Displays closed status badge with subtle pulse indicator.
-   - Shows job metadata (title, department, workplace, type, location).
-   - Provides clear localized guidance (`t("careers.jobClosed.description")`).
-   - Offers prominent CTA button leading back to all open positions (`/careers/[orgSlug]`).
-   - Renders unified `CareersFooter`.
+### 3.3 Frontend Component Architecture & Design System Parity
+1. **1:1 Design System Parity with Open Job Page**:
+   - **Back Navigation**: Exact `< Tất cả vị trí tại {orgName}` header link with `ChevronLeft` icon.
+   - **Hero Card (`rounded-3xl` container)**:
+     - Top badges row: Department badge, Workplace badge (`Globe2`), Experience Level badge (`Briefcase`), and an amber closed status badge (`Archive` / pulse dot).
+     - Title typography: Exact `text-2xl sm:text-4xl font-black tracking-tight leading-tight`.
+     - Metadata row: `Building2` (org), `MapPin` (location), `Clock` (job type), and `DollarSign` (salary range in emerald).
+   - **Notice Section**: Clean informational card positioned below the hero card, featuring an `Archive` icon, closure title, clear description, and a single responsive CTA button `Xem các vị trí khác` leading to `/careers/[orgSlug]`. Purged redundant elements (removed duplicate organization badge and generic "Tất cả công ty" button) to maintain brand focus and strict design system consistency with the open job experience. No extraneous JD/application forms rendered.
 2. **Page Logic (`frontend/src/app/careers/[orgSlug]/[jobSlug]/page.tsx`)**:
    - Server Component conditionally routes `CLOSED` jobs to `JobClosed` without invoking `notFound()`.
    - `generateMetadata` prefixes page title with `[Closed]` for accurate SEO and browser tab context.

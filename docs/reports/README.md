@@ -33,6 +33,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [32 — Task #13: Closed Career Pages Script Warning Remediation & Semantic UX](32-task-13-careers-job-closed-script-warning-report.md)
 - [33 — Task #14 Phase 1: Comprehensive Gap Analysis Report](33-task-14-phase-1-comprehensive-gap-analysis-report.md)
 - [34 — Task #14A: Frontend Error Boundaries & Resiliency](34-task-14a-frontend-error-boundaries-resiliency-report.md)
+- [35 — Task #14B: Sourcing Query Scoping & Database Indexes](35-task-14b-sourcing-query-scoping-database-indexes-report.md)
 
 ## Archived Reports
 

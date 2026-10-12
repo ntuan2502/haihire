@@ -41,7 +41,7 @@ interface I18nContextType {
   isReady: boolean;
 }
 
-const I18nContext = createContext<I18nContextType | null>(null);
+export const I18nContext = createContext<I18nContextType | null>(null);
 
 /**
  * Helper to detect browser preferred language:

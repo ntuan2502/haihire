@@ -63,15 +63,23 @@ export class OrganizationsService implements OnModuleInit {
   }
 
   private async backfillMemberships() {
+    // Single batched query across all 3 tables (O(1) database roundtrips on startup)
+    const [allOrgs, allUsers, allMembers] = await Promise.all([
+      this.prisma.db.orm.public.Organization.select("id", "ownerId").all(),
+      this.prisma.db.orm.public.User.select("id", "organizationId", "role").all(),
+      this.prisma.db.orm.public.OrganizationMember.select("id", "organizationId", "userId").all(),
+    ]);
+
+    // Fast in-memory lookup set for (organizationId:userId) pairs
+    const memberPairSet = new Set<string>(
+      allMembers.map((m) => `${m.organizationId}:${m.userId}`),
+    );
+
     // 1. Ensure all organization owners have an OrganizationMember record with ADMIN role
-    const allOrgs = await this.prisma.db.orm.public.Organization.select("id", "ownerId").all();
     for (const org of allOrgs) {
       if (org.ownerId) {
-        const orgMembers = await this.prisma.db.orm.public.OrganizationMember.select("id", "userId")
-          .where((m) => m.organizationId.eq(org.id))
-          .all();
-        const hasOwner = orgMembers.some((m) => m.userId === org.ownerId);
-        if (!hasOwner) {
+        const pairKey = `${org.id}:${org.ownerId}`;
+        if (!memberPairSet.has(pairKey)) {
           const id = crypto.randomUUID();
           await this.prisma.db.orm.public.OrganizationMember.upsert({
             create: {
@@ -84,19 +92,16 @@ export class OrganizationsService implements OnModuleInit {
             update: {},
             conflictOn: { id },
           });
+          memberPairSet.add(pairKey);
         }
       }
     }
 
     // 2. Ensure all users with an active organizationId have an OrganizationMember record
-    const allUsers = await this.prisma.db.orm.public.User.select("id", "organizationId", "role").all();
     for (const user of allUsers) {
       if (user.organizationId) {
-        const userOrgs = await this.prisma.db.orm.public.OrganizationMember.select("id", "organizationId")
-          .where((m) => m.userId.eq(user.id))
-          .all();
-        const hasActiveOrg = userOrgs.some((m) => m.organizationId === user.organizationId);
-        if (!hasActiveOrg) {
+        const pairKey = `${user.organizationId}:${user.id}`;
+        if (!memberPairSet.has(pairKey)) {
           const id = crypto.randomUUID();
           await this.prisma.db.orm.public.OrganizationMember.upsert({
             create: {
@@ -109,6 +114,7 @@ export class OrganizationsService implements OnModuleInit {
             update: {},
             conflictOn: { id },
           });
+          memberPairSet.add(pairKey);
         }
       }
     }

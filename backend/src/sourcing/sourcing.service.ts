@@ -48,6 +48,21 @@ export class SourcingService {
     private readonly activitiesService: ActivitiesService,
   ) {}
 
+  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+    const p = this.prisma as unknown as {
+      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
+      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
+      db: PrismaService["db"];
+    };
+    if (typeof p.transaction === "function") {
+      return p.transaction(fn);
+    }
+    if (typeof p.executeTx === "function") {
+      return p.executeTx(fn);
+    }
+    return fn(this.prisma.db);
+  }
+
   async getStats(
     organizationId: string,
     timeRange: "7d" | "30d" | "90d" | "all" = "30d",
@@ -99,7 +114,7 @@ export class SourcingService {
       };
     }
 
-    // 2. Fetch applications for target jobs
+    // 2. Fetch applications for target jobs (scoped to target jobs belonging to organization)
     const rawApplications = await this.prisma.db.orm.public.Application.select(
       "id",
       "jobId",
@@ -111,10 +126,11 @@ export class SourcingService {
       "utmCampaign",
       "trackingLinkId",
       "createdAt",
-    ).all();
+    )
+      .where((a) => a.jobId.in(targetJobIds))
+      .all();
 
     const filteredApplications = rawApplications.filter((app) => {
-      if (!targetJobIds.includes(app.jobId)) return false;
       if (minTimestamp !== null) {
         const appTime = toTimestamp(app.createdAt);
         if (appTime < minTimestamp) return false;
@@ -124,12 +140,15 @@ export class SourcingService {
 
     const totalApplications = filteredApplications.length;
 
-    // 3. Fetch candidates info for recent attributed
+    // 3. Fetch candidates info for recent attributed (scoped to organization and candidate IDs)
     const candidateIds = Array.from(
       new Set(filteredApplications.map((a) => a.candidateId)),
     );
     const candidates = candidateIds.length > 0
-      ? await this.prisma.db.orm.public.Candidate.select("id", "name", "email").all()
+      ? await this.prisma.db.orm.public.Candidate.select("id", "name", "email")
+          .where((c) => c.organizationId.eq(organizationId))
+          .where((c) => c.id.in(candidateIds))
+          .all()
       : [];
     const candidateMap = new Map(
       candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
@@ -249,11 +268,18 @@ export class SourcingService {
       }
     }
 
-    // Also include clicks referrers if available
-    const clicks = await this.prisma.db.orm.public.TrackingClick.select(
-      "referrerDomain",
-      "createdAt",
-    ).all();
+    // Also include clicks referrers if available (scoped to organization tracking links)
+    const targetLinkIds = nonDeletedLinks
+      .filter((l) => (jobId ? l.jobId === jobId : true))
+      .map((l) => l.id);
+    const clicks = targetLinkIds.length > 0
+      ? await this.prisma.db.orm.public.TrackingClick.select(
+          "referrerDomain",
+          "createdAt",
+        )
+          .where((c) => c.trackingLinkId.in(targetLinkIds))
+          .all()
+      : [];
     for (const clk of clicks) {
       if (clk.referrerDomain) {
         if (minTimestamp !== null && toTimestamp(clk.createdAt) < minTimestamp) continue;
@@ -382,17 +408,25 @@ export class SourcingService {
     // Sort by createdAt desc
     filtered.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
 
-    // Get jobs to map job titles
+    // Get jobs to map job titles (scoped by organizationId)
     const jobIds = Array.from(new Set(filtered.map((l) => l.jobId).filter(Boolean))) as string[];
     const jobs = jobIds.length > 0
-      ? await this.prisma.db.orm.public.Job.select("id", "title").all()
+      ? await this.prisma.db.orm.public.Job.select("id", "title")
+          .where((j) => j.organizationId.eq(organizationId))
+          .where((j) => j.id.in(jobIds))
+          .all()
       : [];
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
-    // Count applications for each link
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "trackingLinkId",
-    ).all();
+    // Count applications for each link (scoped to links belonging to this organization)
+    const scopedLinkIds = filtered.map((l) => l.id);
+    const allApps = scopedLinkIds.length > 0
+      ? await this.prisma.db.orm.public.Application.select(
+          "trackingLinkId",
+        )
+          .where((a) => a.trackingLinkId.in(scopedLinkIds))
+          .all()
+      : [];
     const appCountMap = new Map<string, number>();
     for (const app of allApps) {
       if (app.trackingLinkId) {
@@ -630,7 +664,7 @@ export class SourcingService {
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // 7. Attributed applications list with candidates and jobs
+    // 7. Attributed applications list with candidates and jobs (scoped to organization)
     const candidateIds = Array.from(
       new Set(filteredApps.map((a) => a.candidateId)),
     );
@@ -640,7 +674,10 @@ export class SourcingService {
             "id",
             "name",
             "email",
-          ).all()
+          )
+            .where((c) => c.organizationId.eq(organizationId))
+            .where((c) => c.id.in(candidateIds))
+            .all()
         : [];
     const candMap = new Map(
       candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
@@ -649,7 +686,10 @@ export class SourcingService {
     const appJobIds = Array.from(new Set(filteredApps.map((a) => a.jobId)));
     const jobs =
       appJobIds.length > 0
-        ? await this.prisma.db.orm.public.Job.select("id", "title", "type").all()
+        ? await this.prisma.db.orm.public.Job.select("id", "title", "type")
+            .where((j) => j.organizationId.eq(organizationId))
+            .where((j) => j.id.in(appJobIds))
+            .all()
         : [];
     const jobMap = new Map(
       jobs.map((j) => [j.id, { title: j.title, type: j.type }]),
@@ -944,6 +984,7 @@ export class SourcingService {
       };
     }
 
+    // Fetch applications scoped to target organization jobs
     const allApps = await this.prisma.db.orm.public.Application.select(
       "id",
       "jobId",
@@ -954,19 +995,23 @@ export class SourcingService {
       "utmCampaign",
       "trackingLinkId",
       "createdAt",
-    ).all();
+    )
+      .where((a) => a.jobId.in(targetJobIds))
+      .all();
 
-    // Filter by organization jobs
-    let filtered = allApps.filter((a) => targetJobIds.includes(a.jobId));
+    let filtered = allApps;
 
     if (pagination.source) {
       filtered = filtered.filter((a) => a.sourceChannel === pagination.source);
     }
 
-    // Fetch candidates
+    // Fetch candidates scoped to organization
     const candidateIds = Array.from(new Set(filtered.map((a) => a.candidateId)));
     const candidates = candidateIds.length > 0
-      ? await this.prisma.db.orm.public.Candidate.select("id", "name", "email").all()
+      ? await this.prisma.db.orm.public.Candidate.select("id", "name", "email")
+          .where((c) => c.organizationId.eq(organizationId))
+          .where((c) => c.id.in(candidateIds))
+          .all()
       : [];
     const candidateMap = new Map(
       candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
@@ -1025,48 +1070,58 @@ export class SourcingService {
   ): Promise<{ success: boolean; link?: { token: string; source: string; jobId?: string | null } }> {
     if (!token) return { success: false };
 
-    const link = await this.prisma.db.orm.public.TrackingLink.select(
-      "id",
-      "token",
-      "source",
-      "jobId",
-      "clicksCount",
-      "isActive",
-      "deletedAt",
-    )
-      .where((l) => l.token.eq(token))
-      .first();
+    let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
 
-    if (!link || link.deletedAt || !link.isActive) {
-      return { success: false };
-    }
+    await this.executeTx(async (tx) => {
+      const link = await tx.orm.public.TrackingLink.select(
+        "id",
+        "token",
+        "source",
+        "jobId",
+        "clicksCount",
+        "isActive",
+        "deletedAt",
+      )
+        .where((l) => l.token.eq(token))
+        .first();
 
-    const domain = parseDomain(referrer);
-    const ipHash = ip ? crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16) : null;
+      if (!link || link.deletedAt || !link.isActive) {
+        return;
+      }
 
-    // Increment click counter
-    await this.prisma.db.orm.public.TrackingLink.where((l) => l.id.eq(link.id)).update({
-      clicksCount: (link.clicksCount || 0) + 1,
-      updatedAt: toInstant(),
-    });
+      const domain = parseDomain(referrer);
+      const ipHash = ip ? crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16) : null;
 
-    // Record click log
-    await this.prisma.db.orm.public.TrackingClick.create({
-      id: crypto.randomUUID(),
-      trackingLinkId: link.id,
-      referrer: referrer || null,
-      referrerDomain: domain,
-      ipHash,
-      userAgent: userAgent ? userAgent.slice(0, 255) : null,
-    });
+      // Atomic update of click counter inside transaction
+      await tx.orm.public.TrackingLink.where((l) => l.id.eq(link.id)).update({
+        clicksCount: (link.clicksCount || 0) + 1,
+        updatedAt: toInstant(),
+      });
 
-    return {
-      success: true,
-      link: {
+      // Record click audit log in same atomic transaction
+      await tx.orm.public.TrackingClick.create({
+        id: crypto.randomUUID(),
+        trackingLinkId: link.id,
+        referrer: referrer || null,
+        referrerDomain: domain,
+        ipHash,
+        userAgent: userAgent ? userAgent.slice(0, 255) : null,
+      });
+
+      recordedLink = {
         token: link.token,
         source: link.source,
         jobId: link.jobId,
-      },
+      };
+    });
+
+    if (!recordedLink) {
+      return { success: false };
+    }
+
+    return {
+      success: true,
+      link: recordedLink,
     };
   }
 

@@ -227,6 +227,7 @@ model Job {
   updatedAt       temporal.updatedAt()
 
   @@index([organizationId, status])
+  @@index([organizationId, deletedAt])
   @@map("job")
 }
 
@@ -255,6 +256,8 @@ model Candidate {
   updatedAt      temporal.updatedAt()
 
   @@unique([organizationId, email])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, deletedAt])
   @@map("candidate")
 }
 
@@ -291,6 +294,7 @@ model Application {
   @@unique([candidateId, jobId])
   @@index([jobId, stage])
   @@index([candidateId])
+  @@index([trackingLinkId])
   @@map("application")
 }
 

@@ -4236,6 +4236,24 @@
               "indexes": [
                 {
                   "columns": [
+                    "organizationId",
+                    "createdAt"
+                  ],
+                  "name": "candidate_organizationId_createdAt_idx_c52d1cc3",
+                  "prefix": "candidate_organizationId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId",
+                    "deletedAt"
+                  ],
+                  "name": "candidate_organizationId_deletedAt_idx_cd68cf5b",
+                  "prefix": "candidate_organizationId_deletedAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "organizationId"
                   ],
                   "name": "candidate_organizationId_idx_2e17ef41",
@@ -5363,6 +5381,15 @@
                 },
                 {
                   "columns": [
+                    "organizationId",
+                    "deletedAt"
+                  ],
+                  "name": "job_organizationId_deletedAt_idx_cd68cf5b",
+                  "prefix": "job_organizationId_deletedAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "organizationId"
                   ],
                   "name": "job_organizationId_idx_2e17ef41",
@@ -6317,7 +6344,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "952429dc1cab0902250b6c767ea589e0f895d4b03cf035d83e148123d889f940"
+    "storageHash": "dbf5db3554f55e6ddc6143fafec2e7f2a47a229a89e43a37262331162f09e1ae"
   },
   "execution": {
     "executionHash": "b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98",

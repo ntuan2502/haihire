@@ -48,21 +48,6 @@ export class SourcingService {
     private readonly activitiesService: ActivitiesService,
   ) {}
 
-  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
-    const p = this.prisma as unknown as {
-      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      db: PrismaService["db"];
-    };
-    if (typeof p.transaction === "function") {
-      return p.transaction(fn);
-    }
-    if (typeof p.executeTx === "function") {
-      return p.executeTx(fn);
-    }
-    return fn(this.prisma.db);
-  }
-
   async getStats(
     organizationId: string,
     timeRange: "7d" | "30d" | "90d" | "all" = "30d",
@@ -1072,7 +1057,7 @@ export class SourcingService {
 
     let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
 
-    await this.executeTx(async (tx) => {
+    await this.prisma.executeTx(async (tx) => {
       const link = await tx.orm.public.TrackingLink.select(
         "id",
         "token",

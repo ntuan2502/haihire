@@ -41,12 +41,32 @@ function parseDomain(urlStr?: string | null): string | null {
 
 @Injectable()
 export class SourcingService {
+  private readonly clickLocks = new Map<string, Promise<void>>();
+
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
     @Inject(ActivitiesService)
     private readonly activitiesService: ActivitiesService,
   ) {}
+
+  private async withClickLock<T>(token: string, fn: () => Promise<T>): Promise<T> {
+    const current = this.clickLocks.get(token) ?? Promise.resolve();
+    let release = () => {};
+    const next = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    this.clickLocks.set(token, current.then(() => next));
+    await current;
+    try {
+      return await fn();
+    } finally {
+      release();
+      if (this.clickLocks.get(token) === next) {
+        this.clickLocks.delete(token);
+      }
+    }
+  }
 
   async getStats(
     organizationId: string,
@@ -1055,59 +1075,61 @@ export class SourcingService {
   ): Promise<{ success: boolean; link?: { token: string; source: string; jobId?: string | null } }> {
     if (!token) return { success: false };
 
-    let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
+    return this.withClickLock(token, async () => {
+      let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
 
-    await this.prisma.executeTx(async (tx) => {
-      const link = await tx.orm.public.TrackingLink.select(
-        "id",
-        "token",
-        "source",
-        "jobId",
-        "clicksCount",
-        "isActive",
-        "deletedAt",
-      )
-        .where((l) => l.token.eq(token))
-        .first();
+      await this.prisma.executeTx(async (tx) => {
+        const link = await tx.orm.public.TrackingLink.select(
+          "id",
+          "token",
+          "source",
+          "jobId",
+          "clicksCount",
+          "isActive",
+          "deletedAt",
+        )
+          .where((l) => l.token.eq(token))
+          .first();
 
-      if (!link || link.deletedAt || !link.isActive) {
-        return;
+        if (!link || link.deletedAt || !link.isActive) {
+          return;
+        }
+
+        const domain = parseDomain(referrer);
+        const ipHash = ip ? crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16) : null;
+
+        // Atomic update of click counter inside transaction
+        await tx.orm.public.TrackingLink.where((l) => l.id.eq(link.id)).update({
+          clicksCount: (link.clicksCount || 0) + 1,
+          updatedAt: toInstant(),
+        });
+
+        // Record click audit log in same atomic transaction
+        await tx.orm.public.TrackingClick.create({
+          id: crypto.randomUUID(),
+          trackingLinkId: link.id,
+          referrer: referrer || null,
+          referrerDomain: domain,
+          ipHash,
+          userAgent: userAgent ? userAgent.slice(0, 255) : null,
+        });
+
+        recordedLink = {
+          token: link.token,
+          source: link.source,
+          jobId: link.jobId,
+        };
+      });
+
+      if (!recordedLink) {
+        return { success: false };
       }
 
-      const domain = parseDomain(referrer);
-      const ipHash = ip ? crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16) : null;
-
-      // Atomic update of click counter inside transaction
-      await tx.orm.public.TrackingLink.where((l) => l.id.eq(link.id)).update({
-        clicksCount: (link.clicksCount || 0) + 1,
-        updatedAt: toInstant(),
-      });
-
-      // Record click audit log in same atomic transaction
-      await tx.orm.public.TrackingClick.create({
-        id: crypto.randomUUID(),
-        trackingLinkId: link.id,
-        referrer: referrer || null,
-        referrerDomain: domain,
-        ipHash,
-        userAgent: userAgent ? userAgent.slice(0, 255) : null,
-      });
-
-      recordedLink = {
-        token: link.token,
-        source: link.source,
-        jobId: link.jobId,
+      return {
+        success: true,
+        link: recordedLink,
       };
     });
-
-    if (!recordedLink) {
-      return { success: false };
-    }
-
-    return {
-      success: true,
-      link: recordedLink,
-    };
   }
 
   async findLinkByToken(token: string) {

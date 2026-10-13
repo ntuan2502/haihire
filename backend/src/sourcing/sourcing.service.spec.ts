@@ -37,6 +37,7 @@ describe("SourcingService", () => {
   const inMemoryCandidates: Array<Record<string, unknown>> = [];
 
   let executeTxSpy: ReturnType<typeof vi.fn>;
+  let currentMockDb: unknown;
 
   const mockActivitiesService = {
     createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
@@ -108,6 +109,8 @@ describe("SourcingService", () => {
         },
       },
     };
+
+    currentMockDb = mockDb;
 
     executeTxSpy = vi.fn().mockImplementation(async (fn: (tx: typeof mockDb) => Promise<unknown>) => {
       return fn(mockDb);
@@ -292,7 +295,7 @@ describe("SourcingService", () => {
     expect(org2Source).toBeUndefined();
   });
 
-  it("should record concurrent clicks atomically without race conditions", async () => {
+  it("recordClick handles concurrent calls without lost updates", async () => {
     inMemoryLinks.push({
       id: "link-concurrent",
       token: "lnk-conc1",
@@ -302,17 +305,23 @@ describe("SourcingService", () => {
       deletedAt: null,
     });
 
-    // Fire 5 concurrent click events
-    const clickPromises = Array.from({ length: 5 }, (_, i) =>
-      service.recordClick("lnk-conc1", "https://linkedin.com", `10.0.0.${i + 1}`, "TestAgent"),
+    // Simulate async I/O delay in transaction to test concurrent race condition resilience
+    executeTxSpy.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      return fn(currentMockDb);
+    });
+
+    // Fire 10 concurrent click events with the same token
+    const clickPromises = Array.from({ length: 10 }, (_, i) =>
+      service.recordClick("lnk-conc1", "https://linkedin.com", `10.0.0.${i + 1}`, `TestAgent-${i}`),
     );
 
     const results = await Promise.all(clickPromises);
 
     expect(results.every((r) => r.success)).toBe(true);
-    expect(inMemoryLinks[0].clicksCount).toBe(5);
-    expect(inMemoryClicks).toHaveLength(5);
-    expect(executeTxSpy).toHaveBeenCalledTimes(5);
+    expect(inMemoryLinks[0].clicksCount).toBe(10);
+    expect(inMemoryClicks).toHaveLength(10);
+    expect(executeTxSpy).toHaveBeenCalledTimes(10);
   });
 
   it("should rollback click counter if tracking click log creation fails in transaction", async () => {

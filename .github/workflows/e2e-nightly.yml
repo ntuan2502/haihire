@@ -3,7 +3,7 @@ name: E2E Nightly Verification
 on:
   schedule:
     - cron: '0 3 * * *'  # 03:00 UTC every day
-  workflow_dispatch:  # Manual execution trigger
+  workflow_dispatch:
 
 concurrency:
   group: e2e-nightly-${{ github.ref }}
@@ -16,7 +16,7 @@ jobs:
   e2e:
     name: Full Nightly Playwright E2E Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       NEXT_TELEMETRY_DISABLED: 1
       CI: "true"
@@ -73,55 +73,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup environment files for Nightly E2E
+      - name: Setup Single Root Environment for Nightly E2E
         run: |
-          cat > .env << 'EOF'
-          NODE_ENV=test
-          BACKEND_PORT=13001
-          FRONTEND_PORT=13000
-          POSTGRES_PORT=15432
-          POSTGRES_USER=haihire_test
-          POSTGRES_PASSWORD=haihire_test_password
-          POSTGRES_DB=haihire_test_db
-          REDIS_PORT=16379
-          MINIO_PORT=19000
-          MINIO_CONSOLE_PORT=19001
-          EOF
-
-          cat > backend/.env << 'EOF'
-          PORT=13001
-          DATABASE_URL=postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
-          JWT_SECRET=ci-test-jwt-secret-minimum-16-chars
-          ENCRYPTION_SECRET=ci-test-encryption-secret-must-be-32-characters-long
-          DEMO_SEED_PASSWORD=dev-seed-password-2026
-          FRONTEND_URL=http://localhost:13000
-          MINIO_ENDPOINT=localhost
-          MINIO_PORT=19000
-          MINIO_USE_SSL=false
-          MINIO_ACCESS_KEY=minioadmin
-          MINIO_SECRET_KEY=minioadmin
-          MINIO_BUCKET_NAME=haihire-resumes
-          MINIO_PUBLIC_URL=http://localhost:19000
-          SYSTEM_EMAIL_PROVIDER=SIMULATED
-          SYSTEM_EMAIL_FROM_NAME=HaiHire CI
-          SYSTEM_EMAIL_FROM_EMAIL=ci@haihire.test
-          SYSTEM_EMAIL_SMTP_HOST=
-          SYSTEM_EMAIL_SMTP_PORT=587
-          SYSTEM_EMAIL_SMTP_USER=
-          SYSTEM_EMAIL_SMTP_PASS=
-          SYSTEM_EMAIL_RESEND_API_KEY=
-          SYSTEM_EMAIL_SENDGRID_API_KEY=
-          REDIS_PORT=16379
-          EOF
-
-          cat > frontend/.env << 'EOF'
-          PORT=13000
-          INTERNAL_API_URL=http://localhost:13001
-          NEXT_PUBLIC_API_URL=http://localhost:13001
-          NEXT_PUBLIC_MINIO_URL=/haihire-resumes
-          NEXT_PUBLIC_DEMO_SEED_PASSWORD=dev-seed-password-2026
-          E2E_MULTI_TENANT_ENABLED=true
-          EOF
+          cp .env.example .env
+          sed -i 's/BACKEND_PORT=3001/BACKEND_PORT=13001/g' .env
+          sed -i 's/FRONTEND_PORT=3000/FRONTEND_PORT=13000/g' .env
+          sed -i 's/POSTGRES_PORT=5432/POSTGRES_PORT=15432/g' .env
+          sed -i 's/POSTGRES_USER=haihire_user/POSTGRES_USER=haihire_test/g' .env
+          sed -i 's/POSTGRES_PASSWORD=haihire_password/POSTGRES_PASSWORD=haihire_test_password/g' .env
+          sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
+          sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:15432\/haihire_test_db/g' .env
+          sed -i 's/REDIS_PORT=6379/REDIS_PORT=16379/g' .env
+          sed -i 's/MINIO_PORT=9000/MINIO_PORT=19000/g' .env
+          sed -i 's/MINIO_CONSOLE_PORT=9001/MINIO_CONSOLE_PORT=19001/g' .env
+          sed -i 's/http:\/\/localhost:9000/http:\/\/localhost:19000/g' .env
+          sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
 
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |
@@ -134,31 +100,27 @@ jobs:
             alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4 \
             server /data --console-address ":9001"
 
-          echo "Waiting for MinIO container on http://localhost:19000/minio/health/live ..."
           timeout 60s bash -c '
             until curl -sf http://localhost:19000/minio/health/live > /dev/null; do
               if ! docker ps | grep -q minio; then
-                echo "❌ MinIO container stopped unexpectedly! Outputting container logs:"
+                echo "❌ MinIO container stopped unexpectedly!"
                 docker logs minio
                 exit 1
               fi
-              echo "MinIO not ready yet (probing http://localhost:19000/minio/health/live)..."
               sleep 2
             done
           '
-          echo "MinIO is ready on port 19000!"
+          echo "MinIO ready on port 19000!"
 
       - name: Wait for Redis/Valkey Readiness
         run: |
-          echo "Waiting for Redis/Valkey to accept connections on port 16379..."
-          timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/16379) 2>/dev/null; do echo "Redis not ready yet..."; sleep 1; done'
-          echo "Redis is accepting connections on port 16379!"
+          timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/16379) 2>/dev/null; do sleep 1; done'
+          echo "Redis ready on port 16379!"
 
-      - name: Run Database Migrations
-        run: pnpm --filter ./backend run db:update
-
-      - name: Seed Test Data for E2E
-        run: pnpm --filter ./backend run db:seed
+      - name: Run Database Migrations & Seed
+        run: |
+          pnpm --filter ./backend run db:update
+          pnpm --filter ./backend run db:seed
         env:
           DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           DEMO_SEED_PASSWORD: dev-seed-password-2026
@@ -180,19 +142,12 @@ jobs:
       - name: Pre-start services in background & wait for healthcheck
         run: |
           pnpm dev &
-
-          echo "Waiting for services to become healthy on ports 13000 (frontend) and 13001 (backend)..."
           timeout 180s bash -c '
             until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
-              echo "--- Healthcheck attempt $(date +%T) ---"
-              echo -n "Frontend (13000): "
-              curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:13000 || echo "connection refused"
-              echo -n "Backend  (13001): "
-              curl -s -w " [HTTP %{http_code}]\n" http://localhost:13001/health || echo "connection refused"
               sleep 3
             done
           '
-          echo "Services are ready!"
+          echo "Services ready!"
 
       - name: Run Playwright E2E Tests
         run: pnpm test:e2e

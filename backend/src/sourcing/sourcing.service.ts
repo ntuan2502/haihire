@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
   SourcingChannel,
@@ -25,6 +25,11 @@ import { UpdateTrackingLinkDto } from "./dto/update-tracking-link.dto";
 import { toTimestamp, toInstant } from "../common/date.util";
 import crypto from "node:crypto";
 
+export interface RedisLockClient {
+  set(key: string, value: string, mode: "PX", duration: number, flag: "NX"): Promise<string | null>;
+  eval(script: string, numKeys: number, key: string, arg: string): Promise<unknown>;
+}
+
 function parseDomain(urlStr?: string | null): string | null {
   if (!urlStr) return null;
   try {
@@ -41,30 +46,82 @@ function parseDomain(urlStr?: string | null): string | null {
 
 @Injectable()
 export class SourcingService {
-  private readonly clickLocks = new Map<string, Promise<void>>();
+  private readonly logger = new Logger(SourcingService.name);
 
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
     @Inject(ActivitiesService)
     private readonly activitiesService: ActivitiesService,
+    @Optional()
+    @Inject("REDIS_CLIENT")
+    private readonly redis?: RedisLockClient,
   ) {}
 
-  private async withClickLock<T>(token: string, fn: () => Promise<T>): Promise<T> {
-    const current = this.clickLocks.get(token) ?? Promise.resolve();
-    let release = () => {};
-    const next = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    this.clickLocks.set(token, current.then(() => next));
-    await current;
-    try {
-      return await fn();
-    } finally {
-      release();
-      if (this.clickLocks.get(token) === next) {
-        this.clickLocks.delete(token);
+  private async withClickLock<T>(
+    token: string,
+    fn: () => Promise<T>,
+    options?: { maxWaitMs?: number; retryIntervalMs?: number; lockTtlMs?: number },
+  ): Promise<T> {
+    if (!this.redis) {
+      this.logger.warn(`Redis client not configured for token ${token}, proceeding without distributed lock`);
+      return fn();
+    }
+
+    const lockKey = `click:lock:${token}`;
+    const lockValue = crypto.randomUUID();
+    const LOCK_TTL_MS = options?.lockTtlMs ?? 5000;
+    const MAX_WAIT_MS = options?.maxWaitMs ?? 3000;
+    const RETRY_INTERVAL_MS = options?.retryIntervalMs ?? 50;
+
+    const start = Date.now();
+
+    while (true) {
+      let acquired: string | null = null;
+      try {
+        acquired = await this.redis.set(
+          lockKey,
+          lockValue,
+          "PX",
+          LOCK_TTL_MS,
+          "NX",
+        );
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Failed to acquire Redis click lock for token ${token}, proceeding without lock: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        return await fn();
       }
+
+      if (acquired === "OK") {
+        try {
+          return await fn();
+        } finally {
+          const releaseScript = `
+            if redis.call("get", KEYS[1]) == ARGV[1] then
+              return redis.call("del", KEYS[1])
+            else
+              return 0
+            end
+          `;
+          try {
+            await this.redis.eval(releaseScript, 1, lockKey, lockValue);
+          } catch (err: unknown) {
+            this.logger.error(
+              `Failed to release click lock for token ${token}: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          }
+        }
+      }
+
+      if (Date.now() - start > MAX_WAIT_MS) {
+        this.logger.warn(
+          `Click lock timeout after ${MAX_WAIT_MS}ms for token ${token}, proceeding without lock`,
+        );
+        return await fn();
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, RETRY_INTERVAL_MS));
     }
   }
 
@@ -1072,11 +1129,14 @@ export class SourcingService {
     referrer?: string,
     ip?: string,
     userAgent?: string,
+    lockOptions?: { maxWaitMs?: number; retryIntervalMs?: number; lockTtlMs?: number },
   ): Promise<{ success: boolean; link?: { token: string; source: string; jobId?: string | null } }> {
     if (!token) return { success: false };
 
-    return this.withClickLock(token, async () => {
-      let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
+    return this.withClickLock(
+      token,
+      async () => {
+        let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
 
       await this.prisma.executeTx(async (tx) => {
         const link = await tx.orm.public.TrackingLink.select(
@@ -1129,7 +1189,7 @@ export class SourcingService {
         success: true,
         link: recordedLink,
       };
-    });
+    }, lockOptions);
   }
 
   async findLinkByToken(token: string) {

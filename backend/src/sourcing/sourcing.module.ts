@@ -3,9 +3,10 @@ import { SourcingController } from "./sourcing.controller";
 import { SourcingService } from "./sourcing.service";
 import { PrismaModule } from "../prisma/prisma.module";
 import { ActivitiesModule } from "../activities/activities.module";
+import { RedisModule } from "../redis/redis.module";
 
 @Module({
-  imports: [PrismaModule, ActivitiesModule],
+  imports: [PrismaModule, ActivitiesModule, RedisModule],
   controllers: [SourcingController],
   providers: [SourcingService],
   exports: [SourcingService],

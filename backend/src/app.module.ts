@@ -20,6 +20,7 @@ import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.modul
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD, Reflector } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
+import { RedisModule } from "./redis/redis.module";
 
 import { MetricsModule } from "./metrics/metrics.module";
 
@@ -55,6 +56,7 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
       inject: [ConfigService],
     }),
     PrismaModule,
+    RedisModule,
     MinioModule,
     AuthModule,
     EventsModule,

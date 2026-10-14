@@ -20,36 +20,45 @@ Always branch off the primary integration branch (`feature/production-hardening`
 
 ## Branch Strategy
 
-HaiHire uses a 3-branch environment flow:
+HaiHire uses an enterprise 3-branch environment promotion flow:
 
-- **dev**: Active development. Feature branches merge here.
-- **staging**: Pre-production validation. QA and UAT happen here.
-- **main**: Production-ready. Tag releases here.
+| Branch | Purpose | PR from | Merge to | CI Time | Protection Requirements |
+|---|---|---|---|---|---|
+| **`dev`** | Active development & integration | `feature/*`, `fix/*` | `staging` | **~4 min** | 1 approval, 11 Gates & Unit Tests pass |
+| **`staging`** | Pre-production QA & container validation | `dev` | `main` | **~9 min** | 1 approval, 11 Gates + E2E + Build pass |
+| **`main`** | Production release & release gatekeeping | `staging`, `hotfix/*` | `(tag)` | **~10 min** | 2 approvals, Full CI + E2E + Security Audit + Docker pass |
 
-### Feature Development Flow
+### Feature Development Flow (`feature -> dev -> staging -> main`)
 
-1. Create feature branch from dev:
+1. **Create feature branch from `dev`:**
    ```bash
    git checkout dev
-   git pull
+   git pull origin dev
    git checkout -b feat/your-feature
    ```
 
-2. Make changes, commit, push.
+2. **Develop, commit, and push:**
+   ```bash
+   git add .
+   git commit -m "feat(scope): add description"
+   git push -u origin feat/your-feature
+   ```
 
-3. Open PR: `feat/your-feature` -> `dev`.
-   - Requires 1 review.
-   - Requires `check:all:fast` pass.
+3. **Open PR to `dev`:**
+   - Targets `dev`.
+   - Triggers `ci-feature.yml` (<3 min with paths filter fast feedback).
+   - Requires 1 peer review approval.
 
-4. After approval, merge to `dev`.
+4. **Promote `dev -> staging` (Pre-production QA):**
+   - Open PR: `dev` -> `staging`.
+   - Triggers `ci-staging.yml` (~9 min: 11 architecture gates, unit tests with coverage, Playwright E2E suite, production build).
+   - QA team validates against local/staging Docker environment.
 
-5. When ready for QA, PR `dev` -> `staging`.
-   - Requires full CI pass.
-   - Wait 3+ days after last merge.
-
-6. After QA approval, PR `staging` -> `main`.
-   - Requires 2 reviews.
-   - Tag version: `git tag -a vX.Y.Z -m "..."`
+5. **Promote `staging -> main` (Production Release):**
+   - Open PR: `staging` -> `main`.
+   - Triggers `ci-main.yml` (~10 min: full architecture checks, Playwright E2E suite, dependency CVE audit, Docker dry-run).
+   - Requires 2 peer review approvals.
+   - Upon merge to `main`, cut release tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"` and push to trigger `cd-release.yml`.
 
 ### Hotfix Flow
 

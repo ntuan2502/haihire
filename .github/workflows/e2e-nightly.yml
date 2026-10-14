@@ -1,8 +1,6 @@
-name: E2E Nightly Verification
+name: E2E Verification Suite
 
 on:
-  schedule:
-    - cron: '0 3 * * *'  # 03:00 UTC every day
   workflow_dispatch:
 
 concurrency:

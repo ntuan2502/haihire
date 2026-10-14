@@ -583,5 +583,56 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(usr1?.organizationId).toBe("org-2");
     });
   });
+
+  describe("Startup Membership Backfill (Task #14B)", () => {
+    it("should backfill memberships using only 3 batched queries for 100 orgs and 100 users without N+1 query storms", async () => {
+      // 1. Seed 100 orgs without members
+      for (let i = 10; i < 110; i++) {
+        mockOrgs.push({
+          id: `org-${i}`,
+          name: `Org ${i}`,
+          slug: `org-${i}`,
+          ownerId: `owner-${i}`,
+          createdAt: new Date(),
+        });
+      }
+
+      // 2. Seed 100 users without members
+      for (let i = 10; i < 110; i++) {
+        mockUsers.push({
+          id: `owner-${i}`,
+          email: `owner-${i}@test.com`,
+          name: `Owner ${i}`,
+          role: "ADMIN",
+          organizationId: `org-${i}`,
+        });
+      }
+
+      const orgSelectSpy = vi.spyOn(
+        (mockPrismaService as { db: { orm: { public: { Organization: { select: (...args: unknown[]) => unknown } } } } }).db.orm.public.Organization,
+        "select",
+      );
+      const userSelectSpy = vi.spyOn(
+        (mockPrismaService as { db: { orm: { public: { User: { select: (...args: unknown[]) => unknown } } } } }).db.orm.public.User,
+        "select",
+      );
+      const memberSelectSpy = vi.spyOn(
+        (mockPrismaService as { db: { orm: { public: { OrganizationMember: { select: (...args: unknown[]) => unknown } } } } }).db.orm.public.OrganizationMember,
+        "select",
+      );
+
+      // 3. Execute startup backfill
+      await service.onModuleInit();
+
+      // 4. Assert exactly 1 batched query per table (3 total SELECT queries)
+      expect(orgSelectSpy).toHaveBeenCalledTimes(1);
+      expect(userSelectSpy).toHaveBeenCalledTimes(1);
+      expect(memberSelectSpy).toHaveBeenCalledTimes(1);
+
+      // Verify members were upserted for the owners
+      const upsertSpy = (mockPrismaService as { db: { orm: { public: { OrganizationMember: { upsert: ReturnType<typeof vi.fn> } } } } }).db.orm.public.OrganizationMember.upsert;
+      expect(upsertSpy).toHaveBeenCalled();
+    });
+  });
 });
 

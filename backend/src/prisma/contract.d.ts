@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'952429dc1cab0902250b6c767ea589e0f895d4b03cf035d83e148123d889f940'>;
+  StorageHashBase<'dbf5db3554f55e6ddc6143fafec2e7f2a47a229a89e43a37262331162f09e1ae'>;
 export type ExecutionHash =
   ExecutionHashBase<'b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98'>;
 export type ProfileHash =
@@ -2205,6 +2205,18 @@ type ContractBase = Omit<
               uniques: readonly [{ readonly columns: readonly ['organizationId', 'email'] }];
               indexes: readonly [
                 {
+                  readonly name: 'candidate_organizationId_createdAt_idx_c52d1cc3';
+                  readonly prefix: 'candidate_organizationId_createdAt_idx';
+                  readonly columns: readonly ['organizationId', 'createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'candidate_organizationId_deletedAt_idx_cd68cf5b';
+                  readonly prefix: 'candidate_organizationId_deletedAt_idx';
+                  readonly columns: readonly ['organizationId', 'deletedAt'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'candidate_organizationId_idx_2e17ef41';
                   readonly prefix: 'candidate_organizationId_idx';
                   readonly columns: readonly ['organizationId'];
@@ -3012,6 +3024,12 @@ type ContractBase = Omit<
                   readonly name: 'job_createdById_idx_8bf640ed';
                   readonly prefix: 'job_createdById_idx';
                   readonly columns: readonly ['createdById'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'job_organizationId_deletedAt_idx_cd68cf5b';
+                  readonly prefix: 'job_organizationId_deletedAt_idx';
+                  readonly columns: readonly ['organizationId', 'deletedAt'];
                   readonly unique: false;
                 },
                 {

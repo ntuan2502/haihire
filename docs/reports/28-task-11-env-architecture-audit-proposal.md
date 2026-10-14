@@ -361,7 +361,7 @@ The following **19 variables** possess conflicting values across files:
 - `env_file:` directives only populate process environment inside containers.
 
 ### D.6: CI/CD Pipeline
-- **Evidence:** [`.github/workflows/ci-cd.yml`](../../.github/workflows/ci-cd.yml)
+- **Evidence:** `.github/workflows/ci-cd.yml` (legacy)
   - Line 146: Executes `pnpm lint:env-sync` (CI Gate 6).
   - Lines 157-196: Generates `backend/.env` and `frontend/.env` via bash heredocs.
   - Lines 283-330: Generates all 3 files (`.env`, `backend/.env`, `frontend/.env`) for E2E tests.

@@ -1,0 +1,119 @@
+name: Security & Vulnerability Sweep (Weekly)
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # 06:00 UTC every Monday
+  workflow_dispatch:
+
+concurrency:
+  group: security-weekly-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ============================================================================
+  # 1. DEPENDENCY AUDIT (HIGH & MODERATE CVE SCAN)
+  # ============================================================================
+  audit:
+    name: Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Run Moderate & High Vulnerability Audit
+        run: |
+          pnpm audit --audit-level=moderate --json > audit-report.json || true
+          cat audit-report.json | head -n 30
+
+      - name: Upload Audit Report Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: security-audit-report
+          path: audit-report.json
+          if-no-files-found: ignore
+
+  # ============================================================================
+  # 2. TENANT SCOPING STATIC ANALYSIS SWEEP
+  # ============================================================================
+  tenant-isolation:
+    name: Tenant Scoping Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify 100% Tenant Isolation Coverage
+        run: pnpm lint:tenant-scope
+
+  # ============================================================================
+  # 3. OUTDATED DEPENDENCIES INSPECTION
+  # ============================================================================
+  dependency-check:
+    name: Outdated Dependencies Report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Inspect Outdated Packages
+        run: |
+          pnpm outdated > outdated-report.txt || true
+          cat outdated-report.txt
+
+      - name: Upload Outdated Dependencies Report
+        uses: actions/upload-artifact@v6
+        with:
+          name: outdated-dependencies-report
+          path: outdated-report.txt
+          if-no-files-found: ignore
+
+  # ============================================================================
+  # 4. FAILURE NOTIFICATION (WEBHOOK)
+  # ============================================================================
+  notify-on-failure:
+    name: Notify Security Team on Failure
+    needs: [audit, tenant-isolation, dependency-check]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch Webhook Alert
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.SLACK_DLQ_WEBHOOK_URL || secrets.WEBHOOK_URL }}
+        run: |
+          if [ -n "$ALERT_WEBHOOK_URL" ]; then
+            curl -X POST -H 'Content-Type: application/json' \
+              --data '{"text":"⚠️ [SECURITY ALERT] Weekly security or tenant-isolation sweep failed on HaiHire platform!"}' \
+              "$ALERT_WEBHOOK_URL" || true
+          else
+            echo "No security alert webhook configured."
+          fi

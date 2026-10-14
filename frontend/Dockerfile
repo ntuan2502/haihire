@@ -32,8 +32,10 @@ ENV MINIO_HOST=minio
 # Build-time public environment variables inlined into client bundle
 ARG NEXT_PUBLIC_API_URL=""
 ARG NEXT_PUBLIC_MINIO_URL="/haihire-resumes"
+ARG INTERNAL_API_URL="http://backend:3001"
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_MINIO_URL=$NEXT_PUBLIC_MINIO_URL
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
 
 # Build shared and Next.js frontend with output: "standalone"
 RUN pnpm --filter @haihire/shared run build && pnpm --filter frontend run build

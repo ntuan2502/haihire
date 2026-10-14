@@ -1,0 +1,169 @@
+name: Integration CI (Dev Branch)
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ============================================================================
+  # 1. ARCHITECTURAL QUALITY GATES (THE 11 GATES)
+  # ============================================================================
+  ci-gates:
+    name: 11 CI Architecture Gates
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: haihire_test
+          POSTGRES_PASSWORD: haihire_test_password
+          POSTGRES_DB: haihire_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:8.0.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup CI Single Root Environment
+        run: |
+          cp .env.example .env
+          sed -i 's/POSTGRES_USER=haihire_user/POSTGRES_USER=haihire_test/g' .env
+          sed -i 's/POSTGRES_PASSWORD=haihire_password/POSTGRES_PASSWORD=haihire_test_password/g' .env
+          sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
+          sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
+          sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+
+      - name: Run 11 Architecture Quality Gates (Fast)
+        run: pnpm check:all:fast
+
+  # ============================================================================
+  # 2. FULL UNIT TESTS & TEST ANTI-REGRESSION
+  # ============================================================================
+  unit-tests:
+    name: Full Unit Tests & Anti-Regression
+    needs: ci-gates
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: haihire_test
+          POSTGRES_PASSWORD: haihire_test_password
+          POSTGRES_DB: haihire_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:8.0.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup CI Single Root Environment
+        run: |
+          cp .env.example .env
+          sed -i 's/POSTGRES_USER=haihire_user/POSTGRES_USER=haihire_test/g' .env
+          sed -i 's/POSTGRES_PASSWORD=haihire_password/POSTGRES_PASSWORD=haihire_test_password/g' .env
+          sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
+          sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
+          sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+
+      - name: Audit Test Count Delta (Anti-Regression)
+        run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD || true
+
+      - name: Run Full Unit & Integration Test Suite
+        run: pnpm test

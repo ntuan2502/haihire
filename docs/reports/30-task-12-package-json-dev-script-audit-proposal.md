@@ -428,7 +428,7 @@ Rather than a "Big Bang" breaking change, a **two-phase Deprecation Path** is st
    - Remove strictly dead scripts (`composer:*`, `deploy`, `skills:sync`, `postinstall`, `db:init`).
    - Standardize target scripts in backend, frontend, and root `package.json`.
    - Maintain backward-compatible aliases in root `package.json` (`check:i18n`, `seed`, `migrate`).
-   - Update CI workflow ([`.github/workflows/ci-cd.yml`](../../.github/workflows/ci-cd.yml)), [`scripts/check-all.ts`](../../scripts/check-all.ts), and [`README.md`](../../README.md) to use the new canonical names.
+   - Update CI workflow (`.github/workflows/ci-cd.yml` (legacy)), [`scripts/check-all.ts`](../../scripts/check-all.ts), and [`README.md`](../../README.md) to use the new canonical names.
 2. **Post-Release / Sprint v1.1.0:**
    - Remove the deprecated aliases after developer habits adapt.
 

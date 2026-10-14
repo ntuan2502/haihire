@@ -39,6 +39,18 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [38 — Task #14B Third Follow-up: Redis/Valkey Distributed Lock for Click Counter](38-task-14b-third-followup-redis-distributed-lock-report.md)
 - [39 — Task #14C: Public Careers ISR Caching & Email Queue DLQ Alerting](39-task-14c-isr-caching-email-dlq-report.md)
 - [40 — Task #14D: Refresh Token Revocation & Correlation ID Middleware](40-task-14d-token-revocation-correlation-id-report.md)
+- [41 — Task #18: Tag v0.1.0 Pre-Release & Release Artifacts](41-task-18-v0.1.0-prerelease-tag-report.md)
+- [42 — Task #19 Phase 1: CI/CD Pipeline Audit & Layered Redesign Proposal](42-task-19-phase-1-ci-cd-audit-redesign-proposal.md)
+- [43 — Task #19 Phase 2: Layered CI/CD Implementation Report](43-task-19-phase-2-layered-ci-cd-implementation-report.md)
+- [44 — Task #19 Phase 3: Remote CI/CD Verification Report](44-task-19-phase-3-remote-ci-cd-verification-report.md)
+- [45 — Task #20: Branch Structure & Protection Rules Completion Report](45-task-20-branch-structure-and-protection-rules-report.md)
+- [46 — Task #21: GitHub Repository Configuration Audit Report](46-task-21-github-repository-configuration-audit-report.md)
+- [47 — Task #22: GitHub Configuration P1 Blockers & Documentation Report](47-task-22-github-configuration-p1-blockers-and-docs-report.md)
+- [48 — Task #22 Phase 2: GitHub Configuration Re-Audit Completion Report](48-task-22-phase-2-github-configuration-re-audit-report.md)
+- [49 — Task #23: CI/CD Issues Diagnostic Report (E2E Nightly & Dependabot PR #38)](49-task-23-ci-cd-issues-diagnosis-report.md)
+- [50 — Task #24: Fix CI/CD Issues, 3-Tier Promotion & Release v0.1.1 Report](50-task-24-fix-ci-cd-issues-and-release-v0.1.1-report.md)
+
+
 
 ## Archived Reports
 

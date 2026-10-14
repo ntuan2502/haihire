@@ -160,13 +160,11 @@ git push origin v1.0.1
 
 ### Step 5: Automated Workflow Execution
 Pushing tag `v*.*.*` automatically triggers:
-1. [`.github/workflows/docker-publish.yml`](../../.github/workflows/docker-publish.yml):
-   - Runs full test suite
+1. [`.github/workflows/cd-release.yml`](../../.github/workflows/cd-release.yml):
    - Builds multi-stage optimized Docker images with Buildx and GitHub Actions cache
-   - Publishes backend & frontend images to GHCR tagged with `v1.0.1` and `sha-...`
-   - Generates official GitHub Release with release notes and deployment commands
-2. [`.github/workflows/release.yml`](../../.github/workflows/release.yml):
-   - Updates release notes and sends optional release notification webhook
+   - Publishes backend & frontend images to GHCR tagged with semantic version and SHA
+   - Runs Aquasecurity Trivy vulnerability scanner on container images
+   - Generates official GitHub Release with release notes and manual deployment instructions
 
 ---
 

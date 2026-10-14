@@ -1,0 +1,160 @@
+name: Feature CI (Fast Feedback)
+
+on:
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-feature-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ============================================================================
+  # 1. PATH FILTERING: DETECT CHANGED DOMAINS
+  # ============================================================================
+  path-filter:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    outputs:
+      docs-only: ${{ steps.filter.outputs.docs == 'true' && steps.filter.outputs.backend == 'false' && steps.filter.outputs.frontend == 'false' && steps.filter.outputs.ci == 'false' }}
+      docs: ${{ steps.filter.outputs.docs }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Filter changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - '*.md'
+              - 'LICENSE'
+            backend:
+              - 'backend/**'
+              - 'packages/shared/**'
+              - 'pnpm-lock.yaml'
+            frontend:
+              - 'frontend/**'
+              - 'packages/shared/**'
+              - 'pnpm-lock.yaml'
+            ci:
+              - '.github/workflows/**'
+              - 'scripts/**'
+              - 'package.json'
+              - 'tsconfig.json'
+
+  # ============================================================================
+  # 2. FAST CHECKS: LINTING, TYPECHECK, AND STATIC AUDIT
+  # ============================================================================
+  fast-checks:
+    name: Fast Static & Quality Checks
+    needs: path-filter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Docs-only Link Validation (Fast Exit)
+        if: needs.path-filter.outputs.docs-only == 'true'
+        run: pnpm lint:doc-links
+
+      - name: Verify Environment Synchronization Gate
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: pnpm lint:env-sync
+
+      - name: Verify Internationalization & No Hardcoded Strings
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: pnpm lint:i18n
+
+      - name: Run ESLint Code Quality
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: pnpm lint
+
+      - name: Run TypeScript Type Safety
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: pnpm typecheck
+
+      - name: Verify Documentation Markdown Links Gate
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: pnpm lint:doc-links
+
+      - name: Audit Direct Production Dependencies
+        if: needs.path-filter.outputs.docs-only != 'true' && (needs.path-filter.outputs.backend == 'true' || needs.path-filter.outputs.frontend == 'true' || needs.path-filter.outputs.ci == 'true')
+        run: pnpm audit --audit-level=high --prod || true
+
+  # ============================================================================
+  # 3. UNIT TESTS: BACKEND & FRONTEND TEST SUITES
+  # ============================================================================
+  unit-tests:
+    name: Fast Unit & Integration Tests
+    needs: [path-filter, fast-checks]
+    if: needs.path-filter.outputs.docs-only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup minimal CI environment
+        run: cp .env.example .env
+
+      - name: Run Backend Unit & Integration Tests
+        if: needs.path-filter.outputs.backend == 'true' || needs.path-filter.outputs.ci == 'true'
+        run: pnpm --filter backend test
+
+      - name: Run Frontend Unit & Component Tests
+        if: needs.path-filter.outputs.frontend == 'true' || needs.path-filter.outputs.ci == 'true'
+        run: pnpm --filter frontend test

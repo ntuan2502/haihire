@@ -35,6 +35,7 @@ export class AuthService {
       "role",
       "avatarUrl",
       "organizationId",
+      "tokenVersion",
       "createdAt",
     )
       .where((u) => u.email.eq(normalizedEmail))
@@ -157,15 +158,17 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.validateRecruiter(dto);
 
+    const tokenVersion = user.tokenVersion ?? 0;
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
+      tokenVersion,
     };
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh" },
+      { sub: user.id, type: "refresh", tokenVersion },
       { expiresIn: "7d" },
     );
 
@@ -200,6 +203,7 @@ export class AuthService {
       password: hashedPassword,
       role: "MEMBER",
       organizationId: null,
+      tokenVersion: 0,
       updatedAt: toInstant(),
     });
 
@@ -212,6 +216,7 @@ export class AuthService {
       organizationId: null,
       organization: null,
       isOwner: false,
+      tokenVersion: 0,
       createdAt: new Date(),
     };
 
@@ -219,11 +224,12 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      tokenVersion: 0,
     };
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh" },
+      { sub: user.id, type: "refresh", tokenVersion: 0 },
       { expiresIn: "7d" },
     );
 
@@ -235,7 +241,7 @@ export class AuthService {
   }
 
   async refreshToken(dto: RefreshTokenDto) {
-    let decoded: { sub: string; type?: string };
+    let decoded: { sub: string; type?: string; tokenVersion?: number };
     try {
       decoded = this.jwtService.verify(dto.refreshToken);
     } catch {
@@ -258,6 +264,7 @@ export class AuthService {
       "name",
       "role",
       "organizationId",
+      "tokenVersion",
     )
       .where((u) => u.id.eq(decoded.sub))
       .first();
@@ -269,15 +276,25 @@ export class AuthService {
       );
     }
 
+    const decodedTokenVersion = decoded.tokenVersion ?? 0;
+    const userTokenVersion = user.tokenVersion ?? 0;
+    if (decodedTokenVersion !== userTokenVersion) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "Token has been revoked",
+      );
+    }
+
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
+      tokenVersion: userTokenVersion,
     };
 
     const newAccessToken = this.jwtService.sign(payload);
     const newRefreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh" },
+      { sub: user.id, type: "refresh", tokenVersion: userTokenVersion },
       { expiresIn: "7d" },
     );
 
@@ -285,6 +302,64 @@ export class AuthService {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
     };
+  }
+
+  async logout(userId: string): Promise<void> {
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "tokenVersion",
+    )
+      .where((u) => u.id.eq(userId))
+      .first();
+
+    if (user) {
+      await this.prisma.db.orm.public.User
+        .where((u) => u.id.eq(userId))
+        .update({
+          tokenVersion: (user.tokenVersion ?? 0) + 1,
+          updatedAt: toInstant(),
+        });
+    }
+  }
+
+  async changePassword(
+    userId: string,
+    currentPass: string,
+    newPass: string,
+  ): Promise<{ success: boolean }> {
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "password",
+      "tokenVersion",
+    )
+      .where((u) => u.id.eq(userId))
+      .first();
+
+    if (!user || !user.password) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.UNAUTHORIZED,
+        "User not found or password not configured",
+      );
+    }
+
+    const isMatch = await bcrypt.compare(currentPass, user.password);
+    if (!isMatch) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.UNAUTHORIZED,
+        "Current password does not match",
+      );
+    }
+
+    const hashedPassword = bcrypt.hashSync(newPass, 10);
+    await this.prisma.db.orm.public.User
+      .where((u) => u.id.eq(userId))
+      .update({
+        password: hashedPassword,
+        tokenVersion: (user.tokenVersion ?? 0) + 1,
+        updatedAt: toInstant(),
+      });
+
+    return { success: true };
   }
 
   async getProfile(userId: string) {

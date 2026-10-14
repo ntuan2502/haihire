@@ -32,6 +32,7 @@ describe("JwtStrategy", () => {
                       role: "ADMIN",
                       avatarUrl: null,
                       organizationId: "org-1",
+                      tokenVersion: 1,
                       createdAt: new Date(),
                     };
                   }),
@@ -46,16 +47,52 @@ describe("JwtStrategy", () => {
     strategy = new JwtStrategy(mockPrisma as never);
   });
 
-  it("should validate and return user from payload", async () => {
+  it("should validate and return user when tokenVersion matches", async () => {
     const user = await strategy.validate({
       sub: "usr-123",
       email: "test@example.com",
       role: "ADMIN",
+      tokenVersion: 1,
     });
 
     expect(user).toBeDefined();
     expect(user.id).toBe("usr-123");
     expect(user.email).toBe("test@example.com");
+  });
+
+  it("should throw AppUnauthorizedException with revoked message when tokenVersion does not match", async () => {
+    await expect(
+      strategy.validate({
+        sub: "usr-123",
+        email: "test@example.com",
+        role: "ADMIN",
+        tokenVersion: 0, // Old version before revocation
+      }),
+    ).rejects.toThrow("Token has been revoked");
+  });
+
+  it("should accept legacy session tokens without tokenVersion if user is at default version 0", async () => {
+    mockPrisma.db.orm.public.User.select = vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        first: vi.fn().mockResolvedValue({
+          id: "usr-legacy",
+          email: "legacy@example.com",
+          name: "Legacy User",
+          role: "MEMBER",
+          tokenVersion: 0,
+        }),
+      }),
+    });
+
+    const user = await strategy.validate({
+      sub: "usr-legacy",
+      email: "legacy@example.com",
+      role: "MEMBER",
+      // tokenVersion is undefined
+    });
+
+    expect(user).toBeDefined();
+    expect(user.id).toBe("usr-legacy");
   });
 
   it("should throw AppUnauthorizedException if user does not exist", async () => {

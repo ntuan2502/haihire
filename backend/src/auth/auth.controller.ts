@@ -17,7 +17,10 @@ import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { OptionalJwtAuthGuard } from "./optional-jwt-auth.guard";
+import { DtoPipe } from "../common/dto-validation.pipe";
 import { env } from "../config/env";
 
 @Controller("auth")
@@ -75,9 +78,16 @@ export class AuthController {
     return result;
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Post("logout")
   @HttpCode(HttpStatus.OK)
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Request() req: { user?: { id?: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (req?.user?.id) {
+      await this.authService.logout(req.user.id);
+    }
     if (res?.cookie) {
       res.cookie("haihire_token", "", {
         httpOnly: true,
@@ -88,6 +98,20 @@ export class AuthController {
       });
     }
     return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("change-password")
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Request() req: { user: { id: string } },
+    @Body(DtoPipe(ChangePasswordDto)) dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      req.user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

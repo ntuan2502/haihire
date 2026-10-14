@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'dbf5db3554f55e6ddc6143fafec2e7f2a47a229a89e43a37262331162f09e1ae'>;
+  StorageHashBase<'cd5b82eba883e181a8e5c5d4adc65d8a39dfdc05e25d3240eb82735677f3bba2'>;
 export type ExecutionHash =
   ExecutionHashBase<'b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98'>;
 export type ProfileHash =
@@ -525,6 +525,7 @@ export type FieldOutputTypes = {
       readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
       readonly password: CodecTypes['pg/text@1']['output'] | null;
       readonly role: 'ADMIN' | 'MEMBER';
+      readonly tokenVersion: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
   };
@@ -806,6 +807,7 @@ export type FieldInputTypes = {
       readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
       readonly password: CodecTypes['pg/text@1']['input'] | null;
       readonly role: 'ADMIN' | 'MEMBER';
+      readonly tokenVersion: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
   };
@@ -1087,6 +1089,7 @@ export type StorageColumnTypes = {
       readonly organizationId: CodecTypes['pg/text@1']['output'] | null;
       readonly password: CodecTypes['pg/text@1']['output'] | null;
       readonly role: 'ADMIN' | 'MEMBER';
+      readonly tokenVersion: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
   };
@@ -1368,6 +1371,7 @@ export type StorageColumnInputTypes = {
       readonly organizationId: CodecTypes['pg/text@1']['input'] | null;
       readonly password: CodecTypes['pg/text@1']['input'] | null;
       readonly role: 'ADMIN' | 'MEMBER';
+      readonly tokenVersion: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
   };
@@ -1725,6 +1729,7 @@ export namespace Models {
     organizationId: CodecTypes['pg/text@1']['output'] | null;
     password: CodecTypes['pg/text@1']['output'] | null;
     role: 'ADMIN' | 'MEMBER';
+    tokenVersion: CodecTypes['pg/int4@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     inviteLinks: public_InviteLink[];
     jobs: public_Job[];
@@ -3603,6 +3608,15 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/text@1', 'MEMBER'>;
+                  };
+                };
+                readonly tokenVersion: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
                   };
                 };
                 readonly updatedAt: {
@@ -5658,6 +5672,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly tokenVersion: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly updatedAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -5733,6 +5751,7 @@ type ContractBase = Omit<
                 readonly organizationId: { readonly column: 'organizationId' };
                 readonly password: { readonly column: 'password' };
                 readonly role: { readonly column: 'role' };
+                readonly tokenVersion: { readonly column: 'tokenVersion' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };

@@ -3538,6 +3538,13 @@
                   "plane": "domain"
                 }
               },
+              "tokenVersion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
@@ -3649,6 +3656,9 @@
                 },
                 "role": {
                   "column": "role"
+                },
+                "tokenVersion": {
+                  "column": "tokenVersion"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -6126,6 +6136,15 @@
                     "plane": "storage"
                   }
                 },
+                "tokenVersion": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
@@ -6344,7 +6363,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "dbf5db3554f55e6ddc6143fafec2e7f2a47a229a89e43a37262331162f09e1ae"
+    "storageHash": "cd5b82eba883e181a8e5c5d4adc65d8a39dfdc05e25d3240eb82735677f3bba2"
   },
   "execution": {
     "executionHash": "b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98",

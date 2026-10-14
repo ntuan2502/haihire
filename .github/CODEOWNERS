@@ -1,0 +1,30 @@
+# CODEOWNERS for HaiHire Enterprise ATS
+#
+# Auto-assign reviewers for PRs to ensure domain expertise review.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @ntuan2502
+
+# Core Backend Services & Data Model
+/backend/ @ntuan2502
+
+# Frontend Client & Public Career Portal
+/frontend/ @ntuan2502
+
+# Shared Packages
+/packages/ @ntuan2502
+
+# Infrastructure, CI/CD, Containerization
+/.github/ @ntuan2502
+/docker-compose*.yml @ntuan2502
+/Dockerfile @ntuan2502
+
+# Documentation & Engineering Specs
+/docs/ @ntuan2502
+/*.md @ntuan2502
+
+# Security-Critical Paths
+/backend/src/auth/ @ntuan2502
+/backend/src/common/guards/ @ntuan2502
+/backend/src/prisma/ @ntuan2502

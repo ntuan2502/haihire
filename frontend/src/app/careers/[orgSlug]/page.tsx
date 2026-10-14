@@ -7,6 +7,8 @@ interface PageProps {
   params: Promise<{ orgSlug: string }>;
 }
 
+export const revalidate = 60;
+
 const getApiBase = () => {
   return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:13001";
 };
@@ -14,7 +16,7 @@ const getApiBase = () => {
 async function fetchOrg(slug: string): Promise<Organization | null> {
   try {
     const res = await fetch(`${getApiBase()}/organizations/public/${encodeURIComponent(slug)}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     return await res.json();
@@ -27,7 +29,7 @@ async function fetchJobs(orgSlug: string): Promise<Job[]> {
   try {
     const res = await fetch(
       `${getApiBase()}/jobs?organizationSlug=${encodeURIComponent(orgSlug)}&status=PUBLISHED&limit=1000`,
-      { cache: "no-store" },
+      { next: { revalidate: 60 } },
     );
     if (!res.ok) return [];
     const data = await res.json();

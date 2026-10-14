@@ -136,6 +136,7 @@ export function useAllPublicJobs() {
       const res = await jobsApi.getAll({ status: "PUBLISHED", limit: 1000 });
       return res.data;
     },
+    staleTime: 120_000,
   });
 }
 

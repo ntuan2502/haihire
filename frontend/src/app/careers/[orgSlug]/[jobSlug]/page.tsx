@@ -8,6 +8,8 @@ interface PageProps {
   params: Promise<{ orgSlug: string; jobSlug: string }>;
 }
 
+export const revalidate = 60;
+
 const getApiBase = () => {
   return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:13001";
 };
@@ -16,7 +18,7 @@ async function fetchJob(orgSlug: string, jobSlug: string): Promise<Job | null> {
   try {
     const res = await fetch(
       `${getApiBase()}/jobs/careers/${encodeURIComponent(orgSlug)}/${encodeURIComponent(jobSlug)}`,
-      { cache: "no-store" },
+      { next: { revalidate: 60 } },
     );
     if (!res.ok) return null;
     return await res.json();
@@ -28,7 +30,7 @@ async function fetchJob(orgSlug: string, jobSlug: string): Promise<Job | null> {
 async function fetchOrg(slug: string): Promise<Organization | null> {
   try {
     const res = await fetch(`${getApiBase()}/organizations/public/${encodeURIComponent(slug)}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     return await res.json();

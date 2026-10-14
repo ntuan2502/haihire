@@ -15,30 +15,45 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   const validPassword = DEMO_PASSWORD;
   const hashedPassword = bcrypt.hashSync(validPassword, 10);
 
-  const mockUsers = [
-    {
-      id: "usr-admin",
-      email: DEMO_ACCOUNTS.ADMIN.email,
-      name: DEMO_ACCOUNTS.ADMIN.name,
-      password: hashedPassword,
-      role: DEMO_ACCOUNTS.ADMIN.role,
-      avatarUrl: null,
-      organizationId: "org-1",
-      createdAt: new Date(),
-    },
-    {
-      id: "usr-member",
-      email: DEMO_ACCOUNTS.MEMBER.email,
-      name: DEMO_ACCOUNTS.MEMBER.name,
-      password: hashedPassword,
-      role: DEMO_ACCOUNTS.MEMBER.role,
-      avatarUrl: null,
-      organizationId: "org-1",
-      createdAt: new Date(),
-    },
-  ];
+  let mockUsers: Array<{
+    id: string;
+    email: string;
+    name: string;
+    password: string;
+    role: "ADMIN" | "MEMBER";
+    avatarUrl: string | null;
+    organizationId: string | null;
+    tokenVersion: number;
+    createdAt: Date;
+    updatedAt?: Date;
+  }>;
 
   beforeEach(() => {
+    mockUsers = [
+      {
+        id: "usr-admin",
+        email: DEMO_ACCOUNTS.ADMIN.email,
+        name: DEMO_ACCOUNTS.ADMIN.name,
+        password: hashedPassword,
+        role: DEMO_ACCOUNTS.ADMIN.role,
+        avatarUrl: null,
+        organizationId: "org-1",
+        tokenVersion: 0,
+        createdAt: new Date(),
+      },
+      {
+        id: "usr-member",
+        email: DEMO_ACCOUNTS.MEMBER.email,
+        name: DEMO_ACCOUNTS.MEMBER.name,
+        password: hashedPassword,
+        role: DEMO_ACCOUNTS.MEMBER.role,
+        avatarUrl: null,
+        organizationId: "org-1",
+        tokenVersion: 0,
+        createdAt: new Date(),
+      },
+    ];
+
     mockPrismaService = {
       db: {
         orm: {
@@ -73,9 +88,35 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
                   }),
                 })),
               })),
+              where: vi.fn().mockImplementation((predicateFn) => ({
+                first: vi.fn().mockImplementation(async () => {
+                  const match = mockUsers.find((u) => {
+                    const mockRecord = {
+                      id: { eq: (target: string) => u.id === target },
+                      email: { eq: (target: string) => u.email === target },
+                    };
+                    return predicateFn(mockRecord);
+                  });
+                  return match || null;
+                }),
+                update: vi.fn().mockImplementation(async (data) => {
+                  const match = mockUsers.find((u) => {
+                    const mockRecord = {
+                      id: { eq: (target: string) => u.id === target },
+                      email: { eq: (target: string) => u.email === target },
+                    };
+                    return predicateFn(mockRecord);
+                  });
+                  if (match) {
+                    Object.assign(match, data);
+                  }
+                  return match;
+                }),
+              })),
               create: vi.fn().mockImplementation(async (data) => {
                 const newUser = {
                   ...data,
+                  tokenVersion: data.tokenVersion ?? 0,
                   organizationId: null,
                   createdAt: new Date(),
                 };
@@ -85,6 +126,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
               upsert: vi.fn().mockImplementation(async ({ create }) => {
                 const newUser = {
                   ...create,
+                  tokenVersion: create.tokenVersion ?? 0,
                   organizationId: null,
                   createdAt: new Date(),
                 };
@@ -113,7 +155,10 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       sign: vi.fn().mockReturnValue("mocked-jwt-access-token-tun-io-vn"),
       verify: vi.fn().mockImplementation((token: string) => {
         if (token === "valid-refresh-token") {
-          return { sub: "usr-admin", type: "refresh" };
+          return { sub: "usr-admin", type: "refresh", tokenVersion: 0 };
+        }
+        if (token === "revoked-refresh-token") {
+          return { sub: "usr-admin", type: "refresh", tokenVersion: 0 };
         }
         throw new Error("Invalid token");
       }),
@@ -141,6 +186,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       sub: "usr-admin",
       email: DEMO_ACCOUNTS.ADMIN.email,
       role: DEMO_ACCOUNTS.ADMIN.role,
+      tokenVersion: 0,
     });
   });
 
@@ -193,6 +239,7 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       expect(result.user.email).toBe("newmember@company.com");
       expect(result.user.role).toBe("MEMBER");
       expect(result.user.organizationId).toBeNull();
+      expect(result.user.tokenVersion).toBe(0);
     });
 
     it("7. Should throw ConflictException if email is already registered", async () => {
@@ -222,6 +269,53 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
           refreshToken: "invalid-token",
         }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it("10. Should throw UnauthorizedException when refreshToken tokenVersion does not match user tokenVersion", async () => {
+      // Simulate logout incrementing user's tokenVersion
+      mockUsers[0].tokenVersion = 1;
+
+      await expect(
+        authService.refreshToken({
+          refreshToken: "revoked-refresh-token", // Decoded tokenVersion is 0
+        }),
+      ).rejects.toThrow("Token has been revoked");
+    });
+  });
+
+  describe("Logout & Password Revocation Flow", () => {
+    it("11. Should increment user tokenVersion on logout", async () => {
+      expect(mockUsers[0].tokenVersion).toBe(0);
+
+      await authService.logout("usr-admin");
+
+      expect(mockUsers[0].tokenVersion).toBe(1);
+    });
+
+    it("12. Should increment user tokenVersion and update password on changePassword", async () => {
+      expect(mockUsers[0].tokenVersion).toBe(0);
+
+      const result = await authService.changePassword(
+        "usr-admin",
+        DEMO_PASSWORD,
+        "new-secure-pass-123",
+      );
+
+      expect(result.success).toBe(true);
+      expect(mockUsers[0].tokenVersion).toBe(1);
+      expect(bcrypt.compareSync("new-secure-pass-123", mockUsers[0].password)).toBe(true);
+    });
+
+    it("13. Should reject changePassword when current password does not match", async () => {
+      await expect(
+        authService.changePassword(
+          "usr-admin",
+          "incorrect-pass",
+          "new-secure-pass-123",
+        ),
+      ).rejects.toThrow("Current password does not match");
+
+      expect(mockUsers[0].tokenVersion).toBe(0);
     });
   });
 });

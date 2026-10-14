@@ -5,10 +5,14 @@ import { AppModule } from "./app.module";
 import { env } from "./config/env";
 import { GlobalExceptionFilter } from "./common/http-exception.filter";
 import { MetricsService } from "./metrics/metrics.service";
+import { CorrelationLogger } from "./common/logger/correlation-logger.service";
+import { correlationStorage } from "./common/middleware/correlation-id.middleware";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new CorrelationLogger(),
+  });
   app.enableShutdownHooks();
 
   const metricsService = app.get(MetricsService, { strict: false });
@@ -77,6 +81,10 @@ async function bootstrap() {
         level: status >= 500 ? "error" : status >= 400 ? "warn" : "info",
         timestamp: new Date().toISOString(),
         type: "HTTP_ACCESS",
+        requestId:
+          correlationStorage.getStore()?.requestId ||
+          (res.getHeader("X-Request-ID") as string) ||
+          "-",
         method: req.method,
         path: cleanPath,
         status,

@@ -11,6 +11,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  tokenVersion?: number;
 }
 
 @Injectable()
@@ -48,6 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       "role",
       "avatarUrl",
       "organizationId",
+      "tokenVersion",
       "createdAt",
     )
       .where((u) => u.id.eq(payload.sub))
@@ -55,6 +57,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user) {
       throw new AppUnauthorizedException(APP_ERROR_CODES.UNAUTHORIZED, "User not found or token invalid");
+    }
+
+    const payloadTokenVersion = payload.tokenVersion ?? 0;
+    const userTokenVersion = user.tokenVersion ?? 0;
+    if (payloadTokenVersion !== userTokenVersion) {
+      throw new AppUnauthorizedException(APP_ERROR_CODES.UNAUTHORIZED, "Token has been revoked");
     }
 
     return user;

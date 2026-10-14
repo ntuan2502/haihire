@@ -41,6 +41,9 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [40 — Task #14D: Refresh Token Revocation & Correlation ID Middleware](40-task-14d-token-revocation-correlation-id-report.md)
 - [41 — Task #18: Tag v0.1.0 Pre-Release & Release Artifacts](41-task-18-v0.1.0-prerelease-tag-report.md)
 - [42 — Task #19 Phase 1: CI/CD Pipeline Audit & Layered Redesign Proposal](42-task-19-phase-1-ci-cd-audit-redesign-proposal.md)
+- [43 — Task #19 Phase 2: Layered CI/CD Implementation Report](43-task-19-phase-2-layered-ci-cd-implementation-report.md)
+- [44 — Task #19 Phase 3: Remote CI/CD Verification Report](44-task-19-phase-3-remote-ci-cd-verification-report.md)
+- [45 — Task #20: Branch Structure & Protection Rules Completion Report](45-task-20-branch-structure-and-protection-rules-report.md)
 
 ## Archived Reports
 

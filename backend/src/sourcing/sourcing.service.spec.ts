@@ -38,10 +38,41 @@ describe("SourcingService", () => {
 
   let executeTxSpy: ReturnType<typeof vi.fn>;
   let currentMockDb: unknown;
+  let mockRedis: ReturnType<typeof createMockRedis>;
+  let mockPrisma: { db: unknown; executeTx: ReturnType<typeof vi.fn>; transaction: ReturnType<typeof vi.fn> };
 
   const mockActivitiesService = {
     createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
   };
+
+  function createMockRedis() {
+    const store = new Map<string, { value: string; expiresAt: number }>();
+
+    return {
+      set: vi.fn(async (key: string, value: string, _px?: string, ttl?: number, nx?: string) => {
+        const now = Date.now();
+        const existing = store.get(key);
+        if (existing && existing.expiresAt > now) {
+          if (nx === "NX") {
+            return null;
+          }
+        }
+        const expiresAt = ttl ? now + ttl : Infinity;
+        store.set(key, { value, expiresAt });
+        return "OK";
+      }),
+      eval: vi.fn(async (_script: string, _numkeys: number, key: string, arg: string) => {
+        const now = Date.now();
+        const existing = store.get(key);
+        if (existing && existing.expiresAt > now && existing.value === arg) {
+          store.delete(key);
+          return 1;
+        }
+        return 0;
+      }),
+      store,
+    };
+  }
 
   beforeEach(() => {
     inMemoryLinks.length = 0;
@@ -49,6 +80,8 @@ describe("SourcingService", () => {
     inMemoryJobs.length = 0;
     inMemoryApps.length = 0;
     inMemoryCandidates.length = 0;
+
+    mockRedis = createMockRedis();
 
     function createQueryBuilder(
       items: Array<Record<string, unknown>>,
@@ -116,13 +149,13 @@ describe("SourcingService", () => {
       return fn(mockDb);
     });
 
-    const mockPrisma = {
+    mockPrisma = {
       db: mockDb,
       executeTx: executeTxSpy,
       transaction: executeTxSpy,
     };
 
-    service = new SourcingService(mockPrisma as never, mockActivitiesService as never);
+    service = new SourcingService(mockPrisma as never, mockActivitiesService as never, mockRedis);
   });
 
   it("should create a new tracking link with unique token", async () => {
@@ -324,7 +357,96 @@ describe("SourcingService", () => {
     expect(executeTxSpy).toHaveBeenCalledTimes(10);
   });
 
-  it("should rollback click counter if tracking click log creation fails in transaction", async () => {
+  it("recordClick acquires distributed lock, increments counter, and releases lock", async () => {
+    inMemoryLinks.push({
+      id: "link-single",
+      token: "lnk-single",
+      source: SourcingChannel.LINKEDIN,
+      clicksCount: 0,
+      isActive: true,
+      deletedAt: null,
+    });
+
+    const result = await service.recordClick("lnk-single", "https://google.com", "127.0.0.1", "Browser");
+
+    expect(result.success).toBe(true);
+    expect(mockRedis.set).toHaveBeenCalledWith(
+      "click:lock:lnk-single",
+      expect.any(String),
+      "PX",
+      5000,
+      "NX",
+    );
+    expect(mockRedis.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call(\"get\", KEYS[1]) == ARGV[1]"),
+      1,
+      "click:lock:lnk-single",
+      expect.any(String),
+    );
+    expect(mockRedis.store.has("click:lock:lnk-single")).toBe(false);
+    expect(inMemoryLinks[0].clicksCount).toBe(1);
+  });
+
+  it("recordClick retries and eventually acquires lock when initially held by another process", async () => {
+    inMemoryLinks.push({
+      id: "link-retry",
+      token: "lnk-retry",
+      source: SourcingChannel.LINKEDIN,
+      clicksCount: 0,
+      isActive: true,
+      deletedAt: null,
+    });
+
+    // Simulate another instance holding the lock for 40ms
+    mockRedis.store.set("click:lock:lnk-retry", {
+      value: "held-by-other-node",
+      expiresAt: Date.now() + 40,
+    });
+
+    const result = await service.recordClick(
+      "lnk-retry",
+      "https://linkedin.com",
+      "127.0.0.1",
+      "Browser",
+      { retryIntervalMs: 15, maxWaitMs: 1000 },
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockRedis.set.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(inMemoryLinks[0].clicksCount).toBe(1);
+    expect(mockRedis.store.has("click:lock:lnk-retry")).toBe(false);
+  });
+
+  it("recordClick proceeds without lock when wait time exceeds maxWaitMs timeout", async () => {
+    inMemoryLinks.push({
+      id: "link-timeout",
+      token: "lnk-timeout",
+      source: SourcingChannel.LINKEDIN,
+      clicksCount: 0,
+      isActive: true,
+      deletedAt: null,
+    });
+
+    // Lock permanently held
+    mockRedis.store.set("click:lock:lnk-timeout", {
+      value: "permanent-lock",
+      expiresAt: Date.now() + 100000,
+    });
+
+    const result = await service.recordClick(
+      "lnk-timeout",
+      "https://linkedin.com",
+      "127.0.0.1",
+      "Browser",
+      { maxWaitMs: 30, retryIntervalMs: 10 },
+    );
+
+    // High-availability fallback: click is still recorded without blocking user
+    expect(result.success).toBe(true);
+    expect(inMemoryLinks[0].clicksCount).toBe(1);
+  });
+
+  it("recordClick releases distributed lock even when transaction throws error", async () => {
     inMemoryLinks.push({
       id: "link-fail",
       token: "lnk-fail",
@@ -334,9 +456,7 @@ describe("SourcingService", () => {
       deletedAt: null,
     });
 
-    // Simulate database failure during transaction
     executeTxSpy.mockImplementationOnce(async () => {
-      // Rollback simulated
       throw new Error("DB Connection Error during transaction");
     });
 
@@ -344,8 +464,59 @@ describe("SourcingService", () => {
       service.recordClick("lnk-fail", "https://linkedin.com", "127.0.0.1", "TestAgent"),
     ).rejects.toThrow("DB Connection Error during transaction");
 
-    // Clicks count must remain unchanged
+    // Lock must be cleanly released despite exception
+    expect(mockRedis.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call(\"get\", KEYS[1]) == ARGV[1]"),
+      1,
+      "click:lock:lnk-fail",
+      expect.any(String),
+    );
+    expect(mockRedis.store.has("click:lock:lnk-fail")).toBe(false);
     expect(inMemoryLinks[0].clicksCount).toBe(10);
     expect(inMemoryClicks).toHaveLength(0);
+  });
+
+  it("serializes concurrent calls across multiple simulated instances sharing Redis", async () => {
+    inMemoryLinks.push({
+      id: "link-multi-instance",
+      token: "lnk-multi",
+      source: SourcingChannel.LINKEDIN,
+      clicksCount: 0,
+      isActive: true,
+      deletedAt: null,
+    });
+
+    const sharedRedis = createMockRedis();
+    const instance1 = new SourcingService(mockPrisma as never, mockActivitiesService as never, sharedRedis);
+    const instance2 = new SourcingService(mockPrisma as never, mockActivitiesService as never, sharedRedis);
+
+    // Simulate async transaction I/O delay
+    executeTxSpy.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      return fn(currentMockDb);
+    });
+
+    // 50 calls from instance 1 + 50 calls from instance 2 concurrently (100 total)
+    const promises = [
+      ...Array.from({ length: 50 }, (_, i) =>
+        instance1.recordClick("lnk-multi", "https://linkedin.com", `10.0.1.${i + 1}`, `Node1-Agent-${i}`, {
+          maxWaitMs: 15000,
+          retryIntervalMs: 10,
+        }),
+      ),
+      ...Array.from({ length: 50 }, (_, i) =>
+        instance2.recordClick("lnk-multi", "https://linkedin.com", `10.0.2.${i + 1}`, `Node2-Agent-${i}`, {
+          maxWaitMs: 15000,
+          retryIntervalMs: 10,
+        }),
+      ),
+    ];
+
+    const results = await Promise.all(promises);
+
+    expect(results.every((r) => r.success)).toBe(true);
+    expect(inMemoryLinks[0].clicksCount).toBe(100);
+    expect(inMemoryClicks).toHaveLength(100);
+    expect(executeTxSpy).toHaveBeenCalledTimes(100);
   });
 });

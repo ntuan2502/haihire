@@ -39,6 +39,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [38 — Task #14B Third Follow-up: Redis/Valkey Distributed Lock for Click Counter](38-task-14b-third-followup-redis-distributed-lock-report.md)
 - [39 — Task #14C: Public Careers ISR Caching & Email Queue DLQ Alerting](39-task-14c-isr-caching-email-dlq-report.md)
 - [40 — Task #14D: Refresh Token Revocation & Correlation ID Middleware](40-task-14d-token-revocation-correlation-id-report.md)
+- [41 — Task #18: Tag v0.1.0 Pre-Release & Release Artifacts](41-task-18-v0.1.0-prerelease-tag-report.md)
 
 ## Archived Reports
 

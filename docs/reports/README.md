@@ -44,6 +44,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [43 — Task #19 Phase 2: Layered CI/CD Implementation Report](43-task-19-phase-2-layered-ci-cd-implementation-report.md)
 - [44 — Task #19 Phase 3: Remote CI/CD Verification Report](44-task-19-phase-3-remote-ci-cd-verification-report.md)
 - [45 — Task #20: Branch Structure & Protection Rules Completion Report](45-task-20-branch-structure-and-protection-rules-report.md)
+- [46 — Task #21: GitHub Repository Configuration Audit Report](46-task-21-github-repository-configuration-audit-report.md)
 
 ## Archived Reports
 

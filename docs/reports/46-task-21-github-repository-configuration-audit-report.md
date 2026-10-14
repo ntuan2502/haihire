@@ -200,6 +200,7 @@ $ gh api repos/ntuan2502/haihire/actions/permissions/workflow
 
 | Gap | Priority | Component | Recommended Action |
 | :--- | :---: | :--- | :--- |
+| **Solo Developer PR Review Block on `dev`** | **P1 (High)** | Branch Protection Governance | On personal repos with `enforce_admins: true` and `1` required review, the repository owner cannot approve their own PRs (`GraphQL: At least 1 approving review is required`). If developing solo without a second reviewer account, edit `dev` branch protection to either: (a) set required approvals to `0` (relying on the 2 CI status checks), or (b) uncheck **"Do not allow bypassing the above settings"** on `dev` so the admin can merge after CI passes. |
 | **Missing `production` Environment** | **P1 (High)** | GitHub Environments | Go to `Settings -> Environments`, click **"New environment"**, name it `production`, assign required reviewers (`ntuan2502`), and restrict deployment branches to `main` and `v*.*.*`. |
 | **Missing `.github/CODEOWNERS`** | **P2 (Medium)** | Repository Governance | Create and commit `.github/CODEOWNERS` (using the proposed template in Section 6), then enable **"Require review from Code Owners"** in `main` branch protection. |
 | **Secret Scanning Push Protection Disabled** | **P2 (Medium)** | Repository Security | In `Settings -> Code security and analysis`, enable **Secret scanning** and **Push protection** (100% free for public repositories). |

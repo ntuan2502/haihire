@@ -1,14 +1,11 @@
-# ==============================================================================
-# NOTE: Staging branch not yet created. Triggers will be enabled in Task #20.
-# ==============================================================================
 name: Pre-Production CI (Staging Branch)
 
 on:
+  push:
+    branches: [staging]
+  pull_request:
+    branches: [staging]
   workflow_dispatch:
-  # push:
-  #   branches: [staging]
-  # pull_request:
-  #   branches: [staging]
 
 concurrency:
   group: ci-staging-${{ github.ref }}
@@ -366,6 +363,9 @@ jobs:
           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('frontend/src/**', 'frontend/public/**') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
+      - name: Setup CI Environment
+        run: cp .env.example .env
 
       - name: Compile Monorepo Production Build
         run: pnpm build

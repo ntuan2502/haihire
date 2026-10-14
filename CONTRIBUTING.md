@@ -18,6 +18,76 @@ Always branch off the primary integration branch (`feature/production-hardening`
 
 ---
 
+## Branch Strategy
+
+HaiHire uses a 3-branch environment flow:
+
+- **dev**: Active development. Feature branches merge here.
+- **staging**: Pre-production validation. QA and UAT happen here.
+- **main**: Production-ready. Tag releases here.
+
+### Feature Development Flow
+
+1. Create feature branch from dev:
+   ```bash
+   git checkout dev
+   git pull
+   git checkout -b feat/your-feature
+   ```
+
+2. Make changes, commit, push.
+
+3. Open PR: `feat/your-feature` -> `dev`.
+   - Requires 1 review.
+   - Requires `check:all:fast` pass.
+
+4. After approval, merge to `dev`.
+
+5. When ready for QA, PR `dev` -> `staging`.
+   - Requires full CI pass.
+   - Wait 3+ days after last merge.
+
+6. After QA approval, PR `staging` -> `main`.
+   - Requires 2 reviews.
+   - Tag version: `git tag -a vX.Y.Z -m "..."`
+
+### Hotfix Flow
+
+For critical production bugs:
+
+1. Create hotfix branch from main:
+   ```bash
+   git checkout main
+   git pull
+   git checkout -b hotfix/fix-critical
+   ```
+
+2. Fix the bug, test locally.
+
+3. Open PR: `hotfix/fix-critical` -> `main` (fast-track).
+   - Requires 1 review (urgency).
+
+4. Merge to `main`, tag patch version:
+   ```bash
+   git tag -a vX.Y.Z+1 -m "Hotfix: ..."
+   ```
+
+5. Also merge to dev to keep in sync:
+   ```bash
+   git checkout dev
+   git merge hotfix/fix-critical
+   ```
+
+### Branch Protection Rules
+
+| Branch | PR Required | Reviews | Status Checks |
+|---|---|---|---|
+| dev | Yes | 1 | check:all:fast |
+| staging | Yes | 1 | check:all + E2E |
+| main | Yes | 2 | check:all + E2E + Security |
+
+---
+
 ## 📝 Commit Conventions
 
 HaiHire enforces [Conventional Commits](https://www.conventionalcommits.org/) via Husky and Commitlint hooks:

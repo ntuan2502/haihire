@@ -5,33 +5,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
-## [1.0.0] - Production Hardening & Release (2026-10-08)
+## [0.1.0] - 2026-10-14
+
+### Pre-release Note
+
+This is the first pre-release of HaiHire Enterprise ATS. While the
+platform has undergone extensive hardening, it is still in active
+development. The public API may change before the stable 1.0.0 release.
+
 ### Added
-- Task #1A: Multi-channel webhook notifications (Telegram, Discord, Generic HMAC).
-- Task #1B: Per-organization encrypted webhook settings with AES-256-GCM and UI management.
-- Task #2: Dynamic BullMQ Prometheus metrics collector for queue depth tracking.
-- Task #3: 4 new Prometheus alert rules (`HaiHireBullMqDlqGrowing`, `HaiHireBullMqDlqCritical`, `HaiHireEmailQueueBacklog`, `HaiHireBullMqRedisDown`).
-- Task #4: End-to-end cross-tenant security isolation test suite (`tenant-security.spec.ts`).
-- Task #5: Tenant scoping AST static analysis CI gate (`pnpm lint:tenant-scope`).
-- Task #6: Pushgateway telemetry metrics for MinIO orphan cleanup nightly cron.
-- Task #7: 3 new Prometheus alert rules for orphan cleanup spikes and missing cron runs.
-- Task #7.5: Repository-wide English language standardization across documentation, comments, and runtime logs.
-- Task #8: Frontend mutation `onError` hook standardization across all 35 hooks for robust cache invalidation.
-- Task #9: Repository restructuring, legacy audits archival to `docs/archive/audits/`, and CI Gate 10 link check.
-- Task #10: Memory and documentation consistency audit, Single Source of Truth (`docs/PROJECT_METRICS.md`), and metric synchronization across 563 tests and 11 gates.
-- Monorepo lockstep version synchronization tooling: `scripts/sync-version.ts` and `scripts/bump-version.ts`.
-- Automation commands: `pnpm version:sync` and `pnpm version:bump`.
-- Container publishing GitHub Actions workflow: `.github/workflows/docker-publish.yml` (multi-stage buildx, GHA cache, OCI metadata, GHCR publish, and GitHub release generation).
-- GitHub release and changelog workflow: `.github/workflows/release.yml`.
-- Versioning and container registry runbook: `docs/runbooks/versioning.md`.
-- Production environment variables `GITHUB_REPOSITORY` and `IMAGE_TAG` in `.env.production.example`.
+
+- Multi-channel webhook notifications (Telegram, Discord, Generic)
+  with HMAC-SHA256 signing (Task #1A).
+- Per-organization webhook settings with AES-256-GCM encryption (Task #1B).
+- Dynamic BullMQ metrics with per-queue timeout protection (Task #2).
+- 14 Prometheus alert rules covering infrastructure and queues (Task #3, #7).
+- E2E cross-tenant isolation tests via Playwright (6 tests) (Task #4).
+- Tenant scoping static analysis CI gate (100% query coverage) (Task #5).
+- Cron Pushgateway metrics for orphan cleanup (7 metrics) (Task #6).
+- Frontend onError hook standardization across 30 mutation hooks (Task #8).
+- Frontend Error Boundaries (global-error, error, dashboard, careers, 404)
+  (Task #14A).
+- Redis distributed lock for click counter (multi-instance safe)
+  (Task #14B Third Follow-up).
+- ISR caching for public careers pages (Task #14C).
+- Email queue DLQ alerting with webhook notification (Task #14C).
+- Refresh token revocation via tokenVersion (Task #14D).
+- Correlation ID (X-Request-ID) middleware (Task #14D).
+- Single source of truth for project metrics (docs/PROJECT_METRICS.md)
+  (Task #10).
+- Single root .env architecture with 10-section template (Task #11).
 
 ### Changed
-- Synchronized all 4 package manifests (`package.json`, `backend/package.json`, `frontend/package.json`, `packages/shared/package.json`) to `1.0.0`.
-- Updated `docker-compose.prod.yml` to remove local `build:` directives and pull pre-built immutable container images from GHCR.
-- Updated `docs/runbooks/production-deployment-plan.md` to replace local container builds with GHCR pull, digest recording, and immutable tag rollback SOPs.
-- Updated `.github/workflows/ci-cd.yml` to align image naming (`haihire-backend`, `haihire-frontend`) and pull from GHCR during deployment.
-- Updated `CONTRIBUTING.md` and `.agents/memory/project-conventions.md` with versioning and container publishing protocols.
+
+- Standardized all documentation, code comments, and alert descriptions
+  to English (Task #7.5).
+- Repository restructured: audits archived in docs/archive/audits/
+  (Task #9).
+- Environment variables unified into single root .env (Task #11).
+- Package.json scripts standardized across 3 manifests (Task #12).
+- Memory files deduplicated: user-preferences vs project-conventions
+  (Task #10).
+- All markdown links converted to portable relative paths (Task #10.5).
+- Valkey configuration: maxmemory-policy noeviction to prevent BullMQ
+  job eviction (Task #4).
+
+### Fixed
+
+- Unbounded in-memory table scans in sourcing analytics queries
+  (Task #14B).
+- Race condition in click counter under concurrent access (Task #14B).
+- Missing database composite indexes for tenant queries (Task #14B).
+- Startup N+1 query in membership backfill (Task #14B).
+- Silent DLQ alerts for email queue terminal failures (Task #14C).
+- Hardcoded bullmq_queue_depth metric (now dynamic) (Task #2).
+- Vietnamese text in 7 alert rule descriptions (Task #10).
+- 288 absolute file:/// links across 46 markdown files (Task #10.5).
+- PORT collision between backend (13001) and frontend (13000) (Task #11).
+- Script warning on closed/draft career pages (Task #13).
+
+### Security
+
+- Refresh token revocation (instant session invalidation on logout or
+  password change) (Task #14D).
+- Tenant scoping static analysis: 0 unsafe queries (Task #5).
+- Webhook URLs and secret tokens encrypted at-rest (Task #1B).
+- HMAC-SHA256 signature verification for generic webhooks (Task #1A).
+- Distributed lock prevents click counter race condition across
+  multi-instance deployments (Task #14B Third Follow-up).
+
+## Pre-1.0.0
+
+Initial development phases 1-22 with 10 IV&V cycles achieving 99-100%
+reliability score, followed by 20+ hardening tasks.
 
 ---
 

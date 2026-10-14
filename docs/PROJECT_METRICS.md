@@ -3,26 +3,35 @@
 > Canonical metrics for the HaiHire Enterprise ATS platform.  
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
-**Last Updated:** 2026-10-08  
-**Platform Version:** v1.0.0 (Production-Ready)  
+**Last Updated:** 2026-10-14  
+**Platform Version:** v0.1.0 (Pre-release)  
+
+---
+
+## Release Stage
+
+- **Current:** Pre-release (v0.1.0)
+- **Target:** Stable release (v1.0.0) — when ready
+- **Branch strategy:** dev -> staging -> main
+- **Hotfix flow:** hotfix/* from main -> main + dev
 
 ---
 
 ## Quality & Verification Metrics
-- **Automated Tests:** 563 total
-  - Backend: 376 passing (Vitest, 38 test suites)
-  - Frontend: 187 passing (Vitest + JSDOM, 30 test suites)
+- **Automated Tests:** 606 total
+  - Backend: 406 passing (Vitest, 40 test suites)
+  - Frontend: 200 passing (Vitest + JSDOM, 33 test suites)
 - **CI Architecture Gates:** 11 gates (`scripts/check-all.ts`)
   1. `lint:env-sync` — Env Variables Synchronization & Parity
   2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings
   3. `lint` — ESLint Code Quality (Backend + Frontend)
   4. `typecheck` — Strict TypeScript Typecheck (`tsc --noEmit`)
-  5. `lint:dtopipe` — DtoPipe Validation Coverage
-  6. `lint:error-i18n` — Error Code i18n Localization (51 codes)
-  7. `lint:api-contract` — API Contract & Leaks Audit (83 endpoints)
+  5. `lint:dtopipe` — DtoPipe Validation Coverage (29 piped endpoints)
+  6. `lint:error-i18n` — Error Code i18n Localization (54 codes)
+  7. `lint:api-contract` — API Contract & Leaks Audit (84 endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 rules)
-  9. `lint:tenant-scope` — Tenant Scoping Static Analysis
-  10. `lint:doc-links` — Documentation Markdown Link Integrity
+  9. `lint:tenant-scope` — Tenant Scoping Static Analysis (212 queries)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (115 files)
   11. `test:diff` — Test Count Delta & Anti-Regression
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:**
@@ -36,7 +45,7 @@
 - **Monorepo Packages:** 3 (`backend`, `frontend`, `packages/shared`)
 - **Backend Modules:** 18
 - **Backend Controllers:** 13
-- **REST API Endpoints:** 83
+- **REST API Endpoints:** 84
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation in Task #8)
 - **Database Models:** 16 (9 camelCase tech debt + 7 snake_case)
 - **God Files (>400 LOC):** 5
@@ -49,7 +58,7 @@
 ---
 
 ## Operations & Release Metrics
-- **Hardening Milestones:** 10 tasks (Tasks #1A → #8)
+- **Hardening Milestones:** 20+ tasks (Tasks #1A → #14D)
 - **Restructure:** Task #9 complete
 - **Supported Languages:** 2 (`vi` Vietnamese + `en` English)
 - **Documentation Language:** 100% English (Task #7.5 convention)

@@ -1,9 +1,9 @@
 # 🗺️ HaiHire - Product Roadmap & Architectural Horizon
 
 > **Comprehensive strategic roadmap for the HaiHire Enterprise Applicant Tracking System (ATS).**  
-> **Current Version:** `v1.0.0` (Production-Ready, Released 2026-10-08)  
-> **Updated:** 2026-10-08  
-> **Status:** Production-Ready (Tasks #1A-#8 Hardening & Task #9 Restructure complete, 563 tests, 11 CI gates)
+> **Current Version:** `v0.1.0` (Pre-release, Released 2026-10-14)  
+> **Updated:** 2026-10-14  
+> **Status:** Pre-release (20+ hardening tasks completed, 606 tests, 11 CI gates)
 
 ---
 
@@ -43,7 +43,7 @@
 
 ---
 
-## 🟢 PART 1: RELEASED CAPABILITIES (v1.0.0 PRODUCTION)
+## 🟢 PART 1: RELEASED CAPABILITIES (v0.1.0 PRE-RELEASE)
 
 ### 1. Authentication & Security
 - 🟢 **Dual-Layer Authentication**: HttpOnly cookie (`haihire_token`) preventing XSS attacks with Bearer token fallback for API consumers.
@@ -106,6 +106,43 @@
 - 🟢 **Dynamic Organization Branding & XSS Sanitization**: Dynamic variable interpolation with HTML entity escaping.
 - 🟢 **AES-256-GCM Vault**: Encrypted storage of SMTP credentials and provider tokens.
 - 🟢 **Multi-Channel Webhooks**: Webhook notifications to Telegram, Discord, and custom HTTP endpoints on DLQ triggers.
+
+---
+
+## 📦 Release Trajectory & Milestones
+
+### v0.1.0 (Released 2026-10-14) — Pre-release
+
+- First pre-release.
+- 20+ hardening tasks completed.
+- 11 CI gates, 606 tests, 14 Prometheus alerts.
+- Feedback collection begins.
+- Not API-stable yet.
+
+### v0.1.x (Planned)
+
+- Bug fixes from user feedback.
+- Minor UX improvements.
+
+### v0.2.0 (Planned)
+
+- Split 5 God Files.
+- Bundle optimization.
+- More webhook providers.
+
+### v0.3.0 (Planned)
+
+- OpenAPI/Swagger.
+- Business metrics.
+- Account lockout.
+- Correlation ID for background jobs.
+
+### v1.0.0 (Future)
+
+- Stable API.
+- Production hardened.
+- Enterprise-ready.
+- Released when truly ready.
 
 ---
 

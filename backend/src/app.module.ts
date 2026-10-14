@@ -1,7 +1,8 @@
-import { Module } from "@nestjs/common";
+import { Module, type MiddlewareConsumer, type NestModule } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import path from "node:path";
 import { BullModule } from "@nestjs/bullmq";
+import { CorrelationIdMiddleware } from "./common/middleware/correlation-id.middleware";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { ApplicationsModule } from "./applications/applications.module";
@@ -85,5 +86,12 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
   ],
   exports: [MetricsModule],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(CorrelationIdMiddleware)
+      .forRoutes("*");
+  }
+}
+
 

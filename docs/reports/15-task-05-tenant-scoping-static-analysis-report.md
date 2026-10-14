@@ -170,5 +170,5 @@ Unsafe queries: 0
 - [`scripts/check-tenant-scoping.ts`](../../scripts/check-tenant-scoping.ts)
 - [`scripts/check-tenant-scoping.spec.ts`](../../scripts/check-tenant-scoping.spec.ts)
 - [`scripts/check-all.ts`](../../scripts/check-all.ts)
-- [`.github/workflows/ci-cd.yml`](../../.github/workflows/ci-cd.yml)
+- `.github/workflows/ci-cd.yml` (legacy)
 - [`package.json`](../../package.json)

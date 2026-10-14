@@ -78,13 +78,21 @@ For critical production bugs:
    git merge hotfix/fix-critical
    ```
 
-### Branch Protection Rules
+### Branch Protection & Layered CI Rules
 
-| Branch | PR Required | Reviews | Status Checks |
-|---|---|---|---|
-| dev | Yes | 1 | check:all:fast |
-| staging | Yes | 1 | check:all + E2E |
-| main | Yes | 2 | check:all + E2E + Security |
+| Branch / Ref | Workflow File | Focus & Scope | Time Target | Required Status Checks |
+| :--- | :--- | :--- | :---: | :--- |
+| **`feat/*`, `fix/*`** | `.github/workflows/ci-feature.yml` | Path filter, fast lint, typecheck, unit tests | **2 - 3 min** | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests` |
+| **`dev`** | `.github/workflows/ci-dev.yml` | 11 CI gates (`check:all:fast`), unit tests, test diff | **3 - 4 min** | `11 CI Architecture Gates`, `Full Unit Tests & Anti-Regression` |
+| **`staging`** | `.github/workflows/ci-staging.yml` | 11 CI gates, coverage, Playwright E2E, build | **8 - 10 min** | `11 CI Architecture Gates`, `Playwright End-to-End Suite`, `Production Build Verification` |
+| **`main`** | `.github/workflows/ci-main.yml` | Full checks (`check:all`), Playwright E2E, pnpm audit, Docker verify | **10 - 12 min** | `Full CI Quality Pipeline`, `Playwright End-to-End Suite`, `Dependency Security Audit`, `Docker Build Dry-Run Verification` |
+| **`v*.*.*` (Tags)** | `.github/workflows/cd-release.yml` | Docker Buildx, GHCR publish, Trivy scan, GitHub Release | **5 - 7 min** | `Build & Publish Container Images`, `Container Vulnerability Scan` |
+
+### 🛡️ 3-Tier Security Architecture
+
+1. **Layer 1: Dependency Vulnerability Audit (`pnpm audit`)**: Enforced in `ci-main.yml` and `security-weekly.yml`. Blocks builds with High/Critical CVEs in direct runtime dependencies.
+2. **Layer 2: Automated Dependency Updates (Dependabot)**: Configured via `.github/dependabot.yml` targeting `dev` on weekly schedule for automated security patching.
+3. **Layer 3: Container Vulnerability Scanning (Trivy)**: Integrated into `cd-release.yml` scanning GHCR images for Critical/High CVEs and publishing SARIF reports.
 
 ---
 

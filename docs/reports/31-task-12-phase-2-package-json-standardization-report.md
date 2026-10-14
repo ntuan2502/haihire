@@ -109,7 +109,7 @@ Organized cleanly into 7 visual categories:
 
 ## 5. References Updated Across Workspace
 
-1. **CI/CD Pipeline ([`.github/workflows/ci-cd.yml`](../../.github/workflows/ci-cd.yml)):**
+1. **CI/CD Pipeline (`.github/workflows/ci-cd.yml` (legacy)):**
    - Line 131: Updated Gate 2 invocation from `pnpm check:i18n` to `pnpm lint:i18n`.
 2. **Gate Runner ([`scripts/check-all.ts`](../../scripts/check-all.ts)):**
    - Step 2 updated ID and command from `check:i18n` to `lint:i18n`.

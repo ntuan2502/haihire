@@ -14,8 +14,8 @@ Following the release of **`v0.1.0`**, an architectural review of HaiHire's cont
 1. **Uniform Monolithic Execution Across All Branches:** Every commit to feature branches, integration branches, and release tags executes heavy monolithic validation (Docker image builds, full Playwright browser test suites, service container provisioning, and 606 unit tests), taking **12 to 18 minutes per run**.
 2. **Extreme Pipeline Duplication (~75% Redundancy):** A single standard feature lifecycle (`feat/*` $\rightarrow$ `dev` $\rightarrow$ `staging` $\rightarrow$ `main` $\rightarrow$ tag) currently executes the same static linter, typechecks, unit tests, and E2E suites **up to 4 times for the exact same immutable commit SHA**.
 3. **Trigger Inconsistencies & Collisions:**
-   - [`.github/workflows/ci-cd.yml`](../../.github/workflows/ci-cd.yml#L5) targets `develop` instead of the canonical `dev` branch.
-   - Pushing a release tag `v*.*.*` simultaneously triggers [`.github/workflows/docker-publish.yml`](../../.github/workflows/docker-publish.yml#L5) and [`.github/workflows/release.yml`](../../.github/workflows/release.yml#L5), causing duplicate GitHub Release generation and double container builds.
+   - `.github/workflows/ci-cd.yml` (legacy) targeted `develop` instead of the canonical `dev` branch.
+   - Pushing a release tag `v*.*.*` simultaneously triggered `.github/workflows/docker-publish.yml` and `.github/workflows/release.yml` (legacy), causing duplicate GitHub Release generation and double container builds.
 4. **Outdated Environment Emulation:** Several workflows still attempt to generate deprecated 3-file `.env` hierarchies (`backend/.env`, `frontend/.env`), conflicting with the Task #11 unified root `.env` architecture.
 
 ### Quantitative Savings Potential
@@ -46,10 +46,10 @@ HaiHire currently maintains **4 separate workflow files** in `.github/workflows/
 
 | Workflow File | Triggers | Target Branches / Ref | Jobs | Est. Wall Time | Cache Utilized | Concurrency Control |
 | :--- | :--- | :--- | :--- | :---: | :--- | :--- |
-| [`ci-cd.yml`](../../.github/workflows/ci-cd.yml) | `push`, `pull_request` | `main`, `develop` | `changes`, `static-gates`, `e2e`, `docker-build`, `deploy-staging`, `deploy-production` | **12 - 15 min** | `actions/cache@v5` (pnpm store + `.next/cache` + Playwright) | Group: `${{ github.workflow }}-${{ github.ref }}`, `cancel-in-progress: true` |
-| [`docker-publish.yml`](../../.github/workflows/docker-publish.yml) | `push` (tags `v*.*.*`), `workflow_dispatch` | Tags: `v*.*.*` | `test`, `test-e2e`, `build-backend`, `build-frontend`, `release` | **15 - 18 min** | `actions/cache@v5` (pnpm store + Playwright) | Group: `docker-publish-${{ github.ref }}`, `cancel-in-progress: false` |
+| `ci-cd.yml` (legacy) | `push`, `pull_request` | `main`, `develop` | `changes`, `static-gates`, `e2e`, `docker-build`, `deploy-staging`, `deploy-production` | **12 - 15 min** | `actions/cache@v5` (pnpm store + `.next/cache` + Playwright) | Group: `${{ github.workflow }}-${{ github.ref }}`, `cancel-in-progress: true` |
+| `docker-publish.yml` (legacy) | `push` (tags `v*.*.*`), `workflow_dispatch` | Tags: `v*.*.*` | `test`, `test-e2e`, `build-backend`, `build-frontend`, `release` | **15 - 18 min** | `actions/cache@v5` (pnpm store + Playwright) | Group: `docker-publish-${{ github.ref }}`, `cancel-in-progress: false` |
 | [`e2e-nightly.yml`](../../.github/workflows/e2e-nightly.yml) | `schedule` (cron `0 3 * * *`), `workflow_dispatch` | Schedule (default branch) | `e2e` | **8 - 10 min** | `actions/cache@v5` (pnpm store + Playwright) | Group: `e2e-nightly-${{ github.ref }}`, `cancel-in-progress: true` |
-| [`release.yml`](../../.github/workflows/release.yml) | `push` (tags `v*.*.*`), `workflow_dispatch` | Tags: `v*.*.*` | `release` | **1 - 2 min** | None | Group: `release-${{ github.ref }}`, `cancel-in-progress: false` |
+| `release.yml` (legacy) | `push` (tags `v*.*.*`), `workflow_dispatch` | Tags: `v*.*.*` | `release` | **1 - 2 min** | None | Group: `release-${{ github.ref }}`, `cancel-in-progress: false` |
 
 ---
 

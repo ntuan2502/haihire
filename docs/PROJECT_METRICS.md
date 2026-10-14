@@ -71,6 +71,23 @@
 
 ---
 
+## CI/CD & Security Architecture
+- **Workflows Count:** 7 single-responsibility workflows
+  - `ci-feature.yml` — Fast feedback on feature PRs (2–3 min)
+  - `ci-dev.yml` — 11 architecture gates on integration branch (3–4 min)
+  - `ci-staging.yml` — Pre-production E2E & build verification (8–10 min, triggers pending Task #20)
+  - `ci-main.yml` — Production release gatekeeper & pnpm audit (10–12 min)
+  - `cd-release.yml` — GHCR container publishing, Trivy scan, GitHub release (5–7 min)
+  - `e2e-nightly.yml` — Scheduled daily 10-journey Playwright sweep (03:00 UTC)
+  - `security-weekly.yml` — Scheduled weekly vulnerability & tenant AST sweep (06:00 UTC Mondays)
+- **CI Compute Efficiency:** ~72% reduction (~420 min/month vs ~1,500 min/month baseline)
+- **Security Defenses:** 3 active layers
+  - Layer 1: `pnpm audit --audit-level=high` (Build gate)
+  - Layer 2: GitHub Dependabot (Automated weekly security PRs targeting `dev`)
+  - Layer 3: Aquasecurity Trivy container scanner (SARIF report on GHCR images)
+
+---
+
 ## Environment Architecture
 
 - **Single Source of Truth:** Root `.env` file (gitignored).

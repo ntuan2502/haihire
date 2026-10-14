@@ -80,7 +80,7 @@ All 3/3 P3 findings are completely resolved and **CLOSED**, enhancing pipeline r
      ```json
      "lint:dtopipe": "node --no-warnings --experimental-strip-types scripts/check-dtopipe-coverage.ts"
      ```
-  4. Integrated directly into CI/CD pipeline in [`.github/workflows/ci-cd.yml`](../../../.github/workflows/ci-cd.yml):
+  4. Integrated directly into CI/CD pipeline in `.github/workflows/ci-cd.yml` (legacy):
      ```yaml
      - name: Run linter and type checks
        run: pnpm lint

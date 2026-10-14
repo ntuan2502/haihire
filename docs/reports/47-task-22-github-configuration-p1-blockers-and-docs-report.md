@@ -26,7 +26,7 @@ Task #22 implements the automated file artifacts (`.github/CODEOWNERS`), generat
 ## 2. Artifacts Created & Committed
 
 ### 2.1 `.github/CODEOWNERS`
-- **Location:** [`.github/CODEOWNERS`](file:///c:/Workspaces/haihire/.github/CODEOWNERS)
+- **Location:** [`.github/CODEOWNERS`](../../.github/CODEOWNERS)
 - **Purpose:** Automatically routes PR review assignments to maintain domain expertise oversight across the ATS platform:
   - Default ownership: `* @ntuan2502`
   - Core Services & Data Model: `/backend/ @ntuan2502`
@@ -37,7 +37,7 @@ Task #22 implements the automated file artifacts (`.github/CODEOWNERS`), generat
   - Security-Critical Subsystems: `/backend/src/auth/`, `/backend/src/common/guards/`, `/backend/src/prisma/ @ntuan2502`
 
 ### 2.2 `docs/runbooks/github-manual-fixes.md`
-- **Location:** [`docs/runbooks/github-manual-fixes.md`](file:///c:/Workspaces/haihire/docs/runbooks/github-manual-fixes.md)
+- **Location:** [`docs/runbooks/github-manual-fixes.md`](../runbooks/github-manual-fixes.md)
 - **Purpose:** Step-by-step administrative guide for the project owner to execute manual GitHub UI configurations that cannot be automated via standard git commits.
 
 ---

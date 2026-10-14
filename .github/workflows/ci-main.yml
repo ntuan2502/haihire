@@ -1,0 +1,294 @@
+name: Production Gatekeeper CI (Main Branch)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-main-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ============================================================================
+  # 1. FULL ARCHITECTURAL & UNIT TEST VERIFICATION
+  # ============================================================================
+  full-check:
+    name: Full CI Quality Pipeline
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: haihire_test
+          POSTGRES_PASSWORD: haihire_test_password
+          POSTGRES_DB: haihire_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:8.0.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup CI Single Root Environment
+        run: |
+          cp .env.example .env
+          sed -i 's/POSTGRES_USER=haihire_user/POSTGRES_USER=haihire_test/g' .env
+          sed -i 's/POSTGRES_PASSWORD=haihire_password/POSTGRES_PASSWORD=haihire_test_password/g' .env
+          sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
+          sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
+          sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+
+      - name: Run Full CI Architecture Checks & Tests
+        run: pnpm check:all
+
+  # ============================================================================
+  # 2. SECURITY AUDIT: DIRECT DEPENDENCIES
+  # ============================================================================
+  security-audit:
+    name: Dependency Security Audit
+    needs: full-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Audit Direct Production Dependencies
+        run: pnpm audit --audit-level=high --prod
+
+  # ============================================================================
+  # 3. PLAYWRIGHT END-TO-END GATE
+  # ============================================================================
+  e2e:
+    name: Playwright End-to-End Suite
+    needs: full-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      CI: "true"
+      PLAYWRIGHT_BASE_URL: "http://localhost:13000"
+
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_USER: haihire_test
+          POSTGRES_PASSWORD: haihire_test_password
+          POSTGRES_DB: haihire_test_db
+        ports:
+          - 15432:5432
+        options: >-
+          --health-cmd "pg_isready -U haihire_test -d haihire_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:8.0.2-alpine
+        ports:
+          - 16379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Single Root Environment for E2E
+        run: |
+          cp .env.example .env
+          sed -i 's/BACKEND_PORT=3001/BACKEND_PORT=13001/g' .env
+          sed -i 's/FRONTEND_PORT=3000/FRONTEND_PORT=13000/g' .env
+          sed -i 's/POSTGRES_PORT=5432/POSTGRES_PORT=15432/g' .env
+          sed -i 's/POSTGRES_USER=haihire_user/POSTGRES_USER=haihire_test/g' .env
+          sed -i 's/POSTGRES_PASSWORD=haihire_password/POSTGRES_PASSWORD=haihire_test_password/g' .env
+          sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
+          sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:15432\/haihire_test_db/g' .env
+          sed -i 's/REDIS_PORT=6379/REDIS_PORT=16379/g' .env
+          sed -i 's/MINIO_PORT=9000/MINIO_PORT=19000/g' .env
+          sed -i 's/MINIO_CONSOLE_PORT=9001/MINIO_CONSOLE_PORT=19001/g' .env
+          sed -i 's/http:\/\/localhost:9000/http:\/\/localhost:19000/g' .env
+          sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+
+      - name: Start MinIO Object Storage & Wait for Readiness
+        run: |
+          docker run -d --name minio \
+            --user 0:0 \
+            -v minio_data:/data \
+            -p 19000:9000 -p 19001:9001 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4 \
+            server /data --console-address ":9001"
+
+          timeout 60s bash -c '
+            until curl -sf http://localhost:19000/minio/health/live > /dev/null; do
+              if ! docker ps | grep -q minio; then
+                echo "❌ MinIO container stopped unexpectedly!"
+                docker logs minio
+                exit 1
+              fi
+              sleep 2
+            done
+          '
+          echo "MinIO ready on port 19000!"
+
+      - name: Wait for Redis/Valkey Readiness
+        run: |
+          timeout 60s bash -c 'until (exec 3<>/dev/tcp/localhost/16379) 2>/dev/null; do sleep 1; done'
+          echo "Redis ready on port 16379!"
+
+      - name: Run Database Migrations & Seed
+        run: |
+          pnpm --filter ./backend run db:update
+          pnpm --filter ./backend run db:seed
+        env:
+          DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
+          DEMO_SEED_PASSWORD: dev-seed-password-2026
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Pre-build application
+        run: pnpm build
+
+      - name: Pre-start services in background & wait for healthcheck
+        run: |
+          pnpm dev &
+          timeout 180s bash -c '
+            until curl -sf http://localhost:13000 > /dev/null && curl -sf http://localhost:13001/health > /dev/null; do
+              sleep 3
+            done
+          '
+          echo "Services ready!"
+
+      - name: Run Playwright E2E Tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright test report on failure
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: main-playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+
+  # ============================================================================
+  # 4. DOCKER BUILD DRY-RUN VERIFICATION (NO PUSH)
+  # ============================================================================
+  docker-verify:
+    name: Docker Build Dry-Run Verification
+    needs: full-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Backend Container Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          tags: test-backend:latest
+          cache-from: type=gha
+
+      - name: Verify Frontend Container Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: false
+          tags: test-frontend:latest
+          cache-from: type=gha

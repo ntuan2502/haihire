@@ -15,7 +15,7 @@
     "build": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.5",
     "typescript": "^6.0.3"
   }
 }

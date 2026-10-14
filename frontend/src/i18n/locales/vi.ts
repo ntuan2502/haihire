@@ -121,6 +121,21 @@ export const vi: TranslationSchema = {
     VALIDATION_ERROR: "Dữ liệu cung cấp không hợp lệ. Vui lòng kiểm tra lại.",
     RESOURCE_NOT_FOUND: "Tài nguyên không tồn tại.",
     NETWORK_ERROR: "Lỗi kết nối mạng. Vui lòng kiểm tra đường truyền.",
+    boundary: {
+      title: "Có lỗi xảy ra",
+      description: "Chúng tôi đã ghi nhận sự cố. Vui lòng thử lại.",
+      tryAgain: "Thử lại",
+      goHome: "Về trang chủ",
+      dashboardTitle: "Lỗi Dashboard",
+      dashboardDescription: "Không thể tải dashboard. Vui lòng thử lại.",
+      careersTitle: "Lỗi trang tuyển dụng",
+      careersDescription: "Không thể tải trang tuyển dụng. Vui lòng thử lại.",
+    },
+    notFound: {
+      title: "Không tìm thấy trang",
+      description: "Trang bạn tìm không tồn tại hoặc đã bị di chuyển.",
+      goHome: "Về trang chủ",
+    },
   },
   nav: {
     dashboard: "Tổng quan",

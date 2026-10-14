@@ -119,6 +119,21 @@ export interface TranslationSchema {
     VALIDATION_ERROR: string;
     RESOURCE_NOT_FOUND: string;
     NETWORK_ERROR: string;
+    boundary: {
+      title: string;
+      description: string;
+      tryAgain: string;
+      goHome: string;
+      dashboardTitle: string;
+      dashboardDescription: string;
+      careersTitle: string;
+      careersDescription: string;
+    };
+    notFound: {
+      title: string;
+      description: string;
+      goHome: string;
+    };
   };
   nav: {
     dashboard: string;

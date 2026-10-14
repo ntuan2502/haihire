@@ -121,6 +121,21 @@ export const en: TranslationSchema = {
     VALIDATION_ERROR: "The provided data is invalid. Please check your inputs.",
     RESOURCE_NOT_FOUND: "Requested resource was not found.",
     NETWORK_ERROR: "Network error occurred. Please check your internet connection.",
+    boundary: {
+      title: "Something went wrong",
+      description: "We've logged the issue. Please try again.",
+      tryAgain: "Try again",
+      goHome: "Go home",
+      dashboardTitle: "Dashboard Error",
+      dashboardDescription: "Could not load dashboard. Please try again.",
+      careersTitle: "Careers Page Error",
+      careersDescription: "Could not load careers page. Please try again.",
+    },
+    notFound: {
+      title: "Page not found",
+      description: "The page you're looking for doesn't exist or has been moved.",
+      goHome: "Go home",
+    },
   },
   nav: {
     dashboard: "Dashboard",

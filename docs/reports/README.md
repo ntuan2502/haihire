@@ -37,6 +37,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [36 — Task #14B Follow-up: Verification of 2 Review Observations](36-task-14b-followup-verification-report.md)
 - [37 — Task #14B Second Follow-up: Atomic Increment Verification & Concurrency Control](37-task-14b-second-followup-atomic-increment-report.md)
 - [38 — Task #14B Third Follow-up: Redis/Valkey Distributed Lock for Click Counter](38-task-14b-third-followup-redis-distributed-lock-report.md)
+- [39 — Task #14C: Public Careers ISR Caching & Email Queue DLQ Alerting](39-task-14c-isr-caching-email-dlq-report.md)
 
 ## Archived Reports
 

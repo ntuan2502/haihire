@@ -87,6 +87,8 @@ jobs:
           sed -i 's/MINIO_PORT=9000/MINIO_PORT=19000/g' .env
           sed -i 's/MINIO_CONSOLE_PORT=9001/MINIO_CONSOLE_PORT=19001/g' .env
           sed -i 's/http:\/\/localhost:9000/http:\/\/localhost:19000/g' .env
+          sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
+          sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
 
       - name: Start MinIO Object Storage & Wait for Readiness

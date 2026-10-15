@@ -48,7 +48,7 @@ HaiHire currently maintains **4 separate workflow files** in `.github/workflows/
 | :--- | :--- | :--- | :--- | :---: | :--- | :--- |
 | `ci-cd.yml` (legacy) | `push`, `pull_request` | `main`, `develop` | `changes`, `static-gates`, `e2e`, `docker-build`, `deploy-staging`, `deploy-production` | **12 - 15 min** | `actions/cache@v5` (pnpm store + `.next/cache` + Playwright) | Group: `${{ github.workflow }}-${{ github.ref }}`, `cancel-in-progress: true` |
 | `docker-publish.yml` (legacy) | `push` (tags `v*.*.*`), `workflow_dispatch` | Tags: `v*.*.*` | `test`, `test-e2e`, `build-backend`, `build-frontend`, `release` | **15 - 18 min** | `actions/cache@v5` (pnpm store + Playwright) | Group: `docker-publish-${{ github.ref }}`, `cancel-in-progress: false` |
-| [`e2e-nightly.yml`](../../.github/workflows/e2e-nightly.yml) | `schedule` (cron `0 3 * * *`), `workflow_dispatch` | Schedule (default branch) | `e2e` | **8 - 10 min** | `actions/cache@v5` (pnpm store + Playwright) | Group: `e2e-nightly-${{ github.ref }}`, `cancel-in-progress: true` |
+| `e2e-nightly.yml` (legacy) | `schedule` (cron `0 3 * * *`), `workflow_dispatch` | Schedule (default branch) | `e2e` | **8 - 10 min** | `actions/cache@v5` (pnpm store + Playwright) | Group: `e2e-nightly-${{ github.ref }}`, `cancel-in-progress: true` |
 | `release.yml` (legacy) | `push` (tags `v*.*.*`), `workflow_dispatch` | Tags: `v*.*.*` | `release` | **1 - 2 min** | None | Group: `release-${{ github.ref }}`, `cancel-in-progress: false` |
 
 ---

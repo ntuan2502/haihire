@@ -24,7 +24,7 @@ Phase 2 of Task #19 has successfully restructured the HaiHire CI/CD pipeline fro
 | [`.github/workflows/ci-staging.yml`](../../.github/workflows/ci-staging.yml) | `workflow_dispatch` (Disabled triggers pending Task #20) | 11 CI gates, test coverage, full Playwright E2E with MinIO & Valkey, standalone build check | 8–10 min |
 | [`.github/workflows/ci-main.yml`](../../.github/workflows/ci-main.yml) | `pull_request` to `main` | Comprehensive check (`check:all`), full E2E test suite, production dependency audit, dry-run Docker build | 10–12 min |
 | [`.github/workflows/cd-release.yml`](../../.github/workflows/cd-release.yml) | `push` tags `v*.*.*`, `workflow_dispatch` | Buildx multi-arch build, GHCR publication (`ghcr.io`), Aquasecurity Trivy vulnerability scan, SARIF security upload, GitHub Release creation | 5–7 min |
-| [`.github/workflows/e2e-nightly.yml`](../../.github/workflows/e2e-nightly.yml) | Nightly cron (`0 2 * * *`), manual dispatch | Full end-to-end integration suite across background jobs and queues using single root `.env` | ~15 min |
+| [`.github/workflows/e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml) | Weekly cron (`0 3 * * 1`), manual dispatch | Full end-to-end integration suite across background jobs and queues using single root `.env` | ~15 min |
 | [`.github/workflows/security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Weekly cron (`0 6 * * 1`), manual dispatch | Moderate/high audit report, tenant scoping static analysis, outdated dependency audit, webhook alerts | ~5 min |
 
 ### 1.2 Configuration Files Created

@@ -78,7 +78,7 @@
   - `ci-staging.yml` — Pre-production E2E & build verification (8–10 min, triggers pending Task #20)
   - `ci-main.yml` — Production release gatekeeper & pnpm audit (10–12 min)
   - `cd-release.yml` — GHCR container publishing, Trivy scan, GitHub release (5–7 min)
-  - `e2e-nightly.yml` — Scheduled daily 10-journey Playwright sweep (03:00 UTC)
+  - `e2e-weekly.yml` — Scheduled weekly 10-journey Playwright sweep (03:00 UTC Mondays)
   - `security-weekly.yml` — Scheduled weekly vulnerability & tenant AST sweep (06:00 UTC Mondays)
 - **CI Compute Efficiency:** ~72% reduction (~420 min/month vs ~1,500 min/month baseline)
 - **Security Defenses:** 3 active layers

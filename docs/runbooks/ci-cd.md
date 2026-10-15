@@ -44,7 +44,7 @@ All workflows are located in [`.github/workflows/`](../../.github/workflows/):
 | [`ci-staging.yml`](../../.github/workflows/ci-staging.yml) | Push & PR to `staging` | 11 CI gates, coverage, Playwright E2E suite, production build | 8 - 10 min |
 | [`ci-main.yml`](../../.github/workflows/ci-main.yml) | PRs targeting `main` | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run | 10 - 12 min |
 | [`cd-release.yml`](../../.github/workflows/cd-release.yml) | Annotated tags `v*.*.*` | Docker Buildx, GHCR publish, Trivy container scan, GitHub release | 5 - 7 min |
-| [`e2e-nightly.yml`](../../.github/workflows/e2e-nightly.yml) | Schedule: `0 3 * * *` (03:00 UTC daily) | Complete Playwright test regression matrix | 8 - 10 min |
+| [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml) | Schedule: `0 3 * * 1` (03:00 UTC Mondays) | Complete Playwright test regression matrix | 8 - 10 min |
 | [`security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Schedule: `0 6 * * 1` (06:00 UTC Mondays) | Moderate & high CVE audits, tenant scoping AST sweep, outdated report | 3 - 5 min |
 
 ---

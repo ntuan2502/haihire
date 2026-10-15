@@ -44,7 +44,7 @@
 - **DevOps:**
   - *Docker & Container Registry:* Docker Compose v2 (`docker-compose.yml` for dev infra, `docker-compose.prod.yml` pulling pre-built images from GitHub Container Registry - GHCR).
   - *Reverse Proxy:* Caddy `2.8-alpine` (TLS termination & reverse proxy).
-  - *CI/CD:* GitHub Actions (`.github/workflows/ci-cd.yml`, `docker-publish.yml`, `e2e-nightly.yml`, `release.yml`) with automated architecture quality gates.
+  - *CI/CD:* GitHub Actions (Layered CI/CD: `ci-feature.yml`, `ci-dev.yml`, `ci-staging.yml`, `ci-main.yml`, `cd-release.yml`, `e2e-weekly.yml`, `security-weekly.yml`) with automated architecture quality gates.
   - *Monitoring:* Internal Prometheus metrics endpoint at `/metrics` via `MetricsService` and Pushgateway for cron batch metrics.
 - **Package Manager:** `pnpm` `12.6.0` (workspace configuration in `pnpm-workspace.yaml`).
 

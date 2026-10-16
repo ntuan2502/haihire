@@ -52,4 +52,6 @@ export const SAFE_QUERY_PATTERNS: RegExp[] = [
   /findBySlug/,
   // Health check query
   /healthCheck/,
+  // Public tracking link click recording by token
+  /recordClick/,
 ];

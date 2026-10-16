@@ -49,7 +49,81 @@ All workflows are located in [`.github/workflows/`](../../.github/workflows/):
 
 ---
 
-## 2. Staging Branch & Environment Operations
+## 2. Test Pyramid & Execution Matrix
+
+HaiHire adopts a strictly stratified Testing Pyramid to ensure rapid developer feedback loops, high regression coverage, and cost-effective runner utilization:
+
+```
+          / \
+         /   \       End-to-End (E2E) UI Tests
+        / E2E \      Playwright Chromium • 10 journeys (19 specs, 6 cross-tenant)
+       /───────\     Critical Paths Only • Staging & Weekly Sweep
+      /         \
+     /Integration\   Integration & Contract Tests
+    /  & Contract \  Saga DB Transactions • MinIO DLQ • API Contracts
+   /───────────────\ DtoPipe Protection • i18n Dictionary Parity
+  /                 \
+ /    Unit Tests     \ Unit Test Matrix
+/  (Backend+Frontend) \ Vitest • 656 tests • 75 suites • <25s
+/─────────────────────\ 100% PR execution • Fast fail
+```
+
+### 2.1 Layer Rationale
+
+1. **Unit & Integration Tests (Vitest - 656 tests):** Fast execution (<25 seconds), zero external service dependencies (pure mock/in-memory), execute on **100% of pull requests and commits**.
+2. **Static Architecture Gates (11 Gates):** Env sync, i18n parity, ESLint, typecheck, DtoPipe, error code i18n, API contracts, Prometheus rules, tenant scoping, doc links, test count diff. Total runtime ~25s.
+3. **End-to-End (E2E) Tests (Playwright - 19 specs across 10 critical user journeys):** Real browser journeys (including 6 cross-tenant security tests, Careers SEO & themes, candidate applications, multi-step ATS login, Kanban drag-and-drop). Heavyweight requirement with PostgreSQL, Valkey, and MinIO services. Triggered on staging push, PR to main, and weekly schedule.
+
+### 2.2 Execution Matrix
+
+| Test Layer                   | Local Dev (`check:all:fast`) | Pull Request (`ci-feature.yml`) | Push to `dev` (`ci-dev.yml`) | Push to `staging` (`ci-staging.yml`) | PR to `main` (`ci-main.yml`) | Weekly (`e2e-weekly.yml`) | Tagged Release (`cd-release.yml`) |
+| :--------------------------- | :--------------------------: | :-----------------------------: | :--------------------------: | :----------------------------------: | :--------------------------: | :-----------------------: | :-------------------------------: |
+| **Static Gates (1-11)**      |           ✅ Runs            |             ✅ Runs             |  ✅ Runs (code) / ~30s docs  |      ✅ Runs (code) / ~30s docs      |           ✅ Runs            |             —             |              ✅ Runs              |
+| **Unit Tests (`pnpm test`)** |           ✅ Runs            |             ✅ Runs             |           ✅ Runs            |               ✅ Runs                |           ✅ Runs            |             —             |              ✅ Runs              |
+| **Next.js Package Build**    |           Optional           |           ⏭️ Skipped            |          ⏭️ Skipped          |               ✅ Runs                |           ✅ Runs            |             —             |              ✅ Runs              |
+| **Playwright E2E Tests**     |    Optional (`test:e2e`)     |           ⏭️ Skipped            |          ⏭️ Skipped          |               🟢 Runs                |           🟢 Runs            |     🟢 Runs (staging)     |           🟢 Mandatory            |
+| **Docker Build & Push**      |           Optional           |           ⏭️ Skipped            |          ⏭️ Skipped          |              ⏭️ Skipped              |          🟢 Dry-run          |        ⏭️ Skipped         |          🟢 GHCR Publish          |
+
+---
+
+## 3. Critical Paths & Path Filtering
+
+HaiHire uses path filtering (`dorny/paths-filter@v3`) across workflows to eliminate redundant compute:
+
+### 3.1 Two-Tier Path Filtering (Task #32)
+
+- **Code Changes:** Any changes to backend, frontend, packages, scripts, or workflows trigger full architecture gates, unit tests, and compilation.
+- **Documentation-Only Changes:** Changes strictly isolated to `docs/**` and `*.md` bypass the 11 CI gates, test containers, E2E suites, and builds, executing only `docs-verify` (`lint:doc-links` + `lint:i18n`) in **~30 seconds**.
+
+### 3.2 Critical Path Definitions
+
+#### Frontend Critical Paths
+
+- `frontend/src/app/**`: Core App Router routes (e.g. `/auth/login`, `/careers/*`, `/dashboard/*`).
+- `frontend/src/components/**`: UI primitives, shared controls, forms, and layout shells.
+- `frontend/src/lib/api/**`: Client-side HTTP client, error handlers, and endpoint wrappers.
+- `frontend/src/i18n/**`: Translation dictionaries and locale selectors.
+- `frontend/tests/e2e/**`: Changes or additions to E2E test specifications.
+
+#### Backend Critical Paths
+
+- `backend/src/auth/**`: Authentication controllers, JWT guards, password hashing, and login endpoints.
+- `backend/src/applications/**`: Job application processing, resume uploads, stage transitions.
+- `backend/src/candidates/**`: Candidate profile management and document storage.
+- `backend/src/jobs/**`: Job requisition CRUD, public careers endpoints, pipeline definitions.
+- `backend/src/common/**`: Magic bytes, MIME filters, DtoPipe, and upload utilities.
+- `backend/src/prisma/**`: Database schema, seed data, and migration scripts.
+
+#### Monorepo & Configuration Critical Paths
+
+- `packages/**`: Shared contracts, domain models, error code definitions.
+- `package.json`, `pnpm-lock.yaml`: Dependency upgrades and tool modifications.
+- `tsconfig.json`, `next.config.ts`, `playwright.config.ts`: Runtime and build configurations.
+- `.github/workflows/**`: CI/CD automation and quality gate workflows.
+
+---
+
+## 4. Staging Branch & Environment Operations
 
 The `staging` branch is HaiHire's pre-production validation gate where integrated changes are verified under full production-like conditions (database migrations, Playwright E2E, and production build).
 
@@ -93,7 +167,7 @@ docker compose --profile app up -d --build
 
 ---
 
-## 3. 3-Tier Security Defenses
+## 5. 3-Tier Security Defenses
 
 1. **Layer 1: Dependency Vulnerability Audit (`pnpm audit`)**
    - Automatically executed in `ci-main.yml` and `security-weekly.yml`.
@@ -110,11 +184,11 @@ docker compose --profile app up -d --build
 
 ---
 
-## 4. Manual Production Deployment SOP
+## 6. Manual Production Deployment SOP
 
 Per platform governance, container publishing to GitHub Container Registry (`ghcr.io`) is automated upon release tag creation, while production deployment remains an explicit operator action.
 
-### 4.1 Standard Deployment Procedure
+### 6.1 Standard Deployment Procedure
 
 1. **Log in to Target Production Host:**
 
@@ -156,9 +230,9 @@ Per platform governance, container publishing to GitHub Container Registry (`ghc
 
 ---
 
-## 5. Rollback Procedures
+## 7. Rollback Procedures
 
-### 5.1 Production Container Rollback (< 2 Minutes)
+### 7.1 Production Container Rollback (< 2 Minutes)
 
 If a newly deployed release exhibits runtime regressions:
 
@@ -180,7 +254,7 @@ If a newly deployed release exhibits runtime regressions:
    curl -f http://localhost:13001/health
    ```
 
-### 5.2 CI/CD Pipeline Rollback
+### 7.2 CI/CD Pipeline Rollback
 
 If a newly migrated GitHub Actions workflow fails:
 
@@ -197,7 +271,7 @@ If a newly migrated GitHub Actions workflow fails:
 
 ---
 
-## 6. Troubleshooting Guide
+## 8. Troubleshooting Guide
 
 | Issue                                   | Symptom                                         | Diagnostic Step                            | Remediation                                                                         |
 | :-------------------------------------- | :---------------------------------------------- | :----------------------------------------- | :---------------------------------------------------------------------------------- |

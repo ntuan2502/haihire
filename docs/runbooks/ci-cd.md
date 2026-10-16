@@ -127,12 +127,13 @@ HaiHire uses path filtering (`dorny/paths-filter@v3`) across workflows to elimin
 
 The `staging` branch is HaiHire's pre-production validation gate where integrated changes are verified under full production-like conditions (database migrations, Playwright E2E, and production build).
 
-### 2.1 Staging Promotion Workflow
+### 4.1 Staging Promotion Workflow
 
 1. **Promotion from `dev` to `staging`:**
    - After feature branches merge into `dev` and pass `ci-dev.yml`:
    - Open Pull Request: `dev` -> `staging`.
    - Requires: **1 peer review approval**.
+   - > **Note (Branch Protection Workaround):** PRs from `dev` to `staging` will not automatically trigger required checks because Task #32 removed the `pull_request` trigger from `ci-staging.yml`. Follow the [Staging Promotion Workaround](branch-protection.md#known-workaround-staging-promotion) to temporarily bypass admin enforcement for merging.
 2. **Automated Verification:**
    - Once merged to `staging`, `ci-staging.yml` executes:
      - 11 Architecture Quality Gates (`pnpm check:all:fast`).
@@ -150,7 +151,7 @@ The `staging` branch is HaiHire's pre-production validation gate where integrate
    - After merging into `main`, tag the release (`git tag -a vX.Y.Z -m "Release vX.Y.Z"`).
    - This triggers immutable container publishing via `cd-release.yml`.
 
-### 2.2 Manual Deploy to Staging (Local Docker)
+### 4.2 Manual Deploy to Staging (Local Docker)
 
 To run the complete production-grade stack locally from the staging branch:
 
@@ -273,9 +274,10 @@ If a newly migrated GitHub Actions workflow fails:
 
 ## 8. Troubleshooting Guide
 
-| Issue                                   | Symptom                                         | Diagnostic Step                            | Remediation                                                                         |
-| :-------------------------------------- | :---------------------------------------------- | :----------------------------------------- | :---------------------------------------------------------------------------------- |
-| **`pnpm audit` Failure**                | CI fails on `security-audit`                    | Check runner log for failing package       | Run `pnpm audit` locally. Update or patch the affected package in `package.json`.   |
-| **Playwright Healthcheck Timeout**      | E2E job times out waiting for ports 13000/13001 | Check step output for `connection refused` | Verify MinIO and Valkey readiness steps passed. Inspect background `pnpm dev` logs. |
-| **GHCR Login Error**                    | `docker login` fails with 403 Forbidden         | Check workflow `permissions:` block        | Ensure `packages: write` is declared in workflow job permissions.                   |
-| **Dorny Path Filter Misclassification** | Fast checks skipped when code changed           | Review path filter patterns                | Verify edited files match patterns in `ci-feature.yml` (`filters:` block).          |
+| Issue                                   | Symptom                                         | Diagnostic Step                            | Remediation                                                                                         |
+| :-------------------------------------- | :---------------------------------------------- | :----------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **`pnpm audit` Failure**                | CI fails on `security-audit`                    | Check runner log for failing package       | Run `pnpm audit` locally. Update or patch the affected package in `package.json`.                   |
+| **Playwright Healthcheck Timeout**      | E2E job times out waiting for ports 13000/13001 | Check step output for `connection refused` | Verify MinIO and Valkey readiness steps passed. Inspect background `pnpm dev` logs.                 |
+| **GHCR Login Error**                    | `docker login` fails with 403 Forbidden         | Check workflow `permissions:` block        | Ensure `packages: write` is declared in workflow job permissions.                                   |
+| **Dorny Path Filter Misclassification** | Fast checks skipped when code changed           | Review path filter patterns                | Verify edited files match patterns in `ci-feature.yml` (`filters:` block).                          |
+| **Staging PR Blocked by Checks**        | Required checks not running on staging PR       | Missing `pull_request` trigger in workflow | Follow the [Staging Promotion Workaround](branch-protection.md#known-workaround-staging-promotion). |

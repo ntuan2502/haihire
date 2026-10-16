@@ -154,3 +154,46 @@ When workflow triggers change (e.g., Task #32 removing `pull_request` triggers f
 - **Remediation:**
   1. Create environment `production` under `Settings` $\rightarrow$ `Environments`.
   2. Restrict deployments to tag pattern `v*.*.*` and branch `main`.
+
+---
+
+## Known Workaround: Staging Promotion
+
+### Context
+
+Task #32 removed the `pull_request` trigger from `.github/workflows/ci-staging.yml`.
+Branch protection `staging` still requires 4 checks from this workflow:
+
+- 11 CI Architecture Gates
+- Unit & Integration Tests (Coverage)
+- Playwright End-to-End Suite
+- Production Build Verification
+
+When creating a PR `dev` → `staging`, checks do not run automatically → PR is blocked.
+
+### Workaround (Manual, ~2 min)
+
+1. Go to: [https://github.com/ntuan2502/haihire/settings/branches](https://github.com/ntuan2502/haihire/settings/branches)
+2. Edit rule `staging`.
+3. Uncheck "Do not allow bypassing the above settings".
+4. Save.
+5. Merge PR `dev` → `staging`.
+6. Re-check "Do not allow bypassing the above settings".
+7. Save.
+
+### Why not fix permanently?
+
+Frequency of staging promotion is very low (~1-2 times/month).
+Permanent fix (add back `pull_request` trigger) would cause duplicate runs (~3m per merge), not worth the trade-off.
+
+→ Accept manual workaround.
+
+### When to reconsider?
+
+If:
+
+- Promotion frequency increases (>5 times/month).
+- Another team member does not have admin access.
+- Automated promotion pipeline is introduced.
+
+→ Consider permanent fix (revert Task #32 change).

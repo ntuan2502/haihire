@@ -75,15 +75,16 @@ Tasks #26 — #30. 5 monolithic files decomposed.
 
 ---
 
-## Phase 4: Optimization & Release Engineering (Reports 59–62+)
+## Phase 4: Optimization & Release Engineering (Reports 59–64+)
 
-Tasks #31 — #33+. v0.1.2 release, CI/CD optimization, documentation reorganization.
+Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganization, v0.1.3 release.
 
 - [59 — Task #31: Post-Refactor Cleanup + v0.1.2 Release Report](./59-task-31-post-refactor-cleanup-v0.1.2-release-report.md)
 - [60 — Task #32 Prep: CI/CD Optimization File Content Report](./60-task-32-prep-ci-cd-optimization-file-content-report.md)
 - [61 — Task #32: CI/CD Optimization + Husky Restructure Report](./61-task-32-ci-cd-optimization-husky-restructure-report.md)
 - [62 — Task #33 Phase 1: Docs Audit & Reorganization Plan Report](./62-task-33-phase-1-docs-audit-and-reorganization-plan-report.md)
 - [63 — Task #33 Phase 2: Docs Reorganization Completion Report](./63-task-33-phase-2-docs-reorganization-completion-report.md)
+- [64 — Task #34: v0.1.3 Release Completion Report](./64-task-34-v0.1.3-release-completion-report.md)
 
 ---
 

@@ -58,8 +58,8 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [57 — Task #30 Wave 3: ApplicationsDataTable Characterization Tests Report](57-task-30-wave-3-applications-data-table-characterization-tests-report.md)
 - [58 — Task #30 Wave 3: ApplicationsDataTable Component Refactor Report](58-task-30-wave-3-applications-data-table-refactor-report.md)
 - [59 — Task #31: Post-Refactor Cleanup + v0.1.2 Release Report](59-task-31-post-refactor-cleanup-v0.1.2-release-report.md)
-
-
+- [60 — Task #32 Prep: CI/CD Optimization File Content Report](60-task-32-prep-ci-cd-optimization-file-content-report.md)
+- [61 — Task #32: CI/CD Optimization + Husky Restructure Report](61-task-32-ci-cd-optimization-husky-restructure-report.md)
 
 ## Archived Reports
 

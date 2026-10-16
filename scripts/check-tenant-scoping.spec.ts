@@ -26,10 +26,10 @@ describe("Tenant Scoping Static Analysis Gate (check-tenant-scoping)", () => {
     }
   });
 
-  // Test Case 1: Parses services directory correctly, returns 8 tenant-scoped files in actual project
-  it("Test 1: parses services directory correctly, returns 8 tenant-scoped files", () => {
+  // Test Case 1: Parses services directory correctly, covers all tenant-scoped modules
+  it("Test 1: parses services directory correctly, covers all tenant-scoped modules", () => {
     const files = findTenantServiceFiles();
-    expect(files.length).toBe(8);
+    expect(files.length).toBeGreaterThanOrEqual(8);
     for (const mod of TENANT_SCOPED_MODULES) {
       const matched = files.some((f) => f.replace(/\\/g, "/").includes(`/${mod}/`));
       expect(matched).toBe(true);

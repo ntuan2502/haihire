@@ -1,10 +1,12 @@
-name: E2E Verification Suite
+name: E2E Weekly Verification
 
 on:
+  schedule:
+    - cron: '0 3 * * 1'  # Monday 3AM UTC (weekly)
   workflow_dispatch:
 
 concurrency:
-  group: e2e-nightly-${{ github.ref }}
+  group: e2e-weekly-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -12,7 +14,7 @@ permissions:
 
 jobs:
   e2e:
-    name: Full Nightly Playwright E2E Suite
+    name: Full Weekly Playwright E2E Suite
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -71,7 +73,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Single Root Environment for Nightly E2E
+      - name: Setup Single Root Environment for Weekly E2E
         run: |
           cp .env.example .env
           sed -i 's/BACKEND_PORT=3001/BACKEND_PORT=13001/g' .env
@@ -85,6 +87,8 @@ jobs:
           sed -i 's/MINIO_PORT=9000/MINIO_PORT=19000/g' .env
           sed -i 's/MINIO_CONSOLE_PORT=9001/MINIO_CONSOLE_PORT=19001/g' .env
           sed -i 's/http:\/\/localhost:9000/http:\/\/localhost:19000/g' .env
+          sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
+          sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
 
       - name: Start MinIO Object Storage & Wait for Readiness
@@ -154,6 +158,6 @@ jobs:
         uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: nightly-playwright-report
+          name: weekly-playwright-report
           path: playwright-report/
           if-no-files-found: ignore

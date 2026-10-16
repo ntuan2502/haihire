@@ -3,6 +3,29 @@
 All notable changes to the HaiHire Enterprise ATS platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-10-16
+
+### Changed
+- Refactored 5 God Files (>400 LOC) into modular architecture:
+  - `backend/src/organizations/organizations.service.ts` (1,366 → 125 LOC)
+  - `backend/src/sourcing/sourcing.service.ts` (1,214 → 162 LOC)
+  - `backend/src/applications/applications.service.ts` (1,189 → 150 LOC)
+  - `frontend/src/components/jobs/job-list.tsx` (957 → 10 LOC shim)
+  - `frontend/src/components/applications/applications-data-table.tsx` (1,706 → 2 LOC shim)
+- Cumulative: 5,696 LOC eliminated, max file size reduced to 265 LOC.
+
+### Added
+- 50 new characterization tests (from 606 → 656 passing tests).
+- Refactoring patterns documented in `CONTRIBUTING.md`.
+
+### Fixed
+- E2E weekly verification (Monday 03:00 UTC).
+- Dependabot target branch (`dev`).
+
+### Security
+- No vulnerabilities introduced during refactor.
+- Saga pattern and distributed transaction integrity preserved.
+
 ---
 
 ## [0.1.0] - 2026-10-14

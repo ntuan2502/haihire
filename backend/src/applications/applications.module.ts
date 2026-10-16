@@ -3,7 +3,13 @@ import { BullModule } from "@nestjs/bullmq";
 import { MinioModule } from "../minio/minio.module";
 import { PrismaService } from "../prisma/prisma.service";
 import { ApplicationsController } from "./applications.controller";
-import { ApplicationsService } from "./applications.service";
+import {
+  ApplicationsService,
+  ApplicationsQueryService,
+  ApplicationsSagaService,
+  ApplicationsStageService,
+  ApplicationsDocumentsService,
+} from "./applications.service";
 import {
   OrphanCleanupProcessor,
   ORPHAN_CLEANUP_QUEUE,
@@ -26,7 +32,15 @@ import { CommonModule } from "../common/common.module";
     ),
   ],
   controllers: [ApplicationsController],
-  providers: [ApplicationsService, PrismaService, OrphanCleanupProcessor],
+  providers: [
+    ApplicationsService,
+    ApplicationsQueryService,
+    ApplicationsSagaService,
+    ApplicationsStageService,
+    ApplicationsDocumentsService,
+    PrismaService,
+    OrphanCleanupProcessor,
+  ],
   exports: [ApplicationsService, BullModule],
 })
 export class ApplicationsModule {}

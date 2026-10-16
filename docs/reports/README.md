@@ -85,6 +85,8 @@ Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganiza
 - [62 — Task #33 Phase 1: Docs Audit & Reorganization Plan Report](./62-task-33-phase-1-docs-audit-and-reorganization-plan-report.md)
 - [63 — Task #33 Phase 2: Docs Reorganization Completion Report](./63-task-33-phase-2-docs-reorganization-completion-report.md)
 - [64 — Task #34: v0.1.3 Release Completion Report](./64-task-34-v0.1.3-release-completion-report.md)
+- [65 — Task #36 Phase 1: Coverage Gap Audit Report](./65-task-36-phase-1-coverage-gap-audit-report.md)
+- [66 — Task #37: Accessibility Audit (WCAG 2.1 AA) Report](./66-task-37-accessibility-audit-wcag-2.1-aa-report.md)
 
 ---
 

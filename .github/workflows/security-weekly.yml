@@ -2,7 +2,7 @@ name: Security & Vulnerability Sweep (Weekly)
 
 on:
   schedule:
-    - cron: '0 6 * * 1'  # 06:00 UTC every Monday
+    - cron: "0 6 * * 3" # 06:00 UTC every Wednesday
   workflow_dispatch:
 
 concurrency:

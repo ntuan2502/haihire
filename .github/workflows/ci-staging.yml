@@ -3,8 +3,6 @@ name: Pre-Production CI (Staging Branch)
 on:
   push:
     branches: [staging]
-  pull_request:
-    branches: [staging]
   workflow_dispatch:
 
 concurrency:
@@ -17,10 +15,45 @@ permissions:
 
 jobs:
   # ============================================================================
+  # 0. PATH FILTER DETECTION
+  # ============================================================================
+  path-filter:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      docs-only: ${{ steps.filter.outputs.docs-only }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Detect Changed Paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'backend/**'
+              - 'frontend/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - '.github/workflows/**'
+              - 'scripts/**'
+              - 'pnpm-workspace.yaml'
+              - 'tsconfig.json'
+            docs-only:
+              - 'docs/**'
+              - '**.md'
+              - '!**/*.spec.ts'
+
+  # ============================================================================
   # 1. ARCHITECTURAL QUALITY GATES
   # ============================================================================
   ci-gates:
     name: 11 CI Architecture Gates
+    needs: path-filter
+    if: needs.path-filter.outputs.code == 'true'
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: 1
@@ -95,7 +128,8 @@ jobs:
   # ============================================================================
   unit-tests:
     name: Unit & Integration Tests (Coverage)
-    needs: ci-gates
+    needs: [path-filter, ci-gates]
+    if: needs.path-filter.outputs.code == 'true'
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: 1
@@ -175,7 +209,8 @@ jobs:
   # ============================================================================
   e2e:
     name: Playwright End-to-End Suite
-    needs: ci-gates
+    needs: [path-filter, ci-gates]
+    if: needs.path-filter.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -328,7 +363,8 @@ jobs:
   # ============================================================================
   build:
     name: Production Build Verification
-    needs: ci-gates
+    needs: [path-filter, ci-gates]
+    if: needs.path-filter.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -369,3 +405,32 @@ jobs:
 
       - name: Compile Monorepo Production Build
         run: pnpm build
+
+  # ============================================================================
+  # 5. DOCUMENTATION VERIFICATION (DOCS-ONLY COMMITS)
+  # ============================================================================
+  docs-verify:
+    name: Documentation Verification
+    needs: path-filter
+    if: needs.path-filter.outputs.docs-only == 'true' && needs.path-filter.outputs.code == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 26
+        uses: actions/setup-node@v5
+        with:
+          node-version: 26
+
+      - name: Install pnpm
+        run: npm install -g pnpm@12
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Documentation Links & Portability
+        run: pnpm lint:doc-links
+
+      - name: Verify Two-Way i18n
+        run: pnpm lint:i18n

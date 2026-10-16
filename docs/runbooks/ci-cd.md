@@ -1,8 +1,8 @@
 # CI/CD Operations & Runbook
 
 > **Operational guide for HaiHire's Layered CI/CD pipeline, manual deployment protocols, and rollback procedures.**  
-> **Platform Version:** v0.1.0+  
-> **Last Updated:** 2026-10-14  
+> **Platform Version:** v0.1.2+  
+> **Last Updated:** 2026-10-16
 
 ---
 
@@ -17,11 +17,11 @@ graph TD
     end
 
     subgraph Tier 2: Integration
-        WF_FEAT -->|PR to dev| WF_DEV[ci-dev.yml <br/> ⏱️ 3-4 min]
+        WF_FEAT -->|Merge PR to dev| WF_DEV[ci-dev.yml <br/> ⏱️ 3-4 min / 30s docs]
     end
 
     subgraph Tier 3: Pre-Production
-        WF_DEV -->|Promote to staging| WF_STG[ci-staging.yml <br/> ⏱️ 8-10 min]
+        WF_DEV -->|Promote to staging| WF_STG[ci-staging.yml <br/> ⏱️ 8-10 min / 30s docs]
     end
 
     subgraph Tier 4: Release Gatekeeper
@@ -37,19 +37,93 @@ graph TD
 
 All workflows are located in [`.github/workflows/`](../../.github/workflows/):
 
-| Workflow | Target Scope | Key Operations | Time Target |
-| :--- | :--- | :--- | :---: |
-| [`ci-feature.yml`](../../.github/workflows/ci-feature.yml) | PRs targeting `dev` (`feat/*`, `fix/*`, etc.) | Path filtering, lint, typecheck, unit tests | 2 - 3 min |
-| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml) | Push & PR to `dev` | 11 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min |
-| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml) | Push & PR to `staging` | 11 CI gates, coverage, Playwright E2E suite, production build | 8 - 10 min |
-| [`ci-main.yml`](../../.github/workflows/ci-main.yml) | PRs targeting `main` | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run | 10 - 12 min |
-| [`cd-release.yml`](../../.github/workflows/cd-release.yml) | Annotated tags `v*.*.*` | Docker Buildx, GHCR publish, Trivy container scan, GitHub release | 5 - 7 min |
-| [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml) | Schedule: `0 3 * * 1` (03:00 UTC Mondays) | Complete Playwright test regression matrix | 8 - 10 min |
-| [`security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Schedule: `0 6 * * 1` (06:00 UTC Mondays) | Moderate & high CVE audits, tenant scoping AST sweep, outdated report | 3 - 5 min |
+| Workflow                                                             | Target Scope                                           | Key Operations                                                                                        |           Time Target           |
+| :------------------------------------------------------------------- | :----------------------------------------------------- | :---------------------------------------------------------------------------------------------------- | :-----------------------------: |
+| [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)           | PRs targeting `dev` (`feat/*`, `fix/*`, etc.)          | Path filtering, lint, typecheck, unit tests                                                           |            2 - 3 min            |
+| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml)                   | Push to `dev` (post-merge integration)                 | Path filtering (code vs docs-only), 11 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min (code) / ~30s (docs)  |
+| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml)           | Push to `staging` (pre-production verification)        | Path filtering (code vs docs-only), 11 CI gates, coverage, Playwright E2E suite, production build     | 8 - 10 min (code) / ~30s (docs) |
+| [`ci-main.yml`](../../.github/workflows/ci-main.yml)                 | PRs targeting `main` (production gatekeeper)           | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run                               |           10 - 12 min           |
+| [`cd-release.yml`](../../.github/workflows/cd-release.yml)           | Annotated tags `v*.*.*`                                | Docker Buildx, GHCR publish, Trivy container scan, GitHub release                                     |            5 - 7 min            |
+| [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml)           | Schedule: `0 3 * * 1` (03:00 UTC Mondays on `staging`) | Complete Playwright test regression sweep on pre-production                                           |           8 - 10 min            |
+| [`security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Schedule: `0 6 * * 3` (06:00 UTC Wednesdays)           | Moderate & high CVE audits, tenant scoping AST sweep, outdated report                                 |            3 - 5 min            |
 
 ---
 
-## 2. Staging Branch & Environment Operations
+## 2. Test Pyramid & Execution Matrix
+
+HaiHire adopts a strictly stratified Testing Pyramid to ensure rapid developer feedback loops, high regression coverage, and cost-effective runner utilization:
+
+```
+          / \
+         /   \       End-to-End (E2E) UI Tests
+        / E2E \      Playwright Chromium • 10 journeys (19 specs, 6 cross-tenant)
+       /───────\     Critical Paths Only • Staging & Weekly Sweep
+      /         \
+     /Integration\   Integration & Contract Tests
+    /  & Contract \  Saga DB Transactions • MinIO DLQ • API Contracts
+   /───────────────\ DtoPipe Protection • i18n Dictionary Parity
+  /                 \
+ /    Unit Tests     \ Unit Test Matrix
+/  (Backend+Frontend) \ Vitest • 656 tests • 75 suites • <25s
+/─────────────────────\ 100% PR execution • Fast fail
+```
+
+### 2.1 Layer Rationale
+
+1. **Unit & Integration Tests (Vitest - 656 tests):** Fast execution (<25 seconds), zero external service dependencies (pure mock/in-memory), execute on **100% of pull requests and commits**.
+2. **Static Architecture Gates (11 Gates):** Env sync, i18n parity, ESLint, typecheck, DtoPipe, error code i18n, API contracts, Prometheus rules, tenant scoping, doc links, test count diff. Total runtime ~25s.
+3. **End-to-End (E2E) Tests (Playwright - 19 specs across 10 critical user journeys):** Real browser journeys (including 6 cross-tenant security tests, Careers SEO & themes, candidate applications, multi-step ATS login, Kanban drag-and-drop). Heavyweight requirement with PostgreSQL, Valkey, and MinIO services. Triggered on staging push, PR to main, and weekly schedule.
+
+### 2.2 Execution Matrix
+
+| Test Layer                   | Local Dev (`check:all:fast`) | Pull Request (`ci-feature.yml`) | Push to `dev` (`ci-dev.yml`) | Push to `staging` (`ci-staging.yml`) | PR to `main` (`ci-main.yml`) | Weekly (`e2e-weekly.yml`) | Tagged Release (`cd-release.yml`) |
+| :--------------------------- | :--------------------------: | :-----------------------------: | :--------------------------: | :----------------------------------: | :--------------------------: | :-----------------------: | :-------------------------------: |
+| **Static Gates (1-11)**      |           ✅ Runs            |             ✅ Runs             |  ✅ Runs (code) / ~30s docs  |      ✅ Runs (code) / ~30s docs      |           ✅ Runs            |             —             |              ✅ Runs              |
+| **Unit Tests (`pnpm test`)** |           ✅ Runs            |             ✅ Runs             |           ✅ Runs            |               ✅ Runs                |           ✅ Runs            |             —             |              ✅ Runs              |
+| **Next.js Package Build**    |           Optional           |           ⏭️ Skipped            |          ⏭️ Skipped          |               ✅ Runs                |           ✅ Runs            |             —             |              ✅ Runs              |
+| **Playwright E2E Tests**     |    Optional (`test:e2e`)     |           ⏭️ Skipped            |          ⏭️ Skipped          |               🟢 Runs                |           🟢 Runs            |     🟢 Runs (staging)     |           🟢 Mandatory            |
+| **Docker Build & Push**      |           Optional           |           ⏭️ Skipped            |          ⏭️ Skipped          |              ⏭️ Skipped              |          🟢 Dry-run          |        ⏭️ Skipped         |          🟢 GHCR Publish          |
+
+---
+
+## 3. Critical Paths & Path Filtering
+
+HaiHire uses path filtering (`dorny/paths-filter@v3`) across workflows to eliminate redundant compute:
+
+### 3.1 Two-Tier Path Filtering (Task #32)
+
+- **Code Changes:** Any changes to backend, frontend, packages, scripts, or workflows trigger full architecture gates, unit tests, and compilation.
+- **Documentation-Only Changes:** Changes strictly isolated to `docs/**` and `*.md` bypass the 11 CI gates, test containers, E2E suites, and builds, executing only `docs-verify` (`lint:doc-links` + `lint:i18n`) in **~30 seconds**.
+
+### 3.2 Critical Path Definitions
+
+#### Frontend Critical Paths
+
+- `frontend/src/app/**`: Core App Router routes (e.g. `/auth/login`, `/careers/*`, `/dashboard/*`).
+- `frontend/src/components/**`: UI primitives, shared controls, forms, and layout shells.
+- `frontend/src/lib/api/**`: Client-side HTTP client, error handlers, and endpoint wrappers.
+- `frontend/src/i18n/**`: Translation dictionaries and locale selectors.
+- `frontend/tests/e2e/**`: Changes or additions to E2E test specifications.
+
+#### Backend Critical Paths
+
+- `backend/src/auth/**`: Authentication controllers, JWT guards, password hashing, and login endpoints.
+- `backend/src/applications/**`: Job application processing, resume uploads, stage transitions.
+- `backend/src/candidates/**`: Candidate profile management and document storage.
+- `backend/src/jobs/**`: Job requisition CRUD, public careers endpoints, pipeline definitions.
+- `backend/src/common/**`: Magic bytes, MIME filters, DtoPipe, and upload utilities.
+- `backend/src/prisma/**`: Database schema, seed data, and migration scripts.
+
+#### Monorepo & Configuration Critical Paths
+
+- `packages/**`: Shared contracts, domain models, error code definitions.
+- `package.json`, `pnpm-lock.yaml`: Dependency upgrades and tool modifications.
+- `tsconfig.json`, `next.config.ts`, `playwright.config.ts`: Runtime and build configurations.
+- `.github/workflows/**`: CI/CD automation and quality gate workflows.
+
+---
+
+## 4. Staging Branch & Environment Operations
 
 The `staging` branch is HaiHire's pre-production validation gate where integrated changes are verified under full production-like conditions (database migrations, Playwright E2E, and production build).
 
@@ -58,7 +132,7 @@ The `staging` branch is HaiHire's pre-production validation gate where integrate
 1. **Promotion from `dev` to `staging`:**
    - After feature branches merge into `dev` and pass `ci-dev.yml`:
    - Open Pull Request: `dev` -> `staging`.
-   - Requires: **1 peer review approval** + passing `ci-staging.yml` checks.
+   - Requires: **1 peer review approval**.
 2. **Automated Verification:**
    - Once merged to `staging`, `ci-staging.yml` executes:
      - 11 Architecture Quality Gates (`pnpm check:all:fast`).
@@ -93,7 +167,7 @@ docker compose --profile app up -d --build
 
 ---
 
-## 3. 3-Tier Security Defenses
+## 5. 3-Tier Security Defenses
 
 1. **Layer 1: Dependency Vulnerability Audit (`pnpm audit`)**
    - Automatically executed in `ci-main.yml` and `security-weekly.yml`.
@@ -101,7 +175,7 @@ docker compose --profile app up -d --build
    - Direct production dependencies with Critical/High CVEs fail the build immediately.
 2. **Layer 2: Automated Vulnerability Patching (Dependabot)**
    - Configured in [`.github/dependabot.yml`](../../.github/dependabot.yml).
-   - Scans dependencies weekly on Mondays at 04:00 UTC and generates automated PRs targeting `dev`.
+   - Scans dependencies weekly on Saturdays at 04:00 UTC and generates automated PRs targeting `dev`.
    - Major version bumps for `@prisma/*` and `prisma` are locked to maintain Contract-First architecture compatibility.
 3. **Layer 3: Container Vulnerability Scanning (Aquasecurity Trivy)**
    - Automatically executed in `cd-release.yml` on backend and frontend container images.
@@ -110,30 +184,34 @@ docker compose --profile app up -d --build
 
 ---
 
-## 4. Manual Production Deployment SOP
+## 6. Manual Production Deployment SOP
 
 Per platform governance, container publishing to GitHub Container Registry (`ghcr.io`) is automated upon release tag creation, while production deployment remains an explicit operator action.
 
-### 4.1 Standard Deployment Procedure
+### 6.1 Standard Deployment Procedure
 
 1. **Log in to Target Production Host:**
+
    ```bash
    ssh deploy@production.haihire.internal
    cd /opt/haihire
    ```
 
 2. **Verify Target Release Tag:**
+
    ```bash
    # Confirm tag exists on GHCR
    export RELEASE_TAG=v0.1.0
    ```
 
 3. **Pull Pre-built Immutable Images (Zero Rebuild Overhead):**
+
    ```bash
    IMAGE_TAG=${RELEASE_TAG} docker compose --env-file .env.production -f docker-compose.prod.yml pull
    ```
 
 4. **Execute Rolling Update:**
+
    ```bash
    IMAGE_TAG=${RELEASE_TAG} docker compose --env-file .env.production -f docker-compose.prod.yml up -d --remove-orphans
    ```
@@ -152,19 +230,21 @@ Per platform governance, container publishing to GitHub Container Registry (`ghc
 
 ---
 
-## 5. Rollback Procedures
+## 7. Rollback Procedures
 
-### 5.1 Production Container Rollback (< 2 Minutes)
+### 7.1 Production Container Rollback (< 2 Minutes)
 
 If a newly deployed release exhibits runtime regressions:
 
 1. **Identify Previous Known-Good Tag:**
+
    ```bash
    # Example: rolling back from v0.1.1 to v0.1.0
    export PREVIOUS_TAG=v0.1.0
    ```
 
 2. **Deploy Previous Image:**
+
    ```bash
    IMAGE_TAG=${PREVIOUS_TAG} docker compose --env-file .env.production -f docker-compose.prod.yml up -d
    ```
@@ -174,11 +254,12 @@ If a newly deployed release exhibits runtime regressions:
    curl -f http://localhost:13001/health
    ```
 
-### 5.2 CI/CD Pipeline Rollback
+### 7.2 CI/CD Pipeline Rollback
 
 If a newly migrated GitHub Actions workflow fails:
 
 1. **Restore Workflows from Backup Branch:**
+
    ```bash
    git checkout backup/legacy-workflows-20261014 -- .github/workflows/
    git commit -m "revert(ci): restore legacy monolithic workflows"
@@ -190,11 +271,11 @@ If a newly migrated GitHub Actions workflow fails:
 
 ---
 
-## 6. Troubleshooting Guide
+## 8. Troubleshooting Guide
 
-| Issue | Symptom | Diagnostic Step | Remediation |
-| :--- | :--- | :--- | :--- |
-| **`pnpm audit` Failure** | CI fails on `security-audit` | Check runner log for failing package | Run `pnpm audit` locally. Update or patch the affected package in `package.json`. |
-| **Playwright Healthcheck Timeout** | E2E job times out waiting for ports 13000/13001 | Check step output for `connection refused` | Verify MinIO and Valkey readiness steps passed. Inspect background `pnpm dev` logs. |
-| **GHCR Login Error** | `docker login` fails with 403 Forbidden | Check workflow `permissions:` block | Ensure `packages: write` is declared in workflow job permissions. |
-| **Dorny Path Filter Misclassification** | Fast checks skipped when code changed | Review path filter patterns | Verify edited files match patterns in `ci-feature.yml` (`filters:` block). |
+| Issue                                   | Symptom                                         | Diagnostic Step                            | Remediation                                                                         |
+| :-------------------------------------- | :---------------------------------------------- | :----------------------------------------- | :---------------------------------------------------------------------------------- |
+| **`pnpm audit` Failure**                | CI fails on `security-audit`                    | Check runner log for failing package       | Run `pnpm audit` locally. Update or patch the affected package in `package.json`.   |
+| **Playwright Healthcheck Timeout**      | E2E job times out waiting for ports 13000/13001 | Check step output for `connection refused` | Verify MinIO and Valkey readiness steps passed. Inspect background `pnpm dev` logs. |
+| **GHCR Login Error**                    | `docker login` fails with 403 Forbidden         | Check workflow `permissions:` block        | Ensure `packages: write` is declared in workflow job permissions.                   |
+| **Dorny Path Filter Misclassification** | Fast checks skipped when code changed           | Review path filter patterns                | Verify edited files match patterns in `ci-feature.yml` (`filters:` block).          |

@@ -55,7 +55,7 @@ In `.github/dependabot.yml`:
 
 ## 3. Documentation & Runbooks Created
 
-1. **[`docs/runbooks/branch-protection-update.md`](../runbooks/branch-protection-update.md):**  
+1. **[`docs/runbooks/branch-protection.md`](../runbooks/branch-protection.md):**  
    Manual SOP for repository administrators to update GitHub branch protection rules on `dev` (replacing legacy `ci-dev.yml` check names with `ci-feature.yml` check names `Fast Static & Quality Checks` and `Fast Unit & Integration Tests`).
 2. **[`CONTRIBUTING.md`](../../CONTRIBUTING.md):**  
    Added `## 🪝 Git Hooks` and `## 🚀 CI Triggers` sections detailing the 3-tier hook lifecycle and branch CI matrix.
@@ -106,4 +106,4 @@ In `.github/dependabot.yml`:
 ## 5. Next Steps for Repository Owner
 
 1. Review and merge the Task #32 Pull Request into `dev`.
-2. Follow [`docs/runbooks/branch-protection-update.md`](../runbooks/branch-protection-update.md) to update the required checks under `dev` branch protection settings in GitHub.
+2. Follow [`docs/runbooks/branch-protection.md`](../runbooks/branch-protection.md) to update the required checks under `dev` branch protection settings in GitHub.

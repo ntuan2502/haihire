@@ -6,7 +6,7 @@ Thank you for contributing to the HaiHire Enterprise ATS platform. To maintain e
 
 ## 🌿 Branch Naming Conventions
 
-Always branch off the primary integration branch (`feature/production-hardening` or `main` depending on current milestone). Use the following naming format:
+Always branch off the primary integration branch (`dev`). Use the following naming format:
 
 | Type              | Pattern                | Example                        |
 | :---------------- | :--------------------- | :----------------------------- |
@@ -22,11 +22,11 @@ Always branch off the primary integration branch (`feature/production-hardening`
 
 HaiHire uses an enterprise 3-branch environment promotion flow:
 
-| Branch        | Purpose                                  | PR from               | Merge to  | CI Time     | Protection Requirements                                   |
-| ------------- | ---------------------------------------- | --------------------- | --------- | ----------- | --------------------------------------------------------- |
-| **`dev`**     | Active development & integration         | `feature/*`, `fix/*`  | `staging` | **~4 min**  | 1 approval, 11 Gates & Unit Tests pass                    |
-| **`staging`** | Pre-production QA & container validation | `dev`                 | `main`    | **~9 min**  | 1 approval, 11 Gates + E2E + Build pass                   |
-| **`main`**    | Production release & release gatekeeping | `staging`, `hotfix/*` | `(tag)`   | **~10 min** | 2 approvals, Full CI + E2E + Security Audit + Docker pass |
+| Branch        | Purpose                                  | PR from               | Merge to  | CI Time        | Protection Requirements                                    |
+| ------------- | ---------------------------------------- | --------------------- | --------- | -------------- | ---------------------------------------------------------- |
+| **`dev`**     | Active development & integration         | `feature/*`, `fix/*`  | `staging` | **~2 - 3 min** | 0 approvals (solo dev), Fast Static & Fast Unit Tests pass |
+| **`staging`** | Pre-production QA & container validation | `dev`                 | `main`    | **~9 min**     | 1 approval, 11 Gates + E2E + Build pass                    |
+| **`main`**    | Production release & release gatekeeping | `staging`, `hotfix/*` | `(tag)`   | **~10 min**    | 2 approvals, Full CI + E2E + Security Audit + Docker pass  |
 
 ### Feature Development Flow (`feature -> dev -> staging -> main`)
 
@@ -49,7 +49,7 @@ HaiHire uses an enterprise 3-branch environment promotion flow:
 3. **Open PR to `dev`:**
    - Targets `dev`.
    - Triggers `ci-feature.yml` (<3 min with paths filter fast feedback).
-   - Requires 1 peer review approval.
+   - Required status checks: `Fast Static & Quality Checks`, `Fast Unit & Integration Tests`.
 
 4. **Promote `dev -> staging` (Pre-production QA):**
    - Open PR: `dev` -> `staging`.

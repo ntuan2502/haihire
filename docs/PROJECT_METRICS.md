@@ -4,7 +4,7 @@
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
 **Last Updated:** 2026-10-16  
-**Platform Version:** v0.1.2 (Pre-release)  
+**Platform Version:** v0.1.2 (Pre-release)
 
 ---
 
@@ -18,6 +18,7 @@
 ---
 
 ## Quality & Verification Metrics
+
 - **Automated Tests:** 656 total (+50 characterization tests added in v0.1.2)
   - Backend: 406 passing (Vitest, 40 test suites)
   - Frontend: 250 passing (Vitest + JSDOM, 35 test suites)
@@ -34,7 +35,7 @@
   7. `lint:api-contract` — API Contract & Leaks Audit (84 endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 rules)
   9. `lint:tenant-scope` — Tenant Scoping Static Analysis (212 queries)
-  10. `lint:doc-links` — Documentation Markdown Link Integrity (115 files)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (147 files)
   11. `test:diff` — Test Count Delta & Anti-Regression
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:**
@@ -45,6 +46,7 @@
 ---
 
 ## Architecture & Codebase Metrics
+
 - **Monorepo Packages:** 3 (`backend`, `frontend`, `packages/shared`)
 - **Backend Modules:** 18
 - **Backend Controllers:** 13
@@ -64,6 +66,7 @@
 ---
 
 ## Operations & Release Metrics
+
 - **Hardening Milestones:** 20+ tasks (Tasks #1A → #14D)
 - **Restructure:** Task #9 complete
 - **Supported Languages:** 2 (`vi` Vietnamese + `en` English)
@@ -78,18 +81,23 @@
 ---
 
 ## CI/CD & Security Architecture
+
 - **Workflows Count:** 7 single-responsibility workflows
   - `ci-feature.yml` — Fast feedback on feature PRs (2–3 min)
-  - `ci-dev.yml` — 11 architecture gates on integration branch (3–4 min)
-  - `ci-staging.yml` — Pre-production E2E & build verification (8–10 min, triggers pending Task #20)
+  - `ci-dev.yml` — Post-merge integration gate on `dev` (3–4 min code / ~30s docs via path filtering)
+  - `ci-staging.yml` — Pre-production E2E & build verification on `staging` (8–10 min code / ~30s docs)
   - `ci-main.yml` — Production release gatekeeper & pnpm audit (10–12 min)
   - `cd-release.yml` — GHCR container publishing, Trivy scan, GitHub release (5–7 min)
-  - `e2e-weekly.yml` — Scheduled weekly 10-journey Playwright sweep (03:00 UTC Mondays)
-  - `security-weekly.yml` — Scheduled weekly vulnerability & tenant AST sweep (06:00 UTC Mondays)
+  - `e2e-weekly.yml` — Scheduled weekly 10-journey Playwright sweep on `staging` (03:00 UTC Mondays)
+  - `security-weekly.yml` — Scheduled weekly vulnerability & tenant AST sweep (06:00 UTC Wednesdays)
 - **CI Compute Efficiency:** ~72% reduction (~420 min/month vs ~1,500 min/month baseline)
+- **Git Hooks Architecture (3-Tier):**
+  - Tier 1 (Pre-commit): `lint-staged` running ESLint & Prettier on staged files (<3s)
+  - Tier 2 (Pre-push): `pnpm lint && pnpm typecheck` full static verification (~25s)
+  - Tier 3 (Remote CI): 11 Architecture Gates & E2E Suites
 - **Security Defenses:** 3 active layers
   - Layer 1: `pnpm audit --audit-level=high` (Build gate)
-  - Layer 2: GitHub Dependabot (Automated weekly security PRs targeting `dev`)
+  - Layer 2: GitHub Dependabot (Automated weekly grouped updates on Saturdays at 04:00 UTC targeting `dev`)
   - Layer 3: Aquasecurity Trivy container scanner (SARIF report on GHCR images)
 
 ---

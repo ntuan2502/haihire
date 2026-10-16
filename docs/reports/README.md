@@ -56,6 +56,7 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [55 — Task #28 Wave 2.1: Applications Service Refactor Report](55-task-28-wave-2-1-applications-service-refactor-report.md)
 - [56 — Task #29 Wave 2.2: JobList Component Refactor Report](56-task-29-wave-2-2-job-list-refactor-report.md)
 - [57 — Task #30 Wave 3: ApplicationsDataTable Characterization Tests Report](57-task-30-wave-3-applications-data-table-characterization-tests-report.md)
+- [58 — Task #30 Wave 3: ApplicationsDataTable Component Refactor Report](58-task-30-wave-3-applications-data-table-refactor-report.md)
 
 
 

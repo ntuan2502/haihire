@@ -49,6 +49,9 @@ This directory contains milestone completion reports from the v1.0.0 hardening p
 - [48 — Task #22 Phase 2: GitHub Configuration Re-Audit Completion Report](48-task-22-phase-2-github-configuration-re-audit-report.md)
 - [49 — Task #23: CI/CD Issues Diagnostic Report (E2E Nightly & Dependabot PR #38)](49-task-23-ci-cd-issues-diagnosis-report.md)
 - [50 — Task #24: Fix CI/CD Issues, 3-Tier Promotion & Release v0.1.1 Report](50-task-24-fix-ci-cd-issues-and-release-v0.1.1-report.md)
+- [51 — Task #25: Re-Enable E2E Weekly Verification & Verify v0.1.1 Report](51-task-25-re-enable-e2e-weekly-and-verify-v0.1.1-report.md)
+- [52 — Task #26 Phase 1: God Files Refactor Audit Report](52-task-26-phase-1-god-files-refactor-audit-report.md)
+- [53 — Task #26 Phase 2 Wave 1: Organizations Service Refactor Report](53-task-26-phase-2-wave-1-organizations-service-refactor-report.md)
 
 
 

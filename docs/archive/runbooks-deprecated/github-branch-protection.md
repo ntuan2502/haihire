@@ -104,6 +104,7 @@ This guide walks through configuring branch protection rules for the
 ## Verification Checklist
 
 After completing the manual setup via GitHub UI, verify the following:
+
 - [ ] Direct push to `main` is rejected: `git push origin main` -> `GH006: Protected branch update failed`.
 - [ ] Pull requests targeting `main` require 2 peer approvals and all 4 CI status checks to be green.
 - [ ] Pull requests targeting `staging` require 1 peer approval and all 4 staging CI checks to be green.
@@ -116,10 +117,12 @@ After completing the manual setup via GitHub UI, verify the following:
 ## Troubleshooting
 
 ### "Required status checks not showing in search dropdown"
+
 - GitHub Actions status checks only appear in the dropdown once they have run at least once on the repository.
 - Run a PR or commit against the respective branch, wait for the jobs to finish, then refresh the branch protection settings page.
 
 ### "Cannot merge PR due to outdated branch"
+
 - If linear history or up-to-date checks are enforced:
   - Click **"Update branch"** on the GitHub PR page.
   - Or rebase locally:

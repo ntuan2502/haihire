@@ -2,7 +2,7 @@
 
 ## Overview
 
-Task #21 audit identified 6 gaps in GitHub configuration. Some can 
+Task #21 audit identified 6 gaps in GitHub configuration. Some can
 be fixed via code (CODEOWNERS), others require manual UI configuration.
 
 This guide walks through manual fixes step-by-step.
@@ -14,7 +14,7 @@ This guide walks through manual fixes step-by-step.
 ### Problem
 
 `dev` branch has `1 required approval` + `enforce admins` enabled.
-As a solo developer, you cannot approve your own PRs. This blocks 
+As a solo developer, you cannot approve your own PRs. This blocks
 all PRs to `dev`.
 
 ### Solution A (Recommended): Set `dev` required approvals = 0
@@ -69,6 +69,7 @@ GitHub Environment `production` doesn't exist. Release workflows cannot enforce 
 ### Status
 
 Created by Task #22 (`.github/CODEOWNERS`). After merging to `main`:
+
 1. Go to: https://github.com/ntuan2502/haihire/settings/branches
 2. Edit `main` rule.
 3. Under **"Require a pull request before merging"**:
@@ -88,7 +89,7 @@ Created by Task #22 (`.github/CODEOWNERS`). After merging to `main`:
    - Click **"Enable"**.
 4. Verify both statuses display green **"Enabled"**.
 
-*Note: 100% free for public repositories.*
+_Note: 100% free for public repositories._
 
 ---
 

@@ -13,11 +13,11 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-function resolveKey(path: string, obj: any): string {
+function resolveKey(path: string, obj: Record<string, unknown>): string {
   const parts = path.split(".");
-  let cur = obj;
+  let cur: unknown = obj;
   for (const p of parts) {
-    if (cur && typeof cur === "object") cur = cur[p];
+    if (cur && typeof cur === "object") cur = (cur as Record<string, unknown>)[p];
     else return path;
   }
   return typeof cur === "string" ? cur : path;

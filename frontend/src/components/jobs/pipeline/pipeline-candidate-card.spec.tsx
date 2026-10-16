@@ -30,12 +30,14 @@ describe("PipelineCandidateCard Component", () => {
         candidate={mockCandidate}
         isSelected={false}
         onSelect={handleSelect}
-      />
+      />,
     );
 
     expect(screen.getByText("Le Van Test")).toBeInTheDocument();
     expect(screen.getByText("test@haihire.vn")).toBeInTheDocument();
-    expect(screen.getByText("candidates.columns.quickNotes")).toBeInTheDocument();
+    expect(
+      screen.getByText("candidates.columns.quickNotes"),
+    ).toBeInTheDocument();
   });
 
   it("renders match score if available on candidate", () => {
@@ -49,7 +51,7 @@ describe("PipelineCandidateCard Component", () => {
         candidate={candidateWithScore}
         isSelected={false}
         onSelect={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("92%")).toBeInTheDocument();
@@ -61,7 +63,7 @@ describe("PipelineCandidateCard Component", () => {
         candidate={mockCandidate}
         isSelected={true}
         onSelect={vi.fn()}
-      />
+      />,
     );
 
     const card = container.querySelector("#candidate-card-app-101");
@@ -76,7 +78,7 @@ describe("PipelineCandidateCard Component", () => {
         candidate={mockCandidate}
         isSelected={false}
         onSelect={handleSelect}
-      />
+      />,
     );
 
     const card = container.querySelector("#candidate-card-app-101");
@@ -93,7 +95,7 @@ describe("PipelineCandidateCard Component", () => {
         isSelected={false}
         onSelect={vi.fn()}
         canDrag={true}
-      />
+      />,
     );
 
     const card = container.querySelector("#candidate-card-app-101");
@@ -116,5 +118,48 @@ describe("PipelineCandidateCard Component", () => {
       "application/json",
       JSON.stringify({ id: "app-101", stage: "SCREENING" }),
     );
+  });
+
+  it("has role='button', tabIndex={0}, and aria-label for accessibility", () => {
+    const { container } = render(
+      <PipelineCandidateCard
+        candidate={mockCandidate}
+        isSelected={false}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    const card = container.querySelector("#candidate-card-app-101");
+    expect(card).toHaveAttribute("role", "button");
+    expect(card).toHaveAttribute("tabindex", "0");
+    expect(card).toHaveAttribute(
+      "aria-label",
+      "View candidate Le Van Test, stage SCREENING",
+    );
+  });
+
+  it("triggers onSelect callback when Enter or Space key is pressed", () => {
+    const handleSelect = vi.fn();
+    const { container } = render(
+      <PipelineCandidateCard
+        candidate={mockCandidate}
+        isSelected={false}
+        onSelect={handleSelect}
+      />,
+    );
+
+    const card = container.querySelector("#candidate-card-app-101");
+    expect(card).not.toBeNull();
+
+    if (card) {
+      fireEvent.keyDown(card, { key: "Enter" });
+      expect(handleSelect).toHaveBeenCalledTimes(1);
+
+      fireEvent.keyDown(card, { key: " " });
+      expect(handleSelect).toHaveBeenCalledTimes(2);
+
+      fireEvent.keyDown(card, { key: "ArrowDown" });
+      expect(handleSelect).toHaveBeenCalledTimes(2);
+    }
   });
 });

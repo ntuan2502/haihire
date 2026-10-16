@@ -20,7 +20,7 @@
 4. **Valkey Config Risk Analysis & Hardening (Part B):**
    - Discovered `docker-compose.prod.yml` previously lacked `--maxmemory` and `--maxmemory-policy`, creating severe operational risks: 512MB container memory limits without application-level caps could trigger Linux Kernel OOMKiller, while `volatile-lru` would discard delayed BullMQ jobs.
    - Updated `docker-compose.prod.yml`: added `--maxmemory 384mb`, `--maxmemory-policy noeviction`, `--appendonly yes`, `--appendfsync everysec`.
-5. **CI Nightly Integration (Part C):** Configured `E2E_MULTI_TENANT_ENABLED=true` in [`.github/workflows/e2e-nightly.yml`](../../.github/workflows/e2e-nightly.yml) to ensure nightly execution of the tenant security suite.
+5. **CI Nightly Integration (Part C):** Configured `E2E_MULTI_TENANT_ENABLED=true` in [`.github/workflows/e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml) to ensure regular execution of the tenant security suite.
 6. **Overall Quality Checks:**
    - `pnpm check:all:fast`: 🟢 **9/9 CI Gates PASSED** (20.49s).
    - `pnpm test`: 🟢 **515/515 Unit Tests PASSED** (359 backend + 156 frontend).

@@ -35,7 +35,7 @@
   7. `lint:api-contract` — API Contract & Leaks Audit (84 endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 rules)
   9. `lint:tenant-scope` — Tenant Scoping Static Analysis (212 queries)
-  10. `lint:doc-links` — Documentation Markdown Link Integrity (146 files)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (147 files)
   11. `test:diff` — Test Count Delta & Anti-Regression
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:**

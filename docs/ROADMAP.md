@@ -1,9 +1,9 @@
 # 🗺️ HaiHire - Product Roadmap & Architectural Horizon
 
 > **Comprehensive strategic roadmap for the HaiHire Enterprise Applicant Tracking System (ATS).**  
-> **Current Version:** `v0.1.0` (Pre-release, Released 2026-10-14)  
-> **Updated:** 2026-10-14  
-> **Status:** Pre-release (20+ hardening tasks completed, 606 tests, 11 CI gates)
+> **Current Version:** `v0.1.2` (Pre-release, Released 2026-10-16)  
+> **Updated:** 2026-10-16  
+> **Status:** Pre-release (God Files Refactor campaign complete, 656 tests, 11 CI gates)
 
 ---
 
@@ -111,38 +111,96 @@
 
 ## 📦 Release Trajectory & Milestones
 
-### v0.1.0 (Released 2026-10-14) — Pre-release
-
+### v0.1.0 (Released 2026-10-14) — Pre-release Baseline
 - First pre-release.
 - 20+ hardening tasks completed.
 - 11 CI gates, 606 tests, 14 Prometheus alerts.
 - Feedback collection begins.
 - Not API-stable yet.
 
-### v0.1.x (Planned)
+### v0.1.1 (Released 2026-10-14) — Hotfix & CI Stability
+- Enterprise 3-tier promotion verification.
+- Dependabot configuration refinement.
+- Weekly E2E verification workflow scheduling.
 
-- Bug fixes from user feedback.
-- Minor UX improvements.
+### v0.1.2 (Released 2026-10-16) — Technical Debt Reduction (God Files Refactor)
+- 5 God Files refactored to modular architecture.
+- 5,696 LOC eliminated across facades, shims, and sub-services.
+- 50 new characterization tests added (606 → 656 passing tests).
+- Zero breaking changes; 11 CI gates passing.
 
-### v0.2.0 (Planned)
+### v0.2.0 (Planned) — Technical Debt Wave 4 & Performance
+- Refactor next 5 large frontend components (>800 LOC).
+- Bundle optimization (dynamic imports, tree shaking).
+- Additional webhook providers.
 
-- Split 5 God Files.
-- Bundle optimization.
-- More webhook providers.
+### v0.3.0 (Planned) — Enterprise Features & Core Refactoring
+- Refactor remaining backend services (`email.service.ts`, `candidates.service.ts`, `interviews.service.ts`).
+- OpenAPI/Swagger automated documentation.
+- Business performance metrics dashboard.
+- Account lockout security controls.
+- Correlation ID propagation for async background jobs.
 
-### v0.3.0 (Planned)
+### v0.4.0 (Planned) — Final Debt Elimination & Integrations
+- Eliminate final batch of files >400 LOC.
+- Calendar synchronization (Google & Outlook).
+- Direct candidate self-scheduling links.
 
-- OpenAPI/Swagger.
-- Business metrics.
-- Account lockout.
-- Correlation ID for background jobs.
+### v1.0.0 (Future) — General Availability (GA)
+- Stable, frozen API contract.
+- Production hardened and independently verified.
+- Enterprise-ready security and compliance.
+- Released when all criteria are fully validated.
 
-### v1.0.0 (Future)
+---
 
-- Stable API.
-- Production hardened.
-- Enterprise-ready.
-- Released when truly ready.
+## 🛠️ Technical Debt Reduction — God Files Refactor (v0.1.2)
+
+### Wave 1 (Backend)
+- ✅ `organizations.service.ts` (1,366 → 125 LOC).
+- ✅ `sourcing.service.ts` (1,214 → 162 LOC).
+
+### Wave 2 (Backend + Frontend)
+- ✅ `applications.service.ts` (1,189 → 150 LOC).
+- ✅ `job-list.tsx` (957 → 10 LOC shim).
+
+### Wave 3 (Frontend Final)
+- ✅ `applications-data-table.tsx` (1,706 → 2 LOC shim).
+
+### Cumulative Impact
+- **5,696 LOC** eliminated from oversized files into clean, single-responsibility submodules.
+- **Max file size:** Reduced from 1,706 LOC to 265 LOC (`use-applications-table.ts`).
+- **Test baseline:** 656 tests passing (expanded from 606 with +50 new characterization tests).
+- **Zero breaking changes:** 100% public API compatibility and backward-compatible constructors.
+
+### Remaining Technical Debt (23 files >400 LOC)
+*Planned for phased refactoring in v0.2.0, v0.3.0, and v0.4.0.*
+
+| # | File Path | Current LOC | Target Milestone | Focus Area |
+|---|---|---|---|---|
+| 1 | `frontend/src/app/dashboard/candidates/[id]/page.tsx` | 941 LOC | v0.2.0 | Candidate detail tabs, activity timeline |
+| 2 | `frontend/src/app/dashboard/candidates/page.tsx` | 907 LOC | v0.2.0 | Candidate table filters, batch actions |
+| 3 | `frontend/src/app/dashboard/applications/[id]/page.tsx` | 857 LOC | v0.2.0 | Application review, scorecards |
+| 4 | `frontend/src/components/interviews/interviews-calendar-view.tsx` | 849 LOC | v0.2.0 | Calendar grid, scheduling popover |
+| 5 | `frontend/src/components/jobs/job-wizard-editor.tsx` | 839 LOC | v0.2.0 | Multi-step job wizard forms |
+| 6 | `frontend/src/app/dashboard/settings/members/page.tsx` | 783 LOC | v0.3.0 | Member management & invite dialogs |
+| 7 | `frontend/src/components/candidates/candidate-drawer.tsx` | 748 LOC | v0.3.0 | Candidate quick drawer |
+| 8 | `backend/src/email/email.service.ts` | 698 LOC | v0.3.0 | Email dispatch sub-services |
+| 9 | `frontend/src/components/landing/landing-ats-preview.tsx` | 696 LOC | v0.3.0 | Landing marketing preview |
+| 10 | `backend/src/candidates/candidates.service.ts` | 694 LOC | v0.3.0 | Candidate sub-services |
+| 11 | `frontend/src/app/dashboard/interviews/page.tsx` | 690 LOC | v0.3.0 | Interviews dashboard tab controller |
+| 12 | `frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx` | 679 LOC | v0.3.0 | Pipeline stage coordinator |
+| 13 | `backend/src/interviews/interviews.service.ts` | 640 LOC | v0.3.0 | Interviews facade & sub-services |
+| 14 | `frontend/src/app/dashboard/settings/integrations/page.tsx` | 638 LOC | v0.4.0 | Integrations configuration |
+| 15 | `frontend/src/components/careers/job-details-client.tsx` | 578 LOC | v0.4.0 | Public job client components |
+| 16 | `frontend/src/components/jobs/wizard/wizard-step-details.tsx` | 565 LOC | v0.4.0 | Job wizard step breakdown |
+| 17 | `backend/src/jobs/jobs.service.ts` | 544 LOC | v0.4.0 | Job service domain extraction |
+| 18 | `frontend/src/components/interviews/schedule-interview-modal.tsx` | 531 LOC | v0.4.0 | Interview scheduling modal |
+| 19 | `frontend/src/app/auth/onboarding/page.tsx` | 510 LOC | v0.4.0 | Onboarding flow forms |
+| 20 | `backend/src/webhook-settings/webhook-settings.service.ts` | 508 LOC | v0.4.0 | Webhook settings service |
+| 21 | `frontend/src/components/jobs/pipeline/pipeline-candidate-detail.tsx` | 508 LOC | v0.4.0 | Pipeline candidate drawer |
+| 22 | `frontend/src/app/careers/page.tsx` | 499 LOC | v0.4.0 | Public careers page decomposition |
+| 23 | `frontend/src/components/interviews/interviews-table-view.tsx` | 444 LOC | v0.4.0 | Interviews table view |
 
 ---
 

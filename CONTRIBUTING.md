@@ -172,7 +172,7 @@ pnpm check:all:e2e
 | **Gate 10** | `pnpm lint:doc-links` | Verifies zero broken markdown links across all documentation |
 | **Gate 11** | `pnpm test:diff` | Audits test count changes against git history to detect test regression |
 
-> **Unit & Integration Test Suite:** All 11 architecture gates are followed by the automated test suite (`pnpm test`), executing all 563 tests across backend and frontend packages.  
+> **Unit & Integration Test Suite:** All 11 architecture gates are followed by the automated test suite (`pnpm test`), executing all 656 tests across backend and frontend packages.  
 > Refer to [Project Metrics (Single Source of Truth)](docs/PROJECT_METRICS.md) for live metrics.
 
 ---
@@ -196,6 +196,25 @@ pnpm check:all:e2e
    - Dual-resource workflows (PostgreSQL + MinIO) must implement Saga compensations with BullMQ DLQ fallback.
 6. **Package Manager:**
    - Always use `pnpm` (version 12.x) or `pnpx`. Never use `npx` or `corepack enable`.
+
+---
+
+## 🔧 Refactoring Patterns
+
+### Backend Services (NestJS)
+When service >500 LOC:
+- Refactor to Facade + Sub-services.
+- Preserve public API 1:1.
+- Polymorphic constructor for backward compatibility.
+- Register sub-services in module.
+- Export facade only.
+
+### Frontend Components (React)
+When component >400 LOC:
+- Write characterization tests FIRST.
+- Refactor to directory with `index.tsx`.
+- Separate: `hooks/`, `filters/`, `rows/`, `drawer/`, `modals/`.
+- Original file becomes 2-10 LOC shim.
 
 ---
 

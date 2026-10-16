@@ -4,13 +4,13 @@
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
 **Last Updated:** 2026-10-16  
-**Platform Version:** v0.1.2 (Pre-release)
+**Platform Version:** v0.1.3 (Pre-release)
 
 ---
 
 ## Release Stage
 
-- **Current:** Pre-release (v0.1.2)
+- **Current:** Pre-release (v0.1.3)
 - **Target:** Stable release (v1.0.0) — when ready
 - **Branch strategy:** dev -> staging -> main
 - **Hotfix flow:** hotfix/* from main -> main + dev

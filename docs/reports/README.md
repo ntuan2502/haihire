@@ -87,6 +87,7 @@ Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganiza
 - [64 — Task #34: v0.1.3 Release Completion Report](./64-task-34-v0.1.3-release-completion-report.md)
 - [65 — Task #36 Phase 1: Coverage Gap Audit Report](./65-task-36-phase-1-coverage-gap-audit-report.md)
 - [66 — Task #37: Accessibility Audit (WCAG 2.1 AA) Report](./66-task-37-accessibility-audit-wcag-2.1-aa-report.md)
+- [67 — Task #38: Critical Accessibility Issues Fix Report](./67-task-38-critical-a11y-issues-fix-report.md)
 
 ---
 

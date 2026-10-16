@@ -2,7 +2,7 @@ name: E2E Weekly Verification
 
 on:
   schedule:
-    - cron: '0 3 * * 1'  # Monday 3AM UTC (weekly)
+    - cron: "0 3 * * 1" # Monday 3AM UTC (weekly)
   workflow_dispatch:
 
 concurrency:
@@ -50,6 +50,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          ref: staging
 
       - name: Setup Node.js 26
         uses: actions/setup-node@v5

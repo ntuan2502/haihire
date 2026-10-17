@@ -88,129 +88,222 @@ export function ApplicationsTableView({
               {/* Candidate */}
               {visibleColumns.candidate && (
                 <th
-                  onClick={() => handleSort("candidate")}
-                  className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                  scope="col"
+                  aria-sort={
+                    sortField === "candidate"
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="py-3 px-5 select-none"
                 >
-                  <span className="flex items-center gap-1">
-                    {t("applications.columns.candidate")}
+                  <button
+                    type="button"
+                    onClick={() => handleSort("candidate")}
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                  >
+                    <span>{t("applications.columns.candidate")}</span>
                     {sortField === "candidate" ? (
                       <ArrowDown
                         className={`h-3 w-3 transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
+                        aria-hidden="true"
                       />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                      <ArrowUpDown
+                        className="h-3 w-3 text-slate-400"
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
+                  </button>
                 </th>
               )}
 
               {/* Email */}
               {visibleColumns.email && (
                 <th
-                  onClick={() => handleSort("email")}
-                  className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                  scope="col"
+                  aria-sort={
+                    sortField === "email"
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="py-3 px-5 select-none"
                 >
-                  <span className="flex items-center gap-1">
-                    {t("applications.columns.email")}
+                  <button
+                    type="button"
+                    onClick={() => handleSort("email")}
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                  >
+                    <span>{t("applications.columns.email")}</span>
                     {sortField === "email" ? (
                       <ArrowDown
                         className={`h-3 w-3 transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
+                        aria-hidden="true"
                       />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                      <ArrowUpDown
+                        className="h-3 w-3 text-slate-400"
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
+                  </button>
                 </th>
               )}
 
               {/* Job */}
               {visibleColumns.job && (
                 <th
-                  onClick={() => handleSort("job")}
-                  className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                  scope="col"
+                  aria-sort={
+                    sortField === "job"
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="py-3 px-5 select-none"
                 >
-                  <span className="flex items-center gap-1">
-                    {t("applications.columns.job")}
+                  <button
+                    type="button"
+                    onClick={() => handleSort("job")}
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                  >
+                    <span>{t("applications.columns.job")}</span>
                     {sortField === "job" ? (
                       <ArrowDown
                         className={`h-3 w-3 transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
+                        aria-hidden="true"
                       />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                      <ArrowUpDown
+                        className="h-3 w-3 text-slate-400"
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
+                  </button>
                 </th>
               )}
 
               {/* Status */}
               {visibleColumns.status && (
                 <th
-                  onClick={() => handleSort("status")}
-                  className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                  scope="col"
+                  aria-sort={
+                    sortField === "status"
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="py-3 px-5 select-none"
                 >
-                  <span className="flex items-center gap-1">
-                    {t("applications.columns.status")}
+                  <button
+                    type="button"
+                    onClick={() => handleSort("status")}
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                  >
+                    <span>{t("applications.columns.status")}</span>
                     {sortField === "status" ? (
                       <ArrowDown
                         className={`h-3 w-3 transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
+                        aria-hidden="true"
                       />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                      <ArrowUpDown
+                        className="h-3 w-3 text-slate-400"
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
+                  </button>
                 </th>
               )}
 
               {/* Score */}
               {visibleColumns.score && (
                 <th
-                  onClick={() => handleSort("score")}
-                  className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                  scope="col"
+                  aria-sort={
+                    sortField === "score"
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="py-3 px-5 select-none"
                 >
-                  <span className="flex items-center gap-1">
-                    {t("applications.columns.score")}
+                  <button
+                    type="button"
+                    onClick={() => handleSort("score")}
+                    className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                  >
+                    <span>{t("applications.columns.score")}</span>
                     {sortField === "score" ? (
                       <ArrowDown
                         className={`h-3 w-3 transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
+                        aria-hidden="true"
                       />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                      <ArrowUpDown
+                        className="h-3 w-3 text-slate-400"
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
+                  </button>
                 </th>
               )}
 
               {/* Applied */}
               {visibleColumns.applied && (
                 <th
-                  onClick={() => handleSort("applied")}
-                  className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                  scope="col"
+                  aria-sort={
+                    sortField === "applied"
+                      ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="py-3 px-5 select-none"
                 >
-                  <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
-                    {t("applications.columns.applied")}
+                  <button
+                    type="button"
+                    onClick={() => handleSort("applied")}
+                    className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                  >
+                    <span>{t("applications.columns.applied")}</span>
                     {sortField === "applied" ? (
                       <ArrowDown
                         className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
                           sortDirection === "asc" ? "rotate-180" : ""
                         }`}
+                        aria-hidden="true"
                       />
                     ) : (
-                      <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                      <ArrowUpDown
+                        className="h-3 w-3 text-slate-400"
+                        aria-hidden="true"
+                      />
                     )}
-                  </span>
+                  </button>
                 </th>
               )}
-              <th className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500">
+              <th
+                scope="col"
+                className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500"
+              >
                 {t("common.actions")}
               </th>
             </tr>
@@ -222,7 +315,11 @@ export function ApplicationsTableView({
               <ApplicationsTableRow
                 key={application.id}
                 application={application}
-                job={application.jobId ? jobMap.get(application.jobId) || null : null}
+                job={
+                  application.jobId
+                    ? jobMap.get(application.jobId) || null
+                    : null
+                }
                 visibleColumns={visibleColumns}
                 onSelectApp={onSelectApp}
                 onDeleteApp={onDeleteApp}

@@ -5,7 +5,11 @@ import { Columns3, SlidersHorizontal, X } from "lucide-react";
 import { SearchInput } from "@/components/shared/search-input";
 import { SegmentedTabs } from "@/components/shared/segmented-tabs";
 import { useI18n } from "@/i18n";
-import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
+import {
+  getJobTypeLabel,
+  getWorkplaceLabel,
+  getExperienceLevelLabel,
+} from "@/lib/jobs";
 import type { VisibleColumns } from "../types";
 
 export interface JobFiltersBarProps {
@@ -75,6 +79,7 @@ export function JobFiltersBar({
           <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
             <SearchInput
               placeholder={t("jobs.searchJobs")}
+              aria-label={t("jobs.searchJobs")}
               value={search}
               onChange={onSearchChange}
             />
@@ -89,7 +94,10 @@ export function JobFiltersBar({
                 isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
               }`}
             >
-              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+              <Columns3
+                className="h-3.5 w-3.5 text-slate-500"
+                aria-hidden="true"
+              />
               <span>{t("common.columns")}</span>
             </button>
 
@@ -100,12 +108,17 @@ export function JobFiltersBar({
                 </div>
                 <div className="space-y-0.5 mt-1">
                   {[
-                    { id: "title", label: t("jobs.columns.title"), locked: true },
+                    {
+                      id: "title",
+                      label: t("jobs.columns.title"),
+                      locked: true,
+                    },
                     { id: "status", label: t("jobs.columns.status") },
                     { id: "pipeline", label: t("jobs.columns.pipeline") },
                     { id: "applicants", label: t("jobs.columns.applicants") },
                   ].map((col) => {
-                    const isChecked = visibleColumns[col.id as keyof VisibleColumns];
+                    const isChecked =
+                      visibleColumns[col.id as keyof VisibleColumns];
                     const isLocked = col.locked;
                     return (
                       <label
@@ -118,9 +131,13 @@ export function JobFiltersBar({
                       >
                         <input
                           type="checkbox"
+                          name={`col-${col.id}`}
+                          aria-label={col.label}
                           checked={isChecked}
                           disabled={isLocked}
-                          onChange={() => onToggleColumn(col.id as keyof VisibleColumns)}
+                          onChange={() =>
+                            onToggleColumn(col.id as keyof VisibleColumns)
+                          }
                           className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
                         />
                         <span>{col.label}</span>
@@ -138,7 +155,10 @@ export function JobFiltersBar({
             onClick={onOpenFiltersDrawer}
             className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+            <SlidersHorizontal
+              className="h-3.5 w-3.5 text-slate-500"
+              aria-hidden="true"
+            />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
               <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
@@ -152,7 +172,9 @@ export function JobFiltersBar({
       {/* Active Filter Chips Bar */}
       {hasSecondaryFilters && (
         <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+          <span className="text-slate-400 font-medium text-[11px]">
+            {t("common.filter")}:
+          </span>
           {typeFilters.map((tf) => (
             <span
               key={tf}
@@ -162,10 +184,11 @@ export function JobFiltersBar({
               <button
                 type="button"
                 onClick={() => onToggleFilter("type", typeFilters, tf)}
-                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer p-0.5"
+                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
                 title="Remove filter"
+                aria-label={`${t("common.remove")} ${getJobTypeLabel(tf, t)} ${t("common.filter")}`}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </span>
           ))}
@@ -178,10 +201,11 @@ export function JobFiltersBar({
               <button
                 type="button"
                 onClick={() => onToggleFilter("exp", expFilters, ef)}
-                className="hover:text-indigo-900 dark:hover:text-indigo-100 cursor-pointer p-0.5"
+                className="hover:text-indigo-900 dark:hover:text-indigo-100 cursor-pointer p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
                 title="Remove filter"
+                aria-label={`${t("common.remove")} ${getExperienceLevelLabel(ef, t)} ${t("common.filter")}`}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </span>
           ))}
@@ -193,11 +217,14 @@ export function JobFiltersBar({
               <span>{getWorkplaceLabel(wf, t)}</span>
               <button
                 type="button"
-                onClick={() => onToggleFilter("workplace", workplaceFilters, wf)}
-                className="hover:text-teal-900 dark:hover:text-teal-100 cursor-pointer p-0.5"
+                onClick={() =>
+                  onToggleFilter("workplace", workplaceFilters, wf)
+                }
+                className="hover:text-teal-900 dark:hover:text-teal-100 cursor-pointer p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
                 title="Remove filter"
+                aria-label={`${t("common.remove")} ${getWorkplaceLabel(wf, t)} ${t("common.filter")}`}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </span>
           ))}

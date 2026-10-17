@@ -1,14 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  CheckCircle2,
-  AlertCircle,
-  Search,
-} from "lucide-react";
-import {
-  type EmailLog,
-} from "@/lib/email-templates";
+import { CheckCircle2, AlertCircle, Search } from "lucide-react";
+import { type EmailLog } from "@/lib/email-templates";
 import { useI18n } from "@/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,11 +51,16 @@ export default function EmailLogsPage() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <Search
+              className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400"
+              aria-hidden="true"
+            />
             <Input
+              name="email-logs-search"
               value={logSearch}
               onChange={(e) => setLogSearch(e.target.value)}
               placeholder={t("email.searchRecipient")}
+              aria-label={t("email.searchRecipient")}
               className="h-8 pl-8 text-xs w-full"
             />
           </div>
@@ -98,7 +97,10 @@ export default function EmailLogsPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-slate-400"
+                  >
                     {t("email.noLogsFound")}
                   </td>
                 </tr>
@@ -201,8 +203,12 @@ export default function EmailLogsPage() {
           body={viewingLog.body}
           senderName={viewingLog.senderName}
           senderEmail={viewingLog.senderEmail}
-          candidateName={viewingLog.candidateName || viewingLog.recipientName || undefined}
-          candidateEmail={viewingLog.candidateEmail || viewingLog.recipientEmail || undefined}
+          candidateName={
+            viewingLog.candidateName || viewingLog.recipientName || undefined
+          }
+          candidateEmail={
+            viewingLog.candidateEmail || viewingLog.recipientEmail || undefined
+          }
           templateName={viewingLog.templateType}
           status={viewingLog.status}
           date={viewingLog.sentAt}

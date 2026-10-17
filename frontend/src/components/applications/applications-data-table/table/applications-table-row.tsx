@@ -43,9 +43,16 @@ export function ApplicationsTableRow({
       {/* Candidate Name */}
       {visibleColumns.candidate && (
         <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
-          <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectApp(application);
+            }}
+            className="text-left font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+          >
             {application.candidateName}
-          </span>
+          </button>
         </td>
       )}
 
@@ -87,9 +94,7 @@ export function ApplicationsTableRow({
       )}
 
       {/* Score */}
-      {visibleColumns.score && (
-        <td className="py-4 px-5 text-slate-400">—</td>
-      )}
+      {visibleColumns.score && <td className="py-4 px-5 text-slate-400">—</td>}
 
       {/* Applied */}
       {visibleColumns.applied && (
@@ -110,6 +115,7 @@ export function ApplicationsTableRow({
             }}
             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
             title={t("common.view")}
+            aria-label={t("common.view")}
           >
             <Eye className="h-4 w-4" />
           </button>
@@ -122,6 +128,7 @@ export function ApplicationsTableRow({
               }}
               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
               title={t("common.delete")}
+              aria-label={t("common.delete")}
             >
               <Trash2 className="h-4 w-4" />
             </button>

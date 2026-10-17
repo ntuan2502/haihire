@@ -53,7 +53,8 @@ HaiHire uses an enterprise 3-branch environment promotion flow:
 
 4. **Promote `dev -> staging` (Pre-production QA):**
    - Open PR: `dev` -> `staging`.
-   - Merging triggers `ci-staging.yml` (~9 min: 11 architecture gates, unit tests with coverage, Playwright E2E suite, production build).
+   - Triggers `ci-staging.yml` on PR (~9 min: 11 architecture gates, unit tests with coverage, Playwright E2E suite, production build).
+   - Once all 4 required status checks pass and PR is merged, duplicate post-merge run is automatically skipped.
    - QA team validates against local/staging Docker environment.
 
 5. **Promote `staging -> main` (Production Release):**
@@ -99,23 +100,23 @@ For critical production bugs:
 
 ## 🚀 CI Triggers
 
-| Branch      | Workflow         | Trigger                 |
-| ----------- | ---------------- | ----------------------- |
-| `feature/*` | `ci-feature.yml` | `pull_request` → `dev`  |
-| `dev`       | `ci-dev.yml`     | `push` to `dev`         |
-| `staging`   | `ci-staging.yml` | `push` to `staging`     |
-| `main`      | `ci-main.yml`    | `pull_request` → `main` |
-| `v*.*.*`    | `cd-release.yml` | `push` tag              |
+| Branch      | Workflow         | Trigger                                         |
+| ----------- | ---------------- | ----------------------------------------------- |
+| `feature/*` | `ci-feature.yml` | `pull_request` → `dev`                          |
+| `dev`       | `ci-dev.yml`     | `pull_request` → `dev` + `push` (non-merge)     |
+| `staging`   | `ci-staging.yml` | `pull_request` → `staging` + `push` (non-merge) |
+| `main`      | `ci-main.yml`    | `pull_request` → `main` only                    |
+| `v*.*.*`    | `cd-release.yml` | `push` tag                                      |
 
 ### Branch Protection & Layered CI Rules
 
-| Branch / Ref          | Workflow File                      | Focus & Scope                                                               |            Time Target            | Required Status Checks                                                                                                      |
-| :-------------------- | :--------------------------------- | :-------------------------------------------------------------------------- | :-------------------------------: | :-------------------------------------------------------------------------------------------------------------------------- |
-| **`feat/*`, `fix/*`** | `.github/workflows/ci-feature.yml` | Path filter, fast lint, typecheck, unit tests                               |           **2 - 3 min**           | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests`                                                             |
-| **`dev`**             | `.github/workflows/ci-dev.yml`     | Path filter (code vs docs-only), 11 CI gates (`check:all:fast`), unit tests | **3 - 4 min** (or **~30s** docs)  | Post-merge integration                                                                                                      |
-| **`staging`**         | `.github/workflows/ci-staging.yml` | Path filter, 11 CI gates, coverage, Playwright E2E, build                   | **8 - 10 min** (or **~30s** docs) | Post-merge pre-production                                                                                                   |
-| **`main`**            | `.github/workflows/ci-main.yml`    | Full checks (`check:all`), Playwright E2E, pnpm audit, Docker verify        |          **10 - 12 min**          | `Full CI Quality Pipeline`, `Playwright End-to-End Suite`, `Dependency Security Audit`, `Docker Build Dry-Run Verification` |
-| **`v*.*.*` (Tags)**   | `.github/workflows/cd-release.yml` | Docker Buildx, GHCR publish, Trivy scan, GitHub Release                     |           **5 - 7 min**           | `Build & Publish Container Images`, `Container Vulnerability Scan`                                                          |
+| Branch / Ref          | Workflow File                      | Focus & Scope                                                               |            Time Target            | Required Status Checks                                                                                                            |
+| :-------------------- | :--------------------------------- | :-------------------------------------------------------------------------- | :-------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **`feat/*`, `fix/*`** | `.github/workflows/ci-feature.yml` | Path filter, fast lint, typecheck, unit tests                               |           **2 - 3 min**           | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests`                                                                   |
+| **`dev`**             | `.github/workflows/ci-dev.yml`     | Path filter (code vs docs-only), 11 CI gates (`check:all:fast`), unit tests | **3 - 4 min** (or **~30s** docs)  | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests` (via PR)                                                          |
+| **`staging`**         | `.github/workflows/ci-staging.yml` | Path filter, 11 CI gates, coverage, Playwright E2E, build                   | **8 - 10 min** (or **~30s** docs) | `11 CI Architecture Gates`, `Unit & Integration Tests (Coverage)`, `Playwright End-to-End Suite`, `Production Build Verification` |
+| **`main`**            | `.github/workflows/ci-main.yml`    | Full checks (`check:all`), Playwright E2E, pnpm audit, Docker verify        |          **10 - 12 min**          | `Full CI Quality Pipeline`, `Playwright End-to-End Suite`, `Dependency Security Audit`, `Docker Build Dry-Run Verification`       |
+| **`v*.*.*` (Tags)**   | `.github/workflows/cd-release.yml` | Docker Buildx, GHCR publish, Trivy scan, GitHub Release                     |           **5 - 7 min**           | `Build & Publish Container Images`, `Container Vulnerability Scan`                                                                |
 
 ### 🛡️ 3-Tier Security Architecture
 

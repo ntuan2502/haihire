@@ -44,7 +44,9 @@ function JobsPageContent() {
   const type = getParam("type", "");
   const experience = getParam("experience", "");
   const workplace = getParam("workplace", "");
-  const sortBy = (getParam("sortBy", "created") as "created" | "title" | "applicants") || "created";
+  const sortBy =
+    (getParam("sortBy", "created") as "created" | "title" | "applicants") ||
+    "created";
   const sortOrder = (getParam("sortOrder", "desc") as "desc" | "asc") || "desc";
 
   // TanStack Query Hooks with Server-Side Pagination, Search & Full URL Filters
@@ -120,7 +122,10 @@ function JobsPageContent() {
     }
   };
 
-  const [jobToDelete, setJobToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const handleJobDeleted = (id: string) => {
     const job = jobs.find((j) => j.id === id);
@@ -149,10 +154,16 @@ function JobsPageContent() {
       />
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {jobsLoading && !jobsData ? (
           <LoadingSpinner />
-        ) : stats.total === 0 && currentPage === 1 && !search && !status && !type && !experience && !workplace ? (
+        ) : stats.total === 0 &&
+          currentPage === 1 &&
+          !search &&
+          !status &&
+          !type &&
+          !experience &&
+          !workplace ? (
           <StartRecruiting
             onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
             onCreateTestJob={handleCreateTestJob}
@@ -205,14 +216,23 @@ function JobsPageContent() {
               sortBy={sortBy}
               sortOrder={sortOrder}
               onFilterChange={(filters) => {
-                setParams({
-                  status: filters.status || null,
-                  type: filters.type || null,
-                  experience: filters.experience || null,
-                  workplace: filters.workplace || null,
-                  sortBy: filters.sortBy && filters.sortBy !== "created" ? filters.sortBy : null,
-                  sortOrder: filters.sortOrder && filters.sortOrder !== "desc" ? filters.sortOrder : null,
-                }, true);
+                setParams(
+                  {
+                    status: filters.status || null,
+                    type: filters.type || null,
+                    experience: filters.experience || null,
+                    workplace: filters.workplace || null,
+                    sortBy:
+                      filters.sortBy && filters.sortBy !== "created"
+                        ? filters.sortBy
+                        : null,
+                    sortOrder:
+                      filters.sortOrder && filters.sortOrder !== "desc"
+                        ? filters.sortOrder
+                        : null,
+                  },
+                  true,
+                );
               }}
             />
           </div>
@@ -226,7 +246,9 @@ function JobsPageContent() {
           onClose={() => setJobToDelete(null)}
           onConfirm={handleConfirmDeleteJob}
           title={t("jobs.wizard.deleteConfirmTitle")}
-          description={t("jobs.wizard.deleteConfirmQuestion", { title: jobToDelete.title })}
+          description={t("jobs.wizard.deleteConfirmQuestion", {
+            title: jobToDelete.title,
+          })}
           notice={t("jobs.wizard.deleteConfirmNotice")}
           confirmMatchText={jobToDelete.title}
           confirmButtonLabel={t("jobs.wizard.confirmDeleteButton")}

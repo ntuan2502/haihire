@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  SlidersHorizontal,
-  X,
-  RotateCcw,
-  Columns3,
-} from "lucide-react";
+import { SlidersHorizontal, X, RotateCcw, Columns3 } from "lucide-react";
 import { SearchInput } from "@/components/shared/search-input";
 import { SegmentedTabs } from "@/components/shared/segmented-tabs";
 import type { Job } from "@/types";
@@ -30,7 +25,9 @@ interface ApplicationsTableToolbarProps {
     score: boolean;
     applied: boolean;
   };
-  toggleColumn: (col: keyof ApplicationsTableToolbarProps["visibleColumns"]) => void;
+  toggleColumn: (
+    col: keyof ApplicationsTableToolbarProps["visibleColumns"],
+  ) => void;
   setIsFilterOpen: (val: boolean) => void;
   secondaryFiltersCount: number;
   hasSecondaryFilters: boolean;
@@ -86,6 +83,7 @@ export function ApplicationsTableToolbar({
           <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
             <SearchInput
               placeholder={t("applications.searchApplications")}
+              aria-label={t("applications.searchApplications")}
               value={search}
               onChange={onSearchChangeHandler}
             />
@@ -100,7 +98,10 @@ export function ApplicationsTableToolbar({
                 isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
               }`}
             >
-              <Columns3 className="h-3.5 w-3.5 text-slate-500" />
+              <Columns3
+                className="h-3.5 w-3.5 text-slate-500"
+                aria-hidden="true"
+              />
               <span>{t("common.columns")}</span>
             </button>
 
@@ -111,7 +112,11 @@ export function ApplicationsTableToolbar({
                 </div>
                 <div className="space-y-0.5 mt-1">
                   {[
-                    { id: "candidate", label: t("applications.columns.candidate"), locked: true },
+                    {
+                      id: "candidate",
+                      label: t("applications.columns.candidate"),
+                      locked: true,
+                    },
                     { id: "email", label: t("applications.columns.email") },
                     { id: "job", label: t("applications.columns.job") },
                     { id: "status", label: t("applications.columns.status") },
@@ -132,12 +137,12 @@ export function ApplicationsTableToolbar({
                       >
                         <input
                           type="checkbox"
+                          name={`col-${col.id}`}
+                          aria-label={col.label}
                           checked={isChecked}
                           disabled={isLocked}
                           onChange={() =>
-                            toggleColumn(
-                              col.id as keyof typeof visibleColumns,
-                            )
+                            toggleColumn(col.id as keyof typeof visibleColumns)
                           }
                           className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
                         />
@@ -154,9 +159,12 @@ export function ApplicationsTableToolbar({
           <button
             type="button"
             onClick={() => setIsFilterOpen(true)}
-            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0"
+            className="h-9 px-3.5 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-xs shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500" />
+            <SlidersHorizontal
+              className="h-3.5 w-3.5 text-slate-500"
+              aria-hidden="true"
+            />
             <span>{t("common.filter")}</span>
             {secondaryFiltersCount > 0 && (
               <span className="h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
@@ -170,16 +178,22 @@ export function ApplicationsTableToolbar({
       {/* Active Filter Chips Bar */}
       {hasSecondaryFilters && (
         <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+          <span className="text-slate-400 font-medium text-[11px]">
+            {t("common.filter")}:
+          </span>
           {!fixedJobId && currentJobFilter !== "ALL" && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
-              <span>{jobs.find((j) => j.id === currentJobFilter)?.title || currentJobFilter}</span>
+              <span>
+                {jobs.find((j) => j.id === currentJobFilter)?.title ||
+                  currentJobFilter}
+              </span>
               <button
                 type="button"
                 onClick={() => setJobFilter("ALL")}
-                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+                aria-label={`${t("common.delete")} ${jobs.find((j) => j.id === currentJobFilter)?.title || currentJobFilter} ${t("common.filter")}`}
+                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded"
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </span>
           )}
@@ -189,24 +203,25 @@ export function ApplicationsTableToolbar({
                 {scoreFilter === "80"
                   ? t("applications.scoreFilters.excellent")
                   : scoreFilter === "60"
-                  ? t("applications.scoreFilters.good")
-                  : t("applications.scoreFilters.review")}
+                    ? t("applications.scoreFilters.good")
+                    : t("applications.scoreFilters.review")}
               </span>
               <button
                 type="button"
                 onClick={() => setScoreFilter("ALL")}
-                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer"
+                aria-label={`${t("common.delete")} ${t("applications.columns.score")} ${t("common.filter")}`}
+                className="hover:text-blue-900 dark:hover:text-blue-100 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded"
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </span>
           )}
           <button
             type="button"
             onClick={handleResetFilters}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-medium cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-3 w-3" aria-hidden="true" />
             <span>{t("jobs.resetAll")}</span>
           </button>
         </div>

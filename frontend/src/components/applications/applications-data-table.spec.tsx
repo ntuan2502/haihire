@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { ApplicationsDataTable } from "./applications-data-table";
 import type { Job, Application } from "@/types";
@@ -17,7 +23,8 @@ function resolveKey(path: string, obj: Record<string, unknown>): string {
   const parts = path.split(".");
   let cur: unknown = obj;
   for (const p of parts) {
-    if (cur && typeof cur === "object") cur = (cur as Record<string, unknown>)[p];
+    if (cur && typeof cur === "object")
+      cur = (cur as Record<string, unknown>)[p];
     else return path;
   }
   return typeof cur === "string" ? cur : path;
@@ -60,7 +67,9 @@ vi.mock("@/lib/api", () => ({
   getDocumentUrl: (url: string) => url,
 }));
 
-const mockUpdateStage = vi.fn().mockResolvedValue({ id: "app-1", stage: "INTERVIEW" });
+const mockUpdateStage = vi
+  .fn()
+  .mockResolvedValue({ id: "app-1", stage: "INTERVIEW" });
 const mockDeleteApp = vi.fn().mockResolvedValue({ success: true });
 const mockUpdateCandidate = vi.fn().mockResolvedValue({ id: "app-1" });
 const mockDeleteInterview = vi.fn().mockResolvedValue({ success: true });
@@ -94,7 +103,11 @@ vi.mock("@/hooks/use-queries", () => ({
   }),
   useOrgMembers: () => ({
     data: [
-      { id: "mem-1", role: "ADMIN", user: { id: "u-1", name: "Alice Recruiter", email: "alice@test.com" } },
+      {
+        id: "mem-1",
+        role: "ADMIN",
+        user: { id: "u-1", name: "Alice Recruiter", email: "alice@test.com" },
+      },
     ],
     isLoading: false,
   }),
@@ -185,7 +198,9 @@ const mockApplications: Application[] = [
 describe("ApplicationsDataTable Component", () => {
   let queryClient: QueryClient;
 
-  function renderTable(props: Partial<Parameters<typeof ApplicationsDataTable>[0]> = {}) {
+  function renderTable(
+    props: Partial<Parameters<typeof ApplicationsDataTable>[0]> = {},
+  ) {
     return render(
       <QueryClientProvider client={queryClient}>
         <ApplicationsDataTable
@@ -231,7 +246,9 @@ describe("ApplicationsDataTable Component", () => {
       renderTable();
       expect(screen.getByText("an.nguyen@example.com")).toBeInTheDocument();
       expect(screen.getByText("binh.tran@example.com")).toBeInTheDocument();
-      expect(screen.getAllByText(/Senior Full-Stack Engineer/).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Senior Full-Stack Engineer/).length,
+      ).toBeGreaterThan(0);
       expect(screen.getByText(/Product Designer/)).toBeInTheDocument();
     });
 
@@ -245,13 +262,17 @@ describe("ApplicationsDataTable Component", () => {
 
     it("displays total count and pagination footer", () => {
       renderTable({ totalCount: 3 });
-      expect(screen.getByText(/Showing 1–3 of 3 applications/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Showing 1–3 of 3 applications/i),
+      ).toBeInTheDocument();
     });
 
     it("shows empty state when no applications exist", () => {
       renderTable({ applications: [] });
       expect(screen.getByText("No applications yet")).toBeInTheDocument();
-      const viewJobsBtn = screen.getByRole("button", { name: "View Active Jobs" });
+      const viewJobsBtn = screen.getByRole("button", {
+        name: "View Active Jobs",
+      });
       expect(viewJobsBtn).toBeInTheDocument();
       fireEvent.click(viewJobsBtn);
       expect(mockPush).toHaveBeenCalledWith("/dashboard/jobs");
@@ -358,7 +379,12 @@ describe("ApplicationsDataTable Component", () => {
 
     it("toggles stage filter in SegmentedTabs", () => {
       renderTable();
-      const appliedTab = screen.getByRole("button", { name: /^applied/i });
+      const filterGroup = screen.getByRole("group", {
+        name: /filter status tabs/i,
+      });
+      const appliedTab = within(filterGroup).getByRole("button", {
+        name: /^applied/i,
+      });
       fireEvent.click(appliedTab);
 
       // Only Nguyen Van An is in APPLIED stage
@@ -372,7 +398,9 @@ describe("ApplicationsDataTable Component", () => {
       const filterBtn = screen.getByRole("button", { name: /filter/i });
       fireEvent.click(filterBtn);
 
-      expect(screen.getByRole("heading", { level: 3, name: "Filters" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 3, name: "Filters" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("Filter by job")).toBeInTheDocument();
     });
 
@@ -382,7 +410,9 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(filterBtn);
 
       // Click score filter: ≥ 80% (Excellent)
-      const score80Btn = screen.getByRole("button", { name: /≥ 80% \(Excellent\)/i });
+      const score80Btn = screen.getByRole("button", {
+        name: /≥ 80% \(Excellent\)/i,
+      });
       fireEvent.click(score80Btn);
 
       // Close drawer with Done
@@ -411,8 +441,15 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(row);
 
       const drawer = screen.getByRole("dialog");
-      expect(within(drawer).getByRole("heading", { level: 2, name: "Nguyen Van An" })).toBeInTheDocument();
-      expect(within(drawer).getAllByText("+84901234567").length).toBeGreaterThan(0);
+      expect(
+        within(drawer).getByRole("heading", {
+          level: 2,
+          name: "Nguyen Van An",
+        }),
+      ).toBeInTheDocument();
+      expect(
+        within(drawer).getAllByText("+84901234567").length,
+      ).toBeGreaterThan(0);
       expect(within(drawer).getByText("Back to table")).toBeInTheDocument();
     });
 
@@ -446,7 +483,9 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
       // Notes in Overview
-      expect(screen.getByText("Top candidate from referral")).toBeInTheDocument();
+      expect(
+        screen.getByText("Top candidate from referral"),
+      ).toBeInTheDocument();
       expect(screen.getByText("Speaks fluent English")).toBeInTheDocument();
     });
 
@@ -458,7 +497,9 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(notesTab);
 
       const noteInput = screen.getByPlaceholderText("Type a note...");
-      fireEvent.change(noteInput, { target: { value: "Completed background check" } });
+      fireEvent.change(noteInput, {
+        target: { value: "Completed background check" },
+      });
 
       const addBtn = screen.getByRole("button", { name: "Add note" });
       fireEvent.click(addBtn);
@@ -481,17 +522,25 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
       const drawer = screen.getByRole("dialog");
-      expect(within(drawer).getByText("Technical Interview")).toBeInTheDocument();
+      expect(
+        within(drawer).getByText("Technical Interview"),
+      ).toBeInTheDocument();
       expect(within(drawer).getByText("Alice Recruiter")).toBeInTheDocument();
 
-      const cancelBtn = within(drawer).getByRole("button", { name: "Cancel this interview" });
+      const cancelBtn = within(drawer).getByRole("button", {
+        name: "Cancel this interview",
+      });
       fireEvent.click(cancelBtn);
 
       // Confirm in destructive modal
-      const cancelInput = screen.getByPlaceholderText('Type exactly "CANCEL"...');
+      const cancelInput = screen.getByPlaceholderText(
+        'Type exactly "CANCEL"...',
+      );
       fireEvent.change(cancelInput, { target: { value: "CANCEL" } });
 
-      const confirmBtn = screen.getByRole("button", { name: "Cancel this interview" });
+      const confirmBtn = screen.getByRole("button", {
+        name: "Cancel this interview",
+      });
       fireEvent.click(confirmBtn);
 
       await waitFor(() => {
@@ -503,7 +552,9 @@ describe("ApplicationsDataTable Component", () => {
       renderTable();
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
-      const scheduleBtn = screen.getByRole("button", { name: "Schedule interview" });
+      const scheduleBtn = screen.getByRole("button", {
+        name: "Schedule interview",
+      });
       fireEvent.click(scheduleBtn);
 
       expect(screen.getByText("Schedule Interview")).toBeInTheDocument();
@@ -524,7 +575,9 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
       const drawer = screen.getByRole("dialog");
-      const previewBtn = within(drawer).getByRole("button", { name: "Preview" });
+      const previewBtn = within(drawer).getByRole("button", {
+        name: "Preview",
+      });
       fireEvent.click(previewBtn);
 
       expect(screen.getByTitle("Nguyen_Van_An_CV.pdf")).toBeInTheDocument();
@@ -535,7 +588,9 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(screen.getByText("Nguyen Van An"));
 
       const drawer = screen.getByRole("dialog");
-      const downloadBtn = within(drawer).getByRole("button", { name: "Download" });
+      const downloadBtn = within(drawer).getByRole("button", {
+        name: "Download",
+      });
       fireEvent.click(downloadBtn);
 
       await waitFor(() => {
@@ -551,7 +606,9 @@ describe("ApplicationsDataTable Component", () => {
       const deleteButtons = screen.getAllByTitle("Delete");
       fireEvent.click(deleteButtons[0]);
 
-      expect(screen.getByRole("heading", { name: "Delete Application" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "Delete Application" }),
+      ).toBeInTheDocument();
       expect(screen.getAllByText("Le Van Cuong").length).toBeGreaterThan(1);
     });
 
@@ -562,10 +619,14 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(deleteButtons[0]);
 
       // ConfirmDestructiveModal requires typing the candidate name
-      const confirmInput = screen.getByPlaceholderText('Type exactly "Le Van Cuong"...');
+      const confirmInput = screen.getByPlaceholderText(
+        'Type exactly "Le Van Cuong"...',
+      );
       fireEvent.change(confirmInput, { target: { value: "Le Van Cuong" } });
 
-      const confirmDeleteBtn = screen.getByRole("button", { name: "Delete Application" });
+      const confirmDeleteBtn = screen.getByRole("button", {
+        name: "Delete Application",
+      });
       expect(confirmDeleteBtn).not.toBeDisabled();
       fireEvent.click(confirmDeleteBtn);
 
@@ -583,7 +644,9 @@ describe("ApplicationsDataTable Component", () => {
 
       const drawer = screen.getByRole("dialog");
       // Valid transition from APPLIED -> SCREENING
-      const screeningBtn = within(drawer).getByRole("button", { name: /screening/i });
+      const screeningBtn = within(drawer).getByRole("button", {
+        name: /screening/i,
+      });
       fireEvent.click(screeningBtn);
 
       await waitFor(() => {
@@ -617,7 +680,9 @@ describe("ApplicationsDataTable Component", () => {
       renderTable({ onViewInPipeline: mockOnViewInPipeline });
 
       fireEvent.click(screen.getByText("Nguyen Van An"));
-      const viewPipelineBtn = screen.getByRole("button", { name: "View in pipeline" });
+      const viewPipelineBtn = screen.getByRole("button", {
+        name: "View in pipeline",
+      });
       fireEvent.click(viewPipelineBtn);
 
       expect(mockOnViewInPipeline).toHaveBeenCalledWith("app-1", "APPLIED");

@@ -32,9 +32,7 @@ import {
   RotateCcw,
   X,
 } from "lucide-react";
-import {
-  type ScheduledInterviewInfo,
-} from "@/lib/interviews";
+import { type ScheduledInterviewInfo } from "@/lib/interviews";
 import { getCandidateDisplayName } from "@/lib/utils";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
 import { InterviewsTableView } from "@/components/interviews/interviews-table-view";
@@ -52,14 +50,23 @@ function InterviewsPageContent() {
   const { t } = useI18n();
 
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<Application | undefined>(undefined);
-  const [scheduleDate, setScheduleDate] = useState<string | undefined>(undefined);
-  const [selectedInterviewForEdit, setSelectedInterviewForEdit] = useState<ScheduledInterviewInfo | undefined>(undefined);
+  const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<
+    Application | undefined
+  >(undefined);
+  const [scheduleDate, setScheduleDate] = useState<string | undefined>(
+    undefined,
+  );
+  const [selectedInterviewForEdit, setSelectedInterviewForEdit] = useState<
+    ScheduledInterviewInfo | undefined
+  >(undefined);
 
   // Scorecard modal state
   const [scorecardModalOpen, setScorecardModalOpen] = useState(false);
-  const [selectedAppForScorecard, setSelectedAppForScorecard] = useState<Application | undefined>(undefined);
-  const [selectedInterviewForScorecard, setSelectedInterviewForScorecard] = useState<ScheduledInterviewInfo | undefined>(undefined);
+  const [selectedAppForScorecard, setSelectedAppForScorecard] = useState<
+    Application | undefined
+  >(undefined);
+  const [selectedInterviewForScorecard, setSelectedInterviewForScorecard] =
+    useState<ScheduledInterviewInfo | undefined>(undefined);
 
   // Cancel interview modal state
   const deleteInterviewMutation = useDeleteInterviewMutation();
@@ -86,8 +93,7 @@ function InterviewsPageContent() {
     rawTab === "UPCOMING" || rawTab === "AWAITING" ? rawTab : "ALL";
 
   const rawViewMode = getParam("viewMode", "table");
-  const viewMode: ViewMode =
-    rawViewMode === "calendar" ? "calendar" : "table";
+  const viewMode: ViewMode = rawViewMode === "calendar" ? "calendar" : "table";
 
   const rawSortBy = getParam("sortBy", "upcoming");
   const sortBy: SortOption =
@@ -128,8 +134,7 @@ function InterviewsPageContent() {
   );
 
   const secondaryFiltersCount =
-    (selectedJobFilter !== "ALL" ? 1 : 0) +
-    (sortBy !== "upcoming" ? 1 : 0);
+    (selectedJobFilter !== "ALL" ? 1 : 0) + (sortBy !== "upcoming" ? 1 : 0);
   const hasSecondaryFilters = secondaryFiltersCount > 0;
 
   const handleResetFilters = () => {
@@ -137,8 +142,12 @@ function InterviewsPageContent() {
     setParam("sortBy", "upcoming");
   };
 
-  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(user?.organizationId);
-  const { data: allApplications = [] } = useAllApplications(user?.organizationId);
+  const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
+    user?.organizationId,
+  );
+  const { data: allApplications = [] } = useAllApplications(
+    user?.organizationId,
+  );
 
   // Paginated interviews query from server API (for Table view & Total KPIs)
   const { data: interviewsData, isLoading: appsLoading } = useInterviews({
@@ -152,14 +161,15 @@ function InterviewsPageContent() {
   });
 
   // Full interviews query for Calendar view (all scheduled events, up to 1000 items)
-  const { data: calendarInterviewsData, isLoading: calendarLoading } = useInterviews({
-    organizationId: user?.organizationId,
-    limit: 1000,
-    search: searchQuery.trim() || undefined,
-    jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
-    tab: activeTab,
-    enabled: viewMode === "calendar",
-  });
+  const { data: calendarInterviewsData, isLoading: calendarLoading } =
+    useInterviews({
+      organizationId: user?.organizationId,
+      limit: 1000,
+      search: searchQuery.trim() || undefined,
+      jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
+      tab: activeTab,
+      enabled: viewMode === "calendar",
+    });
 
   // Efficient KPI queries
   const { data: upcomingData } = useInterviews({
@@ -203,8 +213,16 @@ function InterviewsPageContent() {
   const interviewTabs = useMemo(
     () => [
       { id: "ALL", label: t("common.all"), count: totalCandidateCount },
-      { id: "UPCOMING", label: t("interviews.kpiScheduled"), count: scheduledCount },
-      { id: "AWAITING", label: t("interviews.kpiAwaiting"), count: awaitingCount },
+      {
+        id: "UPCOMING",
+        label: t("interviews.kpiScheduled"),
+        count: scheduledCount,
+      },
+      {
+        id: "AWAITING",
+        label: t("interviews.kpiAwaiting"),
+        count: awaitingCount,
+      },
     ],
     [t, totalCandidateCount, scheduledCount, awaitingCount],
   );
@@ -222,7 +240,10 @@ function InterviewsPageContent() {
   };
 
   // Open Scorecard Modal
-  const handleOpenScorecard = (app: Application, intv: ScheduledInterviewInfo) => {
+  const handleOpenScorecard = (
+    app: Application,
+    intv: ScheduledInterviewInfo,
+  ) => {
     setSelectedAppForScorecard(app);
     setSelectedInterviewForScorecard(intv);
     setScorecardModalOpen(true);
@@ -239,7 +260,10 @@ function InterviewsPageContent() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+      <main
+        id="main-content"
+        className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4"
+      >
         {/* Standard Header Row matching Jobs, Candidates & Applications */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -289,7 +313,9 @@ function InterviewsPageContent() {
                 title={t("interviews.tableTitle")}
               >
                 <List className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t("interviews.table")}</span>
+                <span className="hidden sm:inline">
+                  {t("interviews.table")}
+                </span>
               </button>
               <button
                 type="button"
@@ -302,7 +328,9 @@ function InterviewsPageContent() {
                 title={t("interviews.calendarTitle")}
               >
                 <CalendarDays className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t("interviews.calendar")}</span>
+                <span className="hidden sm:inline">
+                  {t("interviews.calendar")}
+                </span>
               </button>
             </div>
 
@@ -310,6 +338,7 @@ function InterviewsPageContent() {
             <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
               <SearchInput
                 placeholder={t("interviews.searchPlaceholder")}
+                aria-label={t("interviews.searchPlaceholder")}
                 value={searchQuery}
                 onChange={setSearch}
               />
@@ -322,7 +351,9 @@ function InterviewsPageContent() {
                   type="button"
                   onClick={() => setIsColumnsOpen((prev) => !prev)}
                   className={`h-9 px-3 rounded-xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors ${
-                    isColumnsOpen ? "ring-2 ring-blue-500/20 border-blue-500" : ""
+                    isColumnsOpen
+                      ? "ring-2 ring-blue-500/20 border-blue-500"
+                      : ""
                   }`}
                 >
                   <Columns3 className="h-3.5 w-3.5 text-slate-500" />
@@ -336,10 +367,20 @@ function InterviewsPageContent() {
                     </div>
                     <div className="space-y-0.5 mt-1">
                       {[
-                        { id: "candidate", label: t("interviews.columns.candidate"), locked: true },
+                        {
+                          id: "candidate",
+                          label: t("interviews.columns.candidate"),
+                          locked: true,
+                        },
                         { id: "job", label: t("interviews.columns.job") },
-                        { id: "schedule", label: t("interviews.columns.schedule") },
-                        { id: "interviewer", label: t("interviews.columns.interviewer") },
+                        {
+                          id: "schedule",
+                          label: t("interviews.columns.schedule"),
+                        },
+                        {
+                          id: "interviewer",
+                          label: t("interviews.columns.interviewer"),
+                        },
                         { id: "status", label: t("interviews.columns.status") },
                         { id: "rating", label: t("interviews.columns.rating") },
                       ].map((col) => {
@@ -357,6 +398,8 @@ function InterviewsPageContent() {
                           >
                             <input
                               type="checkbox"
+                              name={`col-${col.id}`}
+                              aria-label={col.label}
                               checked={isChecked}
                               disabled={isLocked}
                               onChange={() =>
@@ -396,10 +439,15 @@ function InterviewsPageContent() {
         {/* Active Filter Chips Bar */}
         {hasSecondaryFilters && (
           <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
-            <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+            <span className="text-slate-400 font-medium text-[11px]">
+              {t("common.filter")}:
+            </span>
             {selectedJobFilter !== "ALL" && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
-                <span>{jobs.find((j) => j.id === selectedJobFilter)?.title || selectedJobFilter}</span>
+                <span>
+                  {jobs.find((j) => j.id === selectedJobFilter)?.title ||
+                    selectedJobFilter}
+                </span>
                 <button
                   type="button"
                   onClick={() => setParam("jobId", "ALL")}
@@ -446,8 +494,12 @@ function InterviewsPageContent() {
             <InterviewsCalendarView
               applications={calendarApplications}
               jobs={jobs}
-              onScheduleDate={(dateStr) => handleOpenScheduleModal(undefined, dateStr)}
-              onEditSchedule={(app, intv) => handleOpenScheduleModal(app, intv.date, intv)}
+              onScheduleDate={(dateStr) =>
+                handleOpenScheduleModal(undefined, dateStr)
+              }
+              onEditSchedule={(app, intv) =>
+                handleOpenScheduleModal(app, intv.date, intv)
+              }
               onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
               canEdit={canEdit}
             />
@@ -484,7 +536,9 @@ function InterviewsPageContent() {
             visibleColumns={visibleColumns}
             onOpenScheduleModal={handleOpenScheduleModal}
             onOpenScorecard={handleOpenScorecard}
-            onCancelInterview={(app, interview) => setCancelInterviewState({ app, interview })}
+            onCancelInterview={(app, interview) =>
+              setCancelInterviewState({ app, interview })
+            }
             onNavigateToPipeline={(jobId, applicationId, stage) => {
               const query = new URLSearchParams();
               if (stage) {
@@ -495,7 +549,9 @@ function InterviewsPageContent() {
               if (applicationId) {
                 query.set("applicationId", applicationId);
               }
-              router.push(`/dashboard/jobs/${jobId}/pipeline?${query.toString()}`);
+              router.push(
+                `/dashboard/jobs/${jobId}/pipeline?${query.toString()}`,
+              );
             }}
             canEdit={canEdit}
           />
@@ -545,7 +601,9 @@ function InterviewsPageContent() {
         }}
         application={selectedAppForScorecard}
         interview={selectedInterviewForScorecard}
-        job={jobs.find((j) => String(j.id) === String(selectedAppForScorecard?.jobId))}
+        job={jobs.find(
+          (j) => String(j.id) === String(selectedAppForScorecard?.jobId),
+        )}
       />
 
       {/* Cancel Interview Confirmation Modal */}
@@ -555,7 +613,9 @@ function InterviewsPageContent() {
           onClose={() => setCancelInterviewState(null)}
           onConfirm={async () => {
             if (cancelInterviewState.interview?.id) {
-              await deleteInterviewMutation.mutateAsync(cancelInterviewState.interview.id);
+              await deleteInterviewMutation.mutateAsync(
+                cancelInterviewState.interview.id,
+              );
               setCancelInterviewState(null);
             }
           }}
@@ -601,9 +661,24 @@ function InterviewsPageContent() {
               </span>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {[
-                  { id: "ALL", label: t("interviews.tabAll", { count: totalCandidateCount }) },
-                  { id: "UPCOMING", label: t("interviews.tabScheduled", { count: scheduledCount }) },
-                  { id: "AWAITING", label: t("interviews.tabAwaiting", { count: awaitingCount }) },
+                  {
+                    id: "ALL",
+                    label: t("interviews.tabAll", {
+                      count: totalCandidateCount,
+                    }),
+                  },
+                  {
+                    id: "UPCOMING",
+                    label: t("interviews.tabScheduled", {
+                      count: scheduledCount,
+                    }),
+                  },
+                  {
+                    id: "AWAITING",
+                    label: t("interviews.tabAwaiting", {
+                      count: awaitingCount,
+                    }),
+                  },
                 ].map((item) => (
                   <button
                     key={item.id}

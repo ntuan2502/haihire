@@ -20,10 +20,12 @@ import {
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { getInterviewsFromApplication } from "@/lib/interviews";
+import { useI18n } from "@/i18n";
 
 function DashboardContent() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   // TanStack Query - Real data from Database
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
@@ -137,7 +139,8 @@ function DashboardContent() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
+        <h1 className="sr-only">{t("dashboard.title")}</h1>
         {loading ? (
           <LoadingSpinner />
         ) : (

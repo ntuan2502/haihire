@@ -84,7 +84,9 @@ export function JobList(props: JobListProps) {
 
   const handleCopyLink = useCallback((job: Job) => {
     if (typeof window !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(`${window.location.origin}${getJobPublicUrl(job)}`);
+      navigator.clipboard.writeText(
+        `${window.location.origin}${getJobPublicUrl(job)}`,
+      );
       setCopiedJobId(job.id);
       setTimeout(() => setCopiedJobId(null), 2000);
     }
@@ -96,7 +98,9 @@ export function JobList(props: JobListProps) {
       <JobFiltersBar
         statusTabs={statusTabs}
         statusFilters={statusFilters}
-        onToggleStatusTab={(tabId) => toggleFilter("status", statusFilters, tabId)}
+        onToggleStatusTab={(tabId) =>
+          toggleFilter("status", statusFilters, tabId)
+        }
         onClearStatusTabs={() => handleFilterUpdate({ status: [] })}
         search={search}
         onSearchChange={setSearch}
@@ -104,7 +108,9 @@ export function JobList(props: JobListProps) {
         onToggleColumnsOpen={() => setIsColumnsOpen((prev) => !prev)}
         columnsRef={columnsRef}
         visibleColumns={visibleColumns as VisibleColumns}
-        onToggleColumn={(col) => toggleColumn(col as keyof typeof visibleColumns)}
+        onToggleColumn={(col) =>
+          toggleColumn(col as keyof typeof visibleColumns)
+        }
         onOpenFiltersDrawer={() => setIsFilterOpen(true)}
         secondaryFiltersCount={secondaryFiltersCount}
         hasSecondaryFilters={hasSecondaryFilters}
@@ -145,17 +151,30 @@ export function JobList(props: JobListProps) {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
-                  <th className="py-3.5 px-5 min-w-[280px]">{t("jobs.jobTitle")}</th>
+                  <th scope="col" className="py-3.5 px-5 min-w-[280px]">
+                    {t("jobs.jobTitle")}
+                  </th>
                   {visibleColumns.status && (
-                    <th className="py-3.5 px-4 min-w-[110px]">{t("jobs.status")}</th>
+                    <th scope="col" className="py-3.5 px-4 min-w-[110px]">
+                      {t("jobs.status")}
+                    </th>
                   )}
                   {visibleColumns.pipeline && (
-                    <th className="py-3.5 px-4 min-w-[340px]">{t("dashboard.hiringPipeline")}</th>
+                    <th scope="col" className="py-3.5 px-4 min-w-[340px]">
+                      {t("dashboard.hiringPipeline")}
+                    </th>
                   )}
                   {visibleColumns.applicants && (
-                    <th className="py-3.5 px-4 min-w-[130px]">{t("jobs.newApplicants")}</th>
+                    <th scope="col" className="py-3.5 px-4 min-w-[130px]">
+                      {t("jobs.newApplicants")}
+                    </th>
                   )}
-                  <th className="py-3.5 px-5 text-right min-w-[140px]">{t("common.actions")}</th>
+                  <th
+                    scope="col"
+                    className="py-3.5 px-5 text-right min-w-[140px]"
+                  >
+                    {t("common.actions")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">

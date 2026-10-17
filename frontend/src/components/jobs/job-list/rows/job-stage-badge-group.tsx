@@ -41,28 +41,36 @@ export function JobStageBadgeGroup({ jobId, counts }: JobStageBadgeGroupProps) {
             stage.id === "OFFER" && stage.label.includes("Đề nghị")
               ? "Đề nghị"
               : stage.id === "APPLIED" && stage.label.includes("Đã nộp")
-              ? "Đã nộp"
-              : stage.id === "HIRED" && stage.label.includes("Đã tuyển")
-              ? "Đã tuyển"
-              : stage.label;
+                ? "Đã nộp"
+                : stage.id === "HIRED" && stage.label.includes("Đã tuyển")
+                  ? "Đã tuyển"
+                  : stage.label;
 
           return (
-            <div
+            <button
+              type="button"
               key={stage.id}
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(`/dashboard/jobs/${jobId}/pipeline?stage=${stage.id}`);
+                router.push(
+                  `/dashboard/jobs/${jobId}/pipeline?stage=${stage.id}`,
+                );
               }}
-              className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02]`}
+              className={`flex items-center justify-between px-1.5 py-1 rounded-md ${stage.cardBg} border ${stage.cardBorder} cursor-pointer ${stage.cardHover} transition-all hover:scale-[1.02] text-left`}
               title={`${stage.label}: ${count}`}
+              aria-label={`${stage.label}: ${count}`}
             >
-              <span className={`text-[9px] font-semibold ${stage.textColor} opacity-85 truncate mr-0.5`}>
+              <span
+                className={`text-[9px] font-semibold ${stage.textColor} opacity-85 truncate mr-0.5`}
+              >
                 {displayLabel}
               </span>
-              <span className={`text-[10.5px] font-black ${stage.textColor} shrink-0`}>
+              <span
+                className={`text-[10.5px] font-black ${stage.textColor} shrink-0`}
+              >
                 {count}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>

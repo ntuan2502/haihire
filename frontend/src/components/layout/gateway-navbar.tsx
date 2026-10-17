@@ -40,7 +40,8 @@ export function GatewayNavbar({
           {/* Left: Brand Identity with link to home */}
           <Link
             href="/"
-            className="hover:opacity-90 transition-opacity focus:outline-hidden"
+            aria-label="HaiHire Home"
+            className="rounded-lg hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
           >
             <BrandLogo size="md" />
           </Link>

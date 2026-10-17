@@ -49,7 +49,10 @@ export function JobTableRow({
             <span>{getJobTypeLabel(job.type, t)}</span>
             <span>•</span>
             <span className="inline-flex items-center gap-0.5">
-              <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+              <MapPin
+                className="h-3 w-3 text-slate-400 shrink-0"
+                aria-hidden="true"
+              />
               {job.location || "Remote"}
             </span>
           </div>
@@ -74,17 +77,22 @@ export function JobTableRow({
       {visibleColumns.applicants && (
         <td className="py-4 px-4 whitespace-nowrap">
           {counts.new > 0 ? (
-            <span
+            <button
+              type="button"
               onClick={() =>
                 router.push(`/dashboard/jobs/${job.id}/pipeline?stage=APPLIED`)
               }
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/60 cursor-pointer hover:bg-amber-100 transition-colors"
+              aria-label={`${counts.new} ${t("jobs.newApplicants").toLowerCase()} - ${job.title}`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900/60 cursor-pointer hover:bg-amber-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
+                aria-hidden="true"
+              />
               <span>
                 {counts.new} {t("jobs.newApplicants").toLowerCase()}
               </span>
-            </span>
+            </button>
           ) : (
             <span className="text-slate-400 dark:text-slate-500 text-xs font-medium">
               {counts.total} {t("pipeline.stageCounts")}
@@ -104,11 +112,12 @@ export function JobTableRow({
             }}
             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title={t("jobs.copyPublicApplyLink")}
+            aria-label={`${t("jobs.copyPublicApplyLink")}: ${job.title}`}
           >
             {copiedJobId === job.id ? (
-              <Check className="h-4 w-4 text-emerald-600" />
+              <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
             ) : (
-              <Share2 className="h-4 w-4" />
+              <Share2 className="h-4 w-4" aria-hidden="true" />
             )}
           </button>
 
@@ -118,8 +127,9 @@ export function JobTableRow({
             onClick={(e) => e.stopPropagation()}
             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
             title={t("common.view")}
+            aria-label={`${t("common.view")}: ${job.title}`}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4" aria-hidden="true" />
           </Link>
 
           {/* Quick Edit (Settings) */}
@@ -128,8 +138,9 @@ export function JobTableRow({
             onClick={(e) => e.stopPropagation()}
             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
             title={t("common.edit")}
+            aria-label={`${t("common.edit")}: ${job.title}`}
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4" aria-hidden="true" />
           </Link>
 
           {/* Quick Delete */}
@@ -141,8 +152,9 @@ export function JobTableRow({
             }}
             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
             title={t("common.delete")}
+            aria-label={`${t("common.delete")}: ${job.title}`}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </td>

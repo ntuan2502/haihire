@@ -20,6 +20,9 @@ export const en: TranslationSchema = {
     actions: "Actions",
     back: "Back",
     next: "Next",
+    previous: "Previous",
+    pagination: "Pagination",
+    remove: "Remove",
     confirm: "Confirm",
     comingSoon: "Coming Soon",
     soon: "Soon",
@@ -57,70 +60,98 @@ export const en: TranslationSchema = {
     copy: "Copy",
     copied: "Copied",
     copyKeyword: "Copy keyword",
-    confirmInputInstruction: "Please enter \"{matchText}\" to confirm:",
-    confirmInputPlaceholder: "Type exactly \"{matchText}\"...",
+    confirmInputInstruction: 'Please enter "{matchText}" to confirm:',
+    confirmInputPlaceholder: 'Type exactly "{matchText}"...',
     deleteConfirmWord: "DELETE",
     cancelConfirmWord: "CANCEL",
     revokeConfirmWord: "REVOKE",
+    skipToContent: "Skip to main content",
   },
   errors: {
     generic: "An unexpected error occurred. Please try again later.",
-    networkError: "Unable to connect to server. Please check your network connection.",
-    ORG_SLUG_ALREADY_EXISTS: "Organization with slug '{slug}' already exists. Please choose a different slug.",
+    networkError:
+      "Unable to connect to server. Please check your network connection.",
+    ORG_SLUG_ALREADY_EXISTS:
+      "Organization with slug '{slug}' already exists. Please choose a different slug.",
     ORG_NOT_FOUND: "Organization ({slug}) not found.",
     ORG_NAME_REQUIRED: "Please enter your organization name.",
     ORG_SLUG_REQUIRED: "Please enter a valid slug.",
-    ORG_MEMBER_ALREADY_EXISTS: "This member already belongs to the organization.",
+    ORG_MEMBER_ALREADY_EXISTS:
+      "This member already belongs to the organization.",
     ORG_INVITE_INVALID: "Invalid invitation code or link.",
     ORG_INVITE_EXPIRED: "This invitation link has expired.",
     ORG_INVITE_REVOKED: "This invitation link has been revoked.",
     ORG_USER_NO_ORG: "Your account is not associated with an organization.",
-    ORG_CANNOT_CHANGE_OWNER_ROLE: "Cannot change the role of the organization owner.",
+    ORG_CANNOT_CHANGE_OWNER_ROLE:
+      "Cannot change the role of the organization owner.",
     ORG_CANNOT_REMOVE_SELF: "You cannot remove yourself from the organization.",
     ORG_CANNOT_REMOVE_OWNER: "Cannot remove the organization owner.",
     ORG_MEMBER_NOT_FOUND: "Member not found in this organization.",
-    ORG_FORBIDDEN_ACTION: "You do not have permission to perform this action in organization ({organizationId}).",
+    ORG_FORBIDDEN_ACTION:
+      "You do not have permission to perform this action in organization ({organizationId}).",
     JOB_NOT_FOUND: "Job position ({id}) not found.",
     JOB_ID_REQUIRED: "Job position is required.",
-    JOB_NOT_ACCEPTING_APPLICATIONS: "Job position ({id}) is not currently accepting applications.",
-    JOB_INVALID_ORGANIZATION: "Job position ({id}) does not belong to your organization.",
+    JOB_NOT_ACCEPTING_APPLICATIONS:
+      "Job position ({id}) is not currently accepting applications.",
+    JOB_INVALID_ORGANIZATION:
+      "Job position ({id}) does not belong to your organization.",
     APPLICATION_NOT_FOUND: "Application record ({id}) not found.",
-    APPLICATION_INVALID_ORGANIZATION: "Application ({id}) does not belong to your organization.",
-    APPLICATION_STAGE_CONFLICT: "This application was just updated by another user. Please refresh to see the latest status.",
-    APPLICATION_INVALID_STAGE_TRANSITION: "This stage transition is not allowed. Please check the recruitment workflow.",
+    APPLICATION_INVALID_ORGANIZATION:
+      "Application ({id}) does not belong to your organization.",
+    APPLICATION_STAGE_CONFLICT:
+      "This application was just updated by another user. Please refresh to see the latest status.",
+    APPLICATION_INVALID_STAGE_TRANSITION:
+      "This stage transition is not allowed. Please check the recruitment workflow.",
     CANDIDATE_INFO_REQUIRED: "Candidate name and email are required.",
-    CANDIDATE_ORG_MISMATCH: "Candidate ({id}) does not belong to your organization.",
-    CANDIDATE_ALREADY_APPLIED: "Candidate has already applied to this job position.",
+    CANDIDATE_ORG_MISMATCH:
+      "Candidate ({id}) does not belong to your organization.",
+    CANDIDATE_ALREADY_APPLIED:
+      "Candidate has already applied to this job position.",
     DOCUMENT_FILE_REQUIRED: "Please provide a valid document file.",
     DOCUMENT_NOT_FOUND: "Requested document ({name}) was not found.",
     DOCUMENT_RETRIEVE_FAILED: "Could not retrieve document file from storage.",
-    UPLOAD_TRUNCATED_FILE: "The uploaded file is incomplete or was interrupted. Please try again.",
-    TENANT_ID_REQUIRED_FOR_UPLOAD: "Organization tenant ID is required for file upload.",
+    UPLOAD_TRUNCATED_FILE:
+      "The uploaded file is incomplete or was interrupted. Please try again.",
+    TENANT_ID_REQUIRED_FOR_UPLOAD:
+      "Organization tenant ID is required for file upload.",
     CANDIDATE_NOT_FOUND: "Candidate profile ({id}) not found.",
-    CANDIDATE_EMAIL_EXISTS: "A candidate with email '{email}' already exists in your organization.",
+    CANDIDATE_EMAIL_EXISTS:
+      "A candidate with email '{email}' already exists in your organization.",
     CANDIDATE_ORG_REQUIRED: "Organization ID is required to manage candidates.",
     INTERVIEW_NOT_FOUND: "Interview schedule ({id}) not found.",
-    INTERVIEW_APP_NOT_FOUND: "Application record ({applicationId}) for interview not found.",
-    INTERVIEW_INVALID_ORGANIZATION: "Interview schedule ({id}) does not belong to your organization.",
-    EMAIL_TEMPLATE_NOT_FOUND: "Requested email template '{templateType}' not found.",
-    EMAIL_SETTINGS_NOT_FOUND: "Email settings not configured for this organization.",
+    INTERVIEW_APP_NOT_FOUND:
+      "Application record ({applicationId}) for interview not found.",
+    INTERVIEW_INVALID_ORGANIZATION:
+      "Interview schedule ({id}) does not belong to your organization.",
+    EMAIL_TEMPLATE_NOT_FOUND:
+      "Requested email template '{templateType}' not found.",
+    EMAIL_SETTINGS_NOT_FOUND:
+      "Email settings not configured for this organization.",
     EMAIL_ORG_REQUIRED: "Organization ID is required for email settings.",
     INVALID_CREDENTIALS: "Invalid email or password.",
     USER_EMAIL_EXISTS: "An account with this email already exists.",
-    USER_SESSION_EXPIRED: "Your session has expired or is invalid. Please sign in again.",
+    USER_SESSION_EXPIRED:
+      "Your session has expired or is invalid. Please sign in again.",
     UNAUTHORIZED: "Your session has expired or is invalid.",
     FORBIDDEN: "You do not have permission to perform this action.",
-    FORBIDDEN_READ_ONLY: "Members have read-only access. Only Admins can perform this action.",
-    SSE_UNAUTHORIZED: "Real-time event stream connection is invalid or expired.",
+    FORBIDDEN_READ_ONLY:
+      "Members have read-only access. Only Admins can perform this action.",
+    SSE_UNAUTHORIZED:
+      "Real-time event stream connection is invalid or expired.",
     TRACKING_LINK_NOT_FOUND: "Tracking link not found.",
-    WEBHOOK_SETTING_NOT_FOUND: "Organization webhook configuration was not found.",
-    WEBHOOK_TEST_FAILED: "Webhook connection test failed. Please verify the URL and credentials.",
-    WEBHOOK_PROVIDER_MISMATCH: "Configuration does not match the selected webhook provider.",
-    TOO_MANY_REQUESTS: "Too many requests. Please slow down and try again in a few seconds.",
+    WEBHOOK_SETTING_NOT_FOUND:
+      "Organization webhook configuration was not found.",
+    WEBHOOK_TEST_FAILED:
+      "Webhook connection test failed. Please verify the URL and credentials.",
+    WEBHOOK_PROVIDER_MISMATCH:
+      "Configuration does not match the selected webhook provider.",
+    TOO_MANY_REQUESTS:
+      "Too many requests. Please slow down and try again in a few seconds.",
     GENERIC_ERROR: "An unexpected error occurred. Please try again later.",
     VALIDATION_ERROR: "The provided data is invalid. Please check your inputs.",
     RESOURCE_NOT_FOUND: "Requested resource was not found.",
-    NETWORK_ERROR: "Network error occurred. Please check your internet connection.",
+    NETWORK_ERROR:
+      "Network error occurred. Please check your internet connection.",
     boundary: {
       title: "Something went wrong",
       description: "We've logged the issue. Please try again.",
@@ -133,7 +164,8 @@ export const en: TranslationSchema = {
     },
     notFound: {
       title: "Page not found",
-      description: "The page you're looking for doesn't exist or has been moved.",
+      description:
+        "The page you're looking for doesn't exist or has been moved.",
       goHome: "Go home",
     },
   },
@@ -206,13 +238,16 @@ export const en: TranslationSchema = {
     recruiterPortal: "Recruiter Portal",
     tagline: "Talent Acquisition & Hiring Operations",
     teamPortal: "Recruiter & Hiring Team Portal",
-    loginHeroTitle: "Streamline your hiring pipeline from application to offer.",
-    loginHeroDesc: "Manage open positions, review candidate resumes stored securely on MinIO, and advance applicants through interactive drag-and-drop Kanban stages.",
+    loginHeroTitle:
+      "Streamline your hiring pipeline from application to offer.",
+    loginHeroDesc:
+      "Manage open positions, review candidate resumes stored securely on MinIO, and advance applicants through interactive drag-and-drop Kanban stages.",
     featureMultiTenant: "Multi-tenant organization workspaces",
     featureKanban: "Interactive Kanban pipeline & candidate screening",
     featureStorage: "MinIO S3 object storage for candidate resumes",
     registerHeroTitle: "Start hiring faster with modern applicant tracking.",
-    registerHeroDesc: "Create an account to manage your hiring pipelines, coordinate candidate interviews, and collaborate seamlessly with your hiring managers.",
+    registerHeroDesc:
+      "Create an account to manage your hiring pipelines, coordinate candidate interviews, and collaborate seamlessly with your hiring managers.",
     featureOnboarding: "Fast onboarding & team workspace setup",
     featureLifecycle: "End-to-end recruitment lifecycle management",
     featureInvites: "Instant team invitations & role assignment",
@@ -247,7 +282,8 @@ export const en: TranslationSchema = {
     navComparison: "Comparison",
     navCareers: "Careers Portal",
     heroBadge: "NEXT-GEN ATS • POWERED BY AI",
-    heroSubtitle: "End-to-end recruitment intelligence: automated CV parsing, AI match scoring, synchronized interview scheduling, and instant branded career portals in 60 seconds.",
+    heroSubtitle:
+      "End-to-end recruitment intelligence: automated CV parsing, AI match scoring, synchronized interview scheduling, and instant branded career portals in 60 seconds.",
     heroExploreDemo: "Explore Live ATS",
     heroQuickSetup: "Setup in 60 seconds",
     mockupRoleTitle: "Senior Full-Stack Engineer (Live Demo)",
@@ -276,7 +312,8 @@ export const en: TranslationSchema = {
     mockupScorecardTitle: "Interview Evaluation Scorecard",
     mockupScorecardScore: "4.8 / 5.0",
     mockupScorecardDecision: "Hiring Recommendation: Strong Hire",
-    mockupScorecardCriteria: "Technical: Outstanding • Culture Fit: High • Problem Solving: Exceptional",
+    mockupScorecardCriteria:
+      "Technical: Outstanding • Culture Fit: High • Problem Solving: Exceptional",
     mockupAtsWindowTitle: "{brand} • Applicant Tracking System",
     mockupRubricsCount: "5/5 Evaluation Rubrics",
     mockupActionReject: "Reject",
@@ -304,71 +341,98 @@ export const en: TranslationSchema = {
     mockupScorecardProblem: "Problem Solving",
     mockupInterviewRound: "Round 2: Technical Deep Dive",
     metricsEyebrow: "PROVEN PERFORMANCE",
-    metricsTitle: "Tangible numbers proving the power of intelligent recruitment",
+    metricsTitle:
+      "Tangible numbers proving the power of intelligent recruitment",
     metric1Value: "85%",
     metric1Label: "Screening Time Saved",
-    metric1Desc: "AI extracts skills, experience, and calculates compatibility scores instantly.",
+    metric1Desc:
+      "AI extracts skills, experience, and calculates compatibility scores instantly.",
     metric2Value: "3x",
     metric2Label: "Faster Time-to-Hire",
-    metric2Desc: "Two-way synchronized interview scheduling and structured feedback loops.",
+    metric2Desc:
+      "Two-way synchronized interview scheduling and structured feedback loops.",
     metric3Value: "100%",
     metric3Label: "Data Sovereignty & Security",
-    metric3Desc: "Isolated storage on dedicated MinIO infrastructure with strict RBAC access.",
+    metric3Desc:
+      "Isolated storage on dedicated MinIO infrastructure with strict RBAC access.",
     metric4Value: "$0",
     metric4Label: "Starting Cost",
-    metric4Desc: "Free for your first active role forever, no credit card required.",
+    metric4Desc:
+      "Free for your first active role forever, no credit card required.",
     bentoEyebrow: "FEATURE ECOSYSTEM",
     bentoTitle: "Every tool you need to build your dream team",
-    bentoDesc: "Engineered from the ground up to replace messy spreadsheets and lost email threads.",
+    bentoDesc:
+      "Engineered from the ground up to replace messy spreadsheets and lost email threads.",
     bentoAiBadge: "AI Intelligence",
     bentoAiTitle: "Deep AI Resume Intelligence",
-    bentoAiDesc: "Automatically parses multi-format PDF resumes, extracts verified strengths, and matches against role requirements.",
+    bentoAiDesc:
+      "Automatically parses multi-format PDF resumes, extracts verified strengths, and matches against role requirements.",
     bentoAiMatch: "Match Score",
-    bentoAiSkills: "Verified Skills: React, TypeScript, System Design, PostgreSQL",
+    bentoAiSkills:
+      "Verified Skills: React, TypeScript, System Design, PostgreSQL",
     bentoScorecardBadge: "Evaluation",
     bentoScorecardTitle: "Standardized Interview Scorecards",
-    bentoScorecardDesc: "Objective evaluation criteria (Technical, Culture, Problem Solving) empowering confident hiring consensus.",
-    bentoScorecardCriteria: "5-Star Rubrics • Transparent Hire/No-Hire Consensus",
+    bentoScorecardDesc:
+      "Objective evaluation criteria (Technical, Culture, Problem Solving) empowering confident hiring consensus.",
+    bentoScorecardCriteria:
+      "5-Star Rubrics • Transparent Hire/No-Hire Consensus",
     bentoCareersEyebrow: "Employer Brand",
     bentoCareersTitle: "Instant Branded Career Portals",
-    bentoCareersDesc: "Generate beautiful, SEO-optimized public job boards with custom company branding in seconds.",
+    bentoCareersDesc:
+      "Generate beautiful, SEO-optimized public job boards with custom company branding in seconds.",
     bentoCareersBadge: "Ready in 60s • 100% Mobile Responsive",
     bentoCommsEyebrow: "Automation",
     bentoCommsTitle: "Automated Comms & Calendar Sync",
-    bentoCommsDesc: "Send personalized invites with automated calendar invites and integrated Google Meet/Zoom links.",
+    bentoCommsDesc:
+      "Send personalized invites with automated calendar invites and integrated Google Meet/Zoom links.",
     bentoCommsBadge: "Automated Templates • Smart Reminders",
     bentoCommsIntegration: "Google Meet & Zoom Auto-Link Generator",
     workflowEyebrow: "STREAMLINED WORKFLOW",
     workflowTitle: "Execute your hiring pipeline in 3 precise steps",
-    workflowDesc: "From publishing an open role to extending an offer, enjoy zero friction.",
+    workflowDesc:
+      "From publishing an open role to extending an offer, enjoy zero friction.",
     step1Num: "01",
     step1Title: "Create Role & Collect Resumes",
-    step1Desc: "Publish job descriptions with AI-suggested rubrics, launch your careers portal, and accept applications.",
+    step1Desc:
+      "Publish job descriptions with AI-suggested rubrics, launch your careers portal, and accept applications.",
     step2Num: "02",
     step2Title: "AI Auto-Screening & Ranking",
-    step2Desc: "Our model reads resumes, scores match relevance, and populates candidates into your visual pipeline.",
+    step2Desc:
+      "Our model reads resumes, scores match relevance, and populates candidates into your visual pipeline.",
     step3Num: "03",
     step3Title: "Interview, Score & Offer",
-    step3Desc: "Schedule video interviews, score candidates via structured rubrics, and deliver offers in one click.",
+    step3Desc:
+      "Schedule video interviews, score candidates via structured rubrics, and deliver offers in one click.",
     compareEyebrow: "WHY HAIHIRE",
     compareTitle: "Say goodbye to spreadsheet chaos",
-    compareDesc: "A side-by-side look at legacy hiring methods versus our modern ATS platform.",
+    compareDesc:
+      "A side-by-side look at legacy hiring methods versus our modern ATS platform.",
     compareOldTitle: "Legacy Approach (Excel + Email)",
     compareHaihireTitle: "Modern {brand} ATS Platform",
-    compareRow1Old: "Resumes scattered across Drive folders, inbox threads, and chat apps",
-    compareRow1New: "Centralized talent pool with instant full-text and semantic search",
-    compareRow2Old: "Reading every PDF manually, spending hours screening each role",
-    compareRow2New: "AI parses key skills and calculates candidate fit in seconds",
-    compareRow3Old: "Manual back-and-forth email scheduling prone to double-booking",
-    compareRow3New: "Automated calendar invites with built-in Google Meet links",
-    compareRow4Old: "Subjective gut-feel decisions with no consensus or audit trail",
-    compareRow4New: "Standardized rubrics and scorecard consensus for unbiased hiring",
+    compareRow1Old:
+      "Resumes scattered across Drive folders, inbox threads, and chat apps",
+    compareRow1New:
+      "Centralized talent pool with instant full-text and semantic search",
+    compareRow2Old:
+      "Reading every PDF manually, spending hours screening each role",
+    compareRow2New:
+      "AI parses key skills and calculates candidate fit in seconds",
+    compareRow3Old:
+      "Manual back-and-forth email scheduling prone to double-booking",
+    compareRow3New:
+      "Automated calendar invites with built-in Google Meet links",
+    compareRow4Old:
+      "Subjective gut-feel decisions with no consensus or audit trail",
+    compareRow4New:
+      "Standardized rubrics and scorecard consensus for unbiased hiring",
     ctaBadge: "GET STARTED TODAY",
     ctaTitle: "Ready to elevate your hiring pipeline?",
-    ctaDesc: "Join forward-thinking companies using {brand} to discover and close top talent faster.",
+    ctaDesc:
+      "Join forward-thinking companies using {brand} to discover and close top talent faster.",
     ctaButton: "Create Your Free Workspace",
     ctaHint: "1 free role forever • No credit card required • 60-second setup",
-    footerTagline: "Next-generation Applicant Tracking System engineered for fast-moving teams.",
+    footerTagline:
+      "Next-generation Applicant Tracking System engineered for fast-moving teams.",
     footerColProduct: "Product",
     footerColResources: "Resources",
     footerColCompany: "System",
@@ -384,8 +448,10 @@ export const en: TranslationSchema = {
     footerRights: "Copyright {brand}. All rights reserved.",
   },
   dashboard: {
+    title: "Dashboard",
     welcome: "Welcome back",
-    overviewSubtitle: "Here is what's happening with your recruitment pipeline today.",
+    overviewSubtitle:
+      "Here is what's happening with your recruitment pipeline today.",
     totalJobs: "Active Jobs",
     activeCandidates: "Total Candidates",
     pendingReviews: "Pending Applications",
@@ -411,7 +477,8 @@ export const en: TranslationSchema = {
     noUnansweredReplies: "Nothing waiting on you",
     candidatesAppearHere: "Candidates who write back appear here",
     startRecruitingTitle: "Start recruiting",
-    startRecruitingSubtitle: "Create a job to manage applicants in a pipeline, or import existing candidates into your talent pool.",
+    startRecruitingSubtitle:
+      "Create a job to manage applicants in a pipeline, or import existing candidates into your talent pool.",
     createNewJob: "Create a new job",
     createNewJobDesc: "Set up a role and applicant pipeline",
     importFromFile: "Import from file",
@@ -423,7 +490,8 @@ export const en: TranslationSchema = {
     hiringPipelineTitle: "Hiring Pipeline",
     openPositionsCount: "{count} open positions",
     upcomingInterviewsTitle: "Upcoming Interviews",
-    upcomingInterviewsSubtitle: "Scheduled sessions with candidates in the next 7 days",
+    upcomingInterviewsSubtitle:
+      "Scheduled sessions with candidates in the next 7 days",
     today: "Today",
     tomorrow: "Tomorrow",
     joinMeeting: "Join Meeting",
@@ -457,13 +525,16 @@ export const en: TranslationSchema = {
     writePrivateNotePlaceholder: "Write a private note for your team...",
     saveNote: "Save Note",
     aiResumeAnalysis: "Candidate AI Resume Analysis",
-    aiResumeAnalysisDesc: "AI analyzes the candidate's resume, work history, and skill fit against this job's requirements.",
+    aiResumeAnalysisDesc:
+      "AI analyzes the candidate's resume, work history, and skill fit against this job's requirements.",
     startAiEvaluation: "Start AI Evaluation",
     noInterviewsTitle: "No interviews scheduled yet",
-    noInterviewsSubtitle: "Schedule technical interviews, screening calls, or culture fit evaluations for this candidate.",
+    noInterviewsSubtitle:
+      "Schedule technical interviews, screening calls, or culture fit evaluations for this candidate.",
     scheduleNewInterview: "Schedule New Interview",
     noResponsesTitle: "No Responses",
-    noResponsesSubtitle: "Candidate has not submitted any application form responses yet.",
+    noResponsesSubtitle:
+      "Candidate has not submitted any application form responses yet.",
     timelineApplied: "Applied to {job} on {date}",
     noCustomProperties: "No custom properties defined for this candidate yet.",
     noCandidatesInStage: "No candidates in {stage}",
@@ -482,7 +553,8 @@ export const en: TranslationSchema = {
     tabDraft: "Drafts ({count})",
     tabClosed: "Closed ({count})",
     totalApplicantsCount: "{count} applicants",
-    pageSubtitle: "Manage job openings, track publishing status and optimize your candidate pipeline.",
+    pageSubtitle:
+      "Manage job openings, track publishing status and optimize your candidate pipeline.",
     kpiPublished: "Published Jobs",
     kpiPublishedDesc: "Actively hiring",
     kpiDraft: "Drafts",
@@ -502,7 +574,8 @@ export const en: TranslationSchema = {
     editJob: "Edit Job",
     deleteJob: "Delete Job",
     noJobsFound: "No jobs found",
-    noJobsDesc: "Try adjusting your search query or filters to find what you're looking for.",
+    noJobsDesc:
+      "Try adjusting your search query or filters to find what you're looking for.",
     searchJobs: "Search by title or department...",
     departmentAll: "All Departments",
     statusAll: "All Statuses",
@@ -542,8 +615,10 @@ export const en: TranslationSchema = {
     applyLink: "Apply link",
     linkCopiedSuccess: "Link copied!",
     postJobTitle: "Post New Job Opening",
-    postJobDesc: "Publish a new role to begin collecting and tracking candidate applications.",
-    fillRequiredFields: "Please fill in all required fields (Title, Department, Description).",
+    postJobDesc:
+      "Publish a new role to begin collecting and tracking candidate applications.",
+    fillRequiredFields:
+      "Please fill in all required fields (Title, Department, Description).",
     publishingJob: "Publishing Job...",
     publishJobOpening: "Publish Job Opening",
     salaryRange: "Salary Range",
@@ -618,14 +693,17 @@ export const en: TranslationSchema = {
       continueEditing: "Continue editing",
       saveSuccess: "Job settings updated successfully.",
       jobDetailsTitle: "Job details",
-      jobDetailsDesc: "Title, location and description are what job boards need to accept this role. Everything else is optional — and you can save changes at any point.",
+      jobDetailsDesc:
+        "Title, location and description are what job boards need to accept this role. Everything else is optional — and you can save changes at any point.",
       saveChangesLink: "save changes",
       jobTitleLabel: "Job title",
       departmentLabel: "Department",
       departmentHint: "Displayed above the job title tag",
       locationLabel: "Location",
-      locationDesc: "Boards place listings by country. For a role with no base, set Workplace to Remote instead.",
-      locationErrorHelp: "Add a country so job boards can place this role in their search results.",
+      locationDesc:
+        "Boards place listings by country. For a role with no base, set Workplace to Remote instead.",
+      locationErrorHelp:
+        "Add a country so job boards can place this role in their search results.",
       postalCodeLabel: "Postal code",
       pickLocationFirst: "Pick a location first.",
       employmentTypeLabel: "Employment type",
@@ -639,10 +717,13 @@ export const en: TranslationSchema = {
       workplaceError: "Please select a workplace model",
       compensationTitle: "Compensation",
       compensationOptional: "Optional",
-      compensationHintClosed: "Not stated — roles that state pay rank higher on Google Jobs and most aggregators.",
-      compensationHintOpen: "Roles that state pay get a rich result on Google Jobs and are sorted higher by most aggregators. You can change this later in job settings.",
+      compensationHintClosed:
+        "Not stated — roles that state pay rank higher on Google Jobs and most aggregators.",
+      compensationHintOpen:
+        "Roles that state pay get a rich result on Google Jobs and are sorted higher by most aggregators. You can change this later in job settings.",
       payNegotiable: "Pay is negotiable",
-      payNegotiableDetail: 'Pay is negotiable — show "Negotiable" instead of a range',
+      payNegotiableDetail:
+        'Pay is negotiable — show "Negotiable" instead of a range',
       minSalary: "Minimum",
       maxSalary: "Maximum",
       currency: "Currency",
@@ -657,13 +738,16 @@ export const en: TranslationSchema = {
         hour: "Hour",
       },
       descriptionTitle: "Description",
-      descriptionHelpText: "A clear description improves AI scoring and attracts better candidates.",
+      descriptionHelpText:
+        "A clear description improves AI scoring and attracts better candidates.",
       requirementsTitle: "Requirements",
-      requirementsNotice: 'This section will appear under "Requirements" on the public careers page.',
+      requirementsNotice:
+        'This section will appear under "Requirements" on the public careers page.',
       charsCount: "chars",
       // Step 2 & 3
       customizeFormTitle: "CUSTOMIZE YOUR APPLICATION FORM",
-      customizeFormDesc: "Edit the form on the left and watch the candidate's view update live. Locked fields are always collected and cannot be turned off.",
+      customizeFormDesc:
+        "Edit the form on the left and watch the candidate's view update live. Locked fields are always collected and cannot be turned off.",
       personalInfoTitle: "Personal information",
       firstNameLabel: "First name",
       lastNameLabel: "Last name",
@@ -681,11 +765,14 @@ export const en: TranslationSchema = {
       coverLetterDesc: "Free text field, max 10,000 characters",
       offOption: "Off",
       screeningQuestionsTitle: "Screening questions",
-      screeningQuestionsDesc: "Add screening questions to quickly evaluate applicants",
+      screeningQuestionsDesc:
+        "Add screening questions to quickly evaluate applicants",
       generateWithAi: "Generate with AI",
       pasteExisting: "Paste existing",
-      aiQuestionsNoticeTitle: "AI can draft questions from the job description.",
-      aiQuestionsNoticeDesc: "Safety filters are designed to exclude protected or sensitive traits. Laws vary by jurisdiction, so review every draft before publishing.",
+      aiQuestionsNoticeTitle:
+        "AI can draft questions from the job description.",
+      aiQuestionsNoticeDesc:
+        "Safety filters are designed to exclude protected or sensitive traits. Laws vary by jurisdiction, so review every draft before publishing.",
       noScreeningQuestions: "No screening questions added yet.",
       addFirstQuestion: "Add first question",
       openTextAnswer: "Free text answer",
@@ -694,10 +781,13 @@ export const en: TranslationSchema = {
       freeTextAnswer: "Free text answer",
       deleteQuestion: "Delete question",
       addQuestionAction: "Add question",
-      automationKnockoutHint: "Build custom automation and knockout rules from these questions anytime from the role's Automation Rules tab.",
-      scoringCriteriaHint: "Scoring criteria written from your job description — review them in step 3.",
+      automationKnockoutHint:
+        "Build custom automation and knockout rules from these questions anytime from the role's Automation Rules tab.",
+      scoringCriteriaHint:
+        "Scoring criteria written from your job description — review them in step 3.",
       scoringTitle: "Candidate scoring",
-      scoringDesc: "Every applicant is ranked against the criteria below. They're written from your job description, so read them over and change anything that doesn't fit.",
+      scoringDesc:
+        "Every applicant is ranked against the criteria below. They're written from your job description, so read them over and change anything that doesn't fit.",
       scoringConfiguredBadge: "Configured",
       backToFormOptions: "Back to form options",
       writtenByAiBadge: "Written by AI from your description",
@@ -712,22 +802,28 @@ export const en: TranslationSchema = {
       evaluationDescLabel: "Evaluation Description",
       addCriterionAction: "Add Criterion",
       autoScoreTitle: "Automatically score every new applicant",
-      autoScoreDesc: "When a candidate applies, AI will automatically analyze their resume against these criteria and assign a score.",
+      autoScoreDesc:
+        "When a candidate applies, AI will automatically analyze their resume against these criteria and assign a score.",
       skipForNow: "Skip for now",
       // Step 4
       readyToGo: "Ready to go?",
       publishDistributionTitle: "Publishing & distribution",
-      readyToGoDesc: "Publish your job to start receiving applications. After publishing, you'll be able to create tracked links.",
-      controlStatusDesc: 'Control the live status and visibility of this role.',
+      readyToGoDesc:
+        "Publish your job to start receiving applications. After publishing, you'll be able to create tracked links.",
+      controlStatusDesc: "Control the live status and visibility of this role.",
       publishNow: "Publish now",
-      publishNowDesc: "Live job posting. Candidates can apply and submissions are recorded.",
+      publishNowDesc:
+        "Live job posting. Candidates can apply and submissions are recorded.",
       openPublished: "Open / Published",
       saveDraft: "Save as draft",
-      saveDraftDesc: "Internal preview only. Hidden from candidates and public boards.",
+      saveDraftDesc:
+        "Internal preview only. Hidden from candidates and public boards.",
       closeJob: "Closed",
-      closeJobDesc: "No longer accepting new applications. Existing applicants remain.",
+      closeJobDesc:
+        "No longer accepting new applications. Existing applicants remain.",
       externalBoardsTitle: "Also list on external job boards",
-      externalBoardsDesc: "Free syndication to Jooble, Adzuna, Careerjet, Talent.com and others.",
+      externalBoardsDesc:
+        "Free syndication to Jooble, Adzuna, Careerjet, Talent.com and others.",
       jobSummaryTitle: "Job summary",
       titleSub: "Title",
       locationSub: "Location",
@@ -736,13 +832,15 @@ export const en: TranslationSchema = {
       questionsCountText: "custom questions",
       untitledJob: "Untitled Job",
       afterPublishingTitle: "After publishing",
-      afterPublishingDesc: "You'll get tracked links for LinkedIn, Indeed, and other platforms so you can see exactly where your applicants come from.",
+      afterPublishingDesc:
+        "You'll get tracked links for LinkedIn, Indeed, and other platforms so you can see exactly where your applicants come from.",
       workspaceLinkTitle: "Job Workspace Link",
       workspaceLinkDesc: "Direct pipeline link:",
       dangerZoneTitle: "Danger Zone",
       dangerZoneDesc: "Irreversible actions related to this job opening.",
       deletePermanentTitle: "Permanently delete this job opening",
-      deletePermanentDesc: "Once deleted, all candidate applications associated with this job will be permanently removed.",
+      deletePermanentDesc:
+        "Once deleted, all candidate applications associated with this job will be permanently removed.",
       deleteJobAction: "Delete Job",
       deletingAction: "Deleting...",
       backAction: "Back",
@@ -754,12 +852,14 @@ export const en: TranslationSchema = {
       // Delete confirmation modal
       deleteConfirmTitle: "Delete Job Opening",
       deleteConfirmQuestion: 'Are you sure you want to delete "{title}"?',
-      deleteConfirmNotice: "This action is permanent and cannot be undone. All application data for this job will be wiped.",
+      deleteConfirmNotice:
+        "This action is permanent and cannot be undone. All application data for this job will be wiped.",
       confirmDeleteButton: "Yes, Delete Job",
       // Preview modal
       previewModalTitle: "Candidate Preview",
       previewLiveBadge: "Live Preview",
-      previewSubtitle: "Live page preview of job posting and application form as seen by candidates",
+      previewSubtitle:
+        "Live page preview of job posting and application form as seen by candidates",
       desktop: "Desktop",
       tablet: "Tablet",
       mobile: "Mobile",
@@ -769,7 +869,8 @@ export const en: TranslationSchema = {
       nationwide: "Nationwide",
       noDescEntered: "No job description entered yet.",
       noReqEntered: "No requirements entered yet.",
-      securityGuaranteed: "Your personal information is secure and confidential",
+      securityGuaranteed:
+        "Your personal information is secure and confidential",
       screeningQuestionsPreviewTitle: "Screening Questions",
       yesOption: "Yes",
       noOption: "No",
@@ -782,10 +883,12 @@ export const en: TranslationSchema = {
         minSalary: "e.g. 500,000",
         maxSalary: "e.g. 650,000",
         description: "Describe the role, responsibilities, and requirements...",
-        requirements: "Outline key skills, qualifications, or expectations for this position...",
+        requirements:
+          "Outline key skills, qualifications, or expectations for this position...",
         screeningQuestion: "Enter your custom screening question...",
         criterionTitle: "e.g. Leadership and Team Mentorship",
-        criterionDesc: "Describe how candidates should be evaluated against this criterion...",
+        criterionDesc:
+          "Describe how candidates should be evaluated against this criterion...",
       },
       errors: {
         titleRequired: "Job title is required.",
@@ -827,9 +930,11 @@ export const en: TranslationSchema = {
     fullscreen: "Fullscreen",
     importCsv: "Import CSV",
     noCandidatesYet: "No candidates yet",
-    noCandidatesYetDesc: "Add your first candidate to start building your talent pool.",
+    noCandidatesYetDesc:
+      "Add your first candidate to start building your talent pool.",
     dropCv: "Drop a CV to fill this in",
-    dropCvHint: "PDF, DOC, or DOCX — Including a LinkedIn profile saved as PDF.",
+    dropCvHint:
+      "PDF, DOC, or DOCX — Including a LinkedIn profile saved as PDF.",
     chooseFile: "Choose a file",
     cvAttached: "CV attached ({size} KB)",
     removeFile: "Remove file",
@@ -845,11 +950,13 @@ export const en: TranslationSchema = {
     female: "Female",
     otherGender: "Other",
     addCandidateTitle: "Add Candidate",
-    addCandidateSubtitle: "Manually add a candidate or parse CV file to populate candidate details.",
+    addCandidateSubtitle:
+      "Manually add a candidate or parse CV file to populate candidate details.",
     editCandidateTitle: "Edit Candidate",
     editCandidateSubtitle: "Update candidate profile and personal details.",
     deleteCandidate: "Delete Candidate",
-    deleteCandidateConfirm: "Are you sure you want to delete this candidate? All applications and associated documents will be permanently removed.",
+    deleteCandidateConfirm:
+      "Are you sure you want to delete this candidate? All applications and associated documents will be permanently removed.",
     overviewTab: "Overview",
     applicationsTab: "Applications",
     documentsTab: "Documents",
@@ -864,10 +971,12 @@ export const en: TranslationSchema = {
     allStages: "All stages",
     backToDocuments: "Back to documents",
     clickToPreview: "Click to preview",
-    uploadDocHint: "Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).",
+    uploadDocHint:
+      "Upload a resume, cover letter, or other document (PDF, DOC, DOCX — max 10 MB).",
     noApplicationsYet: "No applications yet.",
     noApplicationsMatchingStage: "No applications matching this stage.",
-    applyCandidateHint: "Apply this candidate to a job to start the hiring pipeline.",
+    applyCandidateHint:
+      "Apply this candidate to a job to start the hiring pipeline.",
     trySelectingDifferentStage: "Try selecting a different stage filter.",
     placeholders: {
       firstName: "e.g. Jane",
@@ -879,8 +988,10 @@ export const en: TranslationSchema = {
     },
     createFailed: "Failed to create candidate. Please try again.",
     updateFailed: "Failed to update candidate. Please try again.",
-    invalidCandidateId: "The candidate ID provided is invalid. A valid UUID is required.",
-    candidateNotFound: "The candidate you are trying to edit does not exist or has been removed.",
+    invalidCandidateId:
+      "The candidate ID provided is invalid. A valid UUID is required.",
+    candidateNotFound:
+      "The candidate you are trying to edit does not exist or has been removed.",
   },
   applications: {
     title: "Applications",
@@ -898,7 +1009,8 @@ export const en: TranslationSchema = {
     allJobs: "All Jobs",
     viewInPipeline: "View in pipeline",
     deleteApplication: "Delete Application",
-    deleteApplicationConfirm: "Are you sure you want to delete this application? This action cannot be undone.",
+    deleteApplicationConfirm:
+      "Are you sure you want to delete this application? This action cannot be undone.",
     overview: "Overview",
     documents: "Documents",
     notes: "Notes",
@@ -925,7 +1037,8 @@ export const en: TranslationSchema = {
     compare: "Compare",
     fullscreen: "Fullscreen",
     noApplicationsYet: "No applications yet",
-    noApplicationsYetDesc: "Applications will appear here when candidates apply to this job.",
+    noApplicationsYetDesc:
+      "Applications will appear here when candidates apply to this job.",
     viewActiveJobs: "View Active Jobs",
     backToTable: "Back to table",
     backToApplications: "Back to Applications",
@@ -941,37 +1054,48 @@ export const en: TranslationSchema = {
     addOrgProperty: "+ Add org-wide property",
     manageJobProperties: "Manage job-specific properties",
     submitApplicationTitle: "Submit Candidate Application",
-    submitApplicationDesc: "Upload candidate resume (PDF) and store directly into MinIO object storage.",
+    submitApplicationDesc:
+      "Upload candidate resume (PDF) and store directly into MinIO object storage.",
     applicationSubmittedSuccess: "Application Submitted Successfully!",
-    applicationSubmittedDesc: "Resume uploaded to MinIO and added to the hiring pipeline.",
+    applicationSubmittedDesc:
+      "Resume uploaded to MinIO and added to the hiring pipeline.",
     onlyPdfAccepted: "Only PDF resume files are accepted.",
-    fillRequiredFields: "Please fill in candidate name, email, and select a job.",
-    attachResumeRequired: "Please attach a PDF resume to submit your application.",
+    fillRequiredFields:
+      "Please fill in candidate name, email, and select a job.",
+    attachResumeRequired:
+      "Please attach a PDF resume to submit your application.",
     applyingForPosition: "Applying For Position",
     selectTargetRole: "Select target role",
     dragDropResume: "or drag and drop resume here",
     pdfUpTo10Mb: "PDF documents up to 10MB",
     submitApplication: "Submit Application",
     uploadingToStorage: "Uploading to MinIO...",
-    submitFailed: "Failed to upload CV and submit application. Please check backend status.",
+    submitFailed:
+      "Failed to upload CV and submit application. Please check backend status.",
     applyToJobTitle: "Apply to Job",
     noActiveJobs: "No active jobs available.",
     appliedBadge: "Applied",
     applyButton: "Apply",
     deleteApplicationHeading: "Delete Application",
-    deleteApplicationWarning: "Application responses, interviews, scores, and messages will be permanently deleted. The candidate remains in your candidate list.",
+    deleteApplicationWarning:
+      "Application responses, interviews, scores, and messages will be permanently deleted. The candidate remains in your candidate list.",
     deleteCandidateHeading: "Delete Candidate",
-    deleteCandidateDescription: "You are requesting to delete candidate {name}.",
-    deleteCandidateWarning: "Their data is kept and can be restored from Settings — Privacy & Retention. Nothing is permanently erased here.",
+    deleteCandidateDescription:
+      "You are requesting to delete candidate {name}.",
+    deleteCandidateWarning:
+      "Their data is kept and can be restored from Settings — Privacy & Retention. Nothing is permanently erased here.",
     deleteDocumentHeading: "Delete Document",
-    deleteDocumentWarning: "Are you sure you want to delete this document? This action cannot be undone.",
+    deleteDocumentWarning:
+      "Are you sure you want to delete this document? This action cannot be undone.",
     noMessagesYet: "No messages yet",
     noMessagesYetDesc: "Email communications will appear here.",
     timelineTitle: "Application Timeline",
     appliedOn: "Applied on",
     applicationNotFound: "Application Not Found",
-    invalidAppId: "The application ID provided is invalid. A valid UUID is required.",
-    appNotFoundDesc: "The application you are looking for does not exist or has been removed.",
+    invalidAppId:
+      "The application ID provided is invalid. A valid UUID is required.",
+    appNotFoundDesc:
+      "The application you are looking for does not exist or has been removed.",
     tabs: {
       overview: "Overview",
       inbox: "Inbox",
@@ -1007,7 +1131,8 @@ export const en: TranslationSchema = {
   interviews: {
     title: "Interviews Workspace",
     badge: "Coming Soon",
-    description: "The interview management feature is being finalized. You will soon be able to schedule interviews automatically, sync with calendar apps, and send candidate evaluation scorecards here.",
+    description:
+      "The interview management feature is being finalized. You will soon be able to schedule interviews automatically, sync with calendar apps, and send candidate evaluation scorecards here.",
     backToDashboard: "Return to Dashboard",
     calendar: "Calendar",
     grid: "Grid",
@@ -1033,16 +1158,21 @@ export const en: TranslationSchema = {
     overallRating: "Overall Rating",
     criteriaTitle: "Core Evaluation Criteria",
     technicalCriteria: "Technical & Professional Skills",
-    technicalDesc: "Evaluate foundational knowledge, practical experience, and problem-solving ability in the domain.",
+    technicalDesc:
+      "Evaluate foundational knowledge, practical experience, and problem-solving ability in the domain.",
     communicationCriteria: "Communication & Expression",
-    communicationDesc: "Ability to articulate thoughts, listen actively, discuss constructive feedback, and collaborate.",
+    communicationDesc:
+      "Ability to articulate thoughts, listen actively, discuss constructive feedback, and collaborate.",
     cultureFitCriteria: "Organizational Culture Fit",
-    cultureFitDesc: "Alignment with core company values, sense of ownership, attitude, and work ethics.",
+    cultureFitDesc:
+      "Alignment with core company values, sense of ownership, attitude, and work ethics.",
     problemSolvingCriteria: "Problem Solving & Critical Thinking",
-    problemSolvingDesc: "Analytical rigor, adaptability, and sound judgment in tackling complex scenarios.",
+    problemSolvingDesc:
+      "Analytical rigor, adaptability, and sound judgment in tackling complex scenarios.",
     hiringRecommendation: "Hiring Recommendation",
     detailedFeedback: "Detailed Feedback & Notes",
-    feedbackPlaceholder: "Record strengths, areas of improvement, or justification for your hiring recommendation...",
+    feedbackPlaceholder:
+      "Record strengths, areas of improvement, or justification for your hiring recommendation...",
     saveScorecard: "Save Scorecard",
     savingScorecard: "Saving...",
     recommendations: {
@@ -1066,7 +1196,8 @@ export const en: TranslationSchema = {
     scoreLabel: "Score",
     notRated: "Not rated",
     rateNow: "+ Rate",
-    pageSubtitle: "Manage interview appointments, virtual meeting rooms, and coordinate the hiring pipeline.",
+    pageSubtitle:
+      "Manage interview appointments, virtual meeting rooms, and coordinate the hiring pipeline.",
     candidatesCount: "{count} candidates",
     candidatesUnit: "candidates",
     scheduleNew: "Schedule New Interview",
@@ -1101,7 +1232,8 @@ export const en: TranslationSchema = {
     locationLabel: "Location: {location}",
     ratedStatus: "(Evaluated)",
     scorecardAction: "Rate Interview (Scorecard)",
-    readyForInterviewDesc: "Candidate passed screening and is awaiting an interview schedule.",
+    readyForInterviewDesc:
+      "Candidate passed screening and is awaiting an interview schedule.",
     previousRoundsCount: "Passed {count} previous rounds",
     scorecardBoard: "Evaluation Scorecard",
     updateSchedule: "Update Schedule",
@@ -1203,20 +1335,23 @@ export const en: TranslationSchema = {
     updateBtn: "Update",
     ratingResult: "Evaluation Result: {score} / 5 stars",
     recommendationLabel: "Recommendation: {recommendation}",
-    modalSubtitle: "Set time, format, and interviewers for this session. Data syncs automatically across the platform.",
+    modalSubtitle:
+      "Set time, format, and interviewers for this session. Data syncs automatically across the platform.",
     targetJobAndCandidate: "Target Job & Candidate",
     officeAddressLabel: "Office Address / In-person Room",
     meetingUrlLabel: "Online Meeting Room (Meeting URL)",
     requiredLabel: "Required",
     overallRatingTitle: "Overall Rating",
-    overallRatingSubtitle: "General impression of candidate competence and culture fit",
+    overallRatingSubtitle:
+      "General impression of candidate competence and culture fit",
     competencyTitle: "Competency Breakdown",
     openMeetingShort: "Join",
     viewEvaluation: "View Evaluation",
     rateStar: "Rate ⭐",
     close: "Close",
     cancelInterviewTitle: "Cancel Scheduled Interview",
-    cancelInterviewWarning: "This interview will be cancelled and removed from the schedule. This action cannot be undone.",
+    cancelInterviewWarning:
+      "This interview will be cancelled and removed from the schedule. This action cannot be undone.",
     errors: {
       selectCandidate: "Please select a candidate.",
       selectDate: "Please select an interview date.",
@@ -1225,8 +1360,10 @@ export const en: TranslationSchema = {
       selectFormat: "Please select interview format.",
       enterInterviewer: "Please enter or select an interviewer.",
       candidateNotFound: "Candidate information not found.",
-      saveFailed: "An error occurred while saving the interview schedule. Please try again.",
-      saveScorecardFailed: "An error occurred while saving the scorecard. Please try again.",
+      saveFailed:
+        "An error occurred while saving the interview schedule. Please try again.",
+      saveScorecardFailed:
+        "An error occurred while saving the scorecard. Please try again.",
     },
   },
   members: {
@@ -1248,9 +1385,11 @@ export const en: TranslationSchema = {
     revokeLink: "Revoke link",
     removeMember: "Remove member",
     removeMemberConfirmTitle: "Remove Member from Organization",
-    removeMemberConfirmWarning: "This member will lose access to all organization data and workspaces. This action cannot be undone.",
+    removeMemberConfirmWarning:
+      "This member will lose access to all organization data and workspaces. This action cannot be undone.",
     revokeLinkConfirmTitle: "Revoke Invitation Link",
-    revokeLinkConfirmWarning: "This invitation link will be invalidated immediately and can no longer be used to join.",
+    revokeLinkConfirmWarning:
+      "This invitation link will be invalidated immediately and can no longer be used to join.",
     roleOwner: "Owner",
     roleAdmin: "Admin",
     roleMember: "Member",
@@ -1260,7 +1399,8 @@ export const en: TranslationSchema = {
     uses1: "1 use",
     usesUnlimited: "Unlimited uses",
     noActiveInviteLinks: "No active invite links",
-    noActiveInviteLinksDesc: "Generate expiring or single-use invite links with specific roles to invite your team.",
+    noActiveInviteLinksDesc:
+      "Generate expiring or single-use invite links with specific roles to invite your team.",
   },
   onboarding: {
     selectOrgTitle: "Select an organization",
@@ -1273,7 +1413,8 @@ export const en: TranslationSchema = {
     joinOrgLink: "Join an existing organization",
     backToSelect: "Back to select organization",
     createOrgTitle: "Create a new organization",
-    createOrgSubtitle: "Set up a new workspace to start managing candidates and jobs.",
+    createOrgSubtitle:
+      "Set up a new workspace to start managing candidates and jobs.",
     orgNameLabel: "Organization Name",
     orgNamePlaceholder: "e.g. Acme Corp",
     slugLabel: "Workspace URL Slug",
@@ -1282,12 +1423,15 @@ export const en: TranslationSchema = {
     createOrgButton: "Create organization",
     creatingOrg: "Creating organization...",
     joinOrgTitle: "Join an organization",
-    joinOrgSubtitle: "Paste your invite link or token to join your team workspace.",
+    joinOrgSubtitle:
+      "Paste your invite link or token to join your team workspace.",
     inviteLinkBoxTitle: "Invite link",
-    inviteLinkPlaceholder: "Paste invite link (e.g. http://.../auth/join/...) or token",
+    inviteLinkPlaceholder:
+      "Paste invite link (e.g. http://.../auth/join/...) or token",
     joinButton: "Join",
     joining: "Joining...",
-    inviteLinkHint: "Ask an organization owner or administrator to create and send you an invite link.",
+    inviteLinkHint:
+      "Ask an organization owner or administrator to create and send you an invite link.",
     createOrgInstead: "Create a new organization instead",
     joinOrgInstead: "Join an existing organization instead",
   },
@@ -1322,32 +1466,42 @@ export const en: TranslationSchema = {
     admin: "Admin",
     member: "Member",
     urlSlug: "URL slug",
-    slugHint: "Used in your public job board URL. Only lowercase letters, numbers, and hyphens.",
-    readOnlyAdmin: "Read-only access: only Admins can update organization profile.",
+    slugHint:
+      "Used in your public job board URL. Only lowercase letters, numbers, and hyphens.",
+    readOnlyAdmin:
+      "Read-only access: only Admins can update organization profile.",
     dangerZone: "Danger zone",
     dangerZoneDesc: "Irreversible and destructive actions.",
     deleteOrg: "Delete organization",
-    deleteOrgDesc: "Permanently delete this organization, all its jobs, candidates, and remove all member access.",
-    deleteOrgConfirmPrompt: "This action cannot be undone. To confirm deletion, type your workspace slug {slug} below:",
+    deleteOrgDesc:
+      "Permanently delete this organization, all its jobs, candidates, and remove all member access.",
+    deleteOrgConfirmPrompt:
+      "This action cannot be undone. To confirm deletion, type your workspace slug {slug} below:",
     deleteOrgTypeToConfirm: "Type {slug} to confirm",
     deleteOrgButton: "Delete Organization",
     deletingOrg: "Deleting organization...",
     timeZone: "Time Zone",
     newApplicationAlert: "New Application Alert",
-    newApplicationAlertDesc: "Receive instant email notifications when a candidate applies.",
+    newApplicationAlertDesc:
+      "Receive instant email notifications when a candidate applies.",
     dailyDigest: "Daily Digest",
-    dailyDigestDesc: "A summary of pipeline movements and scheduled interviews every morning.",
+    dailyDigestDesc:
+      "A summary of pipeline movements and scheduled interviews every morning.",
     publicJobBoardLink: "Public Job Board Link",
-    publicJobBoardDesc: "Jobs published with status 'Published' will automatically appear on your public career board.",
+    publicJobBoardDesc:
+      "Jobs published with status 'Published' will automatically appear on your public career board.",
     preview: "Preview",
     freeStarterPlan: "Free Starter Plan",
     oneActiveJobSlot: "1 Active Job Slot",
-    upgradeToProDesc: "Upgrade to Pro to post unlimited jobs and access AI candidate ranking.",
+    upgradeToProDesc:
+      "Upgrade to Pro to post unlimited jobs and access AI candidate ranking.",
     yourName: "Your Name",
     emailAddress: "Email Address",
     proEnterpriseFeature: "Pro & Enterprise Feature",
-    proEnterpriseDesc: "This module provides enterprise-level integrations, retention safeguards, and dedicated custom AI models.",
-    enterpriseFeatureDesc: "This module provides enterprise-level integrations, retention safeguards, and dedicated custom AI models.",
+    proEnterpriseDesc:
+      "This module provides enterprise-level integrations, retention safeguards, and dedicated custom AI models.",
+    enterpriseFeatureDesc:
+      "This module provides enterprise-level integrations, retention safeguards, and dedicated custom AI models.",
     viewUpgradePlans: "View Upgrade Plans",
     tabs: {
       general: "General",
@@ -1381,7 +1535,8 @@ export const en: TranslationSchema = {
     },
     integrations: {
       title: "Integrations & Webhooks",
-      description: "Manage custom webhook integrations to receive real-time notifications for hiring events and system alerts.",
+      description:
+        "Manage custom webhook integrations to receive real-time notifications for hiring events and system alerts.",
       tabs: {
         webhooks: "Webhooks",
       },
@@ -1406,7 +1561,8 @@ export const en: TranslationSchema = {
             generic: "Must use secure HTTPS protocol",
           },
           secretToken: "Secret Token",
-          secretTokenHint: "Optional signing secret for HMAC-SHA256 verification",
+          secretTokenHint:
+            "Optional signing secret for HMAC-SHA256 verification",
           chatId: "Chat ID",
           chatIdHint: "Required for Telegram (e.g., -100123456789)",
           isEnabled: "Enable Event Notifications",
@@ -1420,7 +1576,8 @@ export const en: TranslationSchema = {
         },
         deleteConfirm: {
           title: "Delete Webhook",
-          message: "Are you sure you want to delete this webhook configuration? This action cannot be undone.",
+          message:
+            "Are you sure you want to delete this webhook configuration? This action cannot be undone.",
           confirm: "Delete Webhook",
           cancel: "Cancel",
         },
@@ -1435,7 +1592,8 @@ export const en: TranslationSchema = {
           GENERIC: "Generic Webhook (Custom)",
         },
         emptyState: "No webhook configurations found for your organization.",
-        adminOnly: "Only organization Administrators can manage webhook settings.",
+        adminOnly:
+          "Only organization Administrators can manage webhook settings.",
         enabled: "Active",
         disabled: "Paused",
       },
@@ -1464,8 +1622,10 @@ export const en: TranslationSchema = {
     heroBadge: "Explore Companies & Career Opportunities",
     heroTitlePart1: "Discover companies that are currently",
     heroTitleHighlight: "actively hiring",
-    heroDesc: "Find exciting job opportunities from top companies using the {brand} platform. Apply directly with a single CV upload.",
-    searchPlaceholder: "Search by company name, job title, skills, or department...",
+    heroDesc:
+      "Find exciting job opportunities from top companies using the {brand} platform. Apply directly with a single CV upload.",
+    searchPlaceholder:
+      "Search by company name, job title, skills, or department...",
     clearSearch: "Clear",
     filterDepartment: "All Departments",
     filterWorkplace: "All Work arrangements",
@@ -1484,29 +1644,35 @@ export const en: TranslationSchema = {
     moreRoles: "+{count} more roles",
     viewCompanyPortal: "View Career Portal",
     noCompaniesFound: "No matching companies found",
-    noCompaniesDesc: "Try adjusting your search terms or selecting a different department.",
-    companyNotFoundMatching: "No companies found matching “{query}”. Please try searching with a different keyword.",
+    noCompaniesDesc:
+      "Try adjusting your search terms or selecting a different department.",
+    companyNotFoundMatching:
+      "No companies found matching “{query}”. Please try searching with a different keyword.",
     clearFilter: "Clear filters",
     applyNow: "Apply now",
     applyArrow: "Apply →",
     viewAllRolesAndApply: "View all {count} positions & apply",
     companyPage: "Company Page",
     noJobsFound: "No job openings found",
-    noJobsDesc: "Try adjusting your search keywords or clearing the department filter.",
+    noJobsDesc:
+      "Try adjusting your search keywords or clearing the department filter.",
     loadingCompanies: "Loading companies directory...",
     loadingPortal: "Loading career portal...",
     loadingJob: "Loading job details...",
     orgNotFound: "Organization not found",
-    orgNotFoundDesc: "Organization \"{slug}\" does not exist or has not enabled its public careers portal.",
+    orgNotFoundDesc:
+      'Organization "{slug}" does not exist or has not enabled its public careers portal.',
     jobNotFound: "Job opening not found",
-    jobNotFoundDesc: "This position may no longer be available or the link is incorrect.",
+    jobNotFoundDesc:
+      "This position may no longer be available or the link is incorrect.",
     backToHome: "Back to Home",
     backToJobList: "Back to Job Openings",
     backToOrgJobs: "All open roles at {name}",
     viewOtherJobs: "View other openings",
     hiringTalentBadge: "We are actively hiring new talent!",
     buildCareerWith: "Build your next chapter with",
-    companyHeroDesc: "Explore exciting career opportunities, an open and creative working culture, and competitive benefits. Join us to shape the next breakthroughs.",
+    companyHeroDesc:
+      "Explore exciting career opportunities, an open and creative working culture, and competitive benefits. Join us to shape the next breakthroughs.",
     openPositions: "Open positions",
     departmentsCount: "Departments",
     searchInCompany: "Search by title, location, or keywords...",
@@ -1514,19 +1680,24 @@ export const en: TranslationSchema = {
     allTypesOption: "All employment types",
     viewDetailAndApply: "View details & Apply",
     noCompanyJobs: "No matching positions found",
-    noCompanyJobsDesc: "Try changing your search query or selecting a different department to see more jobs.",
+    noCompanyJobsDesc:
+      "Try changing your search query or selecting a different department to see more jobs.",
     resetFilter: "Reset filters",
     jobDescription: "Job Description",
     requirements: "Requirements",
     salaryNegotiable: "Negotiable",
     allJobsAt: "All jobs at {org}",
     aboutCompany: "About {org}",
-    aboutCompanyDesc: "Your application will be sent directly to the company's hiring team.",
-    privacyNotice: "By submitting your application, you agree to allow the employer to process your application data.",
+    aboutCompanyDesc:
+      "Your application will be sent directly to the company's hiring team.",
+    privacyNotice:
+      "By submitting your application, you agree to allow the employer to process your application data.",
     transparentProcessTitle: "Transparent Hiring Process",
-    transparentProcessDesc: "Your application is stored securely and privately. Once received, the hiring team at {orgName} will review it and follow up directly via your email.",
+    transparentProcessDesc:
+      "Your application is stored securely and privately. Once received, the hiring team at {orgName} will review it and follow up directly via your email.",
     applicationFormTitle: "Submit Your Application",
-    applicationFormSubtitle: "Fill in your information and attach your CV to apply for this role.",
+    applicationFormSubtitle:
+      "Fill in your information and attach your CV to apply for this role.",
     lastName: "Last name & Middle name",
     firstName: "First name",
     email: "Email address",
@@ -1541,7 +1712,8 @@ export const en: TranslationSchema = {
     submitting: "Submitting application...",
     submitApplication: "Submit Application Now",
     submitSuccessTitle: "Application Submitted Successfully!",
-    submitSuccessDesc: "Thank you {name}! Your application for {jobTitle} has been sent directly to the hiring team at {orgName}.",
+    submitSuccessDesc:
+      "Thank you {name}! Your application for {jobTitle} has been sent directly to the hiring team at {orgName}.",
     contactEmail: "Contact email:",
     attachedFile: "Attached resume:",
     applyAnother: "Apply for another position",
@@ -1551,23 +1723,27 @@ export const en: TranslationSchema = {
     errorResume: "Please attach your resume file (PDF/DOCX).",
     errorGeneric: "An error occurred while submitting. Please try again.",
     fileTooLarge: "File size exceeds the 10MB limit.",
-    fileInvalidType: "Unsupported file format. Please upload PDF, DOC, or DOCX.",
+    fileInvalidType:
+      "Unsupported file format. Please upload PDF, DOC, or DOCX.",
     placeholders: {
       lastName: "e.g. John",
       firstName: "e.g. Doe",
       email: "john.doe@example.com",
       phone: "+1 (555) 123-4567",
-      notes: "Share more about yourself, your availability, or why you are interested in this position...",
+      notes:
+        "Share more about yourself, your availability, or why you are interested in this position...",
     },
     jobClosed: {
       title: "This position is closed",
-      description: "This job opening is no longer accepting new applications. You can explore other open positions at this organization.",
+      description:
+        "This job opening is no longer accepting new applications. You can explore other open positions at this organization.",
       viewOtherJobs: "View other positions",
     },
   },
   email: {
     templatesTitle: "Recruitment Email Templates",
-    templatesSubtitle: "Configure automated emails sent to candidates across hiring stages.",
+    templatesSubtitle:
+      "Configure automated emails sent to candidates across hiring stages.",
     tabTemplates: "Email Templates",
     tabSettings: "Delivery Settings (SMTP)",
     tabLogs: "Sent Outbox & Logs",
@@ -1575,9 +1751,11 @@ export const en: TranslationSchema = {
     subject: "Email Subject",
     body: "Email Body (HTML & Variables Supported)",
     enableAutoSend: "Automatically send this email",
-    enableAutoSendDesc: "The system will automatically trigger this template when the corresponding hiring event occurs.",
+    enableAutoSendDesc:
+      "The system will automatically trigger this template when the corresponding hiring event occurs.",
     insertVariable: "Insert Variable",
-    insertVariableHint: "Click any variable chip below to insert it at your current cursor position:",
+    insertVariableHint:
+      "Click any variable chip below to insert it at your current cursor position:",
     livePreview: "Live Preview",
     previewDeviceDesktop: "Desktop",
     previewDeviceTablet: "Tablet",
@@ -1587,15 +1765,19 @@ export const en: TranslationSchema = {
     templateSavedSuccess: "Email template saved successfully!",
     templateResetSuccess: "Template reset to default content.",
     providerTitle: "Email Service Provider",
-    providerDesc: "Choose your organization's sending method. 'Simulated' is recommended for staging/development.",
+    providerDesc:
+      "Choose your organization's sending method. 'Simulated' is recommended for staging/development.",
     providerSimulated: "In-App Simulator (Mock)",
-    providerSimulatedDesc: "Deliver and log emails directly inside the app without needing real credentials.",
+    providerSimulatedDesc:
+      "Deliver and log emails directly inside the app without needing real credentials.",
     providerSmtp: "Corporate SMTP Server",
-    providerSmtpDesc: "Connect your enterprise email server (Google Workspace, Microsoft 365, Postfix,...).",
+    providerSmtpDesc:
+      "Connect your enterprise email server (Google Workspace, Microsoft 365, Postfix,...).",
     providerResend: "Resend",
     providerResendDesc: "Modern developer-first email delivery platform.",
     providerSendGrid: "SendGrid",
-    providerSendGridDesc: "Twilio's scalable cloud email delivery infrastructure.",
+    providerSendGridDesc:
+      "Twilio's scalable cloud email delivery infrastructure.",
     senderName: "Sender Name (From Name)",
     senderEmail: "Sender Email (From Email)",
     smtpHost: "SMTP Host Server",
@@ -1608,12 +1790,15 @@ export const en: TranslationSchema = {
     sendgridApiKeyLabel: "SendGrid API Key",
     deliveryFailedDesc: "Failed to deliver message or rejected by mail server.",
     testEmailSection: "Send Test Email",
-    testEmailDesc: "Verify server connection and delivery to a specific inbox before going live.",
+    testEmailDesc:
+      "Verify server connection and delivery to a specific inbox before going live.",
     testEmailPlaceholder: "recipient@example.com",
     sendTestBtn: "Send Test Email",
-    testSentSuccess: "Test email dispatched successfully! Please check your inbox (or spam folder).",
+    testSentSuccess:
+      "Test email dispatched successfully! Please check your inbox (or spam folder).",
     outboxTitle: "Sent Outbox & Audit Logs",
-    outboxDesc: "Track every outgoing message sent to candidates, delivery status, and exact content snapshots.",
+    outboxDesc:
+      "Track every outgoing message sent to candidates, delivery status, and exact content snapshots.",
     searchRecipient: "Search by candidate name or email...",
     allStatuses: "All Statuses",
     statusSent: "Delivered (Sent)",
@@ -1649,7 +1834,8 @@ export const en: TranslationSchema = {
     logDetailBody: "Delivered Message Body",
     close: "Close",
     sendEmailAction: "Send Email",
-    sendEmailInviteCheckbox: "Send interview invitation email to candidate with details",
+    sendEmailInviteCheckbox:
+      "Send interview invitation email to candidate with details",
     templateSaveError: "Error saving email template!",
     settingsSavedSuccess: "Email settings saved successfully!",
     settingsSaveError: "Error saving email settings!",
@@ -1695,13 +1881,15 @@ export const en: TranslationSchema = {
   },
   timeline: {
     title: "Activity Timeline",
-    subtitle: "Complete chronological history of applications, stage transitions, scheduled interviews, and email communications.",
+    subtitle:
+      "Complete chronological history of applications, stage transitions, scheduled interviews, and email communications.",
     allEvents: "All Events",
     filterEmails: "Emails",
     filterInterviews: "Interviews",
     filterStages: "Stages",
     noEvents: "No activities recorded",
-    noEventsDesc: "Candidate interactions and status changes will be automatically tracked here in real-time.",
+    noEventsDesc:
+      "Candidate interactions and status changes will be automatically tracked here in real-time.",
     performedBy: "Performed by",
     viewEmailBody: "View Email Body",
     hideEmailBody: "Collapse",
@@ -1713,17 +1901,22 @@ export const en: TranslationSchema = {
       STAGE_CHANGED_title: "Stage Changed: {toStage}",
       STAGE_CHANGED_desc: "Application moved from {fromStage} to {toStage}.",
       INTERVIEW_SCHEDULED_title: "Interview Scheduled",
-      INTERVIEW_SCHEDULED_desc: "Round {round} interview scheduled at {time} on {date} with {interviewer}.",
+      INTERVIEW_SCHEDULED_desc:
+        "Round {round} interview scheduled at {time} on {date} with {interviewer}.",
       INTERVIEW_UPDATED_title: "Interview Updated",
-      INTERVIEW_UPDATED_desc: "Interview schedule updated to {time} on {date} with {interviewer}.",
+      INTERVIEW_UPDATED_desc:
+        "Interview schedule updated to {time} on {date} with {interviewer}.",
       SCORECARD_SUBMITTED_title: "Scorecard Submitted",
-      SCORECARD_SUBMITTED_desc: "Interview scorecard submitted by {interviewer}.",
+      SCORECARD_SUBMITTED_desc:
+        "Interview scorecard submitted by {interviewer}.",
       EMAIL_SENT_title: "Email Sent",
-      EMAIL_SENT_desc: "Sent '{subject}' to {recipientName} ({recipientEmail}).",
+      EMAIL_SENT_desc:
+        "Sent '{subject}' to {recipientName} ({recipientEmail}).",
       PII_READ_title: "Profile Accessed (Audit)",
       PII_READ_desc: "Candidate profile was accessed by {userName}.",
       DOCUMENT_DOWNLOADED_title: "Document Downloaded (Audit)",
-      DOCUMENT_DOWNLOADED_desc: "Document '{fileName}' was downloaded by {userName}.",
+      DOCUMENT_DOWNLOADED_desc:
+        "Document '{fileName}' was downloaded by {userName}.",
     },
   },
   sourcing: {
@@ -1780,7 +1973,8 @@ export const en: TranslationSchema = {
       active: "Active",
       inactive: "Inactive",
       emptyTitle: "No tracking links yet",
-      emptyDesc: "Create custom tracking links to share across LinkedIn, Indeed, Facebook and track your candidate conversion rates.",
+      emptyDesc:
+        "Create custom tracking links to share across LinkedIn, Indeed, Facebook and track your candidate conversion rates.",
       searchPlaceholder: "Search by link name, token, campaign...",
       filterAllStatus: "All status",
       filterActive: "Active",
@@ -1797,13 +1991,15 @@ export const en: TranslationSchema = {
       applied: "APPLIED",
       via: "via",
       emptyTitle: "No attribution logs yet",
-      emptyDesc: "When candidates apply through custom links or organic channels, their attribution details will be logged here.",
+      emptyDesc:
+        "When candidates apply through custom links or organic channels, their attribution details will be logged here.",
       searchPlaceholder: "Search by candidate name, email, campaign...",
       filterAllSources: "All sources",
     },
     modal: {
       createTitle: "Create Tracking Link",
-      createDesc: "Create a unique tracking link to share and measure candidate clicks and applications.",
+      createDesc:
+        "Create a unique tracking link to share and measure candidate clicks and applications.",
       linkNameLabel: "Link Name",
       linkNamePlaceholder: "e.g. LinkedIn Senior Engineer Spring 2026",
       sourceLabel: "Channel / Source",

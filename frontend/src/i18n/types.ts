@@ -18,6 +18,9 @@ export interface TranslationSchema {
     actions: string;
     back: string;
     next: string;
+    previous: string;
+    pagination: string;
+    remove: string;
     confirm: string;
     comingSoon: string;
     soon: string;
@@ -60,6 +63,7 @@ export interface TranslationSchema {
     deleteConfirmWord: string;
     cancelConfirmWord: string;
     revokeConfirmWord: string;
+    skipToContent: string;
   };
   errors: {
     generic: string;
@@ -382,6 +386,7 @@ export interface TranslationSchema {
     footerRights: string;
   };
   dashboard: {
+    title: string;
     welcome: string;
     overviewSubtitle: string;
     totalJobs: string;

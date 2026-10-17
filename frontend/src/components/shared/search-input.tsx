@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, type ChangeEvent, type KeyboardEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "cn";
@@ -24,6 +31,7 @@ export interface SearchInputProps {
   autoFocus?: boolean;
   /** Accessible label */
   ariaLabel?: string;
+  "aria-label"?: string;
 }
 
 export function SearchInput({
@@ -36,6 +44,7 @@ export function SearchInput({
   inputClassName,
   autoFocus,
   ariaLabel,
+  "aria-label": ariaLabelKebab,
 }: SearchInputProps) {
   // Local state keeps keystrokes isolated from heavy parent table re-renders,
   // guaranteeing 0ms typing latency and 60+ FPS UI responsiveness.
@@ -111,9 +120,15 @@ export function SearchInput({
     inputRef.current?.focus();
   };
 
+  const resolvedAriaLabel =
+    ariaLabelKebab || ariaLabel || placeholder || "Search";
+
   return (
     <div className={cn("relative flex-1 min-w-0 w-full", className)}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+      <Search
+        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
+        aria-hidden="true"
+      />
       <Input
         ref={inputRef}
         type="text"
@@ -122,7 +137,7 @@ export function SearchInput({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        aria-label={ariaLabel || placeholder}
+        aria-label={resolvedAriaLabel}
         className={cn(
           "h-9 pl-9 pr-8 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl shadow-xs w-full transition-colors",
           inputClassName,
@@ -135,7 +150,7 @@ export function SearchInput({
           aria-label="Clear search"
           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       )}
     </div>

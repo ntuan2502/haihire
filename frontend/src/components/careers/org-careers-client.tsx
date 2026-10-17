@@ -24,7 +24,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
+import {
+  getJobTypeLabel,
+  getWorkplaceLabel,
+  getExperienceLevelLabel,
+} from "@/lib/jobs";
 import type { Organization, Job } from "@/types";
 
 export interface OrgCareersClientProps {
@@ -33,7 +37,11 @@ export interface OrgCareersClientProps {
   orgSlug: string;
 }
 
-export function OrgCareersClient({ initialOrg, initialJobs, orgSlug }: OrgCareersClientProps) {
+export function OrgCareersClient({
+  initialOrg,
+  initialJobs,
+  orgSlug,
+}: OrgCareersClientProps) {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,7 +58,8 @@ export function OrgCareersClient({ initialOrg, initialJobs, orgSlug }: OrgCareer
           sourcingApi
             .recordPublicClick({
               token: refParam,
-              referrer: typeof document !== "undefined" ? document.referrer : undefined,
+              referrer:
+                typeof document !== "undefined" ? document.referrer : undefined,
             })
             .catch(() => {});
         }
@@ -118,7 +127,9 @@ export function OrgCareersClient({ initialOrg, initialJobs, orgSlug }: OrgCareer
         <div className="h-14 w-14 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("careers.orgNotFound")}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+          {t("careers.orgNotFound")}
+        </h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md">
           {t("careers.orgNotFoundDesc", { slug: orgSlug })}
         </p>
@@ -174,14 +185,20 @@ export function OrgCareersClient({ initialOrg, initialJobs, orgSlug }: OrgCareer
             <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-blue-600" />
               <span>
-                <strong className="text-slate-900 dark:text-white font-extrabold">{filteredJobs.length}</strong> {t("careers.openPositions")}
+                <strong className="text-slate-900 dark:text-white font-extrabold">
+                  {filteredJobs.length}
+                </strong>{" "}
+                {t("careers.openPositions")}
               </span>
             </div>
             {departments.length > 0 && (
               <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-indigo-600" />
                 <span>
-                  <strong className="text-slate-900 dark:text-white font-extrabold">{departments.length}</strong> {t("careers.departmentsCount")}
+                  <strong className="text-slate-900 dark:text-white font-extrabold">
+                    {departments.length}
+                  </strong>{" "}
+                  {t("careers.departmentsCount")}
                 </span>
               </div>
             )}
@@ -194,10 +211,15 @@ export function OrgCareersClient({ initialOrg, initialJobs, orgSlug }: OrgCareer
         {/* Search & Filter Bar */}
         <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+              aria-hidden="true"
+            />
             <Input
               type="text"
+              name="company-jobs-search"
               placeholder={t("careers.searchInCompany")}
+              aria-label={t("careers.searchInCompany")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 h-10 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"

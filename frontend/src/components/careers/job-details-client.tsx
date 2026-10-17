@@ -412,11 +412,15 @@ export function JobDetailsClient({
                   {/* Name inputs */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      <label
+                        htmlFor="career-lastName"
+                        className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                      >
                         {t("careers.lastName")}{" "}
                         <span className="text-rose-500">*</span>
                       </label>
                       <Input
+                        id="career-lastName"
                         type="text"
                         required
                         placeholder={t("careers.placeholders.lastName")}
@@ -426,11 +430,15 @@ export function JobDetailsClient({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      <label
+                        htmlFor="career-firstName"
+                        className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                      >
                         {t("careers.firstName")}{" "}
                         <span className="text-rose-500">*</span>
                       </label>
                       <Input
+                        id="career-firstName"
                         type="text"
                         required
                         placeholder={t("careers.placeholders.firstName")}
@@ -443,11 +451,15 @@ export function JobDetailsClient({
 
                   {/* Email & Phone */}
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <label
+                      htmlFor="career-email"
+                      className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
                       {t("careers.email")}{" "}
                       <span className="text-rose-500">*</span>
                     </label>
                     <Input
+                      id="career-email"
                       type="email"
                       required
                       placeholder="name@example.com"
@@ -458,10 +470,14 @@ export function JobDetailsClient({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <label
+                      htmlFor="career-phone"
+                      className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
                       {t("careers.phone")}
                     </label>
                     <Input
+                      id="career-phone"
                       type="tel"
                       placeholder="0912 345 678"
                       value={candidatePhone}
@@ -547,10 +563,14 @@ export function JobDetailsClient({
 
                   {/* Notes / Message */}
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <label
+                      htmlFor="career-notes"
+                      className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
                       {t("careers.notes")}
                     </label>
                     <textarea
+                      id="career-notes"
                       rows={3}
                       placeholder={t("careers.placeholders.notes")}
                       value={notes}

@@ -37,10 +37,7 @@ import {
   Eye,
 } from "lucide-react";
 
-import {
-  formatDate,
-  type CandidateItem,
-} from "@/lib/utils";
+import { formatDate, type CandidateItem } from "@/lib/utils";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { CandidateDrawer } from "@/components/candidates/candidate-drawer";
 import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-modal";
@@ -71,14 +68,19 @@ function CandidatesPageContent() {
     setLimit: setRowsPerPage,
   } = useTableParams();
 
-  const { data: pagedResult, isLoading: candidatesLoading } =
-    useCandidates(user?.organizationId, {
+  const { data: pagedResult, isLoading: candidatesLoading } = useCandidates(
+    user?.organizationId,
+    {
       page: currentPage,
       limit: rowsPerPage,
       search: search.trim() || undefined,
-    });
+    },
+  );
 
-  const candidates = useMemo(() => pagedResult?.data || [], [pagedResult?.data]);
+  const candidates = useMemo(
+    () => pagedResult?.data || [],
+    [pagedResult?.data],
+  );
   const totalCount = pagedResult?.total || 0;
   const totalPages = Math.max(1, pagedResult?.totalPages || 1);
   const loading = jobsLoading || candidatesLoading;
@@ -95,7 +97,8 @@ function CandidatesPageContent() {
     useState<ScheduledInterviewInfo | null>(null);
 
   const deleteCandidateMutation = useDeleteCandidateMutation();
-  const [candidateToDelete, setCandidateToDelete] = useState<CandidateItem | null>(null);
+  const [candidateToDelete, setCandidateToDelete] =
+    useState<CandidateItem | null>(null);
 
   const handleConfirmDeleteCandidate = async () => {
     if (!candidateToDelete) return;
@@ -107,8 +110,6 @@ function CandidatesPageContent() {
       toast.error(getApiErrorMessage(err, t));
     }
   };
-
-
 
   // Filter Drawer State & Secondary Filter
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -157,7 +158,8 @@ function CandidatesPageContent() {
       name: cand.name,
       email: cand.email,
       phone: cand.phone || "—",
-      applicationsCount: cand.applicationsCount ?? (cand.applications?.length ?? 0),
+      applicationsCount:
+        cand.applicationsCount ?? cand.applications?.length ?? 0,
       createdAt: cand.createdAt,
       updatedAt: cand.updatedAt,
       notes: cand.notes || "",
@@ -184,7 +186,9 @@ function CandidatesPageContent() {
     let hasApplications = 0;
     let unassigned = 0;
     for (const c of candidateRows) {
-      const hasCv = Boolean(c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"));
+      const hasCv = Boolean(
+        c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"),
+      );
       if (hasCv) withResume++;
       if (c.applicationsCount > 0) hasApplications++;
       else unassigned++;
@@ -200,9 +204,21 @@ function CandidatesPageContent() {
   const candidateTabs = useMemo(
     () => [
       { id: "ALL", label: t("common.all"), count: candidateCounts.all },
-      { id: "WITH_RESUME", label: t("candidates.withCv"), count: candidateCounts.withResume },
-      { id: "HAS_APPLICATIONS", label: t("candidates.hasApplications"), count: candidateCounts.hasApplications },
-      { id: "UNASSIGNED", label: t("candidates.unassigned"), count: candidateCounts.unassigned },
+      {
+        id: "WITH_RESUME",
+        label: t("candidates.withCv"),
+        count: candidateCounts.withResume,
+      },
+      {
+        id: "HAS_APPLICATIONS",
+        label: t("candidates.hasApplications"),
+        count: candidateCounts.hasApplications,
+      },
+      {
+        id: "UNASSIGNED",
+        label: t("candidates.unassigned"),
+        count: candidateCounts.unassigned,
+      },
     ],
     [t, candidateCounts],
   );
@@ -210,14 +226,22 @@ function CandidatesPageContent() {
   const filteredCandidateRows = useMemo(() => {
     return candidateRows.filter((c) => {
       if (candidateFilter.length > 0) {
-        const hasCv = Boolean(c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"));
+        const hasCv = Boolean(
+          c.resumeUrl || (c.resumeFileName && c.resumeFileName !== "—"),
+        );
         const matchCv = candidateFilter.includes("WITH_RESUME") ? hasCv : false;
-        const matchActive = candidateFilter.includes("HAS_APPLICATIONS") ? c.applicationsCount > 0 : false;
-        const matchUnassigned = candidateFilter.includes("UNASSIGNED") ? c.applicationsCount === 0 : false;
+        const matchActive = candidateFilter.includes("HAS_APPLICATIONS")
+          ? c.applicationsCount > 0
+          : false;
+        const matchUnassigned = candidateFilter.includes("UNASSIGNED")
+          ? c.applicationsCount === 0
+          : false;
         if (!matchCv && !matchActive && !matchUnassigned) return false;
       }
       if (selectedJobId !== "ALL") {
-        const matched = c.candidate?.applications?.some((a) => a.jobId === selectedJobId);
+        const matched = c.candidate?.applications?.some(
+          (a) => a.jobId === selectedJobId,
+        );
         if (!matched) return false;
       }
       return true;
@@ -272,14 +296,10 @@ function CandidatesPageContent() {
 
   const selectedCandidateApps = useMemo(() => {
     if (!selectedCandidate) return [];
-    return (
-      (selectedCandidateFull?.applications ||
-        selectedCandidate.candidate?.applications ||
-        []) as Application[]
-    );
+    return (selectedCandidateFull?.applications ||
+      selectedCandidate.candidate?.applications ||
+      []) as Application[];
   }, [selectedCandidate, selectedCandidateFull]);
-
-
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -292,7 +312,10 @@ function CandidatesPageContent() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4">
+      <main
+        id="main-content"
+        className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10 w-full space-y-4"
+      >
         {/* Standard Header Row matching Jobs & Applications */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -359,12 +382,22 @@ function CandidatesPageContent() {
                   </div>
                   <div className="space-y-0.5 mt-1">
                     {[
-                      { id: "name", label: t("candidates.columns.name"), locked: true },
+                      {
+                        id: "name",
+                        label: t("candidates.columns.name"),
+                        locked: true,
+                      },
                       { id: "email", label: t("candidates.columns.email") },
                       { id: "phone", label: t("candidates.columns.phone") },
-                      { id: "applications", label: t("candidates.columns.applications") },
+                      {
+                        id: "applications",
+                        label: t("candidates.columns.applications"),
+                      },
                       { id: "added", label: t("candidates.columns.added") },
-                      { id: "quickNotes", label: t("candidates.columns.quickNotes") },
+                      {
+                        id: "quickNotes",
+                        label: t("candidates.columns.quickNotes"),
+                      },
                     ].map((col) => {
                       const isChecked =
                         visibleColumns[col.id as keyof typeof visibleColumns];
@@ -418,10 +451,15 @@ function CandidatesPageContent() {
         {/* Active Filter Chips Bar (Shown when secondary filters are applied) */}
         {hasSecondaryFilters && (
           <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
-            <span className="text-slate-400 font-medium text-[11px]">{t("common.filter")}:</span>
+            <span className="text-slate-400 font-medium text-[11px]">
+              {t("common.filter")}:
+            </span>
             {selectedJobId !== "ALL" && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 text-xs font-medium">
-                <span>{jobs.find((j) => j.id === selectedJobId)?.title || selectedJobId}</span>
+                <span>
+                  {jobs.find((j) => j.id === selectedJobId)?.title ||
+                    selectedJobId}
+                </span>
                 <button
                   type="button"
                   onClick={() => setSelectedJobId("ALL")}
@@ -477,105 +515,186 @@ function CandidatesPageContent() {
                   <tr>
                     {visibleColumns.name && (
                       <th
-                        onClick={() => handleSort("name")}
-                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                        scope="col"
+                        aria-sort={
+                          sortField === "name"
+                            ? sortDirection === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                        className="py-3 px-5 select-none"
                       >
-                        <span className="flex items-center gap-1">
-                          {t("candidates.columns.name")}
+                        <button
+                          type="button"
+                          onClick={() => handleSort("name")}
+                          className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                        >
+                          <span>{t("candidates.columns.name")}</span>
                           {sortField === "name" ? (
                             <ArrowDown
                               className={`h-3 w-3 transition-transform ${
                                 sortDirection === "asc" ? "rotate-180" : ""
                               }`}
+                              aria-hidden="true"
                             />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                            <ArrowUpDown
+                              className="h-3 w-3 text-slate-400"
+                              aria-hidden="true"
+                            />
                           )}
-                        </span>
+                        </button>
                       </th>
                     )}
                     {visibleColumns.email && (
                       <th
-                        onClick={() => handleSort("email")}
-                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                        scope="col"
+                        aria-sort={
+                          sortField === "email"
+                            ? sortDirection === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                        className="py-3 px-5 select-none"
                       >
-                        <span className="flex items-center gap-1">
-                          {t("candidates.columns.email")}
+                        <button
+                          type="button"
+                          onClick={() => handleSort("email")}
+                          className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                        >
+                          <span>{t("candidates.columns.email")}</span>
                           {sortField === "email" ? (
                             <ArrowDown
                               className={`h-3 w-3 transition-transform ${
                                 sortDirection === "asc" ? "rotate-180" : ""
                               }`}
+                              aria-hidden="true"
                             />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                            <ArrowUpDown
+                              className="h-3 w-3 text-slate-400"
+                              aria-hidden="true"
+                            />
                           )}
-                        </span>
+                        </button>
                       </th>
                     )}
                     {visibleColumns.phone && (
                       <th
-                        onClick={() => handleSort("phone")}
-                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                        scope="col"
+                        aria-sort={
+                          sortField === "phone"
+                            ? sortDirection === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                        className="py-3 px-5 select-none"
                       >
-                        <span className="flex items-center gap-1">
-                          {t("candidates.columns.phone")}
+                        <button
+                          type="button"
+                          onClick={() => handleSort("phone")}
+                          className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                        >
+                          <span>{t("candidates.columns.phone")}</span>
                           {sortField === "phone" ? (
                             <ArrowDown
                               className={`h-3 w-3 transition-transform ${
                                 sortDirection === "asc" ? "rotate-180" : ""
                               }`}
+                              aria-hidden="true"
                             />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                            <ArrowUpDown
+                              className="h-3 w-3 text-slate-400"
+                              aria-hidden="true"
+                            />
                           )}
-                        </span>
+                        </button>
                       </th>
                     )}
                     {visibleColumns.applications && (
                       <th
-                        onClick={() => handleSort("applications")}
-                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                        scope="col"
+                        aria-sort={
+                          sortField === "applications"
+                            ? sortDirection === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                        className="py-3 px-5 select-none"
                       >
-                        <span className="flex items-center gap-1">
-                          {t("candidates.columns.applications")}
+                        <button
+                          type="button"
+                          onClick={() => handleSort("applications")}
+                          className="flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                        >
+                          <span>{t("candidates.columns.applications")}</span>
                           {sortField === "applications" ? (
                             <ArrowDown
                               className={`h-3 w-3 transition-transform ${
                                 sortDirection === "asc" ? "rotate-180" : ""
                               }`}
+                              aria-hidden="true"
                             />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                            <ArrowUpDown
+                              className="h-3 w-3 text-slate-400"
+                              aria-hidden="true"
+                            />
                           )}
-                        </span>
+                        </button>
                       </th>
                     )}
                     {visibleColumns.added && (
                       <th
-                        onClick={() => handleSort("added")}
-                        className="py-3 px-5 cursor-pointer select-none hover:text-slate-800 dark:hover:text-slate-200"
+                        scope="col"
+                        aria-sort={
+                          sortField === "added"
+                            ? sortDirection === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                        className="py-3 px-5 select-none"
                       >
-                        <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold">
-                          {t("candidates.columns.added")}
+                        <button
+                          type="button"
+                          onClick={() => handleSort("added")}
+                          className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                        >
+                          <span>{t("candidates.columns.added")}</span>
                           {sortField === "added" ? (
                             <ArrowDown
                               className={`h-3 w-3 text-slate-700 dark:text-slate-300 transition-transform ${
                                 sortDirection === "asc" ? "rotate-180" : ""
                               }`}
+                              aria-hidden="true"
                             />
                           ) : (
-                            <ArrowUpDown className="h-3 w-3 text-slate-400" />
+                            <ArrowUpDown
+                              className="h-3 w-3 text-slate-400"
+                              aria-hidden="true"
+                            />
                           )}
-                        </span>
+                        </button>
                       </th>
                     )}
                     {visibleColumns.quickNotes && (
-                      <th className="py-3 px-5 font-semibold text-slate-500">
+                      <th
+                        scope="col"
+                        className="py-3 px-5 font-semibold text-slate-500"
+                      >
                         {t("candidates.columns.quickNotes")}
                       </th>
                     )}
-                    <th className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500">
+                    <th
+                      scope="col"
+                      className="py-3 px-5 text-right min-w-[100px] font-semibold text-slate-500"
+                    >
                       {t("common.actions")}
                     </th>
                   </tr>
@@ -592,9 +711,16 @@ function CandidatesPageContent() {
                       {/* Name */}
                       {visibleColumns.name && (
                         <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
-                          <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCandidate(candidate);
+                            }}
+                            className="text-left font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
+                          >
                             {candidate.name}
-                          </span>
+                          </button>
                         </td>
                       )}
 
@@ -617,7 +743,9 @@ function CandidatesPageContent() {
                               <span>{candidate.phone}</span>
                             </span>
                           ) : (
-                            <span className="text-slate-300 dark:text-slate-600">—</span>
+                            <span className="text-slate-300 dark:text-slate-600">
+                              —
+                            </span>
                           )}
                         </td>
                       )}
@@ -647,7 +775,9 @@ function CandidatesPageContent() {
                               {candidate.notes}
                             </span>
                           ) : (
-                            <span className="text-slate-300 dark:text-slate-600">—</span>
+                            <span className="text-slate-300 dark:text-slate-600">
+                              —
+                            </span>
                           )}
                         </td>
                       )}
@@ -660,10 +790,13 @@ function CandidatesPageContent() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/dashboard/candidates/${candidate.id}`);
+                              router.push(
+                                `/dashboard/candidates/${candidate.id}`,
+                              );
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
                             title={t("common.view")}
+                            aria-label={t("common.view")}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -673,10 +806,13 @@ function CandidatesPageContent() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/dashboard/candidates/${candidate.id}/edit`);
+                              router.push(
+                                `/dashboard/candidates/${candidate.id}/edit`,
+                              );
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
                             title={t("common.edit")}
+                            aria-label={t("common.edit")}
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
@@ -691,6 +827,7 @@ function CandidatesPageContent() {
                               }}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
                               title={t("common.delete")}
+                              aria-label={t("common.delete")}
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -768,8 +905,6 @@ function CandidatesPageContent() {
         />
       )}
 
-
-
       {/* Candidates Filter Drawer (SlideOver) matching Jobs UX */}
       <SlideOver
         isOpen={isFilterOpen}
@@ -805,7 +940,10 @@ function CandidatesPageContent() {
               <div className="flex items-center gap-1.5 flex-wrap">
                 {[
                   { id: "WITH_RESUME", label: t("candidates.withCv") },
-                  { id: "HAS_APPLICATIONS", label: t("candidates.hasApplications") },
+                  {
+                    id: "HAS_APPLICATIONS",
+                    label: t("candidates.hasApplications"),
+                  },
                   { id: "UNASSIGNED", label: t("candidates.unassigned") },
                 ].map((st) => (
                   <button
@@ -838,7 +976,10 @@ function CandidatesPageContent() {
                     { value: "name", label: t("candidates.columns.name") },
                     { value: "email", label: t("candidates.columns.email") },
                     { value: "phone", label: t("candidates.columns.phone") },
-                    { value: "applications", label: t("candidates.columns.applications") },
+                    {
+                      value: "applications",
+                      label: t("candidates.columns.applications"),
+                    },
                   ]}
                   className="w-full"
                   triggerClassName="h-9 text-xs font-normal bg-white dark:bg-slate-950 rounded-xl"

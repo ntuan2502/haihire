@@ -60,6 +60,7 @@ export interface TranslationSchema {
     deleteConfirmWord: string;
     cancelConfirmWord: string;
     revokeConfirmWord: string;
+    skipToContent: string;
   };
   errors: {
     generic: string;
@@ -382,6 +383,7 @@ export interface TranslationSchema {
     footerRights: string;
   };
   dashboard: {
+    title: string;
     welcome: string;
     overviewSubtitle: string;
     totalJobs: string;

@@ -3,6 +3,7 @@ import {
   createQueryBuilder,
   createMockTable,
   evaluatePredicate,
+  type ProxyRecord,
 } from "./prisma-composer-mock";
 
 interface TestItem {
@@ -30,23 +31,23 @@ describe("prisma-composer-mock helper", () => {
 
   describe("evaluatePredicate", () => {
     it("evaluates eq and in operators with wrapResult", () => {
-      const item = { id: "1", role: "ADMIN" };
+      const item: TestItem = {
+        id: "1",
+        name: "Apple",
+        category: "Fruit",
+        price: 10,
+        isActive: true,
+        role: "ADMIN",
+      };
       expect(
-        evaluatePredicate(item, (p) =>
-          (p as { role: { eq: (val: string) => unknown } }).role.eq("ADMIN"),
-        ),
+        evaluatePredicate(item, (p: ProxyRecord) => p.role.eq("ADMIN")),
       ).toBe(true);
       expect(
-        evaluatePredicate(item, (p) =>
-          (p as { role: { eq: (val: string) => unknown } }).role.eq("USER"),
-        ),
+        evaluatePredicate(item, (p: ProxyRecord) => p.role.eq("USER")),
       ).toBe(false);
       expect(
-        evaluatePredicate(item, (p) =>
-          (p as { role: { in: (vals: string[]) => unknown } }).role.in([
-            "ADMIN",
-            "SUPERADMIN",
-          ]),
+        evaluatePredicate(item, (p: ProxyRecord) =>
+          p.role.in(["ADMIN", "SUPERADMIN"]),
         ),
       ).toBe(true);
     });
@@ -59,8 +60,10 @@ describe("prisma-composer-mock helper", () => {
         price: 10,
         isActive: true,
       };
-      expect(evaluatePredicate(item, (r) => r.price > 5)).toBe(true);
-      expect(evaluatePredicate(item, (r) => r.price > 20)).toBe(false);
+      expect(evaluatePredicate(item, (r: TestItem) => r.price > 5)).toBe(true);
+      expect(evaluatePredicate(item, (r: TestItem) => r.price > 20)).toBe(
+        false,
+      );
     });
   });
 
@@ -72,17 +75,19 @@ describe("prisma-composer-mock helper", () => {
       const allItems = await qb.all();
       expect(allItems).toHaveLength(4);
 
-      const fruits = await qb.where((r) => r.category === "Fruit").all();
+      const fruits = await qb
+        .where((r: TestItem) => r.category === "Fruit")
+        .all();
       expect(fruits).toHaveLength(2);
 
       const selected = await createQueryBuilder(store)
         .select("id", "name")
-        .where((r) => r.id === "1")
+        .where((r: TestItem) => r.id === "1")
         .first();
       expect(selected).toEqual({ id: "1", name: "Apple" });
 
       const nonExistent = await createQueryBuilder(store)
-        .where((r) => r.id === "999")
+        .where((r: TestItem) => r.id === "999")
         .first();
       expect(nonExistent).toBeNull();
     });
@@ -105,12 +110,12 @@ describe("prisma-composer-mock helper", () => {
       expect(store).toHaveLength(5);
 
       const updated = await createQueryBuilder(store)
-        .where((r) => r.id === "5")
+        .where((r: TestItem) => r.id === "5")
         .update({ price: 14 });
       expect(updated?.price).toBe(14);
 
       const deleteRes = await createQueryBuilder(store)
-        .where((r) => r.id === "5")
+        .where((r: TestItem) => r.id === "5")
         .delete();
       expect(deleteRes.count).toBe(1);
       expect(store).toHaveLength(4);
@@ -144,7 +149,7 @@ describe("prisma-composer-mock helper", () => {
       expect(await table.count()).toBe(4);
 
       const item = await table
-        .where((r) => r.id === "2")
+        .where((r: TestItem) => r.id === "2")
         .select("id", "price")
         .first();
       expect(item).toEqual({ id: "2", price: 5 });

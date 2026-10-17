@@ -1,7 +1,32 @@
 export type MockRecord = Record<string, unknown>;
 
+export interface ProxyField {
+  eq: (target: unknown) => { and: (other: unknown) => unknown; value: boolean };
+  in: (targets: unknown[]) => {
+    and: (other: unknown) => unknown;
+    value: boolean;
+  };
+  is: (target: unknown) => { and: (other: unknown) => unknown; value: boolean };
+  neq: (target: unknown) => {
+    and: (other: unknown) => unknown;
+    value: boolean;
+  };
+  gte: (target: unknown) => {
+    and: (other: unknown) => unknown;
+    value: boolean;
+  };
+  lte: (target: unknown) => {
+    and: (other: unknown) => unknown;
+    value: boolean;
+  };
+  gt: (target: unknown) => { and: (other: unknown) => unknown; value: boolean };
+  lt: (target: unknown) => { and: (other: unknown) => unknown; value: boolean };
+}
+
+export type ProxyRecord = Record<string, ProxyField>;
+
 export type PredicateFn<T extends MockRecord> =
-  ((proxy: Record<string, unknown>) => unknown) | ((record: T) => boolean);
+  ((proxy: ProxyRecord) => unknown) | ((record: T) => boolean);
 
 export interface QueryBuilder<T extends MockRecord> {
   select(...fields: string[]): QueryBuilder<T>;
@@ -40,7 +65,7 @@ function wrapResult(val: boolean): WrappedResult {
 
 export function evaluatePredicate<T extends MockRecord>(
   item: T,
-  pred?: PredicateFn<T>,
+  pred?: ((proxy: ProxyRecord) => unknown) | ((record: NoInfer<T>) => boolean),
 ): boolean {
   if (!pred) return true;
 

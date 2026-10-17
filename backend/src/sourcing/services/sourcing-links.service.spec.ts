@@ -2,12 +2,8 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { APP_ERROR_CODES, SourcingChannel } from "@haihire/shared";
 import { SourcingLinksService, parseDomain } from "./sourcing-links.service";
 import {
-  AppForbiddenException,
-  AppNotFoundException,
-} from "../../common/app-exception";
-import {
   createMockTable,
-  MockTable,
+  type MockTable,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
 

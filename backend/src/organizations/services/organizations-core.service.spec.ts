@@ -2,13 +2,8 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { OrganizationsCoreService } from "./organizations-core.service";
 import {
-  AppConflictException,
-  AppForbiddenException,
-  AppNotFoundException,
-} from "../../common/app-exception";
-import {
   createMockTable,
-  MockTable,
+  type MockTable,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
 

@@ -9,7 +9,7 @@ import {
 } from "../../common/app-exception";
 import {
   createMockTable,
-  MockTable,
+  type MockTable,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
 import type { MinioService } from "../../minio/minio.service";
@@ -339,9 +339,7 @@ describe("ApplicationsSagaService", () => {
           jobId: "job-1",
           candidateId: "cand-existing",
         }),
-      ).rejects.toMatchObject({
-        code: APP_ERROR_CODES.CANDIDATE_ALREADY_APPLIED,
-      });
+      ).rejects.toThrow(AppConflictException);
     });
   });
 

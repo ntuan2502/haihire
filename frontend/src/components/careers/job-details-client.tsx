@@ -403,8 +403,15 @@ export function JobDetailsClient({
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Alert Error */}
                   {submitError && (
-                    <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5">
-                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div
+                      role="alert"
+                      aria-live="assertive"
+                      className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5"
+                    >
+                      <AlertCircle
+                        className="h-4 w-4 shrink-0 mt-0.5"
+                        aria-hidden="true"
+                      />
                       <span>{submitError}</span>
                     </div>
                   )}
@@ -555,7 +562,11 @@ export function JobDetailsClient({
                     )}
 
                     {fileError && (
-                      <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1">
+                      <p
+                        role="alert"
+                        aria-live="assertive"
+                        className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1"
+                      >
                         {fileError}
                       </p>
                     )}

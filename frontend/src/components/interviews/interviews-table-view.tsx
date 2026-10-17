@@ -41,9 +41,19 @@ export interface InterviewsTableViewProps {
     dateStr?: string,
     interview?: ScheduledInterviewInfo,
   ) => void;
-  onOpenScorecard: (app: Application, interview: ScheduledInterviewInfo) => void;
-  onNavigateToPipeline: (jobId: string, applicationId?: string, stage?: string) => void;
-  onCancelInterview?: (app: Application, interview: ScheduledInterviewInfo) => void;
+  onOpenScorecard: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
+  onNavigateToPipeline: (
+    jobId: string,
+    applicationId?: string,
+    stage?: string,
+  ) => void;
+  onCancelInterview?: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
   canEdit?: boolean;
 }
 
@@ -80,7 +90,11 @@ export function InterviewsTableView({
     if (!rec) return null;
     const label = getRecommendationLabel(rec, t);
     const key = rec.toUpperCase();
-    if (key === "STRONG_YES" || key.includes("STRONG") || key.includes("TUYỂN NGAY")) {
+    if (
+      key === "STRONG_YES" ||
+      key.includes("STRONG") ||
+      key.includes("TUYỂN NGAY")
+    ) {
       return (
         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 whitespace-nowrap">
           {label}
@@ -114,23 +128,37 @@ export function InterviewsTableView({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[11px] font-bold">
-              <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.candidate")}</th>
+              <th scope="col" className="py-3.5 px-4 text-left">
+                {t("interviews.tableHeaders.candidate")}
+              </th>
               {visibleColumns?.job !== false && (
-                <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.job")}</th>
+                <th scope="col" className="py-3.5 px-4 text-left">
+                  {t("interviews.tableHeaders.job")}
+                </th>
               )}
               {visibleColumns?.schedule !== false && (
-                <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.schedule")}</th>
+                <th scope="col" className="py-3.5 px-4 text-left">
+                  {t("interviews.tableHeaders.schedule")}
+                </th>
               )}
               {visibleColumns?.interviewer !== false && (
-                <th className="py-3.5 px-4 text-left">{t("interviews.tableHeaders.interviewer")}</th>
+                <th scope="col" className="py-3.5 px-4 text-left">
+                  {t("interviews.tableHeaders.interviewer")}
+                </th>
               )}
               {visibleColumns?.status !== false && (
-                <th className="py-3.5 px-3 text-center">{t("interviews.tableHeaders.status")}</th>
+                <th scope="col" className="py-3.5 px-3 text-center">
+                  {t("interviews.tableHeaders.status")}
+                </th>
               )}
               {visibleColumns?.rating !== false && (
-                <th className="py-3.5 px-3 text-center">{t("interviews.tableHeaders.rating")}</th>
+                <th scope="col" className="py-3.5 px-3 text-center">
+                  {t("interviews.tableHeaders.rating")}
+                </th>
               )}
-              <th className="py-3.5 px-4 text-right">{t("interviews.tableHeaders.actions")}</th>
+              <th scope="col" className="py-3.5 px-4 text-right">
+                {t("interviews.tableHeaders.actions")}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -148,14 +176,16 @@ export function InterviewsTableView({
                   <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                     {/* 1. Candidate Info */}
                     <td className="py-3.5 px-4 align-middle">
-                      <div
-                        className="flex items-center gap-3 pr-2 min-w-0 cursor-pointer group/cand"
+                      <button
+                        type="button"
+                        className="flex items-center gap-3 pr-2 min-w-0 cursor-pointer group/cand text-left"
                         onClick={() => {
                           if (job) {
                             onNavigateToPipeline(job.id, app.id, app.stage);
                           }
                         }}
                         title={t("interviews.viewCandidateInPipeline")}
+                        aria-label={`${t("interviews.viewCandidateInPipeline")}: ${displayName}`}
                       >
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs group-hover/cand:scale-105 transition-transform">
                           {initials}
@@ -168,7 +198,7 @@ export function InterviewsTableView({
                             {app.candidateEmail}
                           </p>
                         </div>
-                      </div>
+                      </button>
                     </td>
 
                     {/* 2. Job Position */}
@@ -177,10 +207,13 @@ export function InterviewsTableView({
                         <div className="pr-2 min-w-0">
                           <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 truncate">
                             <Briefcase className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                            <span className="truncate">{job?.title || t("interviews.defaultJob")}</span>
+                            <span className="truncate">
+                              {job?.title || t("interviews.defaultJob")}
+                            </span>
                           </div>
                           <p className="text-[11px] text-slate-400 truncate pl-5">
-                            {job?.department || t("interviews.defaultDepartment")}
+                            {job?.department ||
+                              t("interviews.defaultDepartment")}
                           </p>
                         </div>
                       </td>
@@ -195,12 +228,16 @@ export function InterviewsTableView({
                               <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
                                 <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                                 <span>
-                                  {currentInterview.date} • {currentInterview.time}
+                                  {currentInterview.date} •{" "}
+                                  {currentInterview.time}
                                 </span>
                               </div>
                               <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
                                 <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
-                                  {getInterviewTypeLabel(currentInterview.type, t)}
+                                  {getInterviewTypeLabel(
+                                    currentInterview.type,
+                                    t,
+                                  )}
                                 </span>
 
                                 {currentInterview.format === "OFFICE" ? (
@@ -215,7 +252,9 @@ export function InterviewsTableView({
                                   </span>
                                 )}
 
-                                {currentInterview.linkOrLocation?.startsWith("http") && (
+                                {currentInterview.linkOrLocation?.startsWith(
+                                  "http",
+                                ) && (
                                   <a
                                     href={currentInterview.linkOrLocation}
                                     target="_blank"
@@ -223,7 +262,9 @@ export function InterviewsTableView({
                                     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline bg-blue-50/70 dark:bg-blue-950/40"
                                     title={t("interviews.joinOnlineMeeting")}
                                   >
-                                    <span>{t("interviews.joinMeetingShort")}</span>
+                                    <span>
+                                      {t("interviews.joinMeetingShort")}
+                                    </span>
                                     <ExternalLink className="h-2.5 w-2.5" />
                                   </a>
                                 )}
@@ -247,11 +288,15 @@ export function InterviewsTableView({
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium truncate">
                                 <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                                <span className="truncate">{currentInterview.interviewer}</span>
+                                <span className="truncate">
+                                  {currentInterview.interviewer}
+                                </span>
                               </div>
                               {currentInterview.round && (
                                 <p className="text-[10px] text-slate-400 pl-5">
-                                  {t("interviews.roundInterview", { round: currentInterview.round })}
+                                  {t("interviews.roundInterview", {
+                                    round: currentInterview.round,
+                                  })}
                                 </p>
                               )}
                             </div>
@@ -275,7 +320,9 @@ export function InterviewsTableView({
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-900/60 whitespace-nowrap">
                               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                              <span>{t("interviews.awaitingScheduleBadge")}</span>
+                              <span>
+                                {t("interviews.awaitingScheduleBadge")}
+                              </span>
                             </span>
                           )}
 
@@ -285,9 +332,16 @@ export function InterviewsTableView({
                               type="button"
                               onClick={() => toggleRowHistory(app.id)}
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60 transition-colors cursor-pointer whitespace-nowrap"
-                              title={t("interviews.candidateInterviewsMultiple", { count: allInterviews.length })}
+                              title={t(
+                                "interviews.candidateInterviewsMultiple",
+                                { count: allInterviews.length },
+                              )}
                             >
-                              <span>{t("interviews.roundsCount", { count: allInterviews.length })}</span>
+                              <span>
+                                {t("interviews.roundsCount", {
+                                  count: allInterviews.length,
+                                })}
+                              </span>
                               <ChevronDown
                                 className={`h-3 w-3 transition-transform duration-200 ${
                                   isExpanded ? "rotate-180" : ""
@@ -299,7 +353,9 @@ export function InterviewsTableView({
                               {t("interviews.roundsCount", { count: 1 })}
                             </span>
                           ) : (
-                            <span className="text-slate-400 text-[10px]">—</span>
+                            <span className="text-slate-400 text-[10px]">
+                              —
+                            </span>
                           )}
                         </div>
                       </td>
@@ -312,22 +368,38 @@ export function InterviewsTableView({
                           <div className="flex flex-col items-center justify-center gap-1">
                             <button
                               type="button"
-                              onClick={() => onOpenScorecard(app, currentInterview)}
+                              onClick={() =>
+                                onOpenScorecard(app, currentInterview)
+                              }
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200/80 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer transition-colors shadow-2xs"
                               title={t("interviews.scorecardTooltip")}
+                              aria-label={`${t("interviews.scorecardTooltip")} - ${displayName}`}
                             >
-                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                              <span>{currentInterview.scorecard.overallRating} ⭐</span>
+                              <Star
+                                className="h-3 w-3 fill-amber-400 text-amber-400"
+                                aria-hidden="true"
+                              />
+                              <span>
+                                {currentInterview.scorecard.overallRating} ⭐
+                              </span>
                             </button>
-                            {getRecommendationBadge(currentInterview.scorecard.recommendation)}
+                            {getRecommendationBadge(
+                              currentInterview.scorecard.recommendation,
+                            )}
                           </div>
                         ) : currentInterview ? (
                           <button
                             type="button"
-                            onClick={() => onOpenScorecard(app, currentInterview)}
+                            onClick={() =>
+                              onOpenScorecard(app, currentInterview)
+                            }
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50/70 hover:bg-amber-100/70 dark:bg-amber-950/40 font-bold border border-amber-200/70 dark:border-amber-900/60 cursor-pointer transition-colors"
+                            aria-label={`${t("interviews.rateNow")} - ${displayName}`}
                           >
-                            <Star className="h-2.5 w-2.5 text-amber-500" />
+                            <Star
+                              className="h-2.5 w-2.5 text-amber-500"
+                              aria-hidden="true"
+                            />
                             <span>{t("interviews.rateNow")}</span>
                           </button>
                         ) : (
@@ -344,7 +416,11 @@ export function InterviewsTableView({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onOpenScheduleModal(app, undefined, currentInterview);
+                              onOpenScheduleModal(
+                                app,
+                                undefined,
+                                currentInterview,
+                              );
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
                             title={
@@ -352,11 +428,19 @@ export function InterviewsTableView({
                                 ? t("interviews.editSchedule")
                                 : t("interviews.scheduleNow")
                             }
+                            aria-label={
+                              allInterviews.length > 0
+                                ? `${t("interviews.editSchedule")} - ${displayName}`
+                                : `${t("interviews.scheduleNow")} - ${displayName}`
+                            }
                           >
                             {allInterviews.length > 0 ? (
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
                             ) : (
-                              <Calendar className="h-4 w-4" />
+                              <Calendar
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
                             )}
                           </button>
                         )}
@@ -369,8 +453,9 @@ export function InterviewsTableView({
                             }}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer inline-flex items-center"
                             title={t("interviews.cancelThisSchedule")}
+                            aria-label={`${t("interviews.cancelThisSchedule")} - ${displayName}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                           </button>
                         )}
                       </div>
@@ -384,7 +469,11 @@ export function InterviewsTableView({
                         <div className="space-y-2.5">
                           <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
                             <History className="h-3.5 w-3.5 text-blue-500" />
-                            <span>{t("interviews.previousRoundsCount", { count: previousInterviews.length })}</span>
+                            <span>
+                              {t("interviews.previousRoundsCount", {
+                                count: previousInterviews.length,
+                              })}
+                            </span>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -396,7 +485,9 @@ export function InterviewsTableView({
                                 <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
                                   <span>
                                     {prev.round
-                                      ? t("interviews.roundInterview", { round: prev.round })
+                                      ? t("interviews.roundInterview", {
+                                          round: prev.round,
+                                        })
                                       : getInterviewTypeLabel(prev.type, t)}
                                   </span>
                                   <span className="text-[10px] text-slate-400 font-normal">
@@ -422,7 +513,9 @@ export function InterviewsTableView({
                                       <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                                       {prev.scorecard.overallRating} ⭐
                                     </span>
-                                    {getRecommendationBadge(prev.scorecard.recommendation)}
+                                    {getRecommendationBadge(
+                                      prev.scorecard.recommendation,
+                                    )}
                                   </div>
                                 )}
                               </div>

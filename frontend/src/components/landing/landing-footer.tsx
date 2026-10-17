@@ -27,22 +27,34 @@ export const LandingFooter: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <a href="#demo" className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors">
+                <a
+                  href="#demo"
+                  className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors"
+                >
                   {t("landing.footerPipeline")}
                 </a>
               </li>
               <li>
-                <a href="#features" className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors">
+                <a
+                  href="#features"
+                  className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors"
+                >
                   {t("landing.footerAiScreening")}
                 </a>
               </li>
               <li>
-                <a href="#features" className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors">
+                <a
+                  href="#features"
+                  className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors"
+                >
                   {t("landing.footerScorecards")}
                 </a>
               </li>
               <li>
-                <Link href="/careers" className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors">
+                <Link
+                  href="/careers"
+                  className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors"
+                >
                   {t("landing.footerCareerPortals")}
                 </Link>
               </li>
@@ -56,12 +68,18 @@ export const LandingFooter: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/careers" className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors">
+                <Link
+                  href="/careers"
+                  className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors"
+                >
                   {t("landing.footerApiDocs")}
                 </Link>
               </li>
               <li>
-                <a href="#features" className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors">
+                <a
+                  href="#features"
+                  className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-cyan-300 transition-colors"
+                >
                   {t("landing.footerSecurity")}
                 </a>
               </li>
@@ -92,7 +110,10 @@ export const LandingFooter: React.FC = () => {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           {/* System Status Indicator */}
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span
+              className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
+              aria-hidden="true"
+            />
             <span>{t("landing.footerSystemsNormal")}</span>
           </div>
 

@@ -50,8 +50,11 @@ export default function CareersDirectoryPage() {
       if (job.status !== "PUBLISHED") continue;
 
       const orgId = job.organization?.id || job.organizationId || "default";
-      const orgName = job.organization?.name || `${BRAND_CONFIG.name} Organization`;
-      const orgSlug = job.organization?.slug || (job.organization?.name ? slugify(job.organization.name) : "company");
+      const orgName =
+        job.organization?.name || `${BRAND_CONFIG.name} Organization`;
+      const orgSlug =
+        job.organization?.slug ||
+        (job.organization?.name ? slugify(job.organization.name) : "company");
 
       if (!orgMap.has(orgSlug)) {
         orgMap.set(orgSlug, {
@@ -170,12 +173,17 @@ export default function CareersDirectoryPage() {
           {/* Search Box */}
           <div className="pt-2 max-w-2xl mx-auto">
             <div className="relative flex items-center rounded-2xl bg-white dark:bg-slate-900 shadow-md p-1.5 border border-slate-200/80 dark:border-slate-800 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-              <Search className="h-5 w-5 text-slate-400 ml-3.5 shrink-0" />
+              <Search
+                className="h-5 w-5 text-slate-400 ml-3.5 shrink-0"
+                aria-hidden="true"
+              />
               <input
                 type="text"
+                name="careers-search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("careers.searchPlaceholder")}
+                aria-label={t("careers.searchPlaceholder")}
                 className="w-full bg-transparent px-3 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 font-medium"
               />
               {search && (
@@ -195,19 +203,28 @@ export default function CareersDirectoryPage() {
             <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
               <Building2 className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
               <span>
-                <strong className="text-slate-900 dark:text-white font-extrabold">{companiesList.length}</strong> {t("careers.metricsCompanies")}
+                <strong className="text-slate-900 dark:text-white font-extrabold">
+                  {companiesList.length}
+                </strong>{" "}
+                {t("careers.metricsCompanies")}
               </span>
             </div>
             <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
               <span>
-                <strong className="text-slate-900 dark:text-white font-extrabold">{jobs.filter((j) => j.status === "PUBLISHED").length}</strong> {t("careers.metricsPositions")}
+                <strong className="text-slate-900 dark:text-white font-extrabold">
+                  {jobs.filter((j) => j.status === "PUBLISHED").length}
+                </strong>{" "}
+                {t("careers.metricsPositions")}
               </span>
             </div>
             <div className="px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-600 dark:text-cyan-400" />
               <span>
-                <strong className="text-slate-900 dark:text-white font-extrabold">{allDepartments.length}</strong> {t("careers.metricsDepartments")}
+                <strong className="text-slate-900 dark:text-white font-extrabold">
+                  {allDepartments.length}
+                </strong>{" "}
+                {t("careers.metricsDepartments")}
               </span>
             </div>
           </div>
@@ -230,7 +247,11 @@ export default function CareersDirectoryPage() {
               }`}
             >
               <Building2 className="h-3.5 w-3.5" />
-              <span>{t("careers.viewByCompanyWithCount", { count: companiesList.length })}</span>
+              <span>
+                {t("careers.viewByCompanyWithCount", {
+                  count: companiesList.length,
+                })}
+              </span>
             </button>
 
             <button
@@ -243,13 +264,19 @@ export default function CareersDirectoryPage() {
               }`}
             >
               <Briefcase className="h-3.5 w-3.5" />
-              <span>{t("careers.viewAllJobsWithCount", { count: jobs.filter((j) => j.status === "PUBLISHED").length })}</span>
+              <span>
+                {t("careers.viewAllJobsWithCount", {
+                  count: jobs.filter((j) => j.status === "PUBLISHED").length,
+                })}
+              </span>
             </button>
           </div>
 
           {/* Department Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 shrink-0">{t("careers.allDeptsLabel")}</span>
+            <span className="text-xs font-semibold text-slate-500 shrink-0">
+              {t("careers.allDeptsLabel")}
+            </span>
             <CustomSelect
               value={selectedDept}
               onChange={(val) => setSelectedDept(val)}
@@ -270,7 +297,9 @@ export default function CareersDirectoryPage() {
         {isLoading ? (
           <div className="py-24 flex flex-col items-center justify-center space-y-3">
             <LoadingSpinner />
-            <p className="text-xs font-semibold text-slate-400">{t("careers.loadingCompanies")}</p>
+            <p className="text-xs font-semibold text-slate-400">
+              {t("careers.loadingCompanies")}
+            </p>
           </div>
         ) : viewMode === "companies" ? (
           /* ========================================================
@@ -331,7 +360,11 @@ export default function CareersDirectoryPage() {
                         {company.locations.size > 0 && (
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span>{Array.from(company.locations).slice(0, 2).join(", ")}</span>
+                            <span>
+                              {Array.from(company.locations)
+                                .slice(0, 2)
+                                .join(", ")}
+                            </span>
                           </span>
                         )}
                         <span>•</span>
@@ -395,7 +428,11 @@ export default function CareersDirectoryPage() {
                         href={`/careers/${company.slug}`}
                         className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
                       >
-                        <span>{t("careers.viewAllRolesAndApply", { count: company.jobs.length })}</span>
+                        <span>
+                          {t("careers.viewAllRolesAndApply", {
+                            count: company.jobs.length,
+                          })}
+                        </span>
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     </div>
@@ -404,92 +441,94 @@ export default function CareersDirectoryPage() {
               })}
             </div>
           )
-        ) : (
-          /* ========================================================
+        ) : /* ========================================================
              VIEW MODE 2: ALL INDIVIDUAL JOBS
              ======================================================== */
-          filteredJobs.length === 0 ? (
-            <div className="py-20 text-center space-y-3 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8 shadow-xs">
-              <div className="h-12 w-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
-                <Briefcase className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {t("careers.noJobsFound")}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("careers.noJobsDesc")}
-              </p>
+        filteredJobs.length === 0 ? (
+          <div className="py-20 text-center space-y-3 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8 shadow-xs">
+            <div className="h-12 w-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+              <Briefcase className="h-6 w-6" />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredJobs.map((job) => {
-                const orgName = job.organization?.name || "ATS Organization";
-                const orgSlug = job.organization?.slug || (job.organization?.name ? slugify(job.organization.name) : "company");
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              {t("careers.noJobsFound")}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t("careers.noJobsDesc")}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredJobs.map((job) => {
+              const orgName = job.organization?.name || "ATS Organization";
+              const orgSlug =
+                job.organization?.slug ||
+                (job.organization?.name
+                  ? slugify(job.organization.name)
+                  : "company");
 
-                return (
-                  <div
-                    key={job.id}
-                    className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between space-y-4"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <Link
-                            href={`/careers/${orgSlug}/${slugify(job.title)}`}
-                            className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors"
-                          >
-                            {job.title}
-                          </Link>
-                          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                            <Building2 className="h-3 w-3 text-slate-400" />
-                            <span>{orgName}</span>
-                          </p>
-                        </div>
-
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/60 shrink-0">
-                          {job.department}
-                        </span>
+              return (
+                <div
+                  key={job.id}
+                  className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <Link
+                          href={`/careers/${orgSlug}/${slugify(job.title)}`}
+                          className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 transition-colors"
+                        >
+                          {job.title}
+                        </Link>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+                          <Building2 className="h-3 w-3 text-slate-400" />
+                          <span>{orgName}</span>
+                        </p>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap pt-1">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                          <span>{job.location}</span>
-                        </span>
-                        {job.salaryRange && (
-                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                            <DollarSign className="h-3 w-3 shrink-0" />
-                            <span>{job.salaryRange}</span>
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-slate-400 shrink-0" />
-                          <span>{job.type}</span>
-                        </span>
-                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/60 shrink-0">
+                        {job.department}
+                      </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <Link
-                        href={`/careers/${orgSlug}`}
-                        className="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                      >
-                        {t("careers.companyPage")} &rarr;
-                      </Link>
-
-                      <Link
-                        href={`/careers/${orgSlug}/${slugify(job.title)}`}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        <span>{t("careers.applyNow")}</span>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Link>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap pt-1">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                        <span>{job.location}</span>
+                      </span>
+                      {job.salaryRange && (
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <DollarSign className="h-3 w-3 shrink-0" />
+                          <span>{job.salaryRange}</span>
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+                        <span>{job.type}</span>
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <Link
+                      href={`/careers/${orgSlug}`}
+                      className="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    >
+                      {t("careers.companyPage")} &rarr;
+                    </Link>
+
+                    <Link
+                      href={`/careers/${orgSlug}/${slugify(job.title)}`}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <span>{t("careers.applyNow")}</span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </main>
       <CareersFooter />

@@ -357,6 +357,7 @@ function CandidatesPageContent() {
             <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
               <SearchInput
                 placeholder={t("candidates.searchCandidates")}
+                aria-label={t("candidates.searchCandidates")}
                 value={search}
                 onChange={setSearch}
               />
@@ -413,6 +414,8 @@ function CandidatesPageContent() {
                         >
                           <input
                             type="checkbox"
+                            name={`col-${col.id}`}
+                            aria-label={col.label}
                             checked={isChecked}
                             disabled={isLocked}
                             onChange={() =>

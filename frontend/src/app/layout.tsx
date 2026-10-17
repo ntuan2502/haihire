@@ -64,7 +64,13 @@ export default async function RootLayout({
           <QueryProvider>
             <I18nProvider initialLocale={locale}>
               <AuthProvider>{children}</AuthProvider>
-              <Toaster richColors position="top-right" />
+              <Toaster
+                richColors
+                position="top-right"
+                containerAriaLabel={
+                  locale === "vi" ? "Thông báo hệ thống" : "Notifications"
+                }
+              />
             </I18nProvider>
           </QueryProvider>
         </ThemeProvider>

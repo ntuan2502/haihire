@@ -18,6 +18,9 @@ export interface TranslationSchema {
     actions: string;
     back: string;
     next: string;
+    previous: string;
+    pagination: string;
+    remove: string;
     confirm: string;
     comingSoon: string;
     soon: string;

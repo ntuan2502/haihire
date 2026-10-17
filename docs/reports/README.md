@@ -91,6 +91,7 @@ Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganiza
 - [68 — Task #39: High Accessibility Issues Fix Report](./68-task-39-high-a11y-issues-fix-report.md)
 - [69 — Task #40: Medium and Low Accessibility Issues Fix Report](./69-task-40-medium-and-low-a11y-issues-fix-report.md)
 - [70 — Task #36 Phase 2: Coverage Augmentation Completion Report](./70-task-36-phase-2-coverage-augmentation-report.md)
+- [71 — Task #41 & #42: v0.1.4 Release & CI/CD Overlap Fix Completion Report](./71-task-41-v0.1.4-release-completion-report.md)
 
 ---
 

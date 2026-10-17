@@ -95,6 +95,14 @@ Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganiza
 
 ---
 
+## Phase 5: Wave 4 God Files Refactor Campaign (Reports 72+)
+
+Tasks #43+. 5 frontend God Files audit and decomposition.
+
+- [72 — Task #43 Phase 1: Wave 4 Audit Report](./72-task-43-phase-1-wave-4-audit-report.md)
+
+---
+
 ## Archived Reports
 
 Transitional kickoff and survey reports are preserved in [`docs/archive/reports/hardening-transitional/`](../archive/reports/hardening-transitional/).

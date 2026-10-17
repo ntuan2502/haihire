@@ -1,9 +1,9 @@
 # 🗺️ HaiHire - Product Roadmap & Architectural Horizon
 
 > **Comprehensive strategic roadmap for the HaiHire Enterprise Applicant Tracking System (ATS).**  
-> **Current Version:** `v0.1.2` (Pre-release, Released 2026-10-16)  
-> **Updated:** 2026-10-16  
-> **Status:** Pre-release (God Files Refactor complete, CI/CD & Husky optimized, 656 tests, 11 CI gates)
+> **Current Version:** `v0.1.4` (Pre-release, Released 2026-10-17)  
+> **Updated:** 2026-10-17  
+> **Status:** Pre-release (Accessibility Campaign WCAG 92.4%, Coverage Augmentation >94%, 764 tests, 11 CI gates)
 
 ---
 
@@ -139,12 +139,31 @@
 - 5,696 LOC eliminated across facades, shims, and sub-services.
 - 50 new characterization tests added (606 → 656 passing tests).
 - Zero breaking changes; 11 CI gates passing.
-- **CI/CD Optimization & Husky Restructure (Task #32)**:
-  - Eliminated duplicate PR and push workflow triggers on `dev` and `staging`.
-  - Added documentation path filters to bypass heavy CI gates for docs-only changes.
-  - Implemented 3-tier Husky hooks architecture (`pre-commit` <5s, `pre-push` ~25s, full CI).
-  - Staggered Dependabot (Mon 04:00 UTC) and Security Weekly (Wed 04:00 UTC) schedules.
-  - Retargeted E2E weekly verification to active `staging` branch.
+
+### v0.1.3 (Released 2026-10-16) — CI/CD Optimization & Documentation Reorganization
+
+- CI/CD optimization & Husky 3-tier restructure (Task #32).
+- Eliminated duplicate PR and push workflow triggers on `dev` and `staging`.
+- Added documentation path filters to bypass heavy CI gates for docs-only changes.
+- Staggered Dependabot and Security Weekly schedules.
+- Documentation reorganization & canonical runbook unification (Task #33).
+
+### v0.1.4 (Released 2026-10-17) — Accessibility & Coverage Augmentation (Task #41)
+
+- **Accessibility Campaign (Tasks #37-#40)**:
+  - WCAG 2.1 AA compliance: 0% → 92.4%.
+  - Fixed 27 accessibility issues (5 Critical, 11 High, 7 Medium, 4 Low).
+  - Skip to Main Content landmark, dynamic HTML lang hydration parity.
+  - Full W3C ARIA listbox pattern for CustomSelect, keyboard table navigation, aria-sort.
+  - Zero visual regression, zero breaking changes.
+- **Coverage Augmentation (Task #36 Phase 2)**:
+  - `applications-saga.service.ts`: 66.66% → 97.61% (+30.95%).
+  - `sourcing-metrics.service.ts`: 38.36% → 98.27% (+59.91%).
+  - `organizations-core.service.ts`: 63.55% → 94.91% (+31.36%).
+  - `sourcing-links.service.ts`: 58.58% → 97.97% (+39.39%).
+  - New reusable `prisma-composer-mock` test helper.
+- **Automated Tests**: 656 → 764 (+108 tests; 485 backend + 279 frontend across 88 test suites).
+- **Quality Gates**: 11/11 CI architecture gates verified.
 
 ### v0.2.0 (Planned) — Technical Debt Wave 4 & Performance
 

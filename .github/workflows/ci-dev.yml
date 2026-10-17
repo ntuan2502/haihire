@@ -3,6 +3,8 @@ name: Integration CI (Dev Branch)
 on:
   push:
     branches: [dev]
+  pull_request:
+    branches: [dev]
   workflow_dispatch:
 
 concurrency:
@@ -53,7 +55,11 @@ jobs:
   ci-gates:
     name: 11 CI Architecture Gates
     needs: path-filter
-    if: needs.path-filter.outputs.code == 'true'
+    if: |
+      (github.event_name == 'pull_request' || 
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && !contains(github.event.head_commit.message, 'Merge pull request'))) &&
+      needs.path-filter.outputs.code == 'true'
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: 1
@@ -129,7 +135,11 @@ jobs:
   unit-tests:
     name: Full Unit Tests & Anti-Regression
     needs: [path-filter, ci-gates]
-    if: needs.path-filter.outputs.code == 'true'
+    if: |
+      needs.path-filter.outputs.code == 'true' &&
+      (github.event_name == 'pull_request' || 
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && !contains(github.event.head_commit.message, 'Merge pull request')))
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: 1
@@ -208,7 +218,12 @@ jobs:
   docs-verify:
     name: Documentation Verification
     needs: path-filter
-    if: needs.path-filter.outputs.docs-only == 'true' && needs.path-filter.outputs.code == 'false'
+    if: |
+      needs.path-filter.outputs.docs-only == 'true' &&
+      needs.path-filter.outputs.code == 'false' &&
+      (github.event_name == 'pull_request' || 
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && !contains(github.event.head_commit.message, 'Merge pull request')))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

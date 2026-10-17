@@ -89,6 +89,7 @@ Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganiza
 - [66 — Task #37: Accessibility Audit (WCAG 2.1 AA) Report](./66-task-37-accessibility-audit-wcag-2.1-aa-report.md)
 - [67 — Task #38: Critical Accessibility Issues Fix Report](./67-task-38-critical-a11y-issues-fix-report.md)
 - [68 — Task #39: High Accessibility Issues Fix Report](./68-task-39-high-a11y-issues-fix-report.md)
+- [69 — Task #40: Medium and Low Accessibility Issues Fix Report](./69-task-40-medium-and-low-a11y-issues-fix-report.md)
 
 ---
 

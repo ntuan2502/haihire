@@ -100,6 +100,7 @@ Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganiza
 Tasks #43+. 5 frontend God Files audit and decomposition.
 
 - [72 — Task #43 Phase 1: Wave 4 Audit Report](./72-task-43-phase-1-wave-4-audit-report.md)
+- [73 — Task #43 Phase 2: Wave 4.1 Job Wizard Editor Refactor Report](./73-task-43-phase-2-wave-4.1-job-wizard-refactor-report.md)
 
 ---
 

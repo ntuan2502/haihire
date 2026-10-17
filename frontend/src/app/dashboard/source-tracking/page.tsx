@@ -26,7 +26,10 @@ import {
   EditLinkModal,
 } from "@/components/sourcing";
 import { Button } from "@/components/ui/button";
-import { SegmentedTabs, type TabItem } from "@/components/shared/segmented-tabs";
+import {
+  SegmentedTabs,
+  type TabItem,
+} from "@/components/shared/segmented-tabs";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { SearchInput } from "@/components/shared/search-input";
 import { Plus } from "lucide-react";
@@ -57,7 +60,9 @@ function SourceTrackingContent() {
 
   const rawTime = getParam("timeRange", "30d");
   const timeRange: TimeRangeFilter =
-    rawTime === "7d" || rawTime === "90d" || rawTime === "all" ? rawTime : "30d";
+    rawTime === "7d" || rawTime === "90d" || rawTime === "all"
+      ? rawTime
+      : "30d";
 
   const rawJobId = getParam("jobId", "");
   const selectedJobId = rawJobId && rawJobId !== "ALL" ? rawJobId : undefined;
@@ -93,7 +98,8 @@ function SourceTrackingContent() {
     useAttributionLogQuery({
       page: activeTab === "attribution" ? currentPage : 1,
       limit: rowsPerPage || 15,
-      search: activeTab === "attribution" ? search.trim() || undefined : undefined,
+      search:
+        activeTab === "attribution" ? search.trim() || undefined : undefined,
       jobId: selectedJobId,
     });
 
@@ -171,7 +177,10 @@ function SourceTrackingContent() {
             tabs={tabItems}
             activeTab={activeTab}
             onChange={(newTab) => {
-              setParams({ tab: newTab === "overview" ? null : newTab, page: 1 });
+              setParams({
+                tab: newTab === "overview" ? null : newTab,
+                page: 1,
+              });
             }}
           />
 
@@ -182,6 +191,11 @@ function SourceTrackingContent() {
               <div className="flex-1 sm:w-64 md:w-72 sm:flex-initial">
                 <SearchInput
                   placeholder={
+                    activeTab === "links"
+                      ? t("sourcing.links.searchPlaceholder")
+                      : t("sourcing.attribution.searchPlaceholder")
+                  }
+                  aria-label={
                     activeTab === "links"
                       ? t("sourcing.links.searchPlaceholder")
                       : t("sourcing.attribution.searchPlaceholder")
@@ -214,7 +228,9 @@ function SourceTrackingContent() {
             <CustomSelect
               value={timeRange}
               onChange={(val) => {
-                setParams({ timeRange: val === "30d" ? null : (val as TimeRangeFilter) });
+                setParams({
+                  timeRange: val === "30d" ? null : (val as TimeRangeFilter),
+                });
               }}
               options={[
                 { value: "7d", label: t("sourcing.time7d") },
@@ -239,7 +255,9 @@ function SourceTrackingContent() {
               stats={stats}
               isLoading={statsLoading}
               onNavigateToLinks={() => setParams({ tab: "links", page: 1 })}
-              onNavigateToAttribution={() => setParams({ tab: "attribution", page: 1 })}
+              onNavigateToAttribution={() =>
+                setParams({ tab: "attribution", page: 1 })
+              }
             />
           </div>
         )}
@@ -302,7 +320,11 @@ function SourceTrackingContent() {
 export default function SourceTrackingPage() {
   return (
     <AuthGuard>
-      <Suspense fallback={<div className="min-h-screen bg-slate-50 dark:bg-slate-950" />}>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />
+        }
+      >
         <SourceTrackingContent />
       </Suspense>
     </AuthGuard>

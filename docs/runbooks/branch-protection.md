@@ -154,3 +154,17 @@ When workflow triggers change (e.g., Task #32 removing `pull_request` triggers f
 - **Remediation:**
   1. Create environment `production` under `Settings` $\rightarrow$ `Environments`.
   2. Restrict deployments to tag pattern `v*.*.*` and branch `main`.
+
+---
+
+## 7. Automated Staging & Dev Promotion Flow (Task #42)
+
+With Task #42, `ci-dev.yml` and `ci-staging.yml` execute on `pull_request` targeting their respective branches:
+
+- **Pre-Merge PR Verification:** When a PR `dev` $\rightarrow$ `staging` is opened, `ci-staging.yml` automatically triggers on `pull_request`, running all 4 required checks:
+  1. `11 CI Architecture Gates`
+  2. `Unit & Integration Tests (Coverage)`
+  3. `Playwright End-to-End Suite`
+  4. `Production Build Verification`
+- **Zero Workaround Required:** Since checks run directly on the PR, branch protection status requirements are fully satisfied before merging without disabling `enforce_admins`.
+- **Duplicate Run Elimination:** Upon PR merge, the `push` event contains commit message `Merge pull request #...`. The workflow detects merge commits and skips duplicate execution, saving CI runner compute while ensuring complete verification.

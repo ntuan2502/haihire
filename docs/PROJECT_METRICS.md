@@ -3,14 +3,14 @@
 > Canonical metrics for the HaiHire Enterprise ATS platform.  
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
-**Last Updated:** 2026-10-16  
-**Platform Version:** v0.1.3 (Pre-release)
+**Last Updated:** 2026-10-17  
+**Platform Version:** v0.1.4 (Pre-release)
 
 ---
 
 ## Release Stage
 
-- **Current:** Pre-release (v0.1.3)
+- **Current:** Pre-release (v0.1.4)
 - **Target:** Stable release (v1.0.0) — when ready
 - **Branch strategy:** dev -> staging -> main
 - **Hotfix flow:** hotfix/* from main -> main + dev
@@ -19,12 +19,18 @@
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 656 total (+50 characterization tests added in v0.1.2)
-  - Backend: 406 passing (Vitest, 40 test suites)
-  - Frontend: 250 passing (Vitest + JSDOM, 35 test suites)
+- **Automated Tests:** 764 total (+108 from v0.1.3)
+  - Backend: 485 passing (Vitest, 45 test suites)
+  - Frontend: 279 passing (Vitest + JSDOM, 43 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
-  - Backend Coverage: 71.11% Statements (72.96% Lines, 53.95% Branch, 71.70% Funcs)
+  - Backend Coverage: 79.54% Statements (80.92% Lines, 62.35% Branch, 80.38% Funcs)
+  - Critical Services Coverage (Task #36):
+    - `applications-saga.service.ts`: 97.61% lines (was 66.66%)
+    - `sourcing-metrics.service.ts`: 98.27% lines (was 38.36%)
+    - `organizations-core.service.ts`: 94.91% lines (was 63.55%)
+    - `sourcing-links.service.ts`: 97.97% lines (was 58.58%)
+- **Accessibility Compliance (WCAG 2.1 AA):** 92.4% (Tasks #37-#40, 27 issues fixed: 5 critical, 11 high, 7 medium, 4 low)
 - **CI Architecture Gates:** 11 gates (`scripts/check-all.ts`)
   1. `lint:env-sync` — Env Variables Synchronization & Parity
   2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings
@@ -35,7 +41,7 @@
   7. `lint:api-contract` — API Contract & Leaks Audit (84 endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 rules)
   9. `lint:tenant-scope` — Tenant Scoping Static Analysis (212 queries)
-  10. `lint:doc-links` — Documentation Markdown Link Integrity (147 files)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (155 files)
   11. `test:diff` — Test Count Delta & Anti-Regression
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:**

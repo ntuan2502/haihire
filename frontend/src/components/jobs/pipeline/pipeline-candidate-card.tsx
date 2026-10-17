@@ -1,8 +1,14 @@
 "use client";
 
+import type { DragEvent } from "react";
 import { MessageSquare } from "lucide-react";
-import { formatRelativeTime, getInitials, getCandidateDisplayName } from "@/lib/utils";
+import {
+  formatRelativeTime,
+  getInitials,
+  getCandidateDisplayName,
+} from "@/lib/utils";
 import { useI18n } from "@/i18n";
+import { useKeyboardClick } from "@/hooks/use-keyboard-click";
 import type { Application } from "@/types";
 
 interface PipelineCandidateCardProps {
@@ -21,9 +27,11 @@ export function PipelineCandidateCard({
   const { t } = useI18n();
   const displayName = getCandidateDisplayName(candidate);
   const initials = getInitials(displayName);
-  const matchScore = (candidate as unknown as { matchScore?: number }).matchScore;
+  const matchScore = (candidate as unknown as { matchScore?: number })
+    .matchScore;
+  const handleKeyDown = useKeyboardClick({ onActivate: onSelect });
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
     try {
       e.dataTransfer.setData(
         "application/json",
@@ -40,10 +48,14 @@ export function PipelineCandidateCard({
     <div
       id={`candidate-card-${candidate.id}`}
       data-testid={`candidate-card-${candidate.id}`}
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={handleKeyDown}
       draggable={canDrag}
       onDragStart={handleDragStart}
-      className={`p-3.5 flex items-start gap-3 cursor-grab active:cursor-grabbing transition-colors ${
+      aria-label={`View candidate ${displayName}, stage ${candidate.stage}`}
+      className={`p-3.5 flex items-start gap-3 cursor-grab active:cursor-grabbing transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${
         isSelected
           ? "bg-blue-50/80 dark:bg-blue-950/40 border-l-4 border-blue-600 dark:border-blue-400"
           : "hover:bg-slate-50 dark:hover:bg-slate-800/50"

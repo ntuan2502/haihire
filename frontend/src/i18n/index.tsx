@@ -67,15 +67,23 @@ function detectBrowserLocale(): SupportedLocale {
   return DEFAULT_LOCALE;
 }
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<SupportedLocale>(DEFAULT_LOCALE);
+export function I18nProvider({
+  children,
+  initialLocale = DEFAULT_LOCALE,
+}: {
+  children: ReactNode;
+  initialLocale?: SupportedLocale;
+}) {
+  const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
   const [isReady, setIsReady] = useState(false);
 
   // Initialize locale from LocalStorage, Cookie, or Browser Detect
   useEffect(() => {
     try {
       // 1. Try LocalStorage
-      const savedLocale = localStorage.getItem(LOCALE_STORAGE_KEY) as SupportedLocale | null;
+      const savedLocale = localStorage.getItem(
+        LOCALE_STORAGE_KEY,
+      ) as SupportedLocale | null;
       if (savedLocale && savedLocale in SUPPORTED_LOCALES) {
         setLocaleState(savedLocale);
         setIsReady(true);
@@ -84,9 +92,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
       // 2. Try Cookie
       const cookieMatch = document.cookie.match(
-        new RegExp(`(?:^|; )${LOCALE_COOKIE_KEY}=([^;]*)`)
+        new RegExp(`(?:^|; )${LOCALE_COOKIE_KEY}=([^;]*)`),
       );
-      const cookieLocale = cookieMatch ? (decodeURIComponent(cookieMatch[1]) as SupportedLocale) : null;
+      const cookieLocale = cookieMatch
+        ? (decodeURIComponent(cookieMatch[1]) as SupportedLocale)
+        : null;
       if (cookieLocale && cookieLocale in SUPPORTED_LOCALES) {
         setLocaleState(cookieLocale);
         setIsReady(true);
@@ -133,13 +143,21 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       // Traverse dictionary
       let val: unknown = currentDict;
       for (const k of keys) {
-        if (val && typeof val === "object" && k in (val as Record<string, unknown>)) {
+        if (
+          val &&
+          typeof val === "object" &&
+          k in (val as Record<string, unknown>)
+        ) {
           val = (val as Record<string, unknown>)[k];
         } else {
           // Fallback to English
           let fallbackVal: unknown = TRANSLATIONS[DEFAULT_LOCALE];
           for (const fk of keys) {
-            if (fallbackVal && typeof fallbackVal === "object" && fk in (fallbackVal as Record<string, unknown>)) {
+            if (
+              fallbackVal &&
+              typeof fallbackVal === "object" &&
+              fk in (fallbackVal as Record<string, unknown>)
+            ) {
               fallbackVal = (fallbackVal as Record<string, unknown>)[fk];
             } else {
               fallbackVal = key;
@@ -156,7 +174,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       }
 
       // Inject default brand context + custom parameters
-      const resolvedId = params?.id || params?.applicationId || params?.candidateId || params?.jobId || params?.interviewId;
+      const resolvedId =
+        params?.id ||
+        params?.applicationId ||
+        params?.candidateId ||
+        params?.jobId ||
+        params?.interviewId;
       const mergedParams: Record<string, string | number> = {
         brand: BRAND_CONFIG.name,
         brandLegal: BRAND_CONFIG.legalName,
@@ -168,7 +191,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
       let text = val;
       Object.entries(mergedParams).forEach(([paramKey, paramVal]) => {
-        text = text.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(paramVal));
+        text = text.replace(
+          new RegExp(`\\{${paramKey}\\}`, "g"),
+          String(paramVal),
+        );
       });
 
       // Gracefully clean up any unsupplied placeholders so literal `{param}` never leaks to users
@@ -178,7 +204,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       text = text.replace(/\s{2,}/g, " ").trim();
       return text;
     },
-    [locale]
+    [locale],
   );
 
   const contextValue = useMemo(
@@ -188,7 +214,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       t,
       isReady,
     }),
-    [locale, setLocale, t, isReady]
+    [locale, setLocale, t, isReady],
   );
 
   return (
@@ -205,4 +231,9 @@ export function useI18n() {
 }
 
 export const useTranslation = useI18n;
-export { SUPPORTED_LOCALES, type SupportedLocale };
+export {
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+  LOCALE_COOKIE_KEY,
+  DEFAULT_LOCALE,
+};

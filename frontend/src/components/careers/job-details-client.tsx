@@ -20,7 +20,11 @@ import { CareersFooter } from "@/components/careers/careers-footer";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { buildCandidateNotes } from "@/lib/utils";
-import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
+import {
+  getJobTypeLabel,
+  getWorkplaceLabel,
+  getExperienceLevelLabel,
+} from "@/lib/jobs";
 import {
   Briefcase,
   Building2,
@@ -70,7 +74,8 @@ export function JobDetailsClient({
           sourcingApi
             .recordPublicClick({
               token: refParam,
-              referrer: typeof document !== "undefined" ? document.referrer : undefined,
+              referrer:
+                typeof document !== "undefined" ? document.referrer : undefined,
             })
             .catch(() => {});
         }
@@ -205,7 +210,9 @@ export function JobDetailsClient({
         <div className="h-14 w-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t("careers.jobClosed.title")}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+          {t("careers.jobClosed.title")}
+        </h1>
         <p className="mt-2 text-sm text-slate-500 max-w-md leading-relaxed">
           {t("careers.jobClosed.description")}
         </p>
@@ -396,8 +403,15 @@ export function JobDetailsClient({
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Alert Error */}
                   {submitError && (
-                    <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5">
-                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div
+                      role="alert"
+                      aria-live="assertive"
+                      className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5"
+                    >
+                      <AlertCircle
+                        className="h-4 w-4 shrink-0 mt-0.5"
+                        aria-hidden="true"
+                      />
                       <span>{submitError}</span>
                     </div>
                   )}
@@ -405,10 +419,15 @@ export function JobDetailsClient({
                   {/* Name inputs */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                        {t("careers.lastName")} <span className="text-rose-500">*</span>
+                      <label
+                        htmlFor="career-lastName"
+                        className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                      >
+                        {t("careers.lastName")}{" "}
+                        <span className="text-rose-500">*</span>
                       </label>
                       <Input
+                        id="career-lastName"
                         type="text"
                         required
                         placeholder={t("careers.placeholders.lastName")}
@@ -418,10 +437,15 @@ export function JobDetailsClient({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                        {t("careers.firstName")} <span className="text-rose-500">*</span>
+                      <label
+                        htmlFor="career-firstName"
+                        className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                      >
+                        {t("careers.firstName")}{" "}
+                        <span className="text-rose-500">*</span>
                       </label>
                       <Input
+                        id="career-firstName"
                         type="text"
                         required
                         placeholder={t("careers.placeholders.firstName")}
@@ -434,10 +458,15 @@ export function JobDetailsClient({
 
                   {/* Email & Phone */}
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      {t("careers.email")} <span className="text-rose-500">*</span>
+                    <label
+                      htmlFor="career-email"
+                      className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
+                      {t("careers.email")}{" "}
+                      <span className="text-rose-500">*</span>
                     </label>
                     <Input
+                      id="career-email"
                       type="email"
                       required
                       placeholder="name@example.com"
@@ -448,10 +477,14 @@ export function JobDetailsClient({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <label
+                      htmlFor="career-phone"
+                      className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
                       {t("careers.phone")}
                     </label>
                     <Input
+                      id="career-phone"
                       type="tel"
                       placeholder="0912 345 678"
                       value={candidatePhone}
@@ -463,7 +496,8 @@ export function JobDetailsClient({
                   {/* Resume Upload Box */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                      {t("careers.resume")} <span className="text-rose-500">*</span>
+                      {t("careers.resume")}{" "}
+                      <span className="text-rose-500">*</span>
                     </label>
 
                     <input
@@ -472,13 +506,17 @@ export function JobDetailsClient({
                       type="file"
                       accept=".pdf,.doc,.docx"
                       onChange={handleFileChange}
-                      className="hidden"
+                      className="sr-only peer"
+                      aria-label={t("careers.resume")}
                     />
 
                     {resumeFile ? (
                       <div className="p-3.5 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 flex items-center justify-between">
                         <div className="flex items-center gap-2.5 truncate">
-                          <FileText className="h-5 w-5 text-blue-600 shrink-0" />
+                          <FileText
+                            className="h-5 w-5 text-blue-600 shrink-0"
+                            aria-hidden="true"
+                          />
                           <div className="truncate">
                             <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                               {resumeFile.name}
@@ -492,21 +530,26 @@ export function JobDetailsClient({
                           type="button"
                           onClick={() => {
                             setResumeFile(null);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
+                            if (fileInputRef.current)
+                              fileInputRef.current.value = "";
                           }}
-                          className="h-7 w-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+                          aria-label={t("common.delete")}
+                          className="h-7 w-7 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-4 w-4" aria-hidden="true" />
                         </button>
                       </div>
                     ) : (
-                      <div
+                      <label
+                        htmlFor={fileInputId}
                         onDragOver={handleDragOver}
                         onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-900/50 space-y-2"
+                        className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-slate-900/50 space-y-2 block peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-focus-visible:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
                       >
-                        <UploadCloud className="h-6 w-6 text-slate-400 mx-auto" />
+                        <UploadCloud
+                          className="h-6 w-6 text-slate-400 mx-auto"
+                          aria-hidden="true"
+                        />
                         <div className="space-y-0.5">
                           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                             {t("careers.dropCvHere")}
@@ -515,11 +558,15 @@ export function JobDetailsClient({
                             {t("careers.cvFormats")}
                           </p>
                         </div>
-                      </div>
+                      </label>
                     )}
 
                     {fileError && (
-                      <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1">
+                      <p
+                        role="alert"
+                        aria-live="assertive"
+                        className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-1"
+                      >
                         {fileError}
                       </p>
                     )}
@@ -527,10 +574,14 @@ export function JobDetailsClient({
 
                   {/* Notes / Message */}
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <label
+                      htmlFor="career-notes"
+                      className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                    >
                       {t("careers.notes")}
                     </label>
                     <textarea
+                      id="career-notes"
                       rows={3}
                       placeholder={t("careers.placeholders.notes")}
                       value={notes}

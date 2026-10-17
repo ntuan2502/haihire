@@ -37,15 +37,15 @@ graph TD
 
 All workflows are located in [`.github/workflows/`](../../.github/workflows/):
 
-| Workflow                                                             | Target Scope                                           | Key Operations                                                                                        |           Time Target           |
-| :------------------------------------------------------------------- | :----------------------------------------------------- | :---------------------------------------------------------------------------------------------------- | :-----------------------------: |
-| [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)           | PRs targeting `dev` (`feat/*`, `fix/*`, etc.)          | Path filtering, lint, typecheck, unit tests                                                           |            2 - 3 min            |
-| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml)                   | Push to `dev` (post-merge integration)                 | Path filtering (code vs docs-only), 11 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min (code) / ~30s (docs)  |
-| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml)           | Push to `staging` (pre-production verification)        | Path filtering (code vs docs-only), 11 CI gates, coverage, Playwright E2E suite, production build     | 8 - 10 min (code) / ~30s (docs) |
-| [`ci-main.yml`](../../.github/workflows/ci-main.yml)                 | PRs targeting `main` (production gatekeeper)           | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run                               |           10 - 12 min           |
-| [`cd-release.yml`](../../.github/workflows/cd-release.yml)           | Annotated tags `v*.*.*`                                | Docker Buildx, GHCR publish, Trivy container scan, GitHub release                                     |            5 - 7 min            |
-| [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml)           | Schedule: `0 3 * * 1` (03:00 UTC Mondays on `staging`) | Complete Playwright test regression sweep on pre-production                                           |           8 - 10 min            |
-| [`security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Schedule: `0 6 * * 3` (06:00 UTC Wednesdays)           | Moderate & high CVE audits, tenant scoping AST sweep, outdated report                                 |            3 - 5 min            |
+| Workflow                                                             | Target Scope                                            | Key Operations                                                                                        |           Time Target           |
+| :------------------------------------------------------------------- | :------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- | :-----------------------------: |
+| [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)           | PRs targeting `dev` (`feat/*`, `fix/*`, etc.)           | Path filtering, lint, typecheck, unit tests                                                           |            2 - 3 min            |
+| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml)                   | PRs to `dev` & non-merge push to `dev` (skips merge PR) | Path filtering (code vs docs-only), 11 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min (code) / ~30s (docs)  |
+| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml)           | PRs to `staging` & non-merge push (skips merge PR)      | Path filtering (code vs docs-only), 11 CI gates, coverage, Playwright E2E suite, production build     | 8 - 10 min (code) / ~30s (docs) |
+| [`ci-main.yml`](../../.github/workflows/ci-main.yml)                 | PRs targeting `main` (production gatekeeper)            | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run                               |           10 - 12 min           |
+| [`cd-release.yml`](../../.github/workflows/cd-release.yml)           | Annotated tags `v*.*.*`                                 | Docker Buildx, GHCR publish, Trivy container scan, GitHub release                                     |            5 - 7 min            |
+| [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml)           | Schedule: `0 3 * * 1` (03:00 UTC Mondays on `staging`)  | Complete Playwright test regression sweep on pre-production                                           |           8 - 10 min            |
+| [`security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Schedule: `0 6 * * 3` (06:00 UTC Wednesdays)            | Moderate & high CVE audits, tenant scoping AST sweep, outdated report                                 |            3 - 5 min            |
 
 ---
 
@@ -127,12 +127,13 @@ HaiHire uses path filtering (`dorny/paths-filter@v3`) across workflows to elimin
 
 The `staging` branch is HaiHire's pre-production validation gate where integrated changes are verified under full production-like conditions (database migrations, Playwright E2E, and production build).
 
-### 2.1 Staging Promotion Workflow
+### 4.1 Staging Promotion Workflow
 
 1. **Promotion from `dev` to `staging`:**
    - After feature branches merge into `dev` and pass `ci-dev.yml`:
    - Open Pull Request: `dev` -> `staging`.
    - Requires: **1 peer review approval**.
+   - > **Note (Branch Protection Workaround):** PRs from `dev` to `staging` will not automatically trigger required checks because Task #32 removed the `pull_request` trigger from `ci-staging.yml`. Follow the [Staging Promotion Workaround](branch-protection.md#known-workaround-staging-promotion) to temporarily bypass admin enforcement for merging.
 2. **Automated Verification:**
    - Once merged to `staging`, `ci-staging.yml` executes:
      - 11 Architecture Quality Gates (`pnpm check:all:fast`).
@@ -150,7 +151,7 @@ The `staging` branch is HaiHire's pre-production validation gate where integrate
    - After merging into `main`, tag the release (`git tag -a vX.Y.Z -m "Release vX.Y.Z"`).
    - This triggers immutable container publishing via `cd-release.yml`.
 
-### 2.2 Manual Deploy to Staging (Local Docker)
+### 4.2 Manual Deploy to Staging (Local Docker)
 
 To run the complete production-grade stack locally from the staging branch:
 
@@ -273,9 +274,10 @@ If a newly migrated GitHub Actions workflow fails:
 
 ## 8. Troubleshooting Guide
 
-| Issue                                   | Symptom                                         | Diagnostic Step                            | Remediation                                                                         |
-| :-------------------------------------- | :---------------------------------------------- | :----------------------------------------- | :---------------------------------------------------------------------------------- |
-| **`pnpm audit` Failure**                | CI fails on `security-audit`                    | Check runner log for failing package       | Run `pnpm audit` locally. Update or patch the affected package in `package.json`.   |
-| **Playwright Healthcheck Timeout**      | E2E job times out waiting for ports 13000/13001 | Check step output for `connection refused` | Verify MinIO and Valkey readiness steps passed. Inspect background `pnpm dev` logs. |
-| **GHCR Login Error**                    | `docker login` fails with 403 Forbidden         | Check workflow `permissions:` block        | Ensure `packages: write` is declared in workflow job permissions.                   |
-| **Dorny Path Filter Misclassification** | Fast checks skipped when code changed           | Review path filter patterns                | Verify edited files match patterns in `ci-feature.yml` (`filters:` block).          |
+| Issue                                   | Symptom                                         | Diagnostic Step                            | Remediation                                                                                         |
+| :-------------------------------------- | :---------------------------------------------- | :----------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **`pnpm audit` Failure**                | CI fails on `security-audit`                    | Check runner log for failing package       | Run `pnpm audit` locally. Update or patch the affected package in `package.json`.                   |
+| **Playwright Healthcheck Timeout**      | E2E job times out waiting for ports 13000/13001 | Check step output for `connection refused` | Verify MinIO and Valkey readiness steps passed. Inspect background `pnpm dev` logs.                 |
+| **GHCR Login Error**                    | `docker login` fails with 403 Forbidden         | Check workflow `permissions:` block        | Ensure `packages: write` is declared in workflow job permissions.                                   |
+| **Dorny Path Filter Misclassification** | Fast checks skipped when code changed           | Review path filter patterns                | Verify edited files match patterns in `ci-feature.yml` (`filters:` block).                          |
+| **Staging PR Blocked by Checks**        | Required checks not running on staging PR       | Missing `pull_request` trigger in workflow | Follow the [Staging Promotion Workaround](branch-protection.md#known-workaround-staging-promotion). |

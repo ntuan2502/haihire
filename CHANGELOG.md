@@ -3,6 +3,60 @@
 All notable changes to the HaiHire Enterprise ATS platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-10-17
+
+### Changed
+
+- **Accessibility Campaign (Tasks #37-#40):**
+  - WCAG 2.1 AA compliance: 0% → 92.4%.
+  - Fixed 27 accessibility issues (5 Critical, 11 High, 7 Medium, 4 Low).
+  - Added Skip to Main Content link (2.4.1).
+  - Dynamic `html lang` from NEXT_LOCALE cookie (3.1.1).
+  - Main landmarks + h1 trên all dashboard routes (1.3.1, 2.4.1).
+  - Form labels htmlFor/id association across auth + careers (1.3.1, 3.3.2).
+  - Keyboard-accessible table rows (2.1.1).
+  - aria-sort on sortable headers (1.3.1, 2.1.1).
+  - CustomSelect full W3C ARIA Listbox pattern với arrow keys, Home/End, Enter/Space, Escape, auto-scroll (2.1.1, 4.1.2).
+  - Skip link component reusable (SkipToContent).
+  - useKeyboardClick hook cho non-native interactive elements.
+  - Brand logo focus-visible rings.
+  - aria-hidden on decorative icons + pulsing badges.
+  - Pagination `<nav>` + `aria-current="page"`.
+  - Form errors `role="alert"` + `aria-live="assertive"`.
+  - Toast notifications localized aria-label.
+  - Search inputs aria-label across 10 views.
+  - Filter dismiss buttons aria-label.
+  - Table action buttons contextual aria-label.
+  - Settings nav landmark label.
+
+- **Coverage Augmentation (Task #36 Phase 2):**
+  - applications-saga.service.ts: 66.66% → 97.61% (+30.95%).
+  - sourcing-metrics.service.ts: 38.36% → 98.27% (+59.91%).
+  - organizations-core.service.ts: 63.55% → 94.91% (+31.36%).
+  - sourcing-links.service.ts: 58.58% → 97.97% (+39.39%).
+  - Total tests: 685 → 764 (+79).
+  - Added backend test suites: 40 → 45.
+  - New reusable `prisma-composer-mock` helper (zero dependency).
+  - Bonus hardening: stage cards → buttons, recent apps rows → Links, drawer dropzone accessible.
+
+### Added
+
+- docs/releases/v0.1.4.md.
+- backend/src/test/helpers/prisma-composer-mock.ts.
+- 4 new service specs (saga, metrics, organizations-core, links).
+- SkipToContent component.
+- useKeyboardClick hook.
+
+### Fixed
+
+- Zero visual regression across all a11y fixes.
+- Zero breaking changes for public APIs.
+
+### Security
+
+- No changes to security posture.
+- Multi-tenant isolation verified through coverage tests.
+
 ## [0.1.3] - 2026-10-16
 
 ### Changed

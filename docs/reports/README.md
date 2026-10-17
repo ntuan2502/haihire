@@ -75,15 +75,22 @@ Tasks #26 — #30. 5 monolithic files decomposed.
 
 ---
 
-## Phase 4: Optimization & Release Engineering (Reports 59–62+)
+## Phase 4: Optimization & Release Engineering (Reports 59–64+)
 
-Tasks #31 — #33+. v0.1.2 release, CI/CD optimization, documentation reorganization.
+Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganization, v0.1.3 release.
 
 - [59 — Task #31: Post-Refactor Cleanup + v0.1.2 Release Report](./59-task-31-post-refactor-cleanup-v0.1.2-release-report.md)
 - [60 — Task #32 Prep: CI/CD Optimization File Content Report](./60-task-32-prep-ci-cd-optimization-file-content-report.md)
 - [61 — Task #32: CI/CD Optimization + Husky Restructure Report](./61-task-32-ci-cd-optimization-husky-restructure-report.md)
 - [62 — Task #33 Phase 1: Docs Audit & Reorganization Plan Report](./62-task-33-phase-1-docs-audit-and-reorganization-plan-report.md)
 - [63 — Task #33 Phase 2: Docs Reorganization Completion Report](./63-task-33-phase-2-docs-reorganization-completion-report.md)
+- [64 — Task #34: v0.1.3 Release Completion Report](./64-task-34-v0.1.3-release-completion-report.md)
+- [65 — Task #36 Phase 1: Coverage Gap Audit Report](./65-task-36-phase-1-coverage-gap-audit-report.md)
+- [66 — Task #37: Accessibility Audit (WCAG 2.1 AA) Report](./66-task-37-accessibility-audit-wcag-2.1-aa-report.md)
+- [67 — Task #38: Critical Accessibility Issues Fix Report](./67-task-38-critical-a11y-issues-fix-report.md)
+- [68 — Task #39: High Accessibility Issues Fix Report](./68-task-39-high-a11y-issues-fix-report.md)
+- [69 — Task #40: Medium and Low Accessibility Issues Fix Report](./69-task-40-medium-and-low-a11y-issues-fix-report.md)
+- [70 — Task #36 Phase 2: Coverage Augmentation Completion Report](./70-task-36-phase-2-coverage-augmentation-report.md)
 
 ---
 

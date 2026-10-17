@@ -99,6 +99,7 @@ function JobTrackingPageContent() {
               setCurrentPage(1);
             }}
             placeholder={t("sourcing.links.searchPlaceholder")}
+            aria-label={t("sourcing.links.searchPlaceholder")}
           />
         </div>
 
@@ -108,7 +109,7 @@ function JobTrackingPageContent() {
             onClick={() => setIsCreateModalOpen(true)}
             className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto shrink-0"
           >
-            <Plus className="h-4 w-4 stroke-[2.5]" />
+            <Plus className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
             <span>{t("sourcing.newLink")}</span>
           </Button>
         )}

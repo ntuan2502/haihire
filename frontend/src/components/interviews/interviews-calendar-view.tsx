@@ -28,7 +28,10 @@ export interface InterviewsCalendarViewProps {
   jobs: Job[];
   onScheduleDate: (dateStr: string) => void;
   onEditSchedule: (app: Application, interview: ScheduledInterviewInfo) => void;
-  onOpenScorecard: (app: Application, interview: ScheduledInterviewInfo) => void;
+  onOpenScorecard: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
   canEdit?: boolean;
 }
 
@@ -40,7 +43,11 @@ interface CalendarEventItem {
 
 type CalendarMode = "month" | "week";
 
-function formatLocalDate(year: number, monthIndex: number, day: number): string {
+function formatLocalDate(
+  year: number,
+  monthIndex: number,
+  day: number,
+): string {
   const d = new Date(year, monthIndex, day);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -59,7 +66,9 @@ export function InterviewsCalendarView({
   const { t, locale } = useI18n();
   const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(
+    null,
+  );
   const [openDayDetails, setOpenDayDetails] = useState<{
     dateStr: string;
     dayNumber: number;
@@ -89,7 +98,9 @@ export function InterviewsCalendarView({
 
     // Sort events within each day by time
     map.forEach((events) => {
-      events.sort((a, b) => (a.interview.time || "").localeCompare(b.interview.time || ""));
+      events.sort((a, b) =>
+        (a.interview.time || "").localeCompare(b.interview.time || ""),
+      );
     });
 
     return map;
@@ -139,8 +150,12 @@ export function InterviewsCalendarView({
     let startDayOfWeek = firstDayOfMonth.getDay() - 1;
     if (startDayOfWeek === -1) startDayOfWeek = 6;
 
-    const days: { dateStr: string; dayNumber: number; isCurrentMonth: boolean; isToday: boolean }[] =
-      [];
+    const days: {
+      dateStr: string;
+      dayNumber: number;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+    }[] = [];
 
     // Previous month padding
     const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
@@ -190,17 +205,27 @@ export function InterviewsCalendarView({
     const startOfWeek = new Date(curr);
     startOfWeek.setDate(curr.getDate() - dayOfWeek);
 
-    const days: { dateStr: string; dayNumber: number; monthName: string; isToday: boolean }[] = [];
+    const days: {
+      dateStr: string;
+      dayNumber: number;
+      monthName: string;
+      isToday: boolean;
+    }[] = [];
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
-      const dateStr = formatLocalDate(d.getFullYear(), d.getMonth(), d.getDate());
+      const dateStr = formatLocalDate(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate(),
+      );
 
       days.push({
         dateStr,
         dayNumber: d.getDate(),
-        monthName: locale === "vi" ? `Th${d.getMonth() + 1}` : `M${d.getMonth() + 1}`,
+        monthName:
+          locale === "vi" ? `Th${d.getMonth() + 1}` : `M${d.getMonth() + 1}`,
         isToday: dateStr === todayStr,
       });
     }
@@ -220,15 +245,18 @@ export function InterviewsCalendarView({
     return `${t("interviews.week")}: ${weekDays[0].dayNumber}/${weekDays[0].monthName} - ${weekDays[6].dayNumber}/${weekDays[6].monthName}, ${currentYear}`;
   }, [weekDays, currentYear, t]);
 
-  const dayHeaders = useMemo(() => [
-    t("interviews.daysOfWeek.mon"),
-    t("interviews.daysOfWeek.tue"),
-    t("interviews.daysOfWeek.wed"),
-    t("interviews.daysOfWeek.thu"),
-    t("interviews.daysOfWeek.fri"),
-    t("interviews.daysOfWeek.sat"),
-    t("interviews.daysOfWeek.sun"),
-  ], [t]);
+  const dayHeaders = useMemo(
+    () => [
+      t("interviews.daysOfWeek.mon"),
+      t("interviews.daysOfWeek.tue"),
+      t("interviews.daysOfWeek.wed"),
+      t("interviews.daysOfWeek.thu"),
+      t("interviews.daysOfWeek.fri"),
+      t("interviews.daysOfWeek.sat"),
+      t("interviews.daysOfWeek.sun"),
+    ],
+    [t],
+  );
 
   const dayDetailsEvents = useMemo(() => {
     if (!openDayDetails) return [];
@@ -323,7 +351,12 @@ export function InterviewsCalendarView({
           {/* Day Names Row */}
           <div className="grid grid-cols-7 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-center py-2.5 text-xs font-bold text-slate-500 dark:text-slate-400">
             {dayHeaders.map((day, idx) => (
-              <div key={day} className={idx >= 5 ? "text-rose-500/80 dark:text-rose-400/80" : ""}>
+              <div
+                key={day}
+                className={
+                  idx >= 5 ? "text-rose-500/80 dark:text-rose-400/80" : ""
+                }
+              >
                 {day}
               </div>
             ))}
@@ -356,8 +389,8 @@ export function InterviewsCalendarView({
                         day.isToday
                           ? "h-6 w-6 bg-blue-600 text-white shadow-2xs"
                           : day.isCurrentMonth
-                          ? "text-slate-800 dark:text-slate-200"
-                          : "text-slate-400"
+                            ? "text-slate-800 dark:text-slate-200"
+                            : "text-slate-400"
                       }`}
                     >
                       {day.dayNumber}
@@ -378,14 +411,18 @@ export function InterviewsCalendarView({
                   {/* 1-Line Event Strips (Outlook style, max 4) */}
                   <div className="space-y-1 w-full flex-1">
                     {visibleEvents.map((evt, eIdx) => {
-                      const candidateName = getCandidateDisplayName(evt.application);
+                      const candidateName = getCandidateDisplayName(
+                        evt.application,
+                      );
                       const hasScorecard = Boolean(evt.interview.scorecard);
 
                       return (
-                        <div
+                        <button
+                          type="button"
                           key={`${evt.application.id}-${eIdx}`}
                           onClick={() => setSelectedEvent(evt)}
-                          className={`h-5 sm:h-[22px] px-1.5 rounded flex items-center gap-1.5 text-[11px] leading-none cursor-pointer transition-all hover:brightness-95 active:scale-[0.99] border-l-2 select-none truncate ${
+                          aria-label={`Interview with ${candidateName} at ${evt.interview.time || "10:00"}`}
+                          className={`w-full text-left h-5 sm:h-[22px] px-1.5 rounded flex items-center gap-1.5 text-[11px] leading-none cursor-pointer transition-all hover:brightness-95 active:scale-[0.99] border-l-2 select-none truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                             hasScorecard
                               ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-950 dark:text-emerald-200"
                               : "bg-blue-50 dark:bg-blue-950/50 border-blue-500 text-blue-950 dark:text-blue-200"
@@ -398,7 +435,7 @@ export function InterviewsCalendarView({
                           <span className="font-semibold truncate">
                             {candidateName}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -441,7 +478,9 @@ export function InterviewsCalendarView({
                 <div
                   key={day.dateStr}
                   className={`min-h-[350px] p-3 flex flex-col space-y-3 ${
-                    day.isToday ? "bg-blue-50/20 dark:bg-blue-950/20" : "bg-white dark:bg-slate-900"
+                    day.isToday
+                      ? "bg-blue-50/20 dark:bg-blue-950/20"
+                      : "bg-white dark:bg-slate-900"
                   }`}
                 >
                   {/* Day Header */}
@@ -452,7 +491,9 @@ export function InterviewsCalendarView({
                       </span>
                       <span
                         className={`text-sm font-extrabold ${
-                          day.isToday ? "text-blue-600 dark:text-blue-400 font-black" : "text-slate-800 dark:text-slate-200"
+                          day.isToday
+                            ? "text-blue-600 dark:text-blue-400 font-black"
+                            : "text-slate-800 dark:text-slate-200"
                         }`}
                       >
                         {day.dayNumber} {day.monthName}
@@ -480,7 +521,9 @@ export function InterviewsCalendarView({
                       </p>
                     ) : (
                       events.map((evt, eIdx) => {
-                        const candidateName = getCandidateDisplayName(evt.application);
+                        const candidateName = getCandidateDisplayName(
+                          evt.application,
+                        );
                         const hasScorecard = Boolean(evt.interview.scorecard);
 
                         return (
@@ -501,11 +544,17 @@ export function InterviewsCalendarView({
                               {hasScorecard ? (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
                                   <Star className="h-2.5 w-2.5 fill-emerald-500 text-emerald-500" />
-                                  <span>{evt.interview.scorecard?.overallRating} ⭐</span>
+                                  <span>
+                                    {evt.interview.scorecard?.overallRating} ⭐
+                                  </span>
                                 </span>
                               ) : (
                                 <span className="px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold">
-                                  {evt.interview.round ? t("interviews.roundInterview", { round: evt.interview.round }) : t("interviews.round")}
+                                  {evt.interview.round
+                                    ? t("interviews.roundInterview", {
+                                        round: evt.interview.round,
+                                      })
+                                    : t("interviews.round")}
                                 </span>
                               )}
                             </div>
@@ -521,18 +570,27 @@ export function InterviewsCalendarView({
 
                             <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
                               <span className="truncate max-w-[80px]">
-                                {t("interviews.tableHeaders.interviewer")}: {evt.interview.interviewer}
+                                {t("interviews.tableHeaders.interviewer")}:{" "}
+                                {evt.interview.interviewer}
                               </span>
                               {evt.interview.format === "OFFICE" ? (
-                                <span className="text-rose-600 font-semibold">{t("interviews.atOffice")}</span>
+                                <span className="text-rose-600 font-semibold">
+                                  {t("interviews.atOffice")}
+                                </span>
                               ) : (
-                                <span className="text-emerald-600 font-semibold">{t("interviews.onlineFormat", { format: evt.interview.format || "ONLINE" })}</span>
+                                <span className="text-emerald-600 font-semibold">
+                                  {t("interviews.onlineFormat", {
+                                    format: evt.interview.format || "ONLINE",
+                                  })}
+                                </span>
                               )}
                             </div>
 
                             {/* Actions in card */}
                             <div className="pt-1 flex items-center justify-between gap-1">
-                              {evt.interview.linkOrLocation?.startsWith("http") && (
+                              {evt.interview.linkOrLocation?.startsWith(
+                                "http",
+                              ) && (
                                 <a
                                   href={evt.interview.linkOrLocation}
                                   target="_blank"
@@ -540,16 +598,25 @@ export function InterviewsCalendarView({
                                   className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
                                 >
                                   <Video className="h-2.5 w-2.5" />
-                                  <span>{t("interviews.joinMeetingShort")}</span>
+                                  <span>
+                                    {t("interviews.joinMeetingShort")}
+                                  </span>
                                 </a>
                               )}
 
                               <button
                                 type="button"
-                                onClick={() => onOpenScorecard(evt.application, evt.interview)}
+                                onClick={() =>
+                                  onOpenScorecard(
+                                    evt.application,
+                                    evt.interview,
+                                  )
+                                }
                                 className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer ml-auto"
                               >
-                                {hasScorecard ? t("interviews.viewEvaluation") : t("interviews.scorecardAction")}
+                                {hasScorecard
+                                  ? t("interviews.viewEvaluation")
+                                  : t("interviews.scorecardAction")}
                               </button>
                             </div>
                           </div>
@@ -600,7 +667,9 @@ export function InterviewsCalendarView({
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/60 dark:border-white/10">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {t("interviews.candidateInterviewsMultiple", { count: dayDetailsEvents.length })}
+              {t("interviews.candidateInterviewsMultiple", {
+                count: dayDetailsEvents.length,
+              })}
             </span>
             {openDayDetails && (
               <span className="text-xs font-mono font-medium text-slate-400 dark:text-slate-500">
@@ -624,13 +693,15 @@ export function InterviewsCalendarView({
                 const hasScorecard = Boolean(evt.interview.scorecard);
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={`${evt.application.id}-${idx}`}
                     onClick={() => {
                       setOpenDayDetails(null);
                       setSelectedEvent(evt);
                     }}
-                    className={`p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs ${
+                    aria-label={`Interview with ${candidateName} at ${evt.interview.time || "10:00"}`}
+                    className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       hasScorecard
                         ? "bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100"
                         : "bg-white hover:bg-slate-50/90 dark:bg-[#252525] dark:hover:bg-[#2c2c2c] border-slate-200/80 dark:border-white/10 hover:border-blue-300 dark:hover:border-blue-600 text-slate-900 dark:text-white"
@@ -666,7 +737,7 @@ export function InterviewsCalendarView({
                         </span>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}
@@ -680,7 +751,11 @@ export function InterviewsCalendarView({
       <CustomModal
         isOpen={Boolean(selectedEvent)}
         onClose={() => setSelectedEvent(null)}
-        title={selectedEvent ? getCandidateDisplayName(selectedEvent.application) : ""}
+        title={
+          selectedEvent
+            ? getCandidateDisplayName(selectedEvent.application)
+            : ""
+        }
         badge={
           selectedEvent?.interview.round ? (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
@@ -696,13 +771,17 @@ export function InterviewsCalendarView({
             <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-white/10">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                  {getInitials(getCandidateDisplayName(selectedEvent.application))}
+                  {getInitials(
+                    getCandidateDisplayName(selectedEvent.application),
+                  )}
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                     {getCandidateDisplayName(selectedEvent.application)}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{selectedEvent.application.candidateEmail}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {selectedEvent.application.candidateEmail}
+                  </p>
                 </div>
               </div>
             </div>
@@ -716,14 +795,18 @@ export function InterviewsCalendarView({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">{t("interviews.roundType")}:</span>
+                <span className="text-slate-400">
+                  {t("interviews.roundType")}:
+                </span>
                 <span className="font-bold text-blue-600 dark:text-blue-400">
                   {getInterviewTypeLabel(selectedEvent.interview.type, t)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">{t("interviews.timeLabel")}:</span>
+                <span className="text-slate-400">
+                  {t("interviews.timeLabel")}:
+                </span>
                 <span className="font-bold text-blue-600 dark:text-blue-400">
                   {t("interviews.atTime", {
                     date: selectedEvent.interview.date,
@@ -733,14 +816,18 @@ export function InterviewsCalendarView({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">{t("interviews.tableHeaders.interviewer")}:</span>
+                <span className="text-slate-400">
+                  {t("interviews.tableHeaders.interviewer")}:
+                </span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {selectedEvent.interview.interviewer}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">{t("interviews.formatLabel")}:</span>
+                <span className="text-slate-400">
+                  {t("interviews.formatLabel")}:
+                </span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {selectedEvent.interview.format === "OFFICE"
                     ? t("interviews.atOffice")
@@ -752,7 +839,9 @@ export function InterviewsCalendarView({
 
               {selectedEvent.interview.linkOrLocation && (
                 <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-                  <span className="text-slate-400">{t("interviews.meetingUrlLabel")}:</span>
+                  <span className="text-slate-400">
+                    {t("interviews.meetingUrlLabel")}:
+                  </span>
                   {selectedEvent.interview.linkOrLocation.startsWith("http") ? (
                     <a
                       href={selectedEvent.interview.linkOrLocation}
@@ -786,7 +875,10 @@ export function InterviewsCalendarView({
                     </span>
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 font-bold text-[10px] text-emerald-600 border border-emerald-200 dark:border-emerald-800">
-                    {getRecommendationLabel(selectedEvent.interview.scorecard.recommendation, t)}
+                    {getRecommendationLabel(
+                      selectedEvent.interview.scorecard.recommendation,
+                      t,
+                    )}
                   </span>
                 </div>
                 {selectedEvent.interview.scorecard.feedback && (
@@ -835,7 +927,9 @@ export function InterviewsCalendarView({
                 >
                   <Star className="h-3 w-3" />
                   <span>
-                    {selectedEvent.interview.scorecard ? t("interviews.updateSchedule") : t("interviews.scorecardAction")}
+                    {selectedEvent.interview.scorecard
+                      ? t("interviews.updateSchedule")
+                      : t("interviews.scorecardAction")}
                   </span>
                 </Button>
               </div>

@@ -20,6 +20,9 @@ export const vi: TranslationSchema = {
     actions: "Hành động",
     back: "Quay lại",
     next: "Tiếp theo",
+    previous: "Trước",
+    pagination: "Phân trang",
+    remove: "Xóa",
     confirm: "Xác nhận",
     comingSoon: "Sắp ra mắt",
     soon: "Sắp có",
@@ -57,16 +60,19 @@ export const vi: TranslationSchema = {
     copy: "Sao chép",
     copied: "Đã chép",
     copyKeyword: "Sao chép từ khóa",
-    confirmInputInstruction: "Vui lòng nhập \"{matchText}\" để xác nhận:",
-    confirmInputPlaceholder: "Nhập chính xác \"{matchText}\"...",
+    confirmInputInstruction: 'Vui lòng nhập "{matchText}" để xác nhận:',
+    confirmInputPlaceholder: 'Nhập chính xác "{matchText}"...',
     deleteConfirmWord: "XÓA",
     cancelConfirmWord: "HỦY",
     revokeConfirmWord: "THU HỒI",
+    skipToContent: "Bỏ qua đến nội dung chính",
   },
   errors: {
     generic: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
-    networkError: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra đường truyền mạng.",
-    ORG_SLUG_ALREADY_EXISTS: "Tổ chức với đường dẫn '{slug}' đã tồn tại. Vui lòng chọn đường dẫn khác.",
+    networkError:
+      "Không thể kết nối đến máy chủ. Vui lòng kiểm tra đường truyền mạng.",
+    ORG_SLUG_ALREADY_EXISTS:
+      "Tổ chức với đường dẫn '{slug}' đã tồn tại. Vui lòng chọn đường dẫn khác.",
     ORG_NOT_FOUND: "Không tìm thấy tổ chức yêu cầu ({slug}).",
     ORG_NAME_REQUIRED: "Vui lòng nhập tên tổ chức của bạn.",
     ORG_SLUG_REQUIRED: "Vui lòng nhập đường dẫn định danh hợp lệ.",
@@ -75,48 +81,70 @@ export const vi: TranslationSchema = {
     ORG_INVITE_EXPIRED: "Liên kết mời tham gia này đã hết hạn.",
     ORG_INVITE_REVOKED: "Liên kết mời tham gia này đã bị thu hồi.",
     ORG_USER_NO_ORG: "Tài khoản của bạn chưa được liên kết với tổ chức nào.",
-    ORG_CANNOT_CHANGE_OWNER_ROLE: "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",
+    ORG_CANNOT_CHANGE_OWNER_ROLE:
+      "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",
     ORG_CANNOT_REMOVE_SELF: "Bạn không thể tự xóa chính mình khỏi tổ chức.",
     ORG_CANNOT_REMOVE_OWNER: "Không thể xóa chủ sở hữu khỏi tổ chức.",
     ORG_MEMBER_NOT_FOUND: "Không tìm thấy thành viên trong tổ chức này.",
-    ORG_FORBIDDEN_ACTION: "Bạn không có quyền thực hiện thao tác này trong tổ chức ({organizationId}).",
+    ORG_FORBIDDEN_ACTION:
+      "Bạn không có quyền thực hiện thao tác này trong tổ chức ({organizationId}).",
     JOB_NOT_FOUND: "Không tìm thấy tin tuyển dụng ({id}).",
     JOB_ID_REQUIRED: "Vui lòng chọn vị trí tuyển dụng.",
-    JOB_NOT_ACCEPTING_APPLICATIONS: "Vị trí tuyển dụng ({id}) hiện không mở hoặc không còn tiếp nhận hồ sơ.",
-    JOB_INVALID_ORGANIZATION: "Vị trí tuyển dụng ({id}) không thuộc tổ chức hiện tại của bạn.",
+    JOB_NOT_ACCEPTING_APPLICATIONS:
+      "Vị trí tuyển dụng ({id}) hiện không mở hoặc không còn tiếp nhận hồ sơ.",
+    JOB_INVALID_ORGANIZATION:
+      "Vị trí tuyển dụng ({id}) không thuộc tổ chức hiện tại của bạn.",
     APPLICATION_NOT_FOUND: "Không tìm thấy hồ sơ ứng tuyển ({id}).",
-    APPLICATION_INVALID_ORGANIZATION: "Hồ sơ ứng tuyển ({id}) không thuộc tổ chức hiện tại của bạn.",
-    APPLICATION_STAGE_CONFLICT: "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác. Vui lòng tải lại trang để xem trạng thái mới nhất.",
-    APPLICATION_INVALID_STAGE_TRANSITION: "Không thể chuyển hồ sơ sang giai đoạn này. Vui lòng kiểm tra lại quy trình tuyển dụng.",
-    CANDIDATE_INFO_REQUIRED: "Vui lòng cung cấp đầy đủ họ tên và email của ứng viên.",
-    CANDIDATE_ORG_MISMATCH: "Ứng viên ({id}) không thuộc tổ chức hiện tại của bạn.",
-    CANDIDATE_ALREADY_APPLIED: "Ứng viên này đã nộp hồ sơ ứng tuyển vào vị trí này rồi.",
+    APPLICATION_INVALID_ORGANIZATION:
+      "Hồ sơ ứng tuyển ({id}) không thuộc tổ chức hiện tại của bạn.",
+    APPLICATION_STAGE_CONFLICT:
+      "Hồ sơ ứng viên vừa được cập nhật bởi một người dùng khác. Vui lòng tải lại trang để xem trạng thái mới nhất.",
+    APPLICATION_INVALID_STAGE_TRANSITION:
+      "Không thể chuyển hồ sơ sang giai đoạn này. Vui lòng kiểm tra lại quy trình tuyển dụng.",
+    CANDIDATE_INFO_REQUIRED:
+      "Vui lòng cung cấp đầy đủ họ tên và email của ứng viên.",
+    CANDIDATE_ORG_MISMATCH:
+      "Ứng viên ({id}) không thuộc tổ chức hiện tại của bạn.",
+    CANDIDATE_ALREADY_APPLIED:
+      "Ứng viên này đã nộp hồ sơ ứng tuyển vào vị trí này rồi.",
     DOCUMENT_FILE_REQUIRED: "Vui lòng cung cấp tệp tài liệu hợp lệ.",
     DOCUMENT_NOT_FOUND: "Không tìm thấy tệp tài liệu ({name}).",
-    DOCUMENT_RETRIEVE_FAILED: "Không thể tải về tệp tài liệu từ hệ thống lưu trữ.",
-    UPLOAD_TRUNCATED_FILE: "Tệp tải lên không đầy đủ hoặc bị gián đoạn giữa chừng. Vui lòng thử lại.",
-    TENANT_ID_REQUIRED_FOR_UPLOAD: "Thiếu thông tin tổ chức khi tải lên tài liệu.",
+    DOCUMENT_RETRIEVE_FAILED:
+      "Không thể tải về tệp tài liệu từ hệ thống lưu trữ.",
+    UPLOAD_TRUNCATED_FILE:
+      "Tệp tải lên không đầy đủ hoặc bị gián đoạn giữa chừng. Vui lòng thử lại.",
+    TENANT_ID_REQUIRED_FOR_UPLOAD:
+      "Thiếu thông tin tổ chức khi tải lên tài liệu.",
     CANDIDATE_NOT_FOUND: "Không tìm thấy thông tin ứng viên ({id}).",
-    CANDIDATE_EMAIL_EXISTS: "Ứng viên với email '{email}' đã tồn tại trong tổ chức của bạn.",
+    CANDIDATE_EMAIL_EXISTS:
+      "Ứng viên với email '{email}' đã tồn tại trong tổ chức của bạn.",
     CANDIDATE_ORG_REQUIRED: "Yêu cầu mã tổ chức để tạo hoặc quản lý ứng viên.",
     INTERVIEW_NOT_FOUND: "Không tìm thấy thông tin lịch phỏng vấn ({id}).",
-    INTERVIEW_APP_NOT_FOUND: "Không tìm thấy hồ sơ ứng tuyển ({applicationId}) cần xếp lịch phỏng vấn.",
-    INTERVIEW_INVALID_ORGANIZATION: "Lịch phỏng vấn ({id}) không thuộc tổ chức hiện tại của bạn.",
+    INTERVIEW_APP_NOT_FOUND:
+      "Không tìm thấy hồ sơ ứng tuyển ({applicationId}) cần xếp lịch phỏng vấn.",
+    INTERVIEW_INVALID_ORGANIZATION:
+      "Lịch phỏng vấn ({id}) không thuộc tổ chức hiện tại của bạn.",
     EMAIL_TEMPLATE_NOT_FOUND: "Không tìm thấy mẫu email '{templateType}'.",
     EMAIL_SETTINGS_NOT_FOUND: "Chưa cấu hình cài đặt email cho tổ chức.",
     EMAIL_ORG_REQUIRED: "Yêu cầu mã tổ chức để quản lý cấu hình email.",
     INVALID_CREDENTIALS: "Email hoặc mật khẩu không chính xác.",
     USER_EMAIL_EXISTS: "Địa chỉ email này đã được sử dụng.",
-    USER_SESSION_EXPIRED: "Phiên làm việc đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.",
+    USER_SESSION_EXPIRED:
+      "Phiên làm việc đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.",
     UNAUTHORIZED: "Phiên làm việc đã hết hạn hoặc không hợp lệ.",
     FORBIDDEN: "Bạn không có quyền thực hiện thao tác này.",
-    FORBIDDEN_READ_ONLY: "Tài khoản thành viên chỉ có quyền xem. Chỉ Quản trị viên mới được thao tác.",
-    SSE_UNAUTHORIZED: "Phiên kết nối luồng sự kiện thời gian thực không hợp lệ hoặc đã hết hạn.",
+    FORBIDDEN_READ_ONLY:
+      "Tài khoản thành viên chỉ có quyền xem. Chỉ Quản trị viên mới được thao tác.",
+    SSE_UNAUTHORIZED:
+      "Phiên kết nối luồng sự kiện thời gian thực không hợp lệ hoặc đã hết hạn.",
     TRACKING_LINK_NOT_FOUND: "Không tìm thấy liên kết theo dõi nguồn ứng viên.",
     WEBHOOK_SETTING_NOT_FOUND: "Không tìm thấy cấu hình webhook cho tổ chức.",
-    WEBHOOK_TEST_FAILED: "Kiểm tra kết nối webhook thất bại. Vui lòng kiểm tra lại URL và cấu hình.",
-    WEBHOOK_PROVIDER_MISMATCH: "Cấu hình không khớp với loại nhà cung cấp webhook đã chọn.",
-    TOO_MANY_REQUESTS: "Quá nhiều yêu cầu gửi tới hệ thống. Vui lòng thử lại sau vài giây.",
+    WEBHOOK_TEST_FAILED:
+      "Kiểm tra kết nối webhook thất bại. Vui lòng kiểm tra lại URL và cấu hình.",
+    WEBHOOK_PROVIDER_MISMATCH:
+      "Cấu hình không khớp với loại nhà cung cấp webhook đã chọn.",
+    TOO_MANY_REQUESTS:
+      "Quá nhiều yêu cầu gửi tới hệ thống. Vui lòng thử lại sau vài giây.",
     GENERIC_ERROR: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
     VALIDATION_ERROR: "Dữ liệu cung cấp không hợp lệ. Vui lòng kiểm tra lại.",
     RESOURCE_NOT_FOUND: "Tài nguyên không tồn tại.",
@@ -170,7 +198,8 @@ export const vi: TranslationSchema = {
   },
   auth: {
     loginTitle: "Đăng nhập tài khoản",
-    loginSubtitle: "Chào mừng bạn quay trở lại! Vui lòng nhập thông tin để tiếp tục.",
+    loginSubtitle:
+      "Chào mừng bạn quay trở lại! Vui lòng nhập thông tin để tiếp tục.",
     emailLabel: "Email công việc",
     emailPlaceholder: "name@company.com",
     passwordLabel: "Mật khẩu",
@@ -180,7 +209,8 @@ export const vi: TranslationSchema = {
     noAccount: "Chưa có tài khoản?",
     signUpLink: "Đăng ký ngay",
     registerTitle: "Tạo tài khoản {brand}",
-    registerSubtitle: "Bắt đầu tối ưu hóa quy trình tuyển dụng của bạn ngay hôm nay.",
+    registerSubtitle:
+      "Bắt đầu tối ưu hóa quy trình tuyển dụng của bạn ngay hôm nay.",
     fullNameLabel: "Họ và tên",
     fullNamePlaceholder: "Nguyễn Văn A",
     signUpButton: "Đăng ký tài khoản",
@@ -194,11 +224,13 @@ export const vi: TranslationSchema = {
     returnToJobs: "Xem trang cơ hội việc làm công khai",
     orEmail: "Hoặc đăng nhập với email",
     joinOrgTitle: "Bạn đã được mời tham gia",
-    joinOrgSubtitle: "Chấp nhận lời mời để bắt đầu làm việc cùng đội ngũ tuyển dụng.",
+    joinOrgSubtitle:
+      "Chấp nhận lời mời để bắt đầu làm việc cùng đội ngũ tuyển dụng.",
     joinOrgButton: "Chấp nhận lời mời & Tham gia",
     invalidInvitation: "Liên kết mời không hợp lệ hoặc đã hết hạn",
     errorEmailPasswordRequired: "Vui lòng nhập đầy đủ email và mật khẩu.",
-    errorAuthFailed: "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.",
+    errorAuthFailed:
+      "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.",
     errorNetwork: "Không thể kết nối đến máy chủ xác thực.",
     errorRegisterRequired: "Vui lòng điền đầy đủ các thông tin bắt buộc.",
     errorPasswordMinLength: "Mật khẩu phải có ít nhất 6 ký tự.",
@@ -206,13 +238,17 @@ export const vi: TranslationSchema = {
     recruiterPortal: "Cổng Tuyển dụng",
     tagline: "Vận hành Tuyển dụng & Thu hút Nhân tài",
     teamPortal: "Cổng Quản trị & Đội ngũ Tuyển dụng",
-    loginHeroTitle: "Chuẩn hóa quy trình tuyển dụng từ ứng tuyển đến nhận việc.",
-    loginHeroDesc: "Quản lý vị trí mở, xem hồ sơ ứng viên lưu trữ an toàn trên MinIO và chuyển đổi ứng viên qua các giai đoạn phỏng vấn tương tác.",
+    loginHeroTitle:
+      "Chuẩn hóa quy trình tuyển dụng từ ứng tuyển đến nhận việc.",
+    loginHeroDesc:
+      "Quản lý vị trí mở, xem hồ sơ ứng viên lưu trữ an toàn trên MinIO và chuyển đổi ứng viên qua các giai đoạn phỏng vấn tương tác.",
     featureMultiTenant: "Không gian làm việc tổ chức đa người dùng",
     featureKanban: "Quy trình Kanban tương tác & sàng lọc ứng viên",
     featureStorage: "Lưu trữ đám mây MinIO S3 cho hồ sơ ứng viên",
-    registerHeroTitle: "Tuyển dụng nhanh hơn với hệ thống quản lý ứng viên hiện đại.",
-    registerHeroDesc: "Tạo tài khoản để quản lý các quy trình tuyển dụng, lên lịch phỏng vấn và cộng tác mượt mà cùng các cấp quản lý.",
+    registerHeroTitle:
+      "Tuyển dụng nhanh hơn với hệ thống quản lý ứng viên hiện đại.",
+    registerHeroDesc:
+      "Tạo tài khoản để quản lý các quy trình tuyển dụng, lên lịch phỏng vấn và cộng tác mượt mà cùng các cấp quản lý.",
     featureOnboarding: "Khởi tạo nhanh chóng & thiết lập không gian đội ngũ",
     featureLifecycle: "Quản lý toàn diện vòng đời tuyển dụng nhân sự",
     featureInvites: "Mời thành viên tức thì & phân quyền linh hoạt",
@@ -247,7 +283,8 @@ export const vi: TranslationSchema = {
     navComparison: "So sánh",
     navCareers: "Cổng tuyển dụng",
     heroBadge: "ATS THẾ HỆ MỚI • TÍCH HỢP TRÍ TUỆ NHÂN TẠO",
-    heroSubtitle: "Tự động hóa toàn diện từ bóc tách CV, tính điểm AI Match Score, xếp lịch phỏng vấn đồng bộ đến thiết lập trang tuyển dụng thương hiệu riêng trong 60 giây.",
+    heroSubtitle:
+      "Tự động hóa toàn diện từ bóc tách CV, tính điểm AI Match Score, xếp lịch phỏng vấn đồng bộ đến thiết lập trang tuyển dụng thương hiệu riêng trong 60 giây.",
     heroExploreDemo: "Xem bảng Demo",
     heroQuickSetup: "Thiết lập chỉ trong 60 giây",
     mockupRoleTitle: "Kỹ sư Full-Stack Cao cấp (Test Role)",
@@ -276,7 +313,8 @@ export const vi: TranslationSchema = {
     mockupScorecardTitle: "Phiếu đánh giá phỏng vấn",
     mockupScorecardScore: "4.8 / 5.0",
     mockupScorecardDecision: "Khuyến nghị tuyển dụng: Mạnh mẽ Đồng ý",
-    mockupScorecardCriteria: "Kỹ thuật: Xuất sắc • Văn hóa: Rất tốt • Giải quyết vấn đề: Vượt trội",
+    mockupScorecardCriteria:
+      "Kỹ thuật: Xuất sắc • Văn hóa: Rất tốt • Giải quyết vấn đề: Vượt trội",
     mockupAtsWindowTitle: "{brand} • Hệ thống Quản trị Tuyển dụng ATS",
     mockupRubricsCount: "5/5 Tiêu chí Rubric",
     mockupActionReject: "Từ chối",
@@ -304,71 +342,98 @@ export const vi: TranslationSchema = {
     mockupScorecardProblem: "Giải quyết Vấn đề",
     mockupInterviewRound: "Vòng 2: Phỏng vấn Kỹ thuật Chuyên sâu",
     metricsEyebrow: "HIỆU SUẤT VƯỢT TRỘI",
-    metricsTitle: "Những con số chứng minh sức mạnh của quy trình tuyển dụng thông minh",
+    metricsTitle:
+      "Những con số chứng minh sức mạnh của quy trình tuyển dụng thông minh",
     metric1Value: "85%",
     metric1Label: "Tiết kiệm thời gian sàng lọc",
-    metric1Desc: "AI tự động bóc tách kỹ năng, kinh nghiệm và tính điểm tương thích tức thì.",
+    metric1Desc:
+      "AI tự động bóc tách kỹ năng, kinh nghiệm và tính điểm tương thích tức thì.",
     metric2Value: "3x",
     metric2Label: "Tốc độ chốt ứng viên",
-    metric2Desc: "Quy trình phỏng vấn và trao đổi thông tin được đồng bộ liên tục 2 chiều.",
+    metric2Desc:
+      "Quy trình phỏng vấn và trao đổi thông tin được đồng bộ liên tục 2 chiều.",
     metric3Value: "100%",
     metric3Label: "Dữ liệu được bảo mật",
-    metric3Desc: "Lưu trữ độc lập trên hạ tầng MinIO riêng biệt với cơ chế phân quyền RBAC.",
+    metric3Desc:
+      "Lưu trữ độc lập trên hạ tầng MinIO riêng biệt với cơ chế phân quyền RBAC.",
     metric4Value: "0đ",
     metric4Label: "Chi phí bắt đầu",
-    metric4Desc: "Miễn phí 1 vị trí mở đầu tiên trọn đời, không yêu cầu thẻ tín dụng.",
+    metric4Desc:
+      "Miễn phí 1 vị trí mở đầu tiên trọn đời, không yêu cầu thẻ tín dụng.",
     bentoEyebrow: "HỆ SINH THÁI TÍNH NĂNG",
     bentoTitle: "Mọi công cụ bạn cần để xây dựng đội ngũ trong mơ",
-    bentoDesc: "Được thiết kế từ đầu để loại bỏ hoàn toàn các bảng tính Excel rời rạc và email thất lạc.",
+    bentoDesc:
+      "Được thiết kế từ đầu để loại bỏ hoàn toàn các bảng tính Excel rời rạc và email thất lạc.",
     bentoAiBadge: "Trí tuệ Nhân tạo",
     bentoAiTitle: "Trí tuệ nhân tạo Sàng lọc CV chuyên sâu",
-    bentoAiDesc: "Tự động phân tích hồ sơ PDF, trích xuất điểm mạnh và so khớp theo từng tiêu chí tuyển dụng cụ thể.",
+    bentoAiDesc:
+      "Tự động phân tích hồ sơ PDF, trích xuất điểm mạnh và so khớp theo từng tiêu chí tuyển dụng cụ thể.",
     bentoAiMatch: "Điểm tương thích",
-    bentoAiSkills: "Kỹ năng xác thực: React, TypeScript, System Design, PostgreSQL",
+    bentoAiSkills:
+      "Kỹ năng xác thực: React, TypeScript, System Design, PostgreSQL",
     bentoScorecardBadge: "Đánh giá Phỏng vấn",
     bentoScorecardTitle: "Phiếu đánh giá phỏng vấn chuẩn hóa",
-    bentoScorecardDesc: "Bộ tiêu chí chấm điểm khách quan (Kỹ thuật, Văn hóa, Tư duy) giúp hội đồng tuyển dụng ra quyết định đồng thuận.",
+    bentoScorecardDesc:
+      "Bộ tiêu chí chấm điểm khách quan (Kỹ thuật, Văn hóa, Tư duy) giúp hội đồng tuyển dụng ra quyết định đồng thuận.",
     bentoScorecardCriteria: "Tiêu chí 5 sao • Đề xuất Tuyển/Loại minh bạch",
     bentoCareersEyebrow: "Thương hiệu Tuyển dụng",
     bentoCareersTitle: "Trang tuyển dụng thương hiệu tức thì",
-    bentoCareersDesc: "Tự động tạo cổng việc làm công khai đẹp mắt, chuẩn SEO với tên miền riêng cho công ty.",
+    bentoCareersDesc:
+      "Tự động tạo cổng việc làm công khai đẹp mắt, chuẩn SEO với tên miền riêng cho công ty.",
     bentoCareersBadge: "Sẵn sàng trong 60 giây • Chuẩn Responsive",
     bentoCommsEyebrow: "Tự động hóa",
     bentoCommsTitle: "Giao tiếp email & Đồng bộ lịch phỏng vấn",
-    bentoCommsDesc: "Tự động gửi thư mời với biến cá nhân hóa và đường link phòng họp trực tuyến Google Meet/Zoom.",
+    bentoCommsDesc:
+      "Tự động gửi thư mời với biến cá nhân hóa và đường link phòng họp trực tuyến Google Meet/Zoom.",
     bentoCommsBadge: "Tự động gửi thư mời • Nhắc lịch thông minh",
     bentoCommsIntegration: "Tự động tạo link phòng họp Google Meet & Zoom",
     workflowEyebrow: "QUY TRÌNH TINH GỌN",
     workflowTitle: "Vận hành tuyển dụng chuẩn xác chỉ qua 3 bước",
-    workflowDesc: "Từ lúc mở tin đến khi đón chào thành viên mới, quy trình diễn ra liền mạch không ma sát.",
+    workflowDesc:
+      "Từ lúc mở tin đến khi đón chào thành viên mới, quy trình diễn ra liền mạch không ma sát.",
     step1Num: "01",
     step1Title: "Khởi tạo vị trí & Nhận hồ sơ",
-    step1Desc: "Tạo tin tuyển dụng với gợi ý tiêu chí từ AI, xuất bản trang Careers công khai và thu thập CV ứng viên.",
+    step1Desc:
+      "Tạo tin tuyển dụng với gợi ý tiêu chí từ AI, xuất bản trang Careers công khai và thu thập CV ứng viên.",
     step2Num: "02",
     step2Title: "AI tự động phân loại & Xếp hạng",
-    step2Desc: "Hệ thống tự động đọc hiểu CV, tính điểm Match Score và phân bổ vào các cột Kanban trực quan.",
+    step2Desc:
+      "Hệ thống tự động đọc hiểu CV, tính điểm Match Score và phân bổ vào các cột Kanban trực quan.",
     step3Num: "03",
     step3Title: "Phỏng vấn, Chấm điểm & Gửi Offer",
-    step3Desc: "Lên lịch họp trực tuyến, đánh giá qua Scorecard chuẩn hóa và gửi thư mời làm việc chỉ với 1 click.",
+    step3Desc:
+      "Lên lịch họp trực tuyến, đánh giá qua Scorecard chuẩn hóa và gửi thư mời làm việc chỉ với 1 click.",
     compareEyebrow: "TẠI SAO CHỌN HAIHIRE",
     compareTitle: "Tạm biệt sự hỗn loạn của Bảng tính Excel",
-    compareDesc: "So sánh trải nghiệm làm việc giữa phương pháp truyền thống và giải pháp ATS hiện đại.",
+    compareDesc:
+      "So sánh trải nghiệm làm việc giữa phương pháp truyền thống và giải pháp ATS hiện đại.",
     compareOldTitle: "Cách làm truyền thống (Excel + Email)",
     compareHaihireTitle: "Nền tảng {brand} ATS Hiện đại",
-    compareRow1Old: "Hồ sơ ứng viên rải rác trên Drive, Zalo, hòm thư cá nhân dễ thất lạc",
-    compareRow1New: "Kho lưu trữ tập trung, tìm kiếm và phân loại thông minh tức thì",
-    compareRow2Old: "Đọc từng file CV thủ công, tốn hàng giờ sàng lọc cho mỗi vị trí",
-    compareRow2New: "AI tóm tắt kỹ năng và tính điểm tương thích tự động trong vài giây",
-    compareRow3Old: "Lên lịch phỏng vấn thủ công qua chat, dễ quên hoặc trùng lịch",
-    compareRow3New: "Xếp lịch thông minh, tích hợp sẵn link Google Meet và thư mời chuẩn",
-    compareRow4Old: "Đánh giá cảm tính, khó đồng thuận giữa các thành viên phỏng vấn",
-    compareRow4New: "Scorecard chuẩn hóa với rubric đánh giá khách quan, minh bạch",
+    compareRow1Old:
+      "Hồ sơ ứng viên rải rác trên Drive, Zalo, hòm thư cá nhân dễ thất lạc",
+    compareRow1New:
+      "Kho lưu trữ tập trung, tìm kiếm và phân loại thông minh tức thì",
+    compareRow2Old:
+      "Đọc từng file CV thủ công, tốn hàng giờ sàng lọc cho mỗi vị trí",
+    compareRow2New:
+      "AI tóm tắt kỹ năng và tính điểm tương thích tự động trong vài giây",
+    compareRow3Old:
+      "Lên lịch phỏng vấn thủ công qua chat, dễ quên hoặc trùng lịch",
+    compareRow3New:
+      "Xếp lịch thông minh, tích hợp sẵn link Google Meet và thư mời chuẩn",
+    compareRow4Old:
+      "Đánh giá cảm tính, khó đồng thuận giữa các thành viên phỏng vấn",
+    compareRow4New:
+      "Scorecard chuẩn hóa với rubric đánh giá khách quan, minh bạch",
     ctaBadge: "BẮT ĐẦU NGAY HÔM NAY",
     ctaTitle: "Sẵn sàng nâng tầm quy trình tuyển dụng của bạn?",
-    ctaDesc: "Tham gia cùng các đội ngũ tiên phong đang sử dụng {brand} để săn đón nhân tài nhanh hơn.",
+    ctaDesc:
+      "Tham gia cùng các đội ngũ tiên phong đang sử dụng {brand} để săn đón nhân tài nhanh hơn.",
     ctaButton: "Tạo Không gian làm việc miễn phí",
-    ctaHint: "Miễn phí 1 vị trí mở trọn đời • Không cần thẻ tín dụng • Thiết lập trong 60 giây",
-    footerTagline: "Nền tảng Quản trị Tuyển dụng (ATS) thế hệ mới được thiết kế cho các đội ngũ phát triển nhanh.",
+    ctaHint:
+      "Miễn phí 1 vị trí mở trọn đời • Không cần thẻ tín dụng • Thiết lập trong 60 giây",
+    footerTagline:
+      "Nền tảng Quản trị Tuyển dụng (ATS) thế hệ mới được thiết kế cho các đội ngũ phát triển nhanh.",
     footerColProduct: "Sản phẩm",
     footerColResources: "Tài nguyên",
     footerColCompany: "Hệ thống",
@@ -384,6 +449,7 @@ export const vi: TranslationSchema = {
     footerRights: "Bản quyền thuộc về {brand}. Mọi quyền được bảo lưu.",
   },
   dashboard: {
+    title: "Bảng điều khiển",
     welcome: "Chào mừng trở lại",
     overviewSubtitle: "Dưới đây là diễn biến quy trình tuyển dụng hôm nay.",
     totalJobs: "Tin tuyển dụng đang mở",
@@ -411,13 +477,16 @@ export const vi: TranslationSchema = {
     noUnansweredReplies: "Không có công việc nào đang chờ bạn",
     candidatesAppearHere: "Phản hồi từ ứng viên sẽ hiển thị tại đây",
     startRecruitingTitle: "Bắt đầu tuyển dụng",
-    startRecruitingSubtitle: "Tạo tin tuyển dụng để quản lý hồ sơ theo quy trình, hoặc nhập danh sách ứng viên sẵn có vào nguồn nhân tài.",
+    startRecruitingSubtitle:
+      "Tạo tin tuyển dụng để quản lý hồ sơ theo quy trình, hoặc nhập danh sách ứng viên sẵn có vào nguồn nhân tài.",
     createNewJob: "Tạo tin tuyển dụng mới",
     createNewJobDesc: "Thiết lập vị trí và quy trình sàng lọc ứng viên",
     importFromFile: "Nhập danh sách từ tệp",
-    importFromFileDesc: "Tải file CSV danh sách ứng viên trực tiếp vào hệ thống.",
+    importFromFileDesc:
+      "Tải file CSV danh sách ứng viên trực tiếp vào hệ thống.",
     createTestJob: "Tạo tin tuyển dụng mẫu",
-    createTestJobDesc: "Thử nghiệm toàn bộ luồng tuyển dụng nội bộ. Tin sẽ không hiển thị công khai.",
+    createTestJobDesc:
+      "Thử nghiệm toàn bộ luồng tuyển dụng nội bộ. Tin sẽ không hiển thị công khai.",
     postJobButton: "Đăng tin tuyển dụng",
     viewPipeline: "Xem quy trình",
     hiringPipelineTitle: "Quy trình tuyển dụng",
@@ -451,19 +520,23 @@ export const vi: TranslationSchema = {
     stageCounts: "ứng viên",
     emptyStage: "Chưa có ứng viên ở giai đoạn này",
     dragDropHint: "Kéo thả ứng viên giữa các giai đoạn",
-    onlyTeamCanSeeNotes: "Chỉ nhóm tuyển dụng của bạn mới thấy ghi chú. Nhấn ↵+Enter để lưu.",
+    onlyTeamCanSeeNotes:
+      "Chỉ nhóm tuyển dụng của bạn mới thấy ghi chú. Nhấn ↵+Enter để lưu.",
     noNotesYet: "Chưa có ghi chú nào.",
     addNewNote: "Thêm ghi chú mới",
     writePrivateNotePlaceholder: "Viết ghi chú nội bộ cho nhóm tuyển dụng...",
     saveNote: "Lưu ghi chú",
     aiResumeAnalysis: "Đánh giá hồ sơ bằng AI",
-    aiResumeAnalysisDesc: "AI phân tích CV, lịch sử làm việc và độ phù hợp kỹ năng của ứng viên so với yêu cầu vị trí này.",
+    aiResumeAnalysisDesc:
+      "AI phân tích CV, lịch sử làm việc và độ phù hợp kỹ năng của ứng viên so với yêu cầu vị trí này.",
     startAiEvaluation: "Bắt đầu đánh giá AI",
     noInterviewsTitle: "Chưa có lịch phỏng vấn nào",
-    noInterviewsSubtitle: "Lên lịch phỏng vấn kỹ thuật, sơ vấn hoặc đánh giá độ phù hợp văn hóa cho ứng viên này.",
+    noInterviewsSubtitle:
+      "Lên lịch phỏng vấn kỹ thuật, sơ vấn hoặc đánh giá độ phù hợp văn hóa cho ứng viên này.",
     scheduleNewInterview: "Lên lịch phỏng vấn mới",
     noResponsesTitle: "Chưa có phản hồi",
-    noResponsesSubtitle: "Ứng viên chưa gửi câu trả lời nào cho biểu mẫu ứng tuyển.",
+    noResponsesSubtitle:
+      "Ứng viên chưa gửi câu trả lời nào cho biểu mẫu ứng tuyển.",
     timelineApplied: "Đã ứng tuyển vào vị trí {job} lúc {date}",
     noCustomProperties: "Chưa có thuộc tính tùy chỉnh nào cho ứng viên này.",
     noCandidatesInStage: "Không có ứng viên nào trong giai đoạn {stage}",
@@ -482,7 +555,8 @@ export const vi: TranslationSchema = {
     tabDraft: "Bản nháp ({count})",
     tabClosed: "Đã đóng ({count})",
     totalApplicantsCount: "{count} ứng viên",
-    pageSubtitle: "Quản lý các vị trí tuyển dụng, theo dõi tình trạng mở đơn và tối ưu hóa nguồn ứng viên.",
+    pageSubtitle:
+      "Quản lý các vị trí tuyển dụng, theo dõi tình trạng mở đơn và tối ưu hóa nguồn ứng viên.",
     kpiPublished: "Đang mở tuyển",
     kpiPublishedDesc: "Đang nhận hồ sơ",
     kpiDraft: "Bản nháp",
@@ -502,7 +576,8 @@ export const vi: TranslationSchema = {
     editJob: "Chỉnh sửa tin",
     deleteJob: "Xóa tin",
     noJobsFound: "Không tìm thấy tin tuyển dụng nào",
-    noJobsDesc: "Hãy thử thay đổi từ khóa tìm kiếm hoặc bộ lọc để tìm kiếm công việc phù hợp.",
+    noJobsDesc:
+      "Hãy thử thay đổi từ khóa tìm kiếm hoặc bộ lọc để tìm kiếm công việc phù hợp.",
     searchJobs: "Tìm kiếm theo chức danh hoặc phòng ban...",
     departmentAll: "Tất cả phòng ban",
     statusAll: "Tất cả trạng thái",
@@ -542,8 +617,10 @@ export const vi: TranslationSchema = {
     applyLink: "Link nộp hồ sơ",
     linkCopiedSuccess: "Đã copy link!",
     postJobTitle: "Đăng tin tuyển dụng mới",
-    postJobDesc: "Xuất bản một vị trí mới để bắt đầu thu thập và theo dõi hồ sơ ứng viên.",
-    fillRequiredFields: "Vui lòng điền đầy đủ các trường bắt buộc (Tiêu đề, Phòng ban, Mô tả công việc).",
+    postJobDesc:
+      "Xuất bản một vị trí mới để bắt đầu thu thập và theo dõi hồ sơ ứng viên.",
+    fillRequiredFields:
+      "Vui lòng điền đầy đủ các trường bắt buộc (Tiêu đề, Phòng ban, Mô tả công việc).",
     publishingJob: "Đang xuất bản tin...",
     publishJobOpening: "Đăng tin tuyển dụng",
     salaryRange: "Mức lương",
@@ -557,7 +634,8 @@ export const vi: TranslationSchema = {
     applicantsInPipeline: "{count} ứng viên trong quy trình",
     totalJobsCount: "Tổng cộng {count} tin tuyển dụng",
     filterJobs: "Lọc tin tuyển dụng",
-    filterJobsDesc: "Tùy chỉnh chế độ xem của bạn, sau đó lưu lại để truy cập nhanh chóng.",
+    filterJobsDesc:
+      "Tùy chỉnh chế độ xem của bạn, sau đó lưu lại để truy cập nhanh chóng.",
     statusUpper: "TRẠNG THÁI",
     employmentTypeUpper: "LOẠI HÌNH LÀM VIỆC",
     experienceLevelUpper: "KINH NGHIỆM",
@@ -618,14 +696,17 @@ export const vi: TranslationSchema = {
       continueEditing: "Tiếp tục chỉnh sửa",
       saveSuccess: "Đã cập nhật cài đặt công việc thành công.",
       jobDetailsTitle: "Thông tin vị trí tuyển dụng",
-      jobDetailsDesc: "Tiêu đề, địa điểm và mô tả là các thông tin cần thiết để đăng tải vị trí này. Các thông tin khác là tùy chọn — và bạn có thể lưu thay đổi bất cứ lúc nào.",
+      jobDetailsDesc:
+        "Tiêu đề, địa điểm và mô tả là các thông tin cần thiết để đăng tải vị trí này. Các thông tin khác là tùy chọn — và bạn có thể lưu thay đổi bất cứ lúc nào.",
       saveChangesLink: "lưu thay đổi",
       jobTitleLabel: "Chức danh công việc",
       departmentLabel: "Phòng ban",
       departmentHint: "Hiển thị ở thẻ phía trên chức danh công việc",
       locationLabel: "Địa điểm làm việc",
-      locationDesc: "Các nền tảng tuyển dụng sắp xếp tin theo quốc gia/khu vực. Nếu vị trí không có trụ sở cố định, hãy đặt Mô hình làm việc thành Từ xa.",
-      locationErrorHelp: "Vui lòng thêm địa điểm/quốc gia để tin tuyển dụng có thể hiển thị trong kết quả tìm kiếm.",
+      locationDesc:
+        "Các nền tảng tuyển dụng sắp xếp tin theo quốc gia/khu vực. Nếu vị trí không có trụ sở cố định, hãy đặt Mô hình làm việc thành Từ xa.",
+      locationErrorHelp:
+        "Vui lòng thêm địa điểm/quốc gia để tin tuyển dụng có thể hiển thị trong kết quả tìm kiếm.",
       postalCodeLabel: "Mã bưu chính",
       pickLocationFirst: "Chọn một địa điểm trước.",
       employmentTypeLabel: "Hình thức làm việc",
@@ -639,10 +720,13 @@ export const vi: TranslationSchema = {
       workplaceError: "Vui lòng chọn mô hình làm việc",
       compensationTitle: "Chế độ đãi ngộ & Mức lương",
       compensationOptional: "Tùy chọn",
-      compensationHintClosed: "Chưa công bố — các vị trí nêu rõ mức lương sẽ được xếp hạng cao hơn trên Google Jobs và các nền tảng tuyển dụng.",
-      compensationHintOpen: "Các vị trí công khai mức lương sẽ nhận được định dạng hiển thị nổi bật và được đề xuất cao hơn. Bạn có thể thay đổi sau trong cài đặt công việc.",
+      compensationHintClosed:
+        "Chưa công bố — các vị trí nêu rõ mức lương sẽ được xếp hạng cao hơn trên Google Jobs và các nền tảng tuyển dụng.",
+      compensationHintOpen:
+        "Các vị trí công khai mức lương sẽ nhận được định dạng hiển thị nổi bật và được đề xuất cao hơn. Bạn có thể thay đổi sau trong cài đặt công việc.",
       payNegotiable: "Mức lương thỏa thuận",
-      payNegotiableDetail: 'Mức lương thỏa thuận — hiển thị "Thỏa thuận" thay vì khoảng số cụ thể',
+      payNegotiableDetail:
+        'Mức lương thỏa thuận — hiển thị "Thỏa thuận" thay vì khoảng số cụ thể',
       minSalary: "Lương tối thiểu",
       maxSalary: "Lương tối đa",
       currency: "Đơn vị tiền tệ",
@@ -657,13 +741,16 @@ export const vi: TranslationSchema = {
         hour: "Giờ",
       },
       descriptionTitle: "Mô tả công việc",
-      descriptionHelpText: "Mô tả rõ ràng giúp AI chấm điểm chính xác hơn và thu hút ứng viên chất lượng cao.",
+      descriptionHelpText:
+        "Mô tả rõ ràng giúp AI chấm điểm chính xác hơn và thu hút ứng viên chất lượng cao.",
       requirementsTitle: "Yêu cầu ứng viên",
-      requirementsNotice: 'Mục này sẽ hiển thị dưới phần "Yêu cầu ứng viên" trên trang tuyển dụng công khai.',
+      requirementsNotice:
+        'Mục này sẽ hiển thị dưới phần "Yêu cầu ứng viên" trên trang tuyển dụng công khai.',
       charsCount: "ký tự",
       // Step 2 & 3
       customizeFormTitle: "TÙY CHỈNH BIỂU MẪU ỨNG TUYỂN",
-      customizeFormDesc: "Chỉnh sửa biểu mẫu bên trái và theo dõi bản xem trước cập nhật trực tiếp. Các trường bị khóa là bắt buộc và không thể tắt.",
+      customizeFormDesc:
+        "Chỉnh sửa biểu mẫu bên trái và theo dõi bản xem trước cập nhật trực tiếp. Các trường bị khóa là bắt buộc và không thể tắt.",
       personalInfoTitle: "Thông tin cá nhân",
       firstNameLabel: "Họ và tên đệm",
       lastNameLabel: "Tên",
@@ -681,11 +768,14 @@ export const vi: TranslationSchema = {
       coverLetterDesc: "Trường văn bản tự do, tối đa 10.000 ký tự",
       offOption: "Tắt",
       screeningQuestionsTitle: "Câu hỏi sàng lọc",
-      screeningQuestionsDesc: "Thêm các câu hỏi để sàng lọc và đánh giá nhanh ứng viên",
+      screeningQuestionsDesc:
+        "Thêm các câu hỏi để sàng lọc và đánh giá nhanh ứng viên",
       generateWithAi: "Tạo bằng AI",
       pasteExisting: "Dán câu hỏi có sẵn",
-      aiQuestionsNoticeTitle: "AI có thể soạn thảo câu hỏi sàng lọc từ mô tả công việc.",
-      aiQuestionsNoticeDesc: "Bộ lọc an toàn được thiết kế để loại trừ các đặc điểm nhạy cảm hoặc được bảo vệ. Vui lòng xem lại mọi câu hỏi trước khi xuất bản.",
+      aiQuestionsNoticeTitle:
+        "AI có thể soạn thảo câu hỏi sàng lọc từ mô tả công việc.",
+      aiQuestionsNoticeDesc:
+        "Bộ lọc an toàn được thiết kế để loại trừ các đặc điểm nhạy cảm hoặc được bảo vệ. Vui lòng xem lại mọi câu hỏi trước khi xuất bản.",
       noScreeningQuestions: "Chưa có câu hỏi sàng lọc nào được thêm.",
       addFirstQuestion: "Thêm câu hỏi đầu tiên",
       openTextAnswer: "Câu trả lời dạng văn bản",
@@ -694,10 +784,13 @@ export const vi: TranslationSchema = {
       freeTextAnswer: "Câu trả lời tự do",
       deleteQuestion: "Xóa câu hỏi",
       addQuestionAction: "Thêm câu hỏi",
-      automationKnockoutHint: "Tạo quy tắc tự động hóa và loại trừ từ các câu hỏi này bất cứ lúc nào trong tab Quy tắc tự động.",
-      scoringCriteriaHint: "Tiêu chí chấm điểm được tạo từ mô tả công việc — xem lại chúng trong bước 3.",
+      automationKnockoutHint:
+        "Tạo quy tắc tự động hóa và loại trừ từ các câu hỏi này bất cứ lúc nào trong tab Quy tắc tự động.",
+      scoringCriteriaHint:
+        "Tiêu chí chấm điểm được tạo từ mô tả công việc — xem lại chúng trong bước 3.",
       scoringTitle: "Chấm điểm ứng viên",
-      scoringDesc: "Mỗi ứng viên sẽ được xếp hạng dựa trên các tiêu chí bên dưới. Chúng được soạn thảo từ mô tả công việc của bạn, hãy xem xét và chỉnh sửa nếu cần.",
+      scoringDesc:
+        "Mỗi ứng viên sẽ được xếp hạng dựa trên các tiêu chí bên dưới. Chúng được soạn thảo từ mô tả công việc của bạn, hãy xem xét và chỉnh sửa nếu cần.",
       scoringConfiguredBadge: "Đã cấu hình",
       backToFormOptions: "Quay lại tùy chọn biểu mẫu",
       writtenByAiBadge: "Được AI soạn thảo từ mô tả",
@@ -712,22 +805,29 @@ export const vi: TranslationSchema = {
       evaluationDescLabel: "Mô tả phương thức đánh giá",
       addCriterionAction: "Thêm tiêu chí",
       autoScoreTitle: "Tự động chấm điểm mọi ứng viên mới",
-      autoScoreDesc: "Khi có ứng viên nộp hồ sơ, AI sẽ tự động phân tích CV dựa trên các tiêu chí này và chấm điểm.",
+      autoScoreDesc:
+        "Khi có ứng viên nộp hồ sơ, AI sẽ tự động phân tích CV dựa trên các tiêu chí này và chấm điểm.",
       skipForNow: "Bỏ qua bước này",
       // Step 4
       readyToGo: "Sẵn sàng đăng tuyển?",
       publishDistributionTitle: "Xuất bản & Phân phối",
-      readyToGoDesc: "Xuất bản công việc để bắt đầu tiếp nhận hồ sơ. Sau khi xuất bản, bạn có thể tạo các liên kết theo dõi nguồn.",
-      controlStatusDesc: "Kiểm soát trạng thái trực tiếp và khả năng hiển thị của vị trí tuyển dụng này.",
+      readyToGoDesc:
+        "Xuất bản công việc để bắt đầu tiếp nhận hồ sơ. Sau khi xuất bản, bạn có thể tạo các liên kết theo dõi nguồn.",
+      controlStatusDesc:
+        "Kiểm soát trạng thái trực tiếp và khả năng hiển thị của vị trí tuyển dụng này.",
       publishNow: "Đăng tuyển ngay",
-      publishNowDesc: "Đăng tuyển công khai. Ứng viên có thể nộp hồ sơ và dữ liệu sẽ được ghi nhận trực tiếp.",
+      publishNowDesc:
+        "Đăng tuyển công khai. Ứng viên có thể nộp hồ sơ và dữ liệu sẽ được ghi nhận trực tiếp.",
       openPublished: "Đang mở / Đã xuất bản",
       saveDraft: "Lưu bản nháp",
-      saveDraftDesc: "Chỉ xem trước nội bộ. Ẩn khỏi ứng viên và các cổng tuyển dụng bên ngoài.",
+      saveDraftDesc:
+        "Chỉ xem trước nội bộ. Ẩn khỏi ứng viên và các cổng tuyển dụng bên ngoài.",
       closeJob: "Đóng tuyển dụng",
-      closeJobDesc: "Không tiếp nhận thêm hồ sơ mới. Các hồ sơ ứng tuyển hiện tại vẫn được lưu giữ.",
+      closeJobDesc:
+        "Không tiếp nhận thêm hồ sơ mới. Các hồ sơ ứng tuyển hiện tại vẫn được lưu giữ.",
       externalBoardsTitle: "Đồng thời đăng lên các trang tuyển dụng bên ngoài",
-      externalBoardsDesc: "Phân phối miễn phí tới Jooble, Adzuna, Careerjet, Talent.com và các đối tác.",
+      externalBoardsDesc:
+        "Phân phối miễn phí tới Jooble, Adzuna, Careerjet, Talent.com và các đối tác.",
       jobSummaryTitle: "Tóm tắt vị trí tuyển dụng",
       titleSub: "Chức danh",
       locationSub: "Địa điểm",
@@ -736,13 +836,16 @@ export const vi: TranslationSchema = {
       questionsCountText: "câu hỏi tùy chỉnh",
       untitledJob: "Vị trí chưa đặt tên",
       afterPublishingTitle: "Sau khi xuất bản",
-      afterPublishingDesc: "Bạn sẽ nhận được các liên kết theo dõi cho LinkedIn, Facebook, TopCV để biết chính xác nguồn ứng viên đến từ đâu.",
+      afterPublishingDesc:
+        "Bạn sẽ nhận được các liên kết theo dõi cho LinkedIn, Facebook, TopCV để biết chính xác nguồn ứng viên đến từ đâu.",
       workspaceLinkTitle: "Liên kết không gian tuyển dụng",
       workspaceLinkDesc: "Đường dẫn trực tiếp đến Pipeline:",
       dangerZoneTitle: "Vùng nguy hiểm",
-      dangerZoneDesc: "Các thao tác không thể hoàn tác đối với vị trí tuyển dụng này.",
+      dangerZoneDesc:
+        "Các thao tác không thể hoàn tác đối với vị trí tuyển dụng này.",
       deletePermanentTitle: "Xóa vĩnh viễn vị trí tuyển dụng này",
-      deletePermanentDesc: "Sau khi xóa, toàn bộ hồ sơ ứng tuyển liên quan đến vị trí này sẽ bị xóa vĩnh viễn.",
+      deletePermanentDesc:
+        "Sau khi xóa, toàn bộ hồ sơ ứng tuyển liên quan đến vị trí này sẽ bị xóa vĩnh viễn.",
       deleteJobAction: "Xóa vị trí",
       deletingAction: "Đang xóa...",
       backAction: "Quay lại",
@@ -754,12 +857,14 @@ export const vi: TranslationSchema = {
       // Delete confirmation modal
       deleteConfirmTitle: "Xóa vị trí tuyển dụng",
       deleteConfirmQuestion: 'Bạn có chắc chắn muốn xóa "{title}" không?',
-      deleteConfirmNotice: "Hành động này mang tính vĩnh viễn và không thể hoàn tác. Mọi dữ liệu ứng tuyển của vị trí này sẽ bị xóa bỏ.",
+      deleteConfirmNotice:
+        "Hành động này mang tính vĩnh viễn và không thể hoàn tác. Mọi dữ liệu ứng tuyển của vị trí này sẽ bị xóa bỏ.",
       confirmDeleteButton: "Đồng ý, Xóa vị trí",
       // Preview modal
       previewModalTitle: "Xem trước giao diện ứng viên",
       previewLiveBadge: "Xem trực tiếp",
-      previewSubtitle: "Trang hiển thị nội dung tuyển dụng và mẫu đơn mà ứng viên sẽ thấy",
+      previewSubtitle:
+        "Trang hiển thị nội dung tuyển dụng và mẫu đơn mà ứng viên sẽ thấy",
       desktop: "Máy tính",
       tablet: "Máy tính bảng",
       mobile: "Điện thoại",
@@ -781,8 +886,10 @@ export const vi: TranslationSchema = {
         postalCode: "VD: 100000",
         minSalary: "VD: 15,000,000",
         maxSalary: "VD: 30,000,000",
-        description: "Mô tả chi tiết vai trò, trách nhiệm và môi trường làm việc...",
-        requirements: "Nêu các kỹ năng, kinh nghiệm chuyên môn, chứng chỉ hoặc tiêu chuẩn cần thiết cho vị trí này...",
+        description:
+          "Mô tả chi tiết vai trò, trách nhiệm và môi trường làm việc...",
+        requirements:
+          "Nêu các kỹ năng, kinh nghiệm chuyên môn, chứng chỉ hoặc tiêu chuẩn cần thiết cho vị trí này...",
         screeningQuestion: "Nhập câu hỏi sàng lọc tùy chỉnh...",
         criterionTitle: "VD: Năng lực lãnh đạo và cố vấn đội ngũ",
         criterionDesc: "Mô tả cách thức đánh giá ứng viên theo tiêu chí này...",
@@ -827,9 +934,11 @@ export const vi: TranslationSchema = {
     fullscreen: "Toàn màn hình",
     importCsv: "Nhập CSV",
     noCandidatesYet: "Chưa có ứng viên nào",
-    noCandidatesYetDesc: "Thêm ứng viên đầu tiên để bắt đầu xây dựng nguồn nhân tài của bạn.",
+    noCandidatesYetDesc:
+      "Thêm ứng viên đầu tiên để bắt đầu xây dựng nguồn nhân tài của bạn.",
     dropCv: "Kéo thả CV vào đây để tự động điền",
-    dropCvHint: "Định dạng PDF, DOC hoặc DOCX — Bao gồm cả hồ sơ LinkedIn xuất dạng PDF.",
+    dropCvHint:
+      "Định dạng PDF, DOC hoặc DOCX — Bao gồm cả hồ sơ LinkedIn xuất dạng PDF.",
     chooseFile: "Chọn tệp từ máy",
     cvAttached: "Đã đính kèm CV ({size} KB)",
     removeFile: "Gỡ tệp",
@@ -845,11 +954,13 @@ export const vi: TranslationSchema = {
     female: "Nữ",
     otherGender: "Khác",
     addCandidateTitle: "Thêm ứng viên mới",
-    addCandidateSubtitle: "Thêm ứng viên thủ công hoặc tải lên tệp CV để trích xuất thông tin tự động.",
+    addCandidateSubtitle:
+      "Thêm ứng viên thủ công hoặc tải lên tệp CV để trích xuất thông tin tự động.",
     editCandidateTitle: "Chỉnh sửa ứng viên",
     editCandidateSubtitle: "Cập nhật hồ sơ và thông tin cá nhân của ứng viên.",
     deleteCandidate: "Xóa ứng viên",
-    deleteCandidateConfirm: "Bạn có chắc chắn muốn xóa ứng viên này không? Toàn bộ hồ sơ ứng tuyển và tài liệu liên quan sẽ bị xóa vĩnh viễn.",
+    deleteCandidateConfirm:
+      "Bạn có chắc chắn muốn xóa ứng viên này không? Toàn bộ hồ sơ ứng tuyển và tài liệu liên quan sẽ bị xóa vĩnh viễn.",
     overviewTab: "Tổng quan",
     applicationsTab: "Hồ sơ ứng tuyển",
     documentsTab: "Tài liệu đính kèm",
@@ -864,10 +975,12 @@ export const vi: TranslationSchema = {
     allStages: "Tất cả giai đoạn",
     backToDocuments: "Quay lại danh sách tài liệu",
     clickToPreview: "Nhấn để xem trước",
-    uploadDocHint: "Tải lên CV, thư giới thiệu hoặc tài liệu khác (PDF, DOC, DOCX — tối đa 10 MB).",
+    uploadDocHint:
+      "Tải lên CV, thư giới thiệu hoặc tài liệu khác (PDF, DOC, DOCX — tối đa 10 MB).",
     noApplicationsYet: "Chưa có hồ sơ ứng tuyển nào.",
     noApplicationsMatchingStage: "Không có hồ sơ nào ở giai đoạn này.",
-    applyCandidateHint: "Gán ứng viên này vào một công việc để bắt đầu quy trình tuyển dụng.",
+    applyCandidateHint:
+      "Gán ứng viên này vào một công việc để bắt đầu quy trình tuyển dụng.",
     trySelectingDifferentStage: "Thử chọn một bộ lọc giai đoạn khác.",
     placeholders: {
       firstName: "VD: Văn A",
@@ -879,8 +992,10 @@ export const vi: TranslationSchema = {
     },
     createFailed: "Không thể thêm ứng viên. Vui lòng thử lại sau.",
     updateFailed: "Không thể cập nhật ứng viên. Vui lòng thử lại sau.",
-    invalidCandidateId: "Mã định danh ứng viên không hợp lệ. Cần một mã UUID hợp lệ.",
-    candidateNotFound: "Ứng viên bạn đang chỉnh sửa không tồn tại hoặc đã bị xóa.",
+    invalidCandidateId:
+      "Mã định danh ứng viên không hợp lệ. Cần một mã UUID hợp lệ.",
+    candidateNotFound:
+      "Ứng viên bạn đang chỉnh sửa không tồn tại hoặc đã bị xóa.",
   },
   applications: {
     title: "Hồ sơ ứng tuyển",
@@ -898,7 +1013,8 @@ export const vi: TranslationSchema = {
     allJobs: "Tất cả tin tuyển dụng",
     viewInPipeline: "Xem trong quy trình",
     deleteApplication: "Xóa hồ sơ ứng tuyển",
-    deleteApplicationConfirm: "Bạn có chắc chắn muốn xóa hồ sơ ứng tuyển này không? Thao tác này không thể hoàn tác.",
+    deleteApplicationConfirm:
+      "Bạn có chắc chắn muốn xóa hồ sơ ứng tuyển này không? Thao tác này không thể hoàn tác.",
     overview: "Tổng quan",
     documents: "Tài liệu",
     notes: "Ghi chú",
@@ -925,7 +1041,8 @@ export const vi: TranslationSchema = {
     compare: "So sánh",
     fullscreen: "Toàn màn hình",
     noApplicationsYet: "Chưa có hồ sơ ứng tuyển nào",
-    noApplicationsYetDesc: "Hồ sơ ứng tuyển sẽ xuất hiện tại đây khi các ứng viên ứng tuyển vào vị trí này.",
+    noApplicationsYetDesc:
+      "Hồ sơ ứng tuyển sẽ xuất hiện tại đây khi các ứng viên ứng tuyển vào vị trí này.",
     viewActiveJobs: "Xem tin tuyển dụng đang mở",
     backToTable: "Quay lại bảng",
     backToApplications: "Quay lại Hồ sơ ứng tuyển",
@@ -941,37 +1058,47 @@ export const vi: TranslationSchema = {
     addOrgProperty: "+ Thêm thuộc tính tổ chức",
     manageJobProperties: "Quản lý thuộc tính theo công việc",
     submitApplicationTitle: "Nộp hồ sơ ứng tuyển",
-    submitApplicationDesc: "Tải lên CV ứng viên (PDF) và lưu trữ trực tiếp vào kho lưu trữ MinIO.",
+    submitApplicationDesc:
+      "Tải lên CV ứng viên (PDF) và lưu trữ trực tiếp vào kho lưu trữ MinIO.",
     applicationSubmittedSuccess: "Nộp hồ sơ ứng tuyển thành công!",
-    applicationSubmittedDesc: "CV đã được tải lên MinIO và chuyển vào quy trình tuyển dụng.",
+    applicationSubmittedDesc:
+      "CV đã được tải lên MinIO và chuyển vào quy trình tuyển dụng.",
     onlyPdfAccepted: "Hệ thống chỉ chấp nhận tệp CV định dạng PDF.",
-    fillRequiredFields: "Vui lòng nhập tên ứng viên, email và chọn vị trí ứng tuyển.",
-    attachResumeRequired: "Vui lòng đính kèm tệp CV định dạng PDF để nộp hồ sơ.",
+    fillRequiredFields:
+      "Vui lòng nhập tên ứng viên, email và chọn vị trí ứng tuyển.",
+    attachResumeRequired:
+      "Vui lòng đính kèm tệp CV định dạng PDF để nộp hồ sơ.",
     applyingForPosition: "Ứng tuyển vào vị trí",
     selectTargetRole: "Chọn vị trí ứng tuyển",
     dragDropResume: "hoặc kéo thả tệp CV vào đây",
     pdfUpTo10Mb: "Tài liệu PDF dung lượng tối đa 10MB",
     submitApplication: "Nộp hồ sơ",
     uploadingToStorage: "Đang tải lên MinIO...",
-    submitFailed: "Không thể tải lên CV và nộp đơn ứng tuyển. Vui lòng kiểm tra lại trạng thái máy chủ.",
+    submitFailed:
+      "Không thể tải lên CV và nộp đơn ứng tuyển. Vui lòng kiểm tra lại trạng thái máy chủ.",
     applyToJobTitle: "Ứng tuyển vào vị trí",
     noActiveJobs: "Hiện chưa có vị trí tuyển dụng nào đang mở.",
     appliedBadge: "Đã nộp",
     applyButton: "Ứng tuyển",
     deleteApplicationHeading: "Xóa hồ sơ ứng tuyển",
-    deleteApplicationWarning: "Các câu trả lời, lịch phỏng vấn, điểm đánh giá và tin nhắn của hồ sơ này sẽ bị xóa vĩnh viễn. Thông tin ứng viên vẫn được giữ lại trong danh bạ.",
+    deleteApplicationWarning:
+      "Các câu trả lời, lịch phỏng vấn, điểm đánh giá và tin nhắn của hồ sơ này sẽ bị xóa vĩnh viễn. Thông tin ứng viên vẫn được giữ lại trong danh bạ.",
     deleteCandidateHeading: "Xóa ứng viên",
     deleteCandidateDescription: "Bạn đang yêu cầu xóa ứng viên {name}.",
-    deleteCandidateWarning: "Dữ liệu ứng viên vẫn được lưu giữ và có thể khôi phục trong phần Cài đặt — Quyền riêng tư & Lưu trữ. Không có dữ liệu nào bị xóa vĩnh viễn tại đây.",
+    deleteCandidateWarning:
+      "Dữ liệu ứng viên vẫn được lưu giữ và có thể khôi phục trong phần Cài đặt — Quyền riêng tư & Lưu trữ. Không có dữ liệu nào bị xóa vĩnh viễn tại đây.",
     deleteDocumentHeading: "Xóa tài liệu",
-    deleteDocumentWarning: "Bạn có chắc chắn muốn xóa tài liệu này không? Thao tác này không thể hoàn tác.",
+    deleteDocumentWarning:
+      "Bạn có chắc chắn muốn xóa tài liệu này không? Thao tác này không thể hoàn tác.",
     noMessagesYet: "Chưa có tin nhắn nào",
-    noMessagesYetDesc: "Các trao đổi qua email với ứng viên sẽ hiển thị tại đây.",
+    noMessagesYetDesc:
+      "Các trao đổi qua email với ứng viên sẽ hiển thị tại đây.",
     timelineTitle: "Dòng thời gian hồ sơ",
     appliedOn: "Đã nộp vào ngày",
     applicationNotFound: "Không tìm thấy hồ sơ ứng tuyển",
     invalidAppId: "Mã định danh hồ sơ không hợp lệ. Yêu cầu UUID chuẩn.",
-    appNotFoundDesc: "Hồ sơ ứng tuyển bạn đang tìm không tồn tại hoặc đã bị gỡ bỏ.",
+    appNotFoundDesc:
+      "Hồ sơ ứng tuyển bạn đang tìm không tồn tại hoặc đã bị gỡ bỏ.",
     tabs: {
       overview: "Tổng quan",
       inbox: "Hộp thư",
@@ -1007,7 +1134,8 @@ export const vi: TranslationSchema = {
   interviews: {
     title: "Không gian Phỏng vấn",
     badge: "Sắp ra mắt",
-    description: "Tính năng quản lý phỏng vấn hiện đang được hoàn thiện. Bạn sẽ sớm có thể lên lịch phỏng vấn tự động, đồng bộ hóa lịch và gửi bảng đánh giá ứng viên tại đây.",
+    description:
+      "Tính năng quản lý phỏng vấn hiện đang được hoàn thiện. Bạn sẽ sớm có thể lên lịch phỏng vấn tự động, đồng bộ hóa lịch và gửi bảng đánh giá ứng viên tại đây.",
     backToDashboard: "Quay lại Bảng điều khiển",
     calendar: "Lịch",
     grid: "Lưới",
@@ -1033,16 +1161,21 @@ export const vi: TranslationSchema = {
     overallRating: "Đánh giá tổng quan",
     criteriaTitle: "Tiêu chí đánh giá cốt lõi",
     technicalCriteria: "Kỹ năng chuyên môn / Kỹ thuật",
-    technicalDesc: "Đánh giá kiến thức nền tảng, kinh nghiệm thực chiến và năng lực giải quyết vấn đề kỹ thuật.",
+    technicalDesc:
+      "Đánh giá kiến thức nền tảng, kinh nghiệm thực chiến và năng lực giải quyết vấn đề kỹ thuật.",
     communicationCriteria: "Kỹ năng giao tiếp & Diễn đạt",
-    communicationDesc: "Khả năng trình bày, lắng nghe, phản biện rõ ràng và phối hợp làm việc nhóm.",
+    communicationDesc:
+      "Khả năng trình bày, lắng nghe, phản biện rõ ràng và phối hợp làm việc nhóm.",
     cultureFitCriteria: "Độ phù hợp văn hóa tổ chức",
-    cultureFitDesc: "Sự đồng điệu về giá trị cốt lõi, tinh thần trách nhiệm, thái độ và phong cách làm việc.",
+    cultureFitDesc:
+      "Sự đồng điệu về giá trị cốt lõi, tinh thần trách nhiệm, thái độ và phong cách làm việc.",
     problemSolvingCriteria: "Tư duy & Giải quyết vấn đề",
-    problemSolvingDesc: "Khả năng tư duy logic, thích ứng linh hoạt và tiếp cận xử lý tình huống phức tạp.",
+    problemSolvingDesc:
+      "Khả năng tư duy logic, thích ứng linh hoạt và tiếp cận xử lý tình huống phức tạp.",
     hiringRecommendation: "Khuyến nghị tuyển dụng",
     detailedFeedback: "Nhận xét & Đánh giá chi tiết",
-    feedbackPlaceholder: "Ghi lại điểm mạnh, điểm cần cải thiện hoặc lý do đưa ra khuyến nghị tuyển dụng trên...",
+    feedbackPlaceholder:
+      "Ghi lại điểm mạnh, điểm cần cải thiện hoặc lý do đưa ra khuyến nghị tuyển dụng trên...",
     saveScorecard: "Lưu phiếu đánh giá",
     savingScorecard: "Đang lưu...",
     recommendations: {
@@ -1066,7 +1199,8 @@ export const vi: TranslationSchema = {
     scoreLabel: "Điểm đánh giá",
     notRated: "Chưa chấm điểm",
     rateNow: "+ Chấm điểm",
-    pageSubtitle: "Quản lý lịch hẹn phỏng vấn, liên kết phòng họp trực tuyến và điều phối quy trình tuyển dụng.",
+    pageSubtitle:
+      "Quản lý lịch hẹn phỏng vấn, liên kết phòng họp trực tuyến và điều phối quy trình tuyển dụng.",
     candidatesCount: "{count} ứng viên",
     candidatesUnit: "ứng viên",
     scheduleNew: "Lên lịch phỏng vấn mới",
@@ -1084,7 +1218,8 @@ export const vi: TranslationSchema = {
     sortNewest: "Ứng tuyển mới nhất",
     sortName: "Tên ứng viên (A - Z)",
     noInterviewsFound: "Chưa có ứng viên nào trong danh sách",
-    noInterviewsFoundDesc: "Không tìm thấy ứng viên phù hợp với tiêu chí lọc hiện tại.",
+    noInterviewsFoundDesc:
+      "Không tìm thấy ứng viên phù hợp với tiêu chí lọc hiện tại.",
     hasScheduleBadge: "Đã có lịch",
     roundsBadge: "{count} vòng PV",
     awaitingScheduleBadge: "Chờ lên lịch",
@@ -1101,7 +1236,8 @@ export const vi: TranslationSchema = {
     locationLabel: "Địa điểm: {location}",
     ratedStatus: "(Đã đánh giá)",
     scorecardAction: "Chấm điểm phỏng vấn",
-    readyForInterviewDesc: "Ứng viên đã vượt qua sơ loại, hiện chưa được lên lịch hẹn cụ thể.",
+    readyForInterviewDesc:
+      "Ứng viên đã vượt qua sơ loại, hiện chưa được lên lịch hẹn cụ thể.",
     previousRoundsCount: "Đã qua {count} vòng trước đó",
     scorecardBoard: "Bảng đánh giá",
     updateSchedule: "Cập nhật lịch",
@@ -1130,7 +1266,8 @@ export const vi: TranslationSchema = {
     notScheduledYet: "Chưa xếp lịch",
     roundsCount: "{count} vòng",
     joinMeetingShort: "Họp",
-    showingPagination: "Hiển thị {start} - {end} trong tổng số {total} ứng viên",
+    showingPagination:
+      "Hiển thị {start} - {end} trong tổng số {total} ứng viên",
     previous: "Trước",
     next: "Sau",
     modalTitle: "Lên lịch phỏng vấn",
@@ -1203,20 +1340,23 @@ export const vi: TranslationSchema = {
     updateBtn: "Cập nhật",
     ratingResult: "Đánh giá kết quả: {score} / 5 sao",
     recommendationLabel: "Đề xuất: {recommendation}",
-    modalSubtitle: "Thiết lập thời gian, hình thức và người đánh giá cho buổi phỏng vấn. Dữ liệu sẽ đồng bộ tự động trên toàn hệ thống.",
+    modalSubtitle:
+      "Thiết lập thời gian, hình thức và người đánh giá cho buổi phỏng vấn. Dữ liệu sẽ đồng bộ tự động trên toàn hệ thống.",
     targetJobAndCandidate: "Vị trí tuyển dụng & Ứng viên",
     officeAddressLabel: "Địa chỉ văn phòng / Phòng họp trực tiếp",
     meetingUrlLabel: "Đường dẫn phòng họp trực tuyến",
     requiredLabel: "Bắt buộc",
     overallRatingTitle: "Điểm Đánh Giá Tổng Thể",
-    overallRatingSubtitle: "Mức độ ấn tượng chung về năng lực và tiềm năng của ứng viên",
+    overallRatingSubtitle:
+      "Mức độ ấn tượng chung về năng lực và tiềm năng của ứng viên",
     competencyTitle: "Đánh giá theo bộ tiêu chí",
     openMeetingShort: "Vào họp",
     viewEvaluation: "Xem đánh giá",
     rateStar: "Chấm điểm ⭐",
     close: "Đóng",
     cancelInterviewTitle: "Hủy lịch phỏng vấn",
-    cancelInterviewWarning: "Buổi phỏng vấn này sẽ bị hủy và xóa khỏi lịch trình. Thao tác này không thể hoàn tác.",
+    cancelInterviewWarning:
+      "Buổi phỏng vấn này sẽ bị hủy và xóa khỏi lịch trình. Thao tác này không thể hoàn tác.",
     errors: {
       selectCandidate: "Vui lòng chọn ứng viên.",
       selectDate: "Vui lòng chọn ngày phỏng vấn.",
@@ -1226,7 +1366,8 @@ export const vi: TranslationSchema = {
       enterInterviewer: "Vui lòng nhập hoặc chọn người phỏng vấn.",
       candidateNotFound: "Không tìm thấy thông tin ứng viên.",
       saveFailed: "Có lỗi xảy ra khi lưu lịch phỏng vấn. Vui lòng thử lại.",
-      saveScorecardFailed: "Đã có lỗi xảy ra khi lưu phiếu đánh giá. Vui lòng thử lại.",
+      saveScorecardFailed:
+        "Đã có lỗi xảy ra khi lưu phiếu đánh giá. Vui lòng thử lại.",
     },
   },
   members: {
@@ -1248,9 +1389,11 @@ export const vi: TranslationSchema = {
     revokeLink: "Hủy liên kết",
     removeMember: "Xóa khỏi nhóm",
     removeMemberConfirmTitle: "Xóa thành viên khỏi tổ chức",
-    removeMemberConfirmWarning: "Thành viên này sẽ mất quyền truy cập vào toàn bộ dữ liệu của tổ chức. Thao tác này không thể hoàn tác.",
+    removeMemberConfirmWarning:
+      "Thành viên này sẽ mất quyền truy cập vào toàn bộ dữ liệu của tổ chức. Thao tác này không thể hoàn tác.",
     revokeLinkConfirmTitle: "Thu hồi liên kết mời",
-    revokeLinkConfirmWarning: "Liên kết mời này sẽ bị vô hiệu hóa ngay lập tức và không thể sử dụng để tham gia tổ chức nữa.",
+    revokeLinkConfirmWarning:
+      "Liên kết mời này sẽ bị vô hiệu hóa ngay lập tức và không thể sử dụng để tham gia tổ chức nữa.",
     roleOwner: "Chủ sở hữu",
     roleAdmin: "Quản trị viên",
     roleMember: "Thành viên",
@@ -1260,7 +1403,8 @@ export const vi: TranslationSchema = {
     uses1: "1 lượt dùng",
     usesUnlimited: "Không giới hạn lượt dùng",
     noActiveInviteLinks: "Chưa có liên kết mời nào",
-    noActiveInviteLinksDesc: "Tạo liên kết mời có hạn sử dụng hoặc một lần dùng với vai trò cụ thể để mời đội ngũ của bạn.",
+    noActiveInviteLinksDesc:
+      "Tạo liên kết mời có hạn sử dụng hoặc một lần dùng với vai trò cụ thể để mời đội ngũ của bạn.",
   },
   onboarding: {
     selectOrgTitle: "Chọn tổ chức làm việc",
@@ -1273,7 +1417,8 @@ export const vi: TranslationSchema = {
     joinOrgLink: "Tham gia tổ chức đã có",
     backToSelect: "Quay lại chọn tổ chức",
     createOrgTitle: "Tạo tổ chức mới",
-    createOrgSubtitle: "Thiết lập không gian làm việc mới để bắt đầu quản lý tin tuyển dụng và ứng viên.",
+    createOrgSubtitle:
+      "Thiết lập không gian làm việc mới để bắt đầu quản lý tin tuyển dụng và ứng viên.",
     orgNameLabel: "Tên tổ chức",
     orgNamePlaceholder: "Ví dụ: Acme Corp",
     slugLabel: "Đường dẫn định danh",
@@ -1282,12 +1427,15 @@ export const vi: TranslationSchema = {
     createOrgButton: "Tạo tổ chức",
     creatingOrg: "Đang tạo tổ chức...",
     joinOrgTitle: "Tham gia tổ chức",
-    joinOrgSubtitle: "Dán liên kết mời hoặc mã token để gia nhập không gian làm việc của đội ngũ.",
+    joinOrgSubtitle:
+      "Dán liên kết mời hoặc mã token để gia nhập không gian làm việc của đội ngũ.",
     inviteLinkBoxTitle: "Liên kết mời",
-    inviteLinkPlaceholder: "Dán liên kết mời (ví dụ: http://.../auth/join/...) hoặc token",
+    inviteLinkPlaceholder:
+      "Dán liên kết mời (ví dụ: http://.../auth/join/...) hoặc token",
     joinButton: "Tham gia",
     joining: "Đang tham gia...",
-    inviteLinkHint: "Hãy yêu cầu quản trị viên hoặc chủ sở hữu tổ chức gửi cho bạn liên kết mời.",
+    inviteLinkHint:
+      "Hãy yêu cầu quản trị viên hoặc chủ sở hữu tổ chức gửi cho bạn liên kết mời.",
     createOrgInstead: "Tạo tổ chức mới thay thế",
     joinOrgInstead: "Tham gia tổ chức đã có thay thế",
   },
@@ -1322,32 +1470,42 @@ export const vi: TranslationSchema = {
     admin: "Quản trị viên",
     member: "Thành viên",
     urlSlug: "Đường dẫn định danh",
-    slugHint: "Dùng làm đường dẫn trang tuyển dụng công khai. Chỉ gồm chữ cái thường, số và dấu gạch nối.",
-    readOnlyAdmin: "Quyền chỉ xem: chỉ Quản trị viên mới có thể cập nhật hồ sơ tổ chức.",
+    slugHint:
+      "Dùng làm đường dẫn trang tuyển dụng công khai. Chỉ gồm chữ cái thường, số và dấu gạch nối.",
+    readOnlyAdmin:
+      "Quyền chỉ xem: chỉ Quản trị viên mới có thể cập nhật hồ sơ tổ chức.",
     dangerZone: "Khu vực nguy hiểm",
     dangerZoneDesc: "Các thao tác phá hủy và không thể khôi phục.",
     deleteOrg: "Xóa tổ chức",
-    deleteOrgDesc: "Xóa vĩnh viễn tổ chức này, toàn bộ tin tuyển dụng, hồ sơ ứng viên và quyền truy cập của thành viên.",
-    deleteOrgConfirmPrompt: "Hành động này không thể hoàn tác. Để xác nhận xóa, hãy nhập mã slug {slug} của bạn bên dưới:",
+    deleteOrgDesc:
+      "Xóa vĩnh viễn tổ chức này, toàn bộ tin tuyển dụng, hồ sơ ứng viên và quyền truy cập của thành viên.",
+    deleteOrgConfirmPrompt:
+      "Hành động này không thể hoàn tác. Để xác nhận xóa, hãy nhập mã slug {slug} của bạn bên dưới:",
     deleteOrgTypeToConfirm: "Nhập {slug} để xác nhận",
     deleteOrgButton: "Xóa tổ chức vĩnh viễn",
     deletingOrg: "Đang xóa tổ chức...",
     timeZone: "Múi giờ",
     newApplicationAlert: "Thông báo khi có ứng viên mới",
-    newApplicationAlertDesc: "Nhận email thông báo tức thì ngay khi có ứng viên nộp hồ sơ.",
+    newApplicationAlertDesc:
+      "Nhận email thông báo tức thì ngay khi có ứng viên nộp hồ sơ.",
     dailyDigest: "Bản tin tổng hợp hàng ngày",
-    dailyDigestDesc: "Tổng hợp biến động quy trình tuyển dụng và lịch phỏng vấn vào mỗi buổi sáng.",
+    dailyDigestDesc:
+      "Tổng hợp biến động quy trình tuyển dụng và lịch phỏng vấn vào mỗi buổi sáng.",
     publicJobBoardLink: "Liên kết trang tuyển dụng công khai",
-    publicJobBoardDesc: "Các tin tuyển dụng ở trạng thái 'Đã xuất bản' sẽ tự động xuất hiện trên trang tuyển dụng công khai.",
+    publicJobBoardDesc:
+      "Các tin tuyển dụng ở trạng thái 'Đã xuất bản' sẽ tự động xuất hiện trên trang tuyển dụng công khai.",
     preview: "Xem trước",
     freeStarterPlan: "Gói Khởi đầu Miễn phí",
     oneActiveJobSlot: "1 Vị trí tuyển dụng mở",
-    upgradeToProDesc: "Nâng cấp lên gói Chuyên nghiệp để đăng không giới hạn vị trí và sử dụng AI xếp hạng ứng viên.",
+    upgradeToProDesc:
+      "Nâng cấp lên gói Chuyên nghiệp để đăng không giới hạn vị trí và sử dụng AI xếp hạng ứng viên.",
     yourName: "Họ và tên của bạn",
     emailAddress: "Địa chỉ email",
     proEnterpriseFeature: "Tính năng Nâng cao & Doanh nghiệp",
-    proEnterpriseDesc: "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
-    enterpriseFeatureDesc: "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
+    proEnterpriseDesc:
+      "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
+    enterpriseFeatureDesc:
+      "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
     viewUpgradePlans: "Xem các gói nâng cấp",
     tabs: {
       general: "Chung",
@@ -1381,7 +1539,8 @@ export const vi: TranslationSchema = {
     },
     integrations: {
       title: "Tích hợp & Webhook",
-      description: "Quản lý các kết nối webhook tùy chỉnh để nhận thông báo thời gian thực về sự kiện tuyển dụng và cảnh báo hệ thống.",
+      description:
+        "Quản lý các kết nối webhook tùy chỉnh để nhận thông báo thời gian thực về sự kiện tuyển dụng và cảnh báo hệ thống.",
       tabs: {
         webhooks: "Webhooks",
       },
@@ -1401,12 +1560,14 @@ export const vi: TranslationSchema = {
           provider: "Nền tảng cung cấp",
           webhookUrl: "Địa chỉ Webhook URL",
           webhookUrlHint: {
-            telegram: "Định dạng: https://api.telegram.org/bot<token>/sendMessage",
+            telegram:
+              "Định dạng: https://api.telegram.org/bot<token>/sendMessage",
             discord: "Định dạng: https://discord.com/api/webhooks/<id>/<token>",
             generic: "Bắt buộc giao thức HTTPS bảo mật",
           },
           secretToken: "Mã bí mật (Secret Token)",
-          secretTokenHint: "Khóa bí mật dùng để xác thực chữ ký HMAC-SHA256 (Tùy chọn)",
+          secretTokenHint:
+            "Khóa bí mật dùng để xác thực chữ ký HMAC-SHA256 (Tùy chọn)",
           chatId: "ID Nhóm / Kênh Chat (Chat ID)",
           chatIdHint: "Bắt buộc cho Telegram (ví dụ: -100123456789)",
           isEnabled: "Kích hoạt nhận sự kiện",
@@ -1420,7 +1581,8 @@ export const vi: TranslationSchema = {
         },
         deleteConfirm: {
           title: "Xóa cấu hình Webhook",
-          message: "Bạn có chắc chắn muốn xóa cấu hình webhook này? Hành động này không thể hoàn tác.",
+          message:
+            "Bạn có chắc chắn muốn xóa cấu hình webhook này? Hành động này không thể hoàn tác.",
           confirm: "Xóa Webhook",
           cancel: "Hủy bỏ",
         },
@@ -1435,7 +1597,8 @@ export const vi: TranslationSchema = {
           GENERIC: "Generic Webhook (Custom)",
         },
         emptyState: "Chưa có webhook nào được cấu hình cho tổ chức của bạn.",
-        adminOnly: "Chỉ Quản trị viên (Admin) mới có quyền quản lý cấu hình webhook.",
+        adminOnly:
+          "Chỉ Quản trị viên (Admin) mới có quyền quản lý cấu hình webhook.",
         enabled: "Hoạt động",
         disabled: "Tạm dừng",
       },
@@ -1464,8 +1627,10 @@ export const vi: TranslationSchema = {
     heroBadge: "Khám phá công ty & Cơ hội nghề nghiệp",
     heroTitlePart1: "Khám phá các doanh nghiệp đang",
     heroTitleHighlight: "mở tuyển dụng",
-    heroDesc: "Tìm kiếm cơ hội việc làm hấp dẫn từ các công ty hàng đầu đang sử dụng nền tảng {brand}. Nộp đơn trực tiếp chỉ với 1 bước tải lên CV.",
-    searchPlaceholder: "Tìm theo tên công ty, vị trí ứng tuyển, kỹ năng hoặc phòng ban...",
+    heroDesc:
+      "Tìm kiếm cơ hội việc làm hấp dẫn từ các công ty hàng đầu đang sử dụng nền tảng {brand}. Nộp đơn trực tiếp chỉ với 1 bước tải lên CV.",
+    searchPlaceholder:
+      "Tìm theo tên công ty, vị trí ứng tuyển, kỹ năng hoặc phòng ban...",
     clearSearch: "Xóa",
     filterDepartment: "Tất cả phòng ban",
     filterWorkplace: "Tất cả hình thức",
@@ -1484,29 +1649,35 @@ export const vi: TranslationSchema = {
     moreRoles: "+{count} vị trí khác",
     viewCompanyPortal: "Xem cổng tuyển dụng",
     noCompaniesFound: "Không tìm thấy công ty phù hợp",
-    noCompaniesDesc: "Hãy thử điều chỉnh từ khóa tìm kiếm hoặc chọn phòng ban khác.",
-    companyNotFoundMatching: "Không có doanh nghiệp nào phù hợp với từ khóa “{query}”. Vui lòng thử tìm với từ khóa khác.",
+    noCompaniesDesc:
+      "Hãy thử điều chỉnh từ khóa tìm kiếm hoặc chọn phòng ban khác.",
+    companyNotFoundMatching:
+      "Không có doanh nghiệp nào phù hợp với từ khóa “{query}”. Vui lòng thử tìm với từ khóa khác.",
     clearFilter: "Xóa bộ lọc",
     applyNow: "Nộp hồ sơ ngay",
     applyArrow: "Ứng tuyển →",
     viewAllRolesAndApply: "Xem tất cả {count} vị trí & nộp đơn",
     companyPage: "Trang công ty",
     noJobsFound: "Không tìm thấy vị trí tuyển dụng",
-    noJobsDesc: "Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn bộ lọc phòng ban.",
+    noJobsDesc:
+      "Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn bộ lọc phòng ban.",
     loadingCompanies: "Đang tải danh sách công ty tuyển dụng...",
     loadingPortal: "Đang tải trang cơ hội nghề nghiệp...",
     loadingJob: "Đang tải thông tin vị trí tuyển dụng...",
     orgNotFound: "Không tìm thấy tổ chức",
-    orgNotFoundDesc: "Tổ chức \"{slug}\" không tồn tại hoặc chưa kích hoạt trang nghề nghiệp công khai.",
+    orgNotFoundDesc:
+      'Tổ chức "{slug}" không tồn tại hoặc chưa kích hoạt trang nghề nghiệp công khai.',
     jobNotFound: "Không tìm thấy vị trí tuyển dụng",
-    jobNotFoundDesc: "Vị trí này có thể không tồn tại hoặc đường dẫn không còn chính xác.",
+    jobNotFoundDesc:
+      "Vị trí này có thể không tồn tại hoặc đường dẫn không còn chính xác.",
     backToHome: "Về trang chủ",
     backToJobList: "Về danh sách việc làm",
     backToOrgJobs: "Tất cả vị trí tại {name}",
     viewOtherJobs: "Xem các vị trí khác",
     hiringTalentBadge: "Chúng tôi đang tuyển dụng tài năng mới!",
     buildCareerWith: "Xây dựng sự nghiệp vững chắc cùng",
-    companyHeroDesc: "Khám phá các cơ hội nghề nghiệp thú vị, môi trường làm việc cởi mở, sáng tạo cùng chế độ đãi ngộ hấp dẫn. Hãy cùng chúng tôi tạo nên những bước đột phá tiếp theo.",
+    companyHeroDesc:
+      "Khám phá các cơ hội nghề nghiệp thú vị, môi trường làm việc cởi mở, sáng tạo cùng chế độ đãi ngộ hấp dẫn. Hãy cùng chúng tôi tạo nên những bước đột phá tiếp theo.",
     openPositions: "Vị trí đang mở",
     departmentsCount: "Phòng ban",
     searchInCompany: "Tìm kiếm theo chức danh, địa điểm hoặc từ khóa...",
@@ -1514,19 +1685,24 @@ export const vi: TranslationSchema = {
     allTypesOption: "Tất cả hình thức",
     viewDetailAndApply: "Xem chi tiết & Ứng tuyển",
     noCompanyJobs: "Hiện chưa có vị trí phù hợp",
-    noCompanyJobsDesc: "Hãy thử thay đổi từ khóa tìm kiếm hoặc chọn phòng ban khác để xem thêm công việc.",
+    noCompanyJobsDesc:
+      "Hãy thử thay đổi từ khóa tìm kiếm hoặc chọn phòng ban khác để xem thêm công việc.",
     resetFilter: "Đặt lại bộ lọc",
     jobDescription: "Mô tả công việc",
     requirements: "Yêu cầu ứng viên",
     salaryNegotiable: "Thương lượng",
     allJobsAt: "Tất cả vị trí tại {org}",
     aboutCompany: "Về {org}",
-    aboutCompanyDesc: "Hồ sơ của bạn sẽ được gửi trực tiếp đến bộ phận nhân sự của công ty.",
-    privacyNotice: "Bằng việc nộp đơn ứng tuyển, bạn đồng ý cho phép nhà tuyển dụng liên hệ và xử lý dữ liệu hồ sơ theo quy định.",
+    aboutCompanyDesc:
+      "Hồ sơ của bạn sẽ được gửi trực tiếp đến bộ phận nhân sự của công ty.",
+    privacyNotice:
+      "Bằng việc nộp đơn ứng tuyển, bạn đồng ý cho phép nhà tuyển dụng liên hệ và xử lý dữ liệu hồ sơ theo quy định.",
     transparentProcessTitle: "Quy trình tuyển dụng minh bạch",
-    transparentProcessDesc: "Hồ sơ của bạn được lưu trữ an toàn và bảo mật. Sau khi tiếp nhận, đội ngũ nhân sự của {orgName} sẽ xem xét và phản hồi trực tiếp qua email của bạn.",
+    transparentProcessDesc:
+      "Hồ sơ của bạn được lưu trữ an toàn và bảo mật. Sau khi tiếp nhận, đội ngũ nhân sự của {orgName} sẽ xem xét và phản hồi trực tiếp qua email của bạn.",
     applicationFormTitle: "Nộp đơn ứng tuyển",
-    applicationFormSubtitle: "Điền thông tin và đính kèm CV của bạn để ứng tuyển vào vị trí này.",
+    applicationFormSubtitle:
+      "Điền thông tin và đính kèm CV của bạn để ứng tuyển vào vị trí này.",
     lastName: "Họ và tên đệm",
     firstName: "Tên",
     email: "Địa chỉ Email",
@@ -1541,7 +1717,8 @@ export const vi: TranslationSchema = {
     submitting: "Đang nộp hồ sơ...",
     submitApplication: "Nộp hồ sơ ứng tuyển ngay",
     submitSuccessTitle: "Ứng tuyển thành công!",
-    submitSuccessDesc: "Cảm ơn {name}! Hồ sơ của bạn cho vị trí {jobTitle} đã được chuyển trực tiếp đến bộ phận tuyển dụng tại {orgName}.",
+    submitSuccessDesc:
+      "Cảm ơn {name}! Hồ sơ của bạn cho vị trí {jobTitle} đã được chuyển trực tiếp đến bộ phận tuyển dụng tại {orgName}.",
     contactEmail: "Email liên hệ:",
     attachedFile: "Tệp hồ sơ:",
     applyAnother: "Nộp hồ sơ vị trí khác",
@@ -1551,23 +1728,27 @@ export const vi: TranslationSchema = {
     errorResume: "Vui lòng đính kèm tệp CV của bạn (PDF/DOCX).",
     errorGeneric: "Đã có lỗi xảy ra khi nộp hồ sơ. Vui lòng thử lại.",
     fileTooLarge: "Kích thước tệp vượt quá giới hạn 10MB.",
-    fileInvalidType: "Định dạng tệp không được hỗ trợ. Vui lòng tải lên file PDF, DOC hoặc DOCX.",
+    fileInvalidType:
+      "Định dạng tệp không được hỗ trợ. Vui lòng tải lên file PDF, DOC hoặc DOCX.",
     placeholders: {
       lastName: "Ví dụ: Nguyễn Văn",
       firstName: "Ví dụ: An",
       email: "nguyenvana@example.com",
       phone: "0912 345 678",
-      notes: "Chia sẻ thêm về bản thân, thời gian có thể bắt đầu làm việc, hoặc lý do bạn quan tâm đến vị trí này...",
+      notes:
+        "Chia sẻ thêm về bản thân, thời gian có thể bắt đầu làm việc, hoặc lý do bạn quan tâm đến vị trí này...",
     },
     jobClosed: {
       title: "Vị trí này đã đóng",
-      description: "Vị trí tuyển dụng này hiện đã ngừng tiếp nhận hồ sơ ứng tuyển mới. Bạn có thể tham khảo các cơ hội nghề nghiệp khác tại tổ chức.",
+      description:
+        "Vị trí tuyển dụng này hiện đã ngừng tiếp nhận hồ sơ ứng tuyển mới. Bạn có thể tham khảo các cơ hội nghề nghiệp khác tại tổ chức.",
       viewOtherJobs: "Xem các vị trí khác",
     },
   },
   email: {
     templatesTitle: "Mẫu Email Tuyển dụng",
-    templatesSubtitle: "Cấu hình các mẫu email tự động gửi cho ứng viên theo từng giai đoạn trong quy trình tuyển dụng.",
+    templatesSubtitle:
+      "Cấu hình các mẫu email tự động gửi cho ứng viên theo từng giai đoạn trong quy trình tuyển dụng.",
     tabTemplates: "Mẫu Email",
     tabSettings: "Cấu hình Gửi thư (SMTP)",
     tabLogs: "Nhật ký Gửi thư (Outbox)",
@@ -1575,9 +1756,11 @@ export const vi: TranslationSchema = {
     subject: "Tiêu đề email",
     body: "Nội dung email (Hỗ trợ HTML & Biến động)",
     enableAutoSend: "Tự động gửi email này",
-    enableAutoSendDesc: "Hệ thống sẽ tự động kích hoạt gửi mẫu thư này khi sự kiện tương ứng phát sinh trong quy trình tuyển dụng.",
+    enableAutoSendDesc:
+      "Hệ thống sẽ tự động kích hoạt gửi mẫu thư này khi sự kiện tương ứng phát sinh trong quy trình tuyển dụng.",
     insertVariable: "Chèn biến động",
-    insertVariableHint: "Nhấp vào biến bên dưới để tự động chèn vào vị trí con trỏ trong nội dung thư:",
+    insertVariableHint:
+      "Nhấp vào biến bên dưới để tự động chèn vào vị trí con trỏ trong nội dung thư:",
     livePreview: "Xem trước giao diện thực tế",
     previewDeviceDesktop: "Máy tính",
     previewDeviceTablet: "Máy tính bảng",
@@ -1587,11 +1770,14 @@ export const vi: TranslationSchema = {
     templateSavedSuccess: "Đã lưu thành công mẫu email!",
     templateResetSuccess: "Đã khôi phục mẫu email về nội dung mặc định.",
     providerTitle: "Dịch vụ Gửi Email (Email Provider)",
-    providerDesc: "Chọn phương thức gửi email của tổ chức. Chế độ 'Mô phỏng' được khuyến nghị cho môi trường thử nghiệm / dev.",
+    providerDesc:
+      "Chọn phương thức gửi email của tổ chức. Chế độ 'Mô phỏng' được khuyến nghị cho môi trường thử nghiệm / dev.",
     providerSimulated: "Mô phỏng nội bộ (In-App Simulator)",
-    providerSimulatedDesc: "Gửi và ghi log trực tiếp trong ứng dụng mà không cần tài khoản SMTP thật.",
+    providerSimulatedDesc:
+      "Gửi và ghi log trực tiếp trong ứng dụng mà không cần tài khoản SMTP thật.",
     providerSmtp: "Máy chủ SMTP Doanh nghiệp",
-    providerSmtpDesc: "Kết nối máy chủ thư điện tử tiêu chuẩn (Google Workspace, Microsoft 365, Postfix,...).",
+    providerSmtpDesc:
+      "Kết nối máy chủ thư điện tử tiêu chuẩn (Google Workspace, Microsoft 365, Postfix,...).",
     providerResend: "Resend",
     providerResendDesc: "Dịch vụ gửi email hiện đại dành cho nhà phát triển.",
     providerSendGrid: "SendGrid",
@@ -1608,12 +1794,15 @@ export const vi: TranslationSchema = {
     sendgridApiKeyLabel: "Khóa API SendGrid",
     deliveryFailedDesc: "Không thể gửi thư hoặc bị máy chủ thư từ chối.",
     testEmailSection: "Gửi Email Thử Nghiệm",
-    testEmailDesc: "Kiểm tra kết nối và tính năng gửi email đến một hòm thư cụ thể trước khi áp dụng thực tế.",
+    testEmailDesc:
+      "Kiểm tra kết nối và tính năng gửi email đến một hòm thư cụ thể trước khi áp dụng thực tế.",
     testEmailPlaceholder: "nhap-email-nhan@example.com",
     sendTestBtn: "Gửi email thử nghiệm",
-    testSentSuccess: "Đã gửi email thử nghiệm thành công! Vui lòng kiểm tra hộp thư đến (hoặc thư mục Spam).",
+    testSentSuccess:
+      "Đã gửi email thử nghiệm thành công! Vui lòng kiểm tra hộp thư đến (hoặc thư mục Spam).",
     outboxTitle: "Nhật ký Gửi Email (Outbox & Logs)",
-    outboxDesc: "Theo dõi toàn bộ lịch sử các bức thư được gửi từ hệ thống cho ứng viên, trạng thái gửi và nguyên văn nội dung.",
+    outboxDesc:
+      "Theo dõi toàn bộ lịch sử các bức thư được gửi từ hệ thống cho ứng viên, trạng thái gửi và nguyên văn nội dung.",
     searchRecipient: "Tìm theo tên hoặc email ứng viên...",
     allStatuses: "Tất cả trạng thái",
     statusSent: "Đã gửi thành công",
@@ -1649,7 +1838,8 @@ export const vi: TranslationSchema = {
     logDetailBody: "Nội dung bức thư",
     close: "Đóng",
     sendEmailAction: "Gửi Email",
-    sendEmailInviteCheckbox: "Gửi email mời phỏng vấn cho ứng viên kèm thông tin chi tiết",
+    sendEmailInviteCheckbox:
+      "Gửi email mời phỏng vấn cho ứng viên kèm thông tin chi tiết",
     templateSaveError: "Lỗi khi lưu mẫu email!",
     settingsSavedSuccess: "Đã lưu cấu hình gửi thư thành công!",
     settingsSaveError: "Lỗi khi lưu cấu hình gửi thư!",
@@ -1695,13 +1885,15 @@ export const vi: TranslationSchema = {
   },
   timeline: {
     title: "Dòng thời gian Hoạt động (Activity Timeline)",
-    subtitle: "Toàn bộ lịch sử ứng tuyển, chuyển giai đoạn, các buổi phỏng vấn và trao đổi email của ứng viên.",
+    subtitle:
+      "Toàn bộ lịch sử ứng tuyển, chuyển giai đoạn, các buổi phỏng vấn và trao đổi email của ứng viên.",
     allEvents: "Tất cả sự kiện",
     filterEmails: "Email",
     filterInterviews: "Phỏng vấn",
     filterStages: "Giai đoạn",
     noEvents: "Chưa có sự kiện nào",
-    noEventsDesc: "Các hoạt động tương tác với ứng viên sẽ được tự động ghi lại tại đây theo thời gian thực.",
+    noEventsDesc:
+      "Các hoạt động tương tác với ứng viên sẽ được tự động ghi lại tại đây theo thời gian thực.",
     performedBy: "Thực hiện bởi",
     viewEmailBody: "Xem nội dung thư",
     hideEmailBody: "Thu gọn",
@@ -1711,19 +1903,25 @@ export const vi: TranslationSchema = {
       APPLIED_title: "Đã nộp đơn ứng tuyển",
       APPLIED_desc: "Ứng tuyển vị trí {jobTitle}.",
       STAGE_CHANGED_title: "Chuyển giai đoạn: {toStage}",
-      STAGE_CHANGED_desc: "Hồ sơ ứng viên được chuyển từ {fromStage} sang {toStage}.",
+      STAGE_CHANGED_desc:
+        "Hồ sơ ứng viên được chuyển từ {fromStage} sang {toStage}.",
       INTERVIEW_SCHEDULED_title: "Đã lên lịch phỏng vấn",
-      INTERVIEW_SCHEDULED_desc: "Phỏng vấn vòng {round} vào {time} ngày {date} cùng {interviewer}.",
+      INTERVIEW_SCHEDULED_desc:
+        "Phỏng vấn vòng {round} vào {time} ngày {date} cùng {interviewer}.",
       INTERVIEW_UPDATED_title: "Cập nhật lịch phỏng vấn",
-      INTERVIEW_UPDATED_desc: "Lịch phỏng vấn cập nhật: {time} ngày {date} cùng {interviewer}.",
+      INTERVIEW_UPDATED_desc:
+        "Lịch phỏng vấn cập nhật: {time} ngày {date} cùng {interviewer}.",
       SCORECARD_SUBMITTED_title: "Đã hoàn thành đánh giá",
-      SCORECARD_SUBMITTED_desc: "Người phỏng vấn {interviewer} đã gửi phiếu đánh giá phỏng vấn.",
+      SCORECARD_SUBMITTED_desc:
+        "Người phỏng vấn {interviewer} đã gửi phiếu đánh giá phỏng vấn.",
       EMAIL_SENT_title: "Đã gửi email",
-      EMAIL_SENT_desc: "Gửi thư '{subject}' tới {recipientName} ({recipientEmail}).",
+      EMAIL_SENT_desc:
+        "Gửi thư '{subject}' tới {recipientName} ({recipientEmail}).",
       PII_READ_title: "Xem hồ sơ (Audit)",
       PII_READ_desc: "Hồ sơ ứng viên đã được xem bởi {userName}.",
       DOCUMENT_DOWNLOADED_title: "Tải tệp tài liệu (Audit)",
-      DOCUMENT_DOWNLOADED_desc: "Tài liệu '{fileName}' đã được tải về bởi {userName}.",
+      DOCUMENT_DOWNLOADED_desc:
+        "Tài liệu '{fileName}' đã được tải về bởi {userName}.",
     },
   },
   sourcing: {
@@ -1780,7 +1978,8 @@ export const vi: TranslationSchema = {
       active: "Đang hoạt động",
       inactive: "Đã tạm dừng",
       emptyTitle: "Chưa có liên kết theo dõi nào",
-      emptyDesc: "Tạo các liên kết tùy chỉnh để chia sẻ trên LinkedIn, Indeed, Facebook và theo dõi hiệu quả tuyển dụng.",
+      emptyDesc:
+        "Tạo các liên kết tùy chỉnh để chia sẻ trên LinkedIn, Indeed, Facebook và theo dõi hiệu quả tuyển dụng.",
       searchPlaceholder: "Tìm kiếm theo tên liên kết, token, chiến dịch...",
       filterAllStatus: "Tất cả trạng thái",
       filterActive: "Đang hoạt động",
@@ -1797,13 +1996,15 @@ export const vi: TranslationSchema = {
       applied: "THỜI GIAN",
       via: "qua",
       emptyTitle: "Chưa có nhật ký phân bổ",
-      emptyDesc: "Khi ứng viên nộp hồ sơ qua các liên kết tuyển dụng hoặc từ các trang việc làm, hệ thống sẽ tự động ghi nhận tại đây.",
+      emptyDesc:
+        "Khi ứng viên nộp hồ sơ qua các liên kết tuyển dụng hoặc từ các trang việc làm, hệ thống sẽ tự động ghi nhận tại đây.",
       searchPlaceholder: "Tìm kiếm theo tên ứng viên, email, chiến dịch...",
       filterAllSources: "Tất cả các nguồn",
     },
     modal: {
       createTitle: "Tạo liên kết theo dõi mới",
-      createDesc: "Tạo một liên kết tuyển dụng độc nhất để chia sẻ và đo lường số lượt nhấp cùng hồ sơ nộp về.",
+      createDesc:
+        "Tạo một liên kết tuyển dụng độc nhất để chia sẻ và đo lường số lượt nhấp cùng hồ sơ nộp về.",
       linkNameLabel: "Tên liên kết",
       linkNamePlaceholder: "Ví dụ: LinkedIn Tuyển dụng Kỹ sư Phần mềm Q2",
       sourceLabel: "Kênh tuyển dụng",

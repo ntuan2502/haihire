@@ -81,10 +81,14 @@ export function Navbar({
   // Derive active tab from URL pathname or prop
   let currentTab: NavTab = activeTab;
   if (pathname.startsWith("/dashboard/jobs")) currentTab = "jobs";
-  else if (pathname.startsWith("/dashboard/candidates")) currentTab = "candidates";
-  else if (pathname.startsWith("/dashboard/applications")) currentTab = "applications";
-  else if (pathname.startsWith("/dashboard/interviews")) currentTab = "interviews";
-  else if (pathname.startsWith("/dashboard/source-tracking")) currentTab = "sourcing";
+  else if (pathname.startsWith("/dashboard/candidates"))
+    currentTab = "candidates";
+  else if (pathname.startsWith("/dashboard/applications"))
+    currentTab = "applications";
+  else if (pathname.startsWith("/dashboard/interviews"))
+    currentTab = "interviews";
+  else if (pathname.startsWith("/dashboard/source-tracking"))
+    currentTab = "sourcing";
   else if (pathname.startsWith("/dashboard/settings")) currentTab = "settings";
   else if (pathname === "/dashboard") currentTab = "dashboard";
 
@@ -148,7 +152,8 @@ export function Navbar({
             <div className="flex items-center gap-2.5 mr-1 sm:mr-2">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 focus:outline-hidden group"
+                aria-label={BRAND_CONFIG.name}
+                className="flex items-center gap-2 rounded-lg focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 group"
               >
                 <BrandLogo size="md" variant="icon-only" />
               </Link>
@@ -159,7 +164,10 @@ export function Navbar({
             </div>
 
             {/* Desktop Navigation Items */}
-            <nav className="hidden lg:flex items-center gap-0.5">
+            <nav
+              aria-label={t("common.dashboard")}
+              className="hidden lg:flex items-center gap-0.5"
+            >
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentTab === item.id;
@@ -192,7 +200,10 @@ export function Navbar({
                   <span>{t("nav.more")}</span>
                   <ChevronDown className="h-3 w-3 opacity-60" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-0.5">
+                <DropdownMenuContent
+                  align="start"
+                  className="w-56 p-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-0.5"
+                >
                   <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     {t("common.comingSoon")}
                   </div>
@@ -320,7 +331,6 @@ export function Navbar({
               </button>
             );
           })}
-
 
         {/* More (Coming Soon) */}
         <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">

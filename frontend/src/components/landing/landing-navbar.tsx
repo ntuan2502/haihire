@@ -8,7 +8,11 @@ import { useI18n } from "@/i18n";
 import { BrandLogo } from "@/components/shared";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { UserMenu, MobileDrawer, EnterDashboardButton } from "@/components/layout";
+import {
+  UserMenu,
+  MobileDrawer,
+  EnterDashboardButton,
+} from "@/components/layout";
 
 export const LandingNavbar = () => {
   const { isAuthenticated, user } = useAuth();
@@ -21,7 +25,11 @@ export const LandingNavbar = () => {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* Left: Brand Logo & Navigation Links */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="hover:opacity-90 transition-opacity focus:outline-hidden">
+            <Link
+              href="/"
+              aria-label="HaiHire Home"
+              className="rounded-lg hover:opacity-90 transition-opacity focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            >
               <BrandLogo size="md" />
             </Link>
 

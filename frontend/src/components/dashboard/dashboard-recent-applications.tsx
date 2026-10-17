@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Clock, ArrowRight, FileText } from "lucide-react";
 import { getInitials, formatRelativeTime } from "@/lib/utils";
 import { StageBadge } from "@/components/shared/stage-badge";
@@ -17,7 +16,6 @@ export function DashboardRecentApplications({
   applications,
   jobs,
 }: DashboardRecentApplicationsProps) {
-  const router = useRouter();
   const { t } = useI18n();
 
   return (
@@ -60,9 +58,9 @@ export function DashboardRecentApplications({
             const candidateJob = jobs.find((j) => j.id === app.jobId);
 
             return (
-              <div
+              <Link
                 key={app.id}
-                onClick={() => router.push(`/dashboard/applications/${app.id}`)}
+                href={`/dashboard/applications/${app.id}`}
                 className="flex items-center justify-between py-3 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group gap-3"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -89,7 +87,7 @@ export function DashboardRecentApplications({
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">
                   {formatRelativeTime(app.createdAt)}
                 </span>
-              </div>
+              </Link>
             );
           })}
         </div>

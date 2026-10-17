@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, useCallback, Suspense } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+  Suspense,
+} from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   useJob,
@@ -65,7 +72,9 @@ function JobPipelinePageContent() {
   const deleteAppMutation = useDeleteApplicationMutation();
   const updateCandidateMutation = useUpdateCandidateMutation();
 
-  const initialStageParam = searchParams.get("stage") as ApplicationStage | null;
+  const initialStageParam = searchParams.get(
+    "stage",
+  ) as ApplicationStage | null;
 
   const [selectedStage, setSelectedStage] = useState<ApplicationStage>(() => {
     if (
@@ -89,13 +98,16 @@ function JobPipelinePageContent() {
   const handledTargetAppIdRef = useRef<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">("newest");
+  const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">(
+    "newest",
+  );
   const [selectedAppId, setSelectedAppId] = useState<string | null>(
     () => initialTargetAppId || null,
   );
   const [candidateTab, setCandidateTab] = useState<string>("overview");
 
-  const [overviewSections, setOverviewSections] = useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
+  const [overviewSections, setOverviewSections] =
+    useState<OverviewSectionsState>(DEFAULT_OVERVIEW_SECTIONS);
   const [isOverviewPopoverOpen, setIsOverviewPopoverOpen] = useState(false);
   const overviewBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -108,7 +120,8 @@ function JobPipelinePageContent() {
   const [isDeletingApp, setIsDeletingApp] = useState(false);
 
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [editingInterview, setEditingInterview] = useState<ScheduledInterviewInfo | null>(null);
+  const [editingInterview, setEditingInterview] =
+    useState<ScheduledInterviewInfo | null>(null);
 
   const [candidateNotesList, setCandidateNotesList] = useState<string[]>([]);
   const [candidateNoteInput, setCandidateNoteInput] = useState("");
@@ -170,9 +183,12 @@ function JobPipelinePageContent() {
     newParams.set("stage", stage);
     newParams.delete("applicationId");
     newParams.delete("candidateId");
-    router.replace(`/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`, {
-      scroll: false,
-    });
+    router.replace(
+      `/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`,
+      {
+        scroll: false,
+      },
+    );
     setMobileDetailOpen(false);
   };
 
@@ -218,22 +234,42 @@ function JobPipelinePageContent() {
         if (sortBy === "score") {
           const scoreA = (a as unknown as { matchScore?: number }).matchScore;
           const scoreB = (b as unknown as { matchScore?: number }).matchScore;
-          if (scoreA !== undefined && scoreA !== null && scoreB !== undefined && scoreB !== null && scoreA !== scoreB) {
+          if (
+            scoreA !== undefined &&
+            scoreA !== null &&
+            scoreB !== undefined &&
+            scoreB !== null &&
+            scoreA !== scoreB
+          ) {
             return scoreB - scoreA;
           }
-          if ((scoreA === undefined || scoreA === null) && scoreB !== undefined && scoreB !== null) {
+          if (
+            (scoreA === undefined || scoreA === null) &&
+            scoreB !== undefined &&
+            scoreB !== null
+          ) {
             return 1;
           }
-          if (scoreA !== undefined && scoreA !== null && (scoreB === undefined || scoreB === null)) {
+          if (
+            scoreA !== undefined &&
+            scoreA !== null &&
+            (scoreB === undefined || scoreB === null)
+          ) {
             return -1;
           }
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         }
         if (sortBy === "newest") {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         }
         if (sortBy === "oldest") {
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         }
         if (sortBy === "name") {
           return a.candidateName.localeCompare(b.candidateName);
@@ -273,7 +309,14 @@ function JobPipelinePageContent() {
     } else {
       setSelectedAppId(null);
     }
-  }, [appsLoading, searchParams, filteredCandidates, selectedAppId, selectedStage, jobId]);
+  }, [
+    appsLoading,
+    searchParams,
+    filteredCandidates,
+    selectedAppId,
+    selectedStage,
+    jobId,
+  ]);
 
   const selectedCandidate = useMemo(() => {
     return (
@@ -385,7 +428,8 @@ function JobPipelinePageContent() {
     overrideCandidateId?: string,
   ) => {
     const activeAppId = overrideCandidateId || selectedCandidate?.id;
-    const candidate = jobApplications.find((a) => a.id === activeAppId) || selectedCandidate;
+    const candidate =
+      jobApplications.find((a) => a.id === activeAppId) || selectedCandidate;
     if (!candidate) return;
 
     // PART A (A3 Prevention): Enforce state machine transition check before calling API
@@ -404,9 +448,12 @@ function JobPipelinePageContent() {
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.set("stage", newStage);
       newParams.set("applicationId", candidate.id);
-      router.replace(`/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`, {
-        scroll: false,
-      });
+      router.replace(
+        `/dashboard/jobs/${jobId}/pipeline?${newParams.toString()}`,
+        {
+          scroll: false,
+        },
+      );
     } catch (err) {
       console.error("Failed to move candidate stage", err);
       // PART B (B2 & B4 Defense in Depth): Pass all errors through getApiErrorMessage -> i18n
@@ -458,7 +505,9 @@ function JobPipelinePageContent() {
     const queryParams = new URLSearchParams();
     if (url) queryParams.set("url", url);
     if (downloadFileName) queryParams.set("name", downloadFileName);
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    const queryString = queryParams.toString()
+      ? `?${queryParams.toString()}`
+      : "";
 
     const activeAppId = targetAppId || selectedCandidate?.id;
     const downloadPath = activeAppId
@@ -513,10 +562,15 @@ function JobPipelinePageContent() {
           {/* Search box & Toolbar */}
           <div className="shrink-0 p-3 border-b border-slate-200/80 dark:border-slate-800 space-y-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <Search
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"
+                aria-hidden="true"
+              />
               <Input
                 type="text"
+                name="candidates-search"
                 placeholder={t("candidates.searchCandidates")}
+                aria-label={t("candidates.searchCandidates")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-8 pl-8 pr-3 text-xs bg-slate-50/70 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
@@ -527,7 +581,9 @@ function JobPipelinePageContent() {
             <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
               <CustomSelect
                 value={sortBy}
-                onChange={(val) => setSortBy(val as "score" | "newest" | "oldest" | "name")}
+                onChange={(val) =>
+                  setSortBy(val as "score" | "newest" | "oldest" | "name")
+                }
                 size="sm"
                 icon={ArrowUpDown}
                 options={[
@@ -609,7 +665,9 @@ function JobPipelinePageContent() {
           overviewSections={overviewSections}
           onToggleOverviewSection={handleToggleOverviewSection}
           isOverviewPopoverOpen={isOverviewPopoverOpen}
-          onToggleOverviewPopover={() => setIsOverviewPopoverOpen((prev) => !prev)}
+          onToggleOverviewPopover={() =>
+            setIsOverviewPopoverOpen((prev) => !prev)
+          }
           onCloseOverviewPopover={() => setIsOverviewPopoverOpen(false)}
           overviewBtnRef={overviewBtnRef}
           candidateDocuments={candidateDocuments}

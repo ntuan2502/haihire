@@ -88,26 +88,33 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
         {/* Organization Selector Box with Dropdown */}
         {showOrgSwitcher && (
           <div className="w-full my-1 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 overflow-hidden transition-all">
-            <div
+            <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsOrgDropdownOpen(!isOrgDropdownOpen);
               }}
-              className="w-full p-2 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
+              aria-expanded={isOrgDropdownOpen}
+              aria-label={user.organization?.name || t("nav.noOrganization")}
+              className="w-full text-left p-2 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <Building2
+                  className="h-3.5 w-3.5 text-slate-400 shrink-0"
+                  aria-hidden="true"
+                />
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
                   {user.organization?.name || t("nav.noOrganization")}
                 </span>
               </div>
               <ChevronDown
+                aria-hidden="true"
                 className={cn(
                   "h-3 w-3 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-transform duration-200 shrink-0",
                   isOrgDropdownOpen && "rotate-180",
                 )}
               />
-            </div>
+            </button>
 
             {/* Expanded Organization List */}
             {isOrgDropdownOpen && (
@@ -116,8 +123,10 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
                   myOrgs.map((org) => {
                     const isActive = org.id === user.organizationId;
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={org.id}
+                        role="menuitem"
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!isActive) {
@@ -131,38 +140,46 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
                           setIsOrgDropdownOpen(false);
                         }}
                         className={cn(
-                          "w-full px-2.5 py-1.5 flex items-center justify-between text-xs cursor-pointer transition-colors",
+                          "w-full text-left px-2.5 py-1.5 flex items-center justify-between text-xs cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
                           isActive
-                            ? "bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold"
+                            ? "bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold cursor-default"
                             : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60",
                         )}
                       >
                         <span className="truncate">{org.name}</span>
                         {isActive && (
-                          <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                          <Check
+                            className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0"
+                            aria-hidden="true"
+                          />
                         )}
-                      </div>
+                      </button>
                     );
                   })
                 ) : user.organization ? (
                   <div className="w-full px-2.5 py-1.5 flex items-center justify-between text-xs bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-semibold cursor-default">
                     <span className="truncate">{user.organization.name}</span>
-                    <Check className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <Check
+                      className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0"
+                      aria-hidden="true"
+                    />
                   </div>
                 ) : null}
 
                 {/* + Create organization item */}
-                <div
+                <button
+                  type="button"
+                  role="menuitem"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsOrgDropdownOpen(false);
                     router.push("/auth/onboarding?mode=create");
                   }}
-                  className="w-full px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors"
+                  className="w-full text-left px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
-                  <Plus className="h-3 w-3" />
+                  <Plus className="h-3 w-3" aria-hidden="true" />
                   <span>{t("nav.createOrganization")}</span>
-                </div>
+                </button>
               </div>
             )}
           </div>
@@ -170,13 +187,15 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
 
         {/* Settings (if user belongs to an org) */}
         {user.organizationId && (
-          <div
+          <button
+            type="button"
+            role="menuitem"
             onClick={() => router.push("/dashboard/settings")}
-            className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors"
+            className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
-            <Settings className="h-4 w-4 text-slate-400" />
+            <Settings className="h-4 w-4 text-slate-400" aria-hidden="true" />
             <span>{t("nav.settings")}</span>
-          </div>
+          </button>
         )}
 
         {/* Updates & changelog (Coming Soon) */}
@@ -211,13 +230,15 @@ export function UserMenu({ className, showOrgSwitcher = true }: UserMenuProps) {
         <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
         {/* Sign out */}
-        <div
+        <button
+          type="button"
+          role="menuitem"
           onClick={logout}
-          className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer transition-colors"
+          className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-4 w-4" aria-hidden="true" />
           <span>{t("nav.signOut")}</span>
-        </div>
+        </button>
       </DropdownMenuContent>
     </DropdownMenu>
   );

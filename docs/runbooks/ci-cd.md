@@ -37,15 +37,15 @@ graph TD
 
 All workflows are located in [`.github/workflows/`](../../.github/workflows/):
 
-| Workflow                                                             | Target Scope                                           | Key Operations                                                                                        |           Time Target           |
-| :------------------------------------------------------------------- | :----------------------------------------------------- | :---------------------------------------------------------------------------------------------------- | :-----------------------------: |
-| [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)           | PRs targeting `dev` (`feat/*`, `fix/*`, etc.)          | Path filtering, lint, typecheck, unit tests                                                           |            2 - 3 min            |
-| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml)                   | Push to `dev` (post-merge integration)                 | Path filtering (code vs docs-only), 11 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min (code) / ~30s (docs)  |
-| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml)           | Push to `staging` (pre-production verification)        | Path filtering (code vs docs-only), 11 CI gates, coverage, Playwright E2E suite, production build     | 8 - 10 min (code) / ~30s (docs) |
-| [`ci-main.yml`](../../.github/workflows/ci-main.yml)                 | PRs targeting `main` (production gatekeeper)           | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run                               |           10 - 12 min           |
-| [`cd-release.yml`](../../.github/workflows/cd-release.yml)           | Annotated tags `v*.*.*`                                | Docker Buildx, GHCR publish, Trivy container scan, GitHub release                                     |            5 - 7 min            |
-| [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml)           | Schedule: `0 3 * * 1` (03:00 UTC Mondays on `staging`) | Complete Playwright test regression sweep on pre-production                                           |           8 - 10 min            |
-| [`security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Schedule: `0 6 * * 3` (06:00 UTC Wednesdays)           | Moderate & high CVE audits, tenant scoping AST sweep, outdated report                                 |            3 - 5 min            |
+| Workflow                                                             | Target Scope                                            | Key Operations                                                                                        |           Time Target           |
+| :------------------------------------------------------------------- | :------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- | :-----------------------------: |
+| [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)           | PRs targeting `dev` (`feat/*`, `fix/*`, etc.)           | Path filtering, lint, typecheck, unit tests                                                           |            2 - 3 min            |
+| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml)                   | PRs to `dev` & non-merge push to `dev` (skips merge PR) | Path filtering (code vs docs-only), 11 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min (code) / ~30s (docs)  |
+| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml)           | PRs to `staging` & non-merge push (skips merge PR)      | Path filtering (code vs docs-only), 11 CI gates, coverage, Playwright E2E suite, production build     | 8 - 10 min (code) / ~30s (docs) |
+| [`ci-main.yml`](../../.github/workflows/ci-main.yml)                 | PRs targeting `main` (production gatekeeper)            | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run                               |           10 - 12 min           |
+| [`cd-release.yml`](../../.github/workflows/cd-release.yml)           | Annotated tags `v*.*.*`                                 | Docker Buildx, GHCR publish, Trivy container scan, GitHub release                                     |            5 - 7 min            |
+| [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml)           | Schedule: `0 3 * * 1` (03:00 UTC Mondays on `staging`)  | Complete Playwright test regression sweep on pre-production                                           |           8 - 10 min            |
+| [`security-weekly.yml`](../../.github/workflows/security-weekly.yml) | Schedule: `0 6 * * 3` (06:00 UTC Wednesdays)            | Moderate & high CVE audits, tenant scoping AST sweep, outdated report                                 |            3 - 5 min            |
 
 ---
 

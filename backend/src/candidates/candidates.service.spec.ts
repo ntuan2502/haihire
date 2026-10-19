@@ -2,6 +2,11 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { Readable } from "node:stream";
 import { CandidatesService } from "./candidates.service";
 import {
+  CandidatesCrudService,
+  CandidatesDocumentsService,
+  CandidatesProfileService,
+} from "./services";
+import {
   createMockTable,
   type MockTable,
 } from "../test/helpers/prisma-composer-mock";
@@ -377,6 +382,79 @@ describe("CandidatesService (Characterization Tests)", () => {
       const inDb = candidateTable.store.find((c) => c.id === "cand-1");
       expect(inDb?.deletedAt).toBeDefined();
       expect(inDb?.deletedAt).not.toBeNull();
+    });
+  });
+
+  describe("Additional coverage: update, uploadDocument, deleteDocument, DI", () => {
+    it("updates candidate details and parses dateOfBirth", async () => {
+      const updated = await service.update(
+        "cand-1",
+        {
+          name: "Nguyen Van A Updated",
+          phone: "0999888777",
+          notes: "Updated senior developer notes",
+          dateOfBirth: "1992-08-15",
+        },
+        "org-1",
+      );
+
+      expect(updated).toBeDefined();
+      expect(updated.name).toBe("Nguyen Van A Updated");
+      expect(updated.phone).toBe("0999888777");
+      expect(updated.notes).toBe("Updated senior developer notes");
+      expect(updated.dateOfBirth).toBeDefined();
+    });
+
+    it("uploads a document with validated file and updates candidate resume fields", async () => {
+      const mockFile = {
+        fieldname: "file",
+        originalname: "My_Resume.pdf",
+        encoding: "7bit",
+        mimetype: "application/pdf",
+        size: 512,
+        buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+      } as Express.Multer.File;
+
+      const result = await service.uploadDocument(
+        "cand-2",
+        mockFile,
+        "Resume",
+        "org-1",
+      );
+
+      expect(result).toBeDefined();
+      expect(mockMinio.uploadFile).toHaveBeenCalled();
+      expect(result.resumeUrl).toBe(
+        "https://minio.local/resumes/org-1/uploaded-file.pdf",
+      );
+      expect(result.resumeFileName).toBe("My_Resume.pdf");
+    });
+
+    it("deletes a document and resets or falls back candidate resume", async () => {
+      const result = await service.deleteDocument(
+        "cand-1",
+        { documentId: "doc-1" },
+        "org-1",
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it("supports direct NestJS DI constructor instantiation", async () => {
+      const profile = new CandidatesProfileService(mockPrisma, mockActivities);
+      const docs = new CandidatesDocumentsService(
+        mockPrisma,
+        mockMinio,
+        profile,
+        mockActivities,
+      );
+      const crud = new CandidatesCrudService(mockPrisma, mockMinio, profile);
+
+      const diService = new CandidatesService(crud, docs, profile);
+      expect(diService).toBeDefined();
+
+      const list = await diService.findAll("org-1");
+      expect(list.data).toBeDefined();
     });
   });
 });

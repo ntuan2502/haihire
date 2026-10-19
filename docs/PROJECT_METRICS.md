@@ -3,7 +3,7 @@
 > Canonical metrics for the HaiHire Enterprise ATS platform.  
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
-**Last Updated:** 2026-10-17  
+**Last Updated:** 2026-10-19  
 **Platform Version:** v0.1.4 (Pre-release)
 
 ---
@@ -19,9 +19,9 @@
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 821 total (+18 from Task 43 Wave 4.3)
+- **Automated Tests:** 846 total (+25 from Task 43 Wave 4.4)
   - Backend: 485 passing (Vitest, 45 test suites)
-  - Frontend: 336 passing (Vitest + JSDOM, 46 test suites)
+  - Frontend: 361 passing (Vitest + JSDOM, 47 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
   - Backend Coverage: 79.54% Statements (80.92% Lines, 62.35% Branch, 80.38% Funcs)
@@ -41,7 +41,7 @@
   7. `lint:api-contract` — API Contract & Leaks Audit (84 endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 rules)
   9. `lint:tenant-scope` — Tenant Scoping Static Analysis (212 queries)
-  10. `lint:doc-links` — Documentation Markdown Link Integrity (155 files)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (162 files)
   11. `test:diff` — Test Count Delta & Anti-Regression
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:**
@@ -59,9 +59,10 @@
 - **REST API Endpoints:** 84
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation in Task #8)
 - **Database Models:** 16 (9 camelCase tech debt + 7 snake_case)
-- **God Files (>400 LOC):** 20 remaining (reduced from 28; 5 God Files refactored in v0.1.2, 3 refactored in Task 43 Wave 4)
-  - Max file size: 268 LOC (`frontend/src/app/dashboard/candidates/[id]/candidate-detail-view.tsx`, reduced from 941 LOC)
+- **God Files (>400 LOC):** 19 remaining (reduced from 28; 5 God Files refactored in v0.1.2, 4 refactored in Task 43 Wave 4)
+  - Max file size: 268 LOC (`frontend/src/app/dashboard/candidates/[id]/candidate-detail-view.tsx`)
   - Refactored God Files in v0.1.2 & Wave 4:
+    - `frontend/src/app/dashboard/applications/[id]/page.tsx` (857 → 10 LOC wrapper, 10 modular sub-files, Task 43 Wave 4.4)
     - `frontend/src/app/dashboard/candidates/[id]/page.tsx` (941 → 10 LOC wrapper, 9 modular sub-files, Task 43 Wave 4.3)
     - `frontend/src/app/dashboard/candidates/page.tsx` (1,050 → 14 LOC wrapper, 8 modular sub-files, Task 43 Wave 4.2)
     - `frontend/src/components/jobs/job-wizard-editor.tsx` (838 → 2 LOC shim, 4 hooks + 2 components, Task 43 Wave 4.1)
@@ -70,7 +71,7 @@
     - `backend/src/sourcing/sourcing.service.ts` (1,214 → 162 LOC facade, 3 sub-services)
     - `backend/src/applications/applications.service.ts` (1,189 → 150 LOC facade, 4 sub-services)
     - `frontend/src/components/jobs/job-list.tsx` (957 → 10 LOC shim, 8 subcomponents)
-  - Detailed inventory of remaining 20 files tracked in [`docs/ROADMAP.md`](ROADMAP.md)
+  - Detailed inventory of remaining 19 files tracked in [`docs/ROADMAP.md`](ROADMAP.md)
 
 ---
 

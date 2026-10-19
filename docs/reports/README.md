@@ -103,6 +103,7 @@ Tasks #43+. 5 frontend God Files audit and decomposition.
 - [73 — Task #43 Phase 2: Wave 4.1 Job Wizard Editor Refactor Report](./73-task-43-phase-2-wave-4.1-job-wizard-refactor-report.md)
 - [74 — Task #43 Phase 2: Wave 4.2 Candidates Page Refactor Report](./74-task-43-phase-2-wave-4.2-candidates-page-refactor-report.md)
 - [75 — Task 43 Phase 2: Wave 4.3 Candidate Detail Page Refactor Report](./75-task-43-phase-2-wave-4.3-candidates-detail-refactor-report.md)
+- [76 — Task 43 Phase 2: Wave 4.4 Application Detail Page Refactor Report](./76-task-43-phase-2-wave-4.4-applications-detail-refactor-report.md)
 
 ---
 

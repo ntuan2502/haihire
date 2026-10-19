@@ -19,9 +19,9 @@
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 785 total (+21 from Task #43 Wave 4.1)
+- **Automated Tests:** 803 total (+18 from Task #43 Wave 4.2)
   - Backend: 485 passing (Vitest, 45 test suites)
-  - Frontend: 300 passing (Vitest + JSDOM, 44 test suites)
+  - Frontend: 318 passing (Vitest + JSDOM, 45 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
   - Backend Coverage: 79.54% Statements (80.92% Lines, 62.35% Branch, 80.38% Funcs)
@@ -59,16 +59,17 @@
 - **REST API Endpoints:** 84
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation in Task #8)
 - **Database Models:** 16 (9 camelCase tech debt + 7 snake_case)
-- **God Files (>400 LOC):** 22 remaining (reduced from 28; 5 God Files refactored in v0.1.2, 1 refactored in Task #43 Wave 4.1)
+- **God Files (>400 LOC):** 21 remaining (reduced from 28; 5 God Files refactored in v0.1.2, 2 refactored in Task #43 Wave 4)
   - Max file size: 265 LOC (`frontend/src/components/applications/applications-data-table/hooks/use-applications-table.ts`, reduced from 1,706 LOC)
   - Refactored God Files in v0.1.2 & Wave 4:
+    - `frontend/src/app/dashboard/candidates/page.tsx` (1,050 → 14 LOC wrapper, 8 modular sub-files, Task #43 Wave 4.2)
     - `frontend/src/components/jobs/job-wizard-editor.tsx` (838 → 2 LOC shim, 4 hooks + 2 components, Task #43 Wave 4.1)
     - `frontend/src/components/applications/applications-data-table.tsx` (1,706 → 2 LOC shim, 16 modular subcomponents)
     - `backend/src/organizations/organizations.service.ts` (1,366 → 125 LOC facade, 3 sub-services)
     - `backend/src/sourcing/sourcing.service.ts` (1,214 → 162 LOC facade, 3 sub-services)
     - `backend/src/applications/applications.service.ts` (1,189 → 150 LOC facade, 4 sub-services)
     - `frontend/src/components/jobs/job-list.tsx` (957 → 10 LOC shim, 8 subcomponents)
-  - Detailed inventory of remaining 22 files tracked in [`docs/ROADMAP.md`](ROADMAP.md)
+  - Detailed inventory of remaining 21 files tracked in [`docs/ROADMAP.md`](ROADMAP.md)
 
 ---
 

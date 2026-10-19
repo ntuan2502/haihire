@@ -122,7 +122,7 @@ pnpm pre-commit
 # Run pre-push verification (~25s lint + typecheck)
 pnpm pre-push
 
-# Run all unit & integration tests (656 tests)
+# Run all unit & integration tests (871 tests)
 pnpm test
 
 # Run frontend tests only

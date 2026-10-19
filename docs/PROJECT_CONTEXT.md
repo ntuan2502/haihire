@@ -1,8 +1,8 @@
 # PROJECT CONTEXT REPORT: HAIHIRE ENTERPRISE ATS
 
 > **Single Source of Truth (SSOT) for Antigravity, DeepSeek & Project Owner**  
-> **Version:** v0.1.2 (Pre-release)  
-> **Updated:** 2026-10-16  
+> **Version:** v0.2.0 (Pre-release)  
+> **Updated:** 2026-10-19  
 > **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)
 
 ---
@@ -15,7 +15,7 @@
   - `backend`: REST API Server powered by NestJS 12.
   - `frontend`: Web Application built with Next.js 16 App Router.
   - `packages/shared`: Shared domain contract library (`@haihire/shared` containing types, enums, `APP_ERROR_CODES`, brand config).
-- **Status:** **Version v0.1.2** — Pre-release (God Files Refactor campaign complete, 656 tests passing, 11 CI architecture gates, 3-tier Husky git hooks).
+- **Status:** **Version v0.2.0** — Pre-release (Wave 4 Technical Debt Milestone complete, 10/10 God Files refactored across Waves 1–4, 871 tests passing, 11 CI architecture gates, 3-tier Husky git hooks).
 - **Target End Users:**
   1. _Recruiter / HR / Hiring Manager / Tenant Admin_: Authenticate into internal dashboard (`/dashboard`) to manage jobs, candidate pipelines, interview schedules, email templates, and sourcing attribution links.
   2. _Candidate_: Access public career portal (`/careers/[orgSlug]/[jobSlug]`) to view job specifications and submit applications online.
@@ -27,19 +27,19 @@
 - **Language + Version:** TypeScript `6.0.3` (100% Pure TypeScript mandate; pure `.js` files and `any` types are strictly prohibited — reference `.agents/memory/project-conventions.md:L13-19`).
 - **Primary Frameworks:**
   - **Backend:** NestJS `12.1.2` (running on Express platform adapter, reference `backend/package.json:L33-38`).
-  - **Frontend:** Next.js `16.3.8` (App Router, React Server Components combined with Client Components) + React `19.3.0` (reference `frontend/package.json:L30-33`).
+  - **Frontend:** Next.js `16.4.0` (App Router, React Server Components combined with Client Components) + React `19.3.0` (reference `frontend/package.json:L30-33`).
 - **Runtime:**
   - Node.js: `26.x` Active LTS baseline (Docker image `node:26-alpine`).
   - Package Engine: `pnpm@12.6.0` (Node 26 removed Corepack; pnpm installed directly via npm).
 - **Core Libraries:**
-  - _UI & Styling:_ Tailwind CSS `v4`, Base UI (`@base-ui/react ^1.8.0`), Radix UI Primitives (Dialog, Dropdown, Select, Slot), Lucide React (`^1.49.0`), `sonner` (toast notifications), `@dnd-kit` (`^6.3.1` core & sortable for Kanban board).
-  - _Client State & Cache:_ `@tanstack/react-query` `^5.104.0` (server state management with centralized query key factories).
+  - _UI & Styling:_ Tailwind CSS `v4`, Base UI (`@base-ui/react ^1.9.0`), Radix UI Primitives (Dialog, Dropdown, Select, Slot), Lucide React (`^1.56.0`), `sonner` (toast notifications), `@dnd-kit` (`^6.3.1` core & sortable for Kanban board).
+  - _Client State & Cache:_ `@tanstack/react-query` `^5.104.2` (server state management with centralized query key factories).
   - _ORM & Data Access:_ Prisma 8 RC (`@prisma/orm-postgres` `8.0.0-rc.13`, `prisma` `8.0.0-rc.19` Contract-first architecture).
   - _Authentication:_ Passport.js `^0.7.0`, `passport-jwt` `^4.0.1`, `bcryptjs` `^3.0.3`, HttpOnly JWT Cookies (`haihire_token`).
-  - _Async Queues:_ BullMQ `^6.3.11` + `@nestjs/bullmq` `^12.0.0` (email jobs and orphan file cleanup compensation).
+  - _Async Queues:_ BullMQ `^6.3.15` + `@nestjs/bullmq` `^12.0.0` (email jobs and orphan file cleanup compensation).
   - _Object Storage SDK:_ MinIO Node SDK `^8.0.7` (S3-compatible API).
-  - _Validation:_ Zod `^4.6.5` (centralized schemas), `class-validator` `^0.15.1` + `class-transformer` `^0.5.1` wrapped via custom `DtoPipe`.
-  - _Testing:_ Vitest `5.0.3` (unit/integration test, 656 tests passing), Playwright `^1.64.0` (browser E2E), `@testing-library/react` `16.3.3`, `jsdom` `30.1.1`.
+  - _Validation:_ Zod `^4.6.7` (centralized schemas), `class-validator` `^0.15.1` + `class-transformer` `^0.5.1` wrapped via custom `DtoPipe`.
+  - _Testing:_ Vitest `5.0.4` (unit/integration test, 871 tests passing), Playwright `^1.64.0` (browser E2E), `@testing-library/react` `16.3.3`, `jsdom` `30.1.2`.
 - **Database / Storage / Cache / Queue:**
   - _Database:_ PostgreSQL `17.6-alpine` (Host dev port: `15432`, container: `5432`).
   - _Cache & Queue:_ Valkey `8.0.2-alpine` (open-source Redis replacement complying with RSALv2/SSPLv1 license constraints; host dev port: `16379`, container: `6379`).

@@ -1,9 +1,9 @@
 # HaiHire ATS - Test Cases & Verification Matrix
 
 > **Comprehensive classification and verification tracking matrix for the HaiHire Enterprise ATS platform.**  
-> **Version:** `v0.1.2` (Pre-release)  
-> **Updated:** 2026-10-16  
-> **Automated Test Suites:** **656 Passed** (406 backend + 250 frontend unit/integration tests)  
+> **Version:** `v0.2.0` (Pre-release)  
+> **Updated:** 2026-10-19  
+> **Automated Test Suites:** **871 Passed** (485 backend + 386 frontend unit/integration tests)  
 > **Independent Verification & Validation (IV&V):** **100% Passed** (Zero Trust runtime audit)  
 > **Single Source of Truth:** See [`docs/PROJECT_METRICS.md`](PROJECT_METRICS.md)
 
@@ -20,19 +20,19 @@
 
 ## 📊 Test Summary Matrix
 
-| Domain / Module                                |   Core Functional Scenarios   | Runtime Scenarios (IV&V) | Pass Rate |        Status        |
-| :--------------------------------------------- | :---------------------------: | :----------------------: | :-------: | :------------------: |
-| **1. Authentication & Security Hardening**     |              23               |            4             |   100%    |    🟢 **PASSED**     |
-| **2. Organization & Multi-Tenancy (SSE)**      |              27               |            3             |   100%    |    🟢 **PASSED**     |
-| **3. Job Management & Public Career Portal**   |              30               |            2             |   100%    |    🟢 **PASSED**     |
-| **4. Candidate Pipeline & Optimistic Locking** |              36               |            6             |   100%    |    🟢 **PASSED**     |
-| **5. Sourcing & Attribution Tracking**         |              12               |            1             |   100%    |    🟢 **PASSED**     |
-| **6. Resume Storage & Deep Binary Inspection** |              32               |            6             |   100%    |    🟢 **PASSED**     |
-| **7. Interviews & Scorecards**                 |              22               |            2             |   100%    |    🟢 **PASSED**     |
-| **8. Email Engine & Activity Audit Trail**     |              35               |            4             |   100%    |    🟢 **PASSED**     |
-| **9. LAN, Network & Proxy Architecture**       |              18               |            2             |   100%    |    🟢 **PASSED**     |
-| **10. i18n & Error Handling System**           |              41               |            1             |   100%    |    🟢 **PASSED**     |
-| **TOTAL**                                      | **276 Scenarios (656 Tests)** |     **31 Scenarios**     | **100%**  | 🚀 **READY TO SHIP** |
+| Domain / Module                                | Core Functional Scenarios | Runtime Scenarios (IV&V) | Pass Rate |        Status        |
+| :--------------------------------------------- | :-----------------------: | :----------------------: | :-------: | :------------------: |
+| **1. Authentication & Security Hardening**     |            23             |            4             |   100%    |    🟢 **PASSED**     |
+| **2. Organization & Multi-Tenancy (SSE)**      |            27             |            3             |   100%    |    🟢 **PASSED**     |
+| **3. Job Management & Public Career Portal**   |            30             |            2             |   100%    |    🟢 **PASSED**     |
+| **4. Candidate Pipeline & Optimistic Locking** |            36             |            6             |   100%    |    🟢 **PASSED**     |
+| **5. Sourcing & Attribution Tracking**         |            12             |            1             |   100%    |    🟢 **PASSED**     |
+| **6. Resume Storage & Deep Binary Inspection** |            32             |            6             |   100%    |    🟢 **PASSED**     |
+| **7. Interviews & Scorecards**                 |            22             |            2             |   100%    |    🟢 **PASSED**     |
+| **8. Email Engine & Activity Audit Trail**     |            35             |            4             |   100%    |    🟢 **PASSED**     |
+| **9. LAN, Network & Proxy Architecture**       |            18             |            2             |   100%    |    🟢 **PASSED**     |
+| **10. i18n & Error Handling System**           |            41             |            1             |   100%    |    🟢 **PASSED**     |
+| **TOTAL**                                      |  **871 Automated Tests**  |     **31 Scenarios**     | **100%**  | 🚀 **READY TO SHIP** |
 
 ---
 

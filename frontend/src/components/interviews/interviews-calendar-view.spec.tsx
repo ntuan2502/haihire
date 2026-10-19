@@ -480,5 +480,147 @@ describe("InterviewsCalendarView Component Tests", () => {
         screen.queryByRole("heading", { name: "Nguyen Van A", level: 2 }),
       ).not.toBeInTheDocument();
     });
+
+    it("invokes onEditSchedule when clicking edit schedule button in detail modal", () => {
+      const handleEditSchedule = vi.fn();
+      render(
+        <InterviewsCalendarView
+          applications={[mockApp]}
+          jobs={[mockJob]}
+          onScheduleDate={vi.fn()}
+          onEditSchedule={handleEditSchedule}
+          onOpenScorecard={vi.fn()}
+        />,
+      );
+
+      const eventChip = screen.getByRole("button", {
+        name: "Interview with Nguyen Van A at 14:00",
+      });
+      fireEvent.click(eventChip);
+
+      const editBtn = screen.getByRole("button", {
+        name: "interviews.editSchedule",
+      });
+      fireEvent.click(editBtn);
+
+      expect(handleEditSchedule).toHaveBeenCalledWith(
+        mockApp,
+        mockApp.interviews![0],
+      );
+    });
+
+    it("invokes onOpenScorecard when clicking scorecard button in detail modal", () => {
+      const handleOpenScorecard = vi.fn();
+      render(
+        <InterviewsCalendarView
+          applications={[mockApp]}
+          jobs={[mockJob]}
+          onScheduleDate={vi.fn()}
+          onEditSchedule={vi.fn()}
+          onOpenScorecard={handleOpenScorecard}
+        />,
+      );
+
+      const eventChip = screen.getByRole("button", {
+        name: "Interview with Nguyen Van A at 14:00",
+      });
+      fireEvent.click(eventChip);
+
+      const scorecardBtn = screen.getByRole("button", {
+        name: "interviews.scorecardAction",
+      });
+      fireEvent.click(scorecardBtn);
+
+      expect(handleOpenScorecard).toHaveBeenCalledWith(
+        mockApp,
+        mockApp.interviews![0],
+      );
+    });
+
+    it("invokes onScheduleDate from day details modal when clicking schedule button", () => {
+      const handleScheduleDate = vi.fn();
+      const busyApp: Application = {
+        ...mockApp,
+        interviews: [
+          {
+            id: "i1",
+            applicationId: "app-1",
+            date: todayDateStr,
+            time: "09:00",
+          },
+          {
+            id: "i2",
+            applicationId: "app-1",
+            date: todayDateStr,
+            time: "10:00",
+          },
+          {
+            id: "i3",
+            applicationId: "app-1",
+            date: todayDateStr,
+            time: "11:00",
+          },
+          {
+            id: "i4",
+            applicationId: "app-1",
+            date: todayDateStr,
+            time: "13:00",
+          },
+          {
+            id: "i5",
+            applicationId: "app-1",
+            date: todayDateStr,
+            time: "15:00",
+          },
+        ],
+      };
+      render(
+        <InterviewsCalendarView
+          applications={[busyApp]}
+          jobs={[mockJob]}
+          onScheduleDate={handleScheduleDate}
+          onEditSchedule={vi.fn()}
+          onOpenScorecard={vi.fn()}
+        />,
+      );
+
+      const moreBtn = screen.getByRole("button", { name: "+1" });
+      fireEvent.click(moreBtn);
+
+      const scheduleBtn = screen.getByRole("button", {
+        name: "interviews.scheduleNew",
+      });
+      fireEvent.click(scheduleBtn);
+
+      expect(handleScheduleDate).toHaveBeenCalledWith(todayDateStr);
+    });
+
+    it("invokes onOpenScorecard from week view card", () => {
+      const handleOpenScorecard = vi.fn();
+      render(
+        <InterviewsCalendarView
+          applications={[mockApp]}
+          jobs={[mockJob]}
+          onScheduleDate={vi.fn()}
+          onEditSchedule={vi.fn()}
+          onOpenScorecard={handleOpenScorecard}
+        />,
+      );
+
+      const weekBtn = screen.getByRole("button", {
+        name: "interviews.week",
+      });
+      fireEvent.click(weekBtn);
+
+      const scorecardBtn = screen.getByRole("button", {
+        name: "interviews.scorecardAction",
+      });
+      fireEvent.click(scorecardBtn);
+
+      expect(handleOpenScorecard).toHaveBeenCalledWith(
+        mockApp,
+        mockApp.interviews![0],
+      );
+    });
   });
 });

@@ -7,6 +7,12 @@ import { EncryptionService } from "../common/encryption.service";
 import { EmailController } from "./email.controller";
 import { EmailService } from "./email.service";
 import {
+  EmailDispatchService,
+  EmailTemplatesService,
+  EmailSettingsService,
+  EmailSystemService,
+} from "./services";
+import {
   EmailProcessor,
   EMAIL_QUEUE_NAME,
   EMAIL_DLQ_NAME,
@@ -26,8 +32,24 @@ import {
     ),
   ],
   controllers: [EmailController],
-  providers: [PrismaService, EncryptionService, EmailService, EmailProcessor],
-  exports: [EmailService, EncryptionService, BullModule],
+  providers: [
+    PrismaService,
+    EncryptionService,
+    EmailService,
+    EmailDispatchService,
+    EmailTemplatesService,
+    EmailSettingsService,
+    EmailSystemService,
+    EmailProcessor,
+  ],
+  exports: [
+    EmailService,
+    EmailDispatchService,
+    EmailTemplatesService,
+    EmailSettingsService,
+    EmailSystemService,
+    EncryptionService,
+    BullModule,
+  ],
 })
 export class EmailModule {}
-

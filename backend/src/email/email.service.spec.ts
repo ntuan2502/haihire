@@ -57,6 +57,9 @@ describe("EmailService", () => {
                   return (
                     inMemoryTemplates.find((t) => {
                       const rec = {
+                        id: {
+                          eq: (val: string) => t.id === val,
+                        },
                         organizationId: {
                           eq: (val: string) => t.organizationId === val,
                         },
@@ -616,6 +619,128 @@ describe("EmailService", () => {
       expect(log.status).toBe("SIMULATED");
       expect(log.recipientEmail).toBe("fallback@example.com");
       expect(log.subject).toBe("Sync Fallback Subject");
+    });
+  });
+
+  describe("Sub-services and Facade Coverage Augmentation", () => {
+    it("should update an existing template with new subject and body", async () => {
+      await service.seedDefaultTemplates("org-test");
+      const updated = await service.updateTemplate(
+        "org-test",
+        "APPLICATION_CONFIRMATION",
+        {
+          subject: "Custom Confirmation Subject",
+          body: "<p>Custom confirmation body</p>",
+          enabled: false,
+        },
+      );
+
+      expect(updated).toBeDefined();
+      expect(updated.subject).toBe("Custom Confirmation Subject");
+      expect(updated.body).toBe("<p>Custom confirmation body</p>");
+      expect(updated.enabled).toBe(false);
+    });
+
+    it("should send org test email successfully", async () => {
+      const result = await service.sendTestEmail(
+        { to: "tester@example.com" },
+        "org-test",
+      );
+
+      expect(result).toBeDefined();
+      expect((result as { status: string }).status).toBe("SIMULATED");
+    });
+
+    it("should filter organization logs by candidateId, status, and search query", async () => {
+      await service.sendEmail(
+        {
+          to: "john@example.com",
+          recipientName: "John Doe",
+          subject: "Offer Letter",
+          body: "Congratulations",
+          candidateId: "cand-filter-1",
+        },
+        "org-test",
+      );
+
+      const filteredByCandidate = await service.getLogs("org-test", {
+        candidateId: "cand-filter-1",
+        status: "SIMULATED",
+        search: "Offer",
+      });
+
+      expect(filteredByCandidate.data.length).toBeGreaterThanOrEqual(1);
+      expect(filteredByCandidate.data[0]?.candidateName).toBe("John Doe");
+    });
+
+    it("should filter system logs by status and search query", async () => {
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue({
+        provider: "SIMULATED",
+        fromName: "HaiHire Platform",
+        fromEmail: "noreply@haihire.internal",
+        smtpHost: null,
+        smtpPort: 587,
+        smtpUser: null,
+        smtpPass: null,
+        resendApiKey: null,
+        sendgridApiKey: null,
+      });
+
+      await service.sendSystemEmail({
+        to: "system-user@example.com",
+        recipientName: "System User",
+        subject: "Welcome System Notification",
+        body: "Hello System User",
+      });
+
+      const filtered = await service.getSystemLogs({
+        status: "SIMULATED",
+        search: "Welcome",
+      });
+
+      expect(filtered.data).toBeDefined();
+      expect(filtered.total).toBeGreaterThanOrEqual(1);
+
+      // Also verify executeSendSystemEmail directly
+      const direct = await service.executeSendSystemEmail({
+        to: "direct-system@example.com",
+        subject: "Direct System Email",
+        body: "Direct Body",
+      });
+      expect(direct.success).toBe(true);
+    });
+
+    it("supports direct NestJS DI constructor instantiation", async () => {
+      const {
+        EmailDispatchService,
+        EmailTemplatesService,
+        EmailSettingsService,
+        EmailSystemService,
+      } = await import("./services");
+
+      const settings = new EmailSettingsService(
+        mockPrismaService as never,
+        encryptionService,
+      );
+      const templates = new EmailTemplatesService(
+        mockPrismaService as never,
+        settings,
+      );
+      const system = new EmailSystemService(
+        mockPrismaService as never,
+        encryptionService,
+      );
+      const dispatch = new EmailDispatchService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        settings,
+      );
+
+      const diService = new EmailService(dispatch, templates, settings, system);
+
+      expect(diService).toBeDefined();
+      const config = diService.getSystemEmailConfig();
+      expect(config).toBeDefined();
     });
   });
 });

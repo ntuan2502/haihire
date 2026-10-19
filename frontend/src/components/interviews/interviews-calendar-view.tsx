@@ -16,12 +16,15 @@ import { CustomModal } from "@/components/shared";
 import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import {
-  getInterviewsFromApplication,
   getInterviewTypeLabel,
   getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
+import { useCalendarDateMath } from "./calendar/hooks/use-calendar-date-math";
+import { useCalendarEvents } from "./calendar/hooks/use-calendar-events";
+import type { CalendarEventItem, CalendarMode } from "./calendar/types";
+export type { CalendarEventItem, CalendarMode };
 
 export interface InterviewsCalendarViewProps {
   applications: Application[];
@@ -35,26 +38,6 @@ export interface InterviewsCalendarViewProps {
   canEdit?: boolean;
 }
 
-interface CalendarEventItem {
-  application: Application;
-  interview: ScheduledInterviewInfo;
-  job?: Job;
-}
-
-type CalendarMode = "month" | "week";
-
-function formatLocalDate(
-  year: number,
-  monthIndex: number,
-  day: number,
-): string {
-  const d = new Date(year, monthIndex, day);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dt = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dt}`;
-}
-
 export function InterviewsCalendarView({
   applications,
   jobs,
@@ -64,8 +47,6 @@ export function InterviewsCalendarView({
   canEdit = true,
 }: InterviewsCalendarViewProps) {
   const { t, locale } = useI18n();
-  const [calendarMode, setCalendarMode] = useState<CalendarMode>("month");
-  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(
     null,
   );
@@ -74,189 +55,23 @@ export function InterviewsCalendarView({
     dayNumber: number;
   } | null>(null);
 
-  // Map of all interview events grouped by YYYY-MM-DD
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, CalendarEventItem[]>();
+  const {
+    calendarMode,
+    setCalendarMode,
+    handlePrevMonth,
+    handleNextMonth,
+    handleToday,
+    monthDays,
+    weekDays,
+    monthTitle,
+    weekTitle,
+    dayHeaders,
+  } = useCalendarDateMath();
 
-    applications.forEach((app) => {
-      const allInterviews = getInterviewsFromApplication(app);
-      const job = jobs.find((j) => String(j.id) === String(app.jobId));
-
-      allInterviews.forEach((intv) => {
-        if (!intv.date) return;
-        const dateKey = intv.date; // "YYYY-MM-DD"
-        if (!map.has(dateKey)) {
-          map.set(dateKey, []);
-        }
-        map.get(dateKey)!.push({
-          application: app,
-          interview: intv,
-          job,
-        });
-      });
-    });
-
-    // Sort events within each day by time
-    map.forEach((events) => {
-      events.sort((a, b) =>
-        (a.interview.time || "").localeCompare(b.interview.time || ""),
-      );
-    });
-
-    return map;
-  }, [applications, jobs]);
-
-  // Today string YYYY-MM-DD in local timezone
-  const todayStr = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  }, []);
-
-  // Helpers for Month calculation
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth(); // 0-indexed
-
-  // Month navigation
-  const handlePrevMonth = () => {
-    if (calendarMode === "month") {
-      setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
-    } else {
-      const prevWeek = new Date(currentDate);
-      prevWeek.setDate(prevWeek.getDate() - 7);
-      setCurrentDate(prevWeek);
-    }
-  };
-
-  const handleNextMonth = () => {
-    if (calendarMode === "month") {
-      setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
-    } else {
-      const nextWeek = new Date(currentDate);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      setCurrentDate(nextWeek);
-    }
-  };
-
-  const handleToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  // Month days array (with padding for start of week - Monday first)
-  const monthDays = useMemo(() => {
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
-
-    // Monday as 0, Sunday as 6
-    let startDayOfWeek = firstDayOfMonth.getDay() - 1;
-    if (startDayOfWeek === -1) startDayOfWeek = 6;
-
-    const days: {
-      dateStr: string;
-      dayNumber: number;
-      isCurrentMonth: boolean;
-      isToday: boolean;
-    }[] = [];
-
-    // Previous month padding
-    const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
-    for (let i = startDayOfWeek - 1; i >= 0; i--) {
-      const dayNum = prevMonthLastDay - i;
-      const dateStr = formatLocalDate(currentYear, currentMonth - 1, dayNum);
-      days.push({
-        dateStr,
-        dayNumber: dayNum,
-        isCurrentMonth: false,
-        isToday: dateStr === todayStr,
-      });
-    }
-
-    // Current month days
-    for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
-      const dateStr = formatLocalDate(currentYear, currentMonth, i);
-      days.push({
-        dateStr,
-        dayNumber: i,
-        isCurrentMonth: true,
-        isToday: dateStr === todayStr,
-      });
-    }
-
-    // Next month padding to fill out 35 or 42 cells
-    const remaining = (7 - (days.length % 7)) % 7;
-    for (let i = 1; i <= remaining; i++) {
-      const dateStr = formatLocalDate(currentYear, currentMonth + 1, i);
-      days.push({
-        dateStr,
-        dayNumber: i,
-        isCurrentMonth: false,
-        isToday: dateStr === todayStr,
-      });
-    }
-
-    return days;
-  }, [currentYear, currentMonth, todayStr]);
-
-  // Week days array (Monday to Sunday)
-  const weekDays = useMemo(() => {
-    const curr = new Date(currentDate);
-    let dayOfWeek = curr.getDay() - 1;
-    if (dayOfWeek === -1) dayOfWeek = 6;
-
-    const startOfWeek = new Date(curr);
-    startOfWeek.setDate(curr.getDate() - dayOfWeek);
-
-    const days: {
-      dateStr: string;
-      dayNumber: number;
-      monthName: string;
-      isToday: boolean;
-    }[] = [];
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(startOfWeek);
-      d.setDate(startOfWeek.getDate() + i);
-      const dateStr = formatLocalDate(
-        d.getFullYear(),
-        d.getMonth(),
-        d.getDate(),
-      );
-
-      days.push({
-        dateStr,
-        dayNumber: d.getDate(),
-        monthName:
-          locale === "vi" ? `Th${d.getMonth() + 1}` : `M${d.getMonth() + 1}`,
-        isToday: dateStr === todayStr,
-      });
-    }
-
-    return days;
-  }, [currentDate, todayStr, locale]);
-
-  const monthTitle = useMemo(() => {
-    return currentDate.toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US", {
-      month: "long",
-      year: "numeric",
-    });
-  }, [currentDate, locale]);
-
-  const weekTitle = useMemo(() => {
-    if (weekDays.length < 7) return "";
-    return `${t("interviews.week")}: ${weekDays[0].dayNumber}/${weekDays[0].monthName} - ${weekDays[6].dayNumber}/${weekDays[6].monthName}, ${currentYear}`;
-  }, [weekDays, currentYear, t]);
-
-  const dayHeaders = useMemo(
-    () => [
-      t("interviews.daysOfWeek.mon"),
-      t("interviews.daysOfWeek.tue"),
-      t("interviews.daysOfWeek.wed"),
-      t("interviews.daysOfWeek.thu"),
-      t("interviews.daysOfWeek.fri"),
-      t("interviews.daysOfWeek.sat"),
-      t("interviews.daysOfWeek.sun"),
-    ],
-    [t],
-  );
+  const { eventsByDate } = useCalendarEvents({
+    applications,
+    jobs,
+  });
 
   const dayDetailsEvents = useMemo(() => {
     if (!openDayDetails) return [];

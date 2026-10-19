@@ -81,6 +81,16 @@ const mockDeleteAppMutateAsync = vi.fn();
 const mockUpdateCandidateMutateAsync = vi.fn();
 const mockDeleteInterviewMutateAsync = vi.fn();
 const mockSendEmailMutateAsync = vi.fn();
+const mockDownloadAuthenticatedFile = vi.fn();
+
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    downloadAuthenticatedFile: (...args: unknown[]) =>
+      mockDownloadAuthenticatedFile(...args),
+  };
+});
 
 vi.mock("@/hooks/use-queries", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -328,6 +338,41 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       ).toBeInTheDocument();
     });
 
+    it("switches to other tab panels: ai, notes, properties, timeline, documents", () => {
+      renderWithClient(<ApplicationDetailPage />);
+
+      // AI tab
+      const aiTab = screen.getByRole("button", { name: "Phân tích AI" });
+      fireEvent.click(aiTab);
+      expect(screen.getByText("Chưa có phân tích AI")).toBeInTheDocument();
+
+      // Notes tab
+      const notesTab = screen.getByRole("button", { name: "Ghi chú" });
+      fireEvent.click(notesTab);
+      expect(
+        screen.getByPlaceholderText("Nhập ghi chú tại đây..."),
+      ).toBeInTheDocument();
+
+      // Properties tab
+      const propTab = screen.getByRole("button", { name: "Thuộc tính" });
+      fireEvent.click(propTab);
+      expect(
+        screen.getByText(/\+? Thêm thuộc tính tổ chức/i),
+      ).toBeInTheDocument();
+
+      // Timeline tab
+      const timelineTab = screen.getByRole("button", {
+        name: "Dòng thời gian",
+      });
+      fireEvent.click(timelineTab);
+      expect(document.querySelector(".space-y-4")).toBeInTheDocument();
+
+      // Documents tab
+      const docsTab = screen.getByRole("button", { name: /Tài liệu \(1\)/i });
+      fireEvent.click(docsTab);
+      expect(screen.getByText("tran-van-b-cv.pdf")).toBeInTheDocument();
+    });
+
     it("opens overview sections popover when toggle button is clicked", () => {
       renderWithClient(<ApplicationDetailPage />);
 
@@ -465,6 +510,53 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
 
       await waitFor(() => {
         expect(mockPush).toHaveBeenCalledWith("/dashboard/applications");
+      });
+    });
+
+    it("opens document preview modal and invokes authenticated download", async () => {
+      mockDownloadAuthenticatedFile.mockResolvedValueOnce(undefined);
+
+      renderWithClient(<ApplicationDetailPage />);
+
+      const previewBtn = screen.getByRole("button", { name: "Xem trước" });
+      fireEvent.click(previewBtn);
+
+      expect(
+        screen.getByRole("heading", { name: "tran-van-b-cv.pdf", level: 2 }),
+      ).toBeInTheDocument();
+
+      const downloadBtns = screen.getAllByRole("button", {
+        name: /Tải xuống/i,
+      });
+      fireEvent.click(downloadBtns[0]);
+
+      await waitFor(() => {
+        expect(mockDownloadAuthenticatedFile).toHaveBeenCalled();
+      });
+    });
+
+    it("handles delete mutation error gracefully with toast error", async () => {
+      mockDeleteAppMutateAsync.mockRejectedValueOnce(
+        new Error("Cannot delete"),
+      );
+
+      renderWithClient(<ApplicationDetailPage />);
+
+      const deleteBtn = screen.getByRole("button", {
+        name: "Xóa hồ sơ ứng tuyển",
+      });
+      fireEvent.click(deleteBtn);
+
+      const confirmInput = document.getElementById(
+        "confirm-destructive-input",
+      ) as HTMLInputElement;
+      fireEvent.change(confirmInput, { target: { value: "Tran Van B" } });
+
+      const form = confirmInput.closest("form");
+      fireEvent.submit(form!);
+
+      await waitFor(() => {
+        expect(mockDeleteAppMutateAsync).toHaveBeenCalledWith(VALID_APP_ID);
       });
     });
   });

@@ -192,12 +192,12 @@ function OnboardingContent() {
     try {
       setSubmitting(true);
       setErrorSource(null);
-      const res = await api.post<{ organization: Organization; message: string }>(
-        "/organizations/join",
-        {
-          inviteCodeOrSlug: target.trim(),
-        },
-      );
+      const res = await api.post<{
+        organization: Organization;
+        message: string;
+      }>("/organizations/join", {
+        inviteCodeOrSlug: target.trim(),
+      });
 
       const joinedOrg = res.data.organization;
       updateUserOrg(joinedOrg);
@@ -216,11 +216,7 @@ function OnboardingContent() {
 
   // Compute the list of organizations the user can choose from
   const displayOrgs: Organization[] =
-    myOrgs.length > 0
-      ? myOrgs
-      : user?.organization
-      ? [user.organization]
-      : [];
+    myOrgs.length > 0 ? myOrgs : user?.organization ? [user.organization] : [];
 
   const hasExistingOrgs = displayOrgs.length > 0;
 
@@ -260,21 +256,26 @@ function OnboardingContent() {
             {orgsLoading ? (
               <div className="p-8 flex flex-col items-center justify-center gap-2">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                <p className="text-xs text-slate-400">{t("onboarding.loadingWorkspaces")}</p>
+                <p className="text-xs text-slate-400">
+                  {t("onboarding.loadingWorkspaces")}
+                </p>
               </div>
             ) : displayOrgs.length === 0 ? (
               <div className="p-6 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                <p className="text-sm text-slate-500">{t("onboarding.noWorkspaces")}</p>
+                <p className="text-sm text-slate-500">
+                  {t("onboarding.noWorkspaces")}
+                </p>
               </div>
             ) : (
               displayOrgs.map((org) => {
                 const isActive = org.id === user?.organizationId;
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={org.id}
                     onClick={() => handleSelectOrg(org)}
                     className={cn(
-                      "w-full p-4 rounded-xl border bg-white dark:bg-slate-900 flex items-center justify-between cursor-pointer transition-all group",
+                      "w-full p-4 rounded-xl border bg-white dark:bg-slate-900 flex items-center justify-between cursor-pointer transition-all group text-left",
                       isActive
                         ? "border-slate-300 dark:border-slate-700 shadow-xs ring-1 ring-blue-500/20"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/40",
@@ -300,10 +301,11 @@ function OnboardingContent() {
                       </span>
                     ) : (
                       <span className="text-xs text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                        {t("onboarding.openWorkspace")} <ArrowRight className="h-3.5 w-3.5" />
+                        {t("onboarding.openWorkspace")}{" "}
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </span>
                     )}
-                  </div>
+                  </button>
                 );
               })
             )}
@@ -396,7 +398,9 @@ function OnboardingContent() {
               disabled={submitting}
               className="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-all cursor-pointer"
             >
-              {submitting ? t("onboarding.creatingOrg") : t("onboarding.createOrgButton")}
+              {submitting
+                ? t("onboarding.creatingOrg")
+                : t("onboarding.createOrgButton")}
             </Button>
           </form>
 
@@ -469,7 +473,11 @@ function OnboardingContent() {
                   disabled={submitting || !inviteCodeOrSlug.trim()}
                   className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm cursor-pointer shrink-0"
                 >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("onboarding.joinButton")}
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    t("onboarding.joinButton")
+                  )}
                 </Button>
               </form>
               <p className="text-[11px] text-slate-400 mt-2">

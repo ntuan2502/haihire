@@ -73,9 +73,10 @@ export function WizardStepPublish({
         } gap-4`}
       >
         {/* Card 1: Publish Now */}
-        <div
+        <button
+          type="button"
           onClick={() => setPublishMode("publish")}
-          className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
+          className={`w-full text-left relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
             publishMode === "publish"
               ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
               : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
@@ -102,12 +103,13 @@ export function WizardStepPublish({
               {t("jobs.wizard.publishNowDesc")}
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Card 2: Save as draft */}
-        <div
+        <button
+          type="button"
           onClick={() => setPublishMode("draft")}
-          className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
+          className={`w-full text-left relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
             publishMode === "draft"
               ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
               : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
@@ -132,13 +134,14 @@ export function WizardStepPublish({
               {t("jobs.wizard.saveDraftDesc")}
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Card 3: Closed (Edit mode only) */}
         {mode === "edit" && (
-          <div
+          <button
+            type="button"
             onClick={() => setPublishMode("closed")}
-            className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
+            className={`w-full text-left relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
               publishMode === "closed"
                 ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
                 : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
@@ -163,7 +166,7 @@ export function WizardStepPublish({
                 {t("jobs.wizard.closeJobDesc")}
               </p>
             </div>
-          </div>
+          </button>
         )}
       </div>
 

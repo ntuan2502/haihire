@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useI18n } from "@/i18n";
-import {
-  SourcingChannel,
-  type TrackingLinkItem,
-} from "@haihire/shared";
+import { SourcingChannel, type TrackingLinkItem } from "@haihire/shared";
 import {
   useCreateTrackingLinkMutation,
   useUpdateTrackingLinkMutation,
@@ -97,7 +94,9 @@ export function TrackingLinkModal({
   const isEdit = mode === "edit" && Boolean(link);
 
   const [name, setName] = useState("");
-  const [source, setSource] = useState<SourcingChannel>(SourcingChannel.LINKEDIN);
+  const [source, setSource] = useState<SourcingChannel>(
+    SourcingChannel.LINKEDIN,
+  );
   const [customSource, setCustomSource] = useState("");
   const [jobId, setJobId] = useState("ALL");
 
@@ -116,9 +115,11 @@ export function TrackingLinkModal({
         setName(link.name);
         setSource(link.source);
         setCustomSource(link.customSource || "");
-        setJobId(lockJob && defaultJobId ? defaultJobId : (link.jobId || "ALL"));
+        setJobId(lockJob && defaultJobId ? defaultJobId : link.jobId || "ALL");
         setUtmSource(link.utmSource || link.source.toLowerCase());
-        setUtmMedium(link.utmMedium || link.medium || getDefaultMedium(link.source));
+        setUtmMedium(
+          link.utmMedium || link.medium || getDefaultMedium(link.source),
+        );
         setUtmCampaign(link.utmCampaign || link.campaign || "");
         setUtmTerm(link.utmTerm || "");
         setUtmContent(link.utmContent || "");
@@ -163,7 +164,10 @@ export function TrackingLinkModal({
           data: {
             name: name.trim(),
             source,
-            customSource: source === SourcingChannel.OTHER ? customSource.trim() || null : null,
+            customSource:
+              source === SourcingChannel.OTHER
+                ? customSource.trim() || null
+                : null,
             jobId: effectiveJobId === "ALL" ? null : effectiveJobId,
             utmSource: utmSource.trim() || undefined,
             utmMedium: utmMedium.trim() || undefined,
@@ -177,7 +181,10 @@ export function TrackingLinkModal({
         await createMutation.mutateAsync({
           name: name.trim(),
           source,
-          customSource: source === SourcingChannel.OTHER ? customSource.trim() || undefined : undefined,
+          customSource:
+            source === SourcingChannel.OTHER
+              ? customSource.trim() || undefined
+              : undefined,
           jobId: effectiveJobId === "ALL" ? undefined : effectiveJobId,
           utmSource: utmSource.trim() || undefined,
           utmMedium: utmMedium.trim() || undefined,
@@ -198,14 +205,18 @@ export function TrackingLinkModal({
     label: (t as (k: string) => string)(`sourcing.channels.${ch}`) || ch,
   }));
 
-  const hasDefaultJob = Boolean(defaultJobId && jobs.some((j) => j.id === defaultJobId));
+  const hasDefaultJob = Boolean(
+    defaultJobId && jobs.some((j) => j.id === defaultJobId),
+  );
   const normalizedJobs =
     lockJob && defaultJobId && !hasDefaultJob
       ? [{ id: defaultJobId, title: defaultJobId }, ...jobs]
       : jobs;
 
   const jobSelectOptions = [
-    ...(lockJob ? [] : [{ value: "ALL", label: t("sourcing.modal.allJobsOption") }]),
+    ...(lockJob
+      ? []
+      : [{ value: "ALL", label: t("sourcing.modal.allJobsOption") }]),
     ...normalizedJobs.map((j) => ({ value: j.id, label: j.title })),
   ];
 
@@ -214,7 +225,10 @@ export function TrackingLinkModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl max-h-[92vh] flex flex-col">
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-w-0">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 overflow-hidden min-w-0"
+        >
           <DialogHeader className="p-6 pb-4 space-y-1.5 text-left border-b border-slate-100 dark:border-slate-800">
             <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
               {isEdit
@@ -231,11 +245,17 @@ export function TrackingLinkModal({
           <div className="p-6 space-y-4 overflow-y-auto flex-1 min-w-0">
             {/* Link Name */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <label
+                htmlFor="tracking-link-name-input"
+                className="text-xs font-bold text-slate-700 dark:text-slate-300"
+              >
                 {t("sourcing.modal.linkNameLabel")}
                 <span className="text-rose-500 ml-1">*</span>
               </label>
               <input
+                id="tracking-link-name-input"
+                name="name"
+                aria-label={t("sourcing.modal.linkNameLabel")}
                 type="text"
                 value={name}
                 placeholder={t("sourcing.modal.linkNamePlaceholder")}
@@ -269,10 +289,16 @@ export function TrackingLinkModal({
             {/* Custom Source Input when OTHER */}
             {source === SourcingChannel.OTHER && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label
+                  htmlFor="tracking-link-custom-source-input"
+                  className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                >
                   {t("sourcing.modal.customSourceLabel")}
                 </label>
                 <input
+                  id="tracking-link-custom-source-input"
+                  name="customSource"
+                  aria-label={t("sourcing.modal.customSourceLabel")}
                   type="text"
                   value={customSource}
                   placeholder={t("sourcing.modal.customSourcePlaceholder")}
@@ -304,7 +330,8 @@ export function TrackingLinkModal({
                 className="w-full"
                 triggerClassName={cn(
                   "w-full text-xs h-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl",
-                  lockJob && "bg-slate-50/80 dark:bg-slate-800/50 opacity-80 cursor-not-allowed"
+                  lockJob &&
+                    "bg-slate-50/80 dark:bg-slate-800/50 opacity-80 cursor-not-allowed",
                 )}
               />
             </div>
@@ -319,10 +346,16 @@ export function TrackingLinkModal({
                 {/* utm_source & utm_medium */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label
+                      htmlFor="tracking-link-utm-source-input"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                    >
                       {t("sourcing.details.utmSourceLabel")}
                     </label>
                     <input
+                      id="tracking-link-utm-source-input"
+                      name="utmSource"
+                      aria-label={t("sourcing.details.utmSourceLabel")}
                       type="text"
                       value={utmSource}
                       onChange={(e) => setUtmSource(e.target.value)}
@@ -331,10 +364,16 @@ export function TrackingLinkModal({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label
+                      htmlFor="tracking-link-utm-medium-input"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                    >
                       {t("sourcing.details.utmMediumLabel")}
                     </label>
                     <input
+                      id="tracking-link-utm-medium-input"
+                      name="utmMedium"
+                      aria-label={t("sourcing.details.utmMediumLabel")}
                       type="text"
                       value={utmMedium}
                       onChange={(e) => setUtmMedium(e.target.value)}
@@ -347,10 +386,16 @@ export function TrackingLinkModal({
                 {/* utm_campaign & utm_term */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label
+                      htmlFor="tracking-link-utm-campaign-input"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                    >
                       {t("sourcing.details.utmCampaignLabel")}
                     </label>
                     <input
+                      id="tracking-link-utm-campaign-input"
+                      name="utmCampaign"
+                      aria-label={t("sourcing.details.utmCampaignLabel")}
                       type="text"
                       value={utmCampaign}
                       placeholder={t("sourcing.modal.campaignPlaceholder")}
@@ -359,10 +404,16 @@ export function TrackingLinkModal({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <label
+                      htmlFor="tracking-link-utm-term-input"
+                      className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                    >
                       {t("sourcing.details.utmTermLabel")}
                     </label>
                     <input
+                      id="tracking-link-utm-term-input"
+                      name="utmTerm"
+                      aria-label={t("sourcing.details.utmTermLabel")}
                       type="text"
                       value={utmTerm}
                       placeholder={t("sourcing.details.utmTermPlaceholder")}
@@ -374,10 +425,16 @@ export function TrackingLinkModal({
 
                 {/* utm_content */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <label
+                    htmlFor="tracking-link-utm-content-input"
+                    className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                  >
                     {t("sourcing.details.utmContentLabel")}
                   </label>
                   <input
+                    id="tracking-link-utm-content-input"
+                    name="utmContent"
+                    aria-label={t("sourcing.details.utmContentLabel")}
                     type="text"
                     value={utmContent}
                     placeholder={t("sourcing.details.utmContentPlaceholder")}

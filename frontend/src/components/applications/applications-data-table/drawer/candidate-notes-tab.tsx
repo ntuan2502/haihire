@@ -39,6 +39,9 @@ export function CandidateNotesTab({
       )}
       <div className="flex items-center gap-2">
         <input
+          id="candidate-note-input"
+          name="candidateNoteInput"
+          aria-label={t("applications.notePlaceholder")}
           type="text"
           placeholder={t("applications.notePlaceholder")}
           value={noteInput}

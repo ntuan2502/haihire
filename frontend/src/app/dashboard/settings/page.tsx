@@ -175,19 +175,22 @@ export default function GeneralSettingsPage() {
                 {displayHost}/
               </span>
               <input
+                id="org-slug-input"
+                name="orgSlug"
+                aria-label={t("settings.urlSlug")}
                 type="text"
                 placeholder={t("settings.placeholders.orgSlug")}
                 value={orgSlug}
                 onChange={(e) =>
                   setOrgSlug(
-                    e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9-]/g, ""),
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
                   )
                 }
                 className="flex-1 h-10 px-3 text-xs bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
                 required
-                disabled={!canEdit || isOrgLoading || updateOrgMutation.isPending}
+                disabled={
+                  !canEdit || isOrgLoading || updateOrgMutation.isPending
+                }
               />
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">

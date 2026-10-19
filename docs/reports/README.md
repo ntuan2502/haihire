@@ -91,6 +91,21 @@ Tasks #31 — #34+. v0.1.2 release, CI/CD optimization, documentation reorganiza
 - [68 — Task #39: High Accessibility Issues Fix Report](./68-task-39-high-a11y-issues-fix-report.md)
 - [69 — Task #40: Medium and Low Accessibility Issues Fix Report](./69-task-40-medium-and-low-a11y-issues-fix-report.md)
 - [70 — Task #36 Phase 2: Coverage Augmentation Completion Report](./70-task-36-phase-2-coverage-augmentation-report.md)
+- [71 — Task #41 & #42: v0.1.4 Release & CI/CD Overlap Fix Completion Report](./71-task-41-v0.1.4-release-completion-report.md)
+
+---
+
+## Phase 5: Wave 4 God Files Refactor Campaign (Reports 72+)
+
+Tasks #43+. 5 frontend God Files audit and decomposition.
+
+- [72 — Task #43 Phase 1: Wave 4 Audit Report](./72-task-43-phase-1-wave-4-audit-report.md)
+- [73 — Task #43 Phase 2: Wave 4.1 Job Wizard Editor Refactor Report](./73-task-43-phase-2-wave-4.1-job-wizard-refactor-report.md)
+- [74 — Task #43 Phase 2: Wave 4.2 Candidates Page Refactor Report](./74-task-43-phase-2-wave-4.2-candidates-page-refactor-report.md)
+- [75 — Task 43 Phase 2: Wave 4.3 Candidate Detail Page Refactor Report](./75-task-43-phase-2-wave-4.3-candidates-detail-refactor-report.md)
+- [76 — Task 43 Phase 2: Wave 4.4 Application Detail Page Refactor Report](./76-task-43-phase-2-wave-4.4-applications-detail-refactor-report.md)
+- [77 — Task 43 Phase 2: Wave 4.5 Phase A Interviews Calendar Hooks Report](./77-task-43-phase-2-wave-4.5-phase-a-calendar-hooks-report.md)
+- [78 — Task 44 Phase 2: Wave 4.5 Phase B Interviews Calendar UI Report](./78-task-44-wave-4.5-phase-b-calendar-ui-report.md)
 
 ---
 

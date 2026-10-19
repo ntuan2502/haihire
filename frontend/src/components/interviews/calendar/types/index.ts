@@ -36,3 +36,15 @@ export interface DayDetailsInfo {
   dateStr: string;
   dayNumber: number;
 }
+
+export interface InterviewsCalendarViewProps {
+  applications: Application[];
+  jobs: Job[];
+  onScheduleDate: (dateStr: string) => void;
+  onEditSchedule: (app: Application, interview: ScheduledInterviewInfo) => void;
+  onOpenScorecard: (
+    app: Application,
+    interview: ScheduledInterviewInfo,
+  ) => void;
+  canEdit?: boolean;
+}

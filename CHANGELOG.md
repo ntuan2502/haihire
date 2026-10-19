@@ -3,6 +3,44 @@
 All notable changes to the HaiHire Enterprise ATS platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-19
+
+### Changed
+
+- **Wave 4 God Files Refactoring (Tasks #43-44):**
+  - job-wizard-editor.tsx: 838 → 2 LOC shim (6 sub-files).
+  - candidates/page.tsx: 1,050 → 14 LOC wrapper (8 sub-files).
+  - candidates/[id]/page.tsx: 941 → 10 LOC wrapper (9 sub-files).
+  - applications/[id]/page.tsx: 857 → 10 LOC wrapper (10 sub-files).
+  - interviews-calendar-view.tsx: 942 → 7 LOC shim (12 sub-files, 2-phase extraction).
+
+- **Cumulative God Files Refactored (Waves 1-4):**
+  - 10/10 major files refactored.
+  - ~12,500 LOC eliminated from monoliths.
+  - Max file size: 1,706 → 280 LOC.
+  - 85+ modular sub-files created.
+
+### Added
+
+- Wave 4 characterization tests: +107 tests.
+- Total tests: 764 → 871 (+107).
+- 44 sub-files across 5 Wave 4 files.
+- Calendar hooks: use-calendar-date-math.ts, use-calendar-events.ts.
+- Candidate page: candidates-view.tsx + 8 sub-files.
+- Application detail: application-detail-view.tsx + 9 sub-files.
+- Job wizard: wizard/ directory with 4 hooks + 2 components.
+
+### Fixed
+
+- Zero breaking changes across all 5 Wave 4 refactors.
+- All consumers unaffected (App Router pages, dashboard pages).
+- Preserved localStorage keys, URL behavior, state machine.
+
+### Security
+
+- No security changes.
+- Zero new dependencies in Wave 4.
+
 ## [0.1.4] - 2026-10-17
 
 ### Changed

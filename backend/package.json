@@ -10,6 +10,7 @@
     "lint": "eslint . && tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "db:update": "prisma db update",
     "db:seed": "node --import tsx src/prisma/seed.ts",
     "db:verify": "prisma db verify",

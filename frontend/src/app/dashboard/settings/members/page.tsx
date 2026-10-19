@@ -635,6 +635,7 @@ export default function MembersSettingsPage() {
                   {/* Avatar */}
                   <div className="h-9 w-9 rounded-full bg-slate-800 dark:bg-slate-700 text-white font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-slate-100 dark:ring-slate-800">
                     {m.avatarUrl ? (
+                      // Intentional img for user avatar (Next.js Image not suitable for arbitrary external URLs with signed params).
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={m.avatarUrl}

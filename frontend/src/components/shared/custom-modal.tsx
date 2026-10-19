@@ -4,13 +4,14 @@ import { useState, useEffect, type ReactNode } from "react";
 import { X, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "cn";
 
-export type CustomModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "full";
+export type CustomModalSize =
+  "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "full";
 
 export const CUSTOM_MODAL_SIZES: Record<CustomModalSize, string> = {
-  sm: "sm:max-w-md",       // ~448px (Alert / Confirmation dialog)
-  md: "sm:max-w-2xl",      // ~672px (Standard dialog / Event lists)
-  lg: "sm:max-w-4xl",      // ~896px (Complex form / Scorecard / Schedule)
-  xl: "sm:max-w-6xl",      // ~1152px (Document Preview / Multi-column workspace)
+  sm: "sm:max-w-md", // ~448px (Alert / Confirmation dialog)
+  md: "sm:max-w-2xl", // ~672px (Standard dialog / Event lists)
+  lg: "sm:max-w-4xl", // ~896px (Complex form / Scorecard / Schedule)
+  xl: "sm:max-w-6xl", // ~1152px (Document Preview / Multi-column workspace)
   "2xl": "sm:max-w-6xl",
   "3xl": "sm:max-w-7xl",
   "4xl": "sm:max-w-[90vw]",
@@ -87,7 +88,8 @@ export function CustomModal({
 
   if (!isOpen) return null;
 
-  const resolvedMaxWidth = maxWidth || CUSTOM_MODAL_SIZES[size] || "sm:max-w-2xl";
+  const resolvedMaxWidth =
+    maxWidth || CUSTOM_MODAL_SIZES[size] || "sm:max-w-2xl";
   const resolvedHeight = height || "max-h-[92vh]";
 
   return (
@@ -101,9 +103,17 @@ export function CustomModal({
     >
       {/* Backdrop with native blur */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="Close modal"
         className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-xs transition-opacity"
         onClick={onClose}
-        aria-hidden="true"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClose();
+          }
+        }}
       />
 
       {/* Modal Dialog Surface */}
@@ -115,10 +125,14 @@ export function CustomModal({
             : cn(resolvedMaxWidth, resolvedHeight),
           panelClassName,
         )}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header (shadcn design aesthetics with zero macos decoration) */}
-        {(title || description || badge || headerRight || showCloseButton || allowMaximize) && (
+        {(title ||
+          description ||
+          badge ||
+          headerRight ||
+          showCloseButton ||
+          allowMaximize) && (
           <div
             className={cn(
               "px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] flex items-center justify-between gap-3 shrink-0",

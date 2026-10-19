@@ -73,14 +73,26 @@ export function WizardStepPublish({
         } gap-4`}
       >
         {/* Card 1: Publish Now */}
-        <div
-          onClick={() => setPublishMode("publish")}
-          className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
+        <label
+          className={`w-full block text-left relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
             publishMode === "publish"
               ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
               : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
           }`}
         >
+          <input
+            type="radio"
+            name="publishMode"
+            value="publish"
+            checked={publishMode === "publish"}
+            onChange={() => setPublishMode("publish")}
+            className="sr-only"
+            aria-label={
+              mode === "create"
+                ? t("jobs.wizard.publishNow")
+                : t("jobs.wizard.openPublished")
+            }
+          />
           <div className="flex items-center justify-between">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
               <Send className="h-4 w-4" />
@@ -102,17 +114,25 @@ export function WizardStepPublish({
               {t("jobs.wizard.publishNowDesc")}
             </p>
           </div>
-        </div>
+        </label>
 
         {/* Card 2: Save as draft */}
-        <div
-          onClick={() => setPublishMode("draft")}
-          className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
+        <label
+          className={`w-full block text-left relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
             publishMode === "draft"
               ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
               : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
           }`}
         >
+          <input
+            type="radio"
+            name="publishMode"
+            value="draft"
+            checked={publishMode === "draft"}
+            onChange={() => setPublishMode("draft")}
+            className="sr-only"
+            aria-label={t("jobs.wizard.saveDraft")}
+          />
           <div className="flex items-center justify-between">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               <FileEdit className="h-4 w-4" />
@@ -132,18 +152,26 @@ export function WizardStepPublish({
               {t("jobs.wizard.saveDraftDesc")}
             </p>
           </div>
-        </div>
+        </label>
 
         {/* Card 3: Closed (Edit mode only) */}
         {mode === "edit" && (
-          <div
-            onClick={() => setPublishMode("closed")}
-            className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
+          <label
+            className={`w-full block text-left relative p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-xs space-y-3 ${
               publishMode === "closed"
                 ? "border-blue-600 bg-white dark:bg-slate-900 ring-2 ring-blue-600/10"
                 : "border-slate-200/90 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 hover:border-slate-300"
             }`}
           >
+            <input
+              type="radio"
+              name="publishMode"
+              value="closed"
+              checked={publishMode === "closed"}
+              onChange={() => setPublishMode("closed")}
+              className="sr-only"
+              aria-label={t("jobs.wizard.closeJob")}
+            />
             <div className="flex items-center justify-between">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
                 <Lock className="h-4 w-4" />
@@ -163,7 +191,7 @@ export function WizardStepPublish({
                 {t("jobs.wizard.closeJobDesc")}
               </p>
             </div>
-          </div>
+          </label>
         )}
       </div>
 

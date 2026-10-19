@@ -56,9 +56,17 @@ export function SlideOver({
     >
       {/* Backdrop with fade-in effect */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="Close panel"
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
-        aria-hidden="true"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClose();
+          }
+        }}
       />
 
       {/* Slide-over Container */}
@@ -67,7 +75,7 @@ export function SlideOver({
           className={cn(
             "w-screen pointer-events-auto bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200/80 dark:border-slate-800 flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-300 ease-out",
             width || maxWidth,
-            panelClassName
+            panelClassName,
           )}
         >
           {title && (

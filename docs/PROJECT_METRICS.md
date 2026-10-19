@@ -59,7 +59,7 @@
 - **REST API Endpoints:** 84
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation in Task #8)
 - **Database Models:** 16 (9 camelCase tech debt + 7 snake_case)
-- **God Files (>400 LOC):** 18 remaining (reduced from 28; 10/10 God Files refactored across Waves 1–4, Wave 4 complete)
+- **God Files (>400 LOC):** 23 remaining logic/UI/service files >400 LOC (excluding 4 exempt files: 2 i18n dictionaries, seed script, types); 10/10 identified God Files refactored across Waves 1–4, Wave 4 complete
   - Max file size: 280 LOC (`frontend/src/components/interviews/calendar/calendar-month-grid.tsx`)
   - Refactored God Files in Waves 1–4 (10/10 Complete):
     - `frontend/src/components/interviews/interviews-calendar-view.tsx` (942 → 7 LOC shim, 12 modular sub-files, Task 43–44 Wave 4.5)
@@ -72,7 +72,7 @@
     - `backend/src/sourcing/sourcing.service.ts` (1,214 → 162 LOC facade, 3 sub-services, Wave 1)
     - `backend/src/applications/applications.service.ts` (1,189 → 150 LOC facade, 4 sub-services, Wave 2)
     - `frontend/src/components/jobs/job-list.tsx` (957 → 10 LOC shim, 8 subcomponents, Wave 2)
-  - Detailed inventory of remaining 18 files tracked in [`docs/ROADMAP.md`](ROADMAP.md)
+  - Detailed inventory of remaining 23 files tracked in [`docs/ROADMAP.md`](ROADMAP.md)
 
 ---
 

@@ -68,6 +68,9 @@ export function ApplicationNotesCard({ app }: ApplicationNotesCardProps) {
 
       <div className="flex items-center gap-2">
         <input
+          id="application-note-input"
+          name="noteInput"
+          aria-label={t("applications.notePlaceholder")}
           type="text"
           placeholder={t("applications.notePlaceholder")}
           value={noteInput}

@@ -10,18 +10,21 @@
 docs/
 ├── PROJECT_CONTEXT.md              # Living Single Source of Truth (SSOT)
 ├── DEFINITION_OF_DONE.md           # Production DoD Checklist
-├── ROADMAP.md                      # Strategic Horizon & v0.1.2 Release Status
+├── ROADMAP.md                      # Strategic Horizon & v0.2.0 Release Status
 ├── TESTCASES.md                    # Verification test matrix across 10 domains
 ├── onboarding.md                   # Step-by-step developer onboarding & quick start
 ├── architecture/                   # System design & topology
 │   └── system-overview.md          # Monorepo topology, Mermaid diagrams, core patterns
 ├── api/                            # REST API contracts & specifications
-│   └── overview.md                 # 9 controllers, 83 endpoints, auth, error envelope
-├── releases/                       # Official release notes & changelogs (4 versions)
+│   └── overview.md                 # 9 controllers, 84 endpoints, auth, error envelope
+├── releases/                       # Official release notes & changelogs (6 versions)
 │   ├── v0.1.0.md                   # Pre-release baseline notes
 │   ├── v0.1.0-announcement.md      # Launch announcement
 │   ├── v0.1.1.md                   # CI/CD stability patch
-│   └── v0.1.2.md                   # God Files refactor & CI/CD optimization
+│   ├── v0.1.2.md                   # Wave 1-3 God Files refactor
+│   ├── v0.1.3.md                   # CI/CD optimization & runbook consolidation
+│   ├── v0.1.4.md                   # Accessibility campaign & coverage augmentation
+│   └── v0.2.0.md                   # Wave 4 God Files refactor milestone
 ├── runbooks/                       # Site reliability & operational runbooks (11 SOPs)
 │   ├── alerts.md                   # Prometheus alerts catalog & emergency SOPs
 │   ├── backup-and-restore.md       # PostgreSQL dumps, MinIO hot backup & restore drills
@@ -34,9 +37,9 @@ docs/
 │   ├── production-deployment-plan.md # 5-phase deployment protocol & rollback
 │   ├── redis-recovery.md           # Valkey memory exhaustion & failover SOP
 │   └── versioning.md               # Monorepo versioning, SemVer, GHCR & immutable release policy
-├── reports/                        # Milestone Completion Reports (53 reports)
-│   ├── README.md                   # 4-phase structured milestone index
-│   └── [53 milestone reports]      # Primary technical verification evidence
+├── reports/                        # Milestone Completion Reports (80 reports)
+│   ├── README.md                   # 5-phase structured milestone index
+│   └── [80 milestone reports]      # Primary technical verification evidence
 └── archive/                        # Consolidated Historical Archives
     ├── audits/                     # Historical verification logs (Phases 1 to 22.8)
     │   ├── README.md               # Registry of all 20 phases & verification milestones

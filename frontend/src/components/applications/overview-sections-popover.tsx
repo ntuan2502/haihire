@@ -124,7 +124,6 @@ export function OverviewSectionsPopover({
         zIndex: 99999,
       }}
       className="w-48 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl py-2 animate-in fade-in-0 zoom-in-95 duration-150"
-      onClick={(e) => e.stopPropagation()}
     >
       <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
         {t("applications.sections.sectionsTitle")}

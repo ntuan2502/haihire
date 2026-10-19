@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useMemo, useRef, type FormEvent } from "react";
 import { useAuth } from "@/context/auth-context";
 import {
   useOrgMembers,
@@ -41,7 +41,8 @@ export default function MembersSettingsPage() {
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
   const { data: members = [], refetch: refetchMembers } = useOrgMembers();
-  const { data: serverInviteLinks = [], refetch: refetchLinks } = useInviteLinks();
+  const { data: serverInviteLinks = [], refetch: refetchLinks } =
+    useInviteLinks();
   const createInviteMutation = useCreateInviteLinkMutation();
   const revokeInviteMutation = useRevokeInviteLinkMutation();
   const updateMemberRoleMutation = useUpdateMemberRoleMutation();
@@ -49,10 +50,19 @@ export default function MembersSettingsPage() {
 
   const [openMenuMemberId, setOpenMenuMemberId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setOpenMenuMemberId(null);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        menuContainerRef.current &&
+        menuContainerRef.current.contains(e.target as Node)
+      ) {
+        return;
+      }
+      setOpenMenuMemberId(null);
+    };
     if (openMenuMemberId) {
       document.addEventListener("click", handleClickOutside);
     }
@@ -177,7 +187,10 @@ export default function MembersSettingsPage() {
   };
 
   // Handle removing member from organization
-  const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const handleConfirmRemoveMember = async () => {
     if (!memberToRemove) return;
@@ -221,7 +234,7 @@ export default function MembersSettingsPage() {
         avatarUrl: m.avatarUrl,
         isOwner: Boolean(
           (m as { isOwner?: boolean }).isOwner ||
-            (user?.organization?.ownerId && user.organization.ownerId === m.id),
+          (user?.organization?.ownerId && user.organization.ownerId === m.id),
         ),
         isCurrent: m.id === user?.id || m.email === user?.email,
       }));
@@ -237,7 +250,8 @@ export default function MembersSettingsPage() {
           avatarUrl: user.avatarUrl,
           isOwner: Boolean(
             user.isOwner ||
-              (user.organization?.ownerId && user.organization.ownerId === user.id),
+            (user.organization?.ownerId &&
+              user.organization.ownerId === user.id),
           ),
           isCurrent: true,
         },
@@ -342,7 +356,11 @@ export default function MembersSettingsPage() {
               className="h-10 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             >
               <Send className="h-3.5 w-3.5" />
-              <span>{isInviting ? t("members.sendingInvite") : t("members.sendInvite")}</span>
+              <span>
+                {isInviting
+                  ? t("members.sendingInvite")
+                  : t("members.sendInvite")}
+              </span>
             </Button>
           </form>
         </div>
@@ -454,7 +472,9 @@ export default function MembersSettingsPage() {
                     onClick={handleCreateLink}
                     className="h-9 px-4 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs transition-colors cursor-pointer"
                   >
-                    {createInviteMutation.isPending ? t("common.saving") : t("members.createLinkButton")}
+                    {createInviteMutation.isPending
+                      ? t("common.saving")
+                      : t("members.createLinkButton")}
                   </Button>
                 </div>
               </div>
@@ -521,9 +541,13 @@ export default function MembersSettingsPage() {
                         </div>
 
                         <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {link.usesCount}/{link.maxUses !== null ? link.maxUses : "∞"} {t("candidates.columns.applications").toLowerCase()}
-                          {" • "}{t("members.expiresInLabel")} {daysRemaining}
-                          {" • "}{t("common.created")}: {link.createdByName || "Admin"}
+                          {link.usesCount}/
+                          {link.maxUses !== null ? link.maxUses : "∞"}{" "}
+                          {t("candidates.columns.applications").toLowerCase()}
+                          {" • "}
+                          {t("members.expiresInLabel")} {daysRemaining}
+                          {" • "}
+                          {t("common.created")}: {link.createdByName || "Admin"}
                         </p>
                       </div>
                     </div>
@@ -599,7 +623,7 @@ export default function MembersSettingsPage() {
             const isMemberOwner = Boolean(
               (user?.organization?.ownerId &&
                 user.organization.ownerId === m.id) ||
-                (m as { isOwner?: boolean }).isOwner,
+              (m as { isOwner?: boolean }).isOwner,
             );
 
             return (
@@ -609,10 +633,9 @@ export default function MembersSettingsPage() {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Avatar */}
-                  <div
-                    className="h-9 w-9 rounded-full bg-slate-800 dark:bg-slate-700 text-white font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-slate-100 dark:ring-slate-800"
-                  >
+                  <div className="h-9 w-9 rounded-full bg-slate-800 dark:bg-slate-700 text-white font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-slate-100 dark:ring-slate-800">
                     {m.avatarUrl ? (
+                      // Intentional img for user avatar (Next.js Image not suitable for arbitrary external URLs with signed params).
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={m.avatarUrl}
@@ -695,7 +718,7 @@ export default function MembersSettingsPage() {
 
                       {openMenuMemberId === m.id && (
                         <div
-                          onClick={(e) => e.stopPropagation()}
+                          ref={menuContainerRef}
                           className="absolute right-0 top-full mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
                         >
                           <div className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">

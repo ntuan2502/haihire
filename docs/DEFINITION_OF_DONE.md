@@ -1,6 +1,6 @@
-# DEFINITION OF DONE (DoD) — Release v1.0.0
+# Definition of Done — Enterprise Standards
 
-> Universal checklist for all pull requests during the v1.0.0 hardening phase.
+> Universal checklist for all pull requests to maintain enterprise-grade software standards.
 > Every PR must satisfy ALL criteria below prior to merging.
 
 ---
@@ -81,7 +81,7 @@
 ## 8. CI GATES — Automated Quality Verification
 
 - [ ] `pnpm check:all:fast` passes (all static architecture gates)
-- [ ] `pnpm test` passes
+- [ ] `pnpm test` passes (871+ automated tests passing baseline)
 - [ ] `pnpm lint:env-sync` passes (when modifying environment variables)
 - [ ] `pnpm lint:dtopipe` passes (when adding/modifying controllers)
 - [ ] `pnpm lint:error-i18n` passes (when registering error codes)
@@ -104,28 +104,34 @@ Upon completion, provide the final technical report using the following standard
 ### Task #N: <task_title>
 
 **1. Summary**
+
 - Branch: `<name>`
 - Files created/changed: `<list with line counts>`
 - Total diff: `+X / -Y`
 
 **2. Implementation Notes**
+
 - Deviation from spec: `<yes/no>` — if yes, explain WHY
 - Design decisions: `<notable architectural decisions>`
 
 **3. Test Coverage**
+
 - Unit tests: `<case count>`, file: `<path>`
 - Integration tests: `<case count>`
 - E2E tests: `<case count>` (if applicable)
 - Coverage change: `X% → Y%`
 
 **4. Verification Evidence**
+
 - `pnpm check:all:fast`: `PASS / FAIL`
 - `pnpm test`: `PASS / FAIL` (X passing, Y failing)
 - Acceptance criteria: `<checklist with ✅/❌>`
 
 **5. Open Questions**
+
 - `<questions for DeepSeek if any>`
 - `<points requiring project owner confirmation if any>`
 
 **6. Files for Review**
+
 - `<path to primary files requiring in-depth code review>`

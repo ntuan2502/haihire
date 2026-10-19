@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint:i18n": "node scripts/check-i18n.ts"
   },
   "dependencies": {

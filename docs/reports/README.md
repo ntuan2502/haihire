@@ -106,6 +106,7 @@ Tasks #43+. 5 frontend God Files audit and decomposition.
 - [76 — Task 43 Phase 2: Wave 4.4 Application Detail Page Refactor Report](./76-task-43-phase-2-wave-4.4-applications-detail-refactor-report.md)
 - [77 — Task 43 Phase 2: Wave 4.5 Phase A Interviews Calendar Hooks Report](./77-task-43-phase-2-wave-4.5-phase-a-calendar-hooks-report.md)
 - [78 — Task 44 Phase 2: Wave 4.5 Phase B Interviews Calendar UI Report](./78-task-44-wave-4.5-phase-b-calendar-ui-report.md)
+- [79 — Task #46 Phase 1: Post-v0.2.0 Comprehensive Audit & CHANGELOG Cleanup Plan Report](./79-task-46-phase-1-post-v0.2.0-comprehensive-audit-and-changelog-cleanup-plan-report.md)
 
 ---
 

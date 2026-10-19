@@ -28,24 +28,42 @@ describe("EmailService", () => {
               where: vi.fn().mockImplementation((predicateFn) => ({
                 where: vi.fn().mockImplementation((predicateFn2) => ({
                   first: vi.fn().mockImplementation(async () => {
-                    return inMemoryTemplates.find((t) => {
-                      const rec1 = { organizationId: { eq: (val: string) => t.organizationId === val } };
-                      const rec2 = { type: { eq: (val: string) => t.type === val } };
-                      return predicateFn(rec1) && predicateFn2(rec2);
-                    }) || null;
+                    return (
+                      inMemoryTemplates.find((t) => {
+                        const rec1 = {
+                          organizationId: {
+                            eq: (val: string) => t.organizationId === val,
+                          },
+                        };
+                        const rec2 = {
+                          type: { eq: (val: string) => t.type === val },
+                        };
+                        return predicateFn(rec1) && predicateFn2(rec2);
+                      }) || null
+                    );
                   }),
                 })),
                 all: vi.fn().mockImplementation(async () => {
                   return inMemoryTemplates.filter((t) => {
-                    const rec = { organizationId: { eq: (val: string) => t.organizationId === val } };
+                    const rec = {
+                      organizationId: {
+                        eq: (val: string) => t.organizationId === val,
+                      },
+                    };
                     return predicateFn(rec);
                   });
                 }),
                 first: vi.fn().mockImplementation(async () => {
-                  return inMemoryTemplates.find((t) => {
-                    const rec = { organizationId: { eq: (val: string) => t.organizationId === val } };
-                    return predicateFn(rec);
-                  }) || null;
+                  return (
+                    inMemoryTemplates.find((t) => {
+                      const rec = {
+                        organizationId: {
+                          eq: (val: string) => t.organizationId === val,
+                        },
+                      };
+                      return predicateFn(rec);
+                    }) || null
+                  );
                 }),
                 update: vi.fn().mockImplementation(async (data) => {
                   if (inMemoryTemplates[0]) {
@@ -62,10 +80,16 @@ describe("EmailService", () => {
             EmailSetting: {
               where: vi.fn().mockImplementation((predicateFn) => ({
                 first: vi.fn().mockImplementation(async () => {
-                  return inMemorySettings.find((s) => {
-                    const rec = { organizationId: { eq: (val: string) => s.organizationId === val } };
-                    return predicateFn(rec);
-                  }) || null;
+                  return (
+                    inMemorySettings.find((s) => {
+                      const rec = {
+                        organizationId: {
+                          eq: (val: string) => s.organizationId === val,
+                        },
+                      };
+                      return predicateFn(rec);
+                    }) || null
+                  );
                 }),
                 update: vi.fn().mockImplementation(async (data) => {
                   if (inMemorySettings[0]) {
@@ -110,18 +134,22 @@ describe("EmailService", () => {
 
   describe("Variable Interpolation", () => {
     it("should interpolate template variables correctly", () => {
-      const template = "Xin chào {{candidate_name}}, bạn ứng tuyển {{job_title}} tại {{company_name}}.";
+      const template =
+        "Xin chào {{candidate_name}}, bạn ứng tuyển {{job_title}} tại {{company_name}}.";
       const vars = {
         candidate_name: "Nguyễn Văn A",
         job_title: "Kỹ sư phần mềm",
         company_name: "Tech Corp",
       };
       const result = interpolate(template, vars);
-      expect(result).toBe("Xin chào Nguyễn Văn A, bạn ứng tuyển Kỹ sư phần mềm tại Tech Corp.");
+      expect(result).toBe(
+        "Xin chào Nguyễn Văn A, bạn ứng tuyển Kỹ sư phần mềm tại Tech Corp.",
+      );
     });
 
     it("should preserve unmapped variables gracefully", () => {
-      const template = "Hello {{candidate_name}}, your code is {{unknown_var}}.";
+      const template =
+        "Hello {{candidate_name}}, your code is {{unknown_var}}.";
       const vars = { candidate_name: "Alice" };
       const result = interpolate(template, vars);
       expect(result).toBe("Hello Alice, your code is {{unknown_var}}.");
@@ -132,8 +160,12 @@ describe("EmailService", () => {
     it("should seed default templates if none exist for organization", async () => {
       const templates = await service.getTemplates("org-test");
       expect(templates.length).toBe(DEFAULT_TEMPLATES.length);
-      expect(templates.some((t) => t.type === "APPLICATION_CONFIRMATION")).toBe(true);
-      expect(templates.some((t) => t.type === "INTERVIEW_INVITATION")).toBe(true);
+      expect(templates.some((t) => t.type === "APPLICATION_CONFIRMATION")).toBe(
+        true,
+      );
+      expect(templates.some((t) => t.type === "INTERVIEW_INVITATION")).toBe(
+        true,
+      );
     });
   });
 
@@ -273,8 +305,12 @@ describe("EmailService", () => {
       const config = service.getSystemEmailConfig();
       expect(config).toBeDefined();
       expect(config.provider).toBe(env.SYSTEM_EMAIL_PROVIDER);
-      expect(config.fromName).toBe(env.SYSTEM_EMAIL_FROM_NAME || "HaiHire Platform");
-      expect(config.fromEmail).toBe(env.SYSTEM_EMAIL_FROM_EMAIL || "noreply@haihire.internal");
+      expect(config.fromName).toBe(
+        env.SYSTEM_EMAIL_FROM_NAME || "HaiHire Platform",
+      );
+      expect(config.fromEmail).toBe(
+        env.SYSTEM_EMAIL_FROM_EMAIL || "noreply@haihire.internal",
+      );
     });
 
     const mockSimulatedConfig = {
@@ -290,7 +326,9 @@ describe("EmailService", () => {
     };
 
     it("should send system email with simulated provider", async () => {
-      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(
+        mockSimulatedConfig,
+      );
 
       const result = await service.sendSystemEmail({
         to: "user@example.com",
@@ -312,8 +350,12 @@ describe("EmailService", () => {
     });
 
     it("should send system test email", async () => {
-      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
-      vi.spyOn(service, "getSystemEmailConfig").mockReturnValue(mockSimulatedConfig);
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue(
+        mockSimulatedConfig,
+      );
+      vi.spyOn(service, "getSystemEmailConfig").mockReturnValue(
+        mockSimulatedConfig,
+      );
 
       const result = await service.sendSystemTestEmail({
         to: "admin@example.com",
@@ -389,11 +431,14 @@ describe("EmailService", () => {
       };
       const rendered = interpolate(template, variables);
       expect(rendered).not.toContain("<script>");
-      expect(rendered).toContain("&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;");
+      expect(rendered).toContain(
+        "&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;",
+      );
     });
 
     it("should escape quotes, ampersands and angle brackets in variables", () => {
-      const template = "<a href='{{interview_link}}'>Tham gia: {{company_name}}</a>";
+      const template =
+        "<a href='{{interview_link}}'>Tham gia: {{company_name}}</a>";
       const variables = {
         interview_link: "https://meet.google.com/abc?x=1&y=2",
         company_name: 'Tech "Giants" & Co',
@@ -403,5 +448,174 @@ describe("EmailService", () => {
       expect(rendered).toContain("Tech &quot;Giants&quot; &amp; Co");
     });
   });
-});
 
+  describe("Characterization: Provider Failures & Error Handling", () => {
+    it("should log FAILED status when provider returns an error response without throwing", async () => {
+      vi.spyOn(EmailTransporterFactory, "create").mockReturnValueOnce({
+        send: vi.fn().mockResolvedValue({
+          success: false,
+          status: "FAILED",
+          error: "SMTP server refused connection: 554 Transaction failed",
+        }),
+      });
+
+      const result = await service.sendEmail(
+        {
+          to: "failed@example.com",
+          recipientName: "Failed Recipient",
+          subject: "Test Failure",
+          body: "This should fail gracefully",
+        },
+        "org-test",
+      );
+
+      const log = result as { status: string; errorMessage: string };
+      expect(log.status).toBe("FAILED");
+      expect(log.errorMessage).toContain("554 Transaction failed");
+    });
+
+    it("should catch underlying transporter network errors non-throwing in ResendTransporter", async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockRejectedValueOnce(new Error("ECONNRESET"));
+
+      try {
+        const transporter = EmailTransporterFactory.create({
+          provider: "RESEND",
+          fromName: "Test",
+          fromEmail: "test@example.com",
+          resendApiKey: "re_fake_api_key",
+        });
+
+        const res = await transporter.send({
+          from: "test@example.com",
+          to: "recipient@example.com",
+          subject: "Network Failure Test",
+          html: "<p>Hello</p>",
+        });
+
+        expect(res.success).toBe(false);
+        expect(res.status).toBe("FAILED");
+        expect(res.error).toContain("ECONNRESET");
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  describe("Characterization: Encryption Edge Cases", () => {
+    it("should throw a descriptive error when decrypting corrupted ciphertext", () => {
+      expect(() => encryptionService.decrypt("corrupt-invalid-data")).toThrow(
+        /Invalid encrypted payload format/,
+      );
+    });
+
+    it("should preserve existing encrypted credentials when masked dots are submitted", async () => {
+      await service.updateSettings("org-test", {
+        smtpPass: "SuperSecretOriginalPass123!",
+      });
+
+      // Submit masked dots back (standard frontend form behavior)
+      await service.updateSettings("org-test", {
+        smtpPass: "••••••••••••••••",
+      });
+
+      const raw = await service.getRawSettings("org-test");
+      expect(raw?.smtpPass).toBe("SuperSecretOriginalPass123!");
+    });
+  });
+
+  describe("Characterization: Template Edge Cases & Fallbacks", () => {
+    it("should preserve unmatched placeholders when template variables are missing", () => {
+      const template = "Welcome {{candidate_name}}! Next step: {{next_step}}.";
+      const rendered = interpolate(template, { candidate_name: "Bao" });
+      expect(rendered).toBe("Welcome Bao! Next step: {{next_step}}.");
+    });
+
+    it("should automatically seed and return default template when querying a new org", async () => {
+      const template = await service.getTemplateByType(
+        "org-brand-new",
+        "APPLICATION_CONFIRMATION",
+      );
+
+      expect(template).toBeDefined();
+      expect(template?.type).toBe("APPLICATION_CONFIRMATION");
+      expect(template?.subject).toBeDefined();
+      expect(template?.variables).toBeInstanceOf(Array);
+    });
+  });
+
+  describe("Characterization: BullMQ Integration & Idempotency", () => {
+    it("should generate deterministic jobId with org, template, candidate, and time bucket", async () => {
+      const mockQueue = {
+        add: vi.fn().mockResolvedValue({ id: "job-det-123" }),
+      };
+
+      const queuedService = new EmailService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        encryptionService,
+        mockQueue as never,
+      );
+
+      await queuedService.queueEmail(
+        {
+          to: "applicant@example.com",
+          recipientName: "Test Applicant",
+          candidateId: "cand-999",
+          applicationId: "app-888",
+          templateType: "INTERVIEW_INVITATION",
+          subject: "Interview Invitation",
+          body: "Please attend your interview",
+        },
+        "org-test",
+      );
+
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        "send-email",
+        expect.any(Object),
+        expect.objectContaining({
+          jobId: expect.stringMatching(
+            /^email:org-test:INTERVIEW_INVITATION:cand-999:app-888:\d+$/,
+          ),
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 1000,
+          },
+        }),
+      );
+    });
+
+    it("should fall back gracefully to synchronous delivery when emailQueue fails", async () => {
+      const failingQueue = {
+        add: vi.fn().mockRejectedValue(new Error("Redis Out of Memory")),
+      };
+
+      const fallbackService = new EmailService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        encryptionService,
+        failingQueue as never,
+      );
+
+      const result = await fallbackService.sendEmail(
+        {
+          to: "fallback@example.com",
+          recipientName: "Fallback Candidate",
+          subject: "Sync Fallback Subject",
+          body: "Delivered synchronously despite queue crash",
+        },
+        "org-test",
+      );
+
+      const log = result as {
+        status: string;
+        recipientEmail: string;
+        subject: string;
+      };
+      expect(log.status).toBe("SIMULATED");
+      expect(log.recipientEmail).toBe("fallback@example.com");
+      expect(log.subject).toBe("Sync Fallback Subject");
+    });
+  });
+});

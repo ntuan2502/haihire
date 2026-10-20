@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import {
@@ -7,6 +7,7 @@ import {
 } from "../applications/orphan-cleanup.processor";
 
 export const EMAIL_QUEUE_NAME = "email-queue";
+export const EMAIL_DLQ_NAME = "email-dlq-queue";
 
 export const BULLMQ_TRACKED_STATES = [
   "waiting",
@@ -49,6 +50,9 @@ export class MetricsService {
     @InjectQueue(ORPHAN_CLEANUP_QUEUE) private readonly orphanQueue: Queue,
     @InjectQueue(ORPHAN_CLEANUP_DLQ) private readonly dlqQueue: Queue,
     @InjectQueue(EMAIL_QUEUE_NAME) private readonly emailQueue: Queue,
+    @Optional()
+    @InjectQueue(EMAIL_DLQ_NAME)
+    private readonly emailDlqQueue?: Queue,
   ) {}
 
   recordRequest(route: string, status: number, durationMs: number) {
@@ -62,16 +66,21 @@ export class MetricsService {
     this.requestDurations.set(durKey, cur);
   }
 
-  async updateBullMqMetrics(): Promise<string[]> {
+  async updateBullMqMetrics(): Promise<{ depthLines: string[]; dlqLines: string[] }> {
     const queueDefs = [
-      { name: ORPHAN_CLEANUP_QUEUE, queue: this.orphanQueue },
-      { name: ORPHAN_CLEANUP_DLQ, queue: this.dlqQueue },
-      { name: EMAIL_QUEUE_NAME, queue: this.emailQueue },
+      { name: ORPHAN_CLEANUP_QUEUE, queue: this.orphanQueue, isDlq: false },
+      { name: ORPHAN_CLEANUP_DLQ, queue: this.dlqQueue, isDlq: true },
+      { name: EMAIL_QUEUE_NAME, queue: this.emailQueue, isDlq: false },
     ];
 
-    const lines: string[] = [];
+    if (this.emailDlqQueue) {
+      queueDefs.push({ name: EMAIL_DLQ_NAME, queue: this.emailDlqQueue, isDlq: true });
+    }
 
-    for (const { name, queue } of queueDefs) {
+    const depthLines: string[] = [];
+    const dlqLines: string[] = [];
+
+    for (const { name, queue, isDlq } of queueDefs) {
       try {
         if (!queue || typeof queue.getJobCounts !== "function") {
           throw new Error("Queue instance is not available");
@@ -92,18 +101,26 @@ export class MetricsService {
 
         for (const state of BULLMQ_TRACKED_STATES) {
           const count = counts[state] ?? 0;
-          lines.push(`bullmq_queue_depth{queue="${name}",state="${state}"} ${count}`);
+          depthLines.push(`bullmq_queue_depth{queue="${name}",state="${state}"} ${count}`);
+        }
+
+        if (isDlq) {
+          const dlqSize = (counts.waiting ?? 0) + (counts.active ?? 0);
+          dlqLines.push(`bullmq_dlq_size{queue_name="${name}"} ${dlqSize}`);
         }
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : String(err);
         this.logger.error(`Failed to collect BullMQ metrics for queue "${name}": ${errMsg}`);
         for (const state of BULLMQ_TRACKED_STATES) {
-          lines.push(`bullmq_queue_depth{queue="${name}",state="${state}"} -1`);
+          depthLines.push(`bullmq_queue_depth{queue="${name}",state="${state}"} -1`);
+        }
+        if (isDlq) {
+          dlqLines.push(`bullmq_dlq_size{queue_name="${name}"} -1`);
         }
       }
     }
 
-    return lines;
+    return { depthLines, dlqLines };
   }
 
   async getMetrics(): Promise<string> {
@@ -134,13 +151,19 @@ export class MetricsService {
       }
     }
 
+    const { depthLines, dlqLines } = await this.updateBullMqMetrics();
+
     lines.push(
       "# HELP bullmq_queue_depth Number of jobs in each BullMQ queue state",
       "# TYPE bullmq_queue_depth gauge",
     );
+    lines.push(...depthLines);
 
-    const bullmqMetrics = await this.updateBullMqMetrics();
-    lines.push(...bullmqMetrics);
+    lines.push(
+      "# HELP bullmq_dlq_size Number of jobs in BullMQ Dead Letter Queue",
+      "# TYPE bullmq_dlq_size gauge",
+    );
+    lines.push(...dlqLines);
 
     lines.push(
       "# HELP db_pool_active Active connections in database pool.",

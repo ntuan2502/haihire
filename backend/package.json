@@ -15,7 +15,8 @@
     "db:seed": "node --import tsx src/prisma/seed.ts",
     "db:verify": "prisma db verify",
     "db:status": "prisma migration status",
-    "contract:emit": "prisma contract emit"
+    "contract:emit": "prisma contract emit",
+    "check:prod-email-provider": "tsx scripts/check-prod-email-provider.ts"
   },
   "dependencies": {
     "@haihire/shared": "workspace:*",

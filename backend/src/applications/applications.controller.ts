@@ -154,7 +154,8 @@ export class ApplicationsController {
   }
 
   @Get(":id/documents/download")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("application:document_download")
   async downloadDocument(
     @Param("id") id: string,
     @Query("url") targetUrl: string,

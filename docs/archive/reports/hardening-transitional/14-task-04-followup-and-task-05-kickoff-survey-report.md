@@ -11,6 +11,7 @@
 ## PART A: VERIFYING ERROR CODE INCONSISTENCIES
 
 In Task #4, 4 cross-tenant rejection scenarios utilized 4 distinct error codes:
+
 1. `CANDIDATE_ORG_MISMATCH` (`GET /candidates`)
 2. `JOB_INVALID_ORGANIZATION` (`PATCH /jobs`)
 3. `APPLICATION_INVALID_ORGANIZATION` (`DELETE /applications`)
@@ -37,14 +38,15 @@ Audit of the backend codebase confirms:
 
 Actual messages rendered to end-users:
 
-| Error Code | Vietnamese (`vi.ts`) | English (`en.ts`) |
-| :--- | :--- | :--- |
-| **`ORG_FORBIDDEN_ACTION`** | `"Bạn không có quyền thực hiện thao tác này trong tổ chức ({organizationId})."` | `"You do not have permission to perform this action in organization ({organizationId})."` |
-| **`JOB_INVALID_ORGANIZATION`** | `"Vị trí tuyển dụng ({id}) không thuộc tổ chức hiện tại của bạn."` | `"Job position ({id}) does not belong to your organization."` |
-| **`APPLICATION_INVALID_ORGANIZATION`**| `"Hồ sơ ứng tuyển ({id}) không thuộc tổ chức hiện tại của bạn."` | `"Application ({id}) does not belong to your organization."` |
-| **`CANDIDATE_ORG_MISMATCH`** | `"Ứng viên ({id}) không thuộc tổ chức hiện tại của bạn."` | `"Candidate ({id}) does not belong to your organization."` |
+| Error Code                             | Vietnamese (`vi.ts`)                                                            | English (`en.ts`)                                                                         |
+| :------------------------------------- | :------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------- |
+| **`ORG_FORBIDDEN_ACTION`**             | `"Bạn không có quyền thực hiện thao tác này trong tổ chức ({organizationId})."` | `"You do not have permission to perform this action in organization ({organizationId})."` |
+| **`JOB_INVALID_ORGANIZATION`**         | `"Vị trí tuyển dụng ({id}) không thuộc tổ chức hiện tại của bạn."`              | `"Job position ({id}) does not belong to your organization."`                             |
+| **`APPLICATION_INVALID_ORGANIZATION`** | `"Hồ sơ ứng tuyển ({id}) không thuộc tổ chức hiện tại của bạn."`                | `"Application ({id}) does not belong to your organization."`                              |
+| **`CANDIDATE_ORG_MISMATCH`**           | `"Ứng viên ({id}) không thuộc tổ chức hiện tại của bạn."`                       | `"Candidate ({id}) does not belong to your organization."`                                |
 
 **Observations:**
+
 - The 3 entity-level codes (`JOB_INVALID_ORGANIZATION`, `APPLICATION_INVALID_ORGANIZATION`, `CANDIDATE_ORG_MISMATCH`) follow a standardized semantic pattern:
   `"<Entity Name> ({id}) does not belong to your organization."`
   This clearly identifies for users and developers which resource was denied cross-tenant access.
@@ -53,6 +55,7 @@ Actual messages rendered to end-users:
 ---
 
 ### 3. Standardization & Documentation Recommendations
+
 - **Preserve the 4 Error Codes:** Do not alter enum constants in `packages/shared/src/errors.ts` to prevent breaking API contracts between Backend and Frontend.
 - **UX Messaging:**
   - **Option 1 (Recommended):** Retain detailed entity-specific messages as they provide precise operational context.
@@ -68,9 +71,11 @@ Actual messages rendered to end-users:
 ---
 
 ### Question 1: Enumerate all `*.service.ts` files in `backend/src/`
+
 There are **18 service files** in total:
 
 #### A. Tenant-Scoped Services (8 business services holding multi-tenant data):
+
 1. [`backend/src/activities/activities.service.ts`](../../../../backend/src/activities/activities.service.ts)
 2. [`backend/src/applications/applications.service.ts`](../../../../backend/src/applications/applications.service.ts)
 3. [`backend/src/candidates/candidates.service.ts`](../../../../backend/src/candidates/candidates.service.ts)
@@ -79,9 +84,10 @@ There are **18 service files** in total:
 6. [`backend/src/organizations/organizations.service.ts`](../../../../backend/src/organizations/organizations.service.ts)
 7. [`backend/src/sourcing/sourcing.service.ts`](../../../../backend/src/sourcing/sourcing.service.ts)
 8. [`backend/src/webhook-settings/webhook-settings.service.ts`](../../../../backend/src/webhook-settings/webhook-settings.service.ts)
-*(Note: [`backend/src/users/users.service.ts`](../../../../backend/src/users/users.service.ts) reads mock demo user accounts)*
+   _(Note: `backend/src/users/users.service.ts` reads mock demo user accounts)_
 
 #### B. Non-Tenant-Scoped Services (9 infrastructure / system services):
+
 1. `backend/src/app.service.ts` — System health check (Health & Service Status).
 2. `backend/src/auth/auth.service.ts` — Authentication, password hashing, JWT issuance.
 3. `backend/src/common/encryption.service.ts` — AES-256-GCM encryption algorithms.
@@ -95,6 +101,7 @@ There are **18 service files** in total:
 ---
 
 ### Question 2: ORM Query Statistics in Tenant-Scoped Files
+
 The project employs **Prisma 8 Composer API** (`this.prisma.db.orm.public.<Model>.<method>` or `tx.orm.public.<Model>.<method>`).
 Automated static scanner results:
 
@@ -103,6 +110,7 @@ Automated static scanner results:
 - **Queries NOT directly filtering by `organizationId`:** **106 queries** (Categorized into Whitelists under Question 3).
 
 **File Breakdown:**
+
 - `activities.service.ts`: 3 queries (Org-scoped: 1, Non-Org: 2 — dynamic `query.where(...)` on next line).
 - `applications.service.ts`: 32 queries (Org-scoped: 13, Non-Org: 19).
 - `candidates.service.ts`: 18 queries (Org-scoped: 5, Non-Org: 13).
@@ -120,24 +128,29 @@ Automated static scanner results:
 Inspecting the schema in [`backend/src/prisma/contract.prisma`](../../../../backend/src/prisma/contract.prisma) identified 4 valid categories:
 
 #### Category 1: Models Without an `organizationId` Column in Schema
+
 1. **Model `Interview`:** Table contains `id`, `applicationId`, `scheduledAt`, etc. **Lacks an `organizationId` column**. Queries filter by `applicationId` (or `id`).
 2. **Model `Application`:** Table references `jobId` and `candidateId`. **Lacks an `organizationId` column**. Context is derived via `jobId -> job.organizationId`.
 3. **Model `TrackingClick`:** Contains `id` and `trackingLinkId`. Context is derived via `trackingLinkId`.
 4. **Model `Organization`:** Primary key is `id`. Queries filter by `id: orgId` or `slug: orgSlug`.
 
 #### Category 2: Auxiliary Queries Protected by Preceding Parent Guard
-- *Example 1 (`applications.service.ts:findByJob`):* Function head retrieves `Job` by `jobId` and checks `if (job.organizationId !== tenantOrgId) throw 403`. Subsequent queries for `Application` (`where(a => a.jobId.eq(jobId))`) and `Candidate` (`where(c => c.id.in(candidateIds))`) are safe.
-- *Example 2 (`jobs.service.ts:findOne`):* Asserts `job.organizationId === tenantOrgId`, then fetches applications for that job.
+
+- _Example 1 (`applications.service.ts:findByJob`):_ Function head retrieves `Job` by `jobId` and checks `if (job.organizationId !== tenantOrgId) throw 403`. Subsequent queries for `Application` (`where(a => a.jobId.eq(jobId))`) and `Candidate` (`where(c => c.id.in(candidateIds))`) are safe.
+- _Example 2 (`jobs.service.ts:findOne`):_ Asserts `job.organizationId === tenantOrgId`, then fetches applications for that job.
 
 #### Category 3: Updates or Deletions by Primary Key (`id`) Post-Verification
-- *Example (`jobs.service.ts:update` or `webhook-settings.service.ts:delete`):* First invokes `findOne(id, tenantOrgId)` (throwing 403 on mismatch). Subsequent `update` / `delete` safely target `where((x) => x.id.eq(id))`.
+
+- _Example (`jobs.service.ts:update` or `webhook-settings.service.ts:delete`):_ First invokes `findOne(id, tenantOrgId)` (throwing 403 on mismatch). Subsequent `update` / `delete` safely target `where((x) => x.id.eq(id))`.
 
 #### Category 4: Public Unauthenticated Endpoints
-- *Example (`jobs.service.ts:findBySlug`):* External candidates viewing public job postings via organization slug (`orgSlug`) and `status === "PUBLISHED"`.
+
+- _Example (`jobs.service.ts:findBySlug`):_ External candidates viewing public job postings via organization slug (`orgSlug`) and `status === "PUBLISHED"`.
 
 ---
 
 ### Question 4: Query Patterns Beyond `this.prisma.db.orm.public`
+
 1. **Raw SQL (`$queryRaw`, `$executeRaw`):** **ZERO (0 queries)**. Adheres 100% to Prisma 8 Composer type-safe queries.
 2. **Transaction Queries:** Employs `tx.orm.public.<Model>...` within `executeTx` callbacks.
 3. **Static DB Variables:** `users.service.ts` directly imports `db.orm.public.User` from `../prisma/db.ts`.
@@ -147,6 +160,7 @@ Inspecting the schema in [`backend/src/prisma/contract.prisma`](../../../../back
 ---
 
 ### Question 5: Structure of `scripts/check-dtopipe-coverage.ts`
+
 - **Parsing Strategy:** Line-by-line regex inspection with recursive `fs.readdirSync` and `fs.readFileSync`.
   - Runs in < 0.2s without Babel or TypeScript compiler APIs, satisfying fast CI gate requirements.
 - **Reusability:**

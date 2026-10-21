@@ -99,6 +99,8 @@ export function CandidateDrawerDocumentsTab({
           <iframe
             src={getDocumentUrl(previewDoc.url)}
             className="w-full h-full border-0"
+            sandbox="allow-scripts allow-same-origin"
+            referrerPolicy="no-referrer"
             title={previewDoc.name}
           />
         </div>

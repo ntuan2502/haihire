@@ -69,7 +69,7 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   // Organization
   "org:view": [Role.OWNER, Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER, Role.MEMBER],
   "org:update": [Role.OWNER, Role.ADMIN],
-  "org:delete": [Role.OWNER],
+  "org:delete": [Role.OWNER, Role.ADMIN],
   "org:manage_members": [Role.OWNER, Role.ADMIN],
   "org:manage_billing": [Role.OWNER],
 

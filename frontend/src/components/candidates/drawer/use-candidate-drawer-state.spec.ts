@@ -117,4 +117,24 @@ describe("useCandidateDrawerState - handleDownloadDoc", () => {
     expect(downloadAuthenticatedFile).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith("errors.cannotDownloadDocument");
   });
+
+  it("4. Caller #1: downloadAuthenticatedFile throw 401 -> assert toast.error được gọi", async () => {
+    vi.mocked(downloadAuthenticatedFile).mockRejectedValueOnce({
+      response: { status: 401, data: { message: "Unauthorized" } },
+    });
+
+    const { result } = renderHook(() =>
+      useCandidateDrawerState({ candidate: mockCandidate }),
+    );
+
+    await act(async () => {
+      await result.current.handleDownloadDoc(
+        "https://minio.local/resumes/cv.pdf",
+        "Nguyen_Van_A_CV.pdf",
+      );
+    });
+
+    expect(downloadAuthenticatedFile).toHaveBeenCalledTimes(1);
+    expect(toast.error).toHaveBeenCalled();
+  });
 });

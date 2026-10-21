@@ -154,7 +154,11 @@ export function useCandidateDrawerState({
       return;
     }
 
-    await downloadAuthenticatedFile(downloadPath, cleanName);
+    try {
+      await downloadAuthenticatedFile(downloadPath, cleanName);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t));
+    }
   };
 
   const handleUploadDoc = async (file: File) => {

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const token = request.cookies.get("haihire_token")?.value;
   const hasOrg = request.cookies.get("haihire_has_org")?.value === "true";
 
-  const isAuthPage = pathname === "/auth/login" || pathname === "/auth/register";
+  const isAuthPage =
+    pathname === "/auth/login" || pathname === "/auth/register";
   const isDashboardPage = pathname.startsWith("/dashboard");
   const isOnboardingPage = pathname.startsWith("/auth/onboarding");
 
@@ -39,8 +40,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/auth/:path*",
-    "/dashboard/:path*",
-  ],
+  matcher: ["/auth/:path*", "/dashboard/:path*"],
 };

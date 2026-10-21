@@ -125,6 +125,8 @@ export class CandidatesController {
   }
 
   @Get(":id/documents/download")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("candidate:document_download")
   async downloadDocument(
     @Param("id") id: string,
     @Query("url") targetUrl: string,

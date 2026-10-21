@@ -8,7 +8,13 @@ function getMarkdownFiles(dir: string, fileList: string[] = []): string[] {
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name !== "node_modules" && entry.name !== ".next" && entry.name !== "dist" && entry.name !== ".git") {
+      if (
+        entry.name !== "node_modules" &&
+        entry.name !== ".next" &&
+        entry.name !== "dist" &&
+        entry.name !== ".git" &&
+        entry.name !== "archive"
+      ) {
         getMarkdownFiles(fullPath, fileList);
       }
     } else if (entry.isFile() && entry.name.endsWith(".md")) {
@@ -100,7 +106,8 @@ for (const filePath of filesToScan) {
           lineNumber,
           linkText: text,
           rawTarget: target,
-          reason: "Absolute file:// link detected — must use portable relative path",
+          reason:
+            "Absolute file:// link detected — must use portable relative path",
         });
         continue;
       }
@@ -112,7 +119,8 @@ for (const filePath of filesToScan) {
           lineNumber,
           linkText: text,
           rawTarget: target,
-          reason: "Windows backslash '\\' detected — markdown links must use forward slash '/'",
+          reason:
+            "Windows backslash '\\' detected — markdown links must use forward slash '/'",
         });
         continue;
       }
@@ -134,13 +142,21 @@ for (const filePath of filesToScan) {
   }
 }
 
-console.log(`Audited ${filesToScan.length} markdown files for link integrity, portability, and validity.`);
+console.log(
+  `Audited ${filesToScan.length} markdown files for link integrity, portability, and validity.`,
+);
 if (violations.length === 0) {
-  console.log("SUCCESS: 0 broken or non-portable markdown links found. All links are relative and valid!");
+  console.log(
+    "SUCCESS: 0 broken or non-portable markdown links found. All links are relative and valid!",
+  );
 } else {
-  console.error(`FAILURE: Found ${violations.length} markdown link violations:`);
+  console.error(
+    `FAILURE: Found ${violations.length} markdown link violations:`,
+  );
   for (const v of violations) {
-    console.error(`- In ${v.sourceFile}:${v.lineNumber}: [${v.linkText}](${v.rawTarget}) -> ${v.reason}`);
+    console.error(
+      `- In ${v.sourceFile}:${v.lineNumber}: [${v.linkText}](${v.rawTarget}) -> ${v.reason}`,
+    );
   }
   process.exit(1);
 }

@@ -1,4 +1,8 @@
-import { Module, type MiddlewareConsumer, type NestModule } from "@nestjs/common";
+import {
+  Module,
+  type MiddlewareConsumer,
+  type NestModule,
+} from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import path from "node:path";
 import { BullModule } from "@nestjs/bullmq";
@@ -15,7 +19,6 @@ import { MinioModule } from "./minio/minio.module";
 import { OrganizationsModule } from "./organizations/organizations.module";
 import { ActivitiesModule } from "./activities/activities.module";
 import { EmailModule } from "./email/email.module";
-import { UsersModule } from "./users/users.module";
 import { SourcingModule } from "./sourcing/sourcing.module";
 import { WebhookSettingsModule } from "./webhook-settings/webhook-settings.module";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
@@ -26,7 +29,10 @@ import { RedisModule } from "./redis/redis.module";
 import { MetricsModule } from "./metrics/metrics.module";
 
 // Resolve ThrottlerGuard parameter token to bridge CJS/ESM dual package hazard under tsx in dev
-const throttlerParamTypes = (Reflect.getMetadata("design:paramtypes", ThrottlerGuard) as (new (...args: unknown[]) => unknown)[]) || [];
+const throttlerParamTypes =
+  (Reflect.getMetadata("design:paramtypes", ThrottlerGuard) as (new (
+    ...args: unknown[]
+  ) => unknown)[]) || [];
 const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
 
 @Module({
@@ -68,7 +74,6 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
     InterviewsModule,
     ActivitiesModule,
     EmailModule,
-    UsersModule,
     SourcingModule,
     WebhookSettingsModule,
     MetricsModule,
@@ -88,10 +93,6 @@ const throttlerReflectorToken = throttlerParamTypes[2] || Reflector;
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer
-      .apply(CorrelationIdMiddleware)
-      .forRoutes("*");
+    consumer.apply(CorrelationIdMiddleware).forRoutes("*");
   }
 }
-
-

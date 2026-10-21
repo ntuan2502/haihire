@@ -16,7 +16,7 @@ const backendPort = process.env.BACKEND_PORT || "3001";
 const minioPort = process.env.MINIO_PORT || "9000";
 const backendUrl = process.env.BACKEND_HOST
   ? `http://${process.env.BACKEND_HOST}:${backendPort}`
-  : (process.env.INTERNAL_API_URL || `http://127.0.0.1:${backendPort}`);
+  : process.env.INTERNAL_API_URL || `http://127.0.0.1:${backendPort}`;
 const minioUrl = process.env.MINIO_HOST
   ? `http://${process.env.MINIO_HOST}:${minioPort}`
   : `http://127.0.0.1:${minioPort}`;
@@ -35,7 +35,10 @@ function getAllowedDevOrigins(): string[] {
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name] || []) {
-      if (iface.family === "IPv4" || (iface.family as unknown as number) === 4) {
+      if (
+        iface.family === "IPv4" ||
+        (iface.family as unknown as number) === 4
+      ) {
         const ip = iface.address;
         origins.add(ip);
         origins.add(`${ip}:${frontendPort}`);
@@ -106,10 +109,6 @@ const nextConfig: NextConfig = {
       {
         source: "/applications/:path*",
         destination: `${backendUrl}/applications/:path*`,
-      },
-      {
-        source: "/users/:path*",
-        destination: `${backendUrl}/users/:path*`,
       },
       {
         source: "/events/:path*",

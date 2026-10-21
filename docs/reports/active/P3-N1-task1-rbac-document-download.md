@@ -12,8 +12,8 @@ Enforced RBAC authorization on resume and candidate attachment document download
 2. **`backend/src/candidates/candidates.controller.ts`**:
    - Added `@UseGuards(AuthGuard("jwt"), RolesGuard)` and `@RequirePermission("candidate:document_download")` to `downloadDocument`.
 3. **Unit Tests Added**:
-   - `backend/src/applications/applications.controller.spec.ts`: Added tests for `Role.MEMBER` (403), `Role.RECRUITER` (200/stream OK), and unauthenticated request (403).
-   - `backend/src/candidates/candidates.controller.spec.ts`: Added tests for `Role.MEMBER` (403), `Role.RECRUITER` (200/stream OK), and unauthenticated request (403).
+   - `backend/src/applications/applications.controller.spec.ts`: Added tests for `Role.MEMBER` (403), `Role.RECRUITER` (200/stream OK), and unauthenticated context on `RolesGuard` (403 `AppForbiddenException`). Note: In runtime HTTP requests, unauthenticated callers are rejected upstream by `AuthGuard("jwt")` with HTTP 401 (`UnauthorizedException`) before reaching `RolesGuard`.
+   - `backend/src/candidates/candidates.controller.spec.ts`: Added tests for `Role.MEMBER` (403), `Role.RECRUITER` (200/stream OK), and unauthenticated context on `RolesGuard` (403 `AppForbiddenException`). Note: In runtime HTTP requests, unauthenticated callers are rejected upstream by `AuthGuard("jwt")` with HTTP 401 (`UnauthorizedException`) before reaching `RolesGuard`.
 
 ## Files Touched
 

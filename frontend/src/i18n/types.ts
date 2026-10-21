@@ -68,6 +68,7 @@ export interface TranslationSchema {
   errors: {
     generic: string;
     networkError: string;
+    cannotDownloadDocument: string;
     ORG_SLUG_ALREADY_EXISTS: string;
     ORG_NOT_FOUND: string;
     ORG_NAME_REQUIRED: string;

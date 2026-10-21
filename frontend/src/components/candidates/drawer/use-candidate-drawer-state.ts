@@ -9,7 +9,7 @@ import {
   useDeleteDocumentMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
-import { getDocumentUrl, downloadAuthenticatedFile } from "@/lib/api";
+import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   formatDate,
   parseCandidateNotes,
@@ -138,11 +138,27 @@ export function useCandidateDrawerState({
     appId?: string,
   ) => {
     const cleanName = fixUtf8String(docName || "document.pdf");
-    const downloadEndpoint = appId
-      ? `/applications/${appId}/documents/download?url=${encodeURIComponent(docUrl)}&fileName=${encodeURIComponent(cleanName)}`
-      : getDocumentUrl(docUrl);
+    const queryParams = new URLSearchParams();
+    queryParams.set("url", docUrl);
+    queryParams.set("name", cleanName);
+    const queryString = `?${queryParams.toString()}`;
 
-    await downloadAuthenticatedFile(downloadEndpoint, cleanName);
+    const downloadPath = appId
+      ? `/applications/${appId}/documents/download${queryString}`
+      : candidate?.id
+        ? `/candidates/${candidate.id}/documents/download${queryString}`
+        : null;
+
+    if (!downloadPath) {
+      toast.error(t("errors.cannotDownloadDocument"));
+      return;
+    }
+
+    try {
+      await downloadAuthenticatedFile(downloadPath, cleanName);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t));
+    }
   };
 
   const handleUploadDoc = async (file: File) => {

@@ -71,6 +71,8 @@ export const en: TranslationSchema = {
     generic: "An unexpected error occurred. Please try again later.",
     networkError:
       "Unable to connect to server. Please check your network connection.",
+    cannotDownloadDocument:
+      "Cannot download document due to missing application or candidate reference.",
     ORG_SLUG_ALREADY_EXISTS:
       "Organization with slug '{slug}' already exists. Please choose a different slug.",
     ORG_NOT_FOUND: "Organization ({slug}) not found.",

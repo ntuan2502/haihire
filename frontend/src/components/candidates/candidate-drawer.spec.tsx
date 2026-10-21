@@ -438,7 +438,13 @@ describe("CandidateDrawer Component", () => {
 
     // In preview mode
     expect(screen.getByText("Quay lại danh sách")).toBeInTheDocument();
-    expect(screen.getByTitle("Pham_Thi_Ung_Vien_CV.pdf")).toBeInTheDocument();
+    const previewIframe = screen.getByTitle("Pham_Thi_Ung_Vien_CV.pdf");
+    expect(previewIframe).toBeInTheDocument();
+    expect(previewIframe).toHaveAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin",
+    );
+    expect(previewIframe).toHaveAttribute("referrerPolicy", "no-referrer");
 
     // Click back to document list
     fireEvent.click(screen.getByText("Quay lại danh sách"));
@@ -463,7 +469,7 @@ describe("CandidateDrawer Component", () => {
 
     await waitFor(() => {
       expect(mockDownloadAuthenticatedFile).toHaveBeenCalledWith(
-        "https://minio.local/cv.pdf",
+        "/candidates/cand-1/documents/download?url=https%3A%2F%2Fminio.local%2Fcv.pdf&name=Pham_Thi_Ung_Vien_CV.pdf",
         "Pham_Thi_Ung_Vien_CV.pdf",
       );
     });

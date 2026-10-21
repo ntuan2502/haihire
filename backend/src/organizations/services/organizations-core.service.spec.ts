@@ -242,7 +242,13 @@ describe("OrganizationsCoreService", () => {
       });
     });
 
-    it("atomically unlinks users, deletes memberships, and deletes organization on owner request", async () => {
+    it("atomically unlinks all users (owner + members), deletes memberships, and deletes organization on owner request", async () => {
+      // org-1 has 1 owner (user-owner), 1 admin (user-admin), 1 member (user-member) = 3 users
+      const usersBefore = userTable.store.filter(
+        (u) => u.organizationId === "org-1",
+      );
+      expect(usersBefore).toHaveLength(3);
+
       const res = await service.deleteMyOrg("user-owner");
       expect(res.success).toBe(true);
 
@@ -256,8 +262,21 @@ describe("OrganizationsCoreService", () => {
       );
       expect(remainingMembers).toHaveLength(0);
 
-      const ownerUser = userTable.store.find((u) => u.id === "user-owner");
-      expect(ownerUser?.organizationId).toBeNull();
+      // Verify ALL 3 users belonging to org-1 have organizationId set to null
+      const usersAfter = userTable.store.filter(
+        (u) => u.organizationId === "org-1",
+      );
+      expect(usersAfter).toHaveLength(0);
+
+      expect(
+        userTable.store.find((u) => u.id === "user-owner")?.organizationId,
+      ).toBeNull();
+      expect(
+        userTable.store.find((u) => u.id === "user-admin")?.organizationId,
+      ).toBeNull();
+      expect(
+        userTable.store.find((u) => u.id === "user-member")?.organizationId,
+      ).toBeNull();
     });
   });
 

@@ -18,7 +18,9 @@ export class OrganizationsCoreService {
     private readonly prisma: PrismaService,
   ) {}
 
-  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+  private async executeTx<T>(
+    fn: (tx: PrismaService["db"]) => Promise<T>,
+  ): Promise<T> {
     const p = this.prisma as unknown as {
       transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
       executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
@@ -77,7 +79,10 @@ export class OrganizationsCoreService {
       .first();
 
     if (!org) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Failed to retrieve created organization");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        "Failed to retrieve created organization",
+      );
     }
 
     // Record membership in OrganizationMember
@@ -152,13 +157,14 @@ export class OrganizationsCoreService {
       .all();
 
     // Query all persistent memberships for this user
-    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
-      "id",
-      "organizationId",
-      "role",
-    )
-      .where((m) => m.userId.eq(userId))
-      .all();
+    const userMemberships =
+      await this.prisma.db.orm.public.OrganizationMember.select(
+        "id",
+        "organizationId",
+        "role",
+      )
+        .where((m) => m.userId.eq(userId))
+        .all();
 
     const memberOrgIds = [
       ...new Set([
@@ -193,7 +199,10 @@ export class OrganizationsCoreService {
       .first();
 
     if (!user) {
-      throw new AppNotFoundException(APP_ERROR_CODES.RESOURCE_NOT_FOUND, "User not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.RESOURCE_NOT_FOUND,
+        "User not found",
+      );
     }
 
     const org = await this.prisma.db.orm.public.Organization.select(
@@ -207,20 +216,26 @@ export class OrganizationsCoreService {
       .first();
 
     if (!org) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        "Organization not found",
+      );
     }
 
     // Security: User must be owner, have an OrganizationMember record, or currently belong to the target org
     const isOwner = Boolean(org.ownerId && org.ownerId === userId);
-    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
-      "id",
-      "organizationId",
-      "role",
-    )
-      .where((m) => m.userId.eq(userId))
-      .all();
+    const userMemberships =
+      await this.prisma.db.orm.public.OrganizationMember.select(
+        "id",
+        "organizationId",
+        "role",
+      )
+        .where((m) => m.userId.eq(userId))
+        .all();
 
-    const membership = userMemberships.find((m) => m.organizationId === targetOrgId);
+    const membership = userMemberships.find(
+      (m) => m.organizationId === targetOrgId,
+    );
     const isCurrentMember = user.organizationId === targetOrgId;
 
     if (!isOwner && !membership && !isCurrentMember) {
@@ -235,7 +250,7 @@ export class OrganizationsCoreService {
       ? "ADMIN"
       : membership
         ? membership.role
-        : (user.role || "MEMBER");
+        : user.role || "MEMBER";
 
     // Self-healing: ensure membership record exists in OrganizationMember
     if (!membership) {
@@ -285,7 +300,10 @@ export class OrganizationsCoreService {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
     }
 
     if (user.role === "MEMBER") {
@@ -305,7 +323,10 @@ export class OrganizationsCoreService {
       .first();
 
     if (!currentOrg) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        "Organization not found",
+      );
     }
 
     if (dto.slug) {
@@ -358,7 +379,10 @@ export class OrganizationsCoreService {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
     }
 
     if (user.role === "MEMBER") {
@@ -378,7 +402,10 @@ export class OrganizationsCoreService {
       .first();
 
     if (!currentOrg) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        "Organization not found",
+      );
     }
 
     if (currentOrg.ownerId !== userId) {
@@ -393,19 +420,17 @@ export class OrganizationsCoreService {
       // Unlink users from this org
       await tx.orm.public.User.where((u) =>
         u.organizationId.eq(orgId),
-      ).update({
+      ).updateAll({
         organizationId: null,
       });
 
       // Clean up all memberships in this org
       await tx.orm.public.OrganizationMember.where((m) =>
         m.organizationId.eq(orgId),
-      ).delete();
+      ).deleteAll();
 
       // Delete organization
-      await tx.orm.public.Organization.where((o) =>
-        o.id.eq(orgId),
-      ).delete();
+      await tx.orm.public.Organization.where((o) => o.id.eq(orgId)).delete();
     });
 
     return { success: true, message: "Organization deleted successfully" };
@@ -422,7 +447,11 @@ export class OrganizationsCoreService {
       .first();
 
     if (!org) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, `Organization '${slug}' not found`, { slug });
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        `Organization '${slug}' not found`,
+        { slug },
+      );
     }
 
     return org;

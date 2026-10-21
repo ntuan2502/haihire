@@ -16,6 +16,7 @@ import { OrganizationsService } from "./organizations.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
+import { TransferOwnershipDto } from "./dto/transfer-ownership.dto";
 import {
   SwitchOrgDto,
   UpdateMemberRoleDto,
@@ -110,6 +111,17 @@ export class OrganizationsController {
     @Body(DtoPipe(UpdateOrgDto)) dto: UpdateOrgDto,
   ) {
     return this.orgsService.updateMyOrg(req.user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:transfer_ownership")
+  @Post("my/transfer-ownership")
+  @HttpCode(HttpStatus.OK)
+  transferOwnership(
+    @Request() req: { user: { id: string } },
+    @Body(DtoPipe(TransferOwnershipDto)) dto: TransferOwnershipDto,
+  ) {
+    return this.orgsService.transferOwnership(req.user.id, dto.newOwnerUserId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

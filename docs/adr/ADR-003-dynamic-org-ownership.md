@@ -65,6 +65,24 @@ The project unanimously adopts **Option A (Dynamic `ownerId`-First Architecture)
 
 ---
 
+### 4. Ownership Transfer Flow (Finding F-016 Enhancement)
+
+To prevent organizations from entering an orphaned or deadlocked state when an owner departs:
+
+- **API Endpoint:** `POST /organizations/my/transfer-ownership`
+  - Guarded by `JwtAuthGuard`, `RolesGuard`, and `@RequirePermission("org:transfer_ownership")`.
+  - Enforces domain validation:
+    1. Caller must be the active organization owner (`Organization.ownerId === currentUserId`).
+    2. Target user must not be the caller (`currentUserId !== newOwnerUserId`).
+    3. Target user must be an active member of the organization (`OrganizationMember`).
+  - Executes atomically within a database transaction: `Organization.ownerId = newOwnerUserId`.
+  - The previous owner gracefully retains the `ADMIN` role, avoiding sudden access revocation.
+- **Frontend Interaction:**
+  - In `dashboard/settings/members`, an organization owner can trigger "Transfer Ownership" from any eligible member's action menu.
+  - A confirmation modal warns the owner of the loss of owner privileges before submitting the transaction.
+
+---
+
 ## Database Migration Plan
 
 The migration is executed in 3 strictly sequential, idempotent steps:

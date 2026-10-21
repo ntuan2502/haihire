@@ -17,6 +17,7 @@ describe("OrganizationsController", () => {
     create: vi.fn(),
     getMyOrg: vi.fn(),
     deleteMyOrg: vi.fn(),
+    transferOwnership: vi.fn(),
   };
 
   const ownerReq = {
@@ -112,6 +113,50 @@ describe("OrganizationsController", () => {
         AppForbiddenException,
       );
       expect(mockService.deleteMyOrg).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("POST /organizations/my/transfer-ownership (Enhancement P1 / F-016)", () => {
+    const createTransferContext = (req: { user?: unknown }): ExecutionContext =>
+      ({
+        getHandler: () => controller.transferOwnership,
+        getClass: () => OrganizationsController,
+        switchToHttp: () => ({
+          getRequest: () => req,
+        }),
+      }) as unknown as ExecutionContext;
+
+    it("allows owner to transfer ownership -> 200 OK", async () => {
+      const context = createTransferContext(ownerReq);
+      mockService.transferOwnership.mockResolvedValue({
+        success: true,
+        newOwnerId: "user-admin-other",
+      });
+
+      const canActivate = rolesGuard.canActivate(context);
+      expect(canActivate).toBe(true);
+
+      const result = await controller.transferOwnership(ownerReq, {
+        newOwnerUserId: "user-admin-other",
+      });
+
+      expect(mockService.transferOwnership).toHaveBeenCalledWith(
+        "user-owner",
+        "user-admin-other",
+      );
+      expect(result).toEqual({
+        success: true,
+        newOwnerId: "user-admin-other",
+      });
+    });
+
+    it("rejects MEMBER with 403 at RolesGuard layer", () => {
+      const context = createTransferContext(memberReq);
+
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+      expect(mockService.transferOwnership).not.toHaveBeenCalled();
     });
   });
 });

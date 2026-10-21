@@ -313,4 +313,47 @@ describe("OrganizationsCoreService", () => {
       expect(updatedUser?.organizationId).toBe("org-2");
     });
   });
+
+  describe("transferOwnership (Enhancement P1 / F-016)", () => {
+    it("allows organization owner to transfer ownership to another member", async () => {
+      const res = await service.transferOwnership("user-owner", "user-admin");
+      expect(res.success).toBe(true);
+      expect(res.newOwnerId).toBe("user-admin");
+
+      const org = organizationTable.store.find((o) => o.id === "org-1");
+      expect(org?.ownerId).toBe("user-admin");
+    });
+
+    it("throws AppForbiddenException when non-owner attempts to transfer ownership", async () => {
+      await expect(
+        service.transferOwnership("user-admin", "user-member"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+      });
+    });
+
+    it("throws AppBadRequestException when owner attempts to transfer ownership to self", async () => {
+      await expect(
+        service.transferOwnership("user-owner", "user-owner"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_CANNOT_TRANSFER_TO_SELF,
+      });
+    });
+
+    it("throws AppBadRequestException when target user is not a member of the organization", async () => {
+      await expect(
+        service.transferOwnership("user-owner", "ghost-member-uuid"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_TRANSFER_TARGET_NOT_MEMBER,
+      });
+    });
+
+    it("throws AppNotFoundException when caller has no organization", async () => {
+      await expect(
+        service.transferOwnership("user-no-org", "user-admin"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_USER_NO_ORG,
+      });
+    });
+  });
 });

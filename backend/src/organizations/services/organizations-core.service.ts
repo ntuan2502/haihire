@@ -1,10 +1,11 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import crypto from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateOrgDto } from "../dto/create-org.dto";
 import { UpdateOrgDto } from "../dto/update-org.dto";
 import { toInstant } from "../../common/date.util";
 import {
+  AppBadRequestException,
   AppConflictException,
   AppForbiddenException,
   AppNotFoundException,
@@ -13,6 +14,7 @@ import { APP_ERROR_CODES } from "@haihire/shared";
 
 @Injectable()
 export class OrganizationsCoreService {
+  private readonly logger = new Logger(OrganizationsCoreService.name);
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
@@ -434,6 +436,93 @@ export class OrganizationsCoreService {
     });
 
     return { success: true, message: "Organization deleted successfully" };
+  }
+
+  async transferOwnership(userId: string, newOwnerUserId: string) {
+    if (userId === newOwnerUserId) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_CANNOT_TRANSFER_TO_SELF,
+        "Cannot transfer organization ownership to yourself",
+      );
+    }
+
+    const user = await this.prisma.db.orm.public.User.select(
+      "id",
+      "role",
+      "organizationId",
+    )
+      .where((u) => u.id.eq(userId))
+      .first();
+
+    if (!user || !user.organizationId) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
+    }
+
+    const orgId = user.organizationId as string;
+
+    const currentOrg = await this.prisma.db.orm.public.Organization.select(
+      "id",
+      "ownerId",
+    )
+      .where((o) => o.id.eq(orgId))
+      .first();
+
+    if (!currentOrg) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        "Organization not found",
+      );
+    }
+
+    if (currentOrg.ownerId !== userId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        "Only the organization owner can transfer ownership.",
+      );
+    }
+
+    // Verify target user is a member of this organization
+    const orgMembers =
+      await this.prisma.db.orm.public.OrganizationMember.select("id", "userId")
+        .where((m) => m.organizationId.eq(orgId))
+        .all();
+
+    const isMember = orgMembers.some((m) => m.userId === newOwnerUserId);
+
+    if (!isMember) {
+      const targetUser = await this.prisma.db.orm.public.User.select(
+        "id",
+        "organizationId",
+      )
+        .where((u) => u.id.eq(newOwnerUserId))
+        .first();
+
+      if (!targetUser || targetUser.organizationId !== orgId) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.ORG_TRANSFER_TARGET_NOT_MEMBER,
+          "Target user must be a member of the organization",
+        );
+      }
+    }
+
+    await this.executeTx(async (tx) => {
+      await tx.orm.public.Organization.where((o) => o.id.eq(orgId)).update({
+        ownerId: newOwnerUserId,
+        updatedAt: toInstant(),
+      });
+    });
+
+    this.logger.log(
+      `Transferred ownership of organization ${orgId} from ${userId} to ${newOwnerUserId}`,
+    );
+
+    return {
+      success: true,
+      newOwnerId: newOwnerUserId,
+    };
   }
 
   async getPublicOrg(slug: string) {

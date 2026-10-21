@@ -21,6 +21,7 @@ export type Permission =
   | "org:delete"
   | "org:manage_members"
   | "org:manage_billing"
+  | "org:transfer_ownership"
   // Job Requisition Management
   | "job:view"
   | "job:create"
@@ -66,47 +67,98 @@ export type Permission =
 
 export const PERMISSIONS: Record<Permission, Role[]> = {
   // Organization
-  "org:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER, Role.MEMBER],
+  "org:view": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+    Role.MEMBER,
+  ],
   "org:update": [Role.ADMIN],
   "org:delete": [Role.ADMIN],
   "org:manage_members": [Role.ADMIN],
   "org:manage_billing": [],
+  "org:transfer_ownership": [Role.ADMIN],
 
   // Jobs
-  "job:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER, Role.MEMBER],
+  "job:view": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+    Role.MEMBER,
+  ],
   "job:create": [Role.ADMIN, Role.RECRUITER],
   "job:update": [Role.ADMIN, Role.RECRUITER],
   "job:delete": [Role.ADMIN, Role.RECRUITER],
 
   // Candidates
   "candidate:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
-  "candidate:view_basic": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER, Role.MEMBER],
+  "candidate:view_basic": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+    Role.MEMBER,
+  ],
   "candidate:create": [Role.ADMIN, Role.RECRUITER],
   "candidate:update": [Role.ADMIN, Role.RECRUITER],
   "candidate:delete": [Role.ADMIN, Role.RECRUITER],
   "candidate:document_upload": [Role.ADMIN, Role.RECRUITER],
-  "candidate:document_download": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER],
+  "candidate:document_download": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+  ],
   "candidate:document_delete": [Role.ADMIN, Role.RECRUITER],
 
   // Applications
-  "application:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER, Role.MEMBER],
+  "application:view": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+    Role.MEMBER,
+  ],
   "application:create": [Role.ADMIN, Role.RECRUITER],
   "application:update": [Role.ADMIN, Role.RECRUITER],
   "application:update_stage": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
   "application:delete": [Role.ADMIN, Role.RECRUITER],
   "application:document_upload": [Role.ADMIN, Role.RECRUITER],
-  "application:document_download": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER],
+  "application:document_download": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+  ],
   "application:document_delete": [Role.ADMIN, Role.RECRUITER],
 
   // Interviews
-  "interview:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER, Role.MEMBER],
+  "interview:view": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+    Role.MEMBER,
+  ],
   "interview:create": [Role.ADMIN, Role.RECRUITER],
   "interview:update": [Role.ADMIN, Role.RECRUITER],
   "interview:delete": [Role.ADMIN, Role.RECRUITER],
-  "interview:scorecard_submit": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.INTERVIEWER],
+  "interview:scorecard_submit": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.INTERVIEWER,
+  ],
 
   // Sourcing
-  "sourcing:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER, Role.MEMBER],
+  "sourcing:view": [
+    Role.ADMIN,
+    Role.RECRUITER,
+    Role.HIRING_MANAGER,
+    Role.MEMBER,
+  ],
   "sourcing:create": [Role.ADMIN, Role.RECRUITER],
   "sourcing:update": [Role.ADMIN, Role.RECRUITER],
   "sourcing:delete": [Role.ADMIN, Role.RECRUITER],

@@ -55,6 +55,23 @@ export function useUpdateMyOrgMutation() {
   });
 }
 
+export function useTransferOwnershipMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (newOwnerUserId: string) =>
+      organizationsApi.transferOwnership(newOwnerUserId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+    },
+  });
+}
+
 export function useDeleteMyOrgMutation() {
   const queryClient = useQueryClient();
 
@@ -106,8 +123,11 @@ export function useCreateInviteLinkMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { role?: string; expiresIn?: string; maxUses?: string }) =>
-      organizationsApi.createInviteLink(data),
+    mutationFn: (data: {
+      role?: string;
+      expiresIn?: string;
+      maxUses?: string;
+    }) => organizationsApi.createInviteLink(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inviteLinks() });
     },

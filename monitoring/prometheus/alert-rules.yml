@@ -97,6 +97,32 @@ groups:
             Escalate immediately. Check MinIO health and trigger manual cleanup.
             See runbook: docs/runbooks/dlq-recovery.md
 
+      - alert: BullMQDLQNotEmpty
+        expr: bullmq_dlq_size > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: sre
+        annotations:
+          summary: "BullMQ Dead Letter Queue is not empty ({{ $value }} jobs)"
+          description: |
+            BullMQ Dead Letter Queue has unprocessed failed jobs waiting for more than 5 minutes.
+            Investigate DLQ worker status and failure root causes.
+            See runbook: docs/runbooks/dlq-recovery.md
+
+      - alert: BullMQDLQGrowing
+        expr: rate(bullmq_dlq_size[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: sre
+        annotations:
+          summary: "BullMQ Dead Letter Queue size is growing continuously"
+          description: |
+            BullMQ Dead Letter Queue is continuously accumulating failed jobs over 15 minutes.
+            Escalate immediately to investigate persistent job failures.
+            See runbook: docs/runbooks/dlq-recovery.md
+
       - alert: HaiHireEmailQueueBacklog
         expr: bullmq_queue_depth{queue="email-queue",state="waiting"} > 500
         for: 10m

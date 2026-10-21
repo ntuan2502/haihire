@@ -7,6 +7,8 @@ export default defineConfig({
     environment: "node",
     include: [
       "src/**/*.{test,spec}.ts",
+      "test/**/*.{test,spec,e2e-spec}.ts",
+      "scripts/**/*.{test,spec}.ts",
       "../monitoring/**/*.{test,spec}.ts",
       "../scripts/**/*.{test,spec}.ts",
     ],

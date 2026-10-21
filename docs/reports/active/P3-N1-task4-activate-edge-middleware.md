@@ -1,5 +1,7 @@
 # Phase 3 - Branch 1: Task 4 - Activate Edge Middleware (F-004)
 
+> **Severity**: P1 (Security / Edge Route Protection — Aligned with Phase 1 Audit Finding F-004)
+
 ## Executive Summary
 
 Activated Next.js server-side Edge Middleware by renaming `frontend/src/proxy.ts` to `frontend/src/middleware.ts` and exporting `export function middleware(request: NextRequest)`. Previously, unauthenticated requests to `/dashboard/*` reached the client before client-side hooks redirected to `/auth/login`, causing a brief visual flash and executing client JS unnecessarily. With edge middleware enabled, Next.js performs an immediate server-side HTTP 307 redirect before rendering any page HTML.

@@ -3,11 +3,11 @@ name: Release & Container Publishing (GHCR)
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Semantic Version Tag (e.g. v0.1.0)'
+        description: "Semantic Version Tag (e.g. v0.1.0)"
         required: false
         type: string
 
@@ -120,13 +120,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Block Release on Backend CRITICAL Vulnerabilities (ADR-001 accepts High only)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.BACKEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
+          format: "table"
+          exit-code: "1"
+          severity: "CRITICAL"
+          ignore-unfixed: true
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run Trivy Scanner on Backend Image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.BACKEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
-          format: 'sarif'
-          output: 'trivy-backend-results.sarif'
-          severity: 'CRITICAL,HIGH'
+          format: "sarif"
+          output: "trivy-backend-results.sarif"
+          severity: "CRITICAL,HIGH"
           ignore-unfixed: true
         env:
           TRIVY_USERNAME: ${{ github.actor }}
@@ -134,20 +146,32 @@ jobs:
 
       - name: Upload Backend SARIF Report (Code Scanning)
         uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
+        continue-on-error: false
         if: always()
         with:
-          sarif_file: 'trivy-backend-results.sarif'
-          category: 'trivy-backend'
+          sarif_file: "trivy-backend-results.sarif"
+          category: "trivy-backend"
+
+      - name: Block Release on Frontend CRITICAL Vulnerabilities (ADR-001 accepts High only)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.FRONTEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
+          format: "table"
+          exit-code: "1"
+          severity: "CRITICAL"
+          ignore-unfixed: true
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Trivy Scanner on Frontend Image
         uses: aquasecurity/trivy-action@master
         if: always()
         with:
           image-ref: ${{ env.FRONTEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
-          format: 'sarif'
-          output: 'trivy-frontend-results.sarif'
-          severity: 'CRITICAL,HIGH'
+          format: "sarif"
+          output: "trivy-frontend-results.sarif"
+          severity: "CRITICAL,HIGH"
           ignore-unfixed: true
         env:
           TRIVY_USERNAME: ${{ github.actor }}
@@ -155,11 +179,11 @@ jobs:
 
       - name: Upload Frontend SARIF Report (Code Scanning)
         uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
+        continue-on-error: false
         if: always()
         with:
-          sarif_file: 'trivy-frontend-results.sarif'
-          category: 'trivy-frontend'
+          sarif_file: "trivy-frontend-results.sarif"
+          category: "trivy-frontend"
 
       - name: Archive SARIF Vulnerability Reports
         uses: actions/upload-artifact@v4

@@ -116,8 +116,16 @@ const steps: Step[] = [
       "Verify zero broken markdown links across all docs and memory indexes",
   },
   {
+    id: "lint:doc-sync",
+    name: "CI Gate 12: Documentation Synchronization & Drift Gate",
+    command: "pnpm lint:doc-sync",
+    category: "gate",
+    description:
+      "Verify path existence, env var parity, doc stats, and ADRs for pre-release packages",
+  },
+  {
     id: "check:prod-email-provider",
-    name: "CI Gate 12: Production Email Provider Validation",
+    name: "CI Gate 13: Production Email Provider Validation",
     command: "pnpm check:prod-email-provider",
     category: "gate",
     description:

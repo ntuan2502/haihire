@@ -60,7 +60,7 @@
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation in Task #8)
 - **Database Models:** 16 (9 camelCase tech debt + 7 snake_case)
 - **God Files (>400 LOC):** 23 remaining logic/UI/service files >400 LOC (excluding 4 exempt files: 2 i18n dictionaries, seed script, types); 10/10 identified God Files refactored across Waves 1–4, Wave 4 complete
-  - Max file size: 280 LOC (`frontend/src/components/interviews/calendar/calendar-month-grid.tsx`)
+  - Max file size: 280 LOC (`frontend/src/components/interviews/calendar/components/calendar-month-view.tsx`)
   - Refactored God Files in Waves 1–4 (10/10 Complete):
     - `frontend/src/components/interviews/interviews-calendar-view.tsx` (942 → 7 LOC shim, 12 modular sub-files, Task 43–44 Wave 4.5)
     - `frontend/src/app/dashboard/applications/[id]/page.tsx` (857 → 10 LOC wrapper, 10 modular sub-files, Task 43 Wave 4.4)

@@ -16,7 +16,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.decorator";
+import { RequirePermission } from "../auth/require-permission.decorator";
 import type { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CandidatesService } from "./candidates.service";
@@ -62,12 +62,16 @@ export class CandidatesController {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
   ) {
-    return this.candidatesService.findOne(id, req?.user?.organizationId, req?.user);
+    return this.candidatesService.findOne(
+      id,
+      req?.user?.organizationId,
+      req?.user,
+    );
   }
 
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("candidate:create")
   @UseInterceptors(
     FileInterceptor("resume", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -88,7 +92,7 @@ export class CandidatesController {
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("candidate:update")
   update(
     @Param("id") id: string,
     @Body(DtoPipe(UpdateCandidateDto)) dto: UpdateCandidateDto,
@@ -99,7 +103,7 @@ export class CandidatesController {
 
   @Post(":id/documents")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("candidate:document_upload")
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -112,7 +116,12 @@ export class CandidatesController {
     @Query("type") documentType?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.candidatesService.uploadDocument(id, file, documentType, req?.user?.organizationId);
+    return this.candidatesService.uploadDocument(
+      id,
+      file,
+      documentType,
+      req?.user?.organizationId,
+    );
   }
 
   @Get(":id/documents/download")
@@ -148,19 +157,23 @@ export class CandidatesController {
 
   @Delete(":id/documents")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("candidate:document_delete")
   deleteDocument(
     @Param("id") id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.candidatesService.deleteDocument(id, { documentId, url }, req?.user?.organizationId);
+    return this.candidatesService.deleteDocument(
+      id,
+      { documentId, url },
+      req?.user?.organizationId,
+    );
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("candidate:delete")
   remove(
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -168,4 +181,3 @@ export class CandidatesController {
     return this.candidatesService.remove(id, req?.user?.organizationId);
   }
 }
-

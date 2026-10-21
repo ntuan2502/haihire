@@ -341,8 +341,24 @@
             "codecId": "pg/text@1",
             "members": [
               {
+                "name": "OWNER",
+                "value": "OWNER"
+              },
+              {
                 "name": "ADMIN",
                 "value": "ADMIN"
+              },
+              {
+                "name": "RECRUITER",
+                "value": "RECRUITER"
+              },
+              {
+                "name": "HIRING_MANAGER",
+                "value": "HIRING_MANAGER"
+              },
+              {
+                "name": "INTERVIEWER",
+                "value": "INTERVIEWER"
               },
               {
                 "name": "MEMBER",
@@ -577,12 +593,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "applicationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["applicationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Application",
@@ -593,12 +605,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "candidateId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["candidateId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Candidate",
@@ -609,12 +617,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -841,12 +845,8 @@
               "activityLogs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "applicationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["applicationId"]
                 },
                 "to": {
                   "model": "ActivityLog",
@@ -857,12 +857,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "candidateId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["candidateId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Candidate",
@@ -872,12 +868,8 @@
               "emailLogs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "applicationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["applicationId"]
                 },
                 "to": {
                   "model": "EmailLog",
@@ -887,12 +879,8 @@
               "interviews": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "applicationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["applicationId"]
                 },
                 "to": {
                   "model": "Interview",
@@ -903,12 +891,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "jobId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["jobId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Job",
@@ -919,12 +903,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "trackingLinkId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["trackingLinkId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "TrackingLink",
@@ -1137,12 +1117,8 @@
               "activityLogs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "candidateId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["candidateId"]
                 },
                 "to": {
                   "model": "ActivityLog",
@@ -1152,12 +1128,8 @@
               "applications": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "candidateId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["candidateId"]
                 },
                 "to": {
                   "model": "Application",
@@ -1167,12 +1139,8 @@
               "documents": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "candidateId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["candidateId"]
                 },
                 "to": {
                   "model": "CandidateDocument",
@@ -1182,12 +1150,8 @@
               "emailLogs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "candidateId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["candidateId"]
                 },
                 "to": {
                   "model": "EmailLog",
@@ -1198,12 +1162,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -1347,12 +1307,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "candidateId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["candidateId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Candidate",
@@ -1363,12 +1319,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -1565,12 +1517,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "applicationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["applicationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Application",
@@ -1581,12 +1529,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "candidateId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["candidateId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Candidate",
@@ -1597,12 +1541,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -1770,12 +1710,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -1913,12 +1849,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -2067,12 +1999,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "applicationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["applicationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Application",
@@ -2220,12 +2148,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "createdById"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["createdById"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "User",
@@ -2236,12 +2160,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -2439,12 +2359,8 @@
               "applications": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "jobId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["jobId"]
                 },
                 "to": {
                   "model": "Application",
@@ -2455,12 +2371,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "createdById"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["createdById"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "User",
@@ -2471,12 +2383,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -2486,12 +2394,8 @@
               "trackingLinks": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "jobId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["jobId"]
                 },
                 "to": {
                   "model": "TrackingLink",
@@ -2606,12 +2510,8 @@
               "activityLogs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "ActivityLog",
@@ -2621,12 +2521,8 @@
               "candidates": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "Candidate",
@@ -2636,12 +2532,8 @@
               "documents": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "CandidateDocument",
@@ -2651,12 +2543,8 @@
               "emailLogs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "EmailLog",
@@ -2667,12 +2555,8 @@
                 "cardinality": "1:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "EmailSetting",
@@ -2682,12 +2566,8 @@
               "emailTemplates": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "EmailTemplate",
@@ -2697,12 +2577,8 @@
               "inviteLinks": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "InviteLink",
@@ -2712,12 +2588,8 @@
               "jobs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "Job",
@@ -2727,12 +2599,8 @@
               "members": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "OrganizationMember",
@@ -2742,12 +2610,8 @@
               "trackingLinks": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "TrackingLink",
@@ -2757,12 +2621,8 @@
               "users": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "User",
@@ -2772,12 +2632,8 @@
               "webhookSettings": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "organizationId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
                 },
                 "to": {
                   "model": "OrganizationWebhookSetting",
@@ -2866,12 +2722,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -2882,12 +2734,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "userId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["userId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "User",
@@ -3024,12 +2872,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -3137,12 +2981,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "trackingLinkId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["trackingLinkId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "TrackingLink",
@@ -3331,12 +3171,8 @@
               "applications": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "trackingLinkId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["trackingLinkId"]
                 },
                 "to": {
                   "model": "Application",
@@ -3346,12 +3182,8 @@
               "clicks": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "trackingLinkId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["trackingLinkId"]
                 },
                 "to": {
                   "model": "TrackingClick",
@@ -3362,12 +3194,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "createdById"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["createdById"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "User",
@@ -3378,12 +3206,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "jobId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["jobId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Job",
@@ -3394,12 +3218,8 @@
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -3557,12 +3377,8 @@
               "inviteLinks": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "createdById"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["createdById"]
                 },
                 "to": {
                   "model": "InviteLink",
@@ -3572,12 +3388,8 @@
               "jobs": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "createdById"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["createdById"]
                 },
                 "to": {
                   "model": "Job",
@@ -3587,12 +3399,8 @@
               "memberships": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "userId"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["userId"]
                 },
                 "to": {
                   "model": "OrganizationMember",
@@ -3603,12 +3411,8 @@
                 "cardinality": "N:1",
                 "nullable": true,
                 "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
                 },
                 "to": {
                   "model": "Organization",
@@ -3618,12 +3422,8 @@
               "trackingLinks": {
                 "cardinality": "1:N",
                 "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "createdById"
-                  ]
+                  "localFields": ["id"],
+                  "targetFields": ["createdById"]
                 },
                 "to": {
                   "model": "TrackingLink",
@@ -3766,16 +3566,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "activityLog"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -3783,16 +3579,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "candidateId"
-                    ],
+                    "columns": ["candidateId"],
                     "namespaceId": "public",
                     "tableName": "activityLog"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "candidate"
                   }
@@ -3800,16 +3592,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "applicationId"
-                    ],
+                    "columns": ["applicationId"],
                     "namespaceId": "public",
                     "tableName": "activityLog"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "application"
                   }
@@ -3817,43 +3605,32 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "applicationId"
-                  ],
+                  "columns": ["applicationId"],
                   "name": "activityLog_applicationId_idx_8158f91a",
                   "prefix": "activityLog_applicationId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "candidateId"
-                  ],
+                  "columns": ["candidateId"],
                   "name": "activityLog_candidateId_idx_462b5869",
                   "prefix": "activityLog_candidateId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId",
-                    "createdAt"
-                  ],
+                  "columns": ["organizationId", "createdAt"],
                   "name": "activityLog_organizationId_createdAt_idx_c52d1cc3",
                   "prefix": "activityLog_organizationId_createdAt_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "activityLog_organizationId_idx_2e17ef41",
                   "prefix": "activityLog_organizationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -4018,16 +3795,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "candidateId"
-                    ],
+                    "columns": ["candidateId"],
                     "namespaceId": "public",
                     "tableName": "application"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "candidate"
                   }
@@ -4035,16 +3808,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "jobId"
-                    ],
+                    "columns": ["jobId"],
                     "namespaceId": "public",
                     "tableName": "application"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "job"
                   }
@@ -4052,16 +3821,12 @@
                 {
                   "onDelete": "setNull",
                   "source": {
-                    "columns": [
-                      "trackingLinkId"
-                    ],
+                    "columns": ["trackingLinkId"],
                     "namespaceId": "public",
                     "tableName": "application"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "trackingLink"
                   }
@@ -4069,50 +3834,36 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "candidateId"
-                  ],
+                  "columns": ["candidateId"],
                   "name": "application_candidateId_idx_462b5869",
                   "prefix": "application_candidateId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "jobId"
-                  ],
+                  "columns": ["jobId"],
                   "name": "application_jobId_idx_623c8f77",
                   "prefix": "application_jobId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "jobId",
-                    "stage"
-                  ],
+                  "columns": ["jobId", "stage"],
                   "name": "application_jobId_stage_idx_e669f3f8",
                   "prefix": "application_jobId_stage_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "trackingLinkId"
-                  ],
+                  "columns": ["trackingLinkId"],
                   "name": "application_trackingLinkId_idx_dd4cd8d5",
                   "prefix": "application_trackingLinkId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "candidateId",
-                    "jobId"
-                  ]
+                  "columns": ["candidateId", "jobId"]
                 }
               ]
             },
@@ -4228,16 +3979,12 @@
               "foreignKeys": [
                 {
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "candidate"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -4245,43 +3992,30 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "organizationId",
-                    "createdAt"
-                  ],
+                  "columns": ["organizationId", "createdAt"],
                   "name": "candidate_organizationId_createdAt_idx_c52d1cc3",
                   "prefix": "candidate_organizationId_createdAt_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId",
-                    "deletedAt"
-                  ],
+                  "columns": ["organizationId", "deletedAt"],
                   "name": "candidate_organizationId_deletedAt_idx_cd68cf5b",
                   "prefix": "candidate_organizationId_deletedAt_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "candidate_organizationId_idx_2e17ef41",
                   "prefix": "candidate_organizationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "organizationId",
-                    "email"
-                  ]
+                  "columns": ["organizationId", "email"]
                 }
               ]
             },
@@ -4354,16 +4088,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "candidateId"
-                    ],
+                    "columns": ["candidateId"],
                     "namespaceId": "public",
                     "tableName": "candidateDocument"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "candidate"
                   }
@@ -4371,16 +4101,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "candidateDocument"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -4388,26 +4114,20 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "candidateId"
-                  ],
+                  "columns": ["candidateId"],
                   "name": "candidateDocument_candidateId_idx_462b5869",
                   "prefix": "candidateDocument_candidateId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "candidateDocument_organizationId_idx_2e17ef41",
                   "prefix": "candidateDocument_organizationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -4563,16 +4283,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "emailLog"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -4580,16 +4296,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "candidateId"
-                    ],
+                    "columns": ["candidateId"],
                     "namespaceId": "public",
                     "tableName": "emailLog"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "candidate"
                   }
@@ -4597,16 +4309,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "applicationId"
-                    ],
+                    "columns": ["applicationId"],
                     "namespaceId": "public",
                     "tableName": "emailLog"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "application"
                   }
@@ -4614,52 +4322,38 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "applicationId"
-                  ],
+                  "columns": ["applicationId"],
                   "name": "emailLog_applicationId_idx_8158f91a",
                   "prefix": "emailLog_applicationId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "candidateId"
-                  ],
+                  "columns": ["candidateId"],
                   "name": "emailLog_candidateId_idx_462b5869",
                   "prefix": "emailLog_candidateId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId",
-                    "createdAt"
-                  ],
+                  "columns": ["organizationId", "createdAt"],
                   "name": "emailLog_organizationId_createdAt_idx_c52d1cc3",
                   "prefix": "emailLog_organizationId_createdAt_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "emailLog_organizationId_idx_2e17ef41",
                   "prefix": "emailLog_organizationId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "scope",
-                    "createdAt"
-                  ],
+                  "columns": ["scope", "createdAt"],
                   "name": "emailLog_scope_createdAt_idx_9f80888a",
                   "prefix": "emailLog_scope_createdAt_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -4751,16 +4445,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "emailSetting"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -4768,15 +4458,11 @@
               ],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "organizationId"
-                  ]
+                  "columns": ["organizationId"]
                 }
               ]
             },
@@ -4858,16 +4544,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "emailTemplate"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -4875,25 +4557,18 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "emailTemplate_organizationId_idx_2e17ef41",
                   "prefix": "emailTemplate_organizationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "organizationId",
-                    "type"
-                  ]
+                  "columns": ["organizationId", "type"]
                 }
               ]
             },
@@ -5004,16 +4679,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "applicationId"
-                    ],
+                    "columns": ["applicationId"],
                     "namespaceId": "public",
                     "tableName": "interview"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "application"
                   }
@@ -5021,26 +4692,22 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "applicationId"
-                  ],
+                  "columns": ["applicationId"],
                   "name": "interview_applicationId_idx_8158f91a",
                   "prefix": "interview_applicationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
             "inviteLink": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
-                  "name": "inviteLink_role_check_ddb31015",
+                  "expression": "\"role\" IN ('OWNER', 'ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "inviteLink_role_check_d55e7365",
                   "prefix": "inviteLink_role_check"
                 },
                 {
@@ -5138,32 +4805,24 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "inviteLink"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
                 },
                 {
                   "source": {
-                    "columns": [
-                      "createdById"
-                    ],
+                    "columns": ["createdById"],
                     "namespaceId": "public",
                     "tableName": "inviteLink"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "user"
                   }
@@ -5171,32 +4830,24 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "createdById"
-                  ],
+                  "columns": ["createdById"],
                   "name": "inviteLink_createdById_idx_8bf640ed",
                   "prefix": "inviteLink_createdById_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "inviteLink_organizationId_idx_2e17ef41",
                   "prefix": "inviteLink_organizationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "token"
-                  ]
+                  "columns": ["token"]
                 }
               ]
             },
@@ -5349,32 +5000,24 @@
               "foreignKeys": [
                 {
                   "source": {
-                    "columns": [
-                      "createdById"
-                    ],
+                    "columns": ["createdById"],
                     "namespaceId": "public",
                     "tableName": "job"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "user"
                   }
                 },
                 {
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "job"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -5382,44 +5025,32 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "createdById"
-                  ],
+                  "columns": ["createdById"],
                   "name": "job_createdById_idx_8bf640ed",
                   "prefix": "job_createdById_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId",
-                    "deletedAt"
-                  ],
+                  "columns": ["organizationId", "deletedAt"],
                   "name": "job_organizationId_deletedAt_idx_cd68cf5b",
                   "prefix": "job_organizationId_deletedAt_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "job_organizationId_idx_2e17ef41",
                   "prefix": "job_organizationId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId",
-                    "status"
-                  ],
+                  "columns": ["organizationId", "status"],
                   "name": "job_organizationId_status_idx_21af5e82",
                   "prefix": "job_organizationId_status_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -5463,23 +5094,19 @@
               "foreignKeys": [],
               "indexes": [],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "slug"
-                  ]
+                  "columns": ["slug"]
                 }
               ]
             },
             "organizationMember": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
-                  "name": "organizationMember_role_check_ddb31015",
+                  "expression": "\"role\" IN ('OWNER', 'ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "organizationMember_role_check_d55e7365",
                   "prefix": "organizationMember_role_check"
                 }
               ],
@@ -5533,32 +5160,24 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "organizationMember"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
                 },
                 {
                   "source": {
-                    "columns": [
-                      "userId"
-                    ],
+                    "columns": ["userId"],
                     "namespaceId": "public",
                     "tableName": "organizationMember"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "user"
                   }
@@ -5566,35 +5185,26 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "organizationMember_organizationId_idx_2e17ef41",
                   "prefix": "organizationMember_organizationId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId",
-                    "userId"
-                  ],
+                  "columns": ["organizationId", "userId"],
                   "name": "organizationMember_organizationId_userId_idx_28366c8d",
                   "prefix": "organizationMember_organizationId_userId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "userId"
-                  ],
+                  "columns": ["userId"],
                   "name": "organizationMember_userId_idx_a489d58a",
                   "prefix": "organizationMember_userId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -5697,16 +5307,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "organizationWebhookSetting"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -5714,26 +5320,18 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "organizationWebhookSetting_organizationId_idx_2e17ef41",
                   "prefix": "organizationWebhookSetting_organizationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "organizationId",
-                    "eventType",
-                    "provider"
-                  ]
+                  "columns": ["organizationId", "eventType", "provider"]
                 }
               ]
             },
@@ -5783,16 +5381,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "trackingLinkId"
-                    ],
+                    "columns": ["trackingLinkId"],
                     "namespaceId": "public",
                     "tableName": "trackingClick"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "trackingLink"
                   }
@@ -5800,35 +5394,26 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "referrerDomain"
-                  ],
+                  "columns": ["referrerDomain"],
                   "name": "trackingClick_referrerDomain_idx_c9d49a55",
                   "prefix": "trackingClick_referrerDomain_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "trackingLinkId",
-                    "createdAt"
-                  ],
+                  "columns": ["trackingLinkId", "createdAt"],
                   "name": "trackingClick_trackingLinkId_createdAt_idx_84ab446c",
                   "prefix": "trackingClick_trackingLinkId_createdAt_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "trackingLinkId"
-                  ],
+                  "columns": ["trackingLinkId"],
                   "name": "trackingClick_trackingLinkId_idx_dd4cd8d5",
                   "prefix": "trackingClick_trackingLinkId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": []
             },
@@ -5968,16 +5553,12 @@
                 {
                   "onDelete": "cascade",
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "trackingLink"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -5985,16 +5566,12 @@
                 {
                   "onDelete": "setNull",
                   "source": {
-                    "columns": [
-                      "jobId"
-                    ],
+                    "columns": ["jobId"],
                     "namespaceId": "public",
                     "tableName": "trackingLink"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "job"
                   }
@@ -6002,16 +5579,12 @@
                 {
                   "onDelete": "setNull",
                   "source": {
-                    "columns": [
-                      "createdById"
-                    ],
+                    "columns": ["createdById"],
                     "namespaceId": "public",
                     "tableName": "trackingLink"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "user"
                   }
@@ -6019,65 +5592,50 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "createdById"
-                  ],
+                  "columns": ["createdById"],
                   "name": "trackingLink_createdById_idx_8bf640ed",
                   "prefix": "trackingLink_createdById_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "jobId"
-                  ],
+                  "columns": ["jobId"],
                   "name": "trackingLink_jobId_idx_623c8f77",
                   "prefix": "trackingLink_jobId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "trackingLink_organizationId_idx_2e17ef41",
                   "prefix": "trackingLink_organizationId_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "organizationId",
-                    "isActive"
-                  ],
+                  "columns": ["organizationId", "isActive"],
                   "name": "trackingLink_organizationId_isActive_idx_c89f2a48",
                   "prefix": "trackingLink_organizationId_isActive_idx",
                   "unique": false
                 },
                 {
-                  "columns": [
-                    "token"
-                  ],
+                  "columns": ["token"],
                   "name": "trackingLink_token_idx_8b25281e",
                   "prefix": "trackingLink_token_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "token"
-                  ]
+                  "columns": ["token"]
                 }
               ]
             },
             "user": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('ADMIN', 'MEMBER')",
-                  "name": "user_role_check_ddb31015",
+                  "expression": "\"role\" IN ('OWNER', 'ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "user_role_check_d55e7365",
                   "prefix": "user_role_check"
                 }
               ],
@@ -6154,16 +5712,12 @@
               "foreignKeys": [
                 {
                   "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
+                    "columns": ["organizationId"],
                     "namespaceId": "public",
                     "tableName": "user"
                   },
                   "target": {
-                    "columns": [
-                      "id"
-                    ],
+                    "columns": ["id"],
                     "namespaceId": "public",
                     "tableName": "organization"
                   }
@@ -6171,24 +5725,18 @@
               ],
               "indexes": [
                 {
-                  "columns": [
-                    "organizationId"
-                  ],
+                  "columns": ["organizationId"],
                   "name": "user_organizationId_idx_2e17ef41",
                   "prefix": "user_organizationId_idx",
                   "unique": false
                 }
               ],
               "primaryKey": {
-                "columns": [
-                  "id"
-                ]
+                "columns": ["id"]
               },
               "uniques": [
                 {
-                  "columns": [
-                    "email"
-                  ]
+                  "columns": ["email"]
                 }
               ]
             }
@@ -6219,18 +5767,11 @@
             },
             "EmailDeliveryStatus": {
               "kind": "valueSet",
-              "values": [
-                "SENT",
-                "SIMULATED",
-                "FAILED"
-              ]
+              "values": ["SENT", "SIMULATED", "FAILED"]
             },
             "EmailScope": {
               "kind": "valueSet",
-              "values": [
-                "SYSTEM",
-                "ORGANIZATION"
-              ]
+              "values": ["SYSTEM", "ORGANIZATION"]
             },
             "EmailTemplateType": {
               "kind": "valueSet",
@@ -6254,20 +5795,11 @@
             },
             "Gender": {
               "kind": "valueSet",
-              "values": [
-                "MALE",
-                "FEMALE",
-                "OTHER"
-              ]
+              "values": ["MALE", "FEMALE", "OTHER"]
             },
             "InterviewFormat": {
               "kind": "valueSet",
-              "values": [
-                "MEET",
-                "ZOOM",
-                "TEAMS",
-                "OFFICE"
-              ]
+              "values": ["MEET", "ZOOM", "TEAMS", "OFFICE"]
             },
             "InterviewType": {
               "kind": "valueSet",
@@ -6281,34 +5813,24 @@
             },
             "InviteStatus": {
               "kind": "valueSet",
-              "values": [
-                "ACTIVE",
-                "EXPIRED",
-                "REVOKED"
-              ]
+              "values": ["ACTIVE", "EXPIRED", "REVOKED"]
             },
             "JobStatus": {
               "kind": "valueSet",
-              "values": [
-                "DRAFT",
-                "PUBLISHED",
-                "CLOSED",
-                "ARCHIVED"
-              ]
+              "values": ["DRAFT", "PUBLISHED", "CLOSED", "ARCHIVED"]
             },
             "JobType": {
               "kind": "valueSet",
-              "values": [
-                "FULL_TIME",
-                "PART_TIME",
-                "CONTRACT",
-                "INTERNSHIP"
-              ]
+              "values": ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"]
             },
             "Role": {
               "kind": "valueSet",
               "values": [
+                "OWNER",
                 "ADMIN",
+                "RECRUITER",
+                "HIRING_MANAGER",
+                "INTERVIEWER",
                 "MEMBER"
               ]
             },
@@ -6335,27 +5857,15 @@
             },
             "WebhookEventType": {
               "kind": "valueSet",
-              "values": [
-                "DLQ_ALERT",
-                "ORPHAN_SPIKE",
-                "JOB_POSTED"
-              ]
+              "values": ["DLQ_ALERT", "ORPHAN_SPIKE", "JOB_POSTED"]
             },
             "WebhookProviderType": {
               "kind": "valueSet",
-              "values": [
-                "TELEGRAM",
-                "DISCORD",
-                "GENERIC"
-              ]
+              "values": ["TELEGRAM", "DISCORD", "GENERIC"]
             },
             "WorkplaceType": {
               "kind": "valueSet",
-              "values": [
-                "ON_SITE",
-                "HYBRID",
-                "REMOTE"
-              ]
+              "values": ["ON_SITE", "HYBRID", "REMOTE"]
             }
           }
         },
@@ -6363,7 +5873,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "cd5b82eba883e181a8e5c5d4adc65d8a39dfdc05e25d3240eb82735677f3bba2"
+    "storageHash": "88f0fe5b432f8410a86d2c8e8a17ebe1958115a96be6bd7124889b7fbfa9668b"
   },
   "execution": {
     "executionHash": "b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98",

@@ -1,7 +1,11 @@
 // use prisma-next
 
 enum Role {
+  OWNER
   ADMIN
+  RECRUITER
+  HIRING_MANAGER
+  INTERVIEWER
   MEMBER
 }
 

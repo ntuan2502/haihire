@@ -1,6 +1,36 @@
+let warnedMissingDemoPassword = false;
+
 export const DEMO_SEED_PASSWORD =
-  process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD || "dev-seed-password-2026";
+  process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD || "";
 export const DEMO_PASSWORD = DEMO_SEED_PASSWORD;
+
+/**
+ * Double gate for demo login:
+ * 1. NEXT_PUBLIC_ENABLE_DEMO_LOGIN must be strictly "true"
+ * 2. NODE_ENV must NOT be "production"
+ * 3. NEXT_PUBLIC_DEMO_SEED_PASSWORD must be defined and non-empty
+ */
+export const isDemoLoginEnabled = (): boolean => {
+  const isEnabledFlag = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === "true";
+  const isNotProduction = process.env.NODE_ENV !== "production";
+  const hasPassword = Boolean(process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD);
+
+  if (isEnabledFlag && isNotProduction && !hasPassword) {
+    if (!warnedMissingDemoPassword) {
+      console.warn(
+        "[Auth] NEXT_PUBLIC_DEMO_SEED_PASSWORD is not set. Demo login form is disabled.",
+      );
+      warnedMissingDemoPassword = true;
+    }
+    return false;
+  }
+
+  return isEnabledFlag && isNotProduction && hasPassword;
+};
+
+export const resetWarnedMissingDemoPassword = (): void => {
+  warnedMissingDemoPassword = false;
+};
 
 export const DEMO_ACCOUNTS = {
   ADMIN: {

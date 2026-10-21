@@ -98,7 +98,7 @@ Once running, access your local services:
 | **`backend/src/`**             | NestJS backend source code organized into domain modules (`auth`, `jobs`, `candidates`, `applications`, `interviews`, `documents`). |
 | **`backend/src/prisma/`**      | Prisma contract definition (`contract.prisma`), AsyncLocalStorage transaction manager, and seed scripts.                            |
 | **`frontend/src/app/`**        | Next.js App Router routes: `(auth)`, `(dashboard)`, and public `careers/` (React Server Components).                                |
-| **`frontend/src/components/`** | Component library: `ui/` (Shadcn primitives), `shared/` (ATS controls), `layout/` (App shell).                                      |
+| **`frontend/src/components/`** | Component library: `ui/` (Shadcn primitives), `components/shared/` (ATS controls), `layout/` (App shell).                           |
 | **`frontend/src/i18n/`**       | Localization files: `vi.ts` and `en.ts` dictionaries. Zero hardcoded text mandate.                                                  |
 | **`packages/shared/`**         | Monorepo shared package: Canonical types, `APP_ERROR_CODES`, and brand constants.                                                   |
 | **`scripts/`**                 | Monorepo automation scripts: `check-all.ts`, `backup-production.ts`, `check-env-sync.ts`.                                           |

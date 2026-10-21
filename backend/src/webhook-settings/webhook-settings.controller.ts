@@ -14,7 +14,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.decorator";
+import { RequirePermission } from "../auth/require-permission.decorator";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { WebhookSettingsService } from "./webhook-settings.service";
@@ -35,7 +35,7 @@ interface AuthenticatedRequest {
 
 @Controller("webhook-settings")
 @UseGuards(AuthGuard("jwt"), TenantGuard, RolesGuard)
-@Roles("ADMIN")
+@RequirePermission("settings:manage_integrations")
 export class WebhookSettingsController {
   constructor(
     @Inject(WebhookSettingsService)
@@ -60,10 +60,7 @@ export class WebhookSettingsController {
   }
 
   @Get(":id")
-  async findOne(
-    @Param("id") id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
+  async findOne(@Param("id") id: string, @Request() req: AuthenticatedRequest) {
     const orgId = this.getOrgId(req);
     return this.service.findOne(id, orgId);
   }
@@ -90,10 +87,7 @@ export class WebhookSettingsController {
 
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
-  async delete(
-    @Param("id") id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
+  async delete(@Param("id") id: string, @Request() req: AuthenticatedRequest) {
     const orgId = this.getOrgId(req);
     return this.service.delete(id, orgId);
   }

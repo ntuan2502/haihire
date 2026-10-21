@@ -112,7 +112,33 @@ jobs:
 
       - name: Audit Direct Production Dependencies
         if: needs.path-filter.outputs.docs-only != 'true' && (needs.path-filter.outputs.backend == 'true' || needs.path-filter.outputs.frontend == 'true' || needs.path-filter.outputs.ci == 'true')
-        run: pnpm audit --audit-level=high --prod || true
+        run: |
+          node -e "
+            const cp = require('child_process');
+            let output = '';
+            try {
+              output = cp.execSync('pnpm audit --audit-level=high --prod --json', { encoding: 'utf8' });
+            } catch (err) {
+              output = err.stdout?.toString() || '';
+            }
+            if (!output) process.exit(0);
+            try {
+              const data = JSON.parse(output);
+              const advisories = Object.values(data.advisories || {});
+              const directIssues = advisories.filter(a =>
+                (a.severity === 'high' || a.severity === 'critical') &&
+                (a.findings || []).some(f => (f.paths || []).some(p => !p.includes('>')))
+              );
+              if (directIssues.length > 0) {
+                console.error('❌ Direct dependency security violation:', directIssues);
+                process.exit(1);
+              }
+              console.log('✅ Direct dependencies security audit PASSED. Zero Critical/High direct vulnerabilities.');
+              console.log('ℹ️ Transitive High vulnerabilities from Prisma 8 RC composer accepted per docs/adr/ADR-001-prisma-8-rc.md');
+            } catch (e) {
+              console.log('Audit output parse error, skipping', e);
+            }
+          "
 
   # ============================================================================
   # 3. UNIT TESTS: BACKEND & FRONTEND TEST SUITES

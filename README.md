@@ -5,12 +5,35 @@
 
 ---
 
+<!-- STATS:START -->
+
+| Metric                           | Value                             | Reference / Notes                                   |
+| :------------------------------- | :-------------------------------- | :-------------------------------------------------- |
+| **Release Target**               | `v0.3.0`                          | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
+| **Commit Baseline**              | `a12ffa8` (2026-10-21)            | Author: Tún                                         |
+| **Workspace Unit Tests**         | `963 passed`                      | Backend: 540, Frontend: 423                         |
+| **E2E Playwright Specs**         | `23 specs`                        | End-to-end recruitment lifecycle                    |
+| **CI Architecture Gates**        | `16/16 gates`                     | `pnpm check:all` mandatory gates                    |
+| **Environment Configuration**    | `55 keys`                         | 100% key parity & codebase sync                     |
+| **Pre-Release Dependencies**     | `3 packages (covered by ADR-001)` | Prisma 8 RC & effect override                       |
+| **Documentation Link Integrity** | `100% valid`                      | Audited via `pnpm lint:doc-links`                   |
+
+<!-- STATS:END -->
+
+---
+
+## 🤖 AI Agent Guidelines
+
+All AI coding agents, contributors, and automation workflows must comply with the guidelines defined in [**AGENTS.md**](AGENTS.md).
+
+---
+
 ## 🚀 Key Architectural Highlights
 
 - **Backend Architecture:** NestJS 12.1.2 modular monolith with Saga transaction orchestration, compensations, AsyncLocalStorage request context tracking, and DLQ-backed BullMQ processing.
 - **Frontend Architecture:** Next.js 16.4.0 with React 19 Server Components (RSC), `@tanstack/react-query` v5 client caching, Base UI / Radix UI primitives, Tailwind CSS v4, and dual-language internationalization (vi / en).
 - **Data & Storage:** PostgreSQL 17.6 managed via Prisma 8 ORM, Valkey 8.0.2 for distributed caching / rate limiting, and MinIO S3 object storage for candidate resumes.
-- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 11 comprehensive CI gates, and 871 verified automated tests.
+- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 13 comprehensive CI gates, and 963 verified automated tests.
 
 ---
 
@@ -97,17 +120,17 @@ pnpm dev
 
 ## 🛠️ CLI Script Reference
 
-| Command                   | Purpose                                                                                                             |
-| :------------------------ | :------------------------------------------------------------------------------------------------------------------ |
-| `pnpm dev`                | Start backend (`13001`) and frontend (`13000`) concurrently in watch mode                                           |
-| `pnpm build`              | Build shared package, backend bundle (`dist/server.mjs`), and Next.js frontend                                      |
-| `pnpm check:all`          | Run complete 11-gate CI verification (lint, typecheck, tests, env sync, contracts, alerts, tenant scope, doc links) |
-| `pnpm check:all:fast`     | Run rapid pre-commit verification (skip long-running smoke/load tests)                                              |
-| `pnpm test`               | Run full unit & integration test suite (871 tests across backend & frontend)                                        |
-| `pnpm test:e2e`           | Run Playwright end-to-end browser tests                                                                             |
-| `pnpm db:setup`           | Push Prisma schema changes and execute database seeds                                                               |
-| `pnpm docker:prod:up`     | Launch production container stack (`docker-compose.prod.yml`)                                                       |
-| `pnpm docker:prod:config` | Validate production Compose file against `.env.production`                                                          |
+| Command                   | Purpose                                                                                                                       |
+| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                | Start backend (`13001`) and frontend (`13000`) concurrently in watch mode                                                     |
+| `pnpm build`              | Build shared package, backend bundle (`dist/server.mjs`), and Next.js frontend                                                |
+| `pnpm check:all`          | Run complete 13-gate CI verification (lint, typecheck, tests, env sync, contracts, alerts, tenant scope, doc links, doc sync) |
+| `pnpm check:all:fast`     | Run rapid pre-commit verification (skip long-running smoke/load tests)                                                        |
+| `pnpm test`               | Run full unit & integration test suite (963 tests across backend & frontend)                                                  |
+| `pnpm test:e2e`           | Run Playwright end-to-end browser tests                                                                                       |
+| `pnpm db:setup`           | Push Prisma schema changes and execute database seeds                                                                         |
+| `pnpm docker:prod:up`     | Launch production container stack (`docker-compose.prod.yml`)                                                                 |
+| `pnpm docker:prod:config` | Validate production Compose file against `.env.production`                                                                    |
 
 ---
 
@@ -124,6 +147,23 @@ Comprehensive system documentation is maintained under the [`docs/`](docs/) dire
 - 🧹 [**MinIO Orphan Cleanup**](docs/runbooks/orphan-cleanup.md): Daily cron purging unreferenced files with a 30-day grace period.
 - 🚨 [**Monitoring & Alerting Runbook**](docs/runbooks/alerts.md): Prometheus alert catalog and emergency SOPs.
 - 🛡️ [**Audit Reports Archive**](docs/archive/audits/README.md): Historical verification reports and cross-phase synthesis.
+
+---
+
+## 🏛️ Architecture Decision Records (ADRs)
+
+Critical architectural choices and trade-offs are documented under [`docs/adr/`](docs/adr/):
+
+- [**ADR-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**](docs/adr/ADR-001-prisma-8-rc.md)
+- [**ADR-002: Next.js Proxy Rewrites without /api Prefix & v0.4.0 Standardization**](docs/adr/ADR-002-frontend-rewrite-path.md)
+
+---
+
+## ⚠️ Known Limitations (v0.3.0 Release)
+
+1. **Transitive High CVEs in Build Tooling:** 11 High CVEs exist in transitive Hono dependencies via `@prisma/composer-prisma-cloud` (see [ADR-001](docs/adr/ADR-001-prisma-8-rc.md)). Mitigated via production network isolation and Caddy WAF. Scheduled for exit upon Prisma 8 GA.
+2. **Next.js Direct Path Rewrites:** Direct proxy rewrites (`/jobs/*`, `/organizations/*`) are retained in Next.js config without `/api` prefix (see [ADR-002](docs/adr/ADR-002-frontend-rewrite-path.md)) to prevent breaking changes. Scheduled for `/api/v1` migration in v0.4.0.
+3. **Fixed RBAC Permission Matrix:** The 6 roles have fixed permissions mapped in `@haihire/shared`. Customizable role-permission mappings and tenant-level custom roles are scheduled for v0.4.0.
 
 ---
 

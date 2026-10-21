@@ -17,7 +17,7 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { Throttle } from "@nestjs/throttler";
 import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.decorator";
+import { RequirePermission } from "../auth/require-permission.decorator";
 import type { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApplicationsService } from "./applications.service";
@@ -66,7 +66,10 @@ export class ApplicationsController {
     @Param("jobId") jobId: string,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
-    return this.applicationsService.findByJob(jobId, req?.user?.organizationId || undefined);
+    return this.applicationsService.findByJob(
+      jobId,
+      req?.user?.organizationId || undefined,
+    );
   }
 
   @Get(":id")
@@ -89,36 +92,47 @@ export class ApplicationsController {
   create(
     @Body(DtoPipe(CreateApplicationDto)) dto: CreateApplicationDto,
     @UploadedFile() file: Express.Multer.File,
-    @Request() req?: { user?: { id?: string; role?: string; organizationId?: string | null } },
+    @Request()
+    req?: {
+      user?: { id?: string; role?: string; organizationId?: string | null };
+    },
   ) {
     return this.applicationsService.create(dto, file, req?.user);
   }
 
   @Patch(":id/stage")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("application:update_stage")
   updateStage(
     @Param("id") id: string,
     @Body(DtoPipe(UpdateStageDto)) dto: UpdateStageDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.applicationsService.updateStage(id, dto, req?.user?.organizationId);
+    return this.applicationsService.updateStage(
+      id,
+      dto,
+      req?.user?.organizationId,
+    );
   }
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("application:update")
   updateCandidate(
     @Param("id") id: string,
     @Body(DtoPipe(UpdateCandidateDto)) dto: UpdateCandidateDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.applicationsService.updateCandidate(id, dto, req?.user?.organizationId);
+    return this.applicationsService.updateCandidate(
+      id,
+      dto,
+      req?.user?.organizationId,
+    );
   }
 
   @Post(":id/documents")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("application:document_upload")
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -131,7 +145,12 @@ export class ApplicationsController {
     @Query("type") documentType?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.applicationsService.uploadDocument(id, file, documentType, req?.user?.organizationId);
+    return this.applicationsService.uploadDocument(
+      id,
+      file,
+      documentType,
+      req?.user?.organizationId,
+    );
   }
 
   @Get(":id/documents/download")
@@ -168,19 +187,23 @@ export class ApplicationsController {
 
   @Delete(":id/documents")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("application:document_delete")
   deleteDocument(
     @Param("id") id: string,
     @Query("documentId") documentId?: string,
     @Query("url") url?: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.applicationsService.deleteDocument(id, { documentId, url }, req?.user?.organizationId);
+    return this.applicationsService.deleteDocument(
+      id,
+      { documentId, url },
+      req?.user?.organizationId,
+    );
   }
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("application:delete")
   remove(
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -188,4 +211,3 @@ export class ApplicationsController {
     return this.applicationsService.remove(id, req?.user?.organizationId);
   }
 }
-

@@ -226,7 +226,7 @@ model Job {
   createdById     String?
   createdBy       User?         @relation(fields: [createdById], references: [id])
   organizationId  String
-  organization    Organization  @relation(fields: [organizationId], references: [id])
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications    Application[]
   trackingLinks   TrackingLink[]
   deletedAt       DateTime?
@@ -241,7 +241,7 @@ model Job {
 model Candidate {
   id             String        @id @default(uuid())
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   firstName      String?
   lastName       String?

@@ -10,8 +10,6 @@ export const Role = {
   HIRING_MANAGER: "HIRING_MANAGER",
   INTERVIEWER: "INTERVIEWER",
   MEMBER: "MEMBER",
-  /** @deprecated Removed in ADR-003, will be removed in frontend refactor Task 4 */
-  OWNER: "OWNER",
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
@@ -133,7 +131,7 @@ export function hasPermission(
   permission: Permission,
   isOwner?: boolean,
 ): boolean {
-  if (isOwner || role === Role.OWNER || role === "OWNER") {
+  if (isOwner) {
     return true;
   }
   const allowed = PERMISSIONS[permission];

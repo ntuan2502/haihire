@@ -12,7 +12,7 @@
 
 ### 1. Which Query Was the Discrepancy? File and Line Location
 
-- **Discrepant Query:** `backend/src/users/users.service.ts:L30-L37`
+- **Discrepant Query:** [`backend/src/users/users.service.ts:L30-L37`](../../../../backend/src/users/users.service.ts#L30-L37)
   ```ts
   const allUsers = await db.orm.public.User.select(
     "id",

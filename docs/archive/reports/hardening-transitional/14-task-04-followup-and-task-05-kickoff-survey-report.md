@@ -84,7 +84,7 @@ There are **18 service files** in total:
 6. [`backend/src/organizations/organizations.service.ts`](../../../../backend/src/organizations/organizations.service.ts)
 7. [`backend/src/sourcing/sourcing.service.ts`](../../../../backend/src/sourcing/sourcing.service.ts)
 8. [`backend/src/webhook-settings/webhook-settings.service.ts`](../../../../backend/src/webhook-settings/webhook-settings.service.ts)
-   _(Note: `backend/src/users/users.service.ts` reads mock demo user accounts)_
+   _(Note: [`backend/src/users/users.service.ts`](../../../../backend/src/users/users.service.ts) reads mock demo user accounts)_
 
 #### B. Non-Tenant-Scoped Services (9 infrastructure / system services):
 

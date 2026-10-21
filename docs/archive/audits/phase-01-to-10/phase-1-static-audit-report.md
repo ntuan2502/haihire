@@ -2,7 +2,7 @@
 
 > **Audit Date**: 10/01/2026  
 > **Methodology**: Static Analysis + Runtime Verification via Test Suite  
-> **Scope**: Entire Codebase — Backend, Frontend, Shared Package, Infrastructure  
+> **Scope**: Entire Codebase — Backend, Frontend, Shared Package, Infrastructure
 
 ---
 
@@ -26,22 +26,22 @@
 
 ### Tech Stack
 
-| Layer | Technology | Version |
-|---|---|---|
-| **Frontend** | Next.js (App Router) | 16.3.7 |
-| **UI** | React + Radix UI + Shadcn UI + Tailwind CSS v4 | React 19.3.0 |
-| **State Management** | TanStack React Query | 5.x |
-| **Backend** | NestJS (ESM mode) | 12.x |
-| **ORM** | Prisma 8 (Composer / Contract-first pattern) | 8.0.0-rc |
-| **Database** | PostgreSQL 17 | Alpine |
-| **Object Storage** | MinIO (AWS S3 compatible) | Latest |
-| **Queue** | BullMQ + Redis | 6.x |
-| **Authentication** | JWT (Passport.js) + HttpOnly Cookies | - |
-| **Email System** | Nodemailer (SMTP / Resend / SendGrid / Simulated providers) | 10.x |
-| **Encryption** | AES-256-GCM (node:crypto) | - |
-| **Validation** | Zod (env schemas) + class-validator (DTOs) | - |
-| **Monorepo Manager** | pnpm workspaces | 12.6.0 |
-| **Testing** | Vitest + Testing Library | 5.x |
+| Layer                | Technology                                                  | Version      |
+| -------------------- | ----------------------------------------------------------- | ------------ |
+| **Frontend**         | Next.js (App Router)                                        | 16.3.7       |
+| **UI**               | React + Radix UI + Shadcn UI + Tailwind CSS v4              | React 19.3.0 |
+| **State Management** | TanStack React Query                                        | 5.x          |
+| **Backend**          | NestJS (ESM mode)                                           | 12.x         |
+| **ORM**              | Prisma 8 (Composer / Contract-first pattern)                | 8.0.0-rc     |
+| **Database**         | PostgreSQL 17                                               | Alpine       |
+| **Object Storage**   | MinIO (AWS S3 compatible)                                   | Latest       |
+| **Queue**            | BullMQ + Redis                                              | 6.x          |
+| **Authentication**   | JWT (Passport.js) + HttpOnly Cookies                        | -            |
+| **Email System**     | Nodemailer (SMTP / Resend / SendGrid / Simulated providers) | 10.x         |
+| **Encryption**       | AES-256-GCM (node:crypto)                                   | -            |
+| **Validation**       | Zod (env schemas) + class-validator (DTOs)                  | -            |
+| **Monorepo Manager** | pnpm workspaces                                             | 12.6.0       |
+| **Testing**          | Vitest + Testing Library                                    | 5.x          |
 
 ### System Map
 
@@ -123,20 +123,20 @@ haihire/
 
 ## 3. Main Workflows
 
-| # | Workflow | Primary Actor | Detail Section |
-|---|---|---|---|
-| 1 | **Authentication** (Login / Register / Token Refresh / Logout) | User → Auth API | See §4.1 |
-| 2 | **Organization Management** (Create / Join / Invite / Member Admin) | Admin → Org API | See §4.2 |
-| 3 | **Job Management** (CRUD + Lifecycle State Transitions) | Admin → Jobs API | See §4.3 |
-| 4 | **Candidate Management** (CRUD + CV Document Management) | Admin → Candidates API | See §4.4 |
-| 5 | **Application Pipeline** (Apply → Screen → Interview → Offer → Hire / Reject) | Candidate / Recruiter → Applications API | See §4.5 |
-| 6 | **Interview Scheduling** (Schedule, Scorecard Scoring, Reschedule) | Recruiter → Interviews API | See §4.6 |
-| 7 | **Email System** (Templates + Queue Worker + Multi-provider dispatch) | System → Email Queue → Providers | See §4.7 |
-| 8 | **Source Tracking** (Tracking Links, UTMs, Referrer Attribution) | Candidate → Sourcing API | See §4.8 |
-| 9 | **Activity Logging** (Audit Trail Logging) | System → ActivityLog | See §4.9 |
-| 10 | **Public Career Portal** (Org Careers Page + Job Detail Views) | Public Visitor → Frontend → Backend | See §4.10 |
-| 11 | **Real-Time Events** (SSE notifications for member removal / role updates) | Backend → SSE → Frontend | See §4.11 |
-| 12 | **Document Storage** (Upload / Download / Delete via MinIO S3) | Recruiter → MinIO S3 | See §4.12 |
+| #   | Workflow                                                                      | Primary Actor                            | Detail Section |
+| --- | ----------------------------------------------------------------------------- | ---------------------------------------- | -------------- |
+| 1   | **Authentication** (Login / Register / Token Refresh / Logout)                | User → Auth API                          | See §4.1       |
+| 2   | **Organization Management** (Create / Join / Invite / Member Admin)           | Admin → Org API                          | See §4.2       |
+| 3   | **Job Management** (CRUD + Lifecycle State Transitions)                       | Admin → Jobs API                         | See §4.3       |
+| 4   | **Candidate Management** (CRUD + CV Document Management)                      | Admin → Candidates API                   | See §4.4       |
+| 5   | **Application Pipeline** (Apply → Screen → Interview → Offer → Hire / Reject) | Candidate / Recruiter → Applications API | See §4.5       |
+| 6   | **Interview Scheduling** (Schedule, Scorecard Scoring, Reschedule)            | Recruiter → Interviews API               | See §4.6       |
+| 7   | **Email System** (Templates + Queue Worker + Multi-provider dispatch)         | System → Email Queue → Providers         | See §4.7       |
+| 8   | **Source Tracking** (Tracking Links, UTMs, Referrer Attribution)              | Candidate → Sourcing API                 | See §4.8       |
+| 9   | **Activity Logging** (Audit Trail Logging)                                    | System → ActivityLog                     | See §4.9       |
+| 10  | **Public Career Portal** (Org Careers Page + Job Detail Views)                | Public Visitor → Frontend → Backend      | See §4.10      |
+| 11  | **Real-Time Events** (SSE notifications for member removal / role updates)    | Backend → SSE → Frontend                 | See §4.11      |
+| 12  | **Document Storage** (Upload / Download / Delete via MinIO S3)                | Recruiter → MinIO S3                     | See §4.12      |
 
 ---
 
@@ -145,6 +145,7 @@ haihire/
 ### 4.1 Authentication Flow
 
 **Login Flow:**
+
 ```
 User submits email + password
   → POST /auth/login (Rate limit: 5 req/min)
@@ -160,6 +161,7 @@ User submits email + password
 ```
 
 **Register Flow:**
+
 ```
 User submits name + email + password
   → POST /auth/register (Rate limit: 5 req/min)
@@ -168,6 +170,7 @@ User submits name + email + password
 ```
 
 **Token Refresh Flow:**
+
 ```
 POST /auth/refresh { refreshToken }
   → Validate JWT authenticity → Verify type="refresh" → Lookup user
@@ -175,6 +178,7 @@ POST /auth/refresh { refreshToken }
 ```
 
 **Protected Routes Guard Mechanism:**
+
 ```
 Request dispatches with Header Authorization: Bearer <token>
   → OR haihire_token cookie (extracted via dedicated middleware)
@@ -303,11 +307,11 @@ Frontend connects: GET /events/stream?token=<jwt>
 
 ### 5.1 Test Suite Execution ✅
 
-| Package | Test Files | Total Tests | Outcome |
-|---|---|---|---|
-| **Backend** | 19 | 133 | ✅ All Passed |
-| **Frontend** | 21 | 105 | ✅ All Passed |
-| **Total** | **40** | **238** | ✅ **All 238 tests Passed** |
+| Package      | Test Files | Total Tests | Outcome                     |
+| ------------ | ---------- | ----------- | --------------------------- |
+| **Backend**  | 19         | 133         | ✅ All Passed               |
+| **Frontend** | 21         | 105         | ✅ All Passed               |
+| **Total**    | **40**     | **238**     | ✅ **All 238 tests Passed** |
 
 **Execution Evidence**: Command `pnpm test` completed with exit code 0. Runtime duration: Backend 17.71s, Frontend 25.97s.
 
@@ -328,60 +332,60 @@ Frontend connects: GET /events/stream?token=<jwt>
 
 ### 5.3 Areas Untested by Current Test Suite
 
-| Area | Justification |
-|---|---|
-| **Live PostgreSQL Database** | Existing test suite relies on mocks, not executing against live PostgreSQL |
-| **Live MinIO File Uploads** | MinIO service mocked during unit tests |
-| **Live Redis / BullMQ Workers** | Queue infrastructure mocked; live Redis instance not exercised |
-| **Outbound Email Delivery** | Tests utilize Simulated provider |
-| **Browser E2E Execution** | Playwright or Cypress E2E tests not yet established |
-| **Database Migration Integrity** | Database schema sync command not yet verified against live instance |
-| **Production Build Pipeline** | Commercial production build (`pnpm build`) not yet tested |
+| Area                             | Justification                                                              |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| **Live PostgreSQL Database**     | Existing test suite relies on mocks, not executing against live PostgreSQL |
+| **Live MinIO File Uploads**      | MinIO service mocked during unit tests                                     |
+| **Live Redis / BullMQ Workers**  | Queue infrastructure mocked; live Redis instance not exercised             |
+| **Outbound Email Delivery**      | Tests utilize Simulated provider                                           |
+| **Browser E2E Execution**        | Playwright or Cypress E2E tests not yet established                        |
+| **Database Migration Integrity** | Database schema sync command not yet verified against live instance        |
+| **Production Build Pipeline**    | Commercial production build (`pnpm build`) not yet tested                  |
 
 ---
 
 ## 6. Bugs & Issues Identified
 
-| # | Severity | Source Location | Defect Description | Trigger Scenario | Operational Impact | Code Evidence |
-|---|---|---|---|---|---|---|
-| 1 | 🔴 **CRITICAL** | [jwt.strategy.ts](../../../../backend/src/auth/jwt.strategy.ts#L22) | **JWT extracted strictly from `Authorization: Bearer` header**, while auth controller sets HttpOnly cookie. Passport-jwt uses `ExtractJwt.fromAuthHeaderAsBearerToken()`, **ignoring cookies completely**. | Requests relying on HttpOnly cookie without Bearer header | Protected routes return HTTP 401. Client-side SSR cannot access cookies forwarded from rewrites. | Line 22 calls only `fromAuthHeaderAsBearerToken()`. Missing `fromExtractors` cookie extractor. |
-| 2 | 🟡 **HIGH** | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L747-L756) | **Missing State Machine Validation**. Any stage can transition to any stage (e.g. `HIRED → APPLIED`, `REJECTED → OFFER`). | User dispatches `PATCH /applications/:id/stage { stage: "APPLIED" }` on HIRED candidate | Business state corruption. Hired candidates reverted to applied, corrupting audit trail. | `updateStage()` writes directly to database without checking `oldStage → newStage` matrix. |
-| 3 | 🟡 **HIGH** | [jobs.service.ts](../../../../backend/src/jobs/jobs.service.ts#L73-L95) | **In-memory RAM Filtering & Pagination**. `findAll()` loads all jobs for an organization into memory before filtering/slicing via JavaScript. | Organizations with large volumes of jobs | Memory exhaustion, latency degradation. Violates server-side pagination principles. | Lines 73-156: Calls `.all()` then executes `jobs.filter(...)` and `jobs.slice(...)`. |
-| 4 | 🟡 **HIGH** | [candidates.service.ts](../../../../backend/src/candidates/candidates.service.ts#L51-L71) | **In-memory Pagination for Candidates**. Loads all candidates into RAM prior to JavaScript slicing. | Large candidate datasets | RAM pressure and slow query performance | Same `.all()` → `.filter()` → `.slice()` anti-pattern. |
-| 5 | 🟡 **HIGH** | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L216-L232) | **In-memory Pagination for Applications**. Loads all applications across all jobs into memory. | Thousands of applications | Severe memory consumption | Same anti-pattern applied. |
-| 6 | 🟠 **MEDIUM** | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L732) | **Hardcoded Organization Name** `"ATS Recruitment"` in email template context instead of actual org name. | Dispatched application confirmation or rejection emails | Recipients see "ATS Recruitment" rather than their organization's name | Lines 732, 804: `organization: { name: "ATS Recruitment" }`. |
-| 7 | 🟠 **MEDIUM** | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L800) | **Hardcoded Vietnamese Fallback** `"Vị trí tuyển dụng"` as default title in rejection emails when job title is missing. | Rejection emails sent for un-titled job positions | Violates i18n standards, producing mixed language emails | Line 800: `title: updated.job?.title \|\| "Vị trí tuyển dụng"`. |
-| 8 | 🟠 **MEDIUM** | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L1072) | **Hard Delete on Applications** via `.delete()`, whereas Jobs and Candidates use soft delete. | Invoking `DELETE /applications/:id` | Data permanently removed immediately, violating Two-Tier Deletion Protocol. | Line 1072: `Application.where(...).delete()` instead of `update({ deletedAt })`. |
-| 9 | 🟠 **MEDIUM** | [prisma.service.ts](../../../../backend/src/prisma/prisma.service.ts#L16-L68) | **Auto-seeding demo account on startup** in non-production. Inserts user if missing. Race conditions when running concurrent backend instances. | Multiple backend pods starting simultaneously in dev/staging | Primary key collision, corrupted seed state | `onModuleInit()` lacks distributed locking. |
-| 10 | 🟠 **MEDIUM** | [auth.service.ts](../../../../backend/src/auth/auth.service.ts#L46-L120) | **Auto-provisioning demo account during login**. If demo account missing, code inserts user + org during login flow, conflating auth with data provisioning. | Logging in with demo credentials on clean DB | Unintended side-effects during auth validation. Conflict between `PrismaService` and `validateRecruiter()`. | Demo provisioning logic duplicated across 2 places. |
-| 11 | 🟡 **LOW** | [proxy.ts](../../../../frontend/src/proxy.ts) | **Middleware function exported but not wired to standard Next.js middleware**. Next.js requires `src/middleware.ts`. | Auth route redirects | Automatic edge redirect may fail without proper `middleware.ts`. | File named `proxy.ts`, not `middleware.ts`. |
-| 12 | 🟡 **LOW** | [next.config.ts](../../../../frontend/next.config.ts#L93-L123) | **Missing rewrites for several backend routes**: `/auth/*`, `/candidates/*`, `/interviews/*`, `/sourcing/*`, `/activities/*`, `/email/*`. | Frontend calling direct paths without `/api/` prefix | HTTP 404 unless client prefixes `/api/`. | Dependent on frontend API client path construction. |
-| 13 | 🟡 **LOW** | [next.config.ts](../../../../frontend/next.config.ts#L44-L53) | **Permissive /24 Subnet Loop as allowed dev origins**. Iterates 1-254 for all IPv4 interfaces. | Starting frontend dev server | Registers >1000 allowed origins, loose security posture. | Lines 48-53: Nested loop scanning IP subnet range. |
-| 14 | 🟡 **LOW** | [events.service.ts](../../../../backend/src/events/events.service.ts#L63-L65) | **SSE org events broadcast to ALL connected clients** without verifying org membership. | Any connected SSE listener receives events from other tenants | Data leak: Users can observe state updates of other organizations. | Line 64: `if (event.organizationId) { return true; }` — no membership check. |
-| 15 | 🟡 **LOW** | [candidates.service.ts](../../../../backend/src/candidates/candidates.service.ts#L325-L342) | **Incorrect Activity Log Type on profile views**. Uses `type: "NOTE_ADDED"` for viewing candidate profiles. | User views candidate profile | Audit history displays inaccurate semantic event type | Line 330: Records `type: "NOTE_ADDED"` on profile inspection. |
-| 16 | 🟡 **LOW** | [candidates.service.ts](../../../../backend/src/candidates/candidates.service.ts#L513) | **Non-UUID Document ID**: Generates `doc-${Date.now()}` instead of standard UUID. | Uploading new document | Inconsistent ID formatting in database | Line 513: `const newDocId = \`doc-${Date.now()}\``. |
-| 17 | 🟡 **LOW** | [app.module.ts](../../../../backend/src/app.module.ts#L64) | **PrismaService registered twice** — once via `PrismaModule` (line 47) and once directly in `providers` (line 64). | Application module bootstrap | Potential creation of duplicate service instances | Redundant registration. |
+| #   | Severity        | Source Location                                                                                   | Defect Description                                                                                                                                                                                         | Trigger Scenario                                                                        | Operational Impact                                                                                          | Code Evidence                                                                                  |
+| --- | --------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1   | 🔴 **CRITICAL** | [jwt.strategy.ts](../../../../backend/src/auth/jwt.strategy.ts#L22)                               | **JWT extracted strictly from `Authorization: Bearer` header**, while auth controller sets HttpOnly cookie. Passport-jwt uses `ExtractJwt.fromAuthHeaderAsBearerToken()`, **ignoring cookies completely**. | Requests relying on HttpOnly cookie without Bearer header                               | Protected routes return HTTP 401. Client-side SSR cannot access cookies forwarded from rewrites.            | Line 22 calls only `fromAuthHeaderAsBearerToken()`. Missing `fromExtractors` cookie extractor. |
+| 2   | 🟡 **HIGH**     | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L747-L756) | **Missing State Machine Validation**. Any stage can transition to any stage (e.g. `HIRED → APPLIED`, `REJECTED → OFFER`).                                                                                  | User dispatches `PATCH /applications/:id/stage { stage: "APPLIED" }` on HIRED candidate | Business state corruption. Hired candidates reverted to applied, corrupting audit trail.                    | `updateStage()` writes directly to database without checking `oldStage → newStage` matrix.     |
+| 3   | 🟡 **HIGH**     | [jobs.service.ts](../../../../backend/src/jobs/jobs.service.ts#L73-L95)                           | **In-memory RAM Filtering & Pagination**. `findAll()` loads all jobs for an organization into memory before filtering/slicing via JavaScript.                                                              | Organizations with large volumes of jobs                                                | Memory exhaustion, latency degradation. Violates server-side pagination principles.                         | Lines 73-156: Calls `.all()` then executes `jobs.filter(...)` and `jobs.slice(...)`.           |
+| 4   | 🟡 **HIGH**     | [candidates.service.ts](../../../../backend/src/candidates/candidates.service.ts#L51-L71)         | **In-memory Pagination for Candidates**. Loads all candidates into RAM prior to JavaScript slicing.                                                                                                        | Large candidate datasets                                                                | RAM pressure and slow query performance                                                                     | Same `.all()` → `.filter()` → `.slice()` anti-pattern.                                         |
+| 5   | 🟡 **HIGH**     | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L216-L232) | **In-memory Pagination for Applications**. Loads all applications across all jobs into memory.                                                                                                             | Thousands of applications                                                               | Severe memory consumption                                                                                   | Same anti-pattern applied.                                                                     |
+| 6   | 🟠 **MEDIUM**   | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L732)      | **Hardcoded Organization Name** `"ATS Recruitment"` in email template context instead of actual org name.                                                                                                  | Dispatched application confirmation or rejection emails                                 | Recipients see "ATS Recruitment" rather than their organization's name                                      | Lines 732, 804: `organization: { name: "ATS Recruitment" }`.                                   |
+| 7   | 🟠 **MEDIUM**   | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L800)      | **Hardcoded Vietnamese Fallback** `"Vị trí tuyển dụng"` as default title in rejection emails when job title is missing.                                                                                    | Rejection emails sent for un-titled job positions                                       | Violates i18n standards, producing mixed language emails                                                    | Line 800: `title: updated.job?.title \|\| "Vị trí tuyển dụng"`.                                |
+| 8   | 🟠 **MEDIUM**   | [applications.service.ts](../../../../backend/src/applications/applications.service.ts#L1072)     | **Hard Delete on Applications** via `.delete()`, whereas Jobs and Candidates use soft delete.                                                                                                              | Invoking `DELETE /applications/:id`                                                     | Data permanently removed immediately, violating Two-Tier Deletion Protocol.                                 | Line 1072: `Application.where(...).delete()` instead of `update({ deletedAt })`.               |
+| 9   | 🟠 **MEDIUM**   | [prisma.service.ts](../../../../backend/src/prisma/prisma.service.ts#L16-L68)                     | **Auto-seeding demo account on startup** in non-production. Inserts user if missing. Race conditions when running concurrent backend instances.                                                            | Multiple backend pods starting simultaneously in dev/staging                            | Primary key collision, corrupted seed state                                                                 | `onModuleInit()` lacks distributed locking.                                                    |
+| 10  | 🟠 **MEDIUM**   | [auth.service.ts](../../../../backend/src/auth/auth.service.ts#L46-L120)                          | **Auto-provisioning demo account during login**. If demo account missing, code inserts user + org during login flow, conflating auth with data provisioning.                                               | Logging in with demo credentials on clean DB                                            | Unintended side-effects during auth validation. Conflict between `PrismaService` and `validateRecruiter()`. | Demo provisioning logic duplicated across 2 places.                                            |
+| 11  | 🟡 **LOW**      | [middleware.ts](../../../../frontend/src/middleware.ts)                                           | **Middleware function exported but not wired to standard Next.js middleware**. Next.js requires `src/middleware.ts`.                                                                                       | Auth route redirects                                                                    | Automatic edge redirect may fail without proper `middleware.ts`.                                            | File named `proxy.ts`, not `middleware.ts`.                                                    |
+| 12  | 🟡 **LOW**      | [next.config.ts](../../../../frontend/next.config.ts#L93-L123)                                    | **Missing rewrites for several backend routes**: `/auth/*`, `/candidates/*`, `/interviews/*`, `/sourcing/*`, `/activities/*`, `/email/*`.                                                                  | Frontend calling direct paths without `/api/` prefix                                    | HTTP 404 unless client prefixes `/api/`.                                                                    | Dependent on frontend API client path construction.                                            |
+| 13  | 🟡 **LOW**      | [next.config.ts](../../../../frontend/next.config.ts#L44-L53)                                     | **Permissive /24 Subnet Loop as allowed dev origins**. Iterates 1-254 for all IPv4 interfaces.                                                                                                             | Starting frontend dev server                                                            | Registers >1000 allowed origins, loose security posture.                                                    | Lines 48-53: Nested loop scanning IP subnet range.                                             |
+| 14  | 🟡 **LOW**      | [events.service.ts](../../../../backend/src/events/events.service.ts#L63-L65)                     | **SSE org events broadcast to ALL connected clients** without verifying org membership.                                                                                                                    | Any connected SSE listener receives events from other tenants                           | Data leak: Users can observe state updates of other organizations.                                          | Line 64: `if (event.organizationId) { return true; }` — no membership check.                   |
+| 15  | 🟡 **LOW**      | [candidates.service.ts](../../../../backend/src/candidates/candidates.service.ts#L325-L342)       | **Incorrect Activity Log Type on profile views**. Uses `type: "NOTE_ADDED"` for viewing candidate profiles.                                                                                                | User views candidate profile                                                            | Audit history displays inaccurate semantic event type                                                       | Line 330: Records `type: "NOTE_ADDED"` on profile inspection.                                  |
+| 16  | 🟡 **LOW**      | [candidates.service.ts](../../../../backend/src/candidates/candidates.service.ts#L513)            | **Non-UUID Document ID**: Generates `doc-${Date.now()}` instead of standard UUID.                                                                                                                          | Uploading new document                                                                  | Inconsistent ID formatting in database                                                                      | Line 513: `const newDocId = \`doc-${Date.now()}\``.                                            |
+| 17  | 🟡 **LOW**      | [app.module.ts](../../../../backend/src/app.module.ts#L64)                                        | **PrismaService registered twice** — once via `PrismaModule` (line 47) and once directly in `providers` (line 64).                                                                                         | Application module bootstrap                                                            | Potential creation of duplicate service instances                                                           | Redundant registration.                                                                        |
 
 ---
 
 ## 7. Missing & Untested Areas
 
-| Area | Status | Evaluation |
-|---|---|---|
-| **Frontend E2E Testing** | ❌ Missing | Zero automated Playwright or Cypress specs. Only isolated component unit tests exist. |
-| **Database Migration Integrity** | ❌ Untested | Not verified against live PostgreSQL instances via `prisma db update`. |
-| **Production Build Execution** | ❌ Untested | `pnpm build` not yet executed for Next.js and NestJS esbuild bundles. |
-| **Rate Limiting Integration** | ❓ Unverified | ThrottlerGuard declared in code but lacks integration verification. |
-| **Buffer Magic Bytes Validation** | ❌ Missing | Design specifies magic bytes inspection; code currently checks only file extensions. |
-| **30-Day Soft Delete Purge** | ❌ Missing | Missing scheduled cron job or worker to permanently delete records soft-deleted >30 days. |
-| **Background Job Idempotency** | ⚠️ Partial | Email queue specifies `jobId`; other dispatches lack deterministic job keys. |
+| Area                                   | Status        | Evaluation                                                                                 |
+| -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------ |
+| **Frontend E2E Testing**               | ❌ Missing    | Zero automated Playwright or Cypress specs. Only isolated component unit tests exist.      |
+| **Database Migration Integrity**       | ❌ Untested   | Not verified against live PostgreSQL instances via `prisma db update`.                     |
+| **Production Build Execution**         | ❌ Untested   | `pnpm build` not yet executed for Next.js and NestJS esbuild bundles.                      |
+| **Rate Limiting Integration**          | ❓ Unverified | ThrottlerGuard declared in code but lacks integration verification.                        |
+| **Buffer Magic Bytes Validation**      | ❌ Missing    | Design specifies magic bytes inspection; code currently checks only file extensions.       |
+| **30-Day Soft Delete Purge**           | ❌ Missing    | Missing scheduled cron job or worker to permanently delete records soft-deleted >30 days.  |
+| **Background Job Idempotency**         | ⚠️ Partial    | Email queue specifies `jobId`; other dispatches lack deterministic job keys.               |
 | **Application Submission Concurrency** | ❓ Unverified | Unique constraint exists on `[candidateId, jobId]`, but race conditions remain unverified. |
-| **Password Reset / Forgot Password** | ❌ Missing | No API or UI flows exist for password resets. |
-| **User Self-Deletion** | ❌ Missing | No feature allows users to delete their own account. |
-| **API Versioning** | ❌ Missing | API endpoints lack version prefixes (e.g. `/api/v1/...`). |
-| **CSRF Defense** | ❌ Missing | Cookies flagged `SameSite=lax` but lack explicit CSRF tokens for mutating requests. |
-| **HTML Input Sanitization (XSS)** | ⚠️ Partial | `fixUtf8String` present, but rich text fields lack rigorous HTML sanitization. |
-| **Cursor-based Pagination** | ❌ Missing | All endpoints rely on offset pagination; cursor pagination not implemented. |
+| **Password Reset / Forgot Password**   | ❌ Missing    | No API or UI flows exist for password resets.                                              |
+| **User Self-Deletion**                 | ❌ Missing    | No feature allows users to delete their own account.                                       |
+| **API Versioning**                     | ❌ Missing    | API endpoints lack version prefixes (e.g. `/api/v1/...`).                                  |
+| **CSRF Defense**                       | ❌ Missing    | Cookies flagged `SameSite=lax` but lack explicit CSRF tokens for mutating requests.        |
+| **HTML Input Sanitization (XSS)**      | ⚠️ Partial    | `fixUtf8String` present, but rich text fields lack rigorous HTML sanitization.             |
+| **Cursor-based Pagination**            | ❌ Missing    | All endpoints rely on offset pagination; cursor pagination not implemented.                |
 
 ---
 
@@ -389,73 +393,73 @@ Frontend connects: GET /events/stream?token=<jwt>
 
 ### ✅ Covered Business Workflows
 
-| Business Workflow | Associated Test File | Test Count |
-|---|---|---|
-| Authentication (Login / Register / Refresh / Profile / Demo) | `auth.service.spec.ts` | 17 tests |
-| Jobs (CRUD + Filtering + Pagination) | `jobs.service.spec.ts` | Complete suite |
-| Application Pipeline Lifecycle | `applications.service.spec.ts` | Complete suite |
-| Interview Scheduling + Scorecards | `interviews.service.spec.ts` | Complete suite |
-| Multi-Channel Email + Encryption | `email.service.spec.ts` | 17 tests |
-| Organization Management + Members + Invites | `organizations.service.spec.ts` | Complete suite |
-| Sourcing Tracking Links | `sourcing.service.spec.ts` | Complete suite |
-| Activity Logging | `activities.service.spec.ts` | Complete suite |
-| SSE Event Streams | `events.service.spec.ts` | Complete suite |
-| Tenant Isolation Guard | `tenant-isolation.spec.ts` | 3 critical tests |
-| Full Lifecycle E2E | `e2e-flow.spec.ts` | 1 broad test |
-| Frontend Components | 21 component test files | 105 tests |
-| Standardized API Error Handling | `api-error.spec.ts` | 6 tests |
-| Utilities & Helpers | `utils.spec.ts`, `doc-utils.spec.ts`, etc. | Multiple tests |
+| Business Workflow                                            | Associated Test File                       | Test Count       |
+| ------------------------------------------------------------ | ------------------------------------------ | ---------------- |
+| Authentication (Login / Register / Refresh / Profile / Demo) | `auth.service.spec.ts`                     | 17 tests         |
+| Jobs (CRUD + Filtering + Pagination)                         | `jobs.service.spec.ts`                     | Complete suite   |
+| Application Pipeline Lifecycle                               | `applications.service.spec.ts`             | Complete suite   |
+| Interview Scheduling + Scorecards                            | `interviews.service.spec.ts`               | Complete suite   |
+| Multi-Channel Email + Encryption                             | `email.service.spec.ts`                    | 17 tests         |
+| Organization Management + Members + Invites                  | `organizations.service.spec.ts`            | Complete suite   |
+| Sourcing Tracking Links                                      | `sourcing.service.spec.ts`                 | Complete suite   |
+| Activity Logging                                             | `activities.service.spec.ts`               | Complete suite   |
+| SSE Event Streams                                            | `events.service.spec.ts`                   | Complete suite   |
+| Tenant Isolation Guard                                       | `tenant-isolation.spec.ts`                 | 3 critical tests |
+| Full Lifecycle E2E                                           | `e2e-flow.spec.ts`                         | 1 broad test     |
+| Frontend Components                                          | 21 component test files                    | 105 tests        |
+| Standardized API Error Handling                              | `api-error.spec.ts`                        | 6 tests          |
+| Utilities & Helpers                                          | `utils.spec.ts`, `doc-utils.spec.ts`, etc. | Multiple tests   |
 
 ### ❌ Uncovered Business Workflows
 
-| Workflow | Risk Level | Reason |
-|---|---|---|
-| Stage State Machine Validation | **HIGH** | Zero tests verify blocking of invalid transitions (validator unbuilt). |
-| Concurrent Application Submissions | **HIGH** | Missing multi-request concurrency stress tests. |
-| File Upload Magic Bytes Spoofing | **MEDIUM** | Tests only check file extensions, not payload headers. |
-| High-Volume Pagination Performance | **MEDIUM** | In-memory pagination never load-tested with 100k+ records. |
-| SSE Tenant Event Isolation | **LOW** | Missing cross-tenant event isolation tests. |
-| Password Strength Validation | **LOW** | Only tests basic minimum length on registration. |
-| Frontend Middleware Routing | **MEDIUM** | `proxy.ts` unverified within live Next.js request lifecycles. |
+| Workflow                           | Risk Level | Reason                                                                 |
+| ---------------------------------- | ---------- | ---------------------------------------------------------------------- |
+| Stage State Machine Validation     | **HIGH**   | Zero tests verify blocking of invalid transitions (validator unbuilt). |
+| Concurrent Application Submissions | **HIGH**   | Missing multi-request concurrency stress tests.                        |
+| File Upload Magic Bytes Spoofing   | **MEDIUM** | Tests only check file extensions, not payload headers.                 |
+| High-Volume Pagination Performance | **MEDIUM** | In-memory pagination never load-tested with 100k+ records.             |
+| SSE Tenant Event Isolation         | **LOW**    | Missing cross-tenant event isolation tests.                            |
+| Password Strength Validation       | **LOW**    | Only tests basic minimum length on registration.                       |
+| Frontend Middleware Routing        | **MEDIUM** | `proxy.ts` unverified within live Next.js request lifecycles.          |
 
 ---
 
 ## 9. Intended vs Actual Behavior Comparison
 
-| # | Intended Architecture Design | Actual Code Implementation | Alignment Status |
-|---|---|---|---|
-| 1 | **Stage State Machine**: Deterministic transitions with precondition guards | No transition validator. Unconstrained transitions permitted between any stages. | 🔴 **MISSING** |
-| 2 | **Server-side Pagination**: Server-level query pagination, no ad-hoc slicing | Jobs, Candidates, Applications loaded fully into RAM and sliced via JavaScript | 🟡 **VIOLATED** |
-| 3 | **Object Storage Security**: Tenant-scoped directories and buffer magic bytes verification | Extension check only. No magic bytes validation. S3 paths lack `orgId` prefix. | 🟡 **PARTIAL** |
-| 4 | **Two-Tier Deletion**: Soft delete on primary entities with 30-day purge | Jobs and Candidates soft delete. Applications hard delete. No 30-day purge worker. | 🟡 **INCOMPLETE** |
-| 5 | **Background Job Idempotency**: Deterministic job IDs and Redis deduplication | Email queue has `jobId`. No evidence of Redis deduplication locks. | 🟡 **PARTIAL** |
-| 6 | **Strict i18n**: 100% text via `t()`, zero hardcoded strings | Backend contains hardcoded `"Vị trí tuyển dụng"` and `"ATS Recruitment"`. | 🟠 **VIOLATED** |
-| 7 | **Audit Trail**: Zero silent mutations | Most mutations logged. Hard delete `Application.remove()` produces no log. | 🟡 **PARTIAL** |
-| 8 | **Web Security**: HttpOnly cookies for authentication | Sets HttpOnly cookie, but backend `JwtStrategy` only reads Bearer header. | 🔴 **BROKEN** |
-| 9 | **Database Cascade Integrity**: Database-level `onDelete: Cascade` in Prisma | Prisma schema declares `onDelete: Cascade` across relations. | ✅ **CORRECT** |
-| 10 | **Unified Error Envelope & Client i18n**: Machine-readable error codes | `AppException` and `APP_ERROR_CODES` declared, frontend provides `getApiErrorMessage`. | ✅ **CORRECT** |
+| #   | Intended Architecture Design                                                               | Actual Code Implementation                                                             | Alignment Status  |
+| --- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ----------------- |
+| 1   | **Stage State Machine**: Deterministic transitions with precondition guards                | No transition validator. Unconstrained transitions permitted between any stages.       | 🔴 **MISSING**    |
+| 2   | **Server-side Pagination**: Server-level query pagination, no ad-hoc slicing               | Jobs, Candidates, Applications loaded fully into RAM and sliced via JavaScript         | 🟡 **VIOLATED**   |
+| 3   | **Object Storage Security**: Tenant-scoped directories and buffer magic bytes verification | Extension check only. No magic bytes validation. S3 paths lack `orgId` prefix.         | 🟡 **PARTIAL**    |
+| 4   | **Two-Tier Deletion**: Soft delete on primary entities with 30-day purge                   | Jobs and Candidates soft delete. Applications hard delete. No 30-day purge worker.     | 🟡 **INCOMPLETE** |
+| 5   | **Background Job Idempotency**: Deterministic job IDs and Redis deduplication              | Email queue has `jobId`. No evidence of Redis deduplication locks.                     | 🟡 **PARTIAL**    |
+| 6   | **Strict i18n**: 100% text via `t()`, zero hardcoded strings                               | Backend contains hardcoded `"Vị trí tuyển dụng"` and `"ATS Recruitment"`.              | 🟠 **VIOLATED**   |
+| 7   | **Audit Trail**: Zero silent mutations                                                     | Most mutations logged. Hard delete `Application.remove()` produces no log.             | 🟡 **PARTIAL**    |
+| 8   | **Web Security**: HttpOnly cookies for authentication                                      | Sets HttpOnly cookie, but backend `JwtStrategy` only reads Bearer header.              | 🔴 **BROKEN**     |
+| 9   | **Database Cascade Integrity**: Database-level `onDelete: Cascade` in Prisma               | Prisma schema declares `onDelete: Cascade` across relations.                           | ✅ **CORRECT**    |
+| 10  | **Unified Error Envelope & Client i18n**: Machine-readable error codes                     | `AppException` and `APP_ERROR_CODES` declared, frontend provides `getApiErrorMessage`. | ✅ **CORRECT**    |
 
 ---
 
 ## 10. Overall System Status
 
-| Subsystem / Feature | Current Operational Status | Assessment & Evidence |
-|---|---|---|
-| **Authentication (Login / Register)** | ⚠️ AT-RISK | Tests pass. Cookie token extraction misconfigured (Bug #1). Demo provisioning race risk. |
-| **Organization Management** | ✅ VERIFIED OPERATIONAL | Comprehensive test suite (21,929 bytes) covering CRUD, members, invite tokens. |
-| **Job Management** | ⚠️ AT-RISK | Tests pass. In-memory pagination (Bug #3) poses performance risks at scale. |
-| **Candidate Management** | ⚠️ AT-RISK | Tests pass. In-memory pagination (Bug #4). Non-UUID document IDs (Bug #16). |
-| **Application Pipeline** | ⚠️ AT-RISK | Core flow operates. **Missing Stage transition guards** (Bug #2). Hard delete flaw (Bug #8). |
-| **Interview Scheduling** | ✅ VERIFIED OPERATIONAL | 13,408 bytes of tests. Covers scheduling, updates, scorecards. |
-| **Email System** | ✅ VERIFIED OPERATIONAL | 17 tests passing. Multi-provider, encrypted secrets, templates. Hardcoded company name (Bug #6). |
-| **Source Tracking** | ✅ VERIFIED OPERATIONAL | All tests pass. Click deduplication and attribution work as designed. |
-| **Activity Logging** | ⚠️ AT-RISK | Functional but uses inappropriate event type on profile views (Bug #15). |
-| **Public Career Portal** | ⚠️ INCOMPLETE | Backend slug resolution works. Frontend middleware unmapped (Bug #11). |
-| **Real-Time Events (SSE)** | ⚠️ AT-RISK | Core connection works. Events not isolated by organization membership (Bug #14). |
-| **Document Storage** | ⚠️ AT-RISK | Upload/download functions. Missing magic bytes. Missing tenant folder prefix. |
-| **Tenant Isolation** | ✅ VERIFIED OPERATIONAL | TenantGuard paired with service-level `organizationId` scoping. 3 isolation specs pass. |
-| **Rate Limiting** | ❓ UNVERIFIED | ThrottlerGuard declared in code but lacks live integration tests. |
-| **Encryption Subsystem** | ✅ VERIFIED OPERATIONAL | AES-256-GCM with random salt. Backward-compatible with legacy secrets. Tests pass. |
+| Subsystem / Feature                   | Current Operational Status | Assessment & Evidence                                                                            |
+| ------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Authentication (Login / Register)** | ⚠️ AT-RISK                 | Tests pass. Cookie token extraction misconfigured (Bug #1). Demo provisioning race risk.         |
+| **Organization Management**           | ✅ VERIFIED OPERATIONAL    | Comprehensive test suite (21,929 bytes) covering CRUD, members, invite tokens.                   |
+| **Job Management**                    | ⚠️ AT-RISK                 | Tests pass. In-memory pagination (Bug #3) poses performance risks at scale.                      |
+| **Candidate Management**              | ⚠️ AT-RISK                 | Tests pass. In-memory pagination (Bug #4). Non-UUID document IDs (Bug #16).                      |
+| **Application Pipeline**              | ⚠️ AT-RISK                 | Core flow operates. **Missing Stage transition guards** (Bug #2). Hard delete flaw (Bug #8).     |
+| **Interview Scheduling**              | ✅ VERIFIED OPERATIONAL    | 13,408 bytes of tests. Covers scheduling, updates, scorecards.                                   |
+| **Email System**                      | ✅ VERIFIED OPERATIONAL    | 17 tests passing. Multi-provider, encrypted secrets, templates. Hardcoded company name (Bug #6). |
+| **Source Tracking**                   | ✅ VERIFIED OPERATIONAL    | All tests pass. Click deduplication and attribution work as designed.                            |
+| **Activity Logging**                  | ⚠️ AT-RISK                 | Functional but uses inappropriate event type on profile views (Bug #15).                         |
+| **Public Career Portal**              | ⚠️ INCOMPLETE              | Backend slug resolution works. Frontend middleware unmapped (Bug #11).                           |
+| **Real-Time Events (SSE)**            | ⚠️ AT-RISK                 | Core connection works. Events not isolated by organization membership (Bug #14).                 |
+| **Document Storage**                  | ⚠️ AT-RISK                 | Upload/download functions. Missing magic bytes. Missing tenant folder prefix.                    |
+| **Tenant Isolation**                  | ✅ VERIFIED OPERATIONAL    | TenantGuard paired with service-level `organizationId` scoping. 3 isolation specs pass.          |
+| **Rate Limiting**                     | ❓ UNVERIFIED              | ThrottlerGuard declared in code but lacks live integration tests.                                |
+| **Encryption Subsystem**              | ✅ VERIFIED OPERATIONAL    | AES-256-GCM with random salt. Backward-compatible with legacy secrets. Tests pass.               |
 
 ---
 

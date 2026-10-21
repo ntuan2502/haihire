@@ -51,7 +51,8 @@ const steps: Step[] = [
     name: "Two-Way i18n & Zero Hardcoded Strings (pnpm lint:i18n)",
     command: "pnpm lint:i18n",
     category: "lint",
-    description: "Verify dictionary keys consistency and assert zero hardcoded strings in JSX",
+    description:
+      "Verify dictionary keys consistency and assert zero hardcoded strings in JSX",
   },
   {
     id: "lint",
@@ -72,7 +73,8 @@ const steps: Step[] = [
     name: "CI Gate 3: DtoPipe Validation Coverage",
     command: "pnpm lint:dtopipe",
     category: "gate",
-    description: "Assert 100% @Body() params are guarded by DtoPipe in controllers",
+    description:
+      "Assert 100% @Body() params are guarded by DtoPipe in controllers",
   },
   {
     id: "lint:error-i18n",
@@ -86,35 +88,48 @@ const steps: Step[] = [
     name: "CI Gate 5: API Contract & Leaks Audit",
     command: "pnpm lint:api-contract",
     category: "gate",
-    description: "Audit controller coverage, zero error leaks, and zero alert() calls",
+    description:
+      "Audit controller coverage, zero error leaks, and zero alert() calls",
   },
   {
     id: "lint:prometheus-rules",
     name: "CI Gate 6: Prometheus Alert Rules Audit",
     command: "pnpm lint:prometheus-rules",
     category: "gate",
-    description: "Verify syntax, fields, severity, and team: sre labels in alert-rules.yml",
+    description:
+      "Verify syntax, fields, severity, and team: sre labels in alert-rules.yml",
   },
   {
     id: "lint:tenant-scope",
     name: "CI Gate 10: Tenant Scoping Static Analysis",
     command: "pnpm lint:tenant-scope",
     category: "gate",
-    description: "Assert 100% of Prisma queries in tenant-scoped modules are properly isolated",
+    description:
+      "Assert 100% of Prisma queries in tenant-scoped modules are properly isolated",
   },
   {
     id: "lint:doc-links",
     name: "CI Gate 11: Documentation Markdown Link Integrity",
     command: "pnpm lint:doc-links",
     category: "gate",
-    description: "Verify zero broken markdown links across all docs and memory indexes",
+    description:
+      "Verify zero broken markdown links across all docs and memory indexes",
+  },
+  {
+    id: "check:prod-email-provider",
+    name: "CI Gate 12: Production Email Provider Validation",
+    command: "pnpm check:prod-email-provider",
+    category: "gate",
+    description:
+      "Assert SYSTEM_EMAIL_PROVIDER is not SIMULATED when NODE_ENV is production",
   },
   {
     id: "test:diff",
     name: "Test Count Delta & Anti-Regression",
     command: "pnpm test:diff",
     category: "gate",
-    description: "Audit test count changes against git history to detect test regression",
+    description:
+      "Audit test count changes against git history to detect test regression",
   },
 ];
 
@@ -125,7 +140,8 @@ if (!fastOnly) {
     name: "Unit & Integration Test Suite",
     command: "pnpm test",
     category: "test",
-    description: "Run all 563 unit and integration tests across backend and frontend",
+    description:
+      "Run all 563 unit and integration tests across backend and frontend",
   });
 }
 
@@ -147,18 +163,38 @@ if (withE2e) {
     name: "CI Gate 6: Playwright E2E Test Suite",
     command: "pnpm test:e2e",
     category: "e2e",
-    description: "Run 10 critical end-to-end user journeys in headless Chromium",
+    description:
+      "Run 10 critical end-to-end user journeys in headless Chromium",
   });
 }
 
-console.log(`${colors.cyan}==================================================================${colors.reset}`);
-console.log(`${colors.bold}${colors.cyan}             HAIHIRE PLATFORM — COMPREHENSIVE CHECK               ${colors.reset}`);
-console.log(`${colors.cyan}==================================================================${colors.reset}`);
-console.log(`📋 Total Checks Scheduled: ${colors.bold}${steps.length}${colors.reset}`);
-if (fastOnly) console.log(`⚡ Mode: ${colors.yellow}Fast / Quick (Tests Skipped)${colors.reset}`);
-if (withBuild) console.log(`📦 Options: ${colors.green}Includes Production Build${colors.reset}`);
-if (withE2e) console.log(`🌐 Options: ${colors.green}Includes Playwright E2E Suite${colors.reset}`);
-console.log(`${colors.gray}──────────────────────────────────────────────────────────────────${colors.reset}\n`);
+console.log(
+  `${colors.cyan}==================================================================${colors.reset}`,
+);
+console.log(
+  `${colors.bold}${colors.cyan}             HAIHIRE PLATFORM — COMPREHENSIVE CHECK               ${colors.reset}`,
+);
+console.log(
+  `${colors.cyan}==================================================================${colors.reset}`,
+);
+console.log(
+  `📋 Total Checks Scheduled: ${colors.bold}${steps.length}${colors.reset}`,
+);
+if (fastOnly)
+  console.log(
+    `⚡ Mode: ${colors.yellow}Fast / Quick (Tests Skipped)${colors.reset}`,
+  );
+if (withBuild)
+  console.log(
+    `📦 Options: ${colors.green}Includes Production Build${colors.reset}`,
+  );
+if (withE2e)
+  console.log(
+    `🌐 Options: ${colors.green}Includes Playwright E2E Suite${colors.reset}`,
+  );
+console.log(
+  `${colors.gray}──────────────────────────────────────────────────────────────────${colors.reset}\n`,
+);
 
 const results: StepResult[] = [];
 let hasFailed = false;
@@ -207,25 +243,43 @@ for (let i = 0; i < steps.length; i++) {
     });
     hasFailed = true;
 
-    console.log(`${colors.red}==================================================================${colors.reset}`);
-    console.log(`${colors.bold}${colors.red}❌ CHECK FAILED AT STEP: ${step.name}${colors.reset}`);
+    console.log(
+      `${colors.red}==================================================================${colors.reset}`,
+    );
+    console.log(
+      `${colors.bold}${colors.red}❌ CHECK FAILED AT STEP: ${step.name}${colors.reset}`,
+    );
     console.log(`Command:  ${colors.yellow}${step.command}${colors.reset}`);
     console.log(`Exit Code: ${exitCode}`);
-    console.log(`${colors.gray}──────────────────────────────────────────────────────────────────${colors.reset}`);
-    console.log(`${colors.bold}👉 To re-run and debug this step individually, execute:${colors.reset}`);
+    console.log(
+      `${colors.gray}──────────────────────────────────────────────────────────────────${colors.reset}`,
+    );
+    console.log(
+      `${colors.bold}👉 To re-run and debug this step individually, execute:${colors.reset}`,
+    );
     console.log(`   ${colors.cyan}${step.command}${colors.reset}`);
-    console.log(`${colors.red}==================================================================${colors.reset}\n`);
+    console.log(
+      `${colors.red}==================================================================${colors.reset}\n`,
+    );
     break;
   }
 }
 
 const overallEnd = performance.now();
-const totalDurationSec = Number(((overallEnd - overallStart) / 1000).toFixed(2));
+const totalDurationSec = Number(
+  ((overallEnd - overallStart) / 1000).toFixed(2),
+);
 
 // Summary scorecard
-console.log(`${colors.cyan}==================================================================${colors.reset}`);
-console.log(`${colors.bold}${colors.cyan}                       VERIFICATION SUMMARY                       ${colors.reset}`);
-console.log(`${colors.cyan}==================================================================${colors.reset}`);
+console.log(
+  `${colors.cyan}==================================================================${colors.reset}`,
+);
+console.log(
+  `${colors.bold}${colors.cyan}                       VERIFICATION SUMMARY                       ${colors.reset}`,
+);
+console.log(
+  `${colors.cyan}==================================================================${colors.reset}`,
+);
 
 for (let i = 0; i < steps.length; i++) {
   const step = steps[i];
@@ -248,19 +302,25 @@ for (let i = 0; i < steps.length; i++) {
   }
 }
 
-console.log(`${colors.gray}──────────────────────────────────────────────────────────────────${colors.reset}`);
+console.log(
+  `${colors.gray}──────────────────────────────────────────────────────────────────${colors.reset}`,
+);
 console.log(` Total Time: ${colors.bold}${totalDurationSec}s${colors.reset}`);
 
 if (!hasFailed) {
   console.log(
     ` Status: ${colors.bold}${colors.green}🟢 ALL CHECKS PASSED (${steps.length}/${steps.length}) — SYSTEM IS 100% HEALTHY & READY!${colors.reset}`,
   );
-  console.log(`${colors.cyan}==================================================================${colors.reset}\n`);
+  console.log(
+    `${colors.cyan}==================================================================${colors.reset}\n`,
+  );
   process.exit(0);
 } else {
   console.log(
     ` Status: ${colors.bold}${colors.red}🔴 CHECK FAILED — Please resolve the issue above before committing.${colors.reset}`,
   );
-  console.log(`${colors.cyan}==================================================================${colors.reset}\n`);
+  console.log(
+    `${colors.cyan}==================================================================${colors.reset}\n`,
+  );
   process.exit(1);
 }

@@ -134,4 +134,49 @@ describe("CandidatesController", () => {
       );
     });
   });
+
+  describe("GET /candidates/:id (candidate:view permission)", () => {
+    const createFindOneContext = (req: { user?: unknown }): ExecutionContext =>
+      ({
+        getHandler: () => controller.findOne,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({
+          getRequest: () => req,
+          getResponse: () => mockRes,
+        }),
+      }) as unknown as ExecutionContext;
+
+    it("Case 1: rejects Role.MEMBER with 403 AppForbiddenException", () => {
+      // Arrange
+      const context = createFindOneContext(memberReq);
+
+      // Act & Assert
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+
+    it("Case 2: allows Role.RECRUITER and delegates to service.findOne", async () => {
+      // Arrange
+      const context = createFindOneContext(recruiterReq);
+      mockService.findOne.mockResolvedValue({
+        id: "cand-1",
+        name: "Test Candidate",
+      });
+
+      // Act
+      const canActivate = rolesGuard.canActivate(context);
+      expect(canActivate).toBe(true);
+
+      const result = await controller.findOne("cand-1", recruiterReq);
+
+      // Assert
+      expect(mockService.findOne).toHaveBeenCalledWith(
+        "cand-1",
+        "org-1",
+        recruiterReq.user,
+      );
+      expect(result).toEqual({ id: "cand-1", name: "Test Candidate" });
+    });
+  });
 });

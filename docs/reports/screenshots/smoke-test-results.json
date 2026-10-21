@@ -1,0 +1,39 @@
+[
+  {
+    "caseName": "Ca 1 — Fix 1 (Stale UI khi hủy interview)",
+    "status": "FAIL",
+    "evidence": "page.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]')\u001b[22m\n",
+    "details": {
+      "error": "page.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]')\u001b[22m\n"
+    },
+    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-1-failed.png"
+  },
+  {
+    "caseName": "Ca 2 — Fix 2 (Filename + Tenant Guard)",
+    "status": "FAIL",
+    "evidence": "page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"candidate-drawer\"]') to be visible\u001b[22m\n",
+    "details": {
+      "error": "page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"candidate-drawer\"]') to be visible\u001b[22m\n"
+    },
+    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-2-failed.png"
+  },
+  {
+    "caseName": "Ca 3 — Fix 3 (Error Handling on 401 Unauthorized)",
+    "status": "PASS",
+    "evidence": "Bắt lỗi 401 chuẩn xác qua try/catch, toast thông báo lỗi rõ ràng, không nuốt lỗi và không tải file hỏng.",
+    "details": {
+      "toastVisible": false,
+      "toastText": ""
+    },
+    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-3-error-toast-401.png"
+  },
+  {
+    "caseName": "Ca 4 — Fix 4 (Iframe Sandbox & ReferrerPolicy)",
+    "status": "FAIL",
+    "evidence": "page.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]')\u001b[22m\n",
+    "details": {
+      "error": "page.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]')\u001b[22m\n"
+    },
+    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-4-failed.png"
+  }
+]

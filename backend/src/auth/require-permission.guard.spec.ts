@@ -1,17 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { RolesGuard } from "./roles.guard";
 import { Reflector } from "@nestjs/core";
-import { AppForbiddenException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppUnauthorizedException,
+} from "../common/app-exception";
 import { PERMISSION_KEY } from "./require-permission.decorator";
 import { Role, type Permission } from "@haihire/shared";
 import type { ExecutionContext } from "@nestjs/common";
 
-describe("RequirePermissionGuard (RolesGuard RBAC 6-Role Matrix)", () => {
+describe("RequirePermissionGuard (RolesGuard RBAC 5-Role Matrix)", () => {
   let guard: RolesGuard;
   let reflector: Reflector;
 
   const createMockContext = (
-    user: { id: string; role: string } | null,
+    user: {
+      id: string;
+      role: Role;
+      isOwner?: boolean;
+      organization?: { ownerId?: string };
+    } | null,
   ): ExecutionContext =>
     ({
       getHandler: () => {},
@@ -42,18 +50,19 @@ describe("RequirePermissionGuard (RolesGuard RBAC 6-Role Matrix)", () => {
     expect(guard.canActivate(context)).toBe(true);
   });
 
-  it("should throw AppForbiddenException if user is missing in request", () => {
+  it("should throw AppUnauthorizedException if user is missing in request (F-014)", () => {
     setRequiredPermission("job:view");
     const context = createMockContext(null);
 
-    expect(() => guard.canActivate(context)).toThrow(AppForbiddenException);
+    expect(() => guard.canActivate(context)).toThrow(AppUnauthorizedException);
   });
 
-  describe("OWNER role privileges", () => {
-    it("OWNER bypasses all permissions including billing and sensitive actions", () => {
+  describe("isOwner privileges (Dynamic Ownership via ADR-003)", () => {
+    it("owner with isOwner: true bypasses all permissions including billing and sensitive actions", () => {
       const ownerContext = createMockContext({
         id: "owner-1",
-        role: Role.OWNER,
+        role: Role.ADMIN,
+        isOwner: true,
       });
 
       setRequiredPermission("org:manage_billing");
@@ -65,10 +74,21 @@ describe("RequirePermissionGuard (RolesGuard RBAC 6-Role Matrix)", () => {
       setRequiredPermission("settings:manage_integrations");
       expect(guard.canActivate(ownerContext)).toBe(true);
     });
+
+    it("owner matching organization.ownerId bypasses all permissions even without explicit isOwner flag", () => {
+      const ownerContext = createMockContext({
+        id: "owner-1",
+        role: Role.ADMIN,
+        organization: { ownerId: "owner-1" },
+      });
+
+      setRequiredPermission("org:manage_billing");
+      expect(guard.canActivate(ownerContext)).toBe(true);
+    });
   });
 
   describe("ADMIN role permissions & boundaries", () => {
-    it("ADMIN can manage members, jobs, candidates, but CANNOT manage billing", () => {
+    it("ADMIN can manage members, jobs, candidates, but CANNOT manage billing unless owner", () => {
       const adminContext = createMockContext({
         id: "admin-1",
         role: Role.ADMIN,
@@ -83,7 +103,7 @@ describe("RequirePermissionGuard (RolesGuard RBAC 6-Role Matrix)", () => {
       setRequiredPermission("settings:manage_integrations");
       expect(guard.canActivate(adminContext)).toBe(true);
 
-      // Boundary: ADMIN cannot manage billing (only OWNER)
+      // Boundary: Non-owner ADMIN cannot manage billing (only owner)
       setRequiredPermission("org:manage_billing");
       expect(() => guard.canActivate(adminContext)).toThrow(
         AppForbiddenException,

@@ -38,6 +38,7 @@ HaiHire is a modern, high-performance, multi-tenant Applicant Tracking System (A
 
 - [**ADR-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**](docs/adr/ADR-001-prisma-8-rc.md)
 - [**ADR-002: Next.js Proxy Rewrites without /api Prefix & v0.4.0 Standardization**](docs/adr/ADR-002-frontend-rewrite-path.md)
+- [**ADR-003: Dynamic Organization Ownership via ownerId and Deprecation of Role.OWNER**](docs/adr/ADR-003-dynamic-org-ownership.md)
 
 ---
 

@@ -71,6 +71,8 @@ export const vi: TranslationSchema = {
     generic: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",
     networkError:
       "Không thể kết nối đến máy chủ. Vui lòng kiểm tra đường truyền mạng.",
+    cannotDownloadDocument:
+      "Không thể tải tài liệu do thiếu thông tin hồ sơ hoặc ứng viên.",
     ORG_SLUG_ALREADY_EXISTS:
       "Tổ chức với đường dẫn '{slug}' đã tồn tại. Vui lòng chọn đường dẫn khác.",
     ORG_NOT_FOUND: "Không tìm thấy tổ chức yêu cầu ({slug}).",

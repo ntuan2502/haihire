@@ -463,7 +463,7 @@ describe("CandidateDrawer Component", () => {
 
     await waitFor(() => {
       expect(mockDownloadAuthenticatedFile).toHaveBeenCalledWith(
-        "https://minio.local/cv.pdf",
+        "/candidates/cand-1/documents/download?url=https%3A%2F%2Fminio.local%2Fcv.pdf&name=Pham_Thi_Ung_Vien_CV.pdf",
         "Pham_Thi_Ung_Vien_CV.pdf",
       );
     });

@@ -31,6 +31,8 @@ minio_data/
 redis_data/
 backups/
 *.sql
+!backend/migrations/**/*.sql
+!backend/migrations/app/*.sql
 
 # Testing & Coverage
 coverage/

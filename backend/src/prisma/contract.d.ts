@@ -34,7 +34,7 @@ import type {
 } from "@prisma/orm-postgres/contract/types";
 
 export type StorageHash =
-  StorageHashBase<"88f0fe5b432f8410a86d2c8e8a17ebe1958115a96be6bd7124889b7fbfa9668b">;
+  StorageHashBase<"0c00d4d98853be4281cdce7a70e37e12c71222a52fa4b2f7d619506c74e4ed3b">;
 export type ExecutionHash =
   ExecutionHashBase<"b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98">;
 export type ProfileHash =
@@ -719,12 +719,7 @@ export type FieldOutputTypes = {
       readonly maxUses: CodecTypes["pg/int4@1"]["output"] | null;
       readonly organizationId: CodecTypes["pg/text@1"]["output"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly status: "ACTIVE" | "EXPIRED" | "REVOKED";
       readonly token: CodecTypes["pg/text@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
@@ -760,7 +755,7 @@ export type FieldOutputTypes = {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly id: CodecTypes["pg/text@1"]["output"];
       readonly name: CodecTypes["pg/text@1"]["output"];
-      readonly ownerId: CodecTypes["pg/text@1"]["output"] | null;
+      readonly ownerId: CodecTypes["pg/text@1"]["output"];
       readonly slug: CodecTypes["pg/text@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
@@ -769,12 +764,7 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes["pg/text@1"]["output"];
       readonly organizationId: CodecTypes["pg/text@1"]["output"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly userId: CodecTypes["pg/text@1"]["output"];
     };
@@ -849,12 +839,7 @@ export type FieldOutputTypes = {
       readonly organizationId: CodecTypes["pg/text@1"]["output"] | null;
       readonly password: CodecTypes["pg/text@1"]["output"] | null;
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly tokenVersion: CodecTypes["pg/int4@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
@@ -1043,12 +1028,7 @@ export type FieldInputTypes = {
       readonly maxUses: CodecTypes["pg/int4@1"]["input"] | null;
       readonly organizationId: CodecTypes["pg/text@1"]["input"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly status: "ACTIVE" | "EXPIRED" | "REVOKED";
       readonly token: CodecTypes["pg/text@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
@@ -1084,7 +1064,7 @@ export type FieldInputTypes = {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly id: CodecTypes["pg/text@1"]["input"];
       readonly name: CodecTypes["pg/text@1"]["input"];
-      readonly ownerId: CodecTypes["pg/text@1"]["input"] | null;
+      readonly ownerId: CodecTypes["pg/text@1"]["input"];
       readonly slug: CodecTypes["pg/text@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
@@ -1093,12 +1073,7 @@ export type FieldInputTypes = {
       readonly id: CodecTypes["pg/text@1"]["input"];
       readonly organizationId: CodecTypes["pg/text@1"]["input"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly userId: CodecTypes["pg/text@1"]["input"];
     };
@@ -1173,12 +1148,7 @@ export type FieldInputTypes = {
       readonly organizationId: CodecTypes["pg/text@1"]["input"] | null;
       readonly password: CodecTypes["pg/text@1"]["input"] | null;
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly tokenVersion: CodecTypes["pg/int4@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
@@ -1367,12 +1337,7 @@ export type StorageColumnTypes = {
       readonly maxUses: CodecTypes["pg/int4@1"]["output"] | null;
       readonly organizationId: CodecTypes["pg/text@1"]["output"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly status: "ACTIVE" | "EXPIRED" | "REVOKED";
       readonly token: CodecTypes["pg/text@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
@@ -1408,7 +1373,7 @@ export type StorageColumnTypes = {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly id: CodecTypes["pg/text@1"]["output"];
       readonly name: CodecTypes["pg/text@1"]["output"];
-      readonly ownerId: CodecTypes["pg/text@1"]["output"] | null;
+      readonly ownerId: CodecTypes["pg/text@1"]["output"];
       readonly slug: CodecTypes["pg/text@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
@@ -1417,12 +1382,7 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes["pg/text@1"]["output"];
       readonly organizationId: CodecTypes["pg/text@1"]["output"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly userId: CodecTypes["pg/text@1"]["output"];
     };
@@ -1497,12 +1457,7 @@ export type StorageColumnTypes = {
       readonly organizationId: CodecTypes["pg/text@1"]["output"] | null;
       readonly password: CodecTypes["pg/text@1"]["output"] | null;
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly tokenVersion: CodecTypes["pg/int4@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
@@ -1691,12 +1646,7 @@ export type StorageColumnInputTypes = {
       readonly maxUses: CodecTypes["pg/int4@1"]["input"] | null;
       readonly organizationId: CodecTypes["pg/text@1"]["input"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly status: "ACTIVE" | "EXPIRED" | "REVOKED";
       readonly token: CodecTypes["pg/text@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
@@ -1732,7 +1682,7 @@ export type StorageColumnInputTypes = {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly id: CodecTypes["pg/text@1"]["input"];
       readonly name: CodecTypes["pg/text@1"]["input"];
-      readonly ownerId: CodecTypes["pg/text@1"]["input"] | null;
+      readonly ownerId: CodecTypes["pg/text@1"]["input"];
       readonly slug: CodecTypes["pg/text@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
@@ -1741,12 +1691,7 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes["pg/text@1"]["input"];
       readonly organizationId: CodecTypes["pg/text@1"]["input"];
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly userId: CodecTypes["pg/text@1"]["input"];
     };
@@ -1821,12 +1766,7 @@ export type StorageColumnInputTypes = {
       readonly organizationId: CodecTypes["pg/text@1"]["input"] | null;
       readonly password: CodecTypes["pg/text@1"]["input"] | null;
       readonly role:
-        | "OWNER"
-        | "ADMIN"
-        | "RECRUITER"
-        | "HIRING_MANAGER"
-        | "INTERVIEWER"
-        | "MEMBER";
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly tokenVersion: CodecTypes["pg/int4@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
@@ -2052,13 +1992,7 @@ export namespace Models {
     id: CodecTypes["pg/text@1"]["output"];
     maxUses: CodecTypes["pg/int4@1"]["output"] | null;
     organizationId: CodecTypes["pg/text@1"]["output"];
-    role:
-      | "OWNER"
-      | "ADMIN"
-      | "RECRUITER"
-      | "HIRING_MANAGER"
-      | "INTERVIEWER"
-      | "MEMBER";
+    role: "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
     status: "ACTIVE" | "EXPIRED" | "REVOKED";
     token: CodecTypes["pg/text@1"]["output"];
     updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
@@ -2102,7 +2036,7 @@ export namespace Models {
     createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     id: CodecTypes["pg/text@1"]["output"];
     name: CodecTypes["pg/text@1"]["output"];
-    ownerId: CodecTypes["pg/text@1"]["output"] | null;
+    ownerId: CodecTypes["pg/text@1"]["output"];
     slug: CodecTypes["pg/text@1"]["output"];
     updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     activityLogs: public_ActivityLog[];
@@ -2114,6 +2048,7 @@ export namespace Models {
     inviteLinks: public_InviteLink[];
     jobs: public_Job[];
     members: public_OrganizationMember[];
+    owner: public_User;
     trackingLinks: public_TrackingLink[];
     users: public_User[];
     webhookSettings: public_OrganizationWebhookSetting[];
@@ -2127,6 +2062,7 @@ export namespace Models {
       | "inviteLinks"
       | "jobs"
       | "members"
+      | "owner"
       | "trackingLinks"
       | "users"
       | "webhookSettings";
@@ -2135,13 +2071,7 @@ export namespace Models {
     createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     id: CodecTypes["pg/text@1"]["output"];
     organizationId: CodecTypes["pg/text@1"]["output"];
-    role:
-      | "OWNER"
-      | "ADMIN"
-      | "RECRUITER"
-      | "HIRING_MANAGER"
-      | "INTERVIEWER"
-      | "MEMBER";
+    role: "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
     updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     userId: CodecTypes["pg/text@1"]["output"];
     organization: public_Organization;
@@ -2228,22 +2158,22 @@ export namespace Models {
     name: CodecTypes["pg/text@1"]["output"];
     organizationId: CodecTypes["pg/text@1"]["output"] | null;
     password: CodecTypes["pg/text@1"]["output"] | null;
-    role:
-      | "OWNER"
-      | "ADMIN"
-      | "RECRUITER"
-      | "HIRING_MANAGER"
-      | "INTERVIEWER"
-      | "MEMBER";
+    role: "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
     tokenVersion: CodecTypes["pg/int4@1"]["output"];
     updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     inviteLinks: public_InviteLink[];
     jobs: public_Job[];
     memberships: public_OrganizationMember[];
     organization: public_Organization | null;
+    ownedOrganizations: public_Organization[];
     trackingLinks: public_TrackingLink[];
     readonly [RelationKeys]?:
-      "inviteLinks" | "jobs" | "memberships" | "organization" | "trackingLinks";
+      | "inviteLinks"
+      | "jobs"
+      | "memberships"
+      | "organization"
+      | "ownedOrganizations"
+      | "trackingLinks";
   };
 }
 
@@ -3678,7 +3608,7 @@ type ContractBase = Omit<
                 readonly ownerId: {
                   readonly nativeType: "text";
                   readonly codecId: "pg/text@1";
-                  readonly nullable: true;
+                  readonly nullable: false;
                 };
                 readonly slug: {
                   readonly nativeType: "text";
@@ -3693,8 +3623,28 @@ type ContractBase = Omit<
               };
               primaryKey: { readonly columns: readonly ["id"] };
               uniques: readonly [{ readonly columns: readonly ["slug"] }];
-              indexes: readonly [];
-              foreignKeys: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: "organization_ownerId_idx_e2d0c1ef";
+                  readonly prefix: "organization_ownerId_idx";
+                  readonly columns: readonly ["ownerId"];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "organization";
+                    readonly columns: readonly ["ownerId"];
+                  };
+                  readonly target: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "user";
+                    readonly columns: readonly ["id"];
+                  };
+                },
+              ];
             };
             readonly organizationMember: {
               columns: {
@@ -4347,7 +4297,6 @@ type ContractBase = Omit<
             readonly Role: {
               readonly kind: "valueSet";
               readonly values: readonly [
-                "OWNER",
                 "ADMIN",
                 "RECRUITER",
                 "HIRING_MANAGER",
@@ -6089,7 +6038,7 @@ type ContractBase = Omit<
                 };
               };
               readonly ownerId: {
-                readonly nullable: true;
+                readonly nullable: false;
                 readonly type: {
                   readonly kind: "scalar";
                   readonly codecId: "pg/text@1";
@@ -6209,6 +6158,18 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ["id"];
                   readonly targetFields: readonly ["organizationId"];
+                };
+              };
+              readonly owner: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "User";
+                };
+                readonly cardinality: "N:1";
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ["ownerId"];
+                  readonly targetFields: readonly ["id"];
                 };
               };
               readonly trackingLinks: {
@@ -6891,6 +6852,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ["id"];
                 };
               };
+              readonly ownedOrganizations: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "Organization";
+                };
+                readonly cardinality: "1:N";
+                readonly on: {
+                  readonly localFields: readonly ["id"];
+                  readonly targetFields: readonly ["ownerId"];
+                };
+              };
               readonly trackingLinks: {
                 readonly to: {
                   readonly namespace: "public" & NamespaceId;
@@ -7054,7 +7026,6 @@ type ContractBase = Omit<
           readonly Role: {
             readonly codecId: "pg/text@1";
             readonly members: readonly [
-              { readonly name: "OWNER"; readonly value: "OWNER" },
               { readonly name: "ADMIN"; readonly value: "ADMIN" },
               { readonly name: "RECRUITER"; readonly value: "RECRUITER" },
               {

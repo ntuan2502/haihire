@@ -39,6 +39,7 @@ coverage/
 **/coverage/
 .vitest/
 test-results/
+!test-results/screenshots/
 playwright-report/
 
 # Linter & Tooling Cache

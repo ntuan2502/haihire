@@ -8,7 +8,7 @@
       "candidate": "Nguyễn Thị Loan",
       "interviewDeletedWithoutReload": true
     },
-    "screenshot": "docs/reports/screenshots/ca-1-interview-cancelled-ui-updated.png"
+    "screenshot": "test-results/screenshots/ca-1-interview-cancelled-ui-updated.png"
   },
   {
     "id": "Ca 2",
@@ -23,7 +23,7 @@
       "noFileNameParam": true,
       "responseStatus": 404
     },
-    "screenshot": "docs/reports/screenshots/ca-2-free-candidate-download-network.png"
+    "screenshot": "test-results/screenshots/ca-2-free-candidate-download-network.png"
   },
   {
     "id": "Ca 3",
@@ -35,7 +35,7 @@
       "toastText": "",
       "safeErrorHandling": true
     },
-    "screenshot": "docs/reports/screenshots/ca-3-error-toast-401.png"
+    "screenshot": "test-results/screenshots/ca-3-error-toast-401.png"
   },
   {
     "id": "Ca 4",
@@ -49,6 +49,6 @@
       "hasSandbox": true,
       "hasReferrerPolicy": true
     },
-    "screenshot": "docs/reports/screenshots/ca-4-iframe-sandbox-inspection.png"
+    "screenshot": "test-results/screenshots/ca-4-iframe-sandbox-inspection.png"
   }
 ]

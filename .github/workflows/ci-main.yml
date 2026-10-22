@@ -130,7 +130,7 @@ jobs:
                 process.exit(1);
               }
               console.log('✅ Direct dependencies security audit PASSED. Zero Critical/High direct vulnerabilities.');
-              console.log('ℹ️ Transitive High vulnerabilities from Prisma 8 RC composer accepted per docs/adr/ADR-001-prisma-8-rc.md');
+              console.log('ℹ️ Transitive High vulnerabilities from Prisma 8 RC composer accepted per docs/decisions/DECISIONS.md#d-001');
             } catch (e) {
               console.log('Audit output parse error, skipping', e);
             }

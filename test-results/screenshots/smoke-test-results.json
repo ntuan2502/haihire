@@ -6,7 +6,7 @@
     "details": {
       "error": "page.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]')\u001b[22m\n"
     },
-    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-1-failed.png"
+    "screenshotPath": "C:\\Workspaces\\haihire\\test-results\\screenshots\\ca-1-failed.png"
   },
   {
     "caseName": "Ca 2 — Fix 2 (Filename + Tenant Guard)",
@@ -15,7 +15,7 @@
     "details": {
       "error": "page.waitForSelector: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"candidate-drawer\"]') to be visible\u001b[22m\n"
     },
-    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-2-failed.png"
+    "screenshotPath": "C:\\Workspaces\\haihire\\test-results\\screenshots\\ca-2-failed.png"
   },
   {
     "caseName": "Ca 3 — Fix 3 (Error Handling on 401 Unauthorized)",
@@ -25,7 +25,7 @@
       "toastVisible": false,
       "toastText": ""
     },
-    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-3-error-toast-401.png"
+    "screenshotPath": "C:\\Workspaces\\haihire\\test-results\\screenshots\\ca-3-error-toast-401.png"
   },
   {
     "caseName": "Ca 4 — Fix 4 (Iframe Sandbox & ReferrerPolicy)",
@@ -34,6 +34,6 @@
     "details": {
       "error": "page.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"]')\u001b[22m\n"
     },
-    "screenshotPath": "C:\\Workspaces\\haihire\\docs\\reports\\screenshots\\ca-4-failed.png"
+    "screenshotPath": "C:\\Workspaces\\haihire\\test-results\\screenshots\\ca-4-failed.png"
   }
 ]

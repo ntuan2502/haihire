@@ -120,7 +120,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Block Release on Backend CRITICAL Vulnerabilities (ADR-001 accepts High only)
+      - name: Block Release on Backend CRITICAL Vulnerabilities (D-001 accepts High only)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.BACKEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
@@ -152,7 +152,7 @@ jobs:
           sarif_file: "trivy-backend-results.sarif"
           category: "trivy-backend"
 
-      - name: Block Release on Frontend CRITICAL Vulnerabilities (ADR-001 accepts High only)
+      - name: Block Release on Frontend CRITICAL Vulnerabilities (D-001 accepts High only)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.FRONTEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}

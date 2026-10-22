@@ -80,3 +80,19 @@
 - **Evidence:** Audit trail and verification in `docs/decisions/phase4-refactor-evidence.md` with 16/16 CI gates passing continuously across all refactor commits.
 - **Enforcement:** Enforced by CI Gate 10 (`pnpm lint:doc-links`), CI Gate 11 (`pnpm lint:doc-sync`), and CI Gate 13 (`pnpm test:diff`).
 - **History:** Executed on dedicated branch `refactor/p4-information-architecture` from baseline commit `b439cc2` across 10 structured, atomic commits covering dependency remediation (Tasks 0.5, 0.6), decision consolidation (Task 1), architecture specifications (Task 2), reports purge (Task 3), memory cleanup (Task 4), AGENTS.md rewrite (Task 5), documentation portal establishment (Task 6), metrics synchronization (Task 7), and evidence finalization (Task 8).
+
+---
+
+## D-008: Reverse Proxy Selection (Pending)
+
+- **Date:** 2026-10-22
+
+- **Decision:** TBD — Production reverse proxy technology selection (evaluating Caddy vs Nginx vs Cloudflare Tunnel) is currently deferred.
+
+- **Rationale:** The platform does not yet have an active bare-metal or cloud production deployment requiring ingress termination. In development and staging environments, client and API services bind directly to host/container ports (Next.js on port 13000, NestJS on port 13001). A formal reverse proxy architecture will be finalized alongside production infrastructure provisioning.
+
+- **Evidence:** Audit findings during Phase 2 and Phase 4 revealed phantom "Caddy 2.8" claims in legacy documentation despite no Caddy service or container definition existing in the codebase. All inaccurate claims were purged in D-007.
+
+- **Enforcement:** N/A (no reverse proxy is currently deployed or enforced).
+
+- **History:** Legacy documentation claimed Caddy 2.8 was in use for reverse proxy and TLS termination without corresponding docker-compose or container definitions. The phantom claims were removed in Phase 4 Information Architecture refactor, and this decision formally logs the selection as pending.

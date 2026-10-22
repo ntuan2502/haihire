@@ -103,7 +103,7 @@ Once running, access your local services:
 | **`packages/shared/`**         | Monorepo shared package: Canonical types, `APP_ERROR_CODES`, and brand constants.                                                   |
 | **`scripts/`**                 | Monorepo automation scripts: `check-all.ts`, `backup-production.ts`, `check-env-sync.ts`.                                           |
 | **`docs/`**                    | Central documentation repository: Architecture blueprints, API overview, runbooks, and audit history.                               |
-| **`.agents/memory/`**          | AI agent persistent memory: Project conventions, tech decisions, and user preferences.                                              |
+| **`.agents/`**                 | AI agent runtime configuration, skills, and operational rules managed by AG Kit.                                                    |
 
 ---
 

@@ -429,4 +429,31 @@ Purged all transient milestone and investigation reports from git tracking and l
 
 ---
 
+## 8. Task 4 — Cleanup of Stale Agent Memory (`.agents/memory/`)
+
+Pruned legacy, fragmented memory topic files from `.agents/memory/` after having centralized all active engineering conventions into `docs/architecture/conventions.md` and architecture decisions into `docs/decisions/DECISIONS.md`:
+
+### 8.1 Files Removed
+
+1. `<.agents/memory/MEMORY.md>`
+2. `<.agents/memory/project-conventions.md>`
+3. `<.agents/memory/tech-decisions.md>`
+4. `<.agents/memory/feedback-history.md>`
+5. `<.agents/memory/user-preferences.md>`
+
+### 8.2 Preservation of Toolkit Rules & Directory Structure
+
+- Retained `.agents/rules/` untouched as managed by AG Kit.
+- Preserved `.agents/memory/.gitkeep` to maintain directory presence for AG Kit scaffolding.
+- Updated references in `docs/PROJECT_CONTEXT.md` and `docs/onboarding.md` pointing to `docs/architecture/conventions.md`.
+
+### 8.3 Verification Result (`pnpm check:all`)
+
+- **Status:** 🟢 **ALL 16 CHECKS PASSED**.
+- Gate 10 (`lint:doc-links`): 0 broken markdown links across 42 scanned files.
+- Gate 11 (`lint:doc-sync`): 0 path drift or undocumented pre-release packages.
+- Unit & Integration Test Suite: 1,019 tests passed (589 backend + 430 frontend).
+
+---
+
 _(This report will be continuously updated as Tasks 1 through 8 are executed)._

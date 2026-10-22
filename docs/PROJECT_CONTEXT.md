@@ -24,7 +24,7 @@
 
 ## 2. TECH STACK
 
-- **Language + Version:** TypeScript `6.0.3` (100% Pure TypeScript mandate; pure `.js` files and `any` types are strictly prohibited — reference `.agents/memory/project-conventions.md:L13-19`).
+- **Language + Version:** TypeScript `6.0.3` (100% Pure TypeScript mandate; pure `.js` files and `any` types are strictly prohibited — reference `docs/architecture/conventions.md`).
 - **Primary Frameworks:**
   - **Backend:** NestJS `12.1.2` (running on Express platform adapter, reference `backend/package.json:L33-38`).
   - **Frontend:** Next.js `16.4.0` (App Router, React Server Components combined with Client Components) + React `19.3.0` (reference `frontend/package.json:L30-33`).

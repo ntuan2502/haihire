@@ -77,6 +77,33 @@
 - **Date:** 2026-10-22
 - **Decision:** Consolidated all fragmented architectural decisions into a unified `docs/decisions/DECISIONS.md` log, established four canonical architectural specifications in `docs/architecture/` (`system-overview.md`, `data-model.md`, `security-rbac.md`, and `conventions.md`), purged 12 root process reports and all 102 historical reports under `docs/reports/`, removed stale memory topic files in `.agents/memory/`, rewrote `AGENTS.md` as the authoritative single source of truth entry point, and created `docs/README.md` as the central documentation portal.
 - **Rationale:** Prior to this refactor, documentation was heavily fragmented across 12 root reports, 102 milestone reports, 5 agent memory files, and 3 standalone ADRs. This caused conflicting architectural claims (such as Fastify vs Express, Caddy vs Docker Compose, 6 roles vs 5 roles), degraded AI agent context windows, and generated discovery friction for human contributors. Consolidating documentation into single sources of truth ensures strict information integrity, zero duplication, and high operational clarity.
-- **Evidence:** Audit trail and verification in `docs/decisions/phase4-refactor-evidence.md` with 16/16 CI gates passing continuously across all refactor commits.
+- **Evidence:** Verified git commit history from baseline commit `b439cc2` through `3414851` with 16/16 CI gates passing continuously across all refactor commits.
 - **Enforcement:** Enforced by CI Gate 10 (`pnpm lint:doc-links`), CI Gate 11 (`pnpm lint:doc-sync`), and CI Gate 13 (`pnpm test:diff`).
 - **History:** Executed on dedicated branch `refactor/p4-information-architecture` from baseline commit `b439cc2` across 10 structured, atomic commits covering dependency remediation (Tasks 0.5, 0.6), decision consolidation (Task 1), architecture specifications (Task 2), reports purge (Task 3), memory cleanup (Task 4), AGENTS.md rewrite (Task 5), documentation portal establishment (Task 6), metrics synchronization (Task 7), and evidence finalization (Task 8).
+
+---
+
+## D-008: Reverse Proxy Selection (Pending)
+
+- **Date:** 2026-10-22
+
+- **Decision:** TBD — Production reverse proxy technology selection (evaluating Caddy vs Nginx vs Cloudflare Tunnel) is currently deferred.
+
+- **Rationale:** The platform does not yet have an active bare-metal or cloud production deployment requiring ingress termination. In development and staging environments, client and API services bind directly to host/container ports (Next.js on port 13000, NestJS on port 13001). A formal reverse proxy architecture will be finalized alongside production infrastructure provisioning.
+
+- **Evidence:** Audit findings during Phase 2 and Phase 4 revealed phantom "Caddy 2.8" claims in legacy documentation despite no Caddy service or container definition existing in the codebase. All inaccurate claims were purged in D-007.
+
+- **Enforcement:** N/A (no reverse proxy is currently deployed or enforced).
+
+- **History:** Legacy documentation claimed Caddy 2.8 was in use for reverse proxy and TLS termination without corresponding docker-compose or container definitions. The phantom claims were removed in Phase 4 Information Architecture refactor, and this decision formally logs the selection as pending.
+
+---
+
+## D-009: OrganizationAuditLog Entity for Administrative Audit Trail
+
+- **Date:** 2026-10-22
+- **Decision:** Establish a dedicated `OrganizationAuditLog` database entity and service in release `v0.4.0` for tracking tenant administrative events (`OWNERSHIP_TRANSFERRED`, `ORG_DELETED`, `MEMBER_ROLE_CHANGED`, etc.), rather than extending the candidate-scoped `ActivityLog`.
+- **Rationale:** In `contract.prisma`, `ActivityLog` enforces a non-nullable Foreign Key `candidateId String` referencing `Candidate`. Attempting to record organization-level administrative operations inside `ActivityLog` would break domain boundaries by coupling tenant administration with candidate recruitment, or would require making `candidateId` nullable via an unnecessary breaking schema migration. Introducing a separate `OrganizationAuditLog` entity preserves domain isolation and satisfies SOC2/ISO27001 administrative audit trail compliance.
+- **Evidence:** Architectural review finding F-017 from Phase 3 Branch 2, and `contract.prisma` schema definition.
+- **Enforcement:** `v0.4.0` database migration and service implementation.
+- **History:** Discovered during Phase 3 Branch 2 review regarding ownership transfer auditing; formally resolved as finding F-017 and scheduled for `v0.4.0` implementation.

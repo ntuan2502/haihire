@@ -13,6 +13,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Security
 
+## [0.3.0] - 2026-10-22
+
+### Added
+
+- Dynamic organization ownership via `ownerId` ([D-003](docs/decisions/DECISIONS.md#d-003)), deprecating `Role.OWNER`.
+- Transfer ownership API endpoint `POST /organizations/my/transfer-ownership`.
+- Two new CI verification gates: `lint:nextjs-conventions` and `lint:github-action-versions` (16 total gates).
+
+### Fixed
+
+- **P1:** RBAC guards on document download endpoints.
+- **P1:** Elimination of legacy `/users` cross-tenant leak.
+- **P1:** Organization owner deletion authorization fix (F-003).
+- **P1:** Next.js 16 `proxy.ts` convention compliance ([D-004](docs/decisions/DECISIONS.md#d-004)).
+- **P0:** Multi-member unlinking and deletion in `deleteMyOrg` (`updateAll`/`deleteAll`).
+- **P0:** Job and candidate cascade on organization deletion.
+- Pinned `dorny/paths-filter@v4` action version ([D-005](docs/decisions/DECISIONS.md#d-005)).
+
+### Changed
+
+- Information Architecture refactor ([D-007](docs/decisions/DECISIONS.md#d-007)): consolidated documentation into Single Source of Truth, removed 12 root reports, 102 milestone reports, 57 archive files, and 5 agent memory files.
+- Granular permission matrix expanded to 41 permissions across 5 roles, covering 86 endpoints with 1,020 unit & integration tests.
+
+### Known Limitations
+
+- 11 transitive High CVEs from Prisma 8 RC build tooling ([D-001](docs/decisions/DECISIONS.md#d-001)).
+- PII field-level encryption deferred to v0.4.0 (see [roadmap](docs/guides/roadmap.md)).
+
 ## [0.2.0] - 2026-10-19
 
 ### Changed

@@ -324,6 +324,34 @@ describe("OrganizationsCoreService", () => {
       expect(org?.ownerId).toBe("user-admin");
     });
 
+    it("promotes target member to ADMIN in both User and OrganizationMember on ownership transfer", async () => {
+      const memberUserBefore = userTable.store.find(
+        (u) => u.id === "user-member",
+      );
+      const memberEntryBefore = organizationMemberTable.store.find(
+        (m) => m.organizationId === "org-1" && m.userId === "user-member",
+      );
+      expect(memberUserBefore?.role).toBe("MEMBER");
+      expect(memberEntryBefore?.role).toBe("MEMBER");
+
+      const res = await service.transferOwnership("user-owner", "user-member");
+      expect(res.success).toBe(true);
+      expect(res.newOwnerId).toBe("user-member");
+
+      const org = organizationTable.store.find((o) => o.id === "org-1");
+      expect(org?.ownerId).toBe("user-member");
+
+      const memberUserAfter = userTable.store.find(
+        (u) => u.id === "user-member",
+      );
+      expect(memberUserAfter?.role).toBe("ADMIN");
+
+      const memberEntryAfter = organizationMemberTable.store.find(
+        (m) => m.organizationId === "org-1" && m.userId === "user-member",
+      );
+      expect(memberEntryAfter?.role).toBe("ADMIN");
+    });
+
     it("throws AppForbiddenException when non-owner attempts to transfer ownership", async () => {
       await expect(
         service.transferOwnership("user-admin", "user-member"),

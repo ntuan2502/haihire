@@ -1,9 +1,9 @@
 # 🗺️ HaiHire - Product Roadmap & Architectural Horizon
 
 > **Comprehensive strategic roadmap for the HaiHire Enterprise Applicant Tracking System (ATS).**  
-> **Current Version:** `v0.2.0` (Pre-release, Released 2026-10-19)  
-> **Updated:** 2026-10-19  
-> **Status:** Pre-release (Wave 4 Technical Debt Complete, 10/10 God Files Refactored, 871 tests, 11 CI gates, WCAG 92.4%)
+> **Current Version:** `v0.3.0` (Pre-release, Staged 2026-10-22)  
+> **Updated:** 2026-10-22  
+> **Status:** Pre-release (Phase 3 Complete, Dynamic RBAC, SSOT Information Architecture, 1,020 tests, 16 CI gates)
 
 ---
 
@@ -257,6 +257,15 @@ _Planned for phased refactoring in Wave 5 (v0.3.0) and v0.4.0._
 | 16  | `frontend/src/components/jobs/pipeline/pipeline-candidate-detail.tsx` | 508 LOC     | v0.4.0           | Pipeline candidate drawer           |
 | 17  | `frontend/src/app/careers/page.tsx`                                   | 499 LOC     | v0.4.0           | Public careers page decomposition   |
 | 18  | `frontend/src/components/interviews/interviews-table-view.tsx`        | 444 LOC     | v0.4.0           | Interviews table view               |
+
+---
+
+## 🚀 v0.4.0 Planned Features
+
+- **PII Encryption (P1):** Field-level encryption for sensitive candidate personally identifiable information (`phone`, `notes`, `dateOfBirth`) utilizing the existing `EncryptionService` (AES-256-GCM). Primary `email` remains plaintext for operational communications, augmented by an additive `emailHash` pseudonymized SHA-256 index column for collision-resistant, case-insensitive tenant lookups. A transactional additive backfill script will migrate existing candidate records without schema or API downtime.
+- **OrganizationAuditLog (P1):** Dedicated administrative audit logging entity and service for enterprise governance events (`OWNERSHIP_TRANSFERRED`, `ORG_DELETED`, `MEMBER_ROLE_CHANGED`), strictly decoupling tenant administration from recruitment candidate activity (see [D-009](../decisions/DECISIONS.md#d-009)).
+- **API v1 Standardization (P2):** Unified API route normalization migrating legacy un-prefixed Next.js rewrite endpoints to canonical `/api/v1/*` contracts (see [D-002](../decisions/DECISIONS.md#d-002)).
+- **Reverse Proxy Selection (P2):** Finalize production ingress reverse proxy and TLS termination technology (evaluating Caddy vs Nginx vs Cloudflare Tunnel) alongside infrastructure deployment (see [D-008](../decisions/DECISIONS.md#d-008)).
 
 ---
 

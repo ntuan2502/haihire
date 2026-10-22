@@ -19,8 +19,8 @@
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 1,019 total (+148 tests added since v0.2.0: 871 → 1,019)
-  - Backend: 589 passing (Vitest, 57 test suites)
+- **Automated Tests:** 1,020 total (+149 tests added since v0.2.0: 871 → 1,020)
+  - Backend: 590 passing (Vitest, 57 test suites)
   - Frontend: 430 passing (Vitest + JSDOM, 58 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
@@ -47,7 +47,7 @@
   13. `test:diff` — Test Count Delta & Anti-Regression Gate
   14. `lint:nextjs-conventions` — Next.js 16 File Conventions Audit (`proxy.ts` enforced)
   15. `lint:github-action-versions` — GitHub Actions Minimum Versions Audit (Node 24 action runtime)
-  16. `test` — Unit & Integration Test Suite (1,019 tests)
+  16. `test` — Unit & Integration Test Suite (1,020 tests)
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:** 23 specs across end-to-end recruitment lifecycle journeys
 - **Test Pass Rate:** 100% (Zero skipped, zero flaky, zero commented-out tests)

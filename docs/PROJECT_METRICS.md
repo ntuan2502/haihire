@@ -66,7 +66,7 @@
 - **Database Models:** 16 Prisma models (`contract.prisma`)
 - **God Files (>400 LOC):** 23 remaining logic/UI/service files >400 LOC (excluding exempt i18n dictionaries and seed scripts); 10/10 identified God Files refactored across Waves 1–4
   - Max refactored file size: 280 LOC (`frontend/src/components/interviews/calendar/components/calendar-month-view.tsx`)
-  - Detailed inventory tracked in [`docs/ROADMAP.md`](ROADMAP.md)
+  - Detailed inventory tracked in [`docs/guides/roadmap.md`](guides/roadmap.md)
 
 ---
 

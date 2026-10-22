@@ -180,6 +180,6 @@ pnpm contract:emit
 
 ## 📚 6. Next Steps
 
-- Read [System Architecture Overview](architecture/system-overview.md) to understand data flows and design patterns.
-- Read [REST API Overview](api/overview.md) to review endpoints, auth, and error codes.
-- Read [Contributing Guide](../CONTRIBUTING.md) for branch naming, commit conventions, and CI quality gates.
+- Read [System Architecture Overview](../architecture/system-overview.md) to understand data flows and design patterns.
+- Read [REST API Overview](../api/overview.md) to review endpoints, auth, and error codes.
+- Read [Contributing Guide](../../CONTRIBUTING.md) for branch naming, commit conventions, and CI quality gates.

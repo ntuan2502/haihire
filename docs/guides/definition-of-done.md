@@ -70,7 +70,7 @@
 
 ## 7. DOCUMENTATION — Knowledge Integrity
 
-- [ ] Update `PROJECT_CONTEXT.md` when introducing new modules, services, or dependencies
+- [ ] Update `project-context.md` when introducing new modules, services, or dependencies
 - [ ] Update runbooks in `docs/runbooks/` when adding alert rules or background jobs
 - [ ] Comment the WHY, never the WHAT
   - ✅ `// Non-throwing: webhook fail must not crash DLQ flow`

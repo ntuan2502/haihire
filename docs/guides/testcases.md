@@ -5,7 +5,7 @@
 > **Updated:** 2026-10-19  
 > **Automated Test Suites:** **871 Passed** (485 backend + 386 frontend unit/integration tests)  
 > **Independent Verification & Validation (IV&V):** **100% Passed** (Zero Trust runtime audit)  
-> **Single Source of Truth:** See [`docs/PROJECT_METRICS.md`](PROJECT_METRICS.md)
+> **Single Source of Truth:** See [`docs/PROJECT_METRICS.md`](../PROJECT_METRICS.md)
 
 ---
 

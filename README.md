@@ -147,7 +147,7 @@ Comprehensive system documentation is maintained under the [`docs/`](docs/README
 - 🔐 [**Security & RBAC Architecture**](docs/architecture/security-rbac.md): Cookie JWT auth, dynamic org ownership, 5 roles, 41 permissions.
 - 🔌 [**REST API Overview**](docs/api/overview.md): Controller mappings, 86 REST endpoints, auth, and error contracts.
 - 📊 [**Project Metrics (Single Source of Truth)**](docs/PROJECT_METRICS.md): Master metrics, verification counts, and architectural baseline.
-- 📖 [**Developer Onboarding Guide**](docs/onboarding.md): Step-by-step onboarding for new team members.
+- 📖 [**Developer Onboarding Guide**](docs/guides/onboarding.md): Step-by-step onboarding for new team members.
 - 🚀 [**Production Deployment Plan**](docs/runbooks/production-deployment-plan.md): 5-phase production release protocol.
 - 💾 [**Backup & Disaster Recovery**](docs/runbooks/backup-and-restore.md): Automated PostgreSQL dumps, MinIO hot backup, and restore drills.
 - 🚨 [**Monitoring & Alerting Runbook**](docs/runbooks/alerts.md): Prometheus alert catalog and emergency SOPs.

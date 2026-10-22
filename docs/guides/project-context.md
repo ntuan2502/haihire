@@ -286,7 +286,6 @@ Vietnamese is ONLY allowed in:
 
 Historical artifacts that are preserved as-is:
 
-- `docs/archive/audits/*.md` — Phase 1-22.8 historical audit records (may contain Vietnamese, preserved for historical integrity)
 - Git commit history (already in English via Conventional Commits)
 
 ### Rationale

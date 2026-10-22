@@ -265,4 +265,4 @@ development. The public API may change before the stable 1.0.0 release.
 
 ---
 
-_For historical pre-release development logs (Phases 1-22.8), see [Pre-Release Development History](docs/archive/changelog-history.md)._
+_For historical pre-release development logs (Phases 1-22.8), see milestone releases in [docs/releases/](docs/releases/v0.1.0.md)._

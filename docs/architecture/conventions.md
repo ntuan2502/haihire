@@ -163,3 +163,14 @@ Extracted from historical development feedback to govern AI pair programming:
    - _Rationale:_ Prevents compounding technical debt.
 4. **Verified-Ship Mindset:** Every claimed completion must be verified with raw execution evidence before submitting for review.
    - _Rationale:_ Ensures code actually works rather than merely compiling.
+
+---
+
+## 15. Frontend & Next.js Script Architecture
+
+1. **Next.js `<Script>` Abstraction:** Never render raw JSX `<script>` tags inside React Server Components or layout trees. Always import `Script` from `next/script` with a unique `id` and appropriate `strategy` (e.g. `strategy="beforeInteractive"` for synchronous theme initialization in `<head>`).
+   - _Rationale:_ React 19 App Router reconciler emits errors when encountering raw `<script>` tags during client hydration.
+2. **Hydration Warning Scope:** Place `suppressHydrationWarning` strictly on `<html>` in `app/layout.tsx` when manipulating root class names via theme scripts; never scatter it onto arbitrary child components.
+   - _Rationale:_ Prevents hiding genuine hydration mismatches in business UI components.
+3. **No Console Masking:** Never monkey-patch `console.error` or override browser listeners to suppress hydration or framework warnings.
+   - _Rationale:_ Masks production reconciliation bugs and blinds E2E automated test assertion listeners.

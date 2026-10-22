@@ -27,15 +27,18 @@ All AI agents operating in this repository must strictly adhere to the following
 
 1. **What to Read First (Mandatory):**
    - [**Conventions (SSOT)**](docs/architecture/conventions.md): Authoritative engineering rules covering pure TypeScript, zero-any typing, centralized fail-fast environment validation, DtoPipe coverage, 2-way i18n, and multi-tenant scoping.
-   - [**Decisions Log**](docs/decisions/DECISIONS.md): Unified record of all architectural decisions (D-001 through D-006) superseding legacy ADRs.
-2. **What to Write & Update:**
+   - [**Decisions Log**](docs/decisions/DECISIONS.md): Unified record of all architectural decisions (D-001 through D-007) superseding legacy ADRs.
+2. **What to Read for Specific Tasks:**
+   - **Developer Guides & Workflows:** [docs/guides/onboarding.md](docs/guides/onboarding.md) (onboarding, definition of done, QA testcases, project context, roadmap).
+   - **Releases & Versioning:** [docs/releases/v0.3.0.md](docs/releases/v0.3.0.md) and [CHANGELOG.md](CHANGELOG.md) (read when dealing with releases, version tags, or migration logs).
+3. **What to Write & Update:**
    - **Rules & Standards:** Any new persistent coding or architectural convention must be added directly to [docs/architecture/conventions.md](docs/architecture/conventions.md).
    - **Architectural Decisions:** Any significant design choice, trade-off, or pre-release package adoption must be recorded in [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md).
    - **Single Source of Truth:** Never duplicate documentation content across multiple files. Always reference existing specifications via relative markdown links.
-3. **Prohibited Agent Behaviors:**
+4. **Prohibited Agent Behaviors:**
    - ❌ **No Transient Process Reports:** Do NOT create milestone, investigation, or progress report files in root or anywhere in `docs/`. Process history is maintained via git commit messages.
    - ❌ **No Writes to `.agents/memory/`:** The `.agents/memory/` folder is deprecated. Persistent project knowledge lives exclusively in `docs/architecture/conventions.md` and `docs/decisions/DECISIONS.md`.
-4. **Conflict Resolution Hierarchy:**
+5. **Conflict Resolution Hierarchy:**
    - If a conflict arises between documents: specifications in [docs/architecture/](docs/architecture/system-overview.md) and [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md) ALWAYS take precedence over any tool-generated rules or secondary documentation.
 
 ---
@@ -49,6 +52,7 @@ All AI agents operating in this repository must strictly adhere to the following
 | **Security & RBAC**           | [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)     | Cookie JWT auth, dynamic `ownerId`, 5 roles, 41 permissions matrix    |
 | **Engineering Conventions**   | [docs/architecture/conventions.md](docs/architecture/conventions.md)         | Coding standards, fail-fast env, DtoPipe, i18n, tenant scoping        |
 | **Architectural Decisions**   | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                   | Consolidated ADRs and architectural decisions log                     |
+| **Developer Guides**          | [docs/guides/onboarding.md](docs/guides/onboarding.md)                       | Workflows, DoD, testcases, roadmap, project context                   |
 | **REST API Contracts**        | [docs/api/overview.md](docs/api/overview.md)                                 | 9 controllers, 86 endpoints, standard error envelopes                 |
 | **Site Reliability Runbooks** | [docs/runbooks/alerts.md](docs/runbooks/alerts.md)                           | Operational SOPs (alerts, backups, deployment, queues)                |
 | **Releases & Changelog**      | [CHANGELOG.md](CHANGELOG.md)                                                 | Release milestones, migration logs, and version history               |

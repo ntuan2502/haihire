@@ -375,7 +375,7 @@ Consolidated all standalone ADRs and architectural decisions into a unified sing
 
 ### 5.3 Reference Updates
 
-- Updated `README.md`, `docs/release-notes/v0.3.0.md`, and `docs/releases/v0.3.0.md` to reference `docs/decisions/DECISIONS.md#d-00X`.
+- Updated `README.md`, `<docs/release-notes/v0.3.0.md>`, and `docs/releases/v0.3.0.md` to reference `docs/decisions/DECISIONS.md#d-00X`.
 - Updated transitional report files to target `docs/decisions/DECISIONS.md`.
 
 ### 5.4 Verification Result (`pnpm check:all`)
@@ -445,7 +445,7 @@ Pruned legacy, fragmented memory topic files from `.agents/memory/` after having
 
 - Retained `.agents/rules/` untouched as managed by AG Kit.
 - Preserved `.agents/memory/.gitkeep` to maintain directory presence for AG Kit scaffolding.
-- Updated references in `docs/PROJECT_CONTEXT.md` and `docs/onboarding.md` pointing to `docs/architecture/conventions.md`.
+- Updated references in `<docs/PROJECT_CONTEXT.md>` and `<docs/onboarding.md>` pointing to `docs/architecture/conventions.md`.
 
 ### 8.3 Verification Result (`pnpm check:all`)
 
@@ -545,27 +545,147 @@ All tasks were executed sequentially with atomic commits and verified via full `
 |  7  | **Task 5**   | `37763cb`   | `docs(agents): rewrite agents.md as single source of truth entry point`                        | Rewrote `AGENTS.md` as lean 87-line entry point with strict routing rules and stats synchronization                                                      |
 |  8  | **Task 6**   | `87c6927`   | `docs: add documentation portal and update root readme`                                        | Established `docs/README.md` documentation portal and synchronized root `README.md` documentation directory                                              |
 |  9  | **Task 7**   | `0815f3d`   | `docs: sync documentation metrics with current codebase state`                                 | Updated `docs/PROJECT_METRICS.md` to 1,019 tests, 16 CI gates, 86 endpoints, 5 roles, Express engine                                                     |
-| 10  | **Task 8**   | _(Current)_ | `docs(decisions): add d-007 phase 4 ia refactor summary and finalize evidence`                 | Recorded D-007 in `DECISIONS.md`, synthesized before/after metrics, and generated sign-off checklist                                                     |
+| 10  | **Task 8**   | `2d3dfc3`   | `docs(decisions): add d-007 phase 4 ia refactor summary and finalize evidence`                 | Recorded D-007 in `DECISIONS.md`, synthesized before/after metrics, and generated sign-off checklist                                                     |
+| 11  | **Task 9**   | _(Current)_ | `docs: finalize phase 4 docs structure with guides directory and verified releases`            | Created `docs/guides/`, purged `<docs/archive/>` and `<docs/release-notes/>`, verified GitHub releases, and enforced 1 release file per version          |
 
 ---
 
-## 13. Before & After Architecture Comparison
+## 13. Task 9 — Final Docs Structure + GitHub Release Verification
+
+### 13.1 Files Moved to `docs/guides/`
+
+Organized 5 living standards and technical guides into canonical `docs/guides/`:
+
+- `<docs/onboarding.md>` $\rightarrow$ `docs/guides/onboarding.md`
+- `<docs/DEFINITION_OF_DONE.md>` $\rightarrow$ `docs/guides/definition-of-done.md`
+- `<docs/TESTCASES.md>` $\rightarrow$ `docs/guides/testcases.md`
+- `<docs/PROJECT_CONTEXT.md>` $\rightarrow$ `docs/guides/project-context.md`
+- `<docs/ROADMAP.md>` $\rightarrow$ `docs/guides/roadmap.md`
+
+All cross-references in `README.md`, `AGENTS.md`, `docs/PROJECT_METRICS.md`, and within the guides themselves were updated to new relative paths.
+
+### 13.2 Files Deleted
+
+- **`<docs/archive/>` (57 files):** Completely purged following extraction of technical lessons (Next.js `<Script>` abstraction and anti-pattern rules) into `docs/architecture/conventions.md:L169-176`.
+- **`<docs/release-notes/>` (1 file):** Purged `v0.3.0.md` to eliminate duplicate directory structure.
+- **`<docs/releases/v0.1.0-announcement.md>` (1 file):** Purged duplicate announcement file, preserving canonical `v0.1.0.md`.
+
+### 13.3 GitHub Release Verification
+
+- **Command:** `gh release list -R ntuan2502/haihire --json tagName,publishedAt,isPrerelease,isDraft -L 50`
+- **Raw Output:**
+
+```json
+[
+  {
+    "isDraft": false,
+    "isPrerelease": true,
+    "publishedAt": "2026-10-19T06:19:00Z",
+    "tagName": "v0.2.0"
+  },
+  {
+    "isDraft": false,
+    "isPrerelease": true,
+    "publishedAt": "2026-10-17T08:19:54Z",
+    "tagName": "v0.1.4"
+  },
+  {
+    "isDraft": false,
+    "isPrerelease": true,
+    "publishedAt": "2026-10-16T16:11:34Z",
+    "tagName": "v0.1.3"
+  },
+  {
+    "isDraft": false,
+    "isPrerelease": true,
+    "publishedAt": "2026-10-16T08:11:31Z",
+    "tagName": "v0.1.2"
+  },
+  {
+    "isDraft": false,
+    "isPrerelease": true,
+    "publishedAt": "2026-10-14T15:37:02Z",
+    "tagName": "v0.1.1"
+  },
+  {
+    "isDraft": false,
+    "isPrerelease": true,
+    "publishedAt": "2026-10-14T03:02:13Z",
+    "tagName": "v0.1.0"
+  }
+]
+```
+
+### 13.4 Classification of `docs/releases/` Files (One File per Version)
+
+| Version File              | Release Tag on GitHub | Published At (UTC)     | Classification Status                                         |
+| :------------------------ | :-------------------- | :--------------------- | :------------------------------------------------------------ |
+| `docs/releases/v0.1.0.md` | `v0.1.0`              | `2026-10-14T03:02:13Z` | **RELEASED** (Canonical release note)                         |
+| `docs/releases/v0.1.1.md` | `v0.1.1`              | `2026-10-14T15:37:02Z` | **RELEASED** (Canonical release note)                         |
+| `docs/releases/v0.1.2.md` | `v0.1.2`              | `2026-10-16T08:11:31Z` | **RELEASED** (Canonical release note)                         |
+| `docs/releases/v0.1.3.md` | `v0.1.3`              | `2026-10-16T16:11:34Z` | **RELEASED** (Canonical release note)                         |
+| `docs/releases/v0.1.4.md` | `v0.1.4`              | `2026-10-17T08:19:54Z` | **RELEASED** (Canonical release note)                         |
+| `docs/releases/v0.2.0.md` | `v0.2.0`              | `2026-10-19T06:19:00Z` | **RELEASED** (Canonical release note)                         |
+| `docs/releases/v0.3.0.md` | _(None)_              | _(Unpublished)_        | **LOCAL-ONLY** (Pre-tag candidate for current release branch) |
+
+### 13.5 Final Documentation Structure Verification
+
+The final documentation directory on disk contains exactly 34 files across 6 canonical subdirectories:
+
+```
+docs/
+├── README.md                           # Documentation Portal
+├── PROJECT_METRICS.md                  # Unified platform metrics baseline
+├── architecture/                       # 4 core system architecture blueprints
+│   ├── system-overview.md
+│   ├── data-model.md
+│   ├── security-rbac.md
+│   └── conventions.md
+├── decisions/                          # Architectural decisions log and audit evidence
+│   ├── DECISIONS.md
+│   └── phase4-refactor-evidence.md
+├── api/                                # REST API contract overview
+│   └── overview.md
+├── guides/                             # 5 developer workflows and specifications
+│   ├── onboarding.md
+│   ├── definition-of-done.md
+│   ├── testcases.md
+│   ├── project-context.md
+│   └── roadmap.md
+├── runbooks/                           # 13 operational SOPs & reliability runbooks
+│   └── *.md
+└── releases/                           # 7 verified release notes (1 file per version)
+    ├── v0.1.0.md
+    ├── v0.1.1.md
+    ├── v0.1.2.md
+    ├── v0.1.3.md
+    ├── v0.1.4.md
+    ├── v0.2.0.md
+    └── v0.3.0.md
+```
+
+---
+
+## 14. Before & After Architecture Comparison
 
 | Dimension                          | Before Refactor (Baseline `b439cc2`)                   | After Refactor (Branch 4 Completion)                                                             | Refactor Impact & Benefit                                               |
 | :--------------------------------- | :----------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
 | **Root Process Reports**           | 12 reports polluting root directory                    | **0** (Only `README.md`, `AGENTS.md`, `CHANGELOG.md`, `CONTRIBUTING.md`)                         | Clean root workspace; zero transient files                              |
 | **Historical Milestone Reports**   | 102 files in `<docs/reports/>` (23,000+ lines)         | **0** (Purged from repository)                                                                   | Eliminated 23,438 lines of stale, fragmented reports                    |
+| **Legacy Archive Files**           | 57 files in `<docs/archive/>`                          | **0** (Purged from repository)                                                                   | Completely eliminated legacy audit and transitional reports             |
+| **Release Notes Duplication**      | Duplicate files in `release-notes/` & `releases/`      | **0** (`release-notes/` deleted; exactly 1 file per version in `docs/releases/`)                 | Single source of truth for release notes                                |
 | **Agent Memory Files**             | 5 files in `.agents/memory/` drifting from code        | **0** (Preserved `.gitkeep` for AG Kit scaffold)                                                 | Unified all rules into canonical `conventions.md`                       |
+| **Developer Guides Organization**  | 5 living files scattered at `docs/` root               | **`docs/guides/`** (5 organized files: onboarding, DoD, testcases, context, roadmap)             | Clear modular separation between architecture, guides, and runbooks     |
 | **Architecture Specifications**    | 1 fragmented overview (`system-overview.md`)           | **4 canonical specifications** (`system-overview`, `data-model`, `security-rbac`, `conventions`) | Comprehensive data model, security, and conventions coverage            |
 | **Architectural Decisions (ADRs)** | 3 scattered files in `<docs/adr/>` + loose findings    | **1 unified log:** `docs/decisions/DECISIONS.md` (D-001 through D-007)                           | Consolidated single source of truth with complete rationale and history |
 | **Documentation Portal**           | None (outdated `docs/README.md` with broken links)     | **`docs/README.md`**: Complete query-to-document navigation matrix                               | Instant discoverability for human and agent workflows                   |
 | **Agent Operating Guide**          | 189-line outdated `AGENTS.md` referencing deleted ADRs | **87-line lean `AGENTS.md`**: Strict routing rules, SSOT hierarchy                               | Prevents context window dilution and agent hallucination                |
-| **CI Architecture Gates**          | 16/16 Passing                                          | **16/16 Passing continuously**                                                                   | Zero regressions across all 10 refactor commits                         |
+| **CI Architecture Gates**          | 16/16 Passing                                          | **16/16 Passing continuously**                                                                   | Zero regressions across all 11 refactor commits                         |
 | **Unit & Integration Tests**       | 1,019 passed (589 backend + 430 frontend)              | **1,019 passed (589 backend + 430 frontend)**                                                    | Zero test regressions; net test count fully preserved                   |
 
 ---
 
-## 14. Project Lead Sign-Off Checklist
+## 15. Project Lead Sign-Off Checklist
 
 - [x] **0.1 Baseline Verified:** Started from clean branch at `b439cc2` with 16/16 passing gates.
 - [x] **0.5 & 0.6 Dependencies Resolved:** Screenshots removed, CI Gate 12 updated to scan `DECISIONS.md`, GitHub Actions updated to D-001.
@@ -577,4 +697,5 @@ All tasks were executed sequentially with atomic commits and verified via full `
 - [x] **Task 6 Portal & README Updated:** `docs/README.md` documentation portal established; root `README.md` documentation links modernized.
 - [x] **Task 7 Metrics Synchronized:** `docs/PROJECT_METRICS.md` updated to 1,019 tests, 16 gates, 86 endpoints, 5 roles, Express engine.
 - [x] **Task 8 Finalized:** D-007 recorded in `DECISIONS.md`; audit trail, before/after table, and evidence finalized.
+- [x] **Task 9 Guides & Releases Finalized:** Created `docs/guides/`, purged `<docs/archive/>` and `<docs/release-notes/>`, verified GitHub releases, and enforced 1 release file per version.
 - [x] **Continuous Green Pipeline:** Every atomic task passed full 16/16 CI gates and was immediately pushed to remote.

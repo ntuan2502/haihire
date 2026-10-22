@@ -338,7 +338,7 @@ git grep -n "test-results/screenshots" -- scripts/ .github/
 # Output: matches only in scripts/run-all-4-smoke-tests.ts (write-only runtime output)
 ```
 
-- In `docs/reports/93-v1.0.0-staging-ci-and-smoke-tests-verification-report.md`, markdown links were converted to inline code references to avoid broken link violations in Gate 11.
+- In `<docs/reports/93-v1.0.0-staging-ci-and-smoke-tests-verification-report.md>`, markdown links were converted to inline code references to avoid broken link violations in Gate 11.
 
 ---
 
@@ -383,6 +383,48 @@ Consolidated all standalone ADRs and architectural decisions into a unified sing
 - **Status:** 🟢 **ALL 16 CHECKS PASSED** in 86.85s.
 - Gate 11 (`lint:doc-links`): 0 broken markdown links.
 - Gate 12 (`lint:doc-sync`): 0 path drift or undocumented pre-release packages.
+- Unit & Integration Test Suite: 1,019 tests passed (589 backend + 430 frontend).
+
+---
+
+## 6. Task 2 — Architecture Documentation Consolidation
+
+Consolidated fragmented architectural documentation into four canonical, authoritative specifications under `docs/architecture/`:
+
+1. **`docs/architecture/system-overview.md`**: High-level monorepo topology diagram, request flow pipeline, modular backend services, and verified stack baseline (Next.js 16, NestJS 12 Express, Prisma 8 RC, Valkey 8, MinIO S3). Phantom claims regarding Fastify and Caddy were formally removed.
+2. **`docs/architecture/data-model.md`**: Complete specification of all 16 Prisma models, relations, cascading rules, soft-delete grace periods (30-day candidate resume retention), and performance indexes.
+3. **`docs/architecture/security-rbac.md`**: Security architecture covering cookie-based JWT authentication, dynamic organization ownership via `ownerId` (D-003), 5-role hierarchy, full 41-permission matrix, and NestJS execution guard pipeline.
+4. **`docs/architecture/conventions.md`**: Single source of truth for coding standards, UI design token rules, test hygiene, multi-tenant isolation, and AI coding agent guidelines.
+
+- **Commit:** `90fd35f` (`docs(architecture): consolidate system architecture documentation`)
+- **Verification:** 16/16 CI gates passed in 90.2s.
+
+---
+
+## 7. Task 3 — Removal of Process Reports & Portal Initialization
+
+Purged all transient milestone and investigation reports from git tracking and local workspaces, ensuring all durable knowledge lives exclusively in `docs/decisions/DECISIONS.md` and `docs/architecture/`:
+
+### 7.1 Files Removed
+
+1. **12 Root Process Reports:**
+   - Tracked (`git rm`): `<report.md>`, `<PHASE3_BRANCH2_REPORT.md>`.
+   - Untracked (`Remove-Item`): `<FIX_DEPRECATIONS_MERGE_REPORT.md>`, `<FIX_DEPRECATIONS_REPORT.md>`, `<HOTFIX_P1_CLARIFICATION_REPORT.md>`, `<HOTFIX_P1_REVIEW_REPORT.md>`, `<INVESTIGATION_DEPRECATED_PATTERNS.md>`, `<PHASE3_BRANCH1_MERGE_REPORT.md>`, `<PHASE3_BRANCH2_CLARIFICATION_REPORT.md>`, `<PHASE3_BRANCH2_FINAL_VERIFICATION.md>`, `<PHASE3_BRANCH2_FIX_REPORT.md>`, `<PHASE3_BRANCH2_MERGE_REPORT.md>`.
+   - Root verify: Only `AGENTS.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, and `README.md` remain.
+2. **102 Reports in `<docs/reports/>`:**
+   - Executed `git rm -r docs/reports/` purging 96 numbered historical reports and 6 active subfolder reports.
+   - Verified `<docs/reports/>` directory no longer exists on disk.
+
+### 7.2 Broken Link Remediation & Portal Initialization
+
+- Initialized `docs/README.md` as the centralized **Documentation Portal** table mapping search intents directly to canonical documentation, eliminating all legacy relative links to `<reports/>`.
+- Updated `docs/decisions/DECISIONS.md` line 69 to decouple evidence from deleted `<docs/reports/active/finding-F-017-organization-audit-log.md>`.
+
+### 7.3 Verification Result (`pnpm check:all`)
+
+- **Status:** 🟢 **ALL 16 CHECKS PASSED** in 136.35s.
+- Gate 10 (`lint:doc-links`): 0 broken markdown links across 47 scanned files.
+- Gate 11 (`lint:doc-sync`): 0 path drift or undocumented pre-release packages.
 - Unit & Integration Test Suite: 1,019 tests passed (589 backend + 430 frontend).
 
 ---

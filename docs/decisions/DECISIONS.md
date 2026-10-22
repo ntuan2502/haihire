@@ -66,6 +66,6 @@
 - **Date:** 2026-10-22
 - **Decision:** Retain `model ActivityLog` in Prisma strictly for candidate recruitment lifecycle events (`APPLIED`, `STAGE_CHANGED`, `EMAIL_SENT`, `INTERVIEW_SCHEDULED`, etc.). Administrative tenant operations (such as `OWNERSHIP_TRANSFERRED`, `ORG_DELETED`, `MEMBER_ROLE_CHANGED`) are logged via structured backend application logs in `v0.3.0`, and deferred to a dedicated `OrganizationAuditLog` database entity in `v0.4.0` (Finding F-017).
 - **Rationale:** In `contract.prisma`, `ActivityLog` has a non-nullable Foreign Key `candidateId String` referencing `Candidate`. Attempting to store tenant-level administrative events inside `ActivityLog` would break domain boundaries by conflating recruitment activity with tenant administration, or would require altering `candidateId` to nullable via an unnecessary breaking database migration right before `v0.3.0` release.
-- **Evidence:** Schema in `backend/src/prisma/contract.prisma` and finding report `docs/reports/active/finding-F-017-organization-audit-log.md`.
+- **Evidence:** Schema in `backend/src/prisma/contract.prisma` and architectural review finding F-017.
 - **Enforcement:** Code review gate; verified in `backend/src/organizations/organizations.service.ts` where ownership transfers emit structured application logs instead of touching `ActivityLog`.
 - **History:** Raised during Phase 3 Branch 2 code review (Round 3) regarding ownership transfer auditing; formally resolved as architectural finding F-017 and scheduled for `v0.4.0` implementation.

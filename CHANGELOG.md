@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - Information Architecture refactor ([D-007](docs/decisions/DECISIONS.md#d-007)): consolidated documentation into Single Source of Truth, removed 12 root reports, 102 milestone reports, 57 archive files, and 5 agent memory files.
-- Granular permission matrix expanded to 41 permissions across 5 roles, covering 86 endpoints with 1,019 unit & integration tests.
+- Granular permission matrix expanded to 41 permissions across 5 roles, covering 86 endpoints with 1,020 unit & integration tests.
 
 ### Known Limitations
 

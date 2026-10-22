@@ -3,7 +3,7 @@
 > **Comprehensive strategic roadmap for the HaiHire Enterprise Applicant Tracking System (ATS).**  
 > **Current Version:** `v0.3.0` (Pre-release, Staged 2026-10-22)  
 > **Updated:** 2026-10-22  
-> **Status:** Pre-release (Phase 3 Complete, Dynamic RBAC, SSOT Information Architecture, 1,027 tests, 16 CI gates)
+> **Status:** Pre-release (Phase 3 Complete, Dynamic RBAC, SSOT Information Architecture, 1,020 tests, 16 CI gates)
 
 ---
 

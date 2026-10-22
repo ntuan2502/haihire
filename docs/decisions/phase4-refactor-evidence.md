@@ -349,13 +349,13 @@ Consolidated all standalone ADRs and architectural decisions into a unified sing
 ### 5.1 Decisions Consolidated
 
 1. **D-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**
-   - Source: `docs/adr/ADR-001-prisma-8-rc.md`
+   - Source: `<docs/adr/ADR-001-prisma-8-rc.md>` (superseded)
    - Rationale: Required for contract-first PostgreSQL 17 features. Tooling is isolated to development/build CLI; runtime exposes zero Hono HTTP servers.
 2. **D-002: Next.js Proxy Rewrites without /api Prefix and v0.4.0 Standardization**
-   - Source: `docs/adr/ADR-002-frontend-rewrite-path.md`
+   - Source: `<docs/adr/ADR-002-frontend-rewrite-path.md>` (superseded)
    - Rationale: Preserves backward compatibility and prevents regressions across 963+ unit tests in v0.3.0 while scheduling unified `/api/v1` migration for v0.4.0.
 3. **D-003: Dynamic Organization Ownership via Organization.ownerId and Deprecation of Role.OWNER**
-   - Source: `docs/adr/ADR-003-dynamic-org-ownership.md`
+   - Source: `<docs/adr/ADR-003-dynamic-org-ownership.md>` (superseded)
    - Rationale: Eliminates dual-source-of-truth bug F-003. Tenant ownership is contextual to the organization (`ownerId`), not a static user-level enum.
 4. **D-004: Next.js 16 Proxy Convention Adoption (proxy.ts Replaces middleware.ts)**
    - Source: Investigation `INVESTIGATION_DEPRECATED_PATTERNS.md` & findings F-004 / F-004-R1.
@@ -369,9 +369,9 @@ Consolidated all standalone ADRs and architectural decisions into a unified sing
 
 ### 5.2 Files Removed (`git rm -r docs/adr/`)
 
-- `docs/adr/ADR-001-prisma-8-rc.md`
-- `docs/adr/ADR-002-frontend-rewrite-path.md`
-- `docs/adr/ADR-003-dynamic-org-ownership.md`
+- `<docs/adr/ADR-001-prisma-8-rc.md>`
+- `<docs/adr/ADR-002-frontend-rewrite-path.md>`
+- `<docs/adr/ADR-003-dynamic-org-ownership.md>`
 
 ### 5.3 Reference Updates
 

@@ -33,7 +33,7 @@ All AI coding agents, contributors, and automation workflows must comply with th
 - **Backend Architecture:** NestJS 12.1.2 modular monolith with Saga transaction orchestration, compensations, AsyncLocalStorage request context tracking, and DLQ-backed BullMQ processing.
 - **Frontend Architecture:** Next.js 16.4.0 with React 19 Server Components (RSC), `@tanstack/react-query` v5 client caching, Base UI / Radix UI primitives, Tailwind CSS v4, and dual-language internationalization (vi / en).
 - **Data & Storage:** PostgreSQL 17.6 managed via Prisma 8 ORM, Valkey 8.0.2 for distributed caching / rate limiting, and MinIO S3 object storage for candidate resumes.
-- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 13 comprehensive CI gates, and 963 verified automated tests.
+- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 16 comprehensive CI gates, and 963 verified automated tests.
 
 ---
 
@@ -124,7 +124,7 @@ pnpm dev
 | :------------------------ | :---------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm dev`                | Start backend (`13001`) and frontend (`13000`) concurrently in watch mode                                                     |
 | `pnpm build`              | Build shared package, backend bundle (`dist/server.mjs`), and Next.js frontend                                                |
-| `pnpm check:all`          | Run complete 13-gate CI verification (lint, typecheck, tests, env sync, contracts, alerts, tenant scope, doc links, doc sync) |
+| `pnpm check:all`          | Run complete 16-gate CI verification (lint, typecheck, tests, env sync, contracts, alerts, tenant scope, doc links, doc sync) |
 | `pnpm check:all:fast`     | Run rapid pre-commit verification (skip long-running smoke/load tests)                                                        |
 | `pnpm test`               | Run full unit & integration test suite (963 tests across backend & frontend)                                                  |
 | `pnpm test:e2e`           | Run Playwright end-to-end browser tests                                                                                       |

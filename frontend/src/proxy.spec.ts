@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { middleware } from "./middleware";
+import { proxy } from "./proxy";
 import { NextRequest } from "next/server";
 
-describe("Edge Middleware (frontend/src/middleware.ts)", () => {
+describe("Next.js 16 Edge Proxy (frontend/src/proxy.ts)", () => {
   const createMockRequest = (
     pathname: string,
     cookies: Record<string, string> = {},
@@ -21,7 +21,7 @@ describe("Edge Middleware (frontend/src/middleware.ts)", () => {
     const req = createMockRequest("/dashboard");
 
     // Act
-    const res = middleware(req);
+    const res = proxy(req);
 
     // Assert: server-side HTTP redirect (307) to /auth/login with redirect param
     expect(res.status).toBe(307);
@@ -39,7 +39,7 @@ describe("Edge Middleware (frontend/src/middleware.ts)", () => {
     });
 
     // Act
-    const res = middleware(req);
+    const res = proxy(req);
 
     // Assert: passes through via NextResponse.next() without redirect
     expect(res.status).toBe(200);
@@ -54,7 +54,7 @@ describe("Edge Middleware (frontend/src/middleware.ts)", () => {
     });
 
     // Act
-    const res = middleware(req);
+    const res = proxy(req);
 
     // Assert
     expect(res.status).toBe(307);
@@ -69,7 +69,7 @@ describe("Edge Middleware (frontend/src/middleware.ts)", () => {
     });
 
     // Act
-    const res = middleware(req);
+    const res = proxy(req);
 
     // Assert
     expect(res.status).toBe(307);

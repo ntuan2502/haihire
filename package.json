@@ -29,6 +29,8 @@
     "lint:tenant-scope": "tsx scripts/check-tenant-scoping.ts",
     "lint:doc-links": "tsx scripts/verify-doc-links.ts",
     "lint:doc-sync": "tsx scripts/check-doc-sync.ts",
+    "lint:nextjs-conventions": "tsx scripts/check-nextjs-conventions.ts",
+    "lint:github-action-versions": "tsx scripts/check-github-action-versions.ts",
     "docs:stats": "tsx scripts/generate-docs-stats.ts",
     "docs:stats:write": "tsx scripts/generate-docs-stats.ts --write",
     "check:prod-email-provider": "tsx scripts/check-prod-email-provider.ts",

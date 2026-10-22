@@ -16,7 +16,7 @@ import { AuthGuard } from "@nestjs/passport";
 import { Throttle } from "@nestjs/throttler";
 import type { Request as ExpressRequest } from "express";
 import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.decorator";
+import { RequirePermission } from "../auth/require-permission.decorator";
 import { SourcingService } from "./sourcing.service";
 import { CreateTrackingLinkDto } from "./dto/create-tracking-link.dto";
 import { UpdateTrackingLinkDto } from "./dto/update-tracking-link.dto";
@@ -95,7 +95,8 @@ export class SourcingController {
   }
 
   @Post("links")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("sourcing:create")
   async createLink(
     @Request() req: { user?: { id: string; organizationId?: string | null } },
     @Body(DtoPipe(CreateTrackingLinkDto)) dto: CreateTrackingLinkDto,
@@ -112,7 +113,8 @@ export class SourcingController {
   }
 
   @Patch("links/:id")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("sourcing:update")
   async updateLink(
     @Request() req: { user?: { organizationId?: string | null } },
     @Param("id") id: string,
@@ -131,7 +133,7 @@ export class SourcingController {
 
   @Delete("links/:id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("sourcing:delete")
   async deleteLink(
     @Request() req: { user?: { organizationId?: string | null } },
     @Param("id") id: string,
@@ -181,6 +183,11 @@ export class SourcingController {
   ) {
     const ip = req.ip || req.socket.remoteAddress || undefined;
     const userAgent = req.headers["user-agent"] || undefined;
-    return this.sourcingService.recordClick(dto.token, dto.referrer, ip, userAgent);
+    return this.sourcingService.recordClick(
+      dto.token,
+      dto.referrer,
+      ip,
+      userAgent,
+    );
   }
 }

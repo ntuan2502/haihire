@@ -24,7 +24,11 @@ services:
       - haihire-network
     logging: *default-logging
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-haihire_user} -d ${POSTGRES_DB:-haihire_db}" ]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-haihire_user} -d ${POSTGRES_DB:-haihire_db}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -37,8 +41,8 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     ports:
       - "${MINIO_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
@@ -48,7 +52,11 @@ services:
       - haihire-network
     logging: *default-logging
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:$${PORT:-9000}/minio/health/live || exit 1" ]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:$${PORT:-9000}/minio/health/live || exit 1",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -76,14 +84,18 @@ services:
       - haihire-network
     logging: *default-logging
     healthcheck:
-      test: [ "CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD}\" ]; then redis-cli -a \"$${REDIS_PASSWORD}\" ping; else redis-cli ping; fi" ]
+      test:
+        [
+          "CMD-SHELL",
+          'if [ -n "$${REDIS_PASSWORD}" ]; then redis-cli -a "$${REDIS_PASSWORD}" ping; else redis-cli ping; fi',
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
 
   # NestJS Backend Service
   backend:
-    profiles: [ "app" ]
+    profiles: ["app"]
     init: true
     build:
       context: .
@@ -107,7 +119,11 @@ services:
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:$${PORT:-3001}/health || exit 1" ]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:$${PORT:-3001}/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -125,7 +141,7 @@ services:
 
   # Next.js Frontend Service
   frontend:
-    profiles: [ "app" ]
+    profiles: ["app"]
     init: true
     build:
       context: .

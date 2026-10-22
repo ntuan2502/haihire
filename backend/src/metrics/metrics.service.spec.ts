@@ -221,4 +221,42 @@ describe("MetricsService", () => {
       expect(metrics).toContain(`bullmq_queue_depth{queue="orphan-cleanup-queue",state="${state}"} 0`);
     }
   });
+
+  it("Case 11: bullmq_dlq_size gauge exports correct DLQ sizes for orphan-cleanup-dlq and email-dlq-queue", async () => {
+    const mockEmailDlqQueue: Partial<Queue> = {
+      getJobCounts: vi.fn().mockResolvedValue({
+        waiting: 5,
+        active: 1,
+        completed: 10,
+        failed: 0,
+        delayed: 0,
+        paused: 0,
+      }),
+    };
+
+    const serviceWithBothDlqs = new MetricsService(
+      mockOrphanQueue as Queue,
+      mockDlqQueue as Queue,
+      mockEmailQueue as Queue,
+      mockEmailDlqQueue as Queue,
+    );
+
+    const metrics = await serviceWithBothDlqs.getMetrics();
+
+    expect(metrics).toContain("# HELP bullmq_dlq_size Number of jobs in BullMQ Dead Letter Queue");
+    expect(metrics).toContain("# TYPE bullmq_dlq_size gauge");
+    // mockDlqQueue has waiting: 12, active: 0 -> 12
+    expect(metrics).toContain('bullmq_dlq_size{queue_name="orphan-cleanup-dlq"} 12');
+    // mockEmailDlqQueue has waiting: 5, active: 1 -> 6
+    expect(metrics).toContain('bullmq_dlq_size{queue_name="email-dlq-queue"} 6');
+  });
+
+  it("Case 12: bullmq_dlq_size exports -1 when DLQ queue fails to fetch counts", async () => {
+    (mockDlqQueue.getJobCounts as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("DLQ timeout"),
+    );
+
+    const metrics = await service.getMetrics();
+    expect(metrics).toContain('bullmq_dlq_size{queue_name="orphan-cleanup-dlq"} -1');
+  });
 });

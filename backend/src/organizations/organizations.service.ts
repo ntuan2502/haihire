@@ -25,9 +25,15 @@ export class OrganizationsService implements OnModuleInit {
   private readonly invites: OrganizationsInvitesService;
 
   constructor(
-    @Optional() @Inject(OrganizationsCoreService) coreOrPrisma?: OrganizationsCoreService | PrismaService,
-    @Optional() @Inject(OrganizationsMembersService) membersOrEvents?: OrganizationsMembersService | EventsService,
-    @Optional() @Inject(OrganizationsInvitesService) invitesService?: OrganizationsInvitesService,
+    @Optional()
+    @Inject(OrganizationsCoreService)
+    coreOrPrisma?: OrganizationsCoreService | PrismaService,
+    @Optional()
+    @Inject(OrganizationsMembersService)
+    membersOrEvents?: OrganizationsMembersService | EventsService,
+    @Optional()
+    @Inject(OrganizationsInvitesService)
+    invitesService?: OrganizationsInvitesService,
   ) {
     if (coreOrPrisma instanceof OrganizationsCoreService) {
       this.core = coreOrPrisma;
@@ -36,12 +42,15 @@ export class OrganizationsService implements OnModuleInit {
     } else if (coreOrPrisma) {
       // Direct instantiation support for existing tests (e.g. new OrganizationsService(mockPrisma))
       const prisma = coreOrPrisma as PrismaService;
-      const events = membersOrEvents instanceof EventsService ? membersOrEvents : undefined;
+      const events =
+        membersOrEvents instanceof EventsService ? membersOrEvents : undefined;
       this.core = new OrganizationsCoreService(prisma);
       this.members = new OrganizationsMembersService(prisma, events);
       this.invites = new OrganizationsInvitesService(prisma);
     } else {
-      throw new Error("OrganizationsService requires dependencies to be injected");
+      throw new Error(
+        "OrganizationsService requires dependencies to be injected",
+      );
     }
   }
 
@@ -76,6 +85,10 @@ export class OrganizationsService implements OnModuleInit {
     return this.core.deleteMyOrg(userId);
   }
 
+  transferOwnership(userId: string, newOwnerUserId: string) {
+    return this.core.transferOwnership(userId, newOwnerUserId);
+  }
+
   getPublicOrg(slug: string) {
     return this.core.getPublicOrg(slug);
   }
@@ -87,7 +100,11 @@ export class OrganizationsService implements OnModuleInit {
     return this.members.getMembers(userId);
   }
 
-  updateMemberRole(callerId: string, targetMemberId: string, newRole: "ADMIN" | "MEMBER") {
+  updateMemberRole(
+    callerId: string,
+    targetMemberId: string,
+    newRole: "ADMIN" | "MEMBER",
+  ) {
     return this.members.updateMemberRole(callerId, targetMemberId, newRole);
   }
 

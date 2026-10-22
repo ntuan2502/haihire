@@ -74,7 +74,11 @@ export function useCandidateDocumentActions({
         ? `/candidates/${candidate.id}/documents/download${queryString}`
         : getDocumentUrl(url);
 
-    await downloadAuthenticatedFile(downloadPath, downloadFileName);
+    try {
+      await downloadAuthenticatedFile(downloadPath, downloadFileName);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t));
+    }
   };
 
   const handleConfirmDeleteDoc = async () => {

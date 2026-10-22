@@ -2,6 +2,9 @@
 
 enum Role {
   ADMIN
+  RECRUITER
+  HIRING_MANAGER
+  INTERVIEWER
   MEMBER
 }
 
@@ -133,8 +136,9 @@ model Organization {
   id              String                      @id @default(uuid())
   name            String
   slug            String                      @unique
-  ownerId         String?
-  users           User[]
+  ownerId         String
+  owner           User                        @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  users           User[]                      @relation("OrganizationUsers")
   jobs            Job[]
   candidates      Candidate[]
   inviteLinks     InviteLink[]
@@ -149,6 +153,7 @@ model Organization {
   createdAt       DateTime                    @default(now())
   updatedAt       temporal.updatedAt()
 
+  @@index([ownerId])
   @@map("organization")
 }
 
@@ -161,7 +166,8 @@ model User {
   role           Role                 @default(MEMBER)
   tokenVersion   Int                  @default(0)
   organizationId String?
-  organization   Organization?        @relation(fields: [organizationId], references: [id])
+  organization   Organization?        @relation("OrganizationUsers", fields: [organizationId], references: [id])
+  ownedOrganizations Organization[]       @relation("OrganizationOwner")
   jobs           Job[]
   inviteLinks    InviteLink[]
   trackingLinks  TrackingLink[]
@@ -220,7 +226,7 @@ model Job {
   createdById     String?
   createdBy       User?         @relation(fields: [createdById], references: [id])
   organizationId  String
-  organization    Organization  @relation(fields: [organizationId], references: [id])
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   applications    Application[]
   trackingLinks   TrackingLink[]
   deletedAt       DateTime?
@@ -235,7 +241,7 @@ model Job {
 model Candidate {
   id             String        @id @default(uuid())
   organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
   firstName      String?
   lastName       String?

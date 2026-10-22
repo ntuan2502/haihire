@@ -38,7 +38,7 @@ describe("Prometheus Alert Rules Specification", () => {
     expect(parsed).toBeDefined();
     expect(parsed.groups).toBeInstanceOf(Array);
     expect(parsed.groups.length).toBeGreaterThan(0);
-    expect(allRules.length).toBe(14);
+    expect(allRules.length).toBe(16);
   });
 
   it("Case 2: Every rule has all mandatory top-level fields (alert, expr, for, labels, annotations)", () => {
@@ -152,5 +152,25 @@ describe("Prometheus Alert Rules Specification", () => {
     expect(cronMissing?.for).toBe("5m");
     expect(cronMissing?.labels.severity).toBe("critical");
     expect(cronMissing?.labels.team).toBe("sre");
+  });
+
+  it("Case 10: 2 BullMQ DLQ size alert rules match specified PromQL expressions, durations and severities", () => {
+    const ruleMap = new Map(allRules.map((r) => [r.alert, r]));
+
+    // 1. BullMQDLQNotEmpty
+    const dlqNotEmpty = ruleMap.get("BullMQDLQNotEmpty");
+    expect(dlqNotEmpty).toBeDefined();
+    expect(dlqNotEmpty?.expr.trim()).toBe("bullmq_dlq_size > 0");
+    expect(dlqNotEmpty?.for).toBe("5m");
+    expect(dlqNotEmpty?.labels.severity).toBe("warning");
+    expect(dlqNotEmpty?.labels.team).toBe("sre");
+
+    // 2. BullMQDLQGrowing
+    const dlqGrowing = ruleMap.get("BullMQDLQGrowing");
+    expect(dlqGrowing).toBeDefined();
+    expect(dlqGrowing?.expr.trim()).toBe("rate(bullmq_dlq_size[15m]) > 0");
+    expect(dlqGrowing?.for).toBe("5m");
+    expect(dlqGrowing?.labels.severity).toBe("critical");
+    expect(dlqGrowing?.labels.team).toBe("sre");
   });
 });

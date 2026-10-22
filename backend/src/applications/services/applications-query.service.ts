@@ -1,7 +1,5 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
-import {
-  APP_ERROR_CODES,
-} from "@haihire/shared";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import {
   AppForbiddenException,
   AppNotFoundException,
@@ -21,7 +19,9 @@ export class ApplicationsQueryService {
     private readonly activitiesService?: ActivitiesService,
   ) {}
 
-  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
+  private async executeTx<T>(
+    fn: (tx: PrismaService["db"]) => Promise<T>,
+  ): Promise<T> {
     const p = this.prisma as unknown as {
       transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
       executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
@@ -37,7 +37,11 @@ export class ApplicationsQueryService {
   }
 
   async findByJob(jobId: string, organizationId?: string) {
-    const job = await this.prisma.db.orm.public.Job.select("id", "title", "organizationId")
+    const job = await this.prisma.db.orm.public.Job.select(
+      "id",
+      "title",
+      "organizationId",
+    )
       .where((j) => j.id.eq(jobId))
       .first();
 
@@ -48,7 +52,11 @@ export class ApplicationsQueryService {
       );
     }
 
-    if (organizationId && job.organizationId && job.organizationId !== organizationId) {
+    if (
+      organizationId &&
+      job.organizationId &&
+      job.organizationId !== organizationId
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
@@ -79,32 +87,34 @@ export class ApplicationsQueryService {
     }
 
     const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
-    const candidates = candidateIds.length > 0
-      ? await this.prisma.db.orm.public.Candidate.select(
-          "id",
-          "name",
-          "firstName",
-          "lastName",
-          "gender",
-          "dateOfBirth",
-          "email",
-          "phone",
-          "resumeUrl",
-          "resumeFileName",
-          "resumeFileSize",
-          "resumeMimeType",
-        )
-          .where((c) => c.id.in(candidateIds))
-          .all()
-      : [];
+    const candidates =
+      candidateIds.length > 0
+        ? await this.prisma.db.orm.public.Candidate.select(
+            "id",
+            "name",
+            "firstName",
+            "lastName",
+            "gender",
+            "dateOfBirth",
+            "email",
+            "phone",
+            "resumeUrl",
+            "resumeFileName",
+            "resumeFileSize",
+            "resumeMimeType",
+          )
+            .where((c) => c.id.in(candidateIds))
+            .all()
+        : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     const appIds = [...new Set(applications.map((a) => a.id))];
-    const allInterviews = appIds.length > 0
-      ? await this.prisma.db.orm.public.Interview
-          .where((i) => i.applicationId.in(appIds))
-          .all()
-      : [];
+    const allInterviews =
+      appIds.length > 0
+        ? await this.prisma.db.orm.public.Interview.where((i) =>
+            i.applicationId.in(appIds),
+          ).all()
+        : [];
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of allInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
@@ -121,9 +131,11 @@ export class ApplicationsQueryService {
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
-        resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+        resumeFileName:
+          app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
         resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
-        resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+        resumeMimeType:
+          app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
         interviews: interviewsByApp.get(app.id) || [],
       };
     });
@@ -150,7 +162,8 @@ export class ApplicationsQueryService {
       );
     }
     const targetOrgId = tenantOrgId || organizationId || undefined;
-    const defaultLimit = options?.limit && options.limit > 0 ? options.limit : 20;
+    const defaultLimit =
+      options?.limit && options.limit > 0 ? options.limit : 20;
     const defaultPage = options?.page && options.page > 0 ? options.page : 1;
 
     if (!targetOrgId) {
@@ -216,7 +229,9 @@ export class ApplicationsQueryService {
       .all();
 
     if (options?.stage) {
-      const stages = options.stage.split(",").map((s) => s.trim().toUpperCase());
+      const stages = options.stage
+        .split(",")
+        .map((s) => s.trim().toUpperCase());
       orgApps = orgApps.filter((a) => stages.includes(a.stage));
     }
 
@@ -230,9 +245,7 @@ export class ApplicationsQueryService {
       };
     }
 
-    const neededCandidateIds = [
-      ...new Set(orgApps.map((a) => a.candidateId)),
-    ];
+    const neededCandidateIds = [...new Set(orgApps.map((a) => a.candidateId))];
 
     const candidates =
       neededCandidateIds.length > 0
@@ -256,11 +269,12 @@ export class ApplicationsQueryService {
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     const appIds = orgApps.map((a) => a.id);
-    const allInterviews = appIds.length > 0
-      ? await this.prisma.db.orm.public.Interview
-          .where((i) => i.applicationId.in(appIds))
-          .all()
-      : [];
+    const allInterviews =
+      appIds.length > 0
+        ? await this.prisma.db.orm.public.Interview.where((i) =>
+            i.applicationId.in(appIds),
+          ).all()
+        : [];
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of allInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
@@ -279,9 +293,11 @@ export class ApplicationsQueryService {
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
-        resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+        resumeFileName:
+          app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
         resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
-        resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+        resumeMimeType:
+          app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
         interviews: interviewsByApp.get(app.id) || [],
       };
     });
@@ -292,7 +308,8 @@ export class ApplicationsQueryService {
         (app) =>
           app.candidateName.toLowerCase().includes(q) ||
           app.candidateEmail.toLowerCase().includes(q) ||
-          (app.candidatePhone && app.candidatePhone.toLowerCase().includes(q)) ||
+          (app.candidatePhone &&
+            app.candidatePhone.toLowerCase().includes(q)) ||
           (app.job?.title && app.job.title.toLowerCase().includes(q)),
       );
     }
@@ -378,10 +395,11 @@ export class ApplicationsQueryService {
       );
     }
 
-    const appInterviews = (await this.prisma.db.orm.public.Interview
-      .where((i) => i.applicationId.eq(id))
-      .all())
-      .map((intv) => formatInterviewRecord(intv));
+    const appInterviews = (
+      await this.prisma.db.orm.public.Interview.where((i) =>
+        i.applicationId.eq(id),
+      ).all()
+    ).map((intv) => formatInterviewRecord(intv));
 
     return {
       ...app,
@@ -391,28 +409,39 @@ export class ApplicationsQueryService {
       candidateEmail: candidate?.email || "",
       candidatePhone: candidate?.phone || null,
       resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
-      resumeFileName: app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+      resumeFileName:
+        app.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
       resumeFileSize: app.resumeFileSize ?? candidate?.resumeFileSize ?? null,
-      resumeMimeType: app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
+      resumeMimeType:
+        app.resumeMimeType ?? candidate?.resumeMimeType ?? "application/pdf",
       interviews: appInterviews,
     };
   }
 
-  async updateCandidate(id: string, dto: UpdateCandidateDto, tenantOrgId?: string | null) {
+  async updateCandidate(
+    id: string,
+    dto: UpdateCandidateDto,
+    tenantOrgId?: string | null,
+  ) {
     const existing = await this.findOne(id, tenantOrgId);
 
     // Update candidate profile directly
     if (existing.candidateId) {
       const candidateUpdate: Record<string, unknown> = {};
-      if (dto.candidateName !== undefined) candidateUpdate.name = dto.candidateName;
-      if (dto.candidateEmail !== undefined) candidateUpdate.email = dto.candidateEmail.toLowerCase();
-      if (dto.candidatePhone !== undefined) candidateUpdate.phone = dto.candidatePhone;
+      if (dto.candidateName !== undefined)
+        candidateUpdate.name = dto.candidateName;
+      if (dto.candidateEmail !== undefined)
+        candidateUpdate.email = dto.candidateEmail.toLowerCase();
+      if (dto.candidatePhone !== undefined)
+        candidateUpdate.phone = dto.candidatePhone;
       if (dto.notes !== undefined) candidateUpdate.notes = dto.notes;
-      if (dto.resumeUrl !== undefined) candidateUpdate.resumeUrl = dto.resumeUrl;
-      if (dto.resumeFileName !== undefined) candidateUpdate.resumeFileName = dto.resumeFileName;
+      if (dto.resumeUrl !== undefined)
+        candidateUpdate.resumeUrl = dto.resumeUrl;
+      if (dto.resumeFileName !== undefined)
+        candidateUpdate.resumeFileName = dto.resumeFileName;
 
-      await this.prisma.db.orm.public.Candidate.where(
-        (c) => c.id.eq(existing.candidateId),
+      await this.prisma.db.orm.public.Candidate.where((c) =>
+        c.id.eq(existing.candidateId),
       ).update(candidateUpdate);
     }
 
@@ -421,7 +450,10 @@ export class ApplicationsQueryService {
 
   async remove(id: string, tenantOrgId?: string | null) {
     const existing = await this.findOne(id, tenantOrgId);
-    const orgId = existing.job?.organizationId || existing.candidate?.organizationId || tenantOrgId;
+    const orgId =
+      existing.job?.organizationId ||
+      existing.candidate?.organizationId ||
+      tenantOrgId;
 
     if (orgId && existing.candidate) {
       try {
@@ -447,16 +479,38 @@ export class ApplicationsQueryService {
           });
         }
       } catch (err) {
-        console.warn("Failed to create audit activity log on application deletion:", err);
+        console.warn(
+          "Failed to create audit activity log on application deletion:",
+          err,
+        );
       }
     }
 
     await this.executeTx(async (tx) => {
       try {
-        const txObj = tx as unknown as { orm: { public: { Interview?: { where?: (fn: (i: { applicationId: { eq: (val: string) => boolean } }) => boolean) => { delete?: () => Promise<unknown> } } } } };
+        const txObj = tx as unknown as {
+          orm: {
+            public: {
+              Interview?: {
+                where?: (
+                  fn: (i: {
+                    applicationId: { eq: (val: string) => boolean };
+                  }) => boolean,
+                ) => {
+                  delete?: () => Promise<unknown>;
+                  deleteAll?: () => Promise<unknown>;
+                };
+              };
+            };
+          };
+        };
         if (typeof txObj.orm.public.Interview?.where === "function") {
-          const query = txObj.orm.public.Interview.where((i) => i.applicationId.eq(id));
-          if (typeof query?.delete === "function") {
+          const query = txObj.orm.public.Interview.where((i) =>
+            i.applicationId.eq(id),
+          );
+          if (typeof query?.deleteAll === "function") {
+            await query.deleteAll();
+          } else if (typeof query?.delete === "function") {
             await query.delete();
           }
         }

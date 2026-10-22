@@ -16,6 +16,7 @@ import { OrganizationsService } from "./organizations.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
+import { TransferOwnershipDto } from "./dto/transfer-ownership.dto";
 import {
   SwitchOrgDto,
   UpdateMemberRoleDto,
@@ -23,7 +24,7 @@ import {
 } from "./dto/org-actions.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.decorator";
+import { RequirePermission } from "../auth/require-permission.decorator";
 import { DtoPipe } from "../common/dto-validation.pipe";
 
 @Controller("organizations")
@@ -81,7 +82,8 @@ export class OrganizationsController {
     return this.orgsService.getMembers(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
   @Patch("my/members/:memberId/role")
   updateMemberRole(
     @Request() req: { user: { id: string } },
@@ -91,7 +93,8 @@ export class OrganizationsController {
     return this.orgsService.updateMemberRole(req.user.id, memberId, body.role);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
   @Delete("my/members/:memberId")
   removeMember(
     @Request() req: { user: { id: string } },
@@ -101,7 +104,7 @@ export class OrganizationsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("org:update")
   @Patch("my")
   updateMyOrg(
     @Request() req: { user: { id: string } },
@@ -111,7 +114,18 @@ export class OrganizationsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("org:transfer_ownership")
+  @Post("my/transfer-ownership")
+  @HttpCode(HttpStatus.OK)
+  transferOwnership(
+    @Request() req: { user: { id: string } },
+    @Body(DtoPipe(TransferOwnershipDto)) dto: TransferOwnershipDto,
+  ) {
+    return this.orgsService.transferOwnership(req.user.id, dto.newOwnerUserId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:delete")
   @Delete("my")
   deleteMyOrg(@Request() req: { user: { id: string } }) {
     return this.orgsService.deleteMyOrg(req.user.id);
@@ -121,7 +135,7 @@ export class OrganizationsController {
   // INVITE LINKS ENDPOINTS
   // ==========================================
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("org:manage_members")
   @Post("my/invite-links")
   createInviteLink(
     @Request() req: { user: { id: string } },
@@ -137,7 +151,7 @@ export class OrganizationsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("org:manage_members")
   @Delete("my/invite-links/:id")
   revokeInviteLink(
     @Request() req: { user: { id: string } },

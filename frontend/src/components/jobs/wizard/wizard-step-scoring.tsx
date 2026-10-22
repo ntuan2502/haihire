@@ -147,6 +147,9 @@ export function WizardStepScoring({
 
               <div className="flex items-center gap-3">
                 <input
+                  id={`criterion-weight-${crit.id}`}
+                  name={`weight-${crit.id}`}
+                  aria-label={`${t("jobs.wizard.weightLabel")} - ${crit.title}`}
                   type="range"
                   min="0"
                   max="100"
@@ -202,10 +205,7 @@ export function WizardStepScoring({
                 onChange={(val) =>
                   setNewCriterionCategory(
                     val as
-                      | "Experience"
-                      | "Technical"
-                      | "Soft Skills"
-                      | "Custom",
+                      "Experience" | "Technical" | "Soft Skills" | "Custom",
                   )
                 }
                 options={[
@@ -284,8 +284,14 @@ export function WizardStepScoring({
 
       {/* Automatically Score Card */}
       <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
-        <label className="flex items-start gap-3 cursor-pointer">
+        <label
+          htmlFor="auto-score-applicants-checkbox"
+          className="flex items-start gap-3 cursor-pointer"
+        >
           <input
+            id="auto-score-applicants-checkbox"
+            name="autoScoreApplicants"
+            aria-label={t("jobs.wizard.autoScoreTitle")}
             type="checkbox"
             checked={autoScoreApplicants}
             onChange={(e) => setAutoScoreApplicants(e.target.checked)}

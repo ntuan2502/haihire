@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, type Dispatch, type SetStateAction } from "react";
+import {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n";
@@ -25,7 +32,12 @@ import {
   DEFAULT_OVERVIEW_SECTIONS,
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
-import type { Job, Application, ApplicationStage, CandidateDocument } from "@/types";
+import type {
+  Job,
+  Application,
+  ApplicationStage,
+  CandidateDocument,
+} from "@/types";
 
 interface UseCandidateDrawerProps {
   initialApplications: Application[];
@@ -174,11 +186,17 @@ export function useCandidateDrawer({
       : "";
 
     const activeAppId = targetAppId || selectedApp?.id;
-    const downloadPath = activeAppId
-      ? `/applications/${activeAppId}/documents/download${queryString}`
-      : url;
+    if (!activeAppId) {
+      toast.error(t("errors.cannotDownloadDocument"));
+      return;
+    }
+    const downloadPath = `/applications/${activeAppId}/documents/download${queryString}`;
 
-    await downloadAuthenticatedFile(downloadPath, downloadFileName);
+    try {
+      await downloadAuthenticatedFile(downloadPath, downloadFileName);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t));
+    }
   };
 
   const drawerCandidateDocuments = useMemo(() => {

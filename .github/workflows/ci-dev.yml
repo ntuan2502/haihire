@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Detect Changed Paths
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -111,7 +111,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
@@ -191,7 +191,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
@@ -207,7 +207,7 @@ jobs:
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
 
       - name: Audit Test Count Delta (Anti-Regression)
-        run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD || true
+        run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD
 
       - name: Run Full Unit & Integration Test Suite
         run: pnpm test

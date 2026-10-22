@@ -1,9 +1,19 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { interviewsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Interview, CreateInterviewInput, UpdateInterviewInput, PaginatedResult } from "@/types";
+import type {
+  Interview,
+  CreateInterviewInput,
+  UpdateInterviewInput,
+  PaginatedResult,
+} from "@/types";
 import { queryKeys } from "./query-keys";
 
 export function useInterviews(params?: {
@@ -19,7 +29,9 @@ export function useInterviews(params?: {
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
-    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+    params?.organizationId !== undefined
+      ? params.organizationId
+      : user?.organizationId;
 
   return useQuery<PaginatedResult<Interview>>({
     queryKey: queryKeys.interviews({
@@ -93,12 +105,16 @@ export function useUpdateInterviewMutation() {
       interviewsApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.interview(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.interview(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
     onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.interview(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.interview(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
   });
@@ -112,10 +128,12 @@ export function useDeleteInterviewMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
 }

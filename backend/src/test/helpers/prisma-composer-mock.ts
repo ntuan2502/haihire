@@ -34,9 +34,11 @@ export interface QueryBuilder<T extends MockRecord> {
   all(): Promise<T[]>;
   first(): Promise<T | null>;
   update(patch: Partial<T>): Promise<T | null>;
+  updateAll(patch: Partial<T>): Promise<{ count: number }>;
   create(data: Partial<T>): Promise<T>;
   count(): Promise<number>;
   delete(): Promise<{ count: number }>;
+  deleteAll(): Promise<{ count: number }>;
   orderBy(field: string, direction?: "asc" | "desc"): QueryBuilder<T>;
   skip(n: number): QueryBuilder<T>;
   take(n: number): QueryBuilder<T>;
@@ -243,6 +245,17 @@ export function createQueryBuilder<T extends MockRecord>(
       return null;
     },
 
+    async updateAll(patch: Partial<T>): Promise<{ count: number }> {
+      let updatedCount = 0;
+      for (const item of store) {
+        if (state.predicates.every((p) => evaluatePredicate(item, p))) {
+          Object.assign(item, patch);
+          updatedCount++;
+        }
+      }
+      return { count: updatedCount };
+    },
+
     async create(data: Partial<T>): Promise<T> {
       const record = { ...data } as T;
       store.push(record);
@@ -257,6 +270,18 @@ export function createQueryBuilder<T extends MockRecord>(
     },
 
     async delete(): Promise<{ count: number }> {
+      let removedCount = 0;
+      for (let i = store.length - 1; i >= 0; i--) {
+        const item = store[i];
+        if (item && state.predicates.every((p) => evaluatePredicate(item, p))) {
+          store.splice(i, 1);
+          removedCount++;
+        }
+      }
+      return { count: removedCount };
+    },
+
+    async deleteAll(): Promise<{ count: number }> {
       let removedCount = 0;
       for (let i = store.length - 1; i >= 0; i--) {
         const item = store[i];

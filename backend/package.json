@@ -10,11 +10,13 @@
     "lint": "eslint . && tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "db:update": "prisma db update",
     "db:seed": "node --import tsx src/prisma/seed.ts",
     "db:verify": "prisma db verify",
     "db:status": "prisma migration status",
-    "contract:emit": "prisma contract emit"
+    "contract:emit": "prisma contract emit",
+    "check:prod-email-provider": "tsx scripts/check-prod-email-provider.ts"
   },
   "dependencies": {
     "@haihire/shared": "workspace:*",
@@ -29,7 +31,6 @@
     "@prisma/composer": "0.29.1",
     "@prisma/composer-prisma-cloud": "0.29.1",
     "@prisma/orm-postgres": "8.0.0-rc.13",
-    "alchemy": "2.0.0-beta.79",
     "bcryptjs": "^3.0.3",
     "bullmq": "^6.3.15",
     "class-transformer": "^0.5.1",
@@ -61,5 +62,5 @@
     "typescript-eslint": "^8.71.2",
     "vitest": "^5.0.4"
   },
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

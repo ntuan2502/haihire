@@ -137,7 +137,8 @@ export function WizardStepDetails({
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-8">
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.jobTitleLabel")} <span className="text-rose-500">*</span>
+              {t("jobs.wizard.jobTitleLabel")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <Input
               type="text"
@@ -148,7 +149,7 @@ export function WizardStepDetails({
               className={cn(
                 "h-10 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
                 showTitleError &&
-                  "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20"
+                  "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
               )}
               required
             />
@@ -180,7 +181,8 @@ export function WizardStepDetails({
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
           <div className="sm:col-span-8">
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.locationLabel")} <span className="text-rose-500">*</span>
+              {t("jobs.wizard.locationLabel")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -189,11 +191,13 @@ export function WizardStepDetails({
                 placeholder={t("jobs.wizard.placeholders.location")}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                onBlur={() => setTouched((prev) => ({ ...prev, location: true }))}
+                onBlur={() =>
+                  setTouched((prev) => ({ ...prev, location: true }))
+                }
                 className={cn(
                   "h-10 pl-9 text-xs bg-slate-50/50 dark:bg-slate-950 transition-colors",
                   showLocationError &&
-                    "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20"
+                    "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
                 )}
                 required
               />
@@ -212,7 +216,9 @@ export function WizardStepDetails({
           <div className="sm:col-span-4">
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
               {t("jobs.wizard.postalCodeLabel")}{" "}
-              <span className="text-slate-400 font-normal">({t("common.optional")})</span>
+              <span className="text-slate-400 font-normal">
+                ({t("common.optional")})
+              </span>
             </label>
             <Input
               type="text"
@@ -231,7 +237,8 @@ export function WizardStepDetails({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.employmentTypeLabel")} <span className="text-rose-500">*</span>
+              {t("jobs.wizard.employmentTypeLabel")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <CustomSelect
               value={employmentType || ""}
@@ -249,7 +256,8 @@ export function WizardStepDetails({
               className="w-full"
               triggerClassName={cn(
                 "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-                showEmploymentTypeError && "border-rose-500 ring-1 ring-rose-500"
+                showEmploymentTypeError &&
+                  "border-rose-500 ring-1 ring-rose-500",
               )}
             />
             {showEmploymentTypeError && (
@@ -261,7 +269,8 @@ export function WizardStepDetails({
 
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.experienceLevelLabel")} <span className="text-rose-500">*</span>
+              {t("jobs.wizard.experienceLevelLabel")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <CustomSelect
               value={experienceLevel || ""}
@@ -280,7 +289,8 @@ export function WizardStepDetails({
               className="w-full"
               triggerClassName={cn(
                 "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-                showExperienceLevelError && "border-rose-500 ring-1 ring-rose-500"
+                showExperienceLevelError &&
+                  "border-rose-500 ring-1 ring-rose-500",
               )}
             />
             {showExperienceLevelError && (
@@ -292,7 +302,8 @@ export function WizardStepDetails({
 
           <div>
             <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-              {t("jobs.wizard.workplaceLabel")} <span className="text-rose-500">*</span>
+              {t("jobs.wizard.workplaceLabel")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <CustomSelect
               value={workplace || ""}
@@ -309,7 +320,7 @@ export function WizardStepDetails({
               className="w-full"
               triggerClassName={cn(
                 "w-full h-10 text-xs font-normal bg-slate-50/50 dark:bg-slate-950 rounded-xl",
-                showWorkplaceError && "border-rose-500 ring-1 ring-rose-500"
+                showWorkplaceError && "border-rose-500 ring-1 ring-rose-500",
               )}
             />
             {showWorkplaceError && (
@@ -327,7 +338,7 @@ export function WizardStepDetails({
             onClick={() => setCompensationOpen(!compensationOpen)}
             className={cn(
               "w-full flex items-center justify-between p-4 text-left cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors",
-              !compensationOpen ? "rounded-xl" : "rounded-t-xl"
+              !compensationOpen ? "rounded-xl" : "rounded-t-xl",
             )}
           >
             <div className="flex items-center gap-2">
@@ -355,8 +366,14 @@ export function WizardStepDetails({
                 {t("jobs.wizard.compensationHintOpen")}
               </p>
 
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label
+                htmlFor="pay-negotiable-checkbox"
+                className="flex items-center gap-2 cursor-pointer"
+              >
                 <input
+                  id="pay-negotiable-checkbox"
+                  name="payNegotiable"
+                  aria-label={t("jobs.wizard.payNegotiableDetail")}
                   type="checkbox"
                   checked={payNegotiable}
                   onChange={(e) => setPayNegotiable(e.target.checked)}
@@ -380,7 +397,11 @@ export function WizardStepDetails({
                       onChange={(e) => {
                         setMinSalary(e.target.value);
                         if (e.target.value.trim().length > 0) {
-                          setTouched((prev) => ({ ...prev, currency: true, salaryPer: true }));
+                          setTouched((prev) => ({
+                            ...prev,
+                            currency: true,
+                            salaryPer: true,
+                          }));
                         }
                       }}
                       className="h-9 text-xs bg-white dark:bg-slate-900"
@@ -398,7 +419,11 @@ export function WizardStepDetails({
                       onChange={(e) => {
                         setMaxSalary(e.target.value);
                         if (e.target.value.trim().length > 0) {
-                          setTouched((prev) => ({ ...prev, currency: true, salaryPer: true }));
+                          setTouched((prev) => ({
+                            ...prev,
+                            currency: true,
+                            salaryPer: true,
+                          }));
                         }
                       }}
                       className="h-9 text-xs bg-white dark:bg-slate-900"
@@ -408,7 +433,9 @@ export function WizardStepDetails({
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       {t("jobs.wizard.currency")}
-                      {hasSalaryData && <span className="text-rose-500 ml-0.5">*</span>}
+                      {hasSalaryData && (
+                        <span className="text-rose-500 ml-0.5">*</span>
+                      )}
                     </label>
                     <CustomSelect
                       value={currency || ""}
@@ -428,7 +455,8 @@ export function WizardStepDetails({
                       className="w-full"
                       triggerClassName={cn(
                         "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
-                        showCurrencyError && "border-rose-500 ring-1 ring-rose-500"
+                        showCurrencyError &&
+                          "border-rose-500 ring-1 ring-rose-500",
                       )}
                     />
                     {showCurrencyError && (
@@ -441,7 +469,9 @@ export function WizardStepDetails({
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       {t("jobs.wizard.perPeriod")}
-                      {hasSalaryData && <span className="text-rose-500 ml-0.5">*</span>}
+                      {hasSalaryData && (
+                        <span className="text-rose-500 ml-0.5">*</span>
+                      )}
                     </label>
                     <CustomSelect
                       value={salaryPer || ""}
@@ -453,13 +483,17 @@ export function WizardStepDetails({
                       align="right"
                       options={[
                         { value: "Year", label: t("jobs.wizard.periods.year") },
-                        { value: "Month", label: t("jobs.wizard.periods.month") },
+                        {
+                          value: "Month",
+                          label: t("jobs.wizard.periods.month"),
+                        },
                         { value: "Hour", label: t("jobs.wizard.periods.hour") },
                       ]}
                       className="w-full"
                       triggerClassName={cn(
                         "w-full h-9 text-xs font-normal bg-white dark:bg-slate-900 rounded-xl",
-                        showSalaryPerError && "border-rose-500 ring-1 ring-rose-500"
+                        showSalaryPerError &&
+                          "border-rose-500 ring-1 ring-rose-500",
                       )}
                     />
                     {showSalaryPerError && (
@@ -477,17 +511,20 @@ export function WizardStepDetails({
         {/* Field 8: Description */}
         <div>
           <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
-            {t("jobs.wizard.descriptionTitle")} <span className="text-rose-500">*</span>
+            {t("jobs.wizard.descriptionTitle")}{" "}
+            <span className="text-rose-500">*</span>
           </label>
           <Textarea
             placeholder={t("jobs.wizard.placeholders.description")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            onBlur={() => setTouched((prev) => ({ ...prev, description: true }))}
+            onBlur={() =>
+              setTouched((prev) => ({ ...prev, description: true }))
+            }
             className={cn(
               "h-40 text-xs bg-slate-50/50 dark:bg-slate-950 resize-none overflow-y-auto transition-colors",
               showDescriptionError &&
-                "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20"
+                "border-rose-400 focus-visible:border-rose-500 focus-visible:ring-rose-500/20",
             )}
             required
           />
@@ -553,7 +590,7 @@ export function WizardStepDetails({
             "text-white text-xs font-bold px-6 py-2 rounded-xl shadow-xs transition-all",
             isStep1Valid
               ? "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-              : "bg-blue-600/50 cursor-not-allowed opacity-60"
+              : "bg-blue-600/50 cursor-not-allowed opacity-60",
           )}
         >
           {t("jobs.wizard.continueToPublish")}

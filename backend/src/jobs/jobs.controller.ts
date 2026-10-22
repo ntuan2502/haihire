@@ -14,7 +14,7 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.decorator";
+import { RequirePermission } from "../auth/require-permission.decorator";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
@@ -30,7 +30,10 @@ export class JobsController {
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
   findAll(
-    @Request() req: { user?: { id?: string; role?: string; organizationId?: string | null } },
+    @Request()
+    req: {
+      user?: { id?: string; role?: string; organizationId?: string | null };
+    },
     @Query("status") status?: string,
     @Query("department") department?: string,
     @Query("search") search?: string,
@@ -81,7 +84,7 @@ export class JobsController {
 
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("job:create")
   create(
     @Body(DtoPipe(CreateJobDto)) dto: CreateJobDto,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
@@ -95,7 +98,7 @@ export class JobsController {
 
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("job:update")
   update(
     @Param("id") id: string,
     @Body(DtoPipe(UpdateJobDto)) dto: UpdateJobDto,
@@ -106,7 +109,7 @@ export class JobsController {
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("job:delete")
   remove(
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -114,5 +117,3 @@ export class JobsController {
     return this.jobsService.remove(id, req?.user?.organizationId);
   }
 }
-
-

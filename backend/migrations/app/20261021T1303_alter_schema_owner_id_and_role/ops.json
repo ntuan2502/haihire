@@ -1,0 +1,354 @@
+[
+  {
+    "id": "dropCheckConstraint.inviteLink.inviteLink_role_check_d55e7365",
+    "label": "Drop check constraint \"inviteLink_role_check_d55e7365\" on \"inviteLink\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "inviteLink_role_check_d55e7365",
+        "table": "inviteLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"inviteLink_role_check_d55e7365\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inviteLink_role_check_d55e7365",
+          "public",
+          "\"public\".\"inviteLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"inviteLink_role_check_d55e7365\"",
+        "sql": "ALTER TABLE \"public\".\"inviteLink\" DROP CONSTRAINT \"inviteLink_role_check_d55e7365\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"inviteLink_role_check_d55e7365\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inviteLink_role_check_d55e7365",
+          "public",
+          "\"public\".\"inviteLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropCheckConstraint.organizationMember.organizationMember_role_check_d55e7365",
+    "label": "Drop check constraint \"organizationMember_role_check_d55e7365\" on \"organizationMember\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "organizationMember_role_check_d55e7365",
+        "table": "organizationMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"organizationMember_role_check_d55e7365\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "organizationMember_role_check_d55e7365",
+          "public",
+          "\"public\".\"organizationMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"organizationMember_role_check_d55e7365\"",
+        "sql": "ALTER TABLE \"public\".\"organizationMember\" DROP CONSTRAINT \"organizationMember_role_check_d55e7365\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"organizationMember_role_check_d55e7365\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "organizationMember_role_check_d55e7365",
+          "public",
+          "\"public\".\"organizationMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropCheckConstraint.user.user_role_check_d55e7365",
+    "label": "Drop check constraint \"user_role_check_d55e7365\" on \"user\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "user_role_check_d55e7365",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_role_check_d55e7365\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["user_role_check_d55e7365", "public", "\"public\".\"user\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"user_role_check_d55e7365\"",
+        "sql": "ALTER TABLE \"public\".\"user\" DROP CONSTRAINT \"user_role_check_d55e7365\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_role_check_d55e7365\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["user_role_check_d55e7365", "public", "\"public\".\"user\""]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.organization.ownerId",
+    "label": "Set NOT NULL on \"organization\".\"ownerId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "ownerId",
+        "table": "organization"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"ownerId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": ["public", "organization", "ownerId"]
+      },
+      {
+        "description": "ensure no NULL values in \"ownerId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"organization\" WHERE \"ownerId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"ownerId\"",
+        "sql": "ALTER TABLE \"public\".\"organization\" ALTER COLUMN \"ownerId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"ownerId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": ["public", "organization", "ownerId", "NO"]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.inviteLink.inviteLink_role_check_24976965",
+    "label": "Add check constraint \"inviteLink_role_check_24976965\" on \"inviteLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "inviteLink_role_check_24976965",
+        "table": "inviteLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"inviteLink_role_check_24976965\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inviteLink_role_check_24976965",
+          "public",
+          "\"public\".\"inviteLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"inviteLink_role_check_24976965\"",
+        "sql": "ALTER TABLE \"public\".\"inviteLink\" ADD CONSTRAINT \"inviteLink_role_check_24976965\" CHECK (\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"inviteLink_role_check_24976965\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inviteLink_role_check_24976965",
+          "public",
+          "\"public\".\"inviteLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.organizationMember.organizationMember_role_check_24976965",
+    "label": "Add check constraint \"organizationMember_role_check_24976965\" on \"organizationMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "organizationMember_role_check_24976965",
+        "table": "organizationMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"organizationMember_role_check_24976965\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "organizationMember_role_check_24976965",
+          "public",
+          "\"public\".\"organizationMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"organizationMember_role_check_24976965\"",
+        "sql": "ALTER TABLE \"public\".\"organizationMember\" ADD CONSTRAINT \"organizationMember_role_check_24976965\" CHECK (\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"organizationMember_role_check_24976965\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "organizationMember_role_check_24976965",
+          "public",
+          "\"public\".\"organizationMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.user.user_role_check_24976965",
+    "label": "Add check constraint \"user_role_check_24976965\" on \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "user_role_check_24976965",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_role_check_24976965\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["user_role_check_24976965", "public", "\"public\".\"user\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"user_role_check_24976965\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD CONSTRAINT \"user_role_check_24976965\" CHECK (\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_role_check_24976965\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["user_role_check_24976965", "public", "\"public\".\"user\""]
+      }
+    ]
+  },
+  {
+    "id": "index.organization.organization_ownerId_idx_e2d0c1ef",
+    "label": "Create index \"organization_ownerId_idx_e2d0c1ef\" on \"organization\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "organization_ownerId_idx_e2d0c1ef",
+        "table": "organization"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"organization_ownerId_idx_e2d0c1ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": ["\"public\".\"organization_ownerId_idx_e2d0c1ef\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"organization_ownerId_idx_e2d0c1ef\"",
+        "sql": "CREATE INDEX \"organization_ownerId_idx_e2d0c1ef\" ON \"public\".\"organization\" (\"ownerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"organization_ownerId_idx_e2d0c1ef\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": ["\"public\".\"organization_ownerId_idx_e2d0c1ef\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.organization.organization_ownerId_fkey",
+    "label": "Add foreign key \"organization_ownerId_fkey\" on \"organization\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "organization_ownerId_fkey",
+        "table": "organization"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"organization_ownerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "organization_ownerId_fkey",
+          "public",
+          "\"public\".\"organization\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"organization_ownerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"organization\"\nADD CONSTRAINT \"organization_ownerId_fkey\"\nFOREIGN KEY (\"ownerId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"organization_ownerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "organization_ownerId_fkey",
+          "public",
+          "\"public\".\"organization\""
+        ]
+      }
+    ]
+  }
+]

@@ -76,7 +76,9 @@ interface MockDbState {
   interviews: MockInterview[];
 }
 
-type QueryPredicate = (record: Record<string, { eq: (val: string) => boolean }>) => boolean;
+type QueryPredicate = (
+  record: Record<string, { eq: (val: string) => boolean }>,
+) => boolean;
 
 describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => {
   let mockDbState: MockDbState;
@@ -116,8 +118,18 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
         { id: "user-member", organizationId: "org-1", role: "MEMBER" },
       ],
       members: [
-        { id: "mem-1", organizationId: "org-1", userId: "user-owner", role: "ADMIN" },
-        { id: "mem-2", organizationId: "org-1", userId: "user-member", role: "MEMBER" },
+        {
+          id: "mem-1",
+          organizationId: "org-1",
+          userId: "user-owner",
+          role: "ADMIN",
+        },
+        {
+          id: "mem-2",
+          organizationId: "org-1",
+          userId: "user-member",
+          role: "MEMBER",
+        },
       ],
       orgs: [
         { id: "org-1", name: "Acme Corp", slug: "acme", ownerId: "user-owner" },
@@ -125,159 +137,230 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       interviews: [],
     };
 
-    createDbInterface = (stateRef: MockDbState) => ({
-      orm: {
-        public: {
-          Job: {
-            select: vi.fn().mockImplementation(() => ({
-              where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-                first: vi.fn().mockImplementation(async () => {
-                  return stateRef.jobs.find((j) => pred({ id: { eq: (id: string) => j.id === id } }));
-                }),
-              })),
-            })),
-            where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-              update: vi.fn().mockImplementation(async (updates: Record<string, unknown>) => {
-                const job = stateRef.jobs.find((j) => pred({ id: { eq: (id: string) => j.id === id } }));
-                if (job) Object.assign(job, updates);
-                return job;
-              }),
-            })),
-          },
-          Candidate: {
-            select: vi.fn().mockImplementation(() => ({
-              where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-                where: vi.fn().mockImplementation((pred2: QueryPredicate) => ({
+    createDbInterface = (stateRef: MockDbState) =>
+      ({
+        orm: {
+          public: {
+            Job: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
                   first: vi.fn().mockImplementation(async () => {
-                    return stateRef.candidates.find(
-                      (c) =>
-                        pred({ organizationId: { eq: (id: string) => c.organizationId === id } }) &&
-                        pred2({ email: { eq: (email: string) => c.email === email } }),
+                    return stateRef.jobs.find((j) =>
+                      pred({ id: { eq: (id: string) => j.id === id } }),
                     );
                   }),
                 })),
-                first: vi.fn().mockImplementation(async () => {
-                  return stateRef.candidates.find((c) => pred({ id: { eq: (id: string) => c.id === id } }));
-                }),
               })),
-            })),
-            create: vi.fn().mockImplementation(async (data: MockCandidate) => {
-              stateRef.candidates.push(data);
-              return data;
-            }),
-            where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-              update: vi.fn().mockImplementation(async (updates: Record<string, unknown>) => {
-                const cand = stateRef.candidates.find((c) => pred({ id: { eq: (id: string) => c.id === id } }));
-                if (cand) Object.assign(cand, updates);
-                return cand;
-              }),
-            })),
-          },
-          Application: {
-            select: vi.fn().mockImplementation(() => ({
               where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-                where: vi.fn().mockImplementation((pred2: QueryPredicate) => ({
+                update: vi
+                  .fn()
+                  .mockImplementation(
+                    async (updates: Record<string, unknown>) => {
+                      const job = stateRef.jobs.find((j) =>
+                        pred({ id: { eq: (id: string) => j.id === id } }),
+                      );
+                      if (job) Object.assign(job, updates);
+                      return job;
+                    },
+                  ),
+              })),
+            },
+            Candidate: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
+                  where: vi
+                    .fn()
+                    .mockImplementation((pred2: QueryPredicate) => ({
+                      first: vi.fn().mockImplementation(async () => {
+                        return stateRef.candidates.find(
+                          (c) =>
+                            pred({
+                              organizationId: {
+                                eq: (id: string) => c.organizationId === id,
+                              },
+                            }) &&
+                            pred2({
+                              email: {
+                                eq: (email: string) => c.email === email,
+                              },
+                            }),
+                        );
+                      }),
+                    })),
                   first: vi.fn().mockImplementation(async () => {
-                    return stateRef.applications.find(
-                      (a) =>
-                        pred({ candidateId: { eq: (id: string) => a.candidateId === id } }) &&
-                        pred2({ jobId: { eq: (id: string) => a.jobId === id } }),
+                    return stateRef.candidates.find((c) =>
+                      pred({ id: { eq: (id: string) => c.id === id } }),
                     );
                   }),
                 })),
-                all: vi.fn().mockImplementation(async () => {
-                  return stateRef.applications.filter((a) => pred({ jobId: { eq: (id: string) => a.jobId === id } }));
-                }),
-                first: vi.fn().mockImplementation(async () => {
-                  return stateRef.applications.find((a) => pred({ id: { eq: (id: string) => a.id === id } }));
-                }),
               })),
-            })),
-            create: vi.fn().mockImplementation(async (data: MockApplication) => {
-              stateRef.applications.push(data);
-              return data;
-            }),
-            where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-              delete: vi.fn().mockImplementation(async () => {
-                const initialLen = stateRef.applications.length;
-                stateRef.applications = stateRef.applications.filter(
-                  (a) => !pred({ id: { eq: (id: string) => a.id === id } }),
-                );
-                return { count: initialLen - stateRef.applications.length };
-              }),
-            })),
-          },
-          Interview: {
-            where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-              all: vi.fn().mockResolvedValue([]),
-              delete: vi.fn().mockImplementation(async () => {
-                stateRef.interviews = stateRef.interviews.filter(
-                  (i) => !pred({ applicationId: { eq: (id: string) => i.applicationId === id } }),
-                );
-                return { count: 0 };
-              }),
-            })),
-          },
-          TrackingLink: {
-            select: vi.fn().mockImplementation(() => ({
-              where: vi.fn().mockImplementation(() => ({
-                first: vi.fn().mockResolvedValue(null),
-              })),
-            })),
-          },
-          User: {
-            select: vi.fn().mockImplementation(() => ({
+              create: vi
+                .fn()
+                .mockImplementation(async (data: MockCandidate) => {
+                  stateRef.candidates.push(data);
+                  return data;
+                }),
               where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-                first: vi.fn().mockImplementation(async () => {
-                  return stateRef.users.find((u) => pred({ id: { eq: (id: string) => u.id === id } }));
-                }),
+                update: vi
+                  .fn()
+                  .mockImplementation(
+                    async (updates: Record<string, unknown>) => {
+                      const cand = stateRef.candidates.find((c) =>
+                        pred({ id: { eq: (id: string) => c.id === id } }),
+                      );
+                      if (cand) Object.assign(cand, updates);
+                      return cand;
+                    },
+                  ),
               })),
-            })),
-            where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-              update: vi.fn().mockImplementation(async (updates: Record<string, unknown>) => {
-                const matched = stateRef.users.filter((u) =>
-                  pred({
-                    organizationId: { eq: (id: string) => u.organizationId === id },
-                    id: { eq: (id: string) => u.id === id },
+            },
+            Application: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
+                  where: vi
+                    .fn()
+                    .mockImplementation((pred2: QueryPredicate) => ({
+                      first: vi.fn().mockImplementation(async () => {
+                        return stateRef.applications.find(
+                          (a) =>
+                            pred({
+                              candidateId: {
+                                eq: (id: string) => a.candidateId === id,
+                              },
+                            }) &&
+                            pred2({
+                              jobId: { eq: (id: string) => a.jobId === id },
+                            }),
+                        );
+                      }),
+                    })),
+                  all: vi.fn().mockImplementation(async () => {
+                    return stateRef.applications.filter((a) =>
+                      pred({ jobId: { eq: (id: string) => a.jobId === id } }),
+                    );
                   }),
-                );
-                for (const u of matched) Object.assign(u, updates);
-                return { count: matched.length };
-              }),
-            })),
-          },
-          OrganizationMember: {
-            where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-              delete: vi.fn().mockImplementation(async () => {
-                const initial = stateRef.members.length;
-                stateRef.members = stateRef.members.filter(
-                  (m) => !pred({ organizationId: { eq: (id: string) => m.organizationId === id } }),
-                );
-                return { count: initial - stateRef.members.length };
-              }),
-            })),
-          },
-          Organization: {
-            select: vi.fn().mockImplementation(() => ({
+                  first: vi.fn().mockImplementation(async () => {
+                    return stateRef.applications.find((a) =>
+                      pred({ id: { eq: (id: string) => a.id === id } }),
+                    );
+                  }),
+                })),
+              })),
+              create: vi
+                .fn()
+                .mockImplementation(async (data: MockApplication) => {
+                  stateRef.applications.push(data);
+                  return data;
+                }),
               where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-                first: vi.fn().mockImplementation(async () => {
-                  return stateRef.orgs.find((o) => pred({ id: { eq: (id: string) => o.id === id } }));
+                delete: vi.fn().mockImplementation(async () => {
+                  const initialLen = stateRef.applications.length;
+                  stateRef.applications = stateRef.applications.filter(
+                    (a) => !pred({ id: { eq: (id: string) => a.id === id } }),
+                  );
+                  return { count: initialLen - stateRef.applications.length };
                 }),
               })),
-            })),
-            where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
-              delete: vi.fn().mockImplementation(async () => {
-                const initial = stateRef.orgs.length;
-                stateRef.orgs = stateRef.orgs.filter(
-                  (o) => !pred({ id: { eq: (id: string) => o.id === id } }),
-                );
-                return { count: initial - stateRef.orgs.length };
+            },
+            Interview: {
+              where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
+                all: vi.fn().mockResolvedValue([]),
+                delete: vi.fn().mockImplementation(async () => {
+                  stateRef.interviews = stateRef.interviews.filter(
+                    (i) =>
+                      !pred({
+                        applicationId: {
+                          eq: (id: string) => i.applicationId === id,
+                        },
+                      }),
+                  );
+                  return { count: 0 };
+                }),
+              })),
+            },
+            TrackingLink: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation(() => ({
+                  first: vi.fn().mockResolvedValue(null),
+                })),
+              })),
+            },
+            User: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
+                  first: vi.fn().mockImplementation(async () => {
+                    return stateRef.users.find((u) =>
+                      pred({ id: { eq: (id: string) => u.id === id } }),
+                    );
+                  }),
+                })),
+              })),
+              where: vi.fn().mockImplementation((pred: QueryPredicate) => {
+                const doUpdate = vi
+                  .fn()
+                  .mockImplementation(
+                    async (updates: Record<string, unknown>) => {
+                      const matched = stateRef.users.filter((u) =>
+                        pred({
+                          organizationId: {
+                            eq: (id: string) => u.organizationId === id,
+                          },
+                          id: { eq: (id: string) => u.id === id },
+                        }),
+                      );
+                      for (const u of matched) Object.assign(u, updates);
+                      return { count: matched.length };
+                    },
+                  );
+                return {
+                  update: doUpdate,
+                  updateAll: doUpdate,
+                };
               }),
-            })),
+            },
+            OrganizationMember: {
+              where: vi.fn().mockImplementation((pred: QueryPredicate) => {
+                const doDelete = vi.fn().mockImplementation(async () => {
+                  const initial = stateRef.members.length;
+                  stateRef.members = stateRef.members.filter(
+                    (m) =>
+                      !pred({
+                        organizationId: {
+                          eq: (id: string) => m.organizationId === id,
+                        },
+                      }),
+                  );
+                  return { count: initial - stateRef.members.length };
+                });
+                return {
+                  delete: doDelete,
+                  deleteAll: doDelete,
+                };
+              }),
+            },
+            Organization: {
+              select: vi.fn().mockImplementation(() => ({
+                where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
+                  first: vi.fn().mockImplementation(async () => {
+                    return stateRef.orgs.find((o) =>
+                      pred({ id: { eq: (id: string) => o.id === id } }),
+                    );
+                  }),
+                })),
+              })),
+              where: vi.fn().mockImplementation((pred: QueryPredicate) => ({
+                delete: vi.fn().mockImplementation(async () => {
+                  const initial = stateRef.orgs.length;
+                  stateRef.orgs = stateRef.orgs.filter(
+                    (o) => !pred({ id: { eq: (id: string) => o.id === id } }),
+                  );
+                  return { count: initial - stateRef.orgs.length };
+                }),
+              })),
+            },
           },
         },
-      },
-    }) as unknown as typeof mockPrisma.db;
+      }) as unknown as typeof mockPrisma.db;
 
     const realDb = createDbInterface(mockDbState);
     const als = new AsyncLocalStorage<typeof realDb>();
@@ -286,71 +369,91 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
     mockPrisma = {
       db: realDb,
       client: realDb,
-      transaction: vi.fn().mockImplementation(async (txFn: (tx: typeof realDb) => Promise<unknown>) => {
-        const existing = als.getStore();
-        if (existing) {
-          return txFn(existing);
-        }
+      transaction: vi
+        .fn()
+        .mockImplementation(
+          async (txFn: (tx: typeof realDb) => Promise<unknown>) => {
+            const existing = als.getStore();
+            if (existing) {
+              return txFn(existing);
+            }
 
-        transactionCalls++;
-        // Create an isolated snapshot of state to simulate transaction atomicity & rollback
-        const snapshot = JSON.parse(JSON.stringify(mockDbState)) as MockDbState;
-        const txDb = createDbInterface(snapshot);
+            transactionCalls++;
+            // Create an isolated snapshot of state to simulate transaction atomicity & rollback
+            const snapshot = JSON.parse(
+              JSON.stringify(mockDbState),
+            ) as MockDbState;
+            const txDb = createDbInterface(snapshot);
 
-        try {
-          const result = await als.run(txDb, () => txFn(txDb));
-          // If transaction commits, merge changes into real state
-          for (const c of snapshot.candidates) {
-            const idx = mockDbState.candidates.findIndex((x) => x.id === c.id);
-            if (idx >= 0) Object.assign(mockDbState.candidates[idx], c);
-            else mockDbState.candidates.push(c);
-          }
-          for (const a of snapshot.applications) {
-            const idx = mockDbState.applications.findIndex((x) => x.id === a.id);
-            if (idx >= 0) Object.assign(mockDbState.applications[idx], a);
-            else mockDbState.applications.push(a);
-          }
-          if (snapshot.applications.length < mockDbState.applications.length) {
-            mockDbState.applications = mockDbState.applications.filter((a) =>
-              snapshot.applications.some((s) => s.id === a.id),
-            );
-          }
-          for (const j of snapshot.jobs) {
-            const idx = mockDbState.jobs.findIndex((x) => x.id === j.id);
-            if (idx >= 0) Object.assign(mockDbState.jobs[idx], j);
-            else mockDbState.jobs.push(j);
-          }
-          for (const u of snapshot.users) {
-            const idx = mockDbState.users.findIndex((x) => x.id === u.id);
-            if (idx >= 0) Object.assign(mockDbState.users[idx], u);
-          }
-          mockDbState.members = snapshot.members;
-          mockDbState.orgs = snapshot.orgs;
-          mockDbState.interviews = snapshot.interviews;
-          return result;
-        } catch (err) {
-          // Rollback: snapshot is discarded, real state is unchanged!
-          transactionRollbacks++;
-          throw err;
-        }
-      }),
-      executeTx: vi.fn().mockImplementation(async (txFn: (tx: typeof realDb) => Promise<unknown>) => {
-        return mockPrisma.transaction(txFn);
-      }),
+            try {
+              const result = await als.run(txDb, () => txFn(txDb));
+              // If transaction commits, merge changes into real state
+              for (const c of snapshot.candidates) {
+                const idx = mockDbState.candidates.findIndex(
+                  (x) => x.id === c.id,
+                );
+                if (idx >= 0) Object.assign(mockDbState.candidates[idx], c);
+                else mockDbState.candidates.push(c);
+              }
+              for (const a of snapshot.applications) {
+                const idx = mockDbState.applications.findIndex(
+                  (x) => x.id === a.id,
+                );
+                if (idx >= 0) Object.assign(mockDbState.applications[idx], a);
+                else mockDbState.applications.push(a);
+              }
+              if (
+                snapshot.applications.length < mockDbState.applications.length
+              ) {
+                mockDbState.applications = mockDbState.applications.filter(
+                  (a) => snapshot.applications.some((s) => s.id === a.id),
+                );
+              }
+              for (const j of snapshot.jobs) {
+                const idx = mockDbState.jobs.findIndex((x) => x.id === j.id);
+                if (idx >= 0) Object.assign(mockDbState.jobs[idx], j);
+                else mockDbState.jobs.push(j);
+              }
+              for (const u of snapshot.users) {
+                const idx = mockDbState.users.findIndex((x) => x.id === u.id);
+                if (idx >= 0) Object.assign(mockDbState.users[idx], u);
+              }
+              mockDbState.members = snapshot.members;
+              mockDbState.orgs = snapshot.orgs;
+              mockDbState.interviews = snapshot.interviews;
+              return result;
+            } catch (err) {
+              // Rollback: snapshot is discarded, real state is unchanged!
+              transactionRollbacks++;
+              throw err;
+            }
+          },
+        ),
+      executeTx: vi
+        .fn()
+        .mockImplementation(
+          async (txFn: (tx: typeof realDb) => Promise<unknown>) => {
+            return mockPrisma.transaction(txFn);
+          },
+        ),
     } as unknown as PrismaService;
 
     mockMinio = {
-      uploadFile: vi.fn().mockImplementation(async (_file: Express.Multer.File, folder: string, orgId: string) => {
-        const fileName = `tenants/${orgId}/${folder}/test-resume.pdf`;
-        minioUploadedFiles.push(fileName);
-        return {
-          url: `http://minio:9000/haihire-resumes/${fileName}`,
-          fileName,
-          originalName: "test-resume.pdf",
-          size: 1024,
-          mimeType: "application/pdf",
-        };
-      }),
+      uploadFile: vi
+        .fn()
+        .mockImplementation(
+          async (_file: Express.Multer.File, folder: string, orgId: string) => {
+            const fileName = `tenants/${orgId}/${folder}/test-resume.pdf`;
+            minioUploadedFiles.push(fileName);
+            return {
+              url: `http://minio:9000/haihire-resumes/${fileName}`,
+              fileName,
+              originalName: "test-resume.pdf",
+              size: 1024,
+              mimeType: "application/pdf",
+            };
+          },
+        ),
       deleteFile: vi.fn().mockImplementation(async (fileName: string) => {
         minioDeletedFiles.push(fileName);
       }),
@@ -413,12 +516,20 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       );
 
       // Force failure during transaction (e.g. simulate unique constraint or DB connection drop)
-      (mockPrisma as unknown as { transaction: ReturnType<typeof vi.fn> }).transaction.mockImplementationOnce(
+      (
+        mockPrisma as unknown as { transaction: ReturnType<typeof vi.fn> }
+      ).transaction.mockImplementationOnce(
         async (txFn: (tx: typeof mockPrisma.db) => Promise<unknown>) => {
           transactionCalls++;
-          const snapshot = JSON.parse(JSON.stringify(mockDbState)) as MockDbState;
+          const snapshot = JSON.parse(
+            JSON.stringify(mockDbState),
+          ) as MockDbState;
           const txDb = createDbInterface(snapshot);
-          txDb.orm.public.Application.create = vi.fn().mockRejectedValue(new Error("Simulated DB Crash on Application write"));
+          txDb.orm.public.Application.create = vi
+            .fn()
+            .mockRejectedValue(
+              new Error("Simulated DB Crash on Application write"),
+            );
           try {
             return await txFn(txDb);
           } catch (e) {
@@ -495,7 +606,9 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       // Verify all 3 steps completed atomically
       expect(mockDbState.orgs.length).toBe(0);
       expect(mockDbState.members.length).toBe(0);
-      expect(mockDbState.users.every((u) => u.organizationId === null)).toBe(true);
+      expect(mockDbState.users.every((u) => u.organizationId === null)).toBe(
+        true,
+      );
     });
   });
 
@@ -528,7 +641,9 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       let innerRan = false;
       await mockPrisma.transaction(async (tx1) => {
         // First level mutation
-        await tx1.orm.public.Job.where((j) => j.id.eq("job-1")).update({ title: "Updated Job Title" });
+        await tx1.orm.public.Job.where((j) => j.id.eq("job-1")).update({
+          title: "Updated Job Title",
+        });
 
         // Nested call simulates another service calling executeTx / transaction
         await mockPrisma.transaction(async (tx2) => {
@@ -552,7 +667,9 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
     it("Test 2: Nested transaction failure rolls back both parent and child operations", async () => {
       await expect(
         mockPrisma.transaction(async (tx1) => {
-          await tx1.orm.public.Job.where((j) => j.id.eq("job-1")).update({ title: "Should Be Rolled Back" });
+          await tx1.orm.public.Job.where((j) => j.id.eq("job-1")).update({
+            title: "Should Be Rolled Back",
+          });
 
           await mockPrisma.transaction(async (tx2) => {
             await tx2.orm.public.Candidate.create({

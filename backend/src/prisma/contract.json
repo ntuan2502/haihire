@@ -341,10 +341,6 @@
             "codecId": "pg/text@1",
             "members": [
               {
-                "name": "OWNER",
-                "value": "OWNER"
-              },
-              {
                 "name": "ADMIN",
                 "value": "ADMIN"
               },
@@ -2485,7 +2481,7 @@
                 }
               },
               "ownerId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -2604,6 +2600,18 @@
                 },
                 "to": {
                   "model": "OrganizationMember",
+                  "namespace": "public"
+                }
+              },
+              "owner": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["ownerId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "User",
                   "namespace": "public"
                 }
               },
@@ -3419,6 +3427,17 @@
                   "namespace": "public"
                 }
               },
+              "ownedOrganizations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["ownerId"]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              },
               "trackingLinks": {
                 "cardinality": "1:N",
                 "on": {
@@ -3978,6 +3997,7 @@
               },
               "foreignKeys": [
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": ["organizationId"],
                     "namespaceId": "public",
@@ -4706,8 +4726,8 @@
             "inviteLink": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('OWNER', 'ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
-                  "name": "inviteLink_role_check_d55e7365",
+                  "expression": "\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "inviteLink_role_check_24976965",
                   "prefix": "inviteLink_role_check"
                 },
                 {
@@ -5011,6 +5031,7 @@
                   }
                 },
                 {
+                  "onDelete": "cascade",
                   "source": {
                     "columns": ["organizationId"],
                     "namespaceId": "public",
@@ -5078,7 +5099,7 @@
                 "ownerId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "slug": {
                   "codecId": "pg/text@1",
@@ -5091,8 +5112,29 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": ["ownerId"],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "user"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["ownerId"],
+                  "name": "organization_ownerId_idx_e2d0c1ef",
+                  "prefix": "organization_ownerId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": ["id"]
               },
@@ -5105,8 +5147,8 @@
             "organizationMember": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('OWNER', 'ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
-                  "name": "organizationMember_role_check_d55e7365",
+                  "expression": "\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "organizationMember_role_check_24976965",
                   "prefix": "organizationMember_role_check"
                 }
               ],
@@ -5634,8 +5676,8 @@
             "user": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('OWNER', 'ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
-                  "name": "user_role_check_d55e7365",
+                  "expression": "\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "user_role_check_24976965",
                   "prefix": "user_role_check"
                 }
               ],
@@ -5826,7 +5868,6 @@
             "Role": {
               "kind": "valueSet",
               "values": [
-                "OWNER",
                 "ADMIN",
                 "RECRUITER",
                 "HIRING_MANAGER",
@@ -5873,7 +5914,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "88f0fe5b432f8410a86d2c8e8a17ebe1958115a96be6bd7124889b7fbfa9668b"
+    "storageHash": "27ad2c189786c40967bdd866c3208aa93a0abebc0df1f9bd968e0b406aea06c6"
   },
   "execution": {
     "executionHash": "b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98",

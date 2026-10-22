@@ -3,7 +3,10 @@ import { ApplicationsController } from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
 import { RolesGuard } from "../auth/roles.guard";
 import { Reflector } from "@nestjs/core";
-import { AppForbiddenException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppUnauthorizedException,
+} from "../common/app-exception";
 import { Role } from "@haihire/shared";
 import type { ExecutionContext } from "@nestjs/common";
 import type { Response } from "express";
@@ -121,13 +124,13 @@ describe("ApplicationsController", () => {
       expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
     });
 
-    it("Case 3: rejects unauthenticated requests with 403 AppForbiddenException when no user in context", () => {
+    it("Case 3: rejects unauthenticated requests with 401 AppUnauthorizedException when no user in context", () => {
       // Arrange
       const context = createMockContext(unauthenticatedReq);
 
       // Act & Assert
       expect(() => rolesGuard.canActivate(context)).toThrow(
-        AppForbiddenException,
+        AppUnauthorizedException,
       );
     });
   });

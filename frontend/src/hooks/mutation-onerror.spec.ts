@@ -84,6 +84,7 @@ vi.mock("@/lib/api", () => ({
     revokeInviteLink: vi.fn(),
     updateMemberRole: vi.fn(),
     removeMember: vi.fn(),
+    transferOwnership: vi.fn(),
   },
   interviewsApi: {
     create: vi.fn(),

@@ -1,5 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { AppForbiddenException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppUnauthorizedException,
+} from "../common/app-exception";
 import {
   APP_ERROR_CODES,
   hasPermission,
@@ -32,14 +35,17 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
     if (!user) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN,
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.UNAUTHORIZED,
         "Unauthorized request.",
       );
     }
 
-    // Special handling: OWNER role bypasses all checks with full privileges
-    if (user.role === Role.OWNER || user.role === "OWNER") {
+    // Dynamic organization owner bypass (ADR-003):
+    const isOwner = Boolean(
+      user.isOwner || user.organization?.ownerId === user.id,
+    );
+    if (isOwner) {
       return true;
     }
 

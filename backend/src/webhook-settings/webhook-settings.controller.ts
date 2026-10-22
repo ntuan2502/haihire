@@ -54,12 +54,14 @@ export class WebhookSettingsController {
   }
 
   @Get()
+  @RequirePermission("settings:manage_integrations")
   async findAll(@Request() req: AuthenticatedRequest) {
     const orgId = this.getOrgId(req);
     return this.service.findAll(orgId);
   }
 
   @Get(":id")
+  @RequirePermission("settings:manage_integrations")
   async findOne(@Param("id") id: string, @Request() req: AuthenticatedRequest) {
     const orgId = this.getOrgId(req);
     return this.service.findOne(id, orgId);
@@ -67,6 +69,7 @@ export class WebhookSettingsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermission("settings:manage_integrations")
   async create(
     @Request() req: AuthenticatedRequest,
     @Body(DtoPipe(CreateWebhookSettingDto)) dto: CreateWebhookSettingDto,
@@ -76,6 +79,7 @@ export class WebhookSettingsController {
   }
 
   @Patch(":id")
+  @RequirePermission("settings:manage_integrations")
   async update(
     @Param("id") id: string,
     @Request() req: AuthenticatedRequest,
@@ -87,6 +91,7 @@ export class WebhookSettingsController {
 
   @Delete(":id")
   @HttpCode(HttpStatus.OK)
+  @RequirePermission("settings:manage_integrations")
   async delete(@Param("id") id: string, @Request() req: AuthenticatedRequest) {
     const orgId = this.getOrgId(req);
     return this.service.delete(id, orgId);
@@ -94,6 +99,7 @@ export class WebhookSettingsController {
 
   @Post("test")
   @HttpCode(HttpStatus.OK)
+  @RequirePermission("settings:manage_integrations")
   async testConnection(
     @Request() req: AuthenticatedRequest,
     @Body(DtoPipe(TestWebhookSettingDto)) dto: TestWebhookSettingDto,

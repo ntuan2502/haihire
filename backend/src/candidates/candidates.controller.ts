@@ -55,6 +55,8 @@ export class CandidatesController {
   }
 
   @Get(":id")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("candidate:view")
   findOne(
     @Param("id") id: string,
     @Request()

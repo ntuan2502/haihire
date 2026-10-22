@@ -3,7 +3,10 @@ import { CandidatesController } from "./candidates.controller";
 import { CandidatesService } from "./candidates.service";
 import { RolesGuard } from "../auth/roles.guard";
 import { Reflector } from "@nestjs/core";
-import { AppForbiddenException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppUnauthorizedException,
+} from "../common/app-exception";
 import { Role } from "@haihire/shared";
 import type { ExecutionContext } from "@nestjs/common";
 import type { Response } from "express";
@@ -121,14 +124,59 @@ describe("CandidatesController", () => {
       expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
     });
 
-    it("Case 3: rejects unauthenticated requests with 403 AppForbiddenException when no user in context", () => {
+    it("Case 3: rejects unauthenticated requests with 401 AppUnauthorizedException when no user in context", () => {
       // Arrange
       const context = createMockContext(unauthenticatedReq);
 
       // Act & Assert
       expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppUnauthorizedException,
+      );
+    });
+  });
+
+  describe("GET /candidates/:id (candidate:view permission)", () => {
+    const createFindOneContext = (req: { user?: unknown }): ExecutionContext =>
+      ({
+        getHandler: () => controller.findOne,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({
+          getRequest: () => req,
+          getResponse: () => mockRes,
+        }),
+      }) as unknown as ExecutionContext;
+
+    it("Case 1: rejects Role.MEMBER with 403 AppForbiddenException", () => {
+      // Arrange
+      const context = createFindOneContext(memberReq);
+
+      // Act & Assert
+      expect(() => rolesGuard.canActivate(context)).toThrow(
         AppForbiddenException,
       );
+    });
+
+    it("Case 2: allows Role.RECRUITER and delegates to service.findOne", async () => {
+      // Arrange
+      const context = createFindOneContext(recruiterReq);
+      mockService.findOne.mockResolvedValue({
+        id: "cand-1",
+        name: "Test Candidate",
+      });
+
+      // Act
+      const canActivate = rolesGuard.canActivate(context);
+      expect(canActivate).toBe(true);
+
+      const result = await controller.findOne("cand-1", recruiterReq);
+
+      // Assert
+      expect(mockService.findOne).toHaveBeenCalledWith(
+        "cand-1",
+        "org-1",
+        recruiterReq.user,
+      );
+      expect(result).toEqual({ id: "cand-1", name: "Test Candidate" });
     });
   });
 });

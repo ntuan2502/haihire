@@ -292,7 +292,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isOwner = Boolean(
-    user?.role === "OWNER" ||
     user?.isOwner ||
     (user?.organization?.ownerId && user.organization.ownerId === user.id),
   );

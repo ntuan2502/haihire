@@ -87,6 +87,11 @@ export const vi: TranslationSchema = {
       "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",
     ORG_CANNOT_REMOVE_SELF: "Bạn không thể tự xóa chính mình khỏi tổ chức.",
     ORG_CANNOT_REMOVE_OWNER: "Không thể xóa chủ sở hữu khỏi tổ chức.",
+    ORG_CANNOT_TRANSFER_TO_SELF:
+      "Không thể chuyển quyền sở hữu tổ chức cho chính mình.",
+    ORG_TRANSFER_TARGET_NOT_MEMBER:
+      "Người nhận chuyển nhượng phải là thành viên của tổ chức.",
+    ORG_NOT_OWNER: "Chỉ chủ sở hữu tổ chức mới có thể thực hiện thao tác này.",
     ORG_MEMBER_NOT_FOUND: "Không tìm thấy thành viên trong tổ chức này.",
     ORG_FORBIDDEN_ACTION:
       "Bạn không có quyền thực hiện thao tác này trong tổ chức ({organizationId}).",
@@ -1390,6 +1395,13 @@ export const vi: TranslationSchema = {
     copied: "Đã sao chép!",
     revokeLink: "Hủy liên kết",
     removeMember: "Xóa khỏi nhóm",
+    transferOwnership: "Chuyển quyền sở hữu",
+    transferOwnershipConfirmTitle: "Chuyển giao quyền sở hữu tổ chức",
+    transferOwnershipConfirmDesc: "Chuyển giao quyền sở hữu tổ chức cho",
+    transferOwnershipConfirmNote:
+      "Bạn sẽ tiếp tục là Quản trị viên nhưng sẽ không còn các đặc quyền của Chủ sở hữu.",
+    transferOwnershipConfirmButton: "Chuyển giao",
+    transferOwnershipSuccess: "Đã chuyển quyền sở hữu tổ chức thành công.",
     removeMemberConfirmTitle: "Xóa thành viên khỏi tổ chức",
     removeMemberConfirmWarning:
       "Thành viên này sẽ mất quyền truy cập vào toàn bộ dữ liệu của tổ chức. Thao tác này không thể hoàn tác.",

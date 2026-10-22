@@ -1,6 +1,6 @@
 # HaiHire Platform — AI Coding Agent Operating Guide (AGENTS.md)
 
-> This document is the primary architectural contract and operational protocol for all AI coding agents, contributors, and automated tooling operating within the HaiHire codebase. Every rule defined herein is strictly binding.
+> This document is the primary architectural contract and operational entry point for all AI coding agents, contributors, and automated tooling operating within the HaiHire codebase. Every rule defined herein is strictly binding.
 
 ---
 
@@ -21,169 +21,67 @@
 
 ---
 
-## 1. Project Identity
+## 1. Operating Rules for AI Agents
 
-HaiHire is a modern, high-performance, multi-tenant Applicant Tracking System (ATS) engineered for enterprise recruitment workflows.
+All AI agents operating in this repository must strictly adhere to the following workflow:
 
-### Core Technology Stack
-
-- **Runtime & Package Management:** Node.js 26 (LTS baseline), pnpm 12 monorepo.
-- **Backend Architecture:** NestJS 12.1.2 modular monolith, Fastify engine, Saga transaction orchestration with compensating actions, and BullMQ async job queues.
-- **Frontend Architecture:** Next.js 16 (App Router with React 19 Server Components), `@tanstack/react-query` v5 client state caching, Base UI / Radix UI primitives, Tailwind CSS v4, and 2-way i18n dictionary.
-- **Database & Contract:** PostgreSQL 17.6 managed via **Prisma 8 RC** (`@prisma/orm-postgres@8.0.0-rc.13`, contract `./src/prisma/contract.prisma`, `backend/migrations/app/`).
-- **Distributed Cache & State:** Valkey 8.0.2 (Redis-compatible, BSD licensed).
-- **Object Storage:** MinIO S3-compatible storage with tenant path isolation and buffer magic byte verification.
-
-### Key Architectural Decision Records (ADRs)
-
-- [**ADR-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**](docs/adr/ADR-001-prisma-8-rc.md)
-- [**ADR-002: Next.js Proxy Rewrites without /api Prefix & v0.4.0 Standardization**](docs/adr/ADR-002-frontend-rewrite-path.md)
-- [**ADR-003: Dynamic Organization Ownership via ownerId and Deprecation of Role.OWNER**](docs/adr/ADR-003-dynamic-org-ownership.md)
+1. **What to Read First (Mandatory):**
+   - [**Conventions (SSOT)**](docs/architecture/conventions.md): Authoritative engineering rules covering pure TypeScript, zero-any typing, centralized fail-fast environment validation, DtoPipe coverage, 2-way i18n, and multi-tenant scoping.
+   - [**Decisions Log**](docs/decisions/DECISIONS.md): Unified record of all architectural decisions (D-001 through D-006) superseding legacy ADRs.
+2. **What to Write & Update:**
+   - **Rules & Standards:** Any new persistent coding or architectural convention must be added directly to [docs/architecture/conventions.md](docs/architecture/conventions.md).
+   - **Architectural Decisions:** Any significant design choice, trade-off, or pre-release package adoption must be recorded in [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md).
+   - **Single Source of Truth:** Never duplicate documentation content across multiple files. Always reference existing specifications via relative markdown links.
+3. **Prohibited Agent Behaviors:**
+   - ❌ **No Transient Process Reports:** Do NOT create milestone, investigation, or progress report files in root or anywhere in `docs/`. Process history is maintained via git commit messages.
+   - ❌ **No Writes to `.agents/memory/`:** The `.agents/memory/` folder is deprecated. Persistent project knowledge lives exclusively in `docs/architecture/conventions.md` and `docs/decisions/DECISIONS.md`.
+4. **Conflict Resolution Hierarchy:**
+   - If a conflict arises between documents: specifications in [docs/architecture/](docs/architecture/system-overview.md) and [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md) ALWAYS take precedence over any tool-generated rules or secondary documentation.
 
 ---
 
-## 2. Repository Structure
+## 2. Documentation Map
 
-HaiHire is organized as a strict pnpm monorepo workspace.
+| Area                          | Authoritative Document                                                       | Scope & Focus                                                         |
+| :---------------------------- | :--------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| **System Overview**           | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Topology diagram, modular NestJS backend, Next.js 16 frontend         |
+| **Data Model & Schema**       | [docs/architecture/data-model.md](docs/architecture/data-model.md)           | 16 Prisma models, relations, cascading rules, soft-delete periods     |
+| **Security & RBAC**           | [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)     | Cookie JWT auth, dynamic `ownerId`, 5 roles, 41 permissions matrix    |
+| **Engineering Conventions**   | [docs/architecture/conventions.md](docs/architecture/conventions.md)         | Coding standards, fail-fast env, DtoPipe, i18n, tenant scoping        |
+| **Architectural Decisions**   | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                   | Consolidated ADRs and architectural decisions log                     |
+| **REST API Contracts**        | [docs/api/overview.md](docs/api/overview.md)                                 | 9 controllers, 86 endpoints, standard error envelopes                 |
+| **Site Reliability Runbooks** | [docs/runbooks/alerts.md](docs/runbooks/alerts.md)                           | Operational SOPs (alerts, backups, deployment, queues)                |
+| **Releases & Changelog**      | [CHANGELOG.md](CHANGELOG.md)                                                 | Release milestones, migration logs, and version history               |
+| **Documentation Portal**      | [docs/README.md](docs/README.md)                                             | Central search and navigation directory for all project documentation |
 
+---
+
+## 3. Note on AG Kit (`.agents/`)
+
+- The `.agents/` directory is automatically provisioned and managed by the **AG Kit** agent framework (`ag-kit`).
+- **DO NOT DELETE `.agents/`:** Deleting the directory will trigger automatic reinstallation by AG Kit tooling.
+- **Rule Precedence:** Rules in `.agents/rules/` provide baseline assistant tooling behavior; however, HaiHire engineering rules defined in [docs/architecture/conventions.md](docs/architecture/conventions.md) are strictly supreme and override any conflicting baseline guidance.
+
+---
+
+## 4. Key Commands Reference
+
+```bash
+# Verification Gates (16/16 required before PR merge)
+pnpm check:all           # Run all 16 CI architecture verification gates
+
+# Testing
+pnpm test                # Run complete unit & integration test suite (1,019 tests)
+pnpm test:diff           # Verify test count delta against HEAD~1 (regression gate)
+
+# Linting & Static Analysis
+pnpm lint                # ESLint across backend and frontend workspaces
+pnpm typecheck           # TypeScript compiler typecheck (tsc --noEmit)
+pnpm lint:doc-links      # Verify zero broken relative markdown links (Gate 10)
+pnpm lint:doc-sync       # Verify documentation, env parity, and decisions sync (Gate 11)
+pnpm lint:tenant-scope   # Verify 100% of Prisma queries isolated by tenant organizationId (Gate 9)
+
+# Development
+pnpm dev                 # Start development servers (backend: 13001, frontend: 13000)
+pnpm build               # Build all workspace packages and applications
 ```
-haihire/
-├── backend/                  # NestJS 12 enterprise backend application
-│   ├── migrations/app/       # Prisma 8 migration files (migration.ts, ops.json, migration.sql)
-│   ├── src/
-│   │   ├── applications/     # Candidate applications module & Saga orchestrators
-│   │   ├── auth/             # JWT auth, RBAC guards, decorators, strategies
-│   │   ├── candidates/       # Candidate profiles, resumes & PII encryption
-│   │   ├── common/           # Shared guards, interceptors, pipes, encryption
-│   │   ├── config/           # Centralized Zod fail-fast environment schema (env.ts)
-│   │   ├── email/            # Email templates & providers (Resend, SendGrid, SMTP)
-│   │   ├── interviews/       # Scheduling, scorecards & feedback
-│   │   ├── jobs/             # Job requisitions, lifecycle stages & pipelines
-│   │   ├── metrics/          # Prometheus metrics exporter & alerting probes
-│   │   ├── organizations/    # Multi-tenant organization scoping & memberships
-│   │   ├── prisma/           # Prisma 8 contract (contract.prisma), client, service
-│   │   ├── sourcing/         # Candidate sourcing & attribution tracking links
-│   │   └── webhook-settings/ # Webhook integrations (Telegram, Discord, Generic)
-│   └── vitest.config.ts      # Backend test runner configuration
-├── frontend/                 # Next.js 16 + React 19 frontend application
-│   ├── next.config.ts        # Next.js configuration & backend rewrites (see ADR-002)
-│   ├── src/
-│   │   ├── app/              # Next.js App Router (pages, layouts, error boundaries)
-│   │   ├── components/       # UI feature & shared presentation components
-│   │   ├── constants/        # Application constants & error translations
-│   │   ├── context/          # React contexts (AuthContext, ThemeContext)
-│   │   ├── hooks/            # Custom React hooks (e.g. useHasPermission)
-│   │   ├── lib/              # Axios client, stage helpers, env schema (env.ts)
-│   │   └── types/            # Frontend TypeScript definitions
-│   └── vitest.config.mts     # Frontend test runner configuration
-├── packages/
-│   └── shared/               # Universal domain models, RBAC permissions, types
-│       ├── package.json      # @haihire/shared package manifest
-│       └── src/
-│           ├── index.ts      # Main barrel re-export
-│           ├── permissions.ts# 6 roles & 32 permission definitions (hasPermission)
-│           ├── organizations.ts # Tenant types & organization roles
-│           └── ...           # Shared entities & schemas
-├── scripts/                  # CI verification gates & operational automation
-├── docs/                     # Architecture, runbooks, metrics, and ADRs
-│   ├── adr/                  # Architectural Decision Records (ADR-001, ADR-002)
-│   └── PROJECT_METRICS.md    # Single source of truth metrics baseline
-├── .agents/                  # Antigravity AI rules, memory, and specialized skills
-├── docker-compose.yml        # Development infrastructure container stack
-├── docker-compose.prod.yml   # Production container stack definition
-├── .env.example              # Development environment 55-key template
-└── .env.production.example   # Production environment template
-```
-
-> 🔴 **CRITICAL PATH RULE:** The shared workspace package is located strictly at `packages/shared/` and published internally as `@haihire/shared`. **NEVER** use the literal shorthand `shared/` without the `packages/` prefix in code, imports, markdown documentation, or bash scripts.
-
----
-
-## 3. Code Rules
-
-Every contribution must adhere strictly to these non-negotiable coding rules:
-
-1. **Pure TypeScript Mandate:** Every file must be TypeScript (`.ts`, `.tsx`, `.mts`, `.cts`). Zero plain JavaScript (`.js`, `.cjs`, `.mjs`) files are permitted anywhere in the repository.
-2. **Strict Zero-Any Typing:** The TypeScript `any` type is strictly forbidden across all workspaces (`backend`, `frontend`, `packages/shared`, `scripts`). Use explicit types, generics, `unknown`, or Zod inferred types.
-3. **Fail-Fast Centralized Environment Validation:**
-   - All environment variables are validated at boot via centralized Zod schemas (`backend/src/config/env.ts` and `frontend/src/lib/env.ts`).
-   - Zero runtime fallbacks or silent defaults for security secrets (`JWT_SECRET`, `ENCRYPTION_SECRET`, `DATABASE_URL`).
-   - Direct access to `process.env.X` inside business logic or controllers is forbidden; import and use `backendEnv` or `env`.
-4. **100% DtoPipe Validation Coverage:** Every controller `@Body()` parameter in NestJS must be protected by `@Body(DtoPipe)` to guarantee runtime type safety and payload sanitization (enforced by `pnpm lint:dtopipe`).
-5. **100% Two-Way i18n Localization:**
-   - Zero hardcoded human-readable strings in JSX/TSX.
-   - All labels, placeholders, titles, and notifications must be mapped to translation keys in `frontend/src/constants/translations/` and consumed via `t('key')` (enforced by `pnpm lint:i18n`).
-6. **Fixed 6-Role RBAC Authorization:**
-   - 6 roles: `OWNER`, `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`.
-   - 32 granular permissions declared in `@haihire/shared` (`packages/shared/src/permissions.ts`).
-   - Controllers must be guarded via `@RequirePermission(PERMISSIONS.<RESOURCE>_<ACTION>)` and `RequirePermissionGuard`.
-   - The `OWNER` role holds unconditional super-admin bypass.
-   - Controllers must never perform direct role checking; always inspect permissions.
-
----
-
-## 4. Testing Rules
-
-1. **Test Suite Hygiene:**
-   - Unit and integration tests must live adjacent to the source file they test (`*.spec.ts`, `*.spec.tsx`).
-   - E2E Playwright tests live in `e2e/*.spec.ts`.
-2. **Zero-Tolerated Regression:**
-   - Running `pnpm test` executes the complete suite (540 backend tests + 423 frontend tests = 963 tests).
-   - Test count delta is verified by `pnpm test:diff` (Gate 12 / `scripts/check-test-count.ts`); net test count cannot decrease.
-3. **No Skipped or Commented-Out Tests:**
-   - Never use `it.skip`, `describe.skip`, `test.skip`, or comment out existing tests to force CI to pass.
-4. **AAA Testing Pattern:** All unit tests must structure logic using Arrange-Act-Assert.
-
----
-
-## 5. Documentation Rules
-
-1. **Documentation Parity:**
-   - When modifying environment variables: immediately update `.env.example`, `.env.production.example`, and verify with `pnpm lint:env-sync`.
-   - When introducing or altering architectural decisions: author a formal ADR under `docs/adr/ADR-XXX-<name>.md`.
-   - When updating endpoints or error codes: synchronize `docs/api/overview.md` and error dictionaries in `packages/shared`.
-2. **Link Portability & Markdown Integrity:**
-   - All markdown links must use relative paths (`../`, `./`) targeting existing files on disk.
-   - Every markdown file is validated by `pnpm lint:doc-links` (Gate 11) and `pnpm lint:doc-sync` (Gate 13).
-
----
-
-## 6. CI Gate Rules
-
-The HaiHire platform enforces a 16-stage automated verification pipeline via `pnpm check:all`. Every pull request must pass 16/16 gates before merging.
-
-|   #    | Gate ID                 | Command                          | Implementation Script                    | Validation Objective                                               |
-| :----: | :---------------------- | :------------------------------- | :--------------------------------------- | :----------------------------------------------------------------- |
-| **1**  | `lint:env-sync`         | `pnpm lint:env-sync`             | `scripts/check-env-sync.ts`              | 100% key parity dev/prod, Docker compose coverage & codebase sync  |
-| **2**  | `lint:i18n`             | `pnpm lint:i18n`                 | `scripts/check-i18n.ts`                  | 2-way dictionary symmetry (vi/en) and zero hardcoded JSX strings   |
-| **3**  | `lint`                  | `pnpm lint`                      | `eslint .` (Backend & Frontend)          | Zero ESLint warnings or errors; clean-code style compliance        |
-| **4**  | `typecheck`             | `pnpm typecheck`                 | `tsc --noEmit`                           | Zero TypeScript compiler errors across all workspace packages      |
-| **5**  | `lint:dtopipe`          | `pnpm lint:dtopipe`              | `scripts/check-dtopipe-coverage.ts`      | 100% of `@Body()` parameters guarded by `DtoPipe`                  |
-| **6**  | `lint:error-i18n`       | `pnpm lint:error-i18n`           | `scripts/check-error-code-i18n.ts`       | 100% domain error codes translated in both `vi.ts` and `en.ts`     |
-| **7**  | `lint:api-contract`     | `pnpm lint:api-contract`         | `scripts/check-api-contract-coverage.ts` | API contract synchronization, zero raw Error leaks, zero `alert()` |
-| **8**  | `lint:prometheus-rules` | `pnpm lint:prometheus-rules`     | `scripts/check-prometheus-rules.ts`      | Valid PromQL alert rules, required `sre` team labels & annotations |
-| **9**  | `lint:tenant-scope`     | `pnpm lint:tenant-scope`         | `scripts/check-tenant-scoping.ts`        | 100% of Prisma queries isolated by tenant `organizationId`         |
-| **10** | `lint:doc-links`        | `pnpm lint:doc-links`            | `scripts/verify-doc-links.ts`            | Zero broken relative markdown links across docs and memory         |
-| **11** | `check:prod-email`      | `pnpm check:prod-email-provider` | `scripts/check-prod-email-provider.ts`   | Prohibits simulated email provider in production environments      |
-| **12** | `test:diff`             | `pnpm test:diff`                 | `scripts/check-test-count.ts`            | Detects and blocks test count regression against `HEAD~1`          |
-
-| **14** | `lint:nextjs-conventions` | `pnpm lint:nextjs-conventions` | `scripts/check-nextjs-conventions.ts` | Enforces Next.js 16 `proxy.ts` convention and blocks `middleware.ts` |
-| **15** | `lint:github-action-versions` | `pnpm lint:github-action-versions` | `scripts/check-github-action-versions.ts`| Enforces Node 24 action runtime baseline across GitHub workflows |
-| **16** | `test` | `pnpm test` | `vitest` | Zero regressions; full backend (540+) and frontend (423+) test suites |
-
----
-
-## 7. Forbidden Patterns
-
-| ❌ Forbidden Pattern             | Reason / Risk                                                   | ✅ Approved Pattern                                            |
-| :------------------------------- | :-------------------------------------------------------------- | :------------------------------------------------------------- |
-| `any` or `as any`                | Bypasses type safety, introduces runtime null/undefined crashes | Explicit interfaces, generics, Zod `z.infer<T>`, or `unknown`  |
-| Inline styles (`style={{...}}`)  | Defeats design token system, violates CSP style policies        | Tailwind CSS v4 design tokens and utility classes              |
-| Hardcoded UI string in JSX       | Breaks multi-language support (Vietnamese / English)            | `t('translation_key')` mapped in `TranslationSchema`           |
-| `process.env.VARIABLE` in code   | Bypasses boot fail-fast validation, allows missing env drift    | Import typed `backendEnv` from `config/env.ts` or `env`        |
-| `SEED_DEMO_ON_BOOT=true` in prod | Overwrites production database records with demo fixtures       | Boot seed restricted strictly to `NODE_ENV=development`        |
-| `\|\| true` in CI workflow steps | Masks test or security failures, breaks CI gates                | Fix the root cause or formally document in an ADR              |
-| Commented-out tests or `.skip`   | Hides regressions and inflates false confidence                 | Maintain passing tests or refactor to reflect contract changes |
-| `shared/` shorthand path         | Ambiguous path; breaks scripts expecting workspace package      | `packages/shared/` or `@haihire/shared`                        |
-| Direct Prisma query without org  | Cross-tenant data leakage vulnerability                         | Filter every query with `where: { organizationId }`            |
-| Unescaped HTML in email strings  | Cross-Site Scripting (XSS) vulnerability in user mailboxes      | Sanitize context variables and use safe template engine        |

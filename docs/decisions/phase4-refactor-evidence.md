@@ -456,4 +456,25 @@ Pruned legacy, fragmented memory topic files from `.agents/memory/` after having
 
 ---
 
+## 9. Task 5 — Single Source of Truth Entry Point (`AGENTS.md`)
+
+Rewrote `AGENTS.md` at repository root as a lean (87 lines) operational entry point and routing guide:
+
+### 9.1 Core Structure
+
+- **Operating Rules:** Strict mandate defining `docs/architecture/conventions.md` as the authoritative single source of truth for engineering conventions, and `docs/decisions/DECISIONS.md` for architectural choices. Explicit prohibitions against transient process reports and writing to `.agents/memory/`.
+- **Documentation Map:** Routing table directing agents to canonical architecture, data model, RBAC, API, runbooks, and changelog specifications.
+- **AG Kit Note:** Clarified that `.agents/` is an AG Kit managed toolkit and must not be deleted, establishing that repository conventions in `docs/architecture/conventions.md` take strict precedence over toolkit baselines.
+- **Key Commands:** Condensed quick-reference for verification gates, testing, linting, and development workflows.
+- **Stats Block:** Retained `<!-- STATS:START -->` block maintaining 100% synchronization with CI Gate 11 (`lint:doc-sync`).
+
+### 9.2 Verification Result (`pnpm check:all`)
+
+- **Status:** 🟢 **ALL 16 CHECKS PASSED**.
+- Gate 10 (`lint:doc-links`): 0 broken markdown links across 42 scanned files.
+- Gate 11 (`lint:doc-sync`): 0 path drift, 100% stats synchronization.
+- Unit & Integration Test Suite: 1,019 tests passed (589 backend + 430 frontend).
+
+---
+
 _(This report will be continuously updated as Tasks 1 through 8 are executed)._

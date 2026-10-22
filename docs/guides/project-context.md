@@ -46,7 +46,7 @@
   - _Object Storage:_ MinIO S3 (`alpine/minio` pinned digest; host dev API port: `19000`, console: `19001`).
 - **DevOps:**
   - _Docker & Container Registry:_ Docker Compose v2 (`docker-compose.yml` for dev infra, `docker-compose.prod.yml` pulling pre-built images from GitHub Container Registry - GHCR).
-  - _Reverse Proxy:_ Caddy `2.8-alpine` (TLS termination & reverse proxy).
+  - _Reverse Proxy:_ TBD (see [DECISIONS.md#d-008](../decisions/DECISIONS.md#d-008); direct port binding in dev/staging).
   - _CI/CD:_ GitHub Actions (5-Tier Layered CI/CD: `ci-feature.yml` fast feedback, `ci-dev.yml` post-merge integration, `ci-staging.yml` pre-production E2E & build, `ci-main.yml` production gatekeeper, `cd-release.yml` container publishing; scheduled: `e2e-weekly.yml` on staging Mondays 03:00 UTC, `security-weekly.yml` Wednesdays 06:00 UTC; Dependabot Saturdays 04:00 UTC; Two-tier path filtering for ~30s docs verification).
   - _Monitoring:_ Internal Prometheus metrics endpoint at `/metrics` via `MetricsService` and Pushgateway for cron batch metrics.
 - **Package Manager:** `pnpm` `12.6.0` (workspace configuration in `pnpm-workspace.yaml`).
@@ -108,7 +108,7 @@ haihire/
 ```
 
 - **Primary Data & Request Flows:**
-  1. **Public Request (Candidate views JD):** Client $\rightarrow$ Caddy Reverse Proxy $\rightarrow$ Next.js Server Component (`/careers/[orgSlug]/[jobSlug]`) $\rightarrow$ Direct server fetch from internal Backend (`INTERNAL_API_URL`) $\rightarrow$ Semantic HTML + JSON-LD `JobPosting` schema $\rightarrow$ Rendered directly without client API waterfalls.
+  1. **Public Request (Candidate views JD):** Client $\rightarrow$ Reverse Proxy (TBD) $\rightarrow$ Next.js Server Component (`/careers/[orgSlug]/[jobSlug]`) $\rightarrow$ Direct server fetch from internal Backend (`INTERNAL_API_URL`) $\rightarrow$ Semantic HTML + JSON-LD `JobPosting` schema $\rightarrow$ Rendered directly without client API waterfalls.
   2. **Dashboard Request (Recruiter interaction):** Browser calls `/api/*` (proxied by Next.js to Backend) $\rightarrow$ Axios Interceptor Gatekeeper validates URL $\rightarrow$ Backend `ThrottlerGuard` (rate limit) $\rightarrow$ `JwtAuthGuard` (reads HttpOnly cookie `haihire_token`) $\rightarrow$ `TenantGuard` (validates `organizationId`) $\rightarrow$ Controller $\rightarrow$ `DtoPipe` validation $\rightarrow$ Service.
   3. **Candidate Application Submission (Saga Workflow):**
      - _Step 1 (MinIO Upload):_ CV file inspected for magic bytes and uploaded to `tenants/${orgId}/resumes/${filename}`.

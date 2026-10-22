@@ -477,4 +477,30 @@ Rewrote `AGENTS.md` at repository root as a lean (87 lines) operational entry po
 
 ---
 
+## 10. Task 6 — Documentation Portal & Root README Alignment
+
+Synchronized the primary project entry point `README.md` and established the canonical documentation portal `docs/README.md`:
+
+### 10.1 Documentation Portal (`docs/README.md`)
+
+- Authoritative search and navigation table mapping developer questions directly to specifications.
+- Complete documentation directory tree mapping all architecture, decisions, API contracts, runbooks, and testing matrices.
+- 100% relative links validated with zero broken paths.
+
+### 10.2 Root README Synchronization (`README.md`)
+
+- Updated Section "Documentation Directory" with a prominent callout linking to `docs/README.md` as the documentation portal.
+- Modernized all documentation links pointing directly to canonical specifications under `docs/architecture/` and `docs/decisions/DECISIONS.md`.
+- Synchronized REST API endpoint metrics to 86 endpoints and corrected RBAC role constraints to 5 organization roles.
+- Preserved `<!-- STATS:START -->` block maintaining complete synchronization with CI Gate 11 (`lint:doc-sync`).
+
+### 10.3 Verification Result (`pnpm check:all`)
+
+- **Status:** 🟢 **ALL 16 CHECKS PASSED**.
+- Gate 10 (`lint:doc-links`): 0 broken markdown links across 42 scanned files.
+- Gate 11 (`lint:doc-sync`): 0 path drift, 100% metrics parity.
+- Unit & Integration Test Suite: 1,019 tests passed (589 backend + 430 frontend).
+
+---
+
 _(This report will be continuously updated as Tasks 1 through 8 are executed)._

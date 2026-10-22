@@ -1,0 +1,158 @@
+[
+  {
+    "id": "addNativeEnumValue.Role.OWNER",
+    "label": "Add value \"OWNER\" to enum type \"Role\"",
+    "summary": "Adds value \"OWNER\" to enum type \"Role\". A newly added enum value cannot be used until the transaction that adds it commits, so a migration that both appends a value and uses it in the same step will fail at apply.",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "Role"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure enum type \"Role\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_type\" AS \"t\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"t\".\"typtype\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "e"]
+      },
+      {
+        "description": "ensure value \"OWNER\" is absent from enum type \"Role\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "OWNER"]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add value \"OWNER\" to enum type \"Role\"",
+        "sql": "ALTER TYPE \"public\".\"Role\" ADD VALUE 'OWNER'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify value \"OWNER\" exists on enum type \"Role\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "OWNER"]
+      }
+    ]
+  },
+  {
+    "id": "addNativeEnumValue.Role.RECRUITER",
+    "label": "Add value \"RECRUITER\" to enum type \"Role\"",
+    "summary": "Adds value \"RECRUITER\" to enum type \"Role\". A newly added enum value cannot be used until the transaction that adds it commits, so a migration that both appends a value and uses it in the same step will fail at apply.",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "Role"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure enum type \"Role\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_type\" AS \"t\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"t\".\"typtype\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "e"]
+      },
+      {
+        "description": "ensure value \"RECRUITER\" is absent from enum type \"Role\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "RECRUITER"]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add value \"RECRUITER\" to enum type \"Role\"",
+        "sql": "ALTER TYPE \"public\".\"Role\" ADD VALUE 'RECRUITER'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify value \"RECRUITER\" exists on enum type \"Role\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "RECRUITER"]
+      }
+    ]
+  },
+  {
+    "id": "addNativeEnumValue.Role.HIRING_MANAGER",
+    "label": "Add value \"HIRING_MANAGER\" to enum type \"Role\"",
+    "summary": "Adds value \"HIRING_MANAGER\" to enum type \"Role\". A newly added enum value cannot be used until the transaction that adds it commits, so a migration that both appends a value and uses it in the same step will fail at apply.",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "Role"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure enum type \"Role\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_type\" AS \"t\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"t\".\"typtype\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "e"]
+      },
+      {
+        "description": "ensure value \"HIRING_MANAGER\" is absent from enum type \"Role\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "HIRING_MANAGER"]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add value \"HIRING_MANAGER\" to enum type \"Role\"",
+        "sql": "ALTER TYPE \"public\".\"Role\" ADD VALUE 'HIRING_MANAGER'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify value \"HIRING_MANAGER\" exists on enum type \"Role\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "HIRING_MANAGER"]
+      }
+    ]
+  },
+  {
+    "id": "addNativeEnumValue.Role.INTERVIEWER",
+    "label": "Add value \"INTERVIEWER\" to enum type \"Role\"",
+    "summary": "Adds value \"INTERVIEWER\" to enum type \"Role\". A newly added enum value cannot be used until the transaction that adds it commits, so a migration that both appends a value and uses it in the same step will fail at apply.",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "Role"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure enum type \"Role\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_type\" AS \"t\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"t\".\"typtype\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "e"]
+      },
+      {
+        "description": "ensure value \"INTERVIEWER\" is absent from enum type \"Role\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "INTERVIEWER"]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add value \"INTERVIEWER\" to enum type \"Role\"",
+        "sql": "ALTER TYPE \"public\".\"Role\" ADD VALUE 'INTERVIEWER'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify value \"INTERVIEWER\" exists on enum type \"Role\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": ["public", "Role", "INTERVIEWER"]
+      }
+    ]
+  }
+]

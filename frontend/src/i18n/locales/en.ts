@@ -71,6 +71,8 @@ export const en: TranslationSchema = {
     generic: "An unexpected error occurred. Please try again later.",
     networkError:
       "Unable to connect to server. Please check your network connection.",
+    cannotDownloadDocument:
+      "Cannot download document due to missing application or candidate reference.",
     ORG_SLUG_ALREADY_EXISTS:
       "Organization with slug '{slug}' already exists. Please choose a different slug.",
     ORG_NOT_FOUND: "Organization ({slug}) not found.",
@@ -86,6 +88,11 @@ export const en: TranslationSchema = {
       "Cannot change the role of the organization owner.",
     ORG_CANNOT_REMOVE_SELF: "You cannot remove yourself from the organization.",
     ORG_CANNOT_REMOVE_OWNER: "Cannot remove the organization owner.",
+    ORG_CANNOT_TRANSFER_TO_SELF:
+      "Cannot transfer organization ownership to yourself.",
+    ORG_TRANSFER_TARGET_NOT_MEMBER:
+      "Target user must be a member of the organization.",
+    ORG_NOT_OWNER: "Only the organization owner can perform this action.",
     ORG_MEMBER_NOT_FOUND: "Member not found in this organization.",
     ORG_FORBIDDEN_ACTION:
       "You do not have permission to perform this action in organization ({organizationId}).",
@@ -1384,6 +1391,14 @@ export const en: TranslationSchema = {
     copied: "Copied!",
     revokeLink: "Revoke link",
     removeMember: "Remove member",
+    transferOwnership: "Transfer Ownership",
+    transferOwnershipConfirmTitle: "Transfer Organization Ownership",
+    transferOwnershipConfirmDesc: "Transfer organization ownership to",
+    transferOwnershipConfirmNote:
+      "You will remain an Admin but will lose owner privileges.",
+    transferOwnershipConfirmButton: "Transfer Ownership",
+    transferOwnershipSuccess:
+      "Organization ownership transferred successfully.",
     removeMemberConfirmTitle: "Remove Member from Organization",
     removeMemberConfirmWarning:
       "This member will lose access to all organization data and workspaces. This action cannot be undone.",

@@ -152,9 +152,10 @@ export function CandidateDocumentsTab({
         </div>
       ) : (
         /* Empty state */
-        <div
+        <button
+          type="button"
           onClick={() => docInputRef.current?.click()}
-          className="rounded-2xl border border-slate-200/80 dark:border-slate-800 p-10 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+          className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 p-10 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">
             <FileText className="h-5 w-5" />
@@ -165,7 +166,7 @@ export function CandidateDocumentsTab({
           <p className="text-[11px] text-slate-400 max-w-sm">
             {t("candidates.uploadDocHint")}
           </p>
-        </div>
+        </button>
       )}
     </div>
   );

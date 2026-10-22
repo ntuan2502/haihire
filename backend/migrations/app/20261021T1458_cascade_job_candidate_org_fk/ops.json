@@ -1,0 +1,154 @@
+[
+  {
+    "id": "dropConstraint.job.job_organizationId_fkey",
+    "label": "Drop constraint \"job_organizationId_fkey\" on \"job\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "job_organizationId_fkey",
+        "table": "job"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"job_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["job_organizationId_fkey", "public", "\"public\".\"job\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"job_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"job\" DROP CONSTRAINT \"job_organizationId_fkey\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"job_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["job_organizationId_fkey", "public", "\"public\".\"job\""]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.job.job_organizationId_fkey",
+    "label": "Add foreign key \"job_organizationId_fkey\" on \"job\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "job_organizationId_fkey",
+        "table": "job"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"job_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["job_organizationId_fkey", "public", "\"public\".\"job\""]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"job_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"job\"\nADD CONSTRAINT \"job_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"job_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": ["job_organizationId_fkey", "public", "\"public\".\"job\""]
+      }
+    ]
+  },
+  {
+    "id": "dropConstraint.candidate.candidate_organizationId_fkey",
+    "label": "Drop constraint \"candidate_organizationId_fkey\" on \"candidate\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "candidate_organizationId_fkey",
+        "table": "candidate"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"candidate_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "candidate_organizationId_fkey",
+          "public",
+          "\"public\".\"candidate\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"candidate_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"candidate\" DROP CONSTRAINT \"candidate_organizationId_fkey\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"candidate_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "candidate_organizationId_fkey",
+          "public",
+          "\"public\".\"candidate\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.candidate.candidate_organizationId_fkey",
+    "label": "Add foreign key \"candidate_organizationId_fkey\" on \"candidate\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "candidate_organizationId_fkey",
+        "table": "candidate"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"candidate_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "candidate_organizationId_fkey",
+          "public",
+          "\"public\".\"candidate\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"candidate_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"candidate\"\nADD CONSTRAINT \"candidate_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"public\".\"organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"candidate_organizationId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "candidate_organizationId_fkey",
+          "public",
+          "\"public\".\"candidate\""
+        ]
+      }
+    ]
+  }
+]

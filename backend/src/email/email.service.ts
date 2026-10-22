@@ -1,14 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  Optional,
-} from "@nestjs/common";
-import {
-  AppBadRequestException,
-  AppForbiddenException,
-  AppNotFoundException,
-} from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { PrismaService } from "../prisma/prisma.service";
@@ -17,12 +7,18 @@ import { EncryptionService } from "../common/encryption.service";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
-import { SendSystemEmailDto, SendSystemTestEmailDto } from "./dto/send-system-email.dto";
-import { EmailTransporterFactory } from "./transporters/transporter.factory";
-import { toTimestamp, toInstant } from "../common/date.util";
-import { env } from "../config/env";
-import crypto from "node:crypto";
-
+import {
+  SendSystemEmailDto,
+  SendSystemTestEmailDto,
+} from "./dto/send-system-email.dto";
+import {
+  EmailDispatchService,
+  EmailTemplatesService,
+  EmailSettingsService,
+  EmailSystemService,
+  type EnrichedEmailTemplate,
+  type GetLogsOptions,
+} from "./services";
 import {
   type EmailTemplateType,
   type TemplateDefinition,
@@ -37,112 +33,90 @@ export {
   interpolate,
 };
 
-export interface GetLogsOptions {
-  candidateId?: string;
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-}
-
-export interface EnrichedEmailTemplate {
-  id: string;
-  organizationId: string;
-  type: EmailTemplateType;
-  name: string;
-  subject: string;
-  body: string;
-  enabled: boolean;
-  variables: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { GetLogsOptions, EnrichedEmailTemplate };
 
 @Injectable()
 export class EmailService {
+  private readonly dispatch: EmailDispatchService;
+  private readonly templates: EmailTemplatesService;
+  private readonly settings: EmailSettingsService;
+  private readonly system: EmailSystemService;
+
   constructor(
+    @Optional()
+    @Inject(EmailDispatchService)
+    dispatchOrPrisma?: EmailDispatchService | PrismaService,
+    @Optional()
+    @Inject(EmailTemplatesService)
+    templatesOrActivities?: EmailTemplatesService | ActivitiesService,
+    @Optional()
+    @Inject(EmailSettingsService)
+    settingsOrEncryption?: EmailSettingsService | EncryptionService,
+    @Optional()
+    @Inject(EmailSystemService)
+    systemServiceOrQueue?: EmailSystemService | Queue,
+    @Optional()
     @Inject(PrismaService)
-    private readonly prisma: PrismaService,
+    prisma?: PrismaService,
+    @Optional()
     @Inject(ActivitiesService)
-    private readonly activitiesService: ActivitiesService,
+    activities?: ActivitiesService,
+    @Optional()
     @Inject(EncryptionService)
-    private readonly encryptionService: EncryptionService,
+    encryption?: EncryptionService,
     @Optional()
     @InjectQueue("email-queue")
-    private readonly emailQueue?: Queue,
-  ) {}
+    emailQueue?: Queue,
+  ) {
+    if (dispatchOrPrisma instanceof EmailDispatchService) {
+      this.dispatch = dispatchOrPrisma;
+      this.templates = templatesOrActivities as EmailTemplatesService;
+      this.settings = settingsOrEncryption as EmailSettingsService;
+      this.system = systemServiceOrQueue as EmailSystemService;
+    } else {
+      // Legacy and direct test instantiation support:
+      // new EmailService(prisma, activities, encryption, queue)
+      const p = (prisma || dispatchOrPrisma) as PrismaService;
+      const a = (activities || templatesOrActivities) as ActivitiesService;
+      const e = (encryption || settingsOrEncryption) as EncryptionService;
+      const q = (emailQueue ||
+        (systemServiceOrQueue instanceof EmailSystemService
+          ? undefined
+          : systemServiceOrQueue)) as Queue | undefined;
+
+      this.settings = new EmailSettingsService(p, e);
+      this.templates = new EmailTemplatesService(p, this.settings);
+      this.system = new EmailSystemService(p, e, q);
+      this.dispatch = new EmailDispatchService(p, a, this.settings, q);
+    }
+  }
 
   resolveOrgId(
     userOrgId?: string | null,
     requestedOrgId?: string,
     required = true,
   ): string | undefined {
-    if (requestedOrgId && userOrgId && requestedOrgId !== userOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
-        "Access denied: cannot access email resources of another organization.",
-        { organizationId: requestedOrgId },
-      );
-    }
-    const orgId = userOrgId || requestedOrgId || undefined;
-    if (required && !orgId) {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.EMAIL_ORG_REQUIRED,
-        "Organization ID is required",
-      );
-    }
-    return orgId;
+    return this.settings.resolveOrgId(userOrgId, requestedOrgId, required);
   }
 
-  async getTemplates(organizationId?: string, userOrgId?: string | null): Promise<EnrichedEmailTemplate[]> {
-    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, false);
-    if (!targetOrgId) {
-      return [];
-    }
-
-    const templates = await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.organizationId.eq(targetOrgId))
-      .all();
-
-    if (templates.length === 0) {
-      return this.seedDefaultTemplates(targetOrgId);
-    }
-
-    return templates.map((t) => ({
-      ...t,
-      variables: t.variables ? (JSON.parse(t.variables) as string[]) : [],
-      createdAt: new Date(toTimestamp(t.createdAt)),
-      updatedAt: new Date(toTimestamp(t.updatedAt)),
-    }));
+  async getTemplates(
+    organizationId?: string,
+    userOrgId?: string | null,
+  ): Promise<EnrichedEmailTemplate[]> {
+    return this.templates.getTemplates(organizationId, userOrgId);
   }
 
-  async seedDefaultTemplates(organizationId: string): Promise<EnrichedEmailTemplate[]> {
-    const created: EnrichedEmailTemplate[] = [];
-    for (const def of DEFAULT_TEMPLATES) {
-      const item = await this.prisma.db.orm.public.EmailTemplate.create({
-        id: crypto.randomUUID(),
-        organizationId,
-        type: def.type,
-        name: def.name,
-        subject: def.subject,
-        body: def.body,
-        enabled: true,
-        variables: JSON.stringify(def.variables),
-        updatedAt: toInstant(),
-      });
-      created.push({
-        ...item,
-        variables: def.variables,
-        createdAt: new Date(toTimestamp(item.createdAt)),
-        updatedAt: new Date(toTimestamp(item.updatedAt)),
-      });
-    }
-    return created;
+  async seedDefaultTemplates(
+    organizationId: string,
+  ): Promise<EnrichedEmailTemplate[]> {
+    return this.templates.seedDefaultTemplates(organizationId);
   }
 
-  async getTemplateByType(organizationId: string, type: string): Promise<EnrichedEmailTemplate | undefined> {
-    const templates = await this.getTemplates(organizationId);
-    return templates.find((t) => t.type === type);
+  async getTemplateByType(
+    organizationId: string,
+    type: string,
+  ): Promise<EnrichedEmailTemplate | undefined> {
+    return this.templates.getTemplateByType(organizationId, type);
   }
 
   async updateTemplate(
@@ -151,104 +125,15 @@ export class EmailService {
     dto: UpdateEmailTemplateDto,
     userOrgId?: string | null,
   ) {
-    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
-    const existing = await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.organizationId.eq(targetOrgId))
-      .where((t) => t.type.eq(type as EmailTemplateType))
-      .first();
-
-    if (!existing) {
-      await this.seedDefaultTemplates(targetOrgId);
-    }
-
-    const current = await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.organizationId.eq(targetOrgId))
-      .where((t) => t.type.eq(type as EmailTemplateType))
-      .first();
-
-    if (!current) {
-      throw new AppNotFoundException(APP_ERROR_CODES.EMAIL_TEMPLATE_NOT_FOUND, `Template ${type} not found`, { templateType: type });
-    }
-
-    const updateData: {
-      subject?: string;
-      body?: string;
-      enabled?: boolean;
-    } = {};
-    if (dto.subject !== undefined) updateData.subject = dto.subject;
-    if (dto.body !== undefined) updateData.body = dto.body;
-    if (dto.enabled !== undefined) updateData.enabled = dto.enabled;
-
-    await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.id.eq(current.id))
-      .update(updateData);
-
-    const updated = await this.prisma.db.orm.public.EmailTemplate
-      .where((t) => t.id.eq(current.id))
-      .first();
-
-    return {
-      ...updated,
-      variables: updated?.variables ? (JSON.parse(updated.variables) as string[]) : [],
-      createdAt: updated?.createdAt ? new Date(toTimestamp(updated.createdAt)) : new Date(),
-      updatedAt: updated?.updatedAt ? new Date(toTimestamp(updated.updatedAt)) : new Date(),
-    };
+    return this.templates.updateTemplate(organizationId, type, dto, userOrgId);
   }
 
   async getSettings(organizationId?: string, userOrgId?: string | null) {
-    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, false);
-    if (!targetOrgId) {
-      return null;
-    }
-
-    let settings = await this.prisma.db.orm.public.EmailSetting
-      .where((s) => s.organizationId.eq(targetOrgId))
-      .first();
-
-    if (!settings) {
-      settings = await this.prisma.db.orm.public.EmailSetting.create({
-        id: crypto.randomUUID(),
-        organizationId: targetOrgId,
-        provider: "SIMULATED",
-        fromName: "Recruitment Team",
-        fromEmail: "careers@workspace.com",
-        smtpHost: null,
-        smtpPort: null,
-        smtpUser: null,
-        smtpPass: null,
-        resendApiKey: null,
-        sendgridApiKey: null,
-        updatedAt: toInstant(),
-      });
-    }
-
-    return {
-      ...settings,
-      smtpPass: this.encryptionService.mask(settings.smtpPass),
-      resendApiKey: this.encryptionService.mask(settings.resendApiKey),
-      sendgridApiKey: this.encryptionService.mask(settings.sendgridApiKey),
-    };
+    return this.settings.getSettings(organizationId, userOrgId);
   }
 
   async getRawSettings(organizationId: string) {
-    if (!organizationId) {
-      return null;
-    }
-
-    const settings = await this.prisma.db.orm.public.EmailSetting
-      .where((s) => s.organizationId.eq(organizationId))
-      .first();
-
-    if (!settings) {
-      return this.getSettings(organizationId);
-    }
-
-    return {
-      ...settings,
-      smtpPass: this.encryptionService.decrypt(settings.smtpPass),
-      resendApiKey: this.encryptionService.decrypt(settings.resendApiKey),
-      sendgridApiKey: this.encryptionService.decrypt(settings.sendgridApiKey),
-    };
+    return this.settings.getRawSettings(organizationId);
   }
 
   async updateSettings(
@@ -256,65 +141,7 @@ export class EmailService {
     dto: UpdateEmailSettingDto,
     userOrgId?: string | null,
   ) {
-    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
-    const rawCurrent = await this.prisma.db.orm.public.EmailSetting
-      .where((s) => s.organizationId.eq(targetOrgId))
-      .first();
-
-    const currentId = rawCurrent?.id || (await this.getSettings(targetOrgId))?.id;
-
-    if (!currentId) {
-      throw new AppNotFoundException(APP_ERROR_CODES.EMAIL_SETTINGS_NOT_FOUND, "Email settings not found");
-    }
-
-    interface EmailSettingUpdatePayload {
-      provider?: string;
-      fromName?: string;
-      fromEmail?: string;
-      smtpHost?: string | null;
-      smtpPort?: number | null;
-      smtpUser?: string | null;
-      smtpPass?: string | null;
-      resendApiKey?: string | null;
-      sendgridApiKey?: string | null;
-    }
-
-    const updateData: EmailSettingUpdatePayload = {};
-    if (dto.provider !== undefined) updateData.provider = dto.provider;
-    if (dto.fromName !== undefined) updateData.fromName = dto.fromName;
-    if (dto.fromEmail !== undefined) updateData.fromEmail = dto.fromEmail;
-    if (dto.smtpHost !== undefined) updateData.smtpHost = dto.smtpHost;
-    if (dto.smtpPort !== undefined) updateData.smtpPort = dto.smtpPort;
-    if (dto.smtpUser !== undefined) updateData.smtpUser = dto.smtpUser;
-
-    // Credentials handling with AES-256-GCM encryption
-    if (dto.smtpPass !== undefined) {
-      if (dto.smtpPass && !dto.smtpPass.startsWith("•")) {
-        updateData.smtpPass = this.encryptionService.encrypt(dto.smtpPass);
-      } else if (!dto.smtpPass) {
-        updateData.smtpPass = null;
-      }
-    }
-    if (dto.resendApiKey !== undefined) {
-      if (dto.resendApiKey && !dto.resendApiKey.startsWith("•")) {
-        updateData.resendApiKey = this.encryptionService.encrypt(dto.resendApiKey);
-      } else if (!dto.resendApiKey) {
-        updateData.resendApiKey = null;
-      }
-    }
-    if (dto.sendgridApiKey !== undefined) {
-      if (dto.sendgridApiKey && !dto.sendgridApiKey.startsWith("•")) {
-        updateData.sendgridApiKey = this.encryptionService.encrypt(dto.sendgridApiKey);
-      } else if (!dto.sendgridApiKey) {
-        updateData.sendgridApiKey = null;
-      }
-    }
-
-    await this.prisma.db.orm.public.EmailSetting
-      .where((s) => s.id.eq(currentId))
-      .update(updateData);
-
-    return this.getSettings(targetOrgId);
+    return this.settings.updateSettings(organizationId, dto, userOrgId);
   }
 
   async sendEmail(
@@ -323,39 +150,7 @@ export class EmailService {
     senderUser?: { id?: string; name?: string; email?: string },
     userOrgId?: string | null,
   ) {
-    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
-    if (this.emailQueue) {
-      try {
-        const candidateKey = dto.candidateId || dto.to.toLowerCase();
-        const appKey = dto.applicationId || "general";
-        const templateKey = dto.templateType || "custom";
-        const timeBucket = Math.floor(Date.now() / (5 * 60 * 1000));
-        const deterministicJobId = `email:${targetOrgId}:${templateKey}:${candidateKey}:${appKey}:${timeBucket}`;
-
-        const job = await this.emailQueue.add(
-          "send-email",
-          { dto, organizationId: targetOrgId, senderUser },
-          {
-            jobId: deterministicJobId,
-            attempts: 3,
-            backoff: {
-              type: "exponential",
-              delay: 1000,
-            },
-            removeOnComplete: true,
-          },
-        );
-        return {
-          id: job.id,
-          status: "QUEUED",
-          message: "Email queued for delivery",
-        };
-      } catch (_queueErr) {
-        // Fallback gracefully to synchronous delivery if queue dispatch fails
-        return this.executeSendEmail(dto, targetOrgId, senderUser);
-      }
-    }
-    return this.executeSendEmail(dto, targetOrgId, senderUser);
+    return this.dispatch.sendEmail(dto, organizationId, senderUser, userOrgId);
   }
 
   async queueEmail(
@@ -363,7 +158,7 @@ export class EmailService {
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },
   ) {
-    return this.sendEmail(dto, organizationId, senderUser);
+    return this.dispatch.queueEmail(dto, organizationId, senderUser);
   }
 
   async executeSendEmail(
@@ -371,78 +166,7 @@ export class EmailService {
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },
   ) {
-    const settings = await this.getRawSettings(organizationId);
-
-    const variables = dto.variables || {};
-    const renderedSubject = interpolate(dto.subject, variables);
-    const renderedBody = interpolate(dto.body, variables);
-
-    const fromName = senderUser?.name || settings?.fromName || "Recruitment Team";
-    const fromEmail = settings?.fromEmail || senderUser?.email || "careers@workspace.com";
-
-    const transporter = EmailTransporterFactory.create({
-      provider: settings?.provider || "SIMULATED",
-      fromName,
-      fromEmail,
-      smtpHost: settings?.smtpHost,
-      smtpPort: settings?.smtpPort,
-      smtpUser: settings?.smtpUser,
-      smtpPass: settings?.smtpPass,
-      resendApiKey: settings?.resendApiKey,
-      sendgridApiKey: settings?.sendgridApiKey,
-    });
-
-    const sendResult = await transporter.send({
-      from: `${fromName} <${fromEmail}>`,
-      to: dto.to,
-      subject: renderedSubject,
-      html: renderedBody,
-    });
-
-    const logId = crypto.randomUUID();
-    const log = await this.prisma.db.orm.public.EmailLog.create({
-      id: logId,
-      scope: "ORGANIZATION",
-      organizationId,
-      candidateId: dto.candidateId || null,
-      applicationId: dto.applicationId || null,
-      senderId: senderUser?.id || null,
-      senderName: fromName,
-      senderEmail: fromEmail,
-      recipientEmail: dto.to,
-      recipientName: dto.recipientName,
-      templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
-      subject: renderedSubject,
-      body: renderedBody,
-      status: sendResult.status,
-      errorMessage: sendResult.error || null,
-      updatedAt: toInstant(),
-    });
-
-    // Record candidate activity timeline event
-    if (dto.candidateId) {
-      await this.activitiesService.createActivity({
-        organizationId,
-        candidateId: dto.candidateId,
-        applicationId: dto.applicationId || null,
-        type: "EMAIL_SENT",
-        title: `Email Sent: ${renderedSubject}`,
-        description: `Sent to ${dto.recipientName} (${dto.to}) - Status: ${sendResult.status}`,
-        actorId: senderUser?.id || null,
-        actorName: senderUser?.name || settings?.fromName || "Recruiting Team",
-        actorRole: "ADMIN",
-        metadata: {
-          emailLogId: logId,
-          templateType: dto.templateType || "CUSTOM",
-          subject: renderedSubject,
-          status: sendResult.status,
-          recipientEmail: dto.to,
-          recipientName: dto.recipientName,
-        },
-      });
-    }
-
-    return log;
+    return this.dispatch.executeSendEmail(dto, organizationId, senderUser);
   }
 
   async sendTestEmail(
@@ -451,184 +175,39 @@ export class EmailService {
     senderUser?: { id?: string; name?: string },
     userOrgId?: string | null,
   ) {
-    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
-    const settings = await this.getRawSettings(targetOrgId);
-    return this.sendEmail(
-      {
-        to: dto.to,
-        recipientName: "Test Recipient",
-        subject: `[Test] Kiểm tra kết nối gửi email - ${settings?.fromName || "ATS"}`,
-        body: `<div style="font-family: sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
-  <h2 style="color: #0284c7;">Kiểm tra cấu hình Email thành công! ✅</h2>
-  <p>Email này được gửi từ hệ thống ATS để xác thực cấu hình gửi thư của bạn.</p>
-  <p><strong>Cấu hình hiện tại:</strong></p>
-  <ul>
-    <li>Provider: ${settings?.provider || "SIMULATED"}</li>
-    <li>From Name: ${settings?.fromName || "Recruitment Team"}</li>
-    <li>From Email: ${settings?.fromEmail || "careers@workspace.com"}</li>
-  </ul>
-</div>`,
-        templateType: "CUSTOM",
-      },
-      targetOrgId,
+    return this.dispatch.sendTestEmail(
+      dto,
+      organizationId,
       senderUser,
+      userOrgId,
     );
   }
 
-  async getLogs(organizationId?: string, options?: GetLogsOptions, userOrgId?: string | null) {
-    const targetOrgId = this.resolveOrgId(userOrgId, organizationId, false);
-    if (!targetOrgId) {
-      return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
-    }
-
-    const opts = options || {};
-
-    let query = this.prisma.db.orm.public.EmailLog
-      .where((l) => l.organizationId.eq(targetOrgId));
-
-    if (opts.candidateId) {
-      query = query.where((l) => l.candidateId.eq(opts.candidateId!));
-    }
-
-    const logs = await query.all();
-    let mapped = logs
-      .map((l) => ({
-        ...l,
-        candidateName: l.recipientName || "Ứng viên",
-        candidateEmail: l.recipientEmail || "",
-      }))
-      .sort((a, b) => toTimestamp(b.sentAt) - toTimestamp(a.sentAt));
-
-    if (opts.status && opts.status !== "ALL") {
-      mapped = mapped.filter((l) => l.status === opts.status);
-    }
-
-    if (opts.search && opts.search.trim() !== "") {
-      const s = opts.search.trim().toLowerCase();
-      mapped = mapped.filter(
-        (l) =>
-          (l.candidateName || "").toLowerCase().includes(s) ||
-          (l.candidateEmail || "").toLowerCase().includes(s) ||
-          (l.subject || "").toLowerCase().includes(s),
-      );
-    }
-
-    const total = mapped.length;
-    const page = opts.page && opts.page > 0 ? opts.page : 1;
-    const limit = opts.limit && opts.limit > 0 ? opts.limit : 20;
-    const totalPages = Math.ceil(total / limit) || 1;
-
-    const data = mapped.slice((page - 1) * limit, page * limit);
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-    };
+  async getLogs(
+    organizationId?: string,
+    options?: GetLogsOptions,
+    userOrgId?: string | null,
+  ) {
+    return this.dispatch.getLogs(organizationId, options, userOrgId);
   }
 
   getSystemEmailConfig() {
-    return {
-      provider: env.SYSTEM_EMAIL_PROVIDER,
-      fromName: env.SYSTEM_EMAIL_FROM_NAME,
-      fromEmail: env.SYSTEM_EMAIL_FROM_EMAIL,
-      smtpHost: env.SYSTEM_EMAIL_SMTP_HOST || null,
-      smtpPort: env.SYSTEM_EMAIL_SMTP_PORT,
-      smtpUser: env.SYSTEM_EMAIL_SMTP_USER || null,
-      smtpPass: this.encryptionService.mask(env.SYSTEM_EMAIL_SMTP_PASS || null),
-      resendApiKey: this.encryptionService.mask(env.SYSTEM_EMAIL_RESEND_API_KEY || null),
-      sendgridApiKey: this.encryptionService.mask(env.SYSTEM_EMAIL_SENDGRID_API_KEY || null),
-    };
+    return this.system.getSystemEmailConfig();
   }
 
   getRawSystemEmailConfig() {
-    return {
-      provider: env.SYSTEM_EMAIL_PROVIDER,
-      fromName: env.SYSTEM_EMAIL_FROM_NAME,
-      fromEmail: env.SYSTEM_EMAIL_FROM_EMAIL,
-      smtpHost: env.SYSTEM_EMAIL_SMTP_HOST || null,
-      smtpPort: env.SYSTEM_EMAIL_SMTP_PORT,
-      smtpUser: env.SYSTEM_EMAIL_SMTP_USER || null,
-      smtpPass: env.SYSTEM_EMAIL_SMTP_PASS || null,
-      resendApiKey: env.SYSTEM_EMAIL_RESEND_API_KEY || null,
-      sendgridApiKey: env.SYSTEM_EMAIL_SENDGRID_API_KEY || null,
-    };
+    return this.system.getRawSystemEmailConfig();
   }
 
   async sendSystemEmail(dto: SendSystemEmailDto) {
-    if (this.emailQueue) {
-      try {
-        const job = await this.emailQueue.add(
-          "send-system-email",
-          { dto },
-          {
-            attempts: 3,
-            backoff: {
-              type: "exponential",
-              delay: 1000,
-            },
-            removeOnComplete: true,
-          },
-        );
-        return {
-          id: job.id,
-          status: "QUEUED",
-          message: "System email queued for delivery",
-        };
-      } catch (_queueErr) {
-        return this.executeSendSystemEmail(dto);
-      }
-    }
-    return this.executeSendSystemEmail(dto);
+    return this.system.sendSystemEmail(dto, this.getRawSystemEmailConfig());
   }
 
   async executeSendSystemEmail(dto: SendSystemEmailDto) {
-    const config = this.getRawSystemEmailConfig();
-    const variables = dto.variables || {};
-    const renderedSubject = interpolate(dto.subject, variables);
-    const renderedBody = interpolate(dto.body, variables);
-
-    const transporter = EmailTransporterFactory.create(config);
-
-    const sendResult = await transporter.send({
-      from: `${config.fromName} <${config.fromEmail}>`,
-      to: dto.to,
-      subject: renderedSubject,
-      html: renderedBody,
-    });
-
-    const logId = crypto.randomUUID();
-    const log = await this.prisma.db.orm.public.EmailLog.create({
-      id: logId,
-      scope: "SYSTEM",
-      organizationId: dto.organizationId || null,
-      candidateId: null,
-      applicationId: null,
-      senderId: null,
-      senderName: config.fromName,
-      senderEmail: config.fromEmail,
-      recipientEmail: dto.to,
-      recipientName: dto.recipientName || dto.to,
-      templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
-      subject: renderedSubject,
-      body: renderedBody,
-      status: sendResult.status,
-      errorMessage: sendResult.error || null,
-      updatedAt: toInstant(),
-    });
-
-    return {
-      success: sendResult.success,
-      status: sendResult.status,
-      provider: config.provider,
-      to: dto.to,
-      from: `${config.fromName} <${config.fromEmail}>`,
-      subject: renderedSubject,
-      logId: log?.id || null,
-      error: sendResult.error,
-    };
+    return this.system.executeSendSystemEmail(
+      dto,
+      this.getRawSystemEmailConfig(),
+    );
   }
 
   async sendSystemTestEmail(dto: SendSystemTestEmailDto) {
@@ -651,47 +230,6 @@ export class EmailService {
   }
 
   async getSystemLogs(options?: GetLogsOptions) {
-    const opts = options || {};
-
-    const query = this.prisma.db.orm.public.EmailLog
-      .where((l) => l.scope.eq("SYSTEM"));
-
-    const logs = await query.all();
-    let mapped = logs
-      .map((l) => ({
-        ...l,
-        recipientName: l.recipientName || "Recipient",
-        recipientEmail: l.recipientEmail || "",
-      }))
-      .sort((a, b) => toTimestamp(b.sentAt) - toTimestamp(a.sentAt));
-
-    if (opts.status && opts.status !== "ALL") {
-      mapped = mapped.filter((l) => l.status === opts.status);
-    }
-
-    if (opts.search && opts.search.trim() !== "") {
-      const s = opts.search.trim().toLowerCase();
-      mapped = mapped.filter(
-        (l) =>
-          (l.recipientName || "").toLowerCase().includes(s) ||
-          (l.recipientEmail || "").toLowerCase().includes(s) ||
-          (l.subject || "").toLowerCase().includes(s),
-      );
-    }
-
-    const total = mapped.length;
-    const page = opts.page && opts.page > 0 ? opts.page : 1;
-    const limit = opts.limit && opts.limit > 0 ? opts.limit : 20;
-    const totalPages = Math.ceil(total / limit) || 1;
-
-    const data = mapped.slice((page - 1) * limit, page * limit);
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-    };
+    return this.system.getSystemLogs(options);
   }
 }

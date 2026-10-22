@@ -1,5 +1,7 @@
 export const DEMO_SEED_PASSWORD =
-  process.env.DEMO_SEED_PASSWORD || "dev-seed-password-2026";
+  process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD ||
+  process.env.DEMO_SEED_PASSWORD ||
+  "";
 export const DEMO_PASSWORD = DEMO_SEED_PASSWORD;
 
 export const DEMO_ACCOUNTS = {

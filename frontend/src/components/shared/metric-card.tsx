@@ -1,7 +1,8 @@
 import type { ReactNode, ComponentType, SVGProps } from "react";
 import { cn } from "cn";
 
-export type MetricCardColor = "blue" | "indigo" | "emerald" | "amber" | "rose" | "slate";
+export type MetricCardColor =
+  "blue" | "indigo" | "emerald" | "amber" | "rose" | "slate";
 
 export interface MetricCardProps {
   label: ReactNode;
@@ -69,15 +70,8 @@ export function MetricCard({
 }: MetricCardProps) {
   const styles = COLOR_STYLES[color] || COLOR_STYLES.blue;
 
-  return (
-    <div
-      onClick={onClick}
-      className={cn(
-        "p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs",
-        onClick && "cursor-pointer hover:border-slate-300 dark:hover:border-slate-700",
-        className
-      )}
-    >
+  const content = (
+    <>
       <div className="min-w-0 pr-3">
         <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">
           {label}
@@ -90,10 +84,13 @@ export function MetricCard({
             <span
               className={cn(
                 "text-[11px] font-semibold",
-                badge.variant === "success" && "text-emerald-600 dark:text-emerald-400",
-                badge.variant === "warning" && "text-amber-600 dark:text-amber-400",
+                badge.variant === "success" &&
+                  "text-emerald-600 dark:text-emerald-400",
+                badge.variant === "warning" &&
+                  "text-amber-600 dark:text-amber-400",
                 badge.variant === "info" && "text-blue-600 dark:text-blue-400",
-                (!badge.variant || badge.variant === "neutral") && "text-slate-500 dark:text-slate-400"
+                (!badge.variant || badge.variant === "neutral") &&
+                  "text-slate-500 dark:text-slate-400",
               )}
             >
               {badge.text}
@@ -112,11 +109,37 @@ export function MetricCard({
           "h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 border transition-transform",
           styles.iconBg,
           styles.iconColor,
-          styles.iconBorder
+          styles.iconBorder,
         )}
       >
         <Icon className="h-5 w-5" />
       </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "w-full text-left p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs cursor-pointer hover:border-slate-300 dark:hover:border-slate-700",
+          className,
+        )}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-xs",
+        className,
+      )}
+    >
+      {content}
     </div>
   );
 }

@@ -6,20 +6,37 @@ const mockCreateInviteMutateAsync = vi.fn();
 const mockRevokeInviteMutateAsync = vi.fn();
 const mockUpdateRoleMutateAsync = vi.fn();
 const mockRemoveMemberMutateAsync = vi.fn();
+const mockTransferOwnershipMutateAsync = vi.fn();
 const mockRefetchLinks = vi.fn();
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
-    user: { id: "user-admin", name: "Admin User", email: "admin@haihire.vn", role: "ADMIN" },
+    user: {
+      id: "user-admin",
+      name: "Admin User",
+      email: "admin@haihire.vn",
+      role: "ADMIN",
+    },
     canEdit: true,
+    isOwner: true,
   }),
 }));
 
 vi.mock("@/hooks/use-queries", () => ({
   useOrgMembers: () => ({
     data: [
-      { id: "mem-1", name: "Nguyen Recruiter", email: "recruiter@haihire.vn", role: "ADMIN" },
-      { id: "mem-2", name: "Tran Interviewer", email: "interviewer@haihire.vn", role: "MEMBER" },
+      {
+        id: "mem-1",
+        name: "Nguyen Recruiter",
+        email: "recruiter@haihire.vn",
+        role: "ADMIN",
+      },
+      {
+        id: "mem-2",
+        name: "Tran Interviewer",
+        email: "interviewer@haihire.vn",
+        role: "MEMBER",
+      },
     ],
     isLoading: false,
   }),
@@ -52,6 +69,10 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: mockRemoveMemberMutateAsync,
     isPending: false,
   }),
+  useTransferOwnershipMutation: () => ({
+    mutateAsync: mockTransferOwnershipMutateAsync,
+    isPending: false,
+  }),
 }));
 
 vi.mock("@/i18n", () => ({
@@ -67,6 +88,12 @@ vi.mock("@/i18n", () => ({
         "members.sendInvite": "Gửi lời mời",
         "members.roleMember": "Member",
         "members.roleAdmin": "Admin",
+        "members.transferOwnership": "Chuyển quyền sở hữu",
+        "members.transferOwnershipConfirmTitle": "Chuyển giao quyền sở hữu",
+        "members.transferOwnershipConfirmDesc": "Chuyển giao cho",
+        "members.transferOwnershipConfirmNote": "Bạn sẽ là Admin",
+        "members.transferOwnershipConfirmButton": "Chuyển giao",
+        "members.transferOwnershipSuccess": "Thành công",
         "common.cancel": "Hủy",
       };
       return dict[key] || key;
@@ -109,10 +136,10 @@ describe("MembersSettingsPage Component", () => {
     await waitFor(
       () => {
         expect(
-          screen.getByText(/Invitation sent to newbie@haihire.vn/)
+          screen.getByText(/Invitation sent to newbie@haihire.vn/),
         ).toBeInTheDocument();
       },
-      { timeout: 2000 }
+      { timeout: 2000 },
     );
   });
 
@@ -126,16 +153,43 @@ describe("MembersSettingsPage Component", () => {
     fireEvent.click(openCreateBtn);
 
     // Click confirm button inside the revealed form
-    const confirmCreateBtn = screen.getByRole("button", { name: /Tạo liên kết/ });
+    const confirmCreateBtn = screen.getByRole("button", {
+      name: /Tạo liên kết/,
+    });
     fireEvent.click(confirmCreateBtn);
 
     await waitFor(() => {
       expect(mockCreateInviteMutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
           role: "MEMBER",
-        })
+        }),
       );
       expect(mockRefetchLinks).toHaveBeenCalled();
+    });
+  });
+
+  it("renders transfer ownership option for organization owner and executes mutation on confirm", async () => {
+    mockTransferOwnershipMutateAsync.mockResolvedValueOnce({ success: true });
+
+    render(<MembersSettingsPage />);
+
+    // Click member action button for Nguyen Recruiter (mem-1)
+    const actionButtons = screen.getAllByTitle("Member actions");
+    expect(actionButtons.length).toBeGreaterThan(0);
+    fireEvent.click(actionButtons[0]);
+
+    // Expect "Transfer Ownership" button to be visible
+    const transferBtn = screen.getByText("Chuyển quyền sở hữu");
+    expect(transferBtn).toBeInTheDocument();
+    fireEvent.click(transferBtn);
+
+    // Expect modal confirm button to be present and clickable
+    const confirmBtn = screen.getByRole("button", { name: "Chuyển giao" });
+    expect(confirmBtn).toBeInTheDocument();
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(mockTransferOwnershipMutateAsync).toHaveBeenCalledWith("mem-1");
     });
   });
 });

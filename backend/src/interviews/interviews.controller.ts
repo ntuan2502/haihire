@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.decorator";
+import { RequirePermission } from "../auth/require-permission.decorator";
 import { InterviewsService } from "./interviews.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
@@ -64,7 +64,7 @@ export class InterviewsController {
 
   @Post()
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("interview:create")
   create(
     @Body(DtoPipe(CreateInterviewDto)) dto: CreateInterviewDto,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -72,9 +72,20 @@ export class InterviewsController {
     return this.interviewsService.create(dto, req?.user?.organizationId);
   }
 
+  @Patch(":id/scorecard")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("interview:scorecard_submit")
+  submitScorecard(
+    @Param("id") id: string,
+    @Body(DtoPipe(UpdateInterviewDto)) dto: UpdateInterviewDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.update(id, dto, req?.user?.organizationId);
+  }
+
   @Patch(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("interview:update")
   update(
     @Param("id") id: string,
     @Body(DtoPipe(UpdateInterviewDto)) dto: UpdateInterviewDto,
@@ -85,7 +96,7 @@ export class InterviewsController {
 
   @Delete(":id")
   @UseGuards(AuthGuard("jwt"), RolesGuard)
-  @Roles("ADMIN")
+  @RequirePermission("interview:delete")
   remove(
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
@@ -93,4 +104,3 @@ export class InterviewsController {
     return this.interviewsService.remove(id, req?.user?.organizationId);
   }
 }
-

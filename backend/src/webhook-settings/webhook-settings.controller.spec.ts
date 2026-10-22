@@ -3,9 +3,7 @@ import { WebhookSettingsController } from "./webhook-settings.controller";
 import { WebhookSettingsService } from "./webhook-settings.service";
 import { RolesGuard } from "../auth/roles.guard";
 import { Reflector } from "@nestjs/core";
-import {
-  AppForbiddenException,
-} from "../common/app-exception";
+import { AppForbiddenException } from "../common/app-exception";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { CreateWebhookSettingDto } from "./dto/create-webhook-setting.dto";
 import type { ExecutionContext } from "@nestjs/common";
@@ -84,7 +82,10 @@ describe("WebhookSettingsController", () => {
       webhookUrl: "https://api.telegram.org/bot***/sendMessage",
     });
 
-    const result = await controller.findOne("setting-1", adminReq as unknown as ReqParam);
+    const result = await controller.findOne(
+      "setting-1",
+      adminReq as unknown as ReqParam,
+    );
     expect(mockService.findOne).toHaveBeenCalledWith("setting-1", "org-1");
     expect(result.id).toBe("setting-1");
   });
@@ -103,7 +104,10 @@ describe("WebhookSettingsController", () => {
       webhookUrl: "https://api.telegram.org/bot***/sendMessage",
     });
 
-    const result = await controller.create(adminReq as unknown as ReqParam, dto);
+    const result = await controller.create(
+      adminReq as unknown as ReqParam,
+      dto,
+    );
     expect(mockService.create).toHaveBeenCalledWith("org-1", "admin-1", dto);
     expect(result.id).toBe("new-setting");
   });
@@ -115,7 +119,11 @@ describe("WebhookSettingsController", () => {
       isEnabled: false,
     });
 
-    const result = await controller.update("setting-1", adminReq as unknown as ReqParam, updateDto);
+    const result = await controller.update(
+      "setting-1",
+      adminReq as unknown as ReqParam,
+      updateDto,
+    );
     expect(mockService.update).toHaveBeenCalledWith(
       "setting-1",
       "org-1",
@@ -128,7 +136,10 @@ describe("WebhookSettingsController", () => {
   it("Case 5: delete delegates to service with id and orgId", async () => {
     mockService.delete.mockResolvedValue({ success: true });
 
-    const result = await controller.delete("setting-1", adminReq as unknown as ReqParam);
+    const result = await controller.delete(
+      "setting-1",
+      adminReq as unknown as ReqParam,
+    );
     expect(mockService.delete).toHaveBeenCalledWith("setting-1", "org-1");
     expect(result).toEqual({ success: true });
   });
@@ -143,15 +154,18 @@ describe("WebhookSettingsController", () => {
       message: "Webhook test sent successfully",
     });
 
-    const result = await controller.testConnection(adminReq as unknown as ReqParam, testDto);
+    const result = await controller.testConnection(
+      adminReq as unknown as ReqParam,
+      testDto,
+    );
     expect(mockService.testConnection).toHaveBeenCalledWith("org-1", testDto);
     expect(result.success).toBe(true);
   });
 
   it("Case 7: throws AppForbiddenException if organizationId context is missing", async () => {
-    await expect(controller.findAll(missingOrgReq as unknown as ReqParam)).rejects.toThrow(
-      AppForbiddenException,
-    );
+    await expect(
+      controller.findAll(missingOrgReq as unknown as ReqParam),
+    ).rejects.toThrow(AppForbiddenException);
   });
 
   it("Case 8: RolesGuard blocks MEMBER when role is not ADMIN", () => {
@@ -179,7 +193,40 @@ describe("WebhookSettingsController", () => {
     };
 
     await expect(
-      pipe.transform(invalidBody, { type: "body", metatype: CreateWebhookSettingDto }),
+      pipe.transform(invalidBody, {
+        type: "body",
+        metatype: CreateWebhookSettingDto,
+      }),
     ).rejects.toThrow();
+  });
+
+  it("Case 10: methods require settings:manage_integrations permission, rejecting MEMBER", () => {
+    const reflector = new Reflector();
+    const guard = new RolesGuard(reflector);
+
+    const mockContext = {
+      getHandler: () => controller.findAll,
+      getClass: () => WebhookSettingsController,
+      switchToHttp: () => ({
+        getRequest: () => memberReq,
+      }),
+    } as unknown as ExecutionContext;
+
+    expect(() => guard.canActivate(mockContext)).toThrow(AppForbiddenException);
+  });
+
+  it("Case 11: methods allow ADMIN with settings:manage_integrations permission", () => {
+    const reflector = new Reflector();
+    const guard = new RolesGuard(reflector);
+
+    const mockContext = {
+      getHandler: () => controller.findAll,
+      getClass: () => WebhookSettingsController,
+      switchToHttp: () => ({
+        getRequest: () => adminReq,
+      }),
+    } as unknown as ExecutionContext;
+
+    expect(guard.canActivate(mockContext)).toBe(true);
   });
 });

@@ -3,7 +3,9 @@ import type { Organization, User, InviteLink } from "@/types";
 
 export const organizationsApi = {
   getPublicOrg: async (slug: string): Promise<Organization> => {
-    const response = await api.get<Organization>(`/organizations/public/${slug}`);
+    const response = await api.get<Organization>(
+      `/organizations/public/${slug}`,
+    );
     return response.data;
   },
 
@@ -17,8 +19,14 @@ export const organizationsApi = {
     return response.data;
   },
 
-  switchOrg: async (organizationId: string): Promise<{ success: boolean; organization: Organization; user: User }> => {
-    const response = await api.post<{ success: boolean; organization: Organization; user: User }>("/organizations/switch", { organizationId });
+  switchOrg: async (
+    organizationId: string,
+  ): Promise<{ success: boolean; organization: Organization; user: User }> => {
+    const response = await api.post<{
+      success: boolean;
+      organization: Organization;
+      user: User;
+    }>("/organizations/switch", { organizationId });
     return response.data;
   },
 
@@ -42,21 +50,38 @@ export const organizationsApi = {
     return response.data;
   },
 
+  transferOwnership: async (
+    newOwnerUserId: string,
+  ): Promise<{ success: boolean; newOwnerId: string }> => {
+    const response = await api.post<{ success: boolean; newOwnerId: string }>(
+      "/organizations/my/transfer-ownership",
+      { newOwnerUserId },
+    );
+    return response.data;
+  },
+
   createInviteLink: async (data: {
     role?: string;
     expiresIn?: string;
     maxUses?: string;
   }): Promise<InviteLink> => {
-    const response = await api.post<InviteLink>("/organizations/my/invite-links", data);
+    const response = await api.post<InviteLink>(
+      "/organizations/my/invite-links",
+      data,
+    );
     return response.data;
   },
 
   getInviteLinks: async (): Promise<InviteLink[]> => {
-    const response = await api.get<InviteLink[]>("/organizations/my/invite-links");
+    const response = await api.get<InviteLink[]>(
+      "/organizations/my/invite-links",
+    );
     return response.data;
   },
 
-  revokeInviteLink: async (id: string): Promise<{ success: boolean; message: string }> => {
+  revokeInviteLink: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete<{ success: boolean; message: string }>(
       `/organizations/my/invite-links/${id}`,
     );
@@ -74,7 +99,9 @@ export const organizationsApi = {
     expiresAt?: string | null;
     message?: string;
   }> => {
-    const response = await api.get(`/organizations/invite-links/public/${token}`);
+    const response = await api.get(
+      `/organizations/invite-links/public/${token}`,
+    );
     return response.data;
   },
 
@@ -86,7 +113,9 @@ export const organizationsApi = {
     role: string;
     message: string;
   }> => {
-    const response = await api.post(`/organizations/invite-links/join/${token}`);
+    const response = await api.post(
+      `/organizations/invite-links/join/${token}`,
+    );
     return response.data;
   },
 

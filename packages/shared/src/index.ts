@@ -1,4 +1,5 @@
 export * from "./brand";
+export * from "./permissions";
 export * from "./organizations";
 export * from "./jobs";
 export * from "./candidates";

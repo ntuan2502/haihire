@@ -355,5 +355,30 @@ describe("OrganizationsCoreService", () => {
         code: APP_ERROR_CODES.ORG_USER_NO_ORG,
       });
     });
+
+    it("after ownership transfer: old owner calling deleteMyOrg throws 403, new owner calling deleteMyOrg succeeds (200 OK)", async () => {
+      // 1. Initial state: user-owner is the owner
+      const initialOrg = organizationTable.store.find((o) => o.id === "org-1");
+      expect(initialOrg?.ownerId).toBe("user-owner");
+
+      // 2. Transfer ownership to user-admin
+      const transferRes = await service.transferOwnership(
+        "user-owner",
+        "user-admin",
+      );
+      expect(transferRes.success).toBe(true);
+      expect(transferRes.newOwnerId).toBe("user-admin");
+      expect(initialOrg?.ownerId).toBe("user-admin");
+
+      // 3. Old owner calls deleteMyOrg -> throws 403 AppForbiddenException
+      await expect(service.deleteMyOrg("user-owner")).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+      });
+
+      // 4. New owner calls deleteMyOrg -> succeeds 200 OK
+      const deleteRes = await service.deleteMyOrg("user-admin");
+      expect(deleteRes.success).toBe(true);
+      expect(deleteRes.message).toBe("Organization deleted successfully");
+    });
   });
 });

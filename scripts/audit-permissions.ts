@@ -32,7 +32,180 @@ function getAllFiles(dir: string, ext = ".ts"): string[] {
   return results;
 }
 
-export function runPermissionAudit(): {
+export function parseControllerContent(
+  content: string,
+  file: string = "dummy.controller.ts",
+): {
+  endpoints: EndpointAudit[];
+  violations: string[];
+} {
+  const lines = content.split("\n");
+  const controllerName = path.basename(file);
+  const endpoints: EndpointAudit[] = [];
+  const violations: string[] = [];
+
+  // 1. Inspect Class Level Header
+  const classIndex = lines.findIndex((l) => /export\s+class\s+/.test(l));
+  const classHeader =
+    classIndex !== -1 ? lines.slice(0, classIndex).join("\n") : "";
+
+  let baseRoute = "";
+  const baseRouteMatch = classHeader.match(
+    /@Controller\((?:["']([^"']*)["'])?\)/,
+  );
+  if (baseRouteMatch) {
+    baseRoute = baseRouteMatch[1] || "";
+  }
+
+  const classHasJwt =
+    classHeader.includes("JwtAuthGuard") ||
+    classHeader.includes('AuthGuard("jwt")') ||
+    classHeader.includes("AuthGuard('jwt')");
+  const classHasRoles = classHeader.includes("RolesGuard");
+
+  let classPermission: string | null = null;
+  const classPermMatch = classHeader.match(
+    /@RequirePermission\((?:["']([^"']*)["'])\)/,
+  );
+  if (classPermMatch) {
+    classPermission = classPermMatch[1];
+  }
+
+  // 2. Inspect Method Handlers
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const methodMatch = line.match(
+      /@(Get|Post|Put|Patch|Delete)\((?:["']([^"']*)["'])?\)/,
+    );
+    if (methodMatch) {
+      const httpMethod = methodMatch[1].toUpperCase();
+      const subRoute = methodMatch[2] || "";
+
+      // Find method name
+      let methodName = "unknown";
+      for (let j = i + 1; j < Math.min(lines.length, i + 15); j++) {
+        const nextLine = lines[j];
+        const fnMatch = nextLine.match(/(?:async\s+)?([a-zA-Z0-9_]+)\s*\(/);
+        if (fnMatch && !fnMatch[1].startsWith("@") && fnMatch[1] !== "if") {
+          methodName = fnMatch[1];
+          break;
+        }
+      }
+
+      // Method level guards
+      let methodHasJwt = false;
+      let methodHasRoles = false;
+      let methodPermission: string | null = null;
+
+      // Collect preceding lines until another method or closing brace
+      for (let k = i - 1; k >= Math.max(0, i - 8); k--) {
+        const prevLine = lines[k].trim();
+        if (prevLine.startsWith("@UseGuards(")) {
+          if (
+            prevLine.includes("JwtAuthGuard") ||
+            prevLine.includes('AuthGuard("jwt")') ||
+            prevLine.includes("AuthGuard('jwt')")
+          ) {
+            methodHasJwt = true;
+          }
+          if (prevLine.includes("RolesGuard")) {
+            methodHasRoles = true;
+          }
+        }
+        if (prevLine.startsWith("@RequirePermission(")) {
+          const m = prevLine.match(
+            /@RequirePermission\((?:["']([^"']*)["'])\)/,
+          );
+          if (m) methodPermission = m[1];
+        }
+        if (
+          prevLine.endsWith("}") ||
+          prevLine.includes("class ") ||
+          prevLine.includes("@Get") ||
+          prevLine.includes("@Post") ||
+          prevLine.includes("@Put") ||
+          prevLine.includes("@Patch") ||
+          prevLine.includes("@Delete")
+        ) {
+          break;
+        }
+      }
+
+      // Also check if @RequirePermission is placed right after @Get/@Post
+      for (let k = i + 1; k < Math.min(lines.length, i + 6); k++) {
+        const nextLine = lines[k].trim();
+        if (nextLine.startsWith("@RequirePermission(")) {
+          const m = nextLine.match(
+            /@RequirePermission\((?:["']([^"']*)["'])\)/,
+          );
+          if (m) methodPermission = m[1];
+        }
+        if (nextLine.startsWith("@UseGuards(")) {
+          if (
+            nextLine.includes("JwtAuthGuard") ||
+            nextLine.includes('AuthGuard("jwt")') ||
+            nextLine.includes("AuthGuard('jwt')")
+          ) {
+            methodHasJwt = true;
+          }
+          if (nextLine.includes("RolesGuard")) {
+            methodHasRoles = true;
+          }
+        }
+        if (nextLine.includes("(") && !nextLine.startsWith("@")) {
+          break;
+        }
+      }
+
+      const effectiveJwt = classHasJwt || methodHasJwt;
+      const effectiveRoles = classHasRoles || methodHasRoles;
+      const effectivePermission = methodPermission || classPermission;
+      const permissionSource: "method" | "class" | "none" = methodPermission
+        ? "method"
+        : classPermission
+          ? "class"
+          : "none";
+
+      const fullRoute = `/${baseRoute}${subRoute ? `/${subRoute}` : ""}`
+        .replace(/\/+/g, "/")
+        .replace(/\/$/, "");
+
+      const endpoint: EndpointAudit = {
+        controller: controllerName,
+        controllerFile: path
+          .relative(path.resolve(__dirname, ".."), file)
+          .replace(/\\/g, "/"),
+        methodName,
+        httpMethod,
+        fullRoute: fullRoute || "/",
+        hasJwtGuard: effectiveJwt,
+        hasRolesGuard: effectiveRoles,
+        permission: effectivePermission,
+        permissionSource,
+        isPublic: !effectiveJwt,
+        line: i + 1,
+      };
+
+      endpoints.push(endpoint);
+
+      // Validation: If permission is required, RolesGuard and JwtAuthGuard MUST be active
+      if (effectivePermission && !effectiveRoles) {
+        violations.push(
+          `[MISSING ROLES_GUARD] ${endpoint.httpMethod} ${endpoint.fullRoute} (${endpoint.controller}#${endpoint.methodName}:${endpoint.line}) requires '${effectivePermission}' but has no RolesGuard!`,
+        );
+      }
+      if (effectivePermission && !effectiveJwt) {
+        violations.push(
+          `[MISSING JWT_GUARD] ${endpoint.httpMethod} ${endpoint.fullRoute} (${endpoint.controller}#${endpoint.methodName}:${endpoint.line}) requires '${effectivePermission}' but has no JwtAuthGuard!`,
+        );
+      }
+    }
+  }
+
+  return { endpoints, violations };
+}
+
+export function runPermissionAudit(scanDir: string = backendDir): {
   controllersScanned: number;
   endpoints: EndpointAudit[];
   permissionProtectedCount: number;
@@ -42,7 +215,7 @@ export function runPermissionAudit(): {
   publicCount: number;
   violations: string[];
 } {
-  const controllerFiles = getAllFiles(backendDir).filter((f) =>
+  const controllerFiles = getAllFiles(scanDir).filter((f) =>
     f.endsWith(".controller.ts"),
   );
 
@@ -51,172 +224,9 @@ export function runPermissionAudit(): {
 
   for (const file of controllerFiles) {
     const content = fs.readFileSync(file, "utf8");
-    const lines = content.split("\n");
-    const controllerName = path.basename(file);
-
-    // 1. Inspect Class Level Header
-    const classIndex = lines.findIndex((l) => /export\s+class\s+/.test(l));
-    const classHeader =
-      classIndex !== -1 ? lines.slice(0, classIndex).join("\n") : "";
-
-    let baseRoute = "";
-    const baseRouteMatch = classHeader.match(
-      /@Controller\((?:["']([^"']*)["'])?\)/,
-    );
-    if (baseRouteMatch) {
-      baseRoute = baseRouteMatch[1] || "";
-    }
-
-    const classHasJwt =
-      classHeader.includes("JwtAuthGuard") ||
-      classHeader.includes('AuthGuard("jwt")') ||
-      classHeader.includes("AuthGuard('jwt')");
-    const classHasRoles = classHeader.includes("RolesGuard");
-
-    let classPermission: string | null = null;
-    const classPermMatch = classHeader.match(
-      /@RequirePermission\((?:["']([^"']*)["'])\)/,
-    );
-    if (classPermMatch) {
-      classPermission = classPermMatch[1];
-    }
-
-    // 2. Inspect Method Handlers
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const methodMatch = line.match(
-        /@(Get|Post|Put|Patch|Delete)\((?:["']([^"']*)["'])?\)/,
-      );
-      if (methodMatch) {
-        const httpMethod = methodMatch[1].toUpperCase();
-        const subRoute = methodMatch[2] || "";
-
-        // Check decorators surrounding this endpoint (lookback 5 lines, lookahead 5 lines)
-        const windowStart = Math.max(0, i - 6);
-        const windowEnd = Math.min(lines.length, i + 8);
-        const windowText = lines.slice(windowStart, windowEnd).join("\n");
-
-        // Find method name
-        let methodName = "unknown";
-        for (let j = i + 1; j < Math.min(lines.length, i + 15); j++) {
-          const nextLine = lines[j];
-          const fnMatch = nextLine.match(/(?:async\s+)?([a-zA-Z0-9_]+)\s*\(/);
-          if (fnMatch && !fnMatch[1].startsWith("@") && fnMatch[1] !== "if") {
-            methodName = fnMatch[1];
-            break;
-          }
-        }
-
-        // Method level guards
-        // Check decorators specifically attached before the method name
-        let methodHasJwt = false;
-        let methodHasRoles = false;
-        let methodPermission: string | null = null;
-
-        // Collect preceding lines until another method or closing brace
-        for (let k = i - 1; k >= Math.max(0, i - 8); k--) {
-          const prevLine = lines[k].trim();
-          if (prevLine.startsWith("@UseGuards(")) {
-            if (
-              prevLine.includes("JwtAuthGuard") ||
-              prevLine.includes('AuthGuard("jwt")') ||
-              prevLine.includes("AuthGuard('jwt')")
-            ) {
-              methodHasJwt = true;
-            }
-            if (prevLine.includes("RolesGuard")) {
-              methodHasRoles = true;
-            }
-          }
-          if (prevLine.startsWith("@RequirePermission(")) {
-            const m = prevLine.match(
-              /@RequirePermission\((?:["']([^"']*)["'])\)/,
-            );
-            if (m) methodPermission = m[1];
-          }
-          if (
-            prevLine.endsWith("}") ||
-            prevLine.includes("class ") ||
-            prevLine.includes("@Get") ||
-            prevLine.includes("@Post") ||
-            prevLine.includes("@Put") ||
-            prevLine.includes("@Patch") ||
-            prevLine.includes("@Delete")
-          ) {
-            break;
-          }
-        }
-
-        // Also check if @RequirePermission is placed right after @Get/@Post
-        for (let k = i + 1; k < Math.min(lines.length, i + 6); k++) {
-          const nextLine = lines[k].trim();
-          if (nextLine.startsWith("@RequirePermission(")) {
-            const m = nextLine.match(
-              /@RequirePermission\((?:["']([^"']*)["'])\)/,
-            );
-            if (m) methodPermission = m[1];
-          }
-          if (nextLine.startsWith("@UseGuards(")) {
-            if (
-              nextLine.includes("JwtAuthGuard") ||
-              nextLine.includes('AuthGuard("jwt")') ||
-              nextLine.includes("AuthGuard('jwt')")
-            ) {
-              methodHasJwt = true;
-            }
-            if (nextLine.includes("RolesGuard")) {
-              methodHasRoles = true;
-            }
-          }
-          if (nextLine.includes("(") && !nextLine.startsWith("@")) {
-            break;
-          }
-        }
-
-        const effectiveJwt = classHasJwt || methodHasJwt;
-        const effectiveRoles = classHasRoles || methodHasRoles;
-        const effectivePermission = methodPermission || classPermission;
-        const permissionSource: "method" | "class" | "none" = methodPermission
-          ? "method"
-          : classPermission
-            ? "class"
-            : "none";
-
-        const fullRoute = `/${baseRoute}${subRoute ? `/${subRoute}` : ""}`
-          .replace(/\/+/g, "/")
-          .replace(/\/$/, "");
-
-        const endpoint: EndpointAudit = {
-          controller: controllerName,
-          controllerFile: path
-            .relative(path.resolve(__dirname, ".."), file)
-            .replace(/\\/g, "/"),
-          methodName,
-          httpMethod,
-          fullRoute: fullRoute || "/",
-          hasJwtGuard: effectiveJwt,
-          hasRolesGuard: effectiveRoles,
-          permission: effectivePermission,
-          permissionSource,
-          isPublic: !effectiveJwt,
-          line: i + 1,
-        };
-
-        endpoints.push(endpoint);
-
-        // Validation: If permission is required, RolesGuard and JwtAuthGuard MUST be active
-        if (effectivePermission && !effectiveRoles) {
-          violations.push(
-            `[MISSING ROLES_GUARD] ${endpoint.httpMethod} ${endpoint.fullRoute} (${endpoint.controller}#${endpoint.methodName}:${endpoint.line}) requires '${effectivePermission}' but has no RolesGuard!`,
-          );
-        }
-        if (effectivePermission && !effectiveJwt) {
-          violations.push(
-            `[MISSING JWT_GUARD] ${endpoint.httpMethod} ${endpoint.fullRoute} (${endpoint.controller}#${endpoint.methodName}:${endpoint.line}) requires '${effectivePermission}' but has no JwtAuthGuard!`,
-          );
-        }
-      }
-    }
+    const parsed = parseControllerContent(content, file);
+    endpoints.push(...parsed.endpoints);
+    violations.push(...parsed.violations);
   }
 
   const permissionProtectedCount = endpoints.filter(

@@ -526,4 +526,55 @@ Synchronized `docs/PROJECT_METRICS.md` with the verified state of the codebase:
 
 ---
 
-_(This report will be continuously updated as Tasks 1 through 8 are executed)._
+## 12. Task 8 — D-007 Addition & Evidence Finalization
+
+Formally recorded the completion of the Information Architecture Refactor as architectural decision **D-007** in `docs/decisions/DECISIONS.md` and compiled the comprehensive audit trail.
+
+### 12.1 Refactor Commit History
+
+All tasks were executed sequentially with atomic commits and verified via full `pnpm check:all` runs:
+
+|  #  | Task         | Commit      | Commit Message                                                                                 | Key Operational Impact                                                                                                                                   |
+| :-: | :----------- | :---------- | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|  1  | **Task 0.5** | `91c1ce6`   | `chore(refactor): relocate test artifacts and update ci references before ia refactor`         | Relocated test artifacts and updated CI Gate 12 & GitHub Actions workflows to reference `DECISIONS.md#d-001`                                             |
+|  2  | **Task 0.6** | `913bf30`   | `chore(refactor): purge tracked test screenshots and enforce gitignored artifacts`             | Purged 6 tracked binary screenshot artifacts from git and verified write-only script behavior                                                            |
+|  3  | **Task 1**   | `cd9f81e`   | `docs(decisions): consolidate remaining adrs into unified decisions log`                       | Consolidated ADR-001..ADR-003, proxy convention, and dorny action upgrade into unified `DECISIONS.md` (D-001..D-006); deleted `<docs/adr/>`              |
+|  4  | **Task 2**   | `90fd35f`   | `docs(architecture): consolidate system architecture documentation`                            | Authored canonical specifications: `system-overview.md`, `data-model.md`, `security-rbac.md`, and `conventions.md`; removed phantom Fastify/Caddy claims |
+|  5  | **Task 3**   | `43360f2`   | `chore(docs): remove transient process reports after extraction to decisions and architecture` | Purged 12 root process reports and all 102 files in `<docs/reports/>` (-23,438 lines); initialized `docs/README.md` portal                               |
+|  6  | **Task 4**   | `2603bfe`   | `chore(agents): remove stale memory files after extracting rules to docs`                      | Removed stale `.agents/memory/` files; preserved `.gitkeep` for AG Kit; updated all references to point to `conventions.md`                              |
+|  7  | **Task 5**   | `37763cb`   | `docs(agents): rewrite agents.md as single source of truth entry point`                        | Rewrote `AGENTS.md` as lean 87-line entry point with strict routing rules and stats synchronization                                                      |
+|  8  | **Task 6**   | `87c6927`   | `docs: add documentation portal and update root readme`                                        | Established `docs/README.md` documentation portal and synchronized root `README.md` documentation directory                                              |
+|  9  | **Task 7**   | `0815f3d`   | `docs: sync documentation metrics with current codebase state`                                 | Updated `docs/PROJECT_METRICS.md` to 1,019 tests, 16 CI gates, 86 endpoints, 5 roles, Express engine                                                     |
+| 10  | **Task 8**   | _(Current)_ | `docs(decisions): add d-007 phase 4 ia refactor summary and finalize evidence`                 | Recorded D-007 in `DECISIONS.md`, synthesized before/after metrics, and generated sign-off checklist                                                     |
+
+---
+
+## 13. Before & After Architecture Comparison
+
+| Dimension                          | Before Refactor (Baseline `b439cc2`)                   | After Refactor (Branch 4 Completion)                                                             | Refactor Impact & Benefit                                               |
+| :--------------------------------- | :----------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
+| **Root Process Reports**           | 12 reports polluting root directory                    | **0** (Only `README.md`, `AGENTS.md`, `CHANGELOG.md`, `CONTRIBUTING.md`)                         | Clean root workspace; zero transient files                              |
+| **Historical Milestone Reports**   | 102 files in `<docs/reports/>` (23,000+ lines)         | **0** (Purged from repository)                                                                   | Eliminated 23,438 lines of stale, fragmented reports                    |
+| **Agent Memory Files**             | 5 files in `.agents/memory/` drifting from code        | **0** (Preserved `.gitkeep` for AG Kit scaffold)                                                 | Unified all rules into canonical `conventions.md`                       |
+| **Architecture Specifications**    | 1 fragmented overview (`system-overview.md`)           | **4 canonical specifications** (`system-overview`, `data-model`, `security-rbac`, `conventions`) | Comprehensive data model, security, and conventions coverage            |
+| **Architectural Decisions (ADRs)** | 3 scattered files in `<docs/adr/>` + loose findings    | **1 unified log:** `docs/decisions/DECISIONS.md` (D-001 through D-007)                           | Consolidated single source of truth with complete rationale and history |
+| **Documentation Portal**           | None (outdated `docs/README.md` with broken links)     | **`docs/README.md`**: Complete query-to-document navigation matrix                               | Instant discoverability for human and agent workflows                   |
+| **Agent Operating Guide**          | 189-line outdated `AGENTS.md` referencing deleted ADRs | **87-line lean `AGENTS.md`**: Strict routing rules, SSOT hierarchy                               | Prevents context window dilution and agent hallucination                |
+| **CI Architecture Gates**          | 16/16 Passing                                          | **16/16 Passing continuously**                                                                   | Zero regressions across all 10 refactor commits                         |
+| **Unit & Integration Tests**       | 1,019 passed (589 backend + 430 frontend)              | **1,019 passed (589 backend + 430 frontend)**                                                    | Zero test regressions; net test count fully preserved                   |
+
+---
+
+## 14. Project Lead Sign-Off Checklist
+
+- [x] **0.1 Baseline Verified:** Started from clean branch at `b439cc2` with 16/16 passing gates.
+- [x] **0.5 & 0.6 Dependencies Resolved:** Screenshots removed, CI Gate 12 updated to scan `DECISIONS.md`, GitHub Actions updated to D-001.
+- [x] **Task 1 Consolidated Decisions:** `docs/decisions/DECISIONS.md` created with D-001 through D-006; `<docs/adr/>` purged.
+- [x] **Task 2 Architecture Specs:** Four canonical documents created under `docs/architecture/` (`system-overview.md`, `data-model.md`, `security-rbac.md`, `conventions.md`); phantom Fastify/Caddy claims removed.
+- [x] **Task 3 Process Reports Purged:** 12 root reports and 102 files in `<docs/reports/>` removed from git; zero dead links.
+- [x] **Task 4 Agent Memory Cleaned:** Stale `.agents/memory/` files removed; directory presence preserved via `.gitkeep`; `.agents/rules/` preserved.
+- [x] **Task 5 AGENTS.md Rewritten:** Root `AGENTS.md` streamlined to 87 lines as single source of truth entry point; stats block synchronized.
+- [x] **Task 6 Portal & README Updated:** `docs/README.md` documentation portal established; root `README.md` documentation links modernized.
+- [x] **Task 7 Metrics Synchronized:** `docs/PROJECT_METRICS.md` updated to 1,019 tests, 16 gates, 86 endpoints, 5 roles, Express engine.
+- [x] **Task 8 Finalized:** D-007 recorded in `DECISIONS.md`; audit trail, before/after table, and evidence finalized.
+- [x] **Continuous Green Pipeline:** Every atomic task passed full 16/16 CI gates and was immediately pushed to remote.

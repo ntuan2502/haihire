@@ -387,13 +387,6 @@ export class OrganizationsCoreService {
       );
     }
 
-    if (user.role === "MEMBER") {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
-        "Members have read-only access. Only the Organization Owner can perform this action.",
-      );
-    }
-
     const orgId = user.organizationId as string;
 
     const currentOrg = await this.prisma.db.orm.public.Organization.select(
@@ -411,6 +404,12 @@ export class OrganizationsCoreService {
     }
 
     if (currentOrg.ownerId !== userId) {
+      if (user.role === "MEMBER") {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+          "Members have read-only access. Only the Organization Owner can perform this action.",
+        );
+      }
       throw new AppForbiddenException(
         APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only the organization owner can delete this organization.",
@@ -513,6 +512,21 @@ export class OrganizationsCoreService {
         ownerId: newOwnerUserId,
         updatedAt: toInstant(),
       });
+
+      // Promote new owner to ADMIN to ensure full organizational management access
+      await tx.orm.public.User.where((u) => u.id.eq(newOwnerUserId)).update({
+        role: "ADMIN",
+        updatedAt: toInstant(),
+      });
+
+      await tx.orm.public.OrganizationMember.where((m) =>
+        m.organizationId.eq(orgId),
+      )
+        .where((m) => m.userId.eq(newOwnerUserId))
+        .update({
+          role: "ADMIN",
+          updatedAt: toInstant(),
+        });
     });
 
     this.logger.log(

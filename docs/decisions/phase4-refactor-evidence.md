@@ -164,7 +164,7 @@ To prevent breaking CI architecture gates and automated test pipelines prior to 
 
 ### 3.1 Files Moved (`git mv`)
 
-All non-report test artifacts were moved from `docs/reports/screenshots/` to `test-results/screenshots/`:
+Screenshots were moved to `test-results/` in Task 0.5, then removed entirely in Task 0.6 because `test-results/` is gitignored and does not serve audit purposes. Script `run-all-4-smoke-tests.ts` updated to write to `test-results/screenshots/` (gitignored, local-only):
 
 ```text
 R  docs/reports/screenshots/ca-1-interview-cancelled-ui-updated.png -> test-results/screenshots/ca-1-interview-cancelled-ui-updated.png
@@ -291,6 +291,54 @@ Workflow log outputs and references to `docs/adr/ADR-001-prisma-8-rc.md` updated
 - Zero broken markdown links (`pnpm lint:doc-links`).
 - Zero documentation sync drifts (`pnpm lint:doc-sync`).
 - 1,019 unit & integration tests passed.
+
+---
+
+## 4. Task 0.6 — Screenshots Removal
+
+Following project lead review, binary test screenshot artifacts were permanently removed from repository tracking rather than retained under `test-results/screenshots/`.
+
+### 4.1 Script Safety Verification (Write-Only Audit)
+
+An audit of `scripts/run-all-4-smoke-tests.ts` was performed across file read/existence APIs:
+
+- `fs.existsSync(SCREENSHOT_DIR)` is used solely to create the directory if missing (`fs.mkdirSync`).
+- `page.screenshot({ path })` writes screenshots during test runs.
+- `fs.writeFileSync(...)` writes the test execution summary JSON.
+- **Result:** Zero calls to `readFile`, `readFileSync`, `readdir`, or `readdirSync`. The smoke test script is strictly write-only; removing screenshots causes zero script failures.
+
+### 4.2 `.gitignore` Verification
+
+Audit of `.gitignore`:
+
+```text
+.gitignore:41:test-results/
+```
+
+The entire `test-results/` directory is covered by `.gitignore`. Local test runs can freely generate temporary screenshots without polluting git tracking.
+
+### 4.3 Git Removal Execution
+
+The 6 tracked artifacts previously moved to `test-results/screenshots/` were purged via `git rm -r test-results/screenshots/`:
+
+- `test-results/screenshots/ca-1-interview-cancelled-ui-updated.png`
+- `test-results/screenshots/ca-2-free-candidate-download-network.png`
+- `test-results/screenshots/ca-3-error-toast-401.png`
+- `test-results/screenshots/ca-4-iframe-sandbox-inspection.png`
+- `test-results/screenshots/smoke-test-results.json`
+- `test-results/screenshots/smoke-test-summary.json`
+
+### 4.4 Repository Reference Audit
+
+```bash
+git grep "docs/reports/screenshots" -- scripts/ .github/
+# Output: 0 matches (clean)
+
+git grep -n "test-results/screenshots" -- scripts/ .github/
+# Output: matches only in scripts/run-all-4-smoke-tests.ts (write-only runtime output)
+```
+
+- In `docs/reports/93-v1.0.0-staging-ci-and-smoke-tests-verification-report.md`, markdown links were converted to inline code references to avoid broken link violations in Gate 11.
 
 ---
 

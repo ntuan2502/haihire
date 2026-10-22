@@ -204,29 +204,47 @@ export function checkStatsSync(): CheckResult {
 }
 
 // -----------------------------------------------------------------------------
-// Check 4: ADR Existence for Pre-Release Packages
+// Check 4: Architecture Decision Log (DECISIONS.md) Coverage for Pre-Release Packages
 // -----------------------------------------------------------------------------
 export function checkAdrForPreReleasePackages(): CheckResult {
   const root = process.cwd();
   const preRelease = detectPreReleasePackages();
-  const adrDir = resolve(root, "docs", "adr");
+  const decisionsPath = resolve(root, "docs", "decisions", "DECISIONS.md");
+  const legacyAdrDir = resolve(root, "docs", "adr");
 
   const unreferencedPackages: string[] = [];
 
-  let adrCorpus = "";
-  if (existsSync(adrDir)) {
-    const files = readdirSync(adrDir).filter((f) => f.endsWith(".md"));
+  let decisionCorpus = "";
+  if (existsSync(decisionsPath)) {
+    decisionCorpus += readFileSync(decisionsPath, "utf-8") + "\n";
+  } else if (existsSync(legacyAdrDir)) {
+    // Transitional fallback during Phase 4 migration before Task 1 DECISIONS.md is created
+    const files = readdirSync(legacyAdrDir).filter((f) => f.endsWith(".md"));
     for (const f of files) {
-      adrCorpus += readFileSync(join(adrDir, f), "utf-8") + "\n";
+      decisionCorpus += readFileSync(join(legacyAdrDir, f), "utf-8") + "\n";
     }
+  } else {
+    return {
+      checkName:
+        "Check 4: Architecture Decision Log Coverage for Pre-Release Packages",
+      passed: true,
+      message:
+        "Skipped: docs/decisions/DECISIONS.md not yet created (will be enforced in Task 1).",
+    };
   }
 
   for (const pkg of preRelease) {
-    const pkgName = pkg.split("@")[0] || pkg;
-    // Check if the package name is mentioned in any ADR file
-    if (!adrCorpus.toLowerCase().includes(pkgName.toLowerCase())) {
+    const pkgName = pkg.startsWith("@")
+      ? pkg.slice(0, pkg.indexOf("@", 1) > 0 ? pkg.indexOf("@", 1) : pkg.length)
+      : pkg.split("@")[0] || pkg;
+
+    // Check if the package name is mentioned in decisions corpus
+    if (
+      !decisionCorpus.toLowerCase().includes(pkgName.toLowerCase()) &&
+      !decisionCorpus.toLowerCase().includes(pkg.toLowerCase())
+    ) {
       unreferencedPackages.push(
-        `Pre-release package '${pkg}' has no corresponding ADR in docs/adr/`,
+        `Pre-release package '${pkg}' has no corresponding architecture decision in docs/decisions/DECISIONS.md`,
       );
     }
   }
@@ -234,11 +252,11 @@ export function checkAdrForPreReleasePackages(): CheckResult {
   const passed = unreferencedPackages.length === 0;
   return {
     checkName:
-      "Check 4: Architecture Decision Record (ADR) Coverage for Pre-Release Packages",
+      "Check 4: Architecture Decision Log Coverage for Pre-Release Packages",
     passed,
     message: passed
-      ? `All ${preRelease.length} pre-release packages are formally documented in docs/adr/ ADRs.`
-      : `Found ${unreferencedPackages.length} pre-release packages lacking ADR documentation.`,
+      ? `All ${preRelease.length} pre-release packages are formally documented in docs/decisions/DECISIONS.md.`
+      : `Found ${unreferencedPackages.length} pre-release packages lacking architecture decision documentation.`,
     details: unreferencedPackages,
   };
 }

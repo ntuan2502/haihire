@@ -136,34 +136,42 @@ pnpm dev
 
 ## 📂 Documentation Directory
 
-Comprehensive system documentation is maintained under the [`docs/`](docs/) directory:
+Comprehensive system documentation is maintained under the [`docs/`](docs/README.md) directory:
 
+> 🧭 For full navigation across all architecture blueprints, specifications, and runbooks, visit the [**HaiHire Documentation Portal**](docs/README.md).
+
+- 🧭 [**Documentation Portal**](docs/README.md): Central navigation matrix mapping developer and operator queries to specifications.
+- 🏛️ [**System Architecture Overview**](docs/architecture/system-overview.md): High-level topology, Mermaid diagrams, and core patterns.
+- 📐 [**Engineering Conventions (SSOT)**](docs/architecture/conventions.md): Pure TypeScript, fail-fast env, DtoPipe, i18n, and tenant scoping rules.
+- 📋 [**Data Model & Schema**](docs/architecture/data-model.md): 16 Prisma models, relations, cascade rules, and soft-delete retention.
+- 🔐 [**Security & RBAC Architecture**](docs/architecture/security-rbac.md): Cookie JWT auth, dynamic org ownership, 5 roles, 41 permissions.
+- 🔌 [**REST API Overview**](docs/api/overview.md): Controller mappings, 86 REST endpoints, auth, and error contracts.
 - 📊 [**Project Metrics (Single Source of Truth)**](docs/PROJECT_METRICS.md): Master metrics, verification counts, and architectural baseline.
-- 📖 [**Developer Onboarding Guide**](docs/onboarding.md): Step-by-step onboarding for new team members.
-- 🏛️ [**System Architecture Overview**](docs/architecture/system-overview.md): High-level topology, Mermaid diagrams, and design patterns.
-- 🔌 [**REST API Overview**](docs/api/overview.md): Controller mappings, 84 REST endpoints, auth, and error contracts.
+- 📖 [**Developer Onboarding Guide**](docs/guides/onboarding.md): Step-by-step onboarding for new team members.
 - 🚀 [**Production Deployment Plan**](docs/runbooks/production-deployment-plan.md): 5-phase production release protocol.
 - 💾 [**Backup & Disaster Recovery**](docs/runbooks/backup-and-restore.md): Automated PostgreSQL dumps, MinIO hot backup, and restore drills.
-- 🧹 [**MinIO Orphan Cleanup**](docs/runbooks/orphan-cleanup.md): Daily cron purging unreferenced files with a 30-day grace period.
 - 🚨 [**Monitoring & Alerting Runbook**](docs/runbooks/alerts.md): Prometheus alert catalog and emergency SOPs.
-- 🛡️ [**Audit Reports Archive**](docs/archive/audits/README.md): Historical verification reports and cross-phase synthesis.
 
 ---
 
-## 🏛️ Architecture Decision Records (ADRs)
+## 🏛️ Architectural Decisions Log
 
-Critical architectural choices and trade-offs are documented under [`docs/adr/`](docs/adr/):
+Critical architectural choices, trade-offs, and pre-release package rationales are consolidated in [`docs/decisions/DECISIONS.md`](docs/decisions/DECISIONS.md):
 
-- [**ADR-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**](docs/adr/ADR-001-prisma-8-rc.md)
-- [**ADR-002: Next.js Proxy Rewrites without /api Prefix & v0.4.0 Standardization**](docs/adr/ADR-002-frontend-rewrite-path.md)
+- [**D-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**](docs/decisions/DECISIONS.md#d-001)
+- [**D-002: Next.js Proxy Rewrites without /api Prefix & v0.4.0 Standardization**](docs/decisions/DECISIONS.md#d-002)
+- [**D-003: Dynamic Organization Ownership via Organization.ownerId and Deprecation of Role.OWNER**](docs/decisions/DECISIONS.md#d-003)
+- [**D-004: Next.js 16 Proxy Convention Adoption (proxy.ts Replaces middleware.ts)**](docs/decisions/DECISIONS.md#d-004)
+- [**D-005: GitHub Actions dorny/paths-filter@v4 Upgrade and Node 24 Action Baseline**](docs/decisions/DECISIONS.md#d-005)
+- [**D-006: Separation of Recruitment ActivityLog from Enterprise Tenant Administration**](docs/decisions/DECISIONS.md#d-006)
 
 ---
 
 ## ⚠️ Known Limitations (v0.3.0 Release)
 
-1. **Transitive High CVEs in Build Tooling:** 11 High CVEs exist in transitive Hono dependencies via `@prisma/composer-prisma-cloud` (see [ADR-001](docs/adr/ADR-001-prisma-8-rc.md)). Mitigated via production network isolation and Caddy WAF. Scheduled for exit upon Prisma 8 GA.
-2. **Next.js Direct Path Rewrites:** Direct proxy rewrites (`/jobs/*`, `/organizations/*`) are retained in Next.js config without `/api` prefix (see [ADR-002](docs/adr/ADR-002-frontend-rewrite-path.md)) to prevent breaking changes. Scheduled for `/api/v1` migration in v0.4.0.
-3. **Fixed RBAC Permission Matrix:** The 6 roles have fixed permissions mapped in `@haihire/shared`. Customizable role-permission mappings and tenant-level custom roles are scheduled for v0.4.0.
+1. **Transitive High CVEs in Build Tooling:** 11 High CVEs exist in transitive Hono dependencies via `@prisma/composer-prisma-cloud` (see [D-001](docs/decisions/DECISIONS.md#d-001)). Mitigated via production network isolation and container security policies. Scheduled for exit upon Prisma 8 GA.
+2. **Next.js Direct Path Rewrites:** Direct proxy rewrites (`/jobs/*`, `/organizations/*`) are retained in Next.js config without `/api` prefix (see [D-002](docs/decisions/DECISIONS.md#d-002)) to prevent breaking changes. Scheduled for `/api/v1` migration in v0.4.0.
+3. **Fixed RBAC Permission Matrix:** The 5 organization roles have fixed permissions mapped in `@haihire/shared`. Customizable role-permission mappings and tenant-level custom roles are scheduled for v0.4.0.
 
 ---
 

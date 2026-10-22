@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Refactored the backend authentication and authorization architecture to establish `Organization.ownerId` as the dynamic runtime source of truth for organization ownership ([ADR-003](../../adr/ADR-003-dynamic-org-ownership.md)). Replaced the static `Role.OWNER` bypass in `RolesGuard` with dynamic runtime resolution (`req.user.isOwner`), resolved technical debt **F-014** by converting unauthenticated guard rejections from HTTP 403 to HTTP 401 `AppUnauthorizedException`, and reverted the temporary Branch 1 permission band-aid on `"org:delete"` while strictly restricting `"org:manage_billing"` to owners.
+Refactored the backend authentication and authorization architecture to establish `Organization.ownerId` as the dynamic runtime source of truth for organization ownership ([D-003](../../decisions/DECISIONS.md#d-003)). Replaced the static `Role.OWNER` bypass in `RolesGuard` with dynamic runtime resolution (`req.user.isOwner`), resolved technical debt **F-014** by converting unauthenticated guard rejections from HTTP 403 to HTTP 401 `AppUnauthorizedException`, and reverted the temporary Branch 1 permission band-aid on `"org:delete"` while strictly restricting `"org:manage_billing"` to owners.
 
 ## Changes Implemented
 

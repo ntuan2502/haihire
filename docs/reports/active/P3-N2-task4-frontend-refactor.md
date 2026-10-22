@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Executed the frontend ownership refactor aligned with [ADR-003](../../adr/ADR-003-dynamic-org-ownership.md) to eliminate all client-side assumptions about a static `Role.OWNER` enum value. Updated `AuthContext` to determine tenant ownership dynamically via `user.isOwner` and `organization.ownerId`, refactored `useHasPermission` to grant owner bypass based on dynamic ownership flags, removed `Role.OWNER` completely from `@haihire/shared`, and added component tests ensuring owner-only controls (e.g. Danger Zone in Settings) are correctly scoped.
+Executed the frontend ownership refactor aligned with [D-003](../../decisions/DECISIONS.md#d-003) to eliminate all client-side assumptions about a static `Role.OWNER` enum value. Updated `AuthContext` to determine tenant ownership dynamically via `user.isOwner` and `organization.ownerId`, refactored `useHasPermission` to grant owner bypass based on dynamic ownership flags, removed `Role.OWNER` completely from `@haihire/shared`, and added component tests ensuring owner-only controls (e.g. Danger Zone in Settings) are correctly scoped.
 
 ## Changes Implemented
 

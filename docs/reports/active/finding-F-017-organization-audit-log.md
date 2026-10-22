@@ -2,7 +2,7 @@
 
 **Severity:** P2 (Architecture / Security & Compliance Enhancement)  
 **Target Release:** `v0.4.0`  
-**Related Findings & ADRs:** [ADR-003: Dynamic Organization Ownership](../../adr/ADR-003-dynamic-org-ownership.md), F-016 (Ownership Transfer)  
+**Related Findings & Decisions:** [D-003: Dynamic Organization Ownership](../../decisions/DECISIONS.md#d-003), F-016 (Ownership Transfer)  
 **Status:** RECORDED (Deferred to v0.4.0)
 
 ---

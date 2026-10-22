@@ -118,9 +118,9 @@ A full recursive scan of `docs/reports/` identified 102 markdown files:
 
 #### D. Files in `docs/adr/` (3 Files Total)
 
-1. `docs/adr/ADR-001-prisma-8-rc.md`
-2. `docs/adr/ADR-002-frontend-rewrite-path.md`
-3. `docs/adr/ADR-003-dynamic-org-ownership.md`
+1. `<docs/adr/ADR-001-prisma-8-rc.md>` (consolidated into D-001)
+2. `<docs/adr/ADR-002-frontend-rewrite-path.md>` (consolidated into D-002)
+3. `<docs/adr/ADR-003-dynamic-org-ownership.md>` (consolidated into D-003)
 
 #### E. Code & CI Grep for Report References
 
@@ -150,7 +150,7 @@ Three non-report references were identified that would break if deletion proceed
    - Check 4 (`checkAdrForPreReleasePackages()`) scans `docs/adr/` to confirm pre-release packages are documented.
    - Deleting `docs/adr/` causes Gate 12 to fail unless Check 4 is updated to inspect `<docs/decisions/DECISIONS.md>`.
 2. **`.github/workflows/ci-feature.yml` and `ci-main.yml`**:
-   - Both workflows reference `docs/adr/ADR-001-prisma-8-rc.md` in build logs.
+   - Both workflows reference `<docs/adr/ADR-001-prisma-8-rc.md>` in build logs.
    - Must be updated to point to `<docs/decisions/DECISIONS.md>` (D-001).
 3. **`scripts/run-all-4-smoke-tests.ts`**:
    - Hardcodes output directory `docs/reports/screenshots/`.
@@ -339,6 +339,51 @@ git grep -n "test-results/screenshots" -- scripts/ .github/
 ```
 
 - In `docs/reports/93-v1.0.0-staging-ci-and-smoke-tests-verification-report.md`, markdown links were converted to inline code references to avoid broken link violations in Gate 11.
+
+---
+
+## 5. Task 1 — Unified Architectural Decisions Log (`DECISIONS.md`)
+
+Consolidated all standalone ADRs and architectural decisions into a unified single source of truth log at `docs/decisions/DECISIONS.md`.
+
+### 5.1 Decisions Consolidated
+
+1. **D-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**
+   - Source: `docs/adr/ADR-001-prisma-8-rc.md`
+   - Rationale: Required for contract-first PostgreSQL 17 features. Tooling is isolated to development/build CLI; runtime exposes zero Hono HTTP servers.
+2. **D-002: Next.js Proxy Rewrites without /api Prefix and v0.4.0 Standardization**
+   - Source: `docs/adr/ADR-002-frontend-rewrite-path.md`
+   - Rationale: Preserves backward compatibility and prevents regressions across 963+ unit tests in v0.3.0 while scheduling unified `/api/v1` migration for v0.4.0.
+3. **D-003: Dynamic Organization Ownership via Organization.ownerId and Deprecation of Role.OWNER**
+   - Source: `docs/adr/ADR-003-dynamic-org-ownership.md`
+   - Rationale: Eliminates dual-source-of-truth bug F-003. Tenant ownership is contextual to the organization (`ownerId`), not a static user-level enum.
+4. **D-004: Next.js 16 Proxy Convention Adoption (proxy.ts Replaces middleware.ts)**
+   - Source: Investigation `INVESTIGATION_DEPRECATED_PATTERNS.md` & findings F-004 / F-004-R1.
+   - Rationale: Next.js 16 formally deprecated `middleware.ts` in favor of `proxy.ts`. Eliminates compiler deprecation warnings and enforces modern edge proxy standards.
+5. **D-005: GitHub Actions dorny/paths-filter@v4 Upgrade and Node 24 Action Baseline**
+   - Source: Investigation `INVESTIGATION_DEPRECATED_PATTERNS.md` & commit b969b13.
+   - Rationale: Pinned all CI workflows to Node 24 action runtimes to eliminate GitHub Actions Node.js 20 deprecation warnings.
+6. **D-006: Separation of Recruitment ActivityLog from Enterprise Tenant Administration**
+   - Source: Phase 3 Branch 2 finding F-017 (`finding-F-017-organization-audit-log.md`).
+   - Rationale: `ActivityLog` enforces a non-nullable candidate relation. Administrative audit trails are logged via application logger in v0.3.0 and deferred to a dedicated `OrganizationAuditLog` in v0.4.0.
+
+### 5.2 Files Removed (`git rm -r docs/adr/`)
+
+- `docs/adr/ADR-001-prisma-8-rc.md`
+- `docs/adr/ADR-002-frontend-rewrite-path.md`
+- `docs/adr/ADR-003-dynamic-org-ownership.md`
+
+### 5.3 Reference Updates
+
+- Updated `README.md`, `docs/release-notes/v0.3.0.md`, and `docs/releases/v0.3.0.md` to reference `docs/decisions/DECISIONS.md#d-00X`.
+- Updated transitional report files to target `docs/decisions/DECISIONS.md`.
+
+### 5.4 Verification Result (`pnpm check:all`)
+
+- **Status:** 🟢 **ALL 16 CHECKS PASSED** in 86.85s.
+- Gate 11 (`lint:doc-links`): 0 broken markdown links.
+- Gate 12 (`lint:doc-sync`): 0 path drift or undocumented pre-release packages.
+- Unit & Integration Test Suite: 1,019 tests passed (589 backend + 430 frontend).
 
 ---
 

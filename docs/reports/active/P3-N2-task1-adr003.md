@@ -2,11 +2,11 @@
 
 ## Executive Summary
 
-Authored and ratified [ADR-003](../../adr/ADR-003-dynamic-org-ownership.md) establishing the architectural contract for dynamic organization ownership via `Organization.ownerId` and deprecating the static `Role.OWNER` enum value. This resolves the architectural root cause of finding **F-003** (dual source of truth between `user.role` and `org.ownerId`).
+Authored and ratified [D-003](../../decisions/DECISIONS.md#d-003) establishing the architectural contract for dynamic organization ownership via `Organization.ownerId` and deprecating the static `Role.OWNER` enum value. This resolves the architectural root cause of finding **F-003** (dual source of truth between `user.role` and `org.ownerId`).
 
 ## Changes Implemented
 
-1. **Created [`docs/adr/ADR-003-dynamic-org-ownership.md`](../../adr/ADR-003-dynamic-org-ownership.md)**:
+1. **Documented [`docs/decisions/DECISIONS.md#d-003`](../../decisions/DECISIONS.md#d-003)**:
    - Formally documented the context of dual-source-of-truth ownership issues.
    - Outlined the decision adopting **Option A (ownerId-first)**.
    - Detailed consequences across database schema, NestJS guard layer, and frontend client.
@@ -16,7 +16,7 @@ Authored and ratified [ADR-003](../../adr/ADR-003-dynamic-org-ownership.md) esta
 
 ## Files Touched
 
-- Created: [`docs/adr/ADR-003-dynamic-org-ownership.md`](../../adr/ADR-003-dynamic-org-ownership.md)
+- Recorded: [`docs/decisions/DECISIONS.md#d-003`](../../decisions/DECISIONS.md#d-003)
 - Modified: [`AGENTS.md`](../../../AGENTS.md)
 
 ## Test & CI Verification Evidence

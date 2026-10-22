@@ -152,17 +152,18 @@ Comprehensive system documentation is maintained under the [`docs/`](docs/) dire
 
 ## 🏛️ Architecture Decision Records (ADRs)
 
-Critical architectural choices and trade-offs are documented under [`docs/adr/`](docs/adr/):
+Critical architectural choices and trade-offs are documented under [`docs/decisions/DECISIONS.md`](docs/decisions/DECISIONS.md):
 
-- [**ADR-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**](docs/adr/ADR-001-prisma-8-rc.md)
-- [**ADR-002: Next.js Proxy Rewrites without /api Prefix & v0.4.0 Standardization**](docs/adr/ADR-002-frontend-rewrite-path.md)
+- [**D-001: Acceptance of 11 High CVEs from Prisma 8 RC / Alchemy as Known Limitation**](docs/decisions/DECISIONS.md#d-001)
+- [**D-002: Next.js Proxy Rewrites without /api Prefix & v0.4.0 Standardization**](docs/decisions/DECISIONS.md#d-002)
+- [**D-003: Dynamic Organization Ownership via Organization.ownerId and Deprecation of Role.OWNER**](docs/decisions/DECISIONS.md#d-003)
 
 ---
 
 ## ⚠️ Known Limitations (v0.3.0 Release)
 
-1. **Transitive High CVEs in Build Tooling:** 11 High CVEs exist in transitive Hono dependencies via `@prisma/composer-prisma-cloud` (see [ADR-001](docs/adr/ADR-001-prisma-8-rc.md)). Mitigated via production network isolation and Caddy WAF. Scheduled for exit upon Prisma 8 GA.
-2. **Next.js Direct Path Rewrites:** Direct proxy rewrites (`/jobs/*`, `/organizations/*`) are retained in Next.js config without `/api` prefix (see [ADR-002](docs/adr/ADR-002-frontend-rewrite-path.md)) to prevent breaking changes. Scheduled for `/api/v1` migration in v0.4.0.
+1. **Transitive High CVEs in Build Tooling:** 11 High CVEs exist in transitive Hono dependencies via `@prisma/composer-prisma-cloud` (see [D-001](docs/decisions/DECISIONS.md#d-001)). Mitigated via production network isolation and Caddy WAF. Scheduled for exit upon Prisma 8 GA.
+2. **Next.js Direct Path Rewrites:** Direct proxy rewrites (`/jobs/*`, `/organizations/*`) are retained in Next.js config without `/api` prefix (see [D-002](docs/decisions/DECISIONS.md#d-002)) to prevent breaking changes. Scheduled for `/api/v1` migration in v0.4.0.
 3. **Fixed RBAC Permission Matrix:** The 6 roles have fixed permissions mapped in `@haihire/shared`. Customizable role-permission mappings and tenant-level custom roles are scheduled for v0.4.0.
 
 ---

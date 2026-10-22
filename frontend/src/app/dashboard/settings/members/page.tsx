@@ -9,6 +9,7 @@ import {
   useRevokeInviteLinkMutation,
   useUpdateMemberRoleMutation,
   useRemoveMemberMutation,
+  useTransferOwnershipMutation,
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 
 export default function MembersSettingsPage() {
-  const { user, canEdit } = useAuth();
+  const { user, canEdit, isOwner } = useAuth();
   const { t } = useI18n();
   const { data: members = [], refetch: refetchMembers } = useOrgMembers();
   const { data: serverInviteLinks = [], refetch: refetchLinks } =
@@ -47,6 +48,11 @@ export default function MembersSettingsPage() {
   const revokeInviteMutation = useRevokeInviteLinkMutation();
   const updateMemberRoleMutation = useUpdateMemberRoleMutation();
   const removeMemberMutation = useRemoveMemberMutation();
+  const transferOwnershipMutation = useTransferOwnershipMutation();
+  const [memberToTransfer, setMemberToTransfer] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const [openMenuMemberId, setOpenMenuMemberId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -191,6 +197,23 @@ export default function MembersSettingsPage() {
     id: string;
     name: string;
   } | null>(null);
+
+  const handleConfirmTransferOwnership = async () => {
+    if (!memberToTransfer) return;
+    try {
+      setActionLoadingId(memberToTransfer.id);
+      await transferOwnershipMutation.mutateAsync(memberToTransfer.id);
+      toast.success(t("members.transferOwnershipSuccess"));
+      setOpenMenuMemberId(null);
+      setMemberToTransfer(null);
+      refetchMembers?.();
+    } catch (err) {
+      console.error(err);
+      toast.error(getApiErrorMessage(err, t));
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   const handleConfirmRemoveMember = async () => {
     if (!memberToRemove) return;
@@ -740,6 +763,26 @@ export default function MembersSettingsPage() {
 
                           <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
+                          {isOwner && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuMemberId(null);
+                                  setMemberToTransfer({
+                                    id: m.id,
+                                    name: m.name,
+                                  });
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors text-left cursor-pointer font-medium"
+                              >
+                                <Crown className="h-3.5 w-3.5 shrink-0" />
+                                <span>{t("members.transferOwnership")}</span>
+                              </button>
+                              <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                            </>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => {
@@ -785,6 +828,31 @@ export default function MembersSettingsPage() {
         cancelButtonLabel={t("common.cancel")}
         isLoading={actionLoadingId === memberToRemove?.id}
         variant="danger"
+      />
+
+      {/* Transfer Ownership Confirmation Modal */}
+      <ConfirmDestructiveModal
+        isOpen={!!memberToTransfer}
+        onClose={() => setMemberToTransfer(null)}
+        onConfirm={handleConfirmTransferOwnership}
+        title={t("members.transferOwnershipConfirmTitle")}
+        description={
+          memberToTransfer ? (
+            <span>
+              {t("members.transferOwnershipConfirmDesc")}{" "}
+              <strong className="font-semibold text-slate-900 dark:text-white">
+                ({memberToTransfer.name})
+              </strong>
+              ? {t("members.transferOwnershipConfirmNote")}
+            </span>
+          ) : (
+            t("members.transferOwnershipConfirmDesc")
+          )
+        }
+        confirmButtonLabel={t("members.transferOwnershipConfirmButton")}
+        cancelButtonLabel={t("common.cancel")}
+        isLoading={actionLoadingId === memberToTransfer?.id}
+        variant="warning"
       />
 
       {/* Revoke Link Confirmation Modal */}

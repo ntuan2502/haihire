@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 const BASE_URL = "http://localhost:13000";
-const SCREENSHOT_DIR = path.resolve(process.cwd(), "docs/reports/screenshots");
+const SCREENSHOT_DIR = path.resolve(process.cwd(), "test-results/screenshots");
 
 if (!fs.existsSync(SCREENSHOT_DIR)) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
@@ -124,7 +124,7 @@ async function main() {
         interviewDeletedWithoutReload: isGone,
       },
       screenshot:
-        "docs/reports/screenshots/ca-1-interview-cancelled-ui-updated.png",
+        "test-results/screenshots/ca-1-interview-cancelled-ui-updated.png",
     });
     console.log(`  ✔ Ca 1: ${isGone ? "PASS" : "FAIL"}`);
   } catch (err: unknown) {
@@ -138,7 +138,7 @@ async function main() {
       status: "FAIL",
       evidence: errorMsg,
       details: { error: errorMsg },
-      screenshot: "docs/reports/screenshots/ca-1-failed.png",
+      screenshot: "test-results/screenshots/ca-1-failed.png",
     });
   }
 
@@ -230,7 +230,7 @@ async function main() {
         responseStatus: interceptedStatus,
       },
       screenshot:
-        "docs/reports/screenshots/ca-2-free-candidate-download-network.png",
+        "test-results/screenshots/ca-2-free-candidate-download-network.png",
     });
     console.log(`  ✔ Ca 2: ${isPass ? "PASS" : "FAIL"}`);
   } catch (err: unknown) {
@@ -244,7 +244,7 @@ async function main() {
       status: "FAIL",
       evidence: errorMsg,
       details: { error: errorMsg },
-      screenshot: "docs/reports/screenshots/ca-2-failed.png",
+      screenshot: "test-results/screenshots/ca-2-failed.png",
     });
   }
 
@@ -329,7 +329,7 @@ async function main() {
         toastText: toastText.replace(/\n/g, " "),
         safeErrorHandling: true,
       },
-      screenshot: "docs/reports/screenshots/ca-3-error-toast-401.png",
+      screenshot: "test-results/screenshots/ca-3-error-toast-401.png",
     });
     console.log("  ✔ Ca 3: PASS");
   } catch (err: unknown) {
@@ -343,7 +343,7 @@ async function main() {
       status: "FAIL",
       evidence: errorMsg,
       details: { error: errorMsg },
-      screenshot: "docs/reports/screenshots/ca-3-failed.png",
+      screenshot: "test-results/screenshots/ca-3-failed.png",
     });
   }
 
@@ -431,7 +431,7 @@ async function main() {
         hasSandbox,
         hasReferrerPolicy,
       },
-      screenshot: "docs/reports/screenshots/ca-4-iframe-sandbox-inspection.png",
+      screenshot: "test-results/screenshots/ca-4-iframe-sandbox-inspection.png",
     });
     console.log(`  ✔ Ca 4: ${isPass ? "PASS" : "FAIL"}`);
   } catch (err: unknown) {
@@ -445,7 +445,7 @@ async function main() {
       status: "FAIL",
       evidence: errorMsg,
       details: { error: errorMsg },
-      screenshot: "docs/reports/screenshots/ca-4-failed.png",
+      screenshot: "test-results/screenshots/ca-4-failed.png",
     });
   }
 

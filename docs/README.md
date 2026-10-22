@@ -1,112 +1,81 @@
-# HaiHire Documentation Center
+# HaiHire Documentation Portal
 
-> Central knowledge base, architectural specifications, operations runbooks, API contracts, hardening milestone reports, and verification archive for the HaiHire Enterprise ATS platform.
+> Central navigation portal, architectural specifications, engineering conventions, operational runbooks, API contracts, developer guides, and decision records for the HaiHire Enterprise ATS platform.
 
 ---
 
-## 🧭 Documentation Map
+## 🧭 Navigation Portal
+
+| I want to find...                                                          | Document to Read                                   | Brief Description                                                       |
+| :------------------------------------------------------------------------- | :------------------------------------------------- | :---------------------------------------------------------------------- |
+| **System Architecture Overview**                                           | [System Overview](architecture/system-overview.md) | Monorepo topology, core patterns, services, request flow                |
+| **Data Model & Schema**                                                    | [Data Model](architecture/data-model.md)           | Prisma 8 models, relationships, cascading & soft-delete grace periods   |
+| **Security & RBAC Architecture**                                           | [Security & RBAC](architecture/security-rbac.md)   | Cookie-based JWT auth, dynamic org ownership, 5 roles, 41 permissions   |
+| **Coding & Operational Conventions**                                       | [Conventions](architecture/conventions.md)         | Pure TypeScript, zero-any, fail-fast env, DtoPipe, i18n, tenant scoping |
+| │ └── DECISIONS.md # Consolidated architectural decisions (D-001 to D-009) |
+| **REST API Contracts**                                                     | [API Overview](api/overview.md)                    | 9 controllers, 86 endpoints, standard error envelope                    |
+| **Site Reliability & Runbooks**                                            | [Runbooks Catalog](runbooks/alerts.md)             | Operations runbooks (alerts, backups, deployment, redis, queues)        |
+| **Release History & Changelog**                                            | [Changelog](../CHANGELOG.md)                       | Version history, release milestones, migration notes                    |
+| **Developer Onboarding**                                                   | [Onboarding](guides/onboarding.md)                 | Local environment setup, dependencies, quick start                      |
+| **Definition of Done**                                                     | [Definition of Done](guides/definition-of-done.md) | Production readiness criteria, quality gates, PR standards              |
+| **QA Test Cases Matrix**                                                   | [Test Cases](guides/testcases.md)                  | Verification test matrix across 10 platform domains                     |
+| **Deep System Context**                                                    | [Project Context](guides/project-context.md)       | Technical stack, services, runtime architecture                         |
+| **Product Roadmap**                                                        | [Roadmap](guides/roadmap.md)                       | Strategic product roadmap across v0.1.0 to v0.4.0                       |
+| **Project Metrics Baseline**                                               | [Project Metrics](PROJECT_METRICS.md)              | Test suite stats, CI quality gates, coverage, stack baseline            |
+
+---
+
+## 📂 Documentation Directory Structure
 
 ```
 docs/
-├── PROJECT_CONTEXT.md              # Living Single Source of Truth (SSOT)
-├── DEFINITION_OF_DONE.md           # Production DoD Checklist
-├── ROADMAP.md                      # Strategic Horizon & v0.2.0 Release Status
-├── TESTCASES.md                    # Verification test matrix across 10 domains
-├── onboarding.md                   # Step-by-step developer onboarding & quick start
-├── architecture/                   # System design & topology
-│   └── system-overview.md          # Monorepo topology, Mermaid diagrams, core patterns
-├── api/                            # REST API contracts & specifications
-│   └── overview.md                 # 9 controllers, 84 endpoints, auth, error envelope
-├── releases/                       # Official release notes & changelogs (6 versions)
-│   ├── v0.1.0.md                   # Pre-release baseline notes
-│   ├── v0.1.0-announcement.md      # Launch announcement
-│   ├── v0.1.1.md                   # CI/CD stability patch
-│   ├── v0.1.2.md                   # Wave 1-3 God Files refactor
-│   ├── v0.1.3.md                   # CI/CD optimization & runbook consolidation
-│   ├── v0.1.4.md                   # Accessibility campaign & coverage augmentation
-│   └── v0.2.0.md                   # Wave 4 God Files refactor milestone
-├── runbooks/                       # Site reliability & operational runbooks (11 SOPs)
-│   ├── alerts.md                   # Prometheus alerts catalog & emergency SOPs
-│   ├── backup-and-restore.md       # PostgreSQL dumps, MinIO hot backup & restore drills
-│   ├── branch-protection.md        # Branch protection rules, environments & security
-│   ├── ci-cd.md                    # Layered CI/CD pipelines, test pyramid & gates
-│   ├── dlq-recovery.md             # BullMQ dead-letter queue triage & retry SOP
-│   ├── email-queue.md              # Resend/SendGrid queue backlog remediation
-│   ├── env-management.md           # 5-file environment architecture & sync
-│   ├── orphan-cleanup.md           # MinIO daily orphan file cleanup cron
-│   ├── production-deployment-plan.md # 5-phase deployment protocol & rollback
-│   ├── redis-recovery.md           # Valkey memory exhaustion & failover SOP
-│   └── versioning.md               # Monorepo versioning, SemVer, GHCR & immutable release policy
-├── reports/                        # Milestone Completion Reports (80 reports)
-│   ├── README.md                   # 5-phase structured milestone index
-│   └── [80 milestone reports]      # Primary technical verification evidence
-└── archive/                        # Consolidated Historical Archives
-    ├── audits/                     # Historical verification logs (Phases 1 to 22.8)
-    │   ├── README.md               # Registry of all 20 phases & verification milestones
-    │   ├── SUMMARY.md              # Cross-phase synthesis, bug taxonomy & credibility curve
-    │   ├── phase-01-to-10/         # Archived early foundation audits
-    │   └── [phase-11 to 22]        # Modern phase audit reports
-    ├── reports/                    # Historical transitional reports
-    │   └── hardening-transitional/ # 7 kickoff surveys, inventories & audit tables
-    └── runbooks-deprecated/        # Superseded & merged operational runbooks
+├── README.md                           # Central documentation portal index (this file)
+├── PROJECT_METRICS.md                  # Project metrics baseline & test counts
+├── architecture/
+│   ├── system-overview.md              # Monorepo topology, architecture diagrams, request flow
+│   ├── data-model.md                   # 16 Prisma models, relationships, indexes, soft-delete
+│   ├── security-rbac.md                # JWT auth, dynamic ownership, 5 roles, 41 permissions
+│   └── conventions.md                  # Single source of truth for engineering conventions
+├── decisions/
+│   └── DECISIONS.md                    # Consolidated architectural decisions (D-001 to D-009)
+├── api/
+│   └── overview.md                     # 9 controllers, 86 endpoints, auth, error envelope
+├── guides/                             # Developer workflows, checklists, and specifications
+│   ├── onboarding.md                   # Step-by-step developer onboarding & quick start
+│   ├── definition-of-done.md           # Production DoD Checklist
+│   ├── testcases.md                    # Verification test matrix across 10 domains
+│   ├── project-context.md              # Deep technical stack and component specifications
+│   └── roadmap.md                      # Strategic Horizon & v0.2.0 Release Status
+├── runbooks/                           # Site reliability & operational SOPs (13 runbooks)
+│   ├── alerts.md                       # Prometheus alerts catalog & emergency SOPs
+│   ├── backup-and-restore.md           # PostgreSQL dumps, MinIO hot backup & restore drills
+│   ├── branch-protection.md            # Branch protection rules, environments & security
+│   ├── ci-cd.md                        # Layered CI/CD pipelines, test pyramid & gates
+│   ├── dlq-recovery.md                 # BullMQ dead-letter queue triage & retry SOP
+│   ├── email-queue.md                  # Resend/SendGrid queue backlog remediation
+│   ├── env-management.md               # Fail-fast environment architecture & sync
+│   ├── orphan-cleanup.md               # MinIO daily orphan file cleanup cron
+│   ├── prisma-version-policy.md        # Prisma version upgrade policy & ADR coverage
+│   ├── production-deployment-plan.md   # 5-phase deployment protocol & rollback
+│   ├── redis-recovery.md               # Valkey memory exhaustion & failover SOP
+│   ├── release-checklist.md            # Production release verification checklist
+│   └── versioning.md                   # Monorepo versioning, SemVer, GHCR & immutable release policy
+└── releases/                           # Official release notes (one file per version)
+    ├── v0.1.0.md                       # Released on GitHub (2026-10-14)
+    ├── v0.1.1.md                       # Released on GitHub (2026-10-14)
+    ├── v0.1.2.md                       # Released on GitHub (2026-10-16)
+    ├── v0.1.3.md                       # Released on GitHub (2026-10-16)
+    ├── v0.1.4.md                       # Released on GitHub (2026-10-17)
+    ├── v0.2.0.md                       # Released on GitHub (2026-10-19)
+    └── v0.3.0.md                       # Local pre-release candidate (Current branch)
 ```
 
----
-
-## 🛡️ Hardening Summary (v1.0.0)
-
-Between Task #1A and Task #8, the platform underwent a comprehensive hardening phase to reach production readiness:
-
-| #   | Task                     | Focus                                     | Report                                                                   |
-| --- | ------------------------ | ----------------------------------------- | ------------------------------------------------------------------------ |
-| 1A  | Multi-Channel Webhook    | Telegram, Discord, Generic webhooks       | [07](reports/07-task-01a-multi-channel-webhook-report.md)                |
-| 1B  | Per-Org Webhook Settings | DB schema, encryption, UI                 | [09](reports/09-task-01b-per-org-webhook-settings-report.md)             |
-| 2   | Dynamic BullMQ Metrics   | Real-time queue depth                     | [11](reports/11-task-02-dynamic-bullmq-metrics-report.md)                |
-| 3   | Prometheus Alert Rules   | 4 BullMQ alerts + runbooks                | [12](reports/12-task-03-prometheus-alert-rules-report.md)                |
-| 4   | E2E Cross-Tenant Test    | HTTP-level isolation tests                | [13](reports/13-task-04-e2e-cross-tenant-valkey-report.md)               |
-| 5   | Tenant Scoping Static    | CI Gate for query isolation               | [15](reports/15-task-05-tenant-scoping-static-analysis-report.md)        |
-| 6   | Cron Pushgateway         | Orphan cleanup metrics                    | [17](reports/17-task-06-cron-pushgateway-metrics-report.md)              |
-| 7   | Cron Spike Alert         | 3 new alerts for cron                     | [18](reports/18-task-07-cron-spike-alert-report.md)                      |
-| 7.5 | Language Standardization | English docs/comments/logs                | [20](reports/20-task-07.5-language-standardization-report.md)            |
-| 8   | Frontend onError Hook    | Standardize 30 hooks (35 total)           | [22](reports/22-task-08-frontend-onerror-hook-standardization-report.md) |
-| 9   | Repository Restructure   | Archive legacy audits, Gate 11 link check | [24](reports/24-task-09-repo-restructure-completion-report.md)           |
-| 10  | Consistency Audit & Sync | Single Source of Truth & metrics sync     | [25](reports/25-task-10-memory-docs-consistency-audit-report.md)         |
-
-**Results:** 656 tests passing, 11 CI architecture gates, zero critical issues.
-
----
-
-## 📂 Quick Links by Role
-
-### For New Developers
-
-- 🚀 [**Developer Onboarding Guide**](onboarding.md): Get your local environment up and running in under 5 minutes.
-- 🌿 [**Contributing Guidelines**](../CONTRIBUTING.md): Git branching conventions, Conventional Commits, and 11 CI quality gates.
-
-### For Software Engineers & Architects
-
-- 🏛️ [**System Architecture Overview**](architecture/system-overview.md): High-level system diagram, distributed Saga transactions, AsyncLocalStorage context, and React Server Components.
-- 🔌 [**REST API Specifications**](api/overview.md): Endpoint inventory, HttpOnly JWT authentication, server-side pagination, and 51 standardized `APP_ERROR_CODES`.
-- 📋 [**Hardening Reports Index**](reports/README.md): Detailed technical reports on the 10 post-Phase 22 hardening milestones.
-
-### For DevOps & Site Reliability Engineers (SRE)
-
-- 🚀 [**Production Deployment Runbook**](runbooks/production-deployment-plan.md): Safe 5-phase deployment workflow, smoke verification, and rollback procedures.
-- 📦 [**Versioning & Container Publishing Runbook**](runbooks/versioning.md): SemVer rules, monorepo alignment, GHCR image publishing, and immutable tag policy.
-- 💾 [**Backup & Disaster Recovery Runbook**](runbooks/backup-and-restore.md): Automated PostgreSQL dual-format dumps, MinIO volume snapshots, and automated restore verification drills.
-- 🧹 [**MinIO Orphan File Cleanup Runbook**](runbooks/orphan-cleanup.md): Daily cron purging unreferenced resume files after a 30-day grace period.
-- ⚙️ [**Environment Architecture Runbook**](runbooks/env-management.md): Segregated 5-file environment management, auto-sync checks, and build-time inlining rules.
-- 🚨 [**Monitoring & Incident Response Runbook**](runbooks/alerts.md): Prometheus alert matrix, triage steps, and emergency remediation SOPs.
-
-### For QA, Security & Verification Engineers
-
-- 🛡️ [**Historical Audit Registry**](archive/audits/README.md): Complete phase-by-phase verification index across all 20 implementation phases.
-- 📊 [**Audit Cross-Phase Synthesis**](archive/audits/SUMMARY.md): Credibility score evolution (94.1% -> 99.0%), root-cause lessons learned, and bug taxonomy.
+> **Note on Releases:** `docs/releases/` contains exactly one file per version. Only versions officially released on GitHub are listed here, alongside the active local pre-release candidate.
 
 ---
 
 ## 📝 Documentation Guidelines
 
-1. **Language:** All documentation must be written strictly in **English** (per Task #7.5 convention).
-2. **Accuracy:** Keep all commands, port mappings, script names, and versions aligned with actual repository configuration.
-3. **Integrity:** Never leave broken markdown links. Every link is validated by CI Gate 11 (`pnpm lint:doc-links`).
+1. **Single Source of Truth:** Every concept has exactly one authoritative location. Refer to other documents via relative links instead of duplicating text.
+2. **Language Mandate:** All documentation is written strictly in **English** (zero exceptions outside of i18n localization resources).
+3. **Integrity:** Never commit broken markdown links. All links are automatically validated by CI Gate 10 (`pnpm lint:doc-links`) and Gate 12 (`pnpm lint:doc-sync`).

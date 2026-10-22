@@ -1,8 +1,6 @@
-export const Role = {
-  ADMIN: "ADMIN",
-  MEMBER: "MEMBER",
-} as const;
-export type Role = (typeof Role)[keyof typeof Role];
+export { Role } from "./permissions";
+export type { Role as RoleType } from "./permissions";
+import type { Role } from "./permissions";
 
 export const InviteStatus = {
   ACTIVE: "ACTIVE",

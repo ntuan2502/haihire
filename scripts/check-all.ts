@@ -116,8 +116,16 @@ const steps: Step[] = [
       "Verify zero broken markdown links across all docs and memory indexes",
   },
   {
+    id: "lint:doc-sync",
+    name: "CI Gate 12: Documentation Synchronization & Drift Gate",
+    command: "pnpm lint:doc-sync",
+    category: "gate",
+    description:
+      "Verify path existence, env var parity, doc stats, and ADRs for pre-release packages",
+  },
+  {
     id: "check:prod-email-provider",
-    name: "CI Gate 12: Production Email Provider Validation",
+    name: "CI Gate 13: Production Email Provider Validation",
     command: "pnpm check:prod-email-provider",
     category: "gate",
     description:
@@ -130,6 +138,22 @@ const steps: Step[] = [
     category: "gate",
     description:
       "Audit test count changes against git history to detect test regression",
+  },
+  {
+    id: "lint:nextjs-conventions",
+    name: "CI Gate 15: Next.js 16 File Conventions Audit",
+    command: "pnpm lint:nextjs-conventions",
+    category: "gate",
+    description:
+      "Enforce Next.js 16 proxy.ts convention and prohibit deprecated middleware.ts",
+  },
+  {
+    id: "lint:github-action-versions",
+    name: "CI Gate 16: GitHub Action Minimum Versions Audit",
+    command: "pnpm lint:github-action-versions",
+    category: "gate",
+    description:
+      "Enforce Node 24 action runtime baseline (dorny/paths-filter >= v4, checkout >= v5, setup-node >= v5, cache >= v5, upload-artifact >= v6)",
   },
 ];
 

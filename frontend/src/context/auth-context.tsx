@@ -37,14 +37,20 @@ const USER_KEY = "haihire_recruiter_user";
 function setAuthCookies(token: string, hasOrg: boolean) {
   if (typeof document === "undefined") return;
   const maxAge = 60 * 60 * 24 * 7; // 7 days
-  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:"
+      ? "; Secure"
+      : "";
   document.cookie = `haihire_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
   document.cookie = `haihire_has_org=${hasOrg ? "true" : "false"}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 }
 
 function clearAuthCookies() {
   if (typeof document === "undefined") return;
-  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:"
+      ? "; Secure"
+      : "";
   document.cookie = `haihire_token=; path=/; max-age=0; SameSite=Lax${secure}`;
   document.cookie = `haihire_has_org=; path=/; max-age=0; SameSite=Lax${secure}`;
 }
@@ -267,14 +273,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const isOwner = Boolean(
       (org as { ownerId?: string })?.ownerId &&
-        (org as { ownerId?: string }).ownerId === user.id,
+      (org as { ownerId?: string }).ownerId === user.id,
     );
     const updated: User = {
       ...user,
       organizationId: org.id,
       organization: org,
       isOwner,
-      role: isOwner ? "ADMIN" : ((updatedRole as "ADMIN" | "MEMBER") || user.role),
+      role: isOwner
+        ? "ADMIN"
+        : (updatedRole as "ADMIN" | "MEMBER") || user.role,
     };
     setUser(updated);
     localStorage.setItem(USER_KEY, JSON.stringify(updated));
@@ -283,13 +291,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isAdmin = user?.role === "ADMIN";
-  const isMember = user?.role === "MEMBER";
   const isOwner = Boolean(
     user?.isOwner ||
-      (user?.organization?.ownerId && user.organization.ownerId === user.id),
+    (user?.organization?.ownerId && user.organization.ownerId === user.id),
   );
-  const canEdit = isAdmin || isOwner;
+  const isAdmin = user?.role === "ADMIN";
+  const isMember = user?.role === "MEMBER";
+  const canEdit = isOwner || isAdmin || user?.role === "RECRUITER";
 
   return (
     <AuthContext.Provider

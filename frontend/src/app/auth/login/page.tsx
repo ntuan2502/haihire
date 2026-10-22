@@ -17,7 +17,11 @@ import {
   Loader2,
   UserPlus,
 } from "lucide-react";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/constants/auth.constants";
+import {
+  DEMO_ACCOUNTS,
+  DEMO_PASSWORD,
+  isDemoLoginEnabled,
+} from "@/constants/auth.constants";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 
@@ -34,6 +38,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [demoLoadingEmail, setDemoLoadingEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const showDemoLogin = isDemoLoginEnabled();
 
   // If already logged in, redirect immediately
   useEffect(() => {
@@ -125,88 +130,92 @@ function LoginForm() {
       </div>
 
       {/* 1-Click Demo Accounts: Admin & Member */}
-      <div className="space-y-2.5 pt-1">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-          {t("auth.quickLoginDev")}
-        </p>
+      {showDemoLogin && (
+        <>
+          <div className="space-y-2.5 pt-1">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              {t("auth.quickLoginDev")}
+            </p>
 
-        <div className="grid grid-cols-1 gap-2.5">
-          {/* 1. Admin Demo Account */}
-          <button
-            type="button"
-            disabled={Boolean(demoLoadingEmail) || loading}
-            onClick={() => handleQuickLogin(DEMO_ACCOUNTS.ADMIN)}
-            className="w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-slate-200 bg-white hover:bg-slate-50 hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 shadow-2xs group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
-                AD
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">
-                    {DEMO_ACCOUNTS.ADMIN.name}
-                  </p>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
-                    {DEMO_ACCOUNTS.ADMIN.badge}
-                  </span>
+            <div className="grid grid-cols-1 gap-2.5">
+              {/* 1. Admin Demo Account */}
+              <button
+                type="button"
+                disabled={Boolean(demoLoadingEmail) || loading}
+                onClick={() => handleQuickLogin(DEMO_ACCOUNTS.ADMIN)}
+                className="w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-slate-200 bg-white hover:bg-slate-50 hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 shadow-2xs group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
+                    AD
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {DEMO_ACCOUNTS.ADMIN.name}
+                      </p>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
+                        {DEMO_ACCOUNTS.ADMIN.badge}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {DEMO_ACCOUNTS.ADMIN.email} &bull;{" "}
+                      {DEMO_ACCOUNTS.ADMIN.description}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {DEMO_ACCOUNTS.ADMIN.email} &bull;{" "}
-                  {DEMO_ACCOUNTS.ADMIN.description}
-                </p>
-              </div>
-            </div>
-            {demoLoadingEmail === DEMO_ACCOUNTS.ADMIN.email ? (
-              <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
-            ) : (
-              <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform" />
-            )}
-          </button>
+                {demoLoadingEmail === DEMO_ACCOUNTS.ADMIN.email ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform" />
+                )}
+              </button>
 
-          {/* 2. Member Demo Account */}
-          <button
-            type="button"
-            disabled={Boolean(demoLoadingEmail) || loading}
-            onClick={() => handleQuickLogin(DEMO_ACCOUNTS.MEMBER)}
-            className="w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 shadow-2xs group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-700 text-white font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
-                MB
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">
-                    {DEMO_ACCOUNTS.MEMBER.name}
-                  </p>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                    {DEMO_ACCOUNTS.MEMBER.badge}
-                  </span>
+              {/* 2. Member Demo Account */}
+              <button
+                type="button"
+                disabled={Boolean(demoLoadingEmail) || loading}
+                onClick={() => handleQuickLogin(DEMO_ACCOUNTS.MEMBER)}
+                className="w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 shadow-2xs group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-700 text-white font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
+                    MB
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {DEMO_ACCOUNTS.MEMBER.name}
+                      </p>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {DEMO_ACCOUNTS.MEMBER.badge}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {DEMO_ACCOUNTS.MEMBER.email} &bull;{" "}
+                      {DEMO_ACCOUNTS.MEMBER.description}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {DEMO_ACCOUNTS.MEMBER.email} &bull;{" "}
-                  {DEMO_ACCOUNTS.MEMBER.description}
-                </p>
-              </div>
+                {demoLoadingEmail === DEMO_ACCOUNTS.MEMBER.email ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-600 dark:text-slate-400" />
+                ) : (
+                  <UserCheck className="h-4 w-4 text-slate-600 dark:text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                )}
+              </button>
             </div>
-            {demoLoadingEmail === DEMO_ACCOUNTS.MEMBER.email ? (
-              <Loader2 className="h-4 w-4 animate-spin text-slate-600 dark:text-slate-400" />
-            ) : (
-              <UserCheck className="h-4 w-4 text-slate-600 dark:text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-            )}
-          </button>
-        </div>
-      </div>
+          </div>
 
-      {/* Divider */}
-      <div className="relative flex items-center py-1">
-        <div className="grow border-t border-slate-200 dark:border-slate-800" />
-        <span className="shrink mx-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-          {t("auth.orEmail")}
-        </span>
-        <div className="grow border-t border-slate-200 dark:border-slate-800" />
-      </div>
+          {/* Divider */}
+          <div className="relative flex items-center py-1">
+            <div className="grow border-t border-slate-200 dark:border-slate-800" />
+            <span className="shrink mx-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              {t("auth.orEmail")}
+            </span>
+            <div className="grow border-t border-slate-200 dark:border-slate-800" />
+          </div>
+        </>
+      )}
 
       {/* Error Message */}
       {error && (

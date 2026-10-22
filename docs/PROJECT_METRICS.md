@@ -3,90 +3,81 @@
 > Canonical metrics for the HaiHire Enterprise ATS platform.  
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
-**Last Updated:** 2026-10-19  
-**Platform Version:** v0.2.0 (Pre-release)
+**Last Updated:** 2026-10-22  
+**Platform Version:** v0.3.0 (Pre-release)
 
 ---
 
 ## Release Stage
 
-- **Current:** Pre-release (v0.2.0)
-- **Target:** Stable release (v1.0.0) — when ready
-- **Branch strategy:** dev -> staging -> main
-- **Hotfix flow:** hotfix/* from main -> main + dev
+- **Current:** Pre-release (`v0.3.0`)
+- **Target:** Feature branch `feat/v0.3.0-rbac-agents-ci` -> Release Tag `v0.3.0`
+- **Branch strategy:** `feat/*` -> `dev` -> `staging` -> `main`
+- **Hotfix flow:** `hotfix/*` from `main` -> `main` + `dev`
 
 ---
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 871 total (+107 from Wave 4 refactoring, 764 → 871)
-  - Backend: 485 passing (Vitest, 45 test suites)
-  - Frontend: 386 passing (Vitest + JSDOM, 48 test suites)
+- **Automated Tests:** 1,020 total (+149 tests added since v0.2.0: 871 → 1,020)
+  - Backend: 590 passing (Vitest, 57 test suites)
+  - Frontend: 430 passing (Vitest + JSDOM, 58 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
   - Backend Coverage: 79.54% Statements (80.92% Lines, 62.35% Branch, 80.38% Funcs)
-  - Critical Services Coverage (Task #36):
-    - `applications-saga.service.ts`: 97.61% lines (was 66.66%)
-    - `sourcing-metrics.service.ts`: 98.27% lines (was 38.36%)
-    - `organizations-core.service.ts`: 94.91% lines (was 63.55%)
-    - `sourcing-links.service.ts`: 97.97% lines (was 58.58%)
-- **Accessibility Compliance (WCAG 2.1 AA):** 92.4% (Tasks #37-#40, 27 issues fixed: 5 critical, 11 high, 7 medium, 4 low)
-- **CI Architecture Gates:** 11 gates (`scripts/check-all.ts`)
-  1. `lint:env-sync` — Env Variables Synchronization & Parity
-  2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings
-  3. `lint` — ESLint Code Quality (Backend + Frontend)
+  - Critical Services Coverage:
+    - `applications-saga.service.ts`: 97.61% lines
+    - `sourcing-metrics.service.ts`: 98.27% lines
+    - `organizations-core.service.ts`: 94.91% lines
+    - `sourcing-links.service.ts`: 97.97% lines
+- **Accessibility Compliance (WCAG 2.1 AA):** 92.4% (27 issues remediated: 5 critical, 11 high, 7 medium, 4 low)
+- **CI Architecture Gates:** 16 automated quality gates (`scripts/check-all.ts`)
+  1. `lint:env-sync` — Environment Variables Synchronization & Parity (55 keys dev / prod)
+  2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings (1,769 keys vi / en)
+  3. `lint` — ESLint Code Quality across Backend & Frontend
   4. `typecheck` — Strict TypeScript Typecheck (`tsc --noEmit`)
-  5. `lint:dtopipe` — DtoPipe Validation Coverage (29 piped endpoints)
-  6. `lint:error-i18n` — Error Code i18n Localization (54 codes)
-  7. `lint:api-contract` — API Contract & Leaks Audit (84 endpoints)
-  8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 rules)
-  9. `lint:tenant-scope` — Tenant Scoping Static Analysis (212 queries)
-  10. `lint:doc-links` — Documentation Markdown Link Integrity (164 files)
-  11. `test:diff` — Test Count Delta & Anti-Regression
+  5. `lint:dtopipe` — DtoPipe Validation Coverage (31 properly piped controller endpoints)
+  6. `lint:error-i18n` — Error Code i18n Localization (57 domain error codes)
+  7. `lint:api-contract` — API Contract & Leaks Audit (86 REST endpoints)
+  8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 PromQL alert rules)
+  9. `lint:tenant-scope` — Tenant Scoping Static Analysis (219 Prisma queries isolated)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (42 markdown files)
+  11. `lint:doc-sync` — Documentation Synchronization & Drift Gate
+  12. `check:prod-email` — Production Email Provider Validation (prohibits simulated provider in prod)
+  13. `test:diff` — Test Count Delta & Anti-Regression Gate
+  14. `lint:nextjs-conventions` — Next.js 16 File Conventions Audit (`proxy.ts` enforced)
+  15. `lint:github-action-versions` — GitHub Actions Minimum Versions Audit (Node 24 action runtime)
+  16. `test` — Unit & Integration Test Suite (1,020 tests)
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
-- **E2E Browser Tests:**
-  - Cross-Tenant Suite: 6 tests (`frontend/tests/e2e/tenant-security.spec.ts`)
-  - Total E2E: 19 tests across 7 Playwright specs (10 critical user journeys)
-- **Test Pass Rate:** 100% (Zero skipped, zero flaky)
+- **E2E Browser Tests:** 23 specs across end-to-end recruitment lifecycle journeys
+- **Test Pass Rate:** 100% (Zero skipped, zero flaky, zero commented-out tests)
 
 ---
 
 ## Architecture & Codebase Metrics
 
 - **Monorepo Packages:** 3 (`backend`, `frontend`, `packages/shared`)
+- **Backend Architecture:** Modular monolith on NestJS 12.1.2 with Express platform adapter
 - **Backend Modules:** 18
-- **Backend Controllers:** 13
-- **REST API Endpoints:** 84
-- **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation in Task #8)
-- **Database Models:** 16 (9 camelCase tech debt + 7 snake_case)
-- **God Files (>400 LOC):** 23 remaining logic/UI/service files >400 LOC (excluding 4 exempt files: 2 i18n dictionaries, seed script, types); 10/10 identified God Files refactored across Waves 1–4, Wave 4 complete
-  - Max file size: 280 LOC (`frontend/src/components/interviews/calendar/calendar-month-grid.tsx`)
-  - Refactored God Files in Waves 1–4 (10/10 Complete):
-    - `frontend/src/components/interviews/interviews-calendar-view.tsx` (942 → 7 LOC shim, 12 modular sub-files, Task 43–44 Wave 4.5)
-    - `frontend/src/app/dashboard/applications/[id]/page.tsx` (857 → 10 LOC wrapper, 10 modular sub-files, Task 43 Wave 4.4)
-    - `frontend/src/app/dashboard/candidates/[id]/page.tsx` (941 → 10 LOC wrapper, 9 modular sub-files, Task 43 Wave 4.3)
-    - `frontend/src/app/dashboard/candidates/page.tsx` (1,050 → 14 LOC wrapper, 8 modular sub-files, Task 43 Wave 4.2)
-    - `frontend/src/components/jobs/job-wizard-editor.tsx` (838 → 2 LOC shim, 6 modular sub-files, Task 43 Wave 4.1)
-    - `frontend/src/components/applications/applications-data-table.tsx` (1,706 → 2 LOC shim, 16 modular subcomponents, Wave 3)
-    - `backend/src/organizations/organizations.service.ts` (1,366 → 125 LOC facade, 3 sub-services, Wave 1)
-    - `backend/src/sourcing/sourcing.service.ts` (1,214 → 162 LOC facade, 3 sub-services, Wave 1)
-    - `backend/src/applications/applications.service.ts` (1,189 → 150 LOC facade, 4 sub-services, Wave 2)
-    - `frontend/src/components/jobs/job-list.tsx` (957 → 10 LOC shim, 8 subcomponents, Wave 2)
-  - Detailed inventory of remaining 23 files tracked in [`docs/ROADMAP.md`](ROADMAP.md)
+- **Backend Controllers:** 12
+- **REST API Endpoints:** 86
+- **Roles & Permissions:** 5 active organization roles (`Role.OWNER` deprecated per D-003: `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), 41 granular permissions
+- **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation)
+- **Database Models:** 16 Prisma models (`contract.prisma`)
+- **God Files (>400 LOC):** 23 remaining logic/UI/service files >400 LOC (excluding exempt i18n dictionaries and seed scripts); 10/10 identified God Files refactored across Waves 1–4
+  - Max refactored file size: 280 LOC (`frontend/src/components/interviews/calendar/components/calendar-month-view.tsx`)
+  - Detailed inventory tracked in [`docs/guides/roadmap.md`](guides/roadmap.md)
 
 ---
 
 ## Operations & Release Metrics
 
-- **Hardening Milestones:** 20+ tasks (Tasks #1A → #14D)
-- **Restructure:** Task #9 complete
 - **Supported Languages:** 2 (`vi` Vietnamese + `en` English)
-- **Documentation Language:** 100% English (Task #7.5 convention)
+- **Documentation Language:** 100% English
 - **Runtime Infrastructure:**
   - PostgreSQL 17.6-alpine
   - Valkey 8.0.2-alpine
-  - MinIO (SHA256 pinned)
-  - Caddy 2.8-alpine
+  - MinIO S3 Object Storage (SHA256 pinned)
   - Node.js 26-alpine
 
 ---
@@ -99,13 +90,13 @@
   - `ci-staging.yml` — Pre-production E2E & build verification on `staging` (8–10 min code / ~30s docs)
   - `ci-main.yml` — Production release gatekeeper & pnpm audit (10–12 min)
   - `cd-release.yml` — GHCR container publishing, Trivy scan, GitHub release (5–7 min)
-  - `e2e-weekly.yml` — Scheduled weekly 10-journey Playwright sweep on `staging` (03:00 UTC Mondays)
+  - `e2e-weekly.yml` — Scheduled weekly Playwright sweep on `staging` (03:00 UTC Mondays)
   - `security-weekly.yml` — Scheduled weekly vulnerability & tenant AST sweep (06:00 UTC Wednesdays)
 - **CI Compute Efficiency:** ~72% reduction (~420 min/month vs ~1,500 min/month baseline)
 - **Git Hooks Architecture (3-Tier):**
   - Tier 1 (Pre-commit): `lint-staged` running ESLint & Prettier on staged files (<3s)
   - Tier 2 (Pre-push): `pnpm lint && pnpm typecheck` full static verification (~25s)
-  - Tier 3 (Remote CI): 11 Architecture Gates & E2E Suites
+  - Tier 3 (Remote CI): 16 Architecture Gates & E2E Suites
 - **Security Defenses:** 3 active layers
   - Layer 1: `pnpm audit --audit-level=high` (Build gate)
   - Layer 2: GitHub Dependabot (Automated weekly grouped updates on Saturdays at 04:00 UTC targeting `dev`)
@@ -116,6 +107,6 @@
 ## Environment Architecture
 
 - **Single Source of Truth:** Root `.env` file (gitignored).
-- **Template:** `.env.example` (tracked, 10-section standardized).
+- **Template:** `.env.example` (tracked, 55 keys).
 - **Production Template:** `.env.production.example` (tracked).
-- **NO** per-package env files (`backend/.env` and `frontend/.env` removed in Task #11).
+- **Zero Drift:** Enforced by Gate 1 (`pnpm lint:env-sync`).

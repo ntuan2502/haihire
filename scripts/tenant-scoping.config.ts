@@ -20,7 +20,6 @@ export const NON_TENANT_SCOPED_FILES = [
   // Auth has no organization context during login / token verification
   "backend/src/auth/auth.service.ts",
   // Users service reads global system / demo user seeds
-  "backend/src/users/users.service.ts",
   // Infrastructure services
   "backend/src/app.service.ts",
   "backend/src/common/encryption.service.ts",

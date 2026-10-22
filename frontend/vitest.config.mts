@@ -6,6 +6,15 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
+    coverage: {
+      provider: "v8",
+      thresholds: {
+        lines: 66,
+        functions: 57,
+        branches: 59,
+        statements: 65,
+      },
+    },
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],

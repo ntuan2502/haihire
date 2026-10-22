@@ -27,7 +27,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             return req.cookies["haihire_token"];
           }
           if (req?.headers?.cookie) {
-            const match = req.headers.cookie.match(/(?:^|;\s*)haihire_token=([^;]+)/);
+            const match = req.headers.cookie.match(
+              /(?:^|;\s*)haihire_token=([^;]+)/,
+            );
             if (match) {
               return decodeURIComponent(match[1]);
             }
@@ -56,15 +58,48 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       .first();
 
     if (!user) {
-      throw new AppUnauthorizedException(APP_ERROR_CODES.UNAUTHORIZED, "User not found or token invalid");
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.UNAUTHORIZED,
+        "User not found or token invalid",
+      );
     }
 
     const payloadTokenVersion = payload.tokenVersion ?? 0;
     const userTokenVersion = user.tokenVersion ?? 0;
     if (payloadTokenVersion !== userTokenVersion) {
-      throw new AppUnauthorizedException(APP_ERROR_CODES.UNAUTHORIZED, "Token has been revoked");
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.UNAUTHORIZED,
+        "Token has been revoked",
+      );
     }
 
-    return user;
+    let isOwner = false;
+    let organization: {
+      id: string;
+      name: string;
+      slug: string;
+      ownerId: string;
+    } | null = null;
+    if (user.organizationId) {
+      const org = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+        "ownerId",
+      )
+        .where((o) => o.id.eq(user.organizationId as string))
+        .first();
+
+      if (org) {
+        organization = org;
+        isOwner = Boolean(org.ownerId === user.id);
+      }
+    }
+
+    return {
+      ...user,
+      isOwner,
+      organization,
+    };
   }
 }

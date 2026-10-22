@@ -242,7 +242,13 @@ describe("OrganizationsCoreService", () => {
       });
     });
 
-    it("atomically unlinks users, deletes memberships, and deletes organization on owner request", async () => {
+    it("atomically unlinks all users (owner + members), deletes memberships, and deletes organization on owner request", async () => {
+      // org-1 has 1 owner (user-owner), 1 admin (user-admin), 1 member (user-member) = 3 users
+      const usersBefore = userTable.store.filter(
+        (u) => u.organizationId === "org-1",
+      );
+      expect(usersBefore).toHaveLength(3);
+
       const res = await service.deleteMyOrg("user-owner");
       expect(res.success).toBe(true);
 
@@ -256,8 +262,21 @@ describe("OrganizationsCoreService", () => {
       );
       expect(remainingMembers).toHaveLength(0);
 
-      const ownerUser = userTable.store.find((u) => u.id === "user-owner");
-      expect(ownerUser?.organizationId).toBeNull();
+      // Verify ALL 3 users belonging to org-1 have organizationId set to null
+      const usersAfter = userTable.store.filter(
+        (u) => u.organizationId === "org-1",
+      );
+      expect(usersAfter).toHaveLength(0);
+
+      expect(
+        userTable.store.find((u) => u.id === "user-owner")?.organizationId,
+      ).toBeNull();
+      expect(
+        userTable.store.find((u) => u.id === "user-admin")?.organizationId,
+      ).toBeNull();
+      expect(
+        userTable.store.find((u) => u.id === "user-member")?.organizationId,
+      ).toBeNull();
     });
   });
 
@@ -292,6 +311,102 @@ describe("OrganizationsCoreService", () => {
       expect(res.organization.id).toBe("org-2");
       const updatedUser = userTable.store.find((u) => u.id === "user-owner");
       expect(updatedUser?.organizationId).toBe("org-2");
+    });
+  });
+
+  describe("transferOwnership (Enhancement P1 / F-016)", () => {
+    it("allows organization owner to transfer ownership to another member", async () => {
+      const res = await service.transferOwnership("user-owner", "user-admin");
+      expect(res.success).toBe(true);
+      expect(res.newOwnerId).toBe("user-admin");
+
+      const org = organizationTable.store.find((o) => o.id === "org-1");
+      expect(org?.ownerId).toBe("user-admin");
+    });
+
+    it("promotes target member to ADMIN in both User and OrganizationMember on ownership transfer", async () => {
+      const memberUserBefore = userTable.store.find(
+        (u) => u.id === "user-member",
+      );
+      const memberEntryBefore = organizationMemberTable.store.find(
+        (m) => m.organizationId === "org-1" && m.userId === "user-member",
+      );
+      expect(memberUserBefore?.role).toBe("MEMBER");
+      expect(memberEntryBefore?.role).toBe("MEMBER");
+
+      const res = await service.transferOwnership("user-owner", "user-member");
+      expect(res.success).toBe(true);
+      expect(res.newOwnerId).toBe("user-member");
+
+      const org = organizationTable.store.find((o) => o.id === "org-1");
+      expect(org?.ownerId).toBe("user-member");
+
+      const memberUserAfter = userTable.store.find(
+        (u) => u.id === "user-member",
+      );
+      expect(memberUserAfter?.role).toBe("ADMIN");
+
+      const memberEntryAfter = organizationMemberTable.store.find(
+        (m) => m.organizationId === "org-1" && m.userId === "user-member",
+      );
+      expect(memberEntryAfter?.role).toBe("ADMIN");
+    });
+
+    it("throws AppForbiddenException when non-owner attempts to transfer ownership", async () => {
+      await expect(
+        service.transferOwnership("user-admin", "user-member"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+      });
+    });
+
+    it("throws AppBadRequestException when owner attempts to transfer ownership to self", async () => {
+      await expect(
+        service.transferOwnership("user-owner", "user-owner"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_CANNOT_TRANSFER_TO_SELF,
+      });
+    });
+
+    it("throws AppBadRequestException when target user is not a member of the organization", async () => {
+      await expect(
+        service.transferOwnership("user-owner", "ghost-member-uuid"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_TRANSFER_TARGET_NOT_MEMBER,
+      });
+    });
+
+    it("throws AppNotFoundException when caller has no organization", async () => {
+      await expect(
+        service.transferOwnership("user-no-org", "user-admin"),
+      ).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_USER_NO_ORG,
+      });
+    });
+
+    it("after ownership transfer: old owner calling deleteMyOrg throws 403, new owner calling deleteMyOrg succeeds (200 OK)", async () => {
+      // 1. Initial state: user-owner is the owner
+      const initialOrg = organizationTable.store.find((o) => o.id === "org-1");
+      expect(initialOrg?.ownerId).toBe("user-owner");
+
+      // 2. Transfer ownership to user-admin
+      const transferRes = await service.transferOwnership(
+        "user-owner",
+        "user-admin",
+      );
+      expect(transferRes.success).toBe(true);
+      expect(transferRes.newOwnerId).toBe("user-admin");
+      expect(initialOrg?.ownerId).toBe("user-admin");
+
+      // 3. Old owner calls deleteMyOrg -> throws 403 AppForbiddenException
+      await expect(service.deleteMyOrg("user-owner")).rejects.toMatchObject({
+        code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+      });
+
+      // 4. New owner calls deleteMyOrg -> succeeds 200 OK
+      const deleteRes = await service.deleteMyOrg("user-admin");
+      expect(deleteRes.success).toBe(true);
+      expect(deleteRes.message).toBe("Organization deleted successfully");
     });
   });
 });

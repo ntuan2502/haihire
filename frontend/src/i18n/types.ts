@@ -81,6 +81,9 @@ export interface TranslationSchema {
     ORG_CANNOT_CHANGE_OWNER_ROLE: string;
     ORG_CANNOT_REMOVE_SELF: string;
     ORG_CANNOT_REMOVE_OWNER: string;
+    ORG_CANNOT_TRANSFER_TO_SELF: string;
+    ORG_TRANSFER_TARGET_NOT_MEMBER: string;
+    ORG_NOT_OWNER: string;
     ORG_MEMBER_NOT_FOUND: string;
     ORG_FORBIDDEN_ACTION: string;
     JOB_NOT_FOUND: string;
@@ -1253,6 +1256,12 @@ export interface TranslationSchema {
     removeMember: string;
     removeMemberConfirmTitle: string;
     removeMemberConfirmWarning: string;
+    transferOwnership: string;
+    transferOwnershipConfirmTitle: string;
+    transferOwnershipConfirmDesc: string;
+    transferOwnershipConfirmNote: string;
+    transferOwnershipConfirmButton: string;
+    transferOwnershipSuccess: string;
     revokeLinkConfirmTitle: string;
     revokeLinkConfirmWarning: string;
     roleOwner: string;

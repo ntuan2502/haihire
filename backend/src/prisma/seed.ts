@@ -9,31 +9,136 @@ import { SourcingChannel } from "@haihire/shared";
 const defaultPasswordHash = bcrypt.hashSync(DEMO_PASSWORD, 10);
 
 const VIETNAMESE_LAST_NAMES = [
-  "Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng",
-  "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý", "Đoàn", "Trịnh", "Lưu", "Mai",
+  "Nguyễn",
+  "Trần",
+  "Lê",
+  "Phạm",
+  "Hoàng",
+  "Huỳnh",
+  "Phan",
+  "Vũ",
+  "Võ",
+  "Đặng",
+  "Bùi",
+  "Đỗ",
+  "Hồ",
+  "Ngô",
+  "Dương",
+  "Lý",
+  "Đoàn",
+  "Trịnh",
+  "Lưu",
+  "Mai",
 ];
 
 const VIETNAMESE_MIDDLE_NAMES = [
-  "Văn", "Thị", "Hồng", "Minh", "Đức", "Hoàng", "Thanh", "Quốc", "Gia", "Hải",
-  "Đình", "Xuân", "Ngọc", "Tuấn", "Bảo", "Anh", "Phương", "Thu", "Khánh", "Hữu",
+  "Văn",
+  "Thị",
+  "Hồng",
+  "Minh",
+  "Đức",
+  "Hoàng",
+  "Thanh",
+  "Quốc",
+  "Gia",
+  "Hải",
+  "Đình",
+  "Xuân",
+  "Ngọc",
+  "Tuấn",
+  "Bảo",
+  "Anh",
+  "Phương",
+  "Thu",
+  "Khánh",
+  "Hữu",
 ];
 
 const VIETNAMESE_FIRST_NAMES = [
-  "An", "Bình", "Cường", "Dũng", "Em", "Phong", "Giang", "Hương", "Huy", "Khoa",
-  "Linh", "Minh", "Nam", "Oanh", "Phúc", "Quân", "Sơn", "Trang", "Tùng", "Uyên",
-  "Việt", "Xuân", "Yến", "Thắng", "Thảo", "Hà", "Kiên", "Tú", "Hậu", "Loan",
+  "An",
+  "Bình",
+  "Cường",
+  "Dũng",
+  "Em",
+  "Phong",
+  "Giang",
+  "Hương",
+  "Huy",
+  "Khoa",
+  "Linh",
+  "Minh",
+  "Nam",
+  "Oanh",
+  "Phúc",
+  "Quân",
+  "Sơn",
+  "Trang",
+  "Tùng",
+  "Uyên",
+  "Việt",
+  "Xuân",
+  "Yến",
+  "Thắng",
+  "Thảo",
+  "Hà",
+  "Kiên",
+  "Tú",
+  "Hậu",
+  "Loan",
 ];
 
 const INTL_FIRST_NAMES = [
-  "James", "Alexander", "Sarah", "Emily", "Michael", "David", "Jessica", "Daniel",
-  "Sophia", "Lucas", "Oliver", "Emma", "Ethan", "Liam", "Ava", "Noah",
-  "Chloe", "Mason", "Grace", "Logan", "Benjamin", "Charlotte", "Henry", "Amelia",
+  "James",
+  "Alexander",
+  "Sarah",
+  "Emily",
+  "Michael",
+  "David",
+  "Jessica",
+  "Daniel",
+  "Sophia",
+  "Lucas",
+  "Oliver",
+  "Emma",
+  "Ethan",
+  "Liam",
+  "Ava",
+  "Noah",
+  "Chloe",
+  "Mason",
+  "Grace",
+  "Logan",
+  "Benjamin",
+  "Charlotte",
+  "Henry",
+  "Amelia",
 ];
 
 const INTL_LAST_NAMES = [
-  "Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Wilson",
-  "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee", "Perez",
-  "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson",
+  "Smith",
+  "Johnson",
+  "Williams",
+  "Brown",
+  "Jones",
+  "Miller",
+  "Davis",
+  "Wilson",
+  "Anderson",
+  "Taylor",
+  "Thomas",
+  "Moore",
+  "Jackson",
+  "Martin",
+  "Lee",
+  "Perez",
+  "Thompson",
+  "White",
+  "Harris",
+  "Sanchez",
+  "Clark",
+  "Ramirez",
+  "Lewis",
+  "Robinson",
 ];
 
 interface BaseJobConfig {
@@ -209,7 +314,14 @@ Bạn sẽ trực tiếp thiết kế cơ sở dữ liệu, quản lý kết n�
   },
 ];
 
-const STAGES = ["APPLIED", "SCREENING", "INTERVIEW", "OFFER", "HIRED", "REJECTED"] as const;
+const STAGES = [
+  "APPLIED",
+  "SCREENING",
+  "INTERVIEW",
+  "OFFER",
+  "HIRED",
+  "REJECTED",
+] as const;
 
 function generate200UniqueCandidates(): Array<{
   name: string;
@@ -398,7 +510,10 @@ class InterviewSlotManager {
     } else {
       if (round === totalRounds || round >= 3) {
         slot = this.pastTier3Slots.shift();
-      } else if (round === 2 || (round === totalRounds - 1 && totalRounds >= 2)) {
+      } else if (
+        round === 2 ||
+        (round === totalRounds - 1 && totalRounds >= 2)
+      ) {
         slot = this.pastTier2Slots.shift();
       } else {
         slot = this.pastTier1Slots.shift();
@@ -418,16 +533,30 @@ class InterviewSlotManager {
   }
 
   private fallbackCounter = 90;
-  private generateFallbackSlot(isCompleted: boolean): { date: string; time: string } {
+  private generateFallbackSlot(isCompleted: boolean): {
+    date: string;
+    time: string;
+  } {
     const DAILY_TIMES = [
-      "08:30", "09:15", "10:00", "10:45", "11:30",
-      "13:30", "14:15", "15:00", "15:45", "16:30", "17:15",
+      "08:30",
+      "09:15",
+      "10:00",
+      "10:45",
+      "11:30",
+      "13:30",
+      "14:15",
+      "15:00",
+      "15:45",
+      "16:30",
+      "17:15",
     ];
     while (true) {
       this.fallbackCounter++;
       const now = new Date();
       const d = new Date(now);
-      const dayOffset = isCompleted ? -this.fallbackCounter : this.fallbackCounter;
+      const dayOffset = isCompleted
+        ? -this.fallbackCounter
+        : this.fallbackCounter;
       d.setDate(now.getDate() + dayOffset);
       if (d.getDay() === 0 || d.getDay() === 6) continue;
       const dateStr = d.toISOString().split("T")[0];
@@ -469,7 +598,8 @@ class InterviewSlotManager {
       "Đặng Quốc Bảo (Senior Tech Lead)",
       "Vũ Thanh Hà (Head of Talent)",
     ];
-    const interviewer = interviewers[(candidateIdx * 2 + round) % interviewers.length];
+    const interviewer =
+      interviewers[(candidateIdx * 2 + round) % interviewers.length];
 
     const linkOrLocation =
       format === "OFFICE"
@@ -510,63 +640,130 @@ export async function runSeed(): Promise<void> {
   console.log("==================================================");
 
   await db.orm.public.EmailLog.all().then((logs) =>
-    Promise.all(logs.map((l) => db.orm.public.EmailLog.where((x) => x.id.eq(l.id)).delete())),
+    Promise.all(
+      logs.map((l) =>
+        db.orm.public.EmailLog.where((x) => x.id.eq(l.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.EmailSetting.all().then((sets) =>
-    Promise.all(sets.map((s) => db.orm.public.EmailSetting.where((x) => x.id.eq(s.id)).delete())),
+    Promise.all(
+      sets.map((s) =>
+        db.orm.public.EmailSetting.where((x) => x.id.eq(s.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.EmailTemplate.all().then((tmpls) =>
-    Promise.all(tmpls.map((t) => db.orm.public.EmailTemplate.where((x) => x.id.eq(t.id)).delete())),
+    Promise.all(
+      tmpls.map((t) =>
+        db.orm.public.EmailTemplate.where((x) => x.id.eq(t.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.ActivityLog.all().then((acts) =>
-    Promise.all(acts.map((a) => db.orm.public.ActivityLog.where((x) => x.id.eq(a.id)).delete())),
+    Promise.all(
+      acts.map((a) =>
+        db.orm.public.ActivityLog.where((x) => x.id.eq(a.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.CandidateDocument.all().then((docs) =>
-    Promise.all(docs.map((d) => db.orm.public.CandidateDocument.where((x) => x.id.eq(d.id)).delete())),
+    Promise.all(
+      docs.map((d) =>
+        db.orm.public.CandidateDocument.where((x) => x.id.eq(d.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.Interview.all().then((intvs) =>
-    Promise.all(intvs.map((i) => db.orm.public.Interview.where((x) => x.id.eq(i.id)).delete())),
+    Promise.all(
+      intvs.map((i) =>
+        db.orm.public.Interview.where((x) => x.id.eq(i.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.Application.all().then((apps) =>
-    Promise.all(apps.map((a) => db.orm.public.Application.where((x) => x.id.eq(a.id)).delete())),
+    Promise.all(
+      apps.map((a) =>
+        db.orm.public.Application.where((x) => x.id.eq(a.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.TrackingClick.all().then((clicks) =>
-    Promise.all(clicks.map((c) => db.orm.public.TrackingClick.where((x) => x.id.eq(c.id)).delete())),
+    Promise.all(
+      clicks.map((c) =>
+        db.orm.public.TrackingClick.where((x) => x.id.eq(c.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.TrackingLink.all().then((links) =>
-    Promise.all(links.map((l) => db.orm.public.TrackingLink.where((x) => x.id.eq(l.id)).delete())),
+    Promise.all(
+      links.map((l) =>
+        db.orm.public.TrackingLink.where((x) => x.id.eq(l.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.Candidate.all().then((cands) =>
-    Promise.all(cands.map((c) => db.orm.public.Candidate.where((x) => x.id.eq(c.id)).delete())),
+    Promise.all(
+      cands.map((c) =>
+        db.orm.public.Candidate.where((x) => x.id.eq(c.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.InviteLink.all().then((links) =>
-    Promise.all(links.map((l) => db.orm.public.InviteLink.where((x) => x.id.eq(l.id)).delete())),
+    Promise.all(
+      links.map((l) =>
+        db.orm.public.InviteLink.where((x) => x.id.eq(l.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.OrganizationMember.all().then((members) =>
-    Promise.all(members.map((m) => db.orm.public.OrganizationMember.where((x) => x.id.eq(m.id)).delete())),
+    Promise.all(
+      members.map((m) =>
+        db.orm.public.OrganizationMember.where((x) => x.id.eq(m.id)).delete(),
+      ),
+    ),
   );
 
   await db.orm.public.Job.all().then((jobs) =>
-    Promise.all(jobs.map((j) => db.orm.public.Job.where((x) => x.id.eq(j.id)).delete())),
+    Promise.all(
+      jobs.map((j) => db.orm.public.Job.where((x) => x.id.eq(j.id)).delete()),
+    ),
   );
 
+  // Break mutual circular FK reference between User.organizationId and Organization.ownerId
   await db.orm.public.User.all().then((users) =>
-    Promise.all(users.map((u) => db.orm.public.User.where((x) => x.id.eq(u.id)).delete())),
+    Promise.all(
+      users.map((u) =>
+        db.orm.public.User.where((x) => x.id.eq(u.id)).update({
+          organizationId: null,
+        }),
+      ),
+    ),
   );
 
   await db.orm.public.Organization.all().then((orgs) =>
-    Promise.all(orgs.map((o) => db.orm.public.Organization.where((x) => x.id.eq(o.id)).delete())),
+    Promise.all(
+      orgs.map((o) =>
+        db.orm.public.Organization.where((x) => x.id.eq(o.id)).delete(),
+      ),
+    ),
+  );
+
+  await db.orm.public.User.all().then((users) =>
+    Promise.all(
+      users.map((u) => db.orm.public.User.where((x) => x.id.eq(u.id)).delete()),
+    ),
   );
 
   console.log("==================================================");
@@ -577,7 +774,26 @@ export async function runSeed(): Promise<void> {
   const adminOrgId = "00000000-0000-0000-0000-000000000002";
   const memberUserId = "00000000-0000-0000-0000-000000000003";
 
-  // 1. Create Org "Admin"
+  // 1. Create Admin User (pre-created so Organization.ownerId FK succeeds)
+  await db.orm.public.User.upsert({
+    create: {
+      id: adminUserId,
+      email: DEMO_ACCOUNTS.ADMIN.email,
+      name: DEMO_ACCOUNTS.ADMIN.name,
+      role: DEMO_ACCOUNTS.ADMIN.role,
+      password: defaultPasswordHash,
+      organizationId: null,
+      updatedAt: toInstant(),
+    },
+    update: {
+      password: defaultPasswordHash,
+      name: DEMO_ACCOUNTS.ADMIN.name,
+      role: DEMO_ACCOUNTS.ADMIN.role,
+    },
+    conflictOn: { email: DEMO_ACCOUNTS.ADMIN.email },
+  });
+
+  // 2. Create Org "Admin"
   await db.orm.public.Organization.upsert({
     create: {
       id: adminOrgId,
@@ -593,24 +809,9 @@ export async function runSeed(): Promise<void> {
     conflictOn: { slug: "admin" },
   });
 
-  // 2. Create Admin User
-  await db.orm.public.User.upsert({
-    create: {
-      id: adminUserId,
-      email: DEMO_ACCOUNTS.ADMIN.email,
-      name: DEMO_ACCOUNTS.ADMIN.name,
-      role: DEMO_ACCOUNTS.ADMIN.role,
-      password: defaultPasswordHash,
-      organizationId: adminOrgId,
-      updatedAt: toInstant(),
-    },
-    update: {
-      password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.ADMIN.name,
-      role: DEMO_ACCOUNTS.ADMIN.role,
-      organizationId: adminOrgId,
-    },
-    conflictOn: { email: DEMO_ACCOUNTS.ADMIN.email },
+  // Link Admin User to organization
+  await db.orm.public.User.where((u) => u.id.eq(adminUserId)).update({
+    organizationId: adminOrgId,
   });
 
   // 3. Create Org Member relationship
@@ -684,6 +885,24 @@ export async function runSeed(): Promise<void> {
   const betaAppId = "00000000-0000-0000-0000-0000000000b5";
   const betaWebhookId = "00000000-0000-0000-0000-0000000000b6";
 
+  await db.orm.public.User.upsert({
+    create: {
+      id: betaAdminUserId,
+      email: DEMO_ACCOUNTS.BETA_ADMIN.email,
+      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
+      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
+      password: defaultPasswordHash,
+      organizationId: null,
+      updatedAt: toInstant(),
+    },
+    update: {
+      password: defaultPasswordHash,
+      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
+      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
+    },
+    conflictOn: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
+  });
+
   await db.orm.public.Organization.upsert({
     create: {
       id: betaOrgId,
@@ -699,23 +918,8 @@ export async function runSeed(): Promise<void> {
     conflictOn: { slug: "beta-financials" },
   });
 
-  await db.orm.public.User.upsert({
-    create: {
-      id: betaAdminUserId,
-      email: DEMO_ACCOUNTS.BETA_ADMIN.email,
-      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
-      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
-      password: defaultPasswordHash,
-      organizationId: betaOrgId,
-      updatedAt: toInstant(),
-    },
-    update: {
-      password: defaultPasswordHash,
-      name: DEMO_ACCOUNTS.BETA_ADMIN.name,
-      role: DEMO_ACCOUNTS.BETA_ADMIN.role,
-      organizationId: betaOrgId,
-    },
-    conflictOn: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
+  await db.orm.public.User.where((u) => u.id.eq(betaAdminUserId)).update({
+    organizationId: betaOrgId,
   });
 
   await db.orm.public.OrganizationMember.upsert({
@@ -742,7 +946,8 @@ export async function runSeed(): Promise<void> {
       type: "FULL_TIME",
       experienceLevel: "LEAD",
       status: "PUBLISHED",
-      description: "Proprietary trading algorithms and quantitative strategy execution.",
+      description:
+        "Proprietary trading algorithms and quantitative strategy execution.",
       requirements: "Quantitative finance background, 5+ years experience.",
       salaryRange: "$5,000 - $8,000 / month",
       updatedAt: toInstant(),
@@ -810,10 +1015,16 @@ export async function runSeed(): Promise<void> {
   });
 
   console.log(`- Org: Admin (id: ${adminOrgId})`);
-  console.log(`- Admin: ${DEMO_ACCOUNTS.ADMIN.email} (Password: ${DEMO_PASSWORD})`);
-  console.log(`- Member: ${DEMO_ACCOUNTS.MEMBER.email} (Password: ${DEMO_PASSWORD})`);
+  console.log(
+    `- Admin: ${DEMO_ACCOUNTS.ADMIN.email} (Password: ${DEMO_PASSWORD})`,
+  );
+  console.log(
+    `- Member: ${DEMO_ACCOUNTS.MEMBER.email} (Password: ${DEMO_PASSWORD})`,
+  );
   console.log(`- Org Beta: Beta Financials (id: ${betaOrgId})`);
-  console.log(`- Beta Admin: ${DEMO_ACCOUNTS.BETA_ADMIN.email} (Password: ${DEMO_PASSWORD})`);
+  console.log(
+    `- Beta Admin: ${DEMO_ACCOUNTS.BETA_ADMIN.email} (Password: ${DEMO_PASSWORD})`,
+  );
   console.log(`- Email Settings: SIMULATED (careers@tun.io.vn)`);
 
   console.log("==================================================");
@@ -822,9 +1033,15 @@ export async function runSeed(): Promise<void> {
 
   // Guarantee all 3 statuses are present while the count of each is randomized
   const statusPool: Array<"PUBLISHED" | "DRAFT" | "CLOSED"> = [
-    "PUBLISHED", "PUBLISHED", "PUBLISHED",
-    "DRAFT", "DRAFT", "DRAFT",
-    "CLOSED", "CLOSED", "CLOSED",
+    "PUBLISHED",
+    "PUBLISHED",
+    "PUBLISHED",
+    "DRAFT",
+    "DRAFT",
+    "DRAFT",
+    "CLOSED",
+    "CLOSED",
+    "CLOSED",
   ];
   const allPossibleStatuses: Array<"PUBLISHED" | "DRAFT" | "CLOSED"> = [
     "PUBLISHED",
@@ -833,7 +1050,9 @@ export async function runSeed(): Promise<void> {
   ];
   while (statusPool.length < 20) {
     statusPool.push(
-      allPossibleStatuses[Math.floor(Math.random() * allPossibleStatuses.length)],
+      allPossibleStatuses[
+        Math.floor(Math.random() * allPossibleStatuses.length)
+      ],
     );
   }
   // Shuffle statuses
@@ -851,7 +1070,12 @@ export async function runSeed(): Promise<void> {
     "Global Remote",
   ];
   const WORKPLACES = ["HYBRID", "REMOTE", "ON_SITE"] as const;
-  const JOB_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"] as const;
+  const JOB_TYPES = [
+    "FULL_TIME",
+    "PART_TIME",
+    "CONTRACT",
+    "INTERNSHIP",
+  ] as const;
   const EXP_LEVELS = [
     "ENTRY_LEVEL",
     "MID_LEVEL",
@@ -870,7 +1094,11 @@ export async function runSeed(): Promise<void> {
   ];
 
   const createdJobIds: string[] = [];
-  const statusCounts: Record<string, number> = { PUBLISHED: 0, DRAFT: 0, CLOSED: 0 };
+  const statusCounts: Record<string, number> = {
+    PUBLISHED: 0,
+    DRAFT: 0,
+    CLOSED: 0,
+  };
 
   for (let i = 0; i < 20; i++) {
     const baseConfig = BASE_JOB_CONFIGS[i % BASE_JOB_CONFIGS.length];
@@ -883,10 +1111,12 @@ export async function runSeed(): Promise<void> {
       i === 8 ||
       baseConfig.title.includes("Senior Backend Engineer") ||
       baseConfig.title.includes("Senior Technical Recruiter");
-    const isCriticalClosedJob =
-      baseConfig.title.includes("Information Security & SecOps Specialist");
-    const isCriticalDraftJob =
-      baseConfig.title.includes("Customer Success Lead");
+    const isCriticalClosedJob = baseConfig.title.includes(
+      "Information Security & SecOps Specialist",
+    );
+    const isCriticalDraftJob = baseConfig.title.includes(
+      "Customer Success Lead",
+    );
 
     const status = isCriticalPublishedJob
       ? "PUBLISHED"
@@ -900,8 +1130,10 @@ export async function runSeed(): Promise<void> {
     const workplace = WORKPLACES[Math.floor(Math.random() * WORKPLACES.length)];
     const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
     const type = JOB_TYPES[Math.floor(Math.random() * JOB_TYPES.length)];
-    const experienceLevel = EXP_LEVELS[Math.floor(Math.random() * EXP_LEVELS.length)];
-    const salaryRange = SALARY_RANGES[Math.floor(Math.random() * SALARY_RANGES.length)];
+    const experienceLevel =
+      EXP_LEVELS[Math.floor(Math.random() * EXP_LEVELS.length)];
+    const salaryRange =
+      SALARY_RANGES[Math.floor(Math.random() * SALARY_RANGES.length)];
 
     const jobId =
       i === 1
@@ -920,7 +1152,8 @@ export async function runSeed(): Promise<void> {
         location,
         workplace: workplace as "ON_SITE" | "HYBRID" | "REMOTE",
         type,
-        experienceLevel: experienceLevel as "ENTRY_LEVEL" | "MID_LEVEL" | "SENIOR_LEVEL" | "LEAD" | "EXECUTIVE",
+        experienceLevel: experienceLevel as
+          "ENTRY_LEVEL" | "MID_LEVEL" | "SENIOR_LEVEL" | "LEAD" | "EXECUTIVE",
         salaryRange,
         description: baseConfig.description,
         requirements: baseConfig.requirements,
@@ -1474,7 +1707,9 @@ export async function runSeed(): Promise<void> {
       const domain = getDomainForChannel(item.source);
 
       for (let c = 0; c < clickSamplesCount; c++) {
-        const clickOffsetMs = Math.floor(Math.random() * item.ageDays * 86400000);
+        const clickOffsetMs = Math.floor(
+          Math.random() * item.ageDays * 86400000,
+        );
         const clickDate = new Date(Date.now() - clickOffsetMs);
 
         clicksToInsert.push({
@@ -1482,7 +1717,11 @@ export async function runSeed(): Promise<void> {
           trackingLinkId: linkId,
           referrer: `https://${domain}/jobs/feed?ref=${item.token}`,
           referrerDomain: domain,
-          ipHash: crypto.createHash("sha256").update(`ip-${c}-${item.token}`).digest("hex").slice(0, 16),
+          ipHash: crypto
+            .createHash("sha256")
+            .update(`ip-${c}-${item.token}`)
+            .digest("hex")
+            .slice(0, 16),
           userAgent:
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
           createdAt: toInstant(clickDate),
@@ -1491,14 +1730,18 @@ export async function runSeed(): Promise<void> {
     }
   }
 
-  console.log(`✅ Successfully created ${createdTrackingLinks.length} tracking links (full 15 source channels, active/inactive, job-specific and company-wide).`);
+  console.log(
+    `✅ Successfully created ${createdTrackingLinks.length} tracking links (full 15 source channels, active/inactive, job-specific and company-wide).`,
+  );
 
   console.log("==================================================");
   console.log("👥 4. Seeding Exactly 200 Unique Candidates (0-6 jobs each)...");
   console.log("==================================================");
 
   const uniqueCandidates = generate200UniqueCandidates();
-  console.log(`✅ Successfully initialized list of ${uniqueCandidates.length} unique candidates with distinct full names.`);
+  console.log(
+    `✅ Successfully initialized list of ${uniqueCandidates.length} unique candidates with distinct full names.`,
+  );
 
   // Job count allocation for 200 candidates (0 to 6 jobs):
   // 0 jobs: 24 candidates (not yet applied - Talent Pool)
@@ -1526,7 +1769,13 @@ export async function runSeed(): Promise<void> {
   }
 
   const jobDistributionStats: Record<number, number> = {
-    0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0,
+    0: 0,
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
   };
   const stageStats: Record<string, number> = {
     APPLIED: 0,
@@ -1585,7 +1834,12 @@ export async function runSeed(): Promise<void> {
     id: string;
     applicationId: string;
     scheduledAt: Temporal.Instant;
-    type: "HR_SCREENING" | "TECHNICAL" | "CULTURE_FIT" | "FINAL_ROUND" | "ASSESSMENT";
+    type:
+      | "HR_SCREENING"
+      | "TECHNICAL"
+      | "CULTURE_FIT"
+      | "FINAL_ROUND"
+      | "ASSESSMENT";
     format: "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
     linkOrLocation: string;
     interviewer: string;
@@ -1597,13 +1851,54 @@ export async function runSeed(): Promise<void> {
 
   function getCandidateDemographics(name: string, index: number) {
     const femaleHints = [
-      "Thị", "Hồng", "Thảo", "Hương", "Trang", "Uyên", "Yến", "Loan", "Oanh", "Linh",
-      "Sarah", "Emily", "Jessica", "Sophia", "Emma", "Ava", "Chloe", "Grace", "Charlotte", "Amelia",
+      "Thị",
+      "Hồng",
+      "Thảo",
+      "Hương",
+      "Trang",
+      "Uyên",
+      "Yến",
+      "Loan",
+      "Oanh",
+      "Linh",
+      "Sarah",
+      "Emily",
+      "Jessica",
+      "Sophia",
+      "Emma",
+      "Ava",
+      "Chloe",
+      "Grace",
+      "Charlotte",
+      "Amelia",
     ];
     const maleHints = [
-      "Văn", "Đức", "Hoàng", "Quốc", "Hải", "Tuấn", "Dũng", "Cường", "Nam", "Thắng", "Kiên", "Tú",
-      "James", "Alexander", "Michael", "David", "Daniel", "Lucas", "Oliver", "Ethan", "Liam", "Noah",
-      "Mason", "Logan", "Benjamin", "Henry",
+      "Văn",
+      "Đức",
+      "Hoàng",
+      "Quốc",
+      "Hải",
+      "Tuấn",
+      "Dũng",
+      "Cường",
+      "Nam",
+      "Thắng",
+      "Kiên",
+      "Tú",
+      "James",
+      "Alexander",
+      "Michael",
+      "David",
+      "Daniel",
+      "Lucas",
+      "Oliver",
+      "Ethan",
+      "Liam",
+      "Noah",
+      "Mason",
+      "Logan",
+      "Benjamin",
+      "Henry",
     ];
 
     let gender: "MALE" | "FEMALE" | "OTHER" = "MALE";
@@ -1643,7 +1938,9 @@ export async function runSeed(): Promise<void> {
     const { gender, dateOfBirth } = getCandidateDemographics(candidate.name, i);
     // Candidates spread over past 60 days
     const daysAgo = ((i * 0.3) % 60) + (i % 2 === 0 ? 0.05 : 0.2);
-    const candidateCreatedAt = new Date(Date.now() - Math.floor(daysAgo * 86400000));
+    const candidateCreatedAt = new Date(
+      Date.now() - Math.floor(daysAgo * 86400000),
+    );
 
     candidatesToInsert.push({
       id: candidateId,
@@ -1676,7 +1973,8 @@ export async function runSeed(): Promise<void> {
         stageStats[stage]++;
 
         const orderKey = `${jobId}_${stage}`;
-        jobStageOrderCounter[orderKey] = (jobStageOrderCounter[orderKey] || 0) + 1;
+        jobStageOrderCounter[orderKey] =
+          (jobStageOrderCounter[orderKey] || 0) + 1;
         const orderIndex = jobStageOrderCounter[orderKey];
 
         const appId = crypto.randomUUID();
@@ -1684,15 +1982,16 @@ export async function runSeed(): Promise<void> {
         let matchScore = 65 + ((candidate.candidateIndex + j * 7) % 31);
 
         if (stage === "APPLIED" || stage === "SCREENING") {
-          notes = "Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.";
+          notes =
+            "Hồ sơ nộp trực tuyến qua Cổng tuyển dụng ATS. Đánh giá sơ loại hồ sơ đạt chuẩn ứng tuyển.";
         } else if (stage === "INTERVIEW") {
           const roll = Math.random();
           let interviewCount = 0;
-          if (roll < 0.20) {
+          if (roll < 0.2) {
             interviewCount = 0;
-          } else if (roll < 0.70) {
+          } else if (roll < 0.7) {
             interviewCount = 1;
-          } else if (roll < 0.90) {
+          } else if (roll < 0.9) {
             interviewCount = 2;
           } else {
             interviewCount = 3;
@@ -1700,12 +1999,18 @@ export async function runSeed(): Promise<void> {
 
           matchScore = 80 + ((candidate.candidateIndex + j) % 16);
           if (interviewCount === 0) {
-            notes = "Chờ lên lịch phỏng vấn chuyên sâu. Đã hoàn thành sơ vấn qua điện thoại.";
+            notes =
+              "Chờ lên lịch phỏng vấn chuyên sâu. Đã hoàn thành sơ vấn qua điện thoại.";
           } else {
             notes = "Đang trong quy trình phỏng vấn.";
             for (let r = 1; r <= interviewCount; r++) {
               const isCompleted = r < interviewCount;
-              const intv = slotManager.generateInterviewObject(r, interviewCount, isCompleted, candidate.candidateIndex + j);
+              const intv = slotManager.generateInterviewObject(
+                r,
+                interviewCount,
+                isCompleted,
+                candidate.candidateIndex + j,
+              );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
                 applicationId: appId,
@@ -1727,7 +2032,12 @@ export async function runSeed(): Promise<void> {
           notes = `Đánh giá xuất sắc qua ${interviewCount} vòng phỏng vấn. Đã gửi thư mời làm việc.`;
 
           for (let r = 1; r <= interviewCount; r++) {
-            const intv = slotManager.generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
+            const intv = slotManager.generateInterviewObject(
+              r,
+              interviewCount,
+              true,
+              candidate.candidateIndex + j,
+            );
             interviewsToInsert.push({
               id: crypto.randomUUID(),
               applicationId: appId,
@@ -1751,11 +2061,17 @@ export async function runSeed(): Promise<void> {
           matchScore = 55 + ((candidate.candidateIndex + j) % 20);
 
           if (interviewCount === 0) {
-            notes = "Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí.";
+            notes =
+              "Từ chối từ vòng hồ sơ: Kỹ năng hoặc số năm kinh nghiệm chưa đáp ứng yêu cầu tối thiểu của vị trí.";
           } else {
             notes = `Không đạt sau ${interviewCount} vòng phỏng vấn chuyên môn.`;
             for (let r = 1; r <= interviewCount; r++) {
-              const intv = slotManager.generateInterviewObject(r, interviewCount, true, candidate.candidateIndex + j);
+              const intv = slotManager.generateInterviewObject(
+                r,
+                interviewCount,
+                true,
+                candidate.candidateIndex + j,
+              );
               interviewsToInsert.push({
                 id: crypto.randomUUID(),
                 applicationId: appId,
@@ -1773,12 +2089,17 @@ export async function runSeed(): Promise<void> {
           }
         }
 
-        const appOffsetMs = Math.floor((1 + ((candidate.candidateIndex + j * 7) % 36)) * 3600000);
-        const appTime = Math.min(Date.now() - 1800000, candidateCreatedAt.getTime() + appOffsetMs);
+        const appOffsetMs = Math.floor(
+          (1 + ((candidate.candidateIndex + j * 7) % 36)) * 3600000,
+        );
+        const appTime = Math.min(
+          Date.now() - 1800000,
+          candidateCreatedAt.getTime() + appOffsetMs,
+        );
         const appCreatedAt = new Date(appTime);
 
         // Attribution mapping: ~80% attributed to a tracking link, ~20% direct
-        const isAttributed = ((candidate.candidateIndex * 13 + j * 7) % 10) < 8;
+        const isAttributed = (candidate.candidateIndex * 13 + j * 7) % 10 < 8;
         let trackingLinkId: string | null = null;
         let sourceChannel: SourcingChannel = SourcingChannel.DIRECT;
         let sourceDetails: string | null = null;
@@ -1798,8 +2119,12 @@ export async function runSeed(): Promise<void> {
           );
           const chosenLink =
             candidateLinks.length > 0
-              ? candidateLinks[(candidate.candidateIndex + j) % candidateLinks.length]
-              : activeLinks[(candidate.candidateIndex + j) % activeLinks.length];
+              ? candidateLinks[
+                  (candidate.candidateIndex + j) % candidateLinks.length
+                ]
+              : activeLinks[
+                  (candidate.candidateIndex + j) % activeLinks.length
+                ];
 
           trackingLinkId = chosenLink.id;
           sourceChannel = chosenLink.source;
@@ -1813,7 +2138,8 @@ export async function runSeed(): Promise<void> {
         } else {
           sourceChannel = SourcingChannel.DIRECT;
           sourceDetails = "Ứng tuyển trực tiếp từ Career Site";
-          referrerDomain = (candidate.candidateIndex + j) % 2 === 0 ? "google.com" : null;
+          referrerDomain =
+            (candidate.candidateIndex + j) % 2 === 0 ? "google.com" : null;
         }
 
         applicationsToInsert.push({
@@ -1942,7 +2268,9 @@ export async function runSeed(): Promise<void> {
   });
   stageStats.SCREENING++;
 
-  console.log(`\n⏳ Saving ${candidatesToInsert.length} candidates to database...`);
+  console.log(
+    `\n⏳ Saving ${candidatesToInsert.length} candidates to database...`,
+  );
   const BATCH_SIZE = 50;
   for (let b = 0; b < candidatesToInsert.length; b += BATCH_SIZE) {
     const chunk = candidatesToInsert.slice(b, b + BATCH_SIZE);
@@ -1957,7 +2285,9 @@ export async function runSeed(): Promise<void> {
     );
   }
 
-  console.log(`\n⏳ Saving ${applicationsToInsert.length} application records to database (batched)...`);
+  console.log(
+    `\n⏳ Saving ${applicationsToInsert.length} application records to database (batched)...`,
+  );
   for (let b = 0; b < applicationsToInsert.length; b += BATCH_SIZE) {
     const chunk = applicationsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
@@ -1969,7 +2299,9 @@ export async function runSeed(): Promise<void> {
         }),
       ),
     );
-    process.stdout.write(`\r   Progress: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} records`);
+    process.stdout.write(
+      `\r   Progress: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} records`,
+    );
   }
 
   // Strictly verify uniqueness of interview time slots
@@ -1981,7 +2313,9 @@ export async function runSeed(): Promise<void> {
     }
     slotCollisionCheck.add(key);
   }
-  console.log(`\n⏳ Saving ${interviewsToInsert.length} interview schedules to database (100% unique time slots verified)...`);
+  console.log(
+    `\n⏳ Saving ${interviewsToInsert.length} interview schedules to database (100% unique time slots verified)...`,
+  );
   for (let b = 0; b < interviewsToInsert.length; b += BATCH_SIZE) {
     const chunk = interviewsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
@@ -1994,9 +2328,13 @@ export async function runSeed(): Promise<void> {
       ),
     );
   }
-  console.log(`   ✨ Successfully saved: all ${interviewsToInsert.length} interview time slots are conflict-free.`);
+  console.log(
+    `   ✨ Successfully saved: all ${interviewsToInsert.length} interview time slots are conflict-free.`,
+  );
 
-  console.log(`\n⏳ Saving ${clicksToInsert.length} clicks (TrackingClick) to database...`);
+  console.log(
+    `\n⏳ Saving ${clicksToInsert.length} clicks (TrackingClick) to database...`,
+  );
   for (let b = 0; b < clicksToInsert.length; b += BATCH_SIZE) {
     const chunk = clicksToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
@@ -2009,30 +2347,68 @@ export async function runSeed(): Promise<void> {
       ),
     );
   }
-  console.log(`   ✨ Successfully saved ${clicksToInsert.length} sample clicks (TrackingClick).`);
+  console.log(
+    `   ✨ Successfully saved ${clicksToInsert.length} sample clicks (TrackingClick).`,
+  );
 
-  console.log(`\n\n✅ Success! Seeded fixed 200 unique candidates (total ${applicationsToInsert.length} applications):`);
-  console.log(`   - 0 jobs (Not applied):    ${jobDistributionStats[0]} candidates`);
-  console.log(`   - 1 job:                   ${jobDistributionStats[1]} candidates`);
-  console.log(`   - 2 jobs:                  ${jobDistributionStats[2]} candidates`);
-  console.log(`   - 3 jobs:                  ${jobDistributionStats[3]} candidates`);
-  console.log(`   - 4 jobs:                  ${jobDistributionStats[4]} candidates`);
-  console.log(`   - 5 jobs:                  ${jobDistributionStats[5]} candidates`);
-  console.log(`   - 6 jobs:                  ${jobDistributionStats[6]} candidates`);
+  console.log(
+    `\n\n✅ Success! Seeded fixed 200 unique candidates (total ${applicationsToInsert.length} applications):`,
+  );
+  console.log(
+    `   - 0 jobs (Not applied):    ${jobDistributionStats[0]} candidates`,
+  );
+  console.log(
+    `   - 1 job:                   ${jobDistributionStats[1]} candidates`,
+  );
+  console.log(
+    `   - 2 jobs:                  ${jobDistributionStats[2]} candidates`,
+  );
+  console.log(
+    `   - 3 jobs:                  ${jobDistributionStats[3]} candidates`,
+  );
+  console.log(
+    `   - 4 jobs:                  ${jobDistributionStats[4]} candidates`,
+  );
+  console.log(
+    `   - 5 jobs:                  ${jobDistributionStats[5]} candidates`,
+  );
+  console.log(
+    `   - 6 jobs:                  ${jobDistributionStats[6]} candidates`,
+  );
   console.log(`   --------------------------------------------------`);
-  console.log(`   - APPLIED:                 ${stageStats.APPLIED} applications (0 interviews)`);
-  console.log(`   - SCREENING:               ${stageStats.SCREENING} applications (0 interviews)`);
-  console.log(`   - INTERVIEW:               ${stageStats.INTERVIEW} applications (0, 1 or more interviews)`);
-  console.log(`   - OFFER:                   ${stageStats.OFFER} applications (1-3 interviews)`);
-  console.log(`   - HIRED:                   ${stageStats.HIRED} applications (1-3 interviews)`);
-  console.log(`   - REJECTED:                ${stageStats.REJECTED} applications (0-3 interviews)`);
+  console.log(
+    `   - APPLIED:                 ${stageStats.APPLIED} applications (0 interviews)`,
+  );
+  console.log(
+    `   - SCREENING:               ${stageStats.SCREENING} applications (0 interviews)`,
+  );
+  console.log(
+    `   - INTERVIEW:               ${stageStats.INTERVIEW} applications (0, 1 or more interviews)`,
+  );
+  console.log(
+    `   - OFFER:                   ${stageStats.OFFER} applications (1-3 interviews)`,
+  );
+  console.log(
+    `   - HIRED:                   ${stageStats.HIRED} applications (1-3 interviews)`,
+  );
+  console.log(
+    `   - REJECTED:                ${stageStats.REJECTED} applications (0-3 interviews)`,
+  );
   console.log(`   --------------------------------------------------`);
-  const attributedCount = applicationsToInsert.filter((a) => a.trackingLinkId).length;
+  const attributedCount = applicationsToInsert.filter(
+    (a) => a.trackingLinkId,
+  ).length;
   console.log(`📊 Source Tracking statistics:`);
-  console.log(`   - Total tracking links:     ${createdTrackingLinks.length} links (full 15 source channels, 5 UTM, active/inactive)`);
+  console.log(
+    `   - Total tracking links:     ${createdTrackingLinks.length} links (full 15 source channels, 5 UTM, active/inactive)`,
+  );
   console.log(`   - Total detailed clicks:    ${clicksToInsert.length} clicks`);
-  console.log(`   - Sourced applications:     ${attributedCount}/${applicationsToInsert.length} applications (${Math.round((attributedCount / applicationsToInsert.length) * 100)}%)`);
-  console.log(`   - Direct / Unattributed:    ${applicationsToInsert.length - attributedCount} applications (${Math.round(((applicationsToInsert.length - attributedCount) / applicationsToInsert.length) * 100)}%)`);
+  console.log(
+    `   - Sourced applications:     ${attributedCount}/${applicationsToInsert.length} applications (${Math.round((attributedCount / applicationsToInsert.length) * 100)}%)`,
+  );
+  console.log(
+    `   - Direct / Unattributed:    ${applicationsToInsert.length - attributedCount} applications (${Math.round(((applicationsToInsert.length - attributedCount) / applicationsToInsert.length) * 100)}%)`,
+  );
   console.log("==================================================");
 }
 

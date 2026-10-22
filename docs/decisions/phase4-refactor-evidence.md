@@ -503,4 +503,27 @@ Synchronized the primary project entry point `README.md` and established the can
 
 ---
 
+## 11. Task 7 — Project Metrics Synchronization (`PROJECT_METRICS.md`)
+
+Synchronized `docs/PROJECT_METRICS.md` with the verified state of the codebase:
+
+### 11.1 Metrics Synchronized
+
+- **Automated Tests:** Updated to 1,019 total tests (589 backend + 430 frontend) across 115 test suites.
+- **CI Architecture Gates:** Updated to 16 full automated gates (`scripts/check-all.ts`).
+- **REST API Endpoints:** Synchronized to 86 endpoints across 12 controllers.
+- **RBAC Roles & Permissions:** Specified 5 active organization roles (`Role.OWNER` deprecated per D-003) and 41 granular permissions.
+- **Backend Architecture:** Confirmed NestJS 12 running on Express engine; purged all references to Fastify.
+- **Runtime Infrastructure:** Cleaned out phantom references to Caddy; documented PostgreSQL 17.6, Valkey 8.0.2, MinIO, and Node.js 26.
+- **Documentation Language:** 100% English.
+
+### 11.2 Verification Result (`pnpm check:all`)
+
+- **Status:** 🟢 **ALL 16 CHECKS PASSED**.
+- Gate 10 (`lint:doc-links`): 0 broken markdown links across 42 scanned files.
+- Gate 11 (`lint:doc-sync`): 0 path drift, 100% metrics parity.
+- Unit & Integration Test Suite: 1,019 tests passed (589 backend + 430 frontend).
+
+---
+
 _(This report will be continuously updated as Tasks 1 through 8 are executed)._

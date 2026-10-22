@@ -147,6 +147,14 @@ const steps: Step[] = [
     description:
       "Enforce Next.js 16 proxy.ts convention and prohibit deprecated middleware.ts",
   },
+  {
+    id: "lint:github-action-versions",
+    name: "CI Gate 16: GitHub Action Minimum Versions Audit",
+    command: "pnpm lint:github-action-versions",
+    category: "gate",
+    description:
+      "Enforce Node 24 action runtime baseline (dorny/paths-filter >= v4, checkout >= v5, setup-node >= v5, cache >= v5, upload-artifact >= v6)",
+  },
 ];
 
 // Add unit & integration tests unless --fast is specified

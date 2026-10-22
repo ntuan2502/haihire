@@ -31,7 +31,7 @@
     - `organizations-core.service.ts`: 94.91% lines (was 63.55%)
     - `sourcing-links.service.ts`: 97.97% lines (was 58.58%)
 - **Accessibility Compliance (WCAG 2.1 AA):** 92.4% (Tasks #37-#40, 27 issues fixed: 5 critical, 11 high, 7 medium, 4 low)
-- **CI Architecture Gates:** 11 gates (`scripts/check-all.ts`)
+- **CI Architecture Gates:** 16 gates (`scripts/check-all.ts`)
   1. `lint:env-sync` — Env Variables Synchronization & Parity
   2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings
   3. `lint` — ESLint Code Quality (Backend + Frontend)

@@ -150,23 +150,26 @@ Every contribution must adhere strictly to these non-negotiable coding rules:
 
 ## 6. CI Gate Rules
 
-The HaiHire platform enforces a 13-stage automated verification pipeline via `pnpm check:all`. Every pull request must pass 13/13 gates before merging.
+The HaiHire platform enforces a 16-stage automated verification pipeline via `pnpm check:all`. Every pull request must pass 16/16 gates before merging.
 
-|   #    | Gate ID                 | Command                          | Implementation Script                    | Validation Objective                                                   |
-| :----: | :---------------------- | :------------------------------- | :--------------------------------------- | :--------------------------------------------------------------------- |
-| **1**  | `lint:env-sync`         | `pnpm lint:env-sync`             | `scripts/check-env-sync.ts`              | 100% key parity dev/prod, Docker compose coverage & codebase sync      |
-| **2**  | `lint:i18n`             | `pnpm lint:i18n`                 | `scripts/check-i18n.ts`                  | 2-way dictionary symmetry (vi/en) and zero hardcoded JSX strings       |
-| **3**  | `lint`                  | `pnpm lint`                      | `eslint .` (Backend & Frontend)          | Zero ESLint warnings or errors; clean-code style compliance            |
-| **4**  | `typecheck`             | `pnpm typecheck`                 | `tsc --noEmit`                           | Zero TypeScript compiler errors across all workspace packages          |
-| **5**  | `lint:dtopipe`          | `pnpm lint:dtopipe`              | `scripts/check-dtopipe-coverage.ts`      | 100% of `@Body()` parameters guarded by `DtoPipe`                      |
-| **6**  | `lint:error-i18n`       | `pnpm lint:error-i18n`           | `scripts/check-error-code-i18n.ts`       | 100% domain error codes translated in both `vi.ts` and `en.ts`         |
-| **7**  | `lint:api-contract`     | `pnpm lint:api-contract`         | `scripts/check-api-contract-coverage.ts` | API contract synchronization, zero raw Error leaks, zero `alert()`     |
-| **8**  | `lint:prometheus-rules` | `pnpm lint:prometheus-rules`     | `scripts/check-prometheus-rules.ts`      | Valid PromQL alert rules, required `sre` team labels & annotations     |
-| **9**  | `lint:tenant-scope`     | `pnpm lint:tenant-scope`         | `scripts/check-tenant-scoping.ts`        | 100% of Prisma queries isolated by tenant `organizationId`             |
-| **10** | `lint:doc-links`        | `pnpm lint:doc-links`            | `scripts/verify-doc-links.ts`            | Zero broken relative markdown links across docs and memory             |
-| **11** | `check:prod-email`      | `pnpm check:prod-email-provider` | `scripts/check-prod-email-provider.ts`   | Prohibits simulated email provider in production environments          |
-| **12** | `test:diff`             | `pnpm test:diff`                 | `scripts/check-test-count.ts`            | Detects and blocks test count regression against `HEAD~1`              |
-| **13** | `lint:doc-sync`         | `pnpm lint:doc-sync`             | `scripts/check-doc-sync.ts`              | Verifies doc paths existence, env sync, metrics sync, and ADR coverage |
+|   #    | Gate ID                 | Command                          | Implementation Script                    | Validation Objective                                               |
+| :----: | :---------------------- | :------------------------------- | :--------------------------------------- | :----------------------------------------------------------------- |
+| **1**  | `lint:env-sync`         | `pnpm lint:env-sync`             | `scripts/check-env-sync.ts`              | 100% key parity dev/prod, Docker compose coverage & codebase sync  |
+| **2**  | `lint:i18n`             | `pnpm lint:i18n`                 | `scripts/check-i18n.ts`                  | 2-way dictionary symmetry (vi/en) and zero hardcoded JSX strings   |
+| **3**  | `lint`                  | `pnpm lint`                      | `eslint .` (Backend & Frontend)          | Zero ESLint warnings or errors; clean-code style compliance        |
+| **4**  | `typecheck`             | `pnpm typecheck`                 | `tsc --noEmit`                           | Zero TypeScript compiler errors across all workspace packages      |
+| **5**  | `lint:dtopipe`          | `pnpm lint:dtopipe`              | `scripts/check-dtopipe-coverage.ts`      | 100% of `@Body()` parameters guarded by `DtoPipe`                  |
+| **6**  | `lint:error-i18n`       | `pnpm lint:error-i18n`           | `scripts/check-error-code-i18n.ts`       | 100% domain error codes translated in both `vi.ts` and `en.ts`     |
+| **7**  | `lint:api-contract`     | `pnpm lint:api-contract`         | `scripts/check-api-contract-coverage.ts` | API contract synchronization, zero raw Error leaks, zero `alert()` |
+| **8**  | `lint:prometheus-rules` | `pnpm lint:prometheus-rules`     | `scripts/check-prometheus-rules.ts`      | Valid PromQL alert rules, required `sre` team labels & annotations |
+| **9**  | `lint:tenant-scope`     | `pnpm lint:tenant-scope`         | `scripts/check-tenant-scoping.ts`        | 100% of Prisma queries isolated by tenant `organizationId`         |
+| **10** | `lint:doc-links`        | `pnpm lint:doc-links`            | `scripts/verify-doc-links.ts`            | Zero broken relative markdown links across docs and memory         |
+| **11** | `check:prod-email`      | `pnpm check:prod-email-provider` | `scripts/check-prod-email-provider.ts`   | Prohibits simulated email provider in production environments      |
+| **12** | `test:diff`             | `pnpm test:diff`                 | `scripts/check-test-count.ts`            | Detects and blocks test count regression against `HEAD~1`          |
+
+| **14** | `lint:nextjs-conventions` | `pnpm lint:nextjs-conventions` | `scripts/check-nextjs-conventions.ts` | Enforces Next.js 16 `proxy.ts` convention and blocks `middleware.ts` |
+| **15** | `lint:github-action-versions` | `pnpm lint:github-action-versions` | `scripts/check-github-action-versions.ts`| Enforces Node 24 action runtime baseline across GitHub workflows |
+| **16** | `test` | `pnpm test` | `vitest` | Zero regressions; full backend (540+) and frontend (423+) test suites |
 
 ---
 

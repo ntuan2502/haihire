@@ -50,7 +50,7 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 
 export default function MembersSettingsPage() {
-  const { user, canEdit, isOwner } = useAuth();
+  const { user, canEdit, isOwner, refreshUser } = useAuth();
   const { t } = useI18n();
   const canManageMembers = useHasPermission("org:manage_members");
 
@@ -246,10 +246,11 @@ export default function MembersSettingsPage() {
     try {
       setActionLoadingId(memberToTransfer.id);
       await transferOwnershipMutation.mutateAsync(memberToTransfer.id);
+      await refreshUser?.();
+      refetchMembers?.();
       toast.success(t("members.transferOwnershipSuccess"));
       setOpenMenuMemberId(null);
       setMemberToTransfer(null);
-      refetchMembers?.();
     } catch (err) {
       console.error(err);
       toast.error(getApiErrorMessage(err, t));

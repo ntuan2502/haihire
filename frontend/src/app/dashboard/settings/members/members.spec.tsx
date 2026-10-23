@@ -8,6 +8,7 @@ const mockUpdateRoleMutateAsync = vi.fn();
 const mockRemoveMemberMutateAsync = vi.fn();
 const mockTransferOwnershipMutateAsync = vi.fn();
 const mockRefetchLinks = vi.fn();
+const mockRefreshUser = vi.fn();
 
 let mockAuthUser = {
   id: "user-admin",
@@ -25,6 +26,7 @@ vi.mock("@/context/auth-context", () => ({
     user: mockAuthUser,
     canEdit: mockCanEdit,
     isOwner: mockIsOwner,
+    refreshUser: mockRefreshUser,
   }),
 }));
 
@@ -237,6 +239,7 @@ describe("MembersSettingsPage Component", () => {
 
     await waitFor(() => {
       expect(mockTransferOwnershipMutateAsync).toHaveBeenCalledWith("mem-1");
+      expect(mockRefreshUser).toHaveBeenCalled();
     });
   });
 

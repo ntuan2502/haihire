@@ -86,6 +86,8 @@ vi.mock("@/i18n", () => ({
           "You are viewing the permission matrix in read-only mode.",
         "settings.rolesMatrix.coreAdminProtected":
           "Core administrative permissions cannot be revoked from the Admin role.",
+        "settings.rolesMatrix.adminRoleImmutable":
+          "Admin role permissions are immutable and cannot be modified.",
         "settings.rolesMatrix.roleAdmin": "Admin",
         "settings.rolesMatrix.roleRecruiter": "Recruiter",
         "settings.rolesMatrix.roleHiringManager": "Hiring Manager",
@@ -166,7 +168,7 @@ describe("RolesPermissionsSettingsPage Component", () => {
     expect(screen.getByText("Candidate Pipeline")).toBeInTheDocument();
   });
 
-  it("disables core admin permissions checkboxes", () => {
+  it("disables all admin permissions checkboxes unconditionally", () => {
     render(<RolesPermissionsSettingsPage />);
 
     const adminManageRolesCheckbox = screen.getByRole("checkbox", {
@@ -180,6 +182,94 @@ describe("RolesPermissionsSettingsPage Component", () => {
     });
     expect(adminDeleteCheckbox).toBeDisabled();
     expect(adminDeleteCheckbox).toBeChecked();
+
+    const adminJobViewCheckbox = screen.getByRole("checkbox", {
+      name: "Admin: job:view",
+    });
+    expect(adminJobViewCheckbox).toBeDisabled();
+    expect(adminJobViewCheckbox).toBeChecked();
+  });
+
+  it("ADMIN column renders all checkboxes checked and disabled", () => {
+    render(<RolesPermissionsSettingsPage />);
+
+    const adminCheckboxes = screen
+      .getAllByRole("checkbox")
+      .filter((cb) => cb.getAttribute("aria-label")?.startsWith("Admin:"));
+    expect(adminCheckboxes.length).toBeGreaterThan(0);
+    for (const cb of adminCheckboxes) {
+      expect(cb).toBeChecked();
+      expect(cb).toBeDisabled();
+    }
+  });
+
+  it("clicking ADMIN checkbox does NOT toggle state or trigger dirty", () => {
+    render(<RolesPermissionsSettingsPage />);
+
+    const adminOrgView = screen.getByRole("checkbox", {
+      name: "Admin: org:view",
+    });
+    expect(adminOrgView).toBeChecked();
+
+    fireEvent.click(adminOrgView);
+
+    expect(adminOrgView).toBeChecked();
+    expect(screen.queryByText(/unsaved changes/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save Changes" })).toBeDisabled();
+  });
+
+  it("save button does NOT send ADMIN overrides even if other roles modified", async () => {
+    mockUpdateRolePermissionsMutateAsync.mockResolvedValueOnce({
+      role: Role.RECRUITER,
+      permissions: { "job:delete": true },
+    });
+
+    render(<RolesPermissionsSettingsPage />);
+
+    const adminOrgView = screen.getByRole("checkbox", {
+      name: "Admin: org:view",
+    });
+    fireEvent.click(adminOrgView);
+
+    const recruiterJobDelete = screen.getByRole("checkbox", {
+      name: "Recruiter: job:delete",
+    });
+    fireEvent.click(recruiterJobDelete);
+
+    const saveButton = screen.getByRole("button", { name: "Save Changes" });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockUpdateRolePermissionsMutateAsync).toHaveBeenCalledTimes(1);
+      expect(mockUpdateRolePermissionsMutateAsync).toHaveBeenCalledWith({
+        role: Role.RECRUITER,
+        permissions: [
+          {
+            permission: "job:delete",
+            granted: true,
+          },
+        ],
+      });
+    });
+  });
+
+  it("shows lock icon and immutable tooltip on ADMIN column header and cells", () => {
+    render(<RolesPermissionsSettingsPage />);
+
+    // Header and cell lock tooltips
+    const elementsWithLockTooltip = screen.getAllByTitle(
+      "Admin role permissions are immutable and cannot be modified.",
+    );
+    expect(elementsWithLockTooltip.length).toBeGreaterThan(1);
+
+    // Check cells title attribute
+    const adminOrgView = screen.getByRole("checkbox", {
+      name: "Admin: org:view",
+    });
+    expect(adminOrgView).toHaveAttribute(
+      "title",
+      "Admin role permissions are immutable and cannot be modified.",
+    );
   });
 
   it("toggles checkbox and activates dirty state banner with Save button", () => {

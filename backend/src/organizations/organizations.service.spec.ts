@@ -69,6 +69,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         name: "HR Lead",
         role: "ADMIN",
         organizationId: null,
+        createdAt: new Date("2026-01-01T00:00:00Z"),
       },
       {
         id: "usr-2",
@@ -76,6 +77,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         name: "Admin",
         role: "ADMIN",
         organizationId: "org-1",
+        createdAt: new Date("2026-01-02T00:00:00Z"),
       },
       {
         id: "usr-3",
@@ -83,6 +85,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         name: "Member User",
         role: "MEMBER",
         organizationId: "org-1",
+        createdAt: new Date("2026-01-03T00:00:00Z"),
       },
     ];
 
@@ -591,6 +594,25 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       await expect(
         service.updateMemberRole("usr-3", "usr-2", "ADMIN"),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("14f. Should maintain stable member list order (owner first, then createdAt asc) after role change", async () => {
+      const beforeMembers = await service.getMembers("usr-2");
+      expect(beforeMembers.map((m) => m.id)).toEqual([
+        "usr-1",
+        "usr-2",
+        "usr-3",
+      ]);
+
+      await service.updateMemberRole("usr-2", "usr-3", "HIRING_MANAGER");
+
+      const afterMembers = await service.getMembers("usr-2");
+      expect(afterMembers.map((m) => m.id)).toEqual([
+        "usr-1",
+        "usr-2",
+        "usr-3",
+      ]);
+      expect(afterMembers[2].role).toBe("HIRING_MANAGER");
     });
 
     it("15. Should allow admin/owner to remove member from organization", async () => {

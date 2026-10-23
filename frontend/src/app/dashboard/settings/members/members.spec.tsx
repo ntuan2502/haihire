@@ -35,6 +35,7 @@ const mockMembersList = [
     email: "owner@haihire.vn",
     role: "ADMIN",
     isOwner: true,
+    createdAt: "2026-01-01T00:00:00Z",
   },
   {
     id: "user-admin",
@@ -42,6 +43,7 @@ const mockMembersList = [
     email: "admin@haihire.vn",
     role: "ADMIN",
     isOwner: false,
+    createdAt: "2026-01-02T00:00:00Z",
   },
   {
     id: "mem-1",
@@ -49,6 +51,7 @@ const mockMembersList = [
     email: "recruiter@haihire.vn",
     role: "ADMIN",
     isOwner: false,
+    createdAt: "2026-01-03T00:00:00Z",
   },
   {
     id: "mem-2",
@@ -56,6 +59,7 @@ const mockMembersList = [
     email: "interviewer@haihire.vn",
     role: "MEMBER",
     isOwner: false,
+    createdAt: "2026-01-04T00:00:00Z",
   },
 ];
 
@@ -339,6 +343,29 @@ describe("MembersSettingsPage Component", () => {
 
       // Index 3: mem-2 (Other member) -> enabled
       expect(dropdowns[3]).not.toBeDisabled();
+    });
+
+    it("preserves stable member order (owner first, then createdAt asc) regardless of role changes", () => {
+      mockAuthUser = {
+        id: "mem-owner",
+        name: "Le Owner",
+        email: "owner@haihire.vn",
+        role: "ADMIN",
+        isOwner: true,
+        organization: { id: "org-1", ownerId: "mem-owner" },
+      };
+      mockIsOwner = true;
+      mockCanEdit = true;
+
+      render(<MembersSettingsPage />);
+
+      const dropdowns = screen.getAllByLabelText("Role");
+      expect(dropdowns).toHaveLength(4);
+
+      expect(dropdowns[0]).toHaveTextContent("Admin");
+      expect(dropdowns[1]).toHaveTextContent("Admin");
+      expect(dropdowns[2]).toHaveTextContent("Admin");
+      expect(dropdowns[3]).toHaveTextContent("Member");
     });
   });
 });

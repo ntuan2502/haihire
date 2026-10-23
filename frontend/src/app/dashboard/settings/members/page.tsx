@@ -292,18 +292,28 @@ export default function MembersSettingsPage() {
   // Derive members from server query, with fallback to current user
   const combinedMembers = useMemo(() => {
     if (members && members.length > 0) {
-      return members.map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
-        role: m.role || "MEMBER",
-        avatarUrl: m.avatarUrl,
-        isOwner: Boolean(
-          (m as { isOwner?: boolean }).isOwner ||
-          (user?.organization?.ownerId && user.organization.ownerId === m.id),
-        ),
-        isCurrent: m.id === user?.id || m.email === user?.email,
-      }));
+      return members
+        .map((m) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role || "MEMBER",
+          avatarUrl: m.avatarUrl,
+          createdAt: m.createdAt,
+          isOwner: Boolean(
+            (m as { isOwner?: boolean }).isOwner ||
+            (user?.organization?.ownerId && user.organization.ownerId === m.id),
+          ),
+          isCurrent: m.id === user?.id || m.email === user?.email,
+        }))
+        .sort((a, b) => {
+          if (a.isOwner && !b.isOwner) return -1;
+          if (!a.isOwner && b.isOwner) return 1;
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (timeA !== timeB) return timeA - timeB;
+          return a.id.localeCompare(b.id);
+        });
     }
 
     if (user) {

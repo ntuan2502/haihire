@@ -7,7 +7,7 @@ import {
 import crypto from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service";
 import { EventsService } from "../../events/events.service";
-import { toInstant } from "../../common/date.util";
+import { toInstant, toTimestamp } from "../../common/date.util";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -196,14 +196,15 @@ export class OrganizationsMembersService implements OnModuleInit {
         };
       });
 
-    // Ensure owner is first in the list
-    if (org?.ownerId) {
-      const ownerIdx = members.findIndex((m) => m.id === org.ownerId);
-      if (ownerIdx > 0) {
-        const [owner] = members.splice(ownerIdx, 1);
-        members.unshift(owner);
-      }
-    }
+    // Ensure deterministic stable ordering: Owner first, then joined time (createdAt ASC), tie-breaker by id ASC
+    members.sort((a, b) => {
+      if (a.isOwner && !b.isOwner) return -1;
+      if (!a.isOwner && b.isOwner) return 1;
+      const timeA = toTimestamp(a.createdAt);
+      const timeB = toTimestamp(b.createdAt);
+      if (timeA !== timeB) return timeA - timeB;
+      return a.id.localeCompare(b.id);
+    });
 
     return members;
   }

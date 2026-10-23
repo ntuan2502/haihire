@@ -1408,6 +1408,9 @@ export const en: TranslationSchema = {
       "This invitation link will be invalidated immediately and can no longer be used to join.",
     roleOwner: "Owner",
     roleAdmin: "Admin",
+    roleRecruiter: "Recruiter",
+    roleHiringManager: "Hiring Manager",
+    roleInterviewer: "Interviewer",
     roleMember: "Member",
     expires7Days: "7 days",
     expires30Days: "30 days",
@@ -1417,6 +1420,8 @@ export const en: TranslationSchema = {
     noActiveInviteLinks: "No active invite links",
     noActiveInviteLinksDesc:
       "Generate expiring or single-use invite links with specific roles to invite your team.",
+    updateRoleSuccess: "Member role updated successfully.",
+    updateRoleError: "Failed to update member role.",
   },
   onboarding: {
     selectOrgTitle: "Select an organization",

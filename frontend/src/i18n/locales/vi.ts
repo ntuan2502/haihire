@@ -1412,6 +1412,9 @@ export const vi: TranslationSchema = {
       "Liên kết mời này sẽ bị vô hiệu hóa ngay lập tức và không thể sử dụng để tham gia tổ chức nữa.",
     roleOwner: "Chủ sở hữu",
     roleAdmin: "Quản trị viên",
+    roleRecruiter: "Chuyên viên tuyển dụng",
+    roleHiringManager: "Quản lý tuyển dụng",
+    roleInterviewer: "Người phỏng vấn",
     roleMember: "Thành viên",
     expires7Days: "7 ngày",
     expires30Days: "30 ngày",
@@ -1421,6 +1424,8 @@ export const vi: TranslationSchema = {
     noActiveInviteLinks: "Chưa có liên kết mời nào",
     noActiveInviteLinksDesc:
       "Tạo liên kết mời có hạn sử dụng hoặc một lần dùng với vai trò cụ thể để mời đội ngũ của bạn.",
+    updateRoleSuccess: "Cập nhật vai trò thành viên thành công.",
+    updateRoleError: "Không thể cập nhật vai trò thành viên.",
   },
   onboarding: {
     selectOrgTitle: "Chọn tổ chức làm việc",

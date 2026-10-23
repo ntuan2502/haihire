@@ -1267,6 +1267,9 @@ export interface TranslationSchema {
     revokeLinkConfirmWarning: string;
     roleOwner: string;
     roleAdmin: string;
+    roleRecruiter: string;
+    roleHiringManager: string;
+    roleInterviewer: string;
     roleMember: string;
     expires7Days: string;
     expires30Days: string;
@@ -1275,6 +1278,8 @@ export interface TranslationSchema {
     usesUnlimited: string;
     noActiveInviteLinks: string;
     noActiveInviteLinksDesc: string;
+    updateRoleSuccess: string;
+    updateRoleError: string;
   };
   onboarding: {
     selectOrgTitle: string;

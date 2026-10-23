@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { organizationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Organization, User, InviteLink } from "@/types";
+import type { Role } from "@haihire/shared";
 import { queryKeys } from "./query-keys";
 
 export function useMyOrg() {
@@ -155,13 +156,8 @@ export function useUpdateMemberRoleMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      memberId,
-      role,
-    }: {
-      memberId: string;
-      role: "ADMIN" | "MEMBER";
-    }) => organizationsApi.updateMemberRole(memberId, role),
+    mutationFn: ({ memberId, role }: { memberId: string; role: Role }) =>
+      organizationsApi.updateMemberRole(memberId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
     },

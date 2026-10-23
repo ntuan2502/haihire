@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type { Organization, User, InviteLink } from "@/types";
+import type { Role } from "@haihire/shared";
 
 export const organizationsApi = {
   getPublicOrg: async (slug: string): Promise<Organization> => {
@@ -121,7 +122,7 @@ export const organizationsApi = {
 
   updateMemberRole: async (
     memberId: string,
-    role: "ADMIN" | "MEMBER",
+    role: Role,
   ): Promise<{ success: boolean; message: string }> => {
     const response = await api.patch<{ success: boolean; message: string }>(
       `/organizations/my/members/${memberId}/role`,

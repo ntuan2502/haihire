@@ -151,6 +151,7 @@ model Organization {
   trackingLinks   TrackingLink[]
   webhookSettings OrganizationWebhookSetting[]
   rolePermissions OrganizationRolePermission[]
+  auditLogs       OrganizationAuditLog[]
   createdAt       DateTime                    @default(now())
   updatedAt       temporal.updatedAt()
 
@@ -173,6 +174,7 @@ model User {
   inviteLinks    InviteLink[]
   trackingLinks  TrackingLink[]
   memberships    OrganizationMember[]
+  auditLogs      OrganizationAuditLog[]
   createdAt      DateTime             @default(now())
   updatedAt      temporal.updatedAt()
 
@@ -513,4 +515,36 @@ model OrganizationWebhookSetting {
   @@index([organizationId])
   @@map("organizationWebhookSetting")
 }
+
+model OrganizationAuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  actorId        String?
+  action         String
+  resource       String
+  metadata       String?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor          User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, action])
+  @@map("organizationAuditLog")
+}
+
+model PlatformAuditLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  actorId        String
+  action         String
+  resource       String
+  metadata       String?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+  @@map("platformAuditLog")
+}
+
 

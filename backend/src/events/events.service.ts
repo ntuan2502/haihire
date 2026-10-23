@@ -22,6 +22,7 @@ export interface AppEvent {
   type:
     | "MEMBER_REMOVED"
     | "MEMBER_ROLE_UPDATED"
+    | "PERMISSIONS_CHANGED"
     | "ORG_UPDATED"
     | "CONNECTED"
     | "HEARTBEAT";

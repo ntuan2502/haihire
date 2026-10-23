@@ -191,6 +191,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Re-sync with server to ensure complete consistency
             refreshUser();
           }
+        } else if (payload.type === "PERMISSIONS_CHANGED") {
+          // Re-sync current user to refresh permissions and role state
+          refreshUser();
         }
       } catch (err) {
         console.error("Failed to parse SSE event", err);

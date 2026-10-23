@@ -182,6 +182,24 @@ export function useRemoveMemberMutation() {
 }
 
 export function useRolePermissionsMatrix() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleSseEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.type === "PERMISSIONS_CHANGED") {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.rolePermissionsMatrix(),
+        });
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("ats:sse_event", handleSseEvent);
+      return () => window.removeEventListener("ats:sse_event", handleSseEvent);
+    }
+  }, [queryClient]);
+
   return useQuery<Record<Role, Record<Permission, boolean>>>({
     queryKey: queryKeys.rolePermissionsMatrix(),
     queryFn: () => organizationsApi.getRolePermissionsMatrix(),
@@ -231,6 +249,28 @@ export function useAuditLogsQuery(params?: {
   limit?: number;
   offset?: number;
 }) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleSseEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (
+        customEvent.detail?.type === "PERMISSIONS_CHANGED" ||
+        customEvent.detail?.type === "MEMBER_ROLE_UPDATED" ||
+        customEvent.detail?.type === "MEMBER_REMOVED"
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: ["organization", "audit-logs"],
+        });
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("ats:sse_event", handleSseEvent);
+      return () => window.removeEventListener("ats:sse_event", handleSseEvent);
+    }
+  }, [queryClient]);
+
   return useQuery({
     queryKey: queryKeys.auditLogs(params),
     queryFn: () => organizationsApi.getAuditLogs(params),

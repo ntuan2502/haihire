@@ -329,4 +329,46 @@ describe("OrganizationsRolesService", () => {
       ).rejects.toThrow(AppBadRequestException);
     });
   });
+
+  describe("SSE Events Emission (PERMISSIONS_CHANGED)", () => {
+    it("emits PERMISSIONS_CHANGED event when role permissions are updated", async () => {
+      const mockEvents = { emit: vi.fn() };
+      const serviceWithEvents = new OrganizationsRolesService(
+        service["prisma"],
+        mockResolver as unknown as PermissionResolverService,
+        undefined,
+        mockEvents as never,
+      );
+
+      await serviceWithEvents.updateRolePermissions("org-123", Role.RECRUITER, [
+        { permission: "job:delete", granted: true },
+      ]);
+
+      expect(mockEvents.emit).toHaveBeenCalledWith({
+        type: "PERMISSIONS_CHANGED",
+        organizationId: "org-123",
+        role: Role.RECRUITER,
+        data: { action: "UPDATED" },
+      });
+    });
+
+    it("emits PERMISSIONS_CHANGED event when role permissions are reset", async () => {
+      const mockEvents = { emit: vi.fn() };
+      const serviceWithEvents = new OrganizationsRolesService(
+        service["prisma"],
+        mockResolver as unknown as PermissionResolverService,
+        undefined,
+        mockEvents as never,
+      );
+
+      await serviceWithEvents.resetRolePermissions("org-123", Role.RECRUITER);
+
+      expect(mockEvents.emit).toHaveBeenCalledWith({
+        type: "PERMISSIONS_CHANGED",
+        organizationId: "org-123",
+        role: Role.RECRUITER,
+        data: { action: "RESET" },
+      });
+    });
+  });
 });

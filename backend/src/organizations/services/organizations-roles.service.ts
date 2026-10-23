@@ -13,6 +13,7 @@ import {
 } from "@haihire/shared";
 import type { RolePermissionItemDto } from "../dto/role-permissions.dto";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
+import { EventsService } from "../../events/events.service";
 
 export const CUSTOMIZABLE_ROLES: Role[] = [
   Role.ADMIN,
@@ -40,6 +41,9 @@ export class OrganizationsRolesService {
     @Optional()
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog?: OrganizationsAuditLogService,
+    @Optional()
+    @Inject(EventsService)
+    private readonly eventsService?: EventsService,
   ) {}
 
   private async executeTx<T>(
@@ -168,6 +172,13 @@ export class OrganizationsRolesService {
       { role: roleStr, permissions: updates },
     );
 
+    this.eventsService?.emit({
+      type: "PERMISSIONS_CHANGED",
+      organizationId,
+      role: roleStr,
+      data: { action: "UPDATED" },
+    });
+
     const fullMatrix = await this.getRolePermissionsMatrix(organizationId);
 
     return {
@@ -234,6 +245,13 @@ export class OrganizationsRolesService {
       "ROLE_PERMISSIONS",
       { role: roleStr || "ALL" },
     );
+
+    this.eventsService?.emit({
+      type: "PERMISSIONS_CHANGED",
+      organizationId,
+      role: roleStr || "ALL",
+      data: { action: "RESET" },
+    });
 
     return { deleted: deletedCount };
   }

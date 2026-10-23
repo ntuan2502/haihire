@@ -30,7 +30,7 @@
     "@nestjs/throttler": "^6.7.1",
     "@prisma/composer": "0.29.1",
     "@prisma/composer-prisma-cloud": "0.29.1",
-    "@prisma/orm-postgres": "8.0.0-rc.13",
+    "@prisma/orm-postgres": "8.0.0-rc.18",
     "bcryptjs": "^3.0.3",
     "bullmq": "^6.4.0",
     "class-transformer": "^0.5.1",

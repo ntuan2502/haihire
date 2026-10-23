@@ -67,7 +67,11 @@ export class OrganizationsRolesService {
     for (const role of CUSTOMIZABLE_ROLES) {
       matrix[role] = {} as Record<Permission, boolean>;
       for (const permission of PERMISSION_LIST) {
-        matrix[role][permission] = hasPermission(role, permission);
+        if (role === Role.ADMIN) {
+          matrix[role][permission] = true;
+        } else {
+          matrix[role][permission] = hasPermission(role, permission);
+        }
       }
     }
 
@@ -82,6 +86,9 @@ export class OrganizationsRolesService {
 
     for (const record of overrides) {
       const role = record.role as Role;
+      if (role === Role.ADMIN) {
+        continue;
+      }
       const perm = record.permission as Permission;
       if (matrix[role] && perm in matrix[role]) {
         matrix[role][perm] = record.granted;
@@ -99,6 +106,13 @@ export class OrganizationsRolesService {
     roleStr: string,
     updates: RolePermissionItemDto[],
   ): Promise<{ role: Role; permissions: Record<Permission, boolean> }> {
+    if (roleStr === Role.ADMIN) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
+        "ADMIN role permissions are immutable and cannot be modified",
+      );
+    }
+
     if (!CUSTOMIZABLE_ROLES.includes(roleStr as Role)) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
@@ -107,18 +121,6 @@ export class OrganizationsRolesService {
     }
 
     const role = roleStr as Role;
-
-    if (role === Role.ADMIN) {
-      const attemptedRevoke = updates.find(
-        (u) => CORE_ADMIN_PERMISSIONS.includes(u.permission) && !u.granted,
-      );
-      if (attemptedRevoke) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
-          `Cannot revoke core administrative permission '${attemptedRevoke.permission}' for ADMIN role`,
-        );
-      }
-    }
 
     await this.executeTx(async (tx) => {
       for (const update of updates) {

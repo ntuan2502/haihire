@@ -97,6 +97,8 @@ export const vi: TranslationSchema = {
     ORG_MEMBER_NOT_FOUND: "Không tìm thấy thành viên trong tổ chức này.",
     ORG_FORBIDDEN_ACTION:
       "Bạn không có quyền thực hiện thao tác này trong tổ chức ({organizationId}).",
+    ORG_ADMIN_PERMISSIONS_IMMUTABLE:
+      "Quyền hạn của vai trò ADMIN là cố định và không thể thay đổi.",
     JOB_NOT_FOUND: "Không tìm thấy tin tuyển dụng ({id}).",
     JOB_ID_REQUIRED: "Vui lòng chọn vị trí tuyển dụng.",
     JOB_NOT_ACCEPTING_APPLICATIONS:

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OrganizationsRolesService } from "./organizations-roles.service";
 import type { PrismaService } from "../../prisma/prisma.service";
 import type { PermissionResolverService } from "../../auth/permission-resolver.service";
-import { Role, APP_ERROR_CODES } from "@haihire/shared";
+import { Role, APP_ERROR_CODES, PERMISSION_LIST } from "@haihire/shared";
 import { AppBadRequestException } from "../../common/app-exception";
 
 describe("OrganizationsRolesService", () => {
@@ -185,7 +185,7 @@ describe("OrganizationsRolesService", () => {
       expect(matrix[Role.MEMBER]["job:create"]).toBe(false);
     });
 
-    it("merges custom database overrides onto the matrix", async () => {
+    it("merges custom database overrides onto the matrix and keeps ADMIN immutable", async () => {
       mockDbStore.push({
         id: "override-1",
         organizationId: "org-123",
@@ -193,14 +193,26 @@ describe("OrganizationsRolesService", () => {
         permission: "org:delete",
         granted: true,
       });
+      mockDbStore.push({
+        id: "override-2",
+        organizationId: "org-123",
+        role: Role.ADMIN,
+        permission: "job:create",
+        granted: false,
+      });
 
       const matrix = await service.getRolePermissionsMatrix("org-123");
       expect(matrix[Role.RECRUITER]["org:delete"]).toBe(true);
+      // ADMIN role retains full permissions across all 42 permissions
+      expect(matrix[Role.ADMIN]["job:create"]).toBe(true);
+      for (const perm of PERMISSION_LIST) {
+        expect(matrix[Role.ADMIN][perm]).toBe(true);
+      }
     });
   });
 
   describe("updateRolePermissions", () => {
-    it("updates permission override, triggers cache invalidation, and returns updated permissions", async () => {
+    it("updates permission override, triggers cache invalidation, and returns updated permissions for RECRUITER", async () => {
       const result = await service.updateRolePermissions(
         "org-123",
         Role.RECRUITER,
@@ -212,7 +224,7 @@ describe("OrganizationsRolesService", () => {
       expect(result.permissions["org:delete"]).toBe(true);
     });
 
-    it("rejects revoking core permissions from ADMIN role (e.g. org:manage_roles)", async () => {
+    it("rejects modifying ANY permissions for ADMIN role with ORG_ADMIN_PERMISSIONS_IMMUTABLE", async () => {
       await expect(
         service.updateRolePermissions("org-123", Role.ADMIN, [
           { permission: "org:manage_roles", granted: false },
@@ -221,21 +233,13 @@ describe("OrganizationsRolesService", () => {
 
       try {
         await service.updateRolePermissions("org-123", Role.ADMIN, [
-          { permission: "org:manage_roles", granted: false },
+          { permission: "job:create", granted: false },
         ]);
       } catch (err: unknown) {
         expect((err as AppBadRequestException).code).toBe(
-          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
         );
       }
-    });
-
-    it("rejects revoking org:delete or org:manage_members from ADMIN role", async () => {
-      await expect(
-        service.updateRolePermissions("org-123", Role.ADMIN, [
-          { permission: "org:delete", granted: false },
-        ]),
-      ).rejects.toThrow(AppBadRequestException);
     });
 
     it("rejects updating an unsupported role like OWNER or GUEST", async () => {

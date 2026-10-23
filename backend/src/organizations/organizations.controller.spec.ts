@@ -3,7 +3,10 @@ import { OrganizationsController } from "./organizations.controller";
 import { OrganizationsService } from "./organizations.service";
 import { RolesGuard } from "../auth/roles.guard";
 import { Reflector } from "@nestjs/core";
-import { AppForbiddenException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppBadRequestException,
+} from "../common/app-exception";
 import { APP_ERROR_CODES, Role, type Permission } from "@haihire/shared";
 import type { ExecutionContext } from "@nestjs/common";
 import { PermissionResolverService } from "../auth/permission-resolver.service";
@@ -271,6 +274,29 @@ describe("OrganizationsController", () => {
           AppForbiddenException,
         );
         expect(mockService.updateRolePermissions).not.toHaveBeenCalled();
+      });
+
+      it("rejects updating ADMIN role permissions with 400 ORG_ADMIN_PERMISSIONS_IMMUTABLE", async () => {
+        const context = createMockContext(
+          nonOwnerAdminReq,
+          controller.updateRolePermissions,
+        );
+        expect(rolesGuard.canActivate(context)).toBe(true);
+
+        mockService.updateRolePermissions.mockRejectedValueOnce(
+          new AppBadRequestException(
+            APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
+            "ADMIN role permissions are immutable and cannot be modified",
+          ),
+        );
+
+        await expect(
+          controller.updateRolePermissions(nonOwnerAdminReq, Role.ADMIN, {
+            permissions: [{ permission: "job:create", granted: false }],
+          }),
+        ).rejects.toMatchObject({
+          code: APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
+        });
       });
     });
 

@@ -87,6 +87,7 @@ export interface TranslationSchema {
     ORG_NOT_OWNER: string;
     ORG_MEMBER_NOT_FOUND: string;
     ORG_FORBIDDEN_ACTION: string;
+    ORG_ADMIN_PERMISSIONS_IMMUTABLE: string;
     JOB_NOT_FOUND: string;
     JOB_ID_REQUIRED: string;
     JOB_NOT_ACCEPTING_APPLICATIONS: string;

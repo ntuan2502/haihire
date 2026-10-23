@@ -97,6 +97,8 @@ export const en: TranslationSchema = {
     ORG_MEMBER_NOT_FOUND: "Member not found in this organization.",
     ORG_FORBIDDEN_ACTION:
       "You do not have permission to perform this action in organization ({organizationId}).",
+    ORG_ADMIN_PERMISSIONS_IMMUTABLE:
+      "ADMIN role permissions are immutable and cannot be modified.",
     JOB_NOT_FOUND: "Job position ({id}) not found.",
     JOB_ID_REQUIRED: "Job position is required.",
     JOB_NOT_ACCEPTING_APPLICATIONS:

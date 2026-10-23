@@ -47,7 +47,10 @@ export class OrganizationsInvitesService {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
     }
 
     const org = await this.prisma.db.orm.public.Organization.select(
@@ -60,7 +63,10 @@ export class OrganizationsInvitesService {
       .first();
 
     if (!org) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        "Organization not found",
+      );
     }
 
     const isOwner = Boolean(org.ownerId && org.ownerId === user.id);
@@ -91,7 +97,9 @@ export class OrganizationsInvitesService {
 
     const expiresAt =
       expiresInDays !== null
-        ? Temporal.Instant.fromEpochMilliseconds(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+        ? Temporal.Instant.fromEpochMilliseconds(
+            Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
+          )
         : null;
 
     // Calculate max uses
@@ -121,7 +129,7 @@ export class OrganizationsInvitesService {
         updatedAt: toInstant(),
       },
       update: {},
-      conflictOn: { id: "00000000-0000-0000-0000-000000000000" },
+      conflictOn: { id: "00000000-0000-4000-8000-000000000000" },
     });
 
     return {
@@ -211,11 +219,14 @@ export class OrganizationsInvitesService {
         organizationName: org?.name || "Organization",
         organizationSlug: org?.slug || "org",
         role: link.role,
-        expiresAt: link.expiresAt ? new Date(toTimestamp(link.expiresAt)).toISOString() : null,
+        expiresAt: link.expiresAt
+          ? new Date(toTimestamp(link.expiresAt)).toISOString()
+          : null,
         maxUses: link.maxUses,
         usesCount: link.usesCount,
         createdById: link.createdById,
-        createdByName: (link.createdById && userMap.get(link.createdById)) || "Admin",
+        createdByName:
+          (link.createdById && userMap.get(link.createdById)) || "Admin",
         status,
         createdAt: new Date(toTimestamp(link.createdAt)).toISOString(),
       };
@@ -232,7 +243,10 @@ export class OrganizationsInvitesService {
       .first();
 
     if (!user || !user.organizationId) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
     }
 
     const org = await this.prisma.db.orm.public.Organization.select(
@@ -335,7 +349,9 @@ export class OrganizationsInvitesService {
         slug: org?.slug || "org",
       },
       createdByName,
-      expiresAt: link.expiresAt ? new Date(toTimestamp(link.expiresAt)).toISOString() : null,
+      expiresAt: link.expiresAt
+        ? new Date(toTimestamp(link.expiresAt)).toISOString()
+        : null,
     };
   }
 
@@ -354,15 +370,24 @@ export class OrganizationsInvitesService {
       .first();
 
     if (!link) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_INVITE_INVALID, "Invite link not found or invalid");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
+        "Invite link not found or invalid",
+      );
     }
 
     if (link.status === "REVOKED") {
-      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_REVOKED, "This invitation link has been revoked");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_INVITE_REVOKED,
+        "This invitation link has been revoked",
+      );
     }
 
     if (link.expiresAt && toTimestamp(link.expiresAt) < Date.now()) {
-      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_EXPIRED, "This invitation link has expired");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_INVITE_EXPIRED,
+        "This invitation link has expired",
+      );
     }
 
     if (link.maxUses !== null && link.usesCount >= link.maxUses) {
@@ -380,13 +405,14 @@ export class OrganizationsInvitesService {
       .where((u) => u.id.eq(userId))
       .first();
 
-    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
-      "id",
-      "organizationId",
-      "role",
-    )
-      .where((m) => m.userId.eq(userId))
-      .all();
+    const userMemberships =
+      await this.prisma.db.orm.public.OrganizationMember.select(
+        "id",
+        "organizationId",
+        "role",
+      )
+        .where((m) => m.userId.eq(userId))
+        .all();
 
     const isAlreadyMember =
       userMemberships.some((m) => m.organizationId === link.organizationId) ||
@@ -400,7 +426,8 @@ export class OrganizationsInvitesService {
     }
 
     // Link user to organization with the role assigned on the invite link (ADMIN or MEMBER)
-    const assignedRole = (link.role === "ADMIN" ? "ADMIN" : "MEMBER") as "ADMIN" | "MEMBER";
+    const assignedRole = (link.role === "ADMIN" ? "ADMIN" : "MEMBER") as
+      "ADMIN" | "MEMBER";
 
     // Record persistent membership in OrganizationMember
     const newMemberId = crypto.randomUUID();
@@ -424,7 +451,9 @@ export class OrganizationsInvitesService {
     // Increment uses count
     const nextUses = link.usesCount + 1;
     const nextStatus: "ACTIVE" | "EXPIRED" | "REVOKED" =
-      link.maxUses !== null && nextUses >= link.maxUses ? "EXPIRED" : link.status;
+      link.maxUses !== null && nextUses >= link.maxUses
+        ? "EXPIRED"
+        : link.status;
 
     await this.prisma.db.orm.public.InviteLink.where((l) =>
       l.id.eq(link.id),
@@ -452,7 +481,10 @@ export class OrganizationsInvitesService {
   async join(userId: string, dto: JoinOrgDto) {
     let rawInput = dto.inviteCodeOrSlug.trim();
     if (!rawInput) {
-      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_INVALID, "Please provide a valid invite code or link.");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
+        "Please provide a valid invite code or link.",
+      );
     }
 
     // Extract token if user passed a full URL (e.g. /join/:token)
@@ -484,7 +516,10 @@ export class OrganizationsInvitesService {
       inviteLink.expiresAt &&
       toTimestamp(inviteLink.expiresAt) < Date.now()
     ) {
-      throw new AppBadRequestException(APP_ERROR_CODES.ORG_INVITE_EXPIRED, "This invite link has expired.");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_INVITE_EXPIRED,
+        "This invite link has expired.",
+      );
     }
 
     if (
@@ -508,28 +543,36 @@ export class OrganizationsInvitesService {
       .first();
 
     if (!org) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_NOT_FOUND, "Organization not found.");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_NOT_FOUND,
+        "Organization not found.",
+      );
     }
 
     const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
 
     // Check if user already has an active membership in this organization
-    const userMemberships = await this.prisma.db.orm.public.OrganizationMember.select(
-      "id",
-      "organizationId",
-      "role",
-    )
-      .where((m) => m.userId.eq(userId))
-      .all();
+    const userMemberships =
+      await this.prisma.db.orm.public.OrganizationMember.select(
+        "id",
+        "organizationId",
+        "role",
+      )
+        .where((m) => m.userId.eq(userId))
+        .all();
 
-    const existingMembership = userMemberships.find((m) => m.organizationId === org.id);
+    const existingMembership = userMemberships.find(
+      (m) => m.organizationId === org.id,
+    );
 
     if (existingMembership) {
       // User is already a member - switch active organization to this org
-      await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
-        organizationId: org.id,
-        role: existingMembership.role,
-      });
+      await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update(
+        {
+          organizationId: org.id,
+          role: existingMembership.role,
+        },
+      );
 
       return {
         organization: org,

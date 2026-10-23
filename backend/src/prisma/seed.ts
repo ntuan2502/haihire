@@ -771,12 +771,11 @@ export async function runSeed(): Promise<void> {
   console.log("==================================================");
 
   // Architectural Note (Seed ID Format Audit):
-  // Demo IDs use fixed zero-padded pseudo-UUIDs (e.g. 00000000-0000-0000-0000-000000000001).
-  // Migration to deterministic RFC 4122 v4 UUIDs is deferred to a dedicated data-seeding task
-  // to avoid breaking existing local databases, E2E fixtures (seed-helpers.ts), and foreign key graphs.
-  const adminUserId = "00000000-0000-0000-0000-000000000001";
-  const adminOrgId = "00000000-0000-0000-0000-000000000002";
-  const memberUserId = "00000000-0000-0000-0000-000000000003";
+  // Demo IDs use deterministic RFC 4122 UUID v4 (Pattern A: 00000000-0000-4000-8000-xxxxxxxxxxxx).
+  // Version = 4, Variant = 8, maintaining strict compliance with RFC 4122 while keeping predictable test IDs.
+  const adminUserId = "00000000-0000-4000-8000-000000000001";
+  const adminOrgId = "00000000-0000-4000-8000-000000000002";
+  const memberUserId = "00000000-0000-4000-8000-000000000003";
 
   // 1. Create Admin User (pre-created so Organization.ownerId FK succeeds)
   await db.orm.public.User.upsert({
@@ -821,14 +820,14 @@ export async function runSeed(): Promise<void> {
   // 3. Create Org Member relationship
   await db.orm.public.OrganizationMember.upsert({
     create: {
-      id: "00000000-0000-0000-0000-000000000011",
+      id: "00000000-0000-4000-8000-000000000011",
       organizationId: adminOrgId,
       userId: adminUserId,
       role: "ADMIN",
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-0000-0000-000000000011" },
+    conflictOn: { id: "00000000-0000-4000-8000-000000000011" },
   });
 
   // 4. Create Member User
@@ -853,20 +852,20 @@ export async function runSeed(): Promise<void> {
 
   await db.orm.public.OrganizationMember.upsert({
     create: {
-      id: "00000000-0000-0000-0000-000000000012",
+      id: "00000000-0000-4000-8000-000000000012",
       organizationId: adminOrgId,
       userId: memberUserId,
       role: "MEMBER",
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-0000-0000-000000000012" },
+    conflictOn: { id: "00000000-0000-4000-8000-000000000012" },
   });
 
   // 5. Seed Email Settings for Admin Organization
   await db.orm.public.EmailSetting.upsert({
     create: {
-      id: "00000000-0000-0000-0000-000000000021",
+      id: "00000000-0000-4000-8000-000000000021",
       organizationId: adminOrgId,
       provider: "SIMULATED",
       fromName: "Admin Recruitment Team",
@@ -882,12 +881,12 @@ export async function runSeed(): Promise<void> {
   });
 
   // 6. Seed Demo Org Beta for Multi-Tenant Isolation Verification
-  const betaOrgId = "00000000-0000-0000-0000-0000000000b2";
-  const betaAdminUserId = "00000000-0000-0000-0000-0000000000b1";
-  const betaJobId = "00000000-0000-0000-0000-0000000000b3";
-  const betaCandidateId = "00000000-0000-0000-0000-0000000000b4";
-  const betaAppId = "00000000-0000-0000-0000-0000000000b5";
-  const betaWebhookId = "00000000-0000-0000-0000-0000000000b6";
+  const betaOrgId = "00000000-0000-4000-8000-0000000000b2";
+  const betaAdminUserId = "00000000-0000-4000-8000-0000000000b1";
+  const betaJobId = "00000000-0000-4000-8000-0000000000b3";
+  const betaCandidateId = "00000000-0000-4000-8000-0000000000b4";
+  const betaAppId = "00000000-0000-4000-8000-0000000000b5";
+  const betaWebhookId = "00000000-0000-4000-8000-0000000000b6";
 
   await db.orm.public.User.upsert({
     create: {
@@ -928,14 +927,14 @@ export async function runSeed(): Promise<void> {
 
   await db.orm.public.OrganizationMember.upsert({
     create: {
-      id: "00000000-0000-0000-0000-0000000000bb",
+      id: "00000000-0000-4000-8000-0000000000bb",
       organizationId: betaOrgId,
       userId: betaAdminUserId,
       role: "ADMIN",
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-0000-0000-0000000000bb" },
+    conflictOn: { id: "00000000-0000-4000-8000-0000000000bb" },
   });
 
   await db.orm.public.Job.upsert({
@@ -1141,9 +1140,9 @@ export async function runSeed(): Promise<void> {
 
     const jobId =
       i === 1
-        ? "00000000-0000-0000-0000-000000000101"
+        ? "00000000-0000-4000-8000-000000000101"
         : i === 8
-          ? "00000000-0000-0000-0000-000000000108"
+          ? "00000000-0000-4000-8000-000000000108"
           : crypto.randomUUID();
     const jobAgeDays = 5 + Math.floor((i * 3.5) % 45);
     const jobCreatedAt = new Date(Date.now() - jobAgeDays * 86400000);
@@ -2177,8 +2176,8 @@ export async function runSeed(): Promise<void> {
   // ============================================================================
   // Deterministic candidates and applications for E2E automated tests
   // ============================================================================
-  const testCandidateId = "00000000-0000-0000-0000-000000000201";
-  const kanbanCandidateId = "00000000-0000-0000-0000-000000000202";
+  const testCandidateId = "00000000-0000-4000-8000-000000000201";
+  const kanbanCandidateId = "00000000-0000-4000-8000-000000000202";
 
   candidatesToInsert.push({
     id: testCandidateId,
@@ -2220,7 +2219,7 @@ export async function runSeed(): Promise<void> {
 
   // Guarantee Candidate 2 (Kanban) is in APPLIED stage for Job 1 (Senior Backend Engineer)
   applicationsToInsert.push({
-    id: "00000000-0000-0000-0000-000000000301",
+    id: "00000000-0000-4000-8000-000000000301",
     candidateId: kanbanCandidateId,
     jobId: createdJobIds[1], // Senior Backend Engineer (NestJS / PostgreSQL)
     stage: "APPLIED",
@@ -2247,7 +2246,7 @@ export async function runSeed(): Promise<void> {
 
   // Guarantee Candidate 1 is in SCREENING stage for Job 1 so that both stages are available
   applicationsToInsert.push({
-    id: "00000000-0000-0000-0000-000000000302",
+    id: "00000000-0000-4000-8000-000000000302",
     candidateId: testCandidateId,
     jobId: createdJobIds[1],
     stage: "SCREENING",

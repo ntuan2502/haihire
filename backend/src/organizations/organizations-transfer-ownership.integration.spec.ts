@@ -14,10 +14,11 @@ import type { PrismaService } from "../prisma/prisma.service";
 import { AppForbiddenException } from "../common/app-exception";
 
 describe("Organizations Transfer Ownership Integration Specs", () => {
-  const seedOwnerUserId = "00000000-0000-0000-0000-000000000001";
-  const seedTargetUserId = "00000000-0000-0000-0000-000000000003";
+  const seedOwnerUserId = "00000000-0000-4000-8000-000000000001";
+  const seedTargetUserId = "00000000-0000-4000-8000-000000000003";
+  const legacyPseudoUuid = "00000000-0000-0000-0000-000000000003";
   const standardUuid = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-  const orgId = "org-demo-1";
+  const orgId = "00000000-0000-4000-8000-000000000002";
 
   let pipe: ReturnType<typeof DtoPipe<TransferOwnershipDto>>;
   let userTable: MockTable<Record<string, unknown>>;
@@ -47,7 +48,7 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
         organizationId: orgId,
       },
       {
-        id: "non-owner-user-id",
+        id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c99",
         email: "other@haihire.local",
         name: "Other User",
         role: "ADMIN",
@@ -112,7 +113,7 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
   });
 
   describe("1. DtoPipe Validation Layer", () => {
-    it("accepts seeded demo account ID format (00000000-0000-0000-0000-000000000003) without 400", async () => {
+    it("accepts seeded demo account ID format (00000000-0000-4000-8000-000000000003) without 400", async () => {
       const payload = { newOwnerUserId: seedTargetUserId };
       const transformed = await pipe.transform(payload, {
         type: "body",
@@ -132,6 +133,16 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
 
       expect(transformed).toBeInstanceOf(TransferOwnershipDto);
       expect(transformed.newOwnerUserId).toBe(standardUuid);
+    });
+
+    it("rejects legacy non-RFC 4122 pseudo-UUID (00000000-0000-0000-0000-000000000003) with 400 BadRequestException", async () => {
+      const payload = { newOwnerUserId: legacyPseudoUuid };
+      await expect(
+        pipe.transform(payload, {
+          type: "body",
+          metatype: TransferOwnershipDto,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it("rejects non-string input (number) with 400 BadRequestException", async () => {
@@ -211,12 +222,15 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
 
     it("rejects transferOwnership with AppForbiddenException when called by non-owner", async () => {
       await expect(
-        coreService.transferOwnership("non-owner-user-id", seedTargetUserId),
+        coreService.transferOwnership(
+          "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c99",
+          seedTargetUserId,
+        ),
       ).rejects.toThrow(AppForbiddenException);
 
       try {
         await coreService.transferOwnership(
-          "non-owner-user-id",
+          "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c99",
           seedTargetUserId,
         );
       } catch (err) {

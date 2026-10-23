@@ -3,12 +3,12 @@ import type { APIRequestContext } from "@playwright/test";
 /**
  * Deterministic IDs matching backend/src/prisma/seed.ts
  */
-export const SEED_ALPHA_ORG_ID = "00000000-0000-0000-0000-000000000002";
-export const SEED_BETA_ORG_ID = "00000000-0000-0000-0000-0000000000b2";
-export const SEED_BETA_JOB_ID = "00000000-0000-0000-0000-0000000000b3";
-export const SEED_BETA_CANDIDATE_ID = "00000000-0000-0000-0000-0000000000b4";
-export const SEED_BETA_APP_ID = "00000000-0000-0000-0000-0000000000b5";
-export const SEED_BETA_WEBHOOK_ID = "00000000-0000-0000-0000-0000000000b6";
+export const SEED_ALPHA_ORG_ID = "00000000-0000-4000-8000-000000000002";
+export const SEED_BETA_ORG_ID = "00000000-0000-4000-8000-0000000000b2";
+export const SEED_BETA_JOB_ID = "00000000-0000-4000-8000-0000000000b3";
+export const SEED_BETA_CANDIDATE_ID = "00000000-0000-4000-8000-0000000000b4";
+export const SEED_BETA_APP_ID = "00000000-0000-4000-8000-0000000000b5";
+export const SEED_BETA_WEBHOOK_ID = "00000000-0000-4000-8000-0000000000b6";
 
 export async function getOrgAlphaId(): Promise<string> {
   return SEED_ALPHA_ORG_ID;
@@ -36,7 +36,9 @@ export async function getBetaWebhookId(): Promise<string> {
 export async function loginAsAdmin(
   request: APIRequestContext,
   email = "admin@tun.io.vn",
-  password = process.env.DEMO_SEED_PASSWORD || process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD || "dev-seed-password-2026",
+  password = process.env.DEMO_SEED_PASSWORD ||
+    process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD ||
+    "dev-seed-password-2026",
 ): Promise<string> {
   const loginRes = await request.post("/api/auth/login", {
     data: { email, password },
@@ -50,7 +52,8 @@ export async function loginAsAdmin(
 
   // 1. Capture Set-Cookie header if provided
   const headers = loginRes.headersArray();
-  const setCookieHeader = headers.find((h) => h.name.toLowerCase() === "set-cookie")?.value || "";
+  const setCookieHeader =
+    headers.find((h) => h.name.toLowerCase() === "set-cookie")?.value || "";
   const cookieMatch = setCookieHeader.match(/haihire_token=([^;]+)/);
   if (cookieMatch) {
     return `haihire_token=${cookieMatch[1]}`;

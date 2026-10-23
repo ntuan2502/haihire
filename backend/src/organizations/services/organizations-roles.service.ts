@@ -1,0 +1,163 @@
+import { Inject, Injectable, Optional } from "@nestjs/common";
+import crypto from "node:crypto";
+import { PrismaService } from "../../prisma/prisma.service";
+import { PermissionResolverService } from "../../auth/permission-resolver.service";
+import { toInstant } from "../../common/date.util";
+import { AppBadRequestException } from "../../common/app-exception";
+import {
+  APP_ERROR_CODES,
+  Role,
+  PERMISSION_LIST,
+  hasPermission,
+  type Permission,
+} from "@haihire/shared";
+import type { RolePermissionItemDto } from "../dto/role-permissions.dto";
+
+export const CUSTOMIZABLE_ROLES: Role[] = [
+  Role.ADMIN,
+  Role.RECRUITER,
+  Role.HIRING_MANAGER,
+  Role.INTERVIEWER,
+  Role.MEMBER,
+];
+
+export const CORE_ADMIN_PERMISSIONS: Permission[] = [
+  "org:manage_roles",
+  "org:manage_members",
+  "org:delete",
+  "org:transfer_ownership",
+];
+
+@Injectable()
+export class OrganizationsRolesService {
+  constructor(
+    @Inject(PrismaService)
+    private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
+  ) {}
+
+  private async executeTx<T>(
+    fn: (tx: PrismaService["db"]) => Promise<T>,
+  ): Promise<T> {
+    const p = this.prisma as unknown as {
+      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
+      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
+      db: PrismaService["db"];
+    };
+    if (typeof p.transaction === "function") {
+      return p.transaction(fn);
+    }
+    if (typeof p.executeTx === "function") {
+      return p.executeTx(fn);
+    }
+    return fn(this.prisma.db);
+  }
+
+  /**
+   * Returns the complete matrix of 5 roles x all permissions for the specified organization.
+   * Merges persistent overrides from DB on top of the shared default matrix.
+   */
+  async getRolePermissionsMatrix(
+    organizationId: string,
+  ): Promise<Record<Role, Record<Permission, boolean>>> {
+    const matrix = {} as Record<Role, Record<Permission, boolean>>;
+
+    for (const role of CUSTOMIZABLE_ROLES) {
+      matrix[role] = {} as Record<Permission, boolean>;
+      for (const permission of PERMISSION_LIST) {
+        matrix[role][permission] = hasPermission(role, permission);
+      }
+    }
+
+    const overrides =
+      await this.prisma.db.orm.public.OrganizationRolePermission.select(
+        "role",
+        "permission",
+        "granted",
+      )
+        .where((p) => p.organizationId.eq(organizationId))
+        .all();
+
+    for (const record of overrides) {
+      const role = record.role as Role;
+      const perm = record.permission as Permission;
+      if (matrix[role] && perm in matrix[role]) {
+        matrix[role][perm] = record.granted;
+      }
+    }
+
+    return matrix;
+  }
+
+  /**
+   * Updates permission overrides for a specific role within an organization.
+   */
+  async updateRolePermissions(
+    organizationId: string,
+    roleStr: string,
+    updates: RolePermissionItemDto[],
+  ): Promise<{ role: Role; permissions: Record<Permission, boolean> }> {
+    if (!CUSTOMIZABLE_ROLES.includes(roleStr as Role)) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+        `Role '${roleStr}' cannot be customized. Supported roles: ${CUSTOMIZABLE_ROLES.join(", ")}`,
+      );
+    }
+
+    const role = roleStr as Role;
+
+    if (role === Role.ADMIN) {
+      const attemptedRevoke = updates.find(
+        (u) => CORE_ADMIN_PERMISSIONS.includes(u.permission) && !u.granted,
+      );
+      if (attemptedRevoke) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          `Cannot revoke core administrative permission '${attemptedRevoke.permission}' for ADMIN role`,
+        );
+      }
+    }
+
+    await this.executeTx(async (tx) => {
+      for (const update of updates) {
+        const existing = await tx.orm.public.OrganizationRolePermission.where(
+          (p) => p.organizationId.eq(organizationId),
+        )
+          .where((p) => p.role.eq(role))
+          .where((p) => p.permission.eq(update.permission))
+          .first();
+
+        if (existing) {
+          await tx.orm.public.OrganizationRolePermission.where((p) =>
+            p.id.eq(existing.id),
+          ).update({
+            granted: update.granted,
+            updatedAt: toInstant(),
+          });
+        } else {
+          await tx.orm.public.OrganizationRolePermission.create({
+            id: crypto.randomUUID(),
+            organizationId,
+            role,
+            permission: update.permission,
+            granted: update.granted,
+            updatedAt: toInstant(),
+          });
+        }
+      }
+    });
+
+    if (this.permissionResolver) {
+      this.permissionResolver.invalidateCache(organizationId);
+    }
+
+    const fullMatrix = await this.getRolePermissionsMatrix(organizationId);
+
+    return {
+      role,
+      permissions: fullMatrix[role],
+    };
+  }
+}

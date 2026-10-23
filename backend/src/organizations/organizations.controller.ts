@@ -22,6 +22,7 @@ import {
   UpdateMemberRoleDto,
   CreateInviteLinkDto,
 } from "./dto/org-actions.dto";
+import { UpdateRolePermissionsDto } from "./dto/role-permissions.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { RequirePermission } from "../auth/require-permission.decorator";
@@ -101,6 +102,31 @@ export class OrganizationsController {
     @Param("memberId") memberId: string,
   ) {
     return this.orgsService.removeMember(req.user.id, memberId);
+  }
+
+  // ==========================================
+  // ROLES & PERMISSIONS MATRIX ENDPOINTS
+  // ==========================================
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_roles")
+  @Get("my/roles/permissions")
+  getRolePermissionsMatrix(@Request() req: { user: { id: string } }) {
+    return this.orgsService.getRolePermissionsMatrix(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_roles")
+  @Patch("my/roles/:role/permissions")
+  updateRolePermissions(
+    @Request() req: { user: { id: string } },
+    @Param("role") role: string,
+    @Body(DtoPipe(UpdateRolePermissionsDto)) dto: UpdateRolePermissionsDto,
+  ) {
+    return this.orgsService.updateRolePermissions(
+      req.user.id,
+      role,
+      dto.permissions,
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

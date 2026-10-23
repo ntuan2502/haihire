@@ -94,14 +94,14 @@ export class MissingJwtController {
     expect(violations[0]).toContain("[MISSING JWT_GUARD]");
   });
 
-  it("confirms production endpoints: zero routes rely solely on class-level permission, all 44 use explicit method decorators", () => {
+  it("confirms production endpoints: zero routes rely solely on class-level permission, all 46 use explicit method decorators", () => {
     const result = runPermissionAudit();
 
     expect(result.violations).toHaveLength(0);
     expect(result.controllersScanned).toBe(12);
-    expect(result.endpoints.length).toBe(85);
-    expect(result.permissionProtectedCount).toBe(44);
-    expect(result.methodExplicitCount).toBe(44);
+    expect(result.endpoints.length).toBe(87);
+    expect(result.permissionProtectedCount).toBe(46);
+    expect(result.methodExplicitCount).toBe(46);
     expect(result.classInheritedCount).toBe(0);
   });
 });

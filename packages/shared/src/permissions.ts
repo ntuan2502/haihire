@@ -20,6 +20,7 @@ export type Permission =
   | "org:update"
   | "org:delete"
   | "org:manage_members"
+  | "org:manage_roles"
   | "org:manage_billing"
   | "org:transfer_ownership"
   // Job Requisition Management
@@ -77,6 +78,7 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   "org:update": [Role.ADMIN],
   "org:delete": [Role.ADMIN],
   "org:manage_members": [Role.ADMIN],
+  "org:manage_roles": [Role.ADMIN],
   "org:manage_billing": [],
   "org:transfer_ownership": [Role.ADMIN],
 
@@ -173,6 +175,8 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   // Settings & Integrations
   "settings:manage_integrations": [Role.ADMIN],
 };
+
+export const PERMISSION_LIST = Object.keys(PERMISSIONS) as Permission[];
 
 /**
  * Checks whether a given role is granted a specific permission.

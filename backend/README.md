@@ -73,7 +73,25 @@ pnpm run lint
 pnpm run db:update
 
 # Seed demo tenants, users, jobs, and candidates
-pnpm run seed
+pnpm run db:seed
+```
+
+---
+
+## 🔄 Local Development Reset & Re-seed (UUID v4 Migration)
+
+Following the migration to RFC 4122 UUID v4 (`00000000-0000-4000-8000-xxxxxxxxxxxx`), local development databases must be re-seeded so that all demo accounts, organization members, and test records match the v4 format:
+
+```bash
+# Using PowerShell (Windows)
+./backend/scripts/reseed-local.ps1
+
+# Using Bash (Linux/macOS)
+./backend/scripts/reseed-local.sh
+
+# Or manually:
+pnpm --filter ./backend run db:update
+pnpm --filter ./backend run db:seed
 ```
 
 ---

@@ -143,10 +143,12 @@ export class OrganizationsRolesService {
         if (existing) {
           await tx.orm.public.OrganizationRolePermission.where((p) =>
             p.id.eq(existing.id),
-          ).update({
-            granted: update.granted,
-            updatedAt: toInstant(),
-          });
+          )
+            .where((p) => p.organizationId.eq(organizationId))
+            .update({
+              granted: update.granted,
+              updatedAt: toInstant(),
+            });
         } else {
           await tx.orm.public.OrganizationRolePermission.create({
             id: crypto.randomUUID(),
@@ -230,7 +232,9 @@ export class OrganizationsRolesService {
       for (const item of toDelete) {
         await tx.orm.public.OrganizationRolePermission.where((p) =>
           p.id.eq(item.id),
-        ).delete();
+        )
+          .where((p) => p.organizationId.eq(organizationId))
+          .delete();
       }
     });
 

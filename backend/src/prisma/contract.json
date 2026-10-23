@@ -52,6 +52,10 @@
       "model": "OrganizationMember",
       "namespace": "public"
     },
+    "organizationRolePermission": {
+      "model": "OrganizationRolePermission",
+      "namespace": "public"
+    },
     "organizationWebhookSetting": {
       "model": "OrganizationWebhookSetting",
       "namespace": "public"
@@ -2615,6 +2619,17 @@
                   "namespace": "public"
                 }
               },
+              "rolePermissions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
+                },
+                "to": {
+                  "model": "OrganizationRolePermission",
+                  "namespace": "public"
+                }
+              },
               "trackingLinks": {
                 "cardinality": "1:N",
                 "on": {
@@ -2774,6 +2789,106 @@
               },
               "namespaceId": "public",
               "table": "organizationMember"
+            }
+          },
+          "OrganizationRolePermission": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "granted": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "permission": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "Role",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "granted": {
+                  "column": "granted"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "permission": {
+                  "column": "permission"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "organizationRolePermission"
             }
           },
           "OrganizationWebhookSetting": {
@@ -5250,6 +5365,97 @@
               },
               "uniques": []
             },
+            "organizationRolePermission": {
+              "checks": [
+                {
+                  "expression": "\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "organizationRolePermission_role_check_24976965",
+                  "prefix": "organizationRolePermission_role_check"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "granted": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "permission": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Role",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["organizationId"],
+                    "namespaceId": "public",
+                    "tableName": "organizationRolePermission"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["organizationId"],
+                  "name": "organizationRolePermission_organizationId_idx_2e17ef41",
+                  "prefix": "organizationRolePermission_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"]
+              },
+              "uniques": [
+                {
+                  "columns": ["organizationId", "role", "permission"]
+                }
+              ]
+            },
             "organizationWebhookSetting": {
               "checks": [
                 {
@@ -5914,10 +6120,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "27ad2c189786c40967bdd866c3208aa93a0abebc0df1f9bd968e0b406aea06c6"
+    "storageHash": "25a95f3ac9c050ca351ac6c2c81b934f153bd2649a446d3e9e47454879a1073c"
   },
   "execution": {
-    "executionHash": "b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98",
+    "executionHash": "14cb5f7a22274dca1d712690361c0dd8374cde63509d5acba5efbddea1ed9cf4",
     "mutations": {
       "defaults": [
         {
@@ -6228,6 +6434,32 @@
           },
           "ref": {
             "entry": "organizationMember",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "organizationRolePermission",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "organizationRolePermission",
             "field": "updatedAt",
             "namespace": "public"
           }

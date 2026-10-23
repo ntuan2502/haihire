@@ -150,6 +150,7 @@ model Organization {
   documents       CandidateDocument[]
   trackingLinks   TrackingLink[]
   webhookSettings OrganizationWebhookSetting[]
+  rolePermissions OrganizationRolePermission[]
   createdAt       DateTime                    @default(now())
   updatedAt       temporal.updatedAt()
 
@@ -190,6 +191,21 @@ model OrganizationMember {
 
   @@index([organizationId, userId])
   @@map("organizationMember")
+}
+
+model OrganizationRolePermission {
+  id             String       @id @default(uuid())
+  organizationId String
+  role           Role
+  permission     String
+  granted        Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      temporal.updatedAt()
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, role, permission])
+  @@index([organizationId])
+  @@map("organizationRolePermission")
 }
 
 model InviteLink {

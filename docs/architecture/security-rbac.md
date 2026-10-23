@@ -182,4 +182,42 @@ HaiHire implements a lightweight, single-source-of-truth permission resolution m
 
 ---
 
+## 7. Ownership Transfer Flow
+
+Ownership transfer is an atomic lifecycle transition executed within an isolated database transaction:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Owner as Current Owner
+    participant API as OrganizationsController
+    participant Core as OrganizationsCoreService
+    participant DB as PostgreSQL Transaction
+
+    Owner->>API: POST /organizations/my/transfer-ownership { newOwnerUserId }
+    API->>API: DtoPipe validates UUID v4 (RFC 4122)
+    API->>Core: transferOwnership(currentOwnerId, newOwnerUserId)
+    Core->>Core: Step 1: Verify caller is active Organization.ownerId
+    Core->>Core: Step 2: Verify target is a member of the organization
+    Core->>DB: Begin Transaction (executeTx)
+    DB->>DB: Step 3: Update Organization.ownerId = newOwnerUserId
+    DB->>DB: Step 4: Promote target User.role = ADMIN
+    DB->>DB: Step 5: Upsert target OrganizationMember with role ADMIN
+    DB->>DB: Step 6: Retain former owner User.role = ADMIN
+    DB-->>Core: Commit Transaction
+    Core->>Core: Emit audit log & WebSocket event
+    Core-->>API: 200 OK { success: true, newOwnerId }
+```
+
+### 6-Step Transaction Verification:
+
+1. **Step 1 (Caller Verification):** Verifies caller is the current `ownerId` of the organization (`AppForbiddenException` on mismatch).
+2. **Step 2 (Target Verification):** Confirms target belongs to the tenant (`OrganizationMember` record or matching `User.organizationId`).
+3. **Step 3 (Organization Transfer):** Atomically updates `Organization.ownerId` to `newOwnerUserId`.
+4. **Step 4 (User Role Promotion):** Promotes target `User.role` to `ADMIN` so global user identity reflects administrative privileges.
+5. **Step 5 (Membership Upsert):** Upserts `OrganizationMember` with `role: ADMIN` (handles edge cases where membership entry did not previously exist).
+6. **Step 6 (Former Owner Status):** Former owner retains `ADMIN` role, ensuring continuous administrative access without unexpected lockout.
+
+---
+
 _For coding rules and guard implementation standards, refer to [`docs/architecture/conventions.md`](conventions.md)._

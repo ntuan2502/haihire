@@ -36,13 +36,6 @@ const ROLES: Array<{
   { role: Role.MEMBER, labelKey: "roleMember" },
 ];
 
-const CORE_ADMIN_PERMISSIONS: Permission[] = [
-  "org:manage_roles",
-  "org:manage_members",
-  "org:delete",
-  "org:transfer_ownership",
-];
-
 interface PermissionCategory {
   categoryKey:
     | "categoryOrg"
@@ -154,7 +147,7 @@ export default function RolesPermissionsPage() {
   }, [overrides]);
 
   const isCellChecked = (role: Role, permission: Permission): boolean => {
-    if (role === Role.ADMIN && CORE_ADMIN_PERMISSIONS.includes(permission)) {
+    if (role === Role.ADMIN) {
       return true;
     }
     const key = `${role}:${permission}`;
@@ -164,11 +157,11 @@ export default function RolesPermissionsPage() {
     return Boolean(serverMatrix?.[role]?.[permission]);
   };
 
-  const isCellDisabled = (role: Role, permission: Permission): boolean => {
+  const isCellDisabled = (role: Role, _permission: Permission): boolean => {
     if (!canManageRoles) {
       return true;
     }
-    if (role === Role.ADMIN && CORE_ADMIN_PERMISSIONS.includes(permission)) {
+    if (role === Role.ADMIN) {
       return true;
     }
     return false;
@@ -214,6 +207,9 @@ export default function RolesPermissionsPage() {
       for (const [key, granted] of Object.entries(overrides)) {
         const colonIdx = key.indexOf(":");
         const roleStr = key.slice(0, colonIdx) as Role;
+        if (roleStr === Role.ADMIN) {
+          continue;
+        }
         const permStr = key.slice(colonIdx + 1) as Permission;
         const list = roleUpdates.get(roleStr) || [];
         list.push({ permission: permStr, granted });
@@ -378,7 +374,25 @@ export default function RolesPermissionsPage() {
                       className="py-3.5 px-3 font-semibold text-center text-slate-700 dark:text-slate-200 min-w-[110px]"
                     >
                       <div className="flex flex-col items-center">
-                        <span>{t(`settings.rolesMatrix.${labelKey}`)}</span>
+                        <div className="flex items-center gap-1">
+                          <span>{t(`settings.rolesMatrix.${labelKey}`)}</span>
+                          {role === Role.ADMIN && (
+                            <span
+                              title={t(
+                                "settings.rolesMatrix.adminRoleImmutable",
+                              )}
+                              aria-label={t(
+                                "settings.rolesMatrix.adminRoleImmutable",
+                              )}
+                              className="inline-flex items-center cursor-help"
+                            >
+                              <Lock
+                                className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500"
+                                aria-hidden="true"
+                              />
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                           {role}
                         </span>
@@ -412,9 +426,7 @@ export default function RolesPermissionsPage() {
                         {ROLES.map(({ role, labelKey }) => {
                           const checked = isCellChecked(role, permission);
                           const disabled = isCellDisabled(role, permission);
-                          const isCoreAdmin =
-                            role === Role.ADMIN &&
-                            CORE_ADMIN_PERMISSIONS.includes(permission);
+                          const isAdminRole = role === Role.ADMIN;
 
                           return (
                             <td
@@ -431,16 +443,16 @@ export default function RolesPermissionsPage() {
                                     handleToggle(role, permission)
                                   }
                                   title={
-                                    isCoreAdmin
+                                    isAdminRole
                                       ? t(
-                                          "settings.rolesMatrix.coreAdminProtected",
+                                          "settings.rolesMatrix.adminRoleImmutable",
                                         )
                                       : `${t(`settings.rolesMatrix.${labelKey}`)} - ${permission}`
                                   }
                                   aria-label={`${t(`settings.rolesMatrix.${labelKey}`)}: ${permission}`}
                                   className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:checked:bg-blue-600 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                                 />
-                                {isCoreAdmin && (
+                                {isAdminRole && (
                                   <Lock
                                     className="w-2.5 h-2.5 absolute -top-1 -right-2 text-slate-400 dark:text-slate-500 pointer-events-none"
                                     aria-hidden="true"

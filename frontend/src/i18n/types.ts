@@ -1484,6 +1484,7 @@ export interface TranslationSchema {
       categoryEmail: string;
       categorySettings: string;
       coreAdminProtected: string;
+      adminRoleImmutable: string;
       roleAdmin: string;
       roleRecruiter: string;
       roleHiringManager: string;

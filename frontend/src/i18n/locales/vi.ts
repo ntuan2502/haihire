@@ -1653,6 +1653,8 @@ export const vi: TranslationSchema = {
       categorySettings: "Cài đặt & Tích hợp",
       coreAdminProtected:
         "Các quyền hạn quản trị cốt lõi không thể bị tước khỏi vai trò Admin.",
+      adminRoleImmutable:
+        "Quyền hạn của vai trò ADMIN là cố định và không thể thay đổi.",
       roleAdmin: "Quản trị viên",
       roleRecruiter: "Tuyển dụng",
       roleHiringManager: "Trưởng bộ phận",

@@ -1648,6 +1648,8 @@ export const en: TranslationSchema = {
       categorySettings: "Settings",
       coreAdminProtected:
         "Core administrative permissions cannot be revoked from Admin.",
+      adminRoleImmutable:
+        "ADMIN role permissions are immutable and cannot be modified.",
       roleAdmin: "Admin",
       roleRecruiter: "Recruiter",
       roleHiringManager: "Hiring Manager",

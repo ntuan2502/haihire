@@ -159,4 +159,12 @@ export const organizationsApi = {
     }>(`/organizations/my/roles/${role}/permissions`, { permissions });
     return response.data;
   },
+
+  resetRolePermissions: async (role?: Role): Promise<{ deleted: number }> => {
+    const url = role
+      ? `/organizations/my/roles/${role}/reset`
+      : `/organizations/my/roles/reset`;
+    const response = await api.post<{ deleted: number }>(url);
+    return response.data;
+  },
 };

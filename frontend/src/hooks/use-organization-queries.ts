@@ -211,3 +211,16 @@ export function useUpdateRolePermissionsMutation() {
     },
   });
 }
+
+export function useResetRolePermissionsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (role?: Role) => organizationsApi.resetRolePermissions(role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.rolePermissionsMatrix(),
+      });
+    },
+  });
+}

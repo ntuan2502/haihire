@@ -19,6 +19,7 @@ vi.mock("@/hooks/use-has-permission", () => ({
 }));
 
 const mockUpdateRolePermissionsMutateAsync = vi.fn();
+const mockResetRolePermissionsMutateAsync = vi.fn();
 let mockMatrixLoading = false;
 let mockMatrixError: Error | null = null;
 let mockMatrixData: Record<Role, Record<string, boolean>> = {
@@ -64,6 +65,10 @@ vi.mock("@/hooks/use-queries", () => ({
     mutateAsync: mockUpdateRolePermissionsMutateAsync,
     isPending: false,
   }),
+  useResetRolePermissionsMutation: () => ({
+    mutateAsync: mockResetRolePermissionsMutateAsync,
+    isPending: false,
+  }),
 }));
 
 vi.mock("@/i18n", () => ({
@@ -79,6 +84,17 @@ vi.mock("@/i18n", () => ({
         "settings.rolesMatrix.saveButton": "Save Changes",
         "settings.rolesMatrix.savingButton": "Saving...",
         "settings.rolesMatrix.resetButton": "Reset",
+        "settings.rolesMatrix.resetDefaultButton": "Reset to Default",
+        "settings.rolesMatrix.resetDefaultConfirmTitle":
+          "Reset Role Permissions",
+        "settings.rolesMatrix.resetDefaultConfirmMessage":
+          "This will reset all role permissions to system defaults. Continue?",
+        "settings.rolesMatrix.resetDefaultConfirmButton": "Reset Permissions",
+        "settings.rolesMatrix.resetDefaultCancelButton": "Cancel",
+        "settings.rolesMatrix.resetDefaultSuccess":
+          "Role permissions have been reset to default values.",
+        "settings.rolesMatrix.resetDefaultError":
+          "Failed to reset role permissions.",
         "settings.rolesMatrix.saveSuccess": "Permissions updated successfully.",
         "settings.rolesMatrix.saveError": "Failed to update permissions.",
         "settings.rolesMatrix.unsavedChanges": "unsaved changes",
@@ -398,5 +414,68 @@ describe("RolesPermissionsSettingsPage Component", () => {
         name: "Matrix of roles and permissions in this organization",
       }),
     ).not.toBeInTheDocument();
+  });
+
+  describe("Reset to Default functionality", () => {
+    it("opens reset confirm modal and calls resetRolePermissions API on confirm", async () => {
+      mockResetRolePermissionsMutateAsync.mockResolvedValueOnce({
+        deleted: 5,
+      });
+
+      render(<RolesPermissionsSettingsPage />);
+
+      const resetDefaultBtn = screen.getByRole("button", {
+        name: /Reset to Default/i,
+      });
+      expect(resetDefaultBtn).not.toBeDisabled();
+
+      fireEvent.click(resetDefaultBtn);
+
+      // Confirm modal opens
+      expect(screen.getByText("Reset Role Permissions")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "This will reset all role permissions to system defaults. Continue?",
+        ),
+      ).toBeInTheDocument();
+
+      const confirmBtn = screen.getByRole("button", {
+        name: "Reset Permissions",
+      });
+      fireEvent.click(confirmBtn);
+
+      await waitFor(() => {
+        expect(mockResetRolePermissionsMutateAsync).toHaveBeenCalledTimes(1);
+        expect(mockToastSuccess).toHaveBeenCalledWith(
+          "Role permissions have been reset to default values.",
+        );
+      });
+    });
+
+    it("cancels reset modal without calling API", () => {
+      render(<RolesPermissionsSettingsPage />);
+
+      const resetDefaultBtn = screen.getByRole("button", {
+        name: /Reset to Default/i,
+      });
+      fireEvent.click(resetDefaultBtn);
+
+      expect(screen.getByText("Reset Role Permissions")).toBeInTheDocument();
+
+      const cancelBtn = screen.getByRole("button", { name: "Cancel" });
+      fireEvent.click(cancelBtn);
+
+      expect(mockResetRolePermissionsMutateAsync).not.toHaveBeenCalled();
+    });
+
+    it("disables reset to default button when user lacks org:manage_roles", () => {
+      mockCanManageRoles = false;
+      render(<RolesPermissionsSettingsPage />);
+
+      const resetDefaultBtn = screen.getByRole("button", {
+        name: /Reset to Default/i,
+      });
+      expect(resetDefaultBtn).toBeDisabled();
+    });
   });
 });

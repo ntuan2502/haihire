@@ -1650,6 +1650,15 @@ export const en: TranslationSchema = {
         "Core administrative permissions cannot be revoked from Admin.",
       adminRoleImmutable:
         "ADMIN role permissions are immutable and cannot be modified.",
+      resetDefaultButton: "Reset to Default",
+      resetDefaultConfirmTitle: "Reset Role Permissions",
+      resetDefaultConfirmMessage:
+        "This will reset all role permissions to system defaults. Continue?",
+      resetDefaultConfirmButton: "Reset Permissions",
+      resetDefaultCancelButton: "Cancel",
+      resetDefaultSuccess:
+        "Role permissions have been reset to default values.",
+      resetDefaultError: "Failed to reset role permissions.",
       roleAdmin: "Admin",
       roleRecruiter: "Recruiter",
       roleHiringManager: "Hiring Manager",

@@ -1485,6 +1485,13 @@ export interface TranslationSchema {
       categorySettings: string;
       coreAdminProtected: string;
       adminRoleImmutable: string;
+      resetDefaultButton: string;
+      resetDefaultConfirmTitle: string;
+      resetDefaultConfirmMessage: string;
+      resetDefaultConfirmButton: string;
+      resetDefaultCancelButton: string;
+      resetDefaultSuccess: string;
+      resetDefaultError: string;
       roleAdmin: string;
       roleRecruiter: string;
       roleHiringManager: string;

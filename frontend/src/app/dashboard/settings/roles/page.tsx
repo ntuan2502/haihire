@@ -4,6 +4,7 @@ import { useState, useMemo, Fragment } from "react";
 import {
   useRolePermissionsMatrix,
   useUpdateRolePermissionsMutation,
+  useResetRolePermissionsMutation,
 } from "@/hooks/use-queries";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
@@ -11,12 +12,14 @@ import { Role, type Permission } from "@haihire/shared";
 import {
   ShieldCheck,
   RotateCcw,
+  RefreshCw,
   Save,
   Loader2,
   Lock,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CustomModal } from "@/components/shared";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 
@@ -138,9 +141,11 @@ export default function RolesPermissionsPage() {
     error,
   } = useRolePermissionsMatrix();
   const updateMutation = useUpdateRolePermissionsMutation();
+  const resetDefaultMutation = useResetRolePermissionsMutation();
 
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   const dirtyCount = useMemo(() => {
     return Object.keys(overrides).length;
@@ -231,6 +236,20 @@ export default function RolesPermissionsPage() {
     }
   };
 
+  const handleConfirmResetToDefault = async () => {
+    try {
+      await resetDefaultMutation.mutateAsync();
+      setOverrides({});
+      setIsResetConfirmOpen(false);
+      toast.success(t("settings.rolesMatrix.resetDefaultSuccess"));
+    } catch (err: unknown) {
+      toast.error(
+        getApiErrorMessage(err, t) ||
+          t("settings.rolesMatrix.resetDefaultError"),
+      );
+    }
+  };
+
   return (
     <div className="flex-1 w-full space-y-6">
       {/* Header & Actions Bar */}
@@ -255,43 +274,70 @@ export default function RolesPermissionsPage() {
           </p>
         </div>
 
-        {canManageRoles && (
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            {dirtyCount > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReset}
-                disabled={isSaving}
-                className="text-xs h-9 cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-                {t("settings.rolesMatrix.resetButton")}
-              </Button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsResetConfirmOpen(true)}
+            disabled={
+              !canManageRoles || isSaving || resetDefaultMutation.isPending
+            }
+            className="text-xs h-9 cursor-pointer"
+          >
+            {resetDefaultMutation.isPending ? (
+              <Loader2
+                className="w-3.5 h-3.5 mr-1.5 animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
             )}
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={dirtyCount === 0 || isSaving}
-              className="text-xs h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2
-                    className="w-3.5 h-3.5 mr-1.5 animate-spin"
+            {t("settings.rolesMatrix.resetDefaultButton")}
+          </Button>
+
+          {canManageRoles && (
+            <>
+              {dirtyCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  disabled={isSaving || resetDefaultMutation.isPending}
+                  className="text-xs h-9 cursor-pointer"
+                >
+                  <RotateCcw
+                    className="w-3.5 h-3.5 mr-1.5"
                     aria-hidden="true"
                   />
-                  {t("settings.rolesMatrix.savingButton")}
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-                  {t("settings.rolesMatrix.saveButton")}
-                </>
+                  {t("settings.rolesMatrix.resetButton")}
+                </Button>
               )}
-            </Button>
-          </div>
-        )}
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={
+                  dirtyCount === 0 || isSaving || resetDefaultMutation.isPending
+                }
+                className="text-xs h-9 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2
+                      className="w-3.5 h-3.5 mr-1.5 animate-spin"
+                      aria-hidden="true"
+                    />
+                    {t("settings.rolesMatrix.savingButton")}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    {t("settings.rolesMatrix.saveButton")}
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Read-Only Notice */}
@@ -471,6 +517,41 @@ export default function RolesPermissionsPage() {
           </div>
         </div>
       )}
+
+      {/* Reset to Default Confirmation Modal */}
+      <CustomModal
+        isOpen={isResetConfirmOpen}
+        onClose={() => setIsResetConfirmOpen(false)}
+        title={t("settings.rolesMatrix.resetDefaultConfirmTitle")}
+        size="sm"
+      >
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t("settings.rolesMatrix.resetDefaultConfirmMessage")}
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#202020] shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsResetConfirmOpen(false)}
+            disabled={resetDefaultMutation.isPending}
+          >
+            {t("settings.rolesMatrix.resetDefaultCancelButton")}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleConfirmResetToDefault}
+            disabled={resetDefaultMutation.isPending}
+          >
+            {resetDefaultMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+            ) : null}
+            {t("settings.rolesMatrix.resetDefaultConfirmButton")}
+          </Button>
+        </div>
+      </CustomModal>
     </div>
   );
 }

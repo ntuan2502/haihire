@@ -1655,6 +1655,14 @@ export const vi: TranslationSchema = {
         "Các quyền hạn quản trị cốt lõi không thể bị tước khỏi vai trò Admin.",
       adminRoleImmutable:
         "Quyền hạn của vai trò ADMIN là cố định và không thể thay đổi.",
+      resetDefaultButton: "Khôi phục mặc định",
+      resetDefaultConfirmTitle: "Khôi phục quyền mặc định",
+      resetDefaultConfirmMessage:
+        "Thao tác này sẽ đặt lại tất cả quyền của các vai trò về mặc định ban đầu. Bạn có muốn tiếp tục?",
+      resetDefaultConfirmButton: "Khôi phục",
+      resetDefaultCancelButton: "Hủy",
+      resetDefaultSuccess: "Đã khôi phục phân quyền các vai trò về mặc định.",
+      resetDefaultError: "Không thể khôi phục phân quyền về mặc định.",
       roleAdmin: "Quản trị viên",
       roleRecruiter: "Tuyển dụng",
       roleHiringManager: "Trưởng bộ phận",

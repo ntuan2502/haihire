@@ -85,6 +85,8 @@ export const vi: TranslationSchema = {
     ORG_USER_NO_ORG: "Tài khoản của bạn chưa được liên kết với tổ chức nào.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",
+    ORG_CANNOT_CHANGE_SELF_ROLE:
+      "Bạn không thể tự thay đổi vai trò của chính mình.",
     ORG_CANNOT_REMOVE_SELF: "Bạn không thể tự xóa chính mình khỏi tổ chức.",
     ORG_CANNOT_REMOVE_OWNER: "Không thể xóa chủ sở hữu khỏi tổ chức.",
     ORG_CANNOT_TRANSFER_TO_SELF:

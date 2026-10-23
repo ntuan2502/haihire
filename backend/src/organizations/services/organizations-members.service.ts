@@ -13,7 +13,7 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { APP_ERROR_CODES, Role } from "@haihire/shared";
 
 @Injectable()
 export class OrganizationsMembersService implements OnModuleInit {
@@ -37,8 +37,16 @@ export class OrganizationsMembersService implements OnModuleInit {
     // Single batched query across all 3 tables (O(1) database roundtrips on startup)
     const [allOrgs, allUsers, allMembers] = await Promise.all([
       this.prisma.db.orm.public.Organization.select("id", "ownerId").all(),
-      this.prisma.db.orm.public.User.select("id", "organizationId", "role").all(),
-      this.prisma.db.orm.public.OrganizationMember.select("id", "organizationId", "userId").all(),
+      this.prisma.db.orm.public.User.select(
+        "id",
+        "organizationId",
+        "role",
+      ).all(),
+      this.prisma.db.orm.public.OrganizationMember.select(
+        "id",
+        "organizationId",
+        "userId",
+      ).all(),
     ]);
 
     // Fast in-memory lookup set for (organizationId:userId) pairs
@@ -112,14 +120,15 @@ export class OrganizationsMembersService implements OnModuleInit {
       .first();
 
     // 1. Fetch all memberships recorded in OrganizationMember for this organization
-    const memberships = await this.prisma.db.orm.public.OrganizationMember.select(
-      "id",
-      "userId",
-      "role",
-      "createdAt",
-    )
-      .where((m) => m.organizationId.eq(currentOrgId))
-      .all();
+    const memberships =
+      await this.prisma.db.orm.public.OrganizationMember.select(
+        "id",
+        "userId",
+        "role",
+        "createdAt",
+      )
+        .where((m) => m.organizationId.eq(currentOrgId))
+        .all();
 
     const memberUserIds = new Set(memberships.map((m) => m.userId));
     if (org?.ownerId) {
@@ -168,10 +177,14 @@ export class OrganizationsMembersService implements OnModuleInit {
     }
 
     const members = allUsers
-      .filter((u) => memberUserIds.has(u.id) || u.organizationId === currentOrgId)
+      .filter(
+        (u) => memberUserIds.has(u.id) || u.organizationId === currentOrgId,
+      )
       .map((u) => {
         const isOwner = Boolean(org && org.ownerId === u.id);
-        const role = isOwner ? "ADMIN" : (roleMap.get(u.id) || u.role || "MEMBER");
+        const role = isOwner
+          ? "ADMIN"
+          : roleMap.get(u.id) || u.role || "MEMBER";
         return {
           id: u.id,
           name: u.name,
@@ -198,7 +211,7 @@ export class OrganizationsMembersService implements OnModuleInit {
   async updateMemberRole(
     callerId: string,
     targetMemberId: string,
-    newRole: "ADMIN" | "MEMBER",
+    newRole: Role,
   ) {
     const caller = await this.prisma.db.orm.public.User.select(
       "id",
@@ -209,7 +222,10 @@ export class OrganizationsMembersService implements OnModuleInit {
       .first();
 
     if (!caller || !caller.organizationId) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
     }
 
     const targetOrgId = caller.organizationId as string;
@@ -230,18 +246,30 @@ export class OrganizationsMembersService implements OnModuleInit {
       );
     }
 
-    // Cannot change role of Owner
-    if (org && org.ownerId === targetMemberId) {
-      throw new AppBadRequestException(APP_ERROR_CODES.ORG_CANNOT_CHANGE_OWNER_ROLE, "Cannot change the role of the organization owner");
+    // Cannot change own role
+    if (callerId === targetMemberId) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_CANNOT_CHANGE_SELF_ROLE,
+        "You cannot change your own role",
+      );
     }
 
-    const orgMembers = await this.prisma.db.orm.public.OrganizationMember.select(
-      "id",
-      "userId",
-      "role",
-    )
-      .where((m) => m.organizationId.eq(targetOrgId))
-      .all();
+    // Cannot change role of Owner
+    if (org && org.ownerId === targetMemberId) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_CANNOT_CHANGE_OWNER_ROLE,
+        "Cannot change the role of the organization owner",
+      );
+    }
+
+    const orgMembers =
+      await this.prisma.db.orm.public.OrganizationMember.select(
+        "id",
+        "userId",
+        "role",
+      )
+        .where((m) => m.organizationId.eq(targetOrgId))
+        .all();
 
     const membership = orgMembers.find((m) => m.userId === targetMemberId);
 
@@ -253,8 +281,14 @@ export class OrganizationsMembersService implements OnModuleInit {
       .where((u) => u.id.eq(targetMemberId))
       .first();
 
-    if (!membership && (!targetUser || targetUser.organizationId !== targetOrgId)) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_MEMBER_NOT_FOUND, "Member not found in this organization");
+    if (
+      !membership &&
+      (!targetUser || targetUser.organizationId !== targetOrgId)
+    ) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_MEMBER_NOT_FOUND,
+        "Member not found in this organization",
+      );
     }
 
     if (membership) {
@@ -312,7 +346,10 @@ export class OrganizationsMembersService implements OnModuleInit {
       .first();
 
     if (!caller || !caller.organizationId) {
-      throw new AppNotFoundException(APP_ERROR_CODES.ORG_USER_NO_ORG, "User is not associated with an organization");
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User is not associated with an organization",
+      );
     }
 
     const targetOrgId = caller.organizationId as string;
@@ -334,21 +371,25 @@ export class OrganizationsMembersService implements OnModuleInit {
     }
 
     if (callerId === targetMemberId) {
-      throw new AppBadRequestException(APP_ERROR_CODES.ORG_CANNOT_REMOVE_SELF, "You cannot remove yourself from the organization");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_CANNOT_REMOVE_SELF,
+        "You cannot remove yourself from the organization",
+      );
     }
 
     // Cannot remove Owner
     if (org && org.ownerId === targetMemberId) {
-      throw new AppBadRequestException(APP_ERROR_CODES.ORG_CANNOT_REMOVE_OWNER, "Cannot remove the organization owner");
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_CANNOT_REMOVE_OWNER,
+        "Cannot remove the organization owner",
+      );
     }
 
     // Remove from OrganizationMember
-    const memberRecords = await this.prisma.db.orm.public.OrganizationMember.select(
-      "id",
-      "userId",
-    )
-      .where((m) => m.organizationId.eq(targetOrgId))
-      .all();
+    const memberRecords =
+      await this.prisma.db.orm.public.OrganizationMember.select("id", "userId")
+        .where((m) => m.organizationId.eq(targetOrgId))
+        .all();
 
     for (const record of memberRecords) {
       if (record.userId === targetMemberId) {
@@ -367,15 +408,20 @@ export class OrganizationsMembersService implements OnModuleInit {
 
     // If target user is currently viewing this organization, fallback to another org or null
     if (targetUser && targetUser.organizationId === targetOrgId) {
-      const remainingMembership = await this.prisma.db.orm.public.OrganizationMember.select(
-        "organizationId",
-        "role",
-      )
-        .where((m) => m.userId.eq(targetMemberId))
-        .first();
+      const remainingMembership =
+        await this.prisma.db.orm.public.OrganizationMember.select(
+          "organizationId",
+          "role",
+        )
+          .where((m) => m.userId.eq(targetMemberId))
+          .first();
 
-      const fallbackOrgId = remainingMembership ? remainingMembership.organizationId : null;
-      const fallbackRole = remainingMembership ? remainingMembership.role : "MEMBER";
+      const fallbackOrgId = remainingMembership
+        ? remainingMembership.organizationId
+        : null;
+      const fallbackRole = remainingMembership
+        ? remainingMembership.role
+        : "MEMBER";
 
       await this.prisma.db.orm.public.User.where((u) =>
         u.id.eq(targetMemberId),

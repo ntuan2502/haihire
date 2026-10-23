@@ -18,6 +18,7 @@ describe("OrganizationsController", () => {
     getMyOrg: vi.fn(),
     deleteMyOrg: vi.fn(),
     transferOwnership: vi.fn(),
+    updateMemberRole: vi.fn(),
   };
 
   const ownerReq = {
@@ -209,6 +210,25 @@ describe("OrganizationsController", () => {
         message: "Organization deleted successfully",
       });
       expect(mockService.deleteMyOrg).toHaveBeenCalledWith("user-admin-other");
+    });
+  });
+  describe("PATCH /organizations/my/members/:memberId/role", () => {
+    it("delegates to organizationsService.updateMemberRole with caller ID, target member ID, and role", async () => {
+      mockService.updateMemberRole.mockResolvedValueOnce({
+        success: true,
+        role: Role.RECRUITER,
+      });
+
+      const result = await controller.updateMemberRole(ownerReq, "member-1", {
+        role: Role.RECRUITER,
+      });
+
+      expect(mockService.updateMemberRole).toHaveBeenCalledWith(
+        "user-owner",
+        "member-1",
+        Role.RECRUITER,
+      );
+      expect(result).toEqual({ success: true, role: Role.RECRUITER });
     });
   });
 });

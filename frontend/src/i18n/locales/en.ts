@@ -86,6 +86,7 @@ export const en: TranslationSchema = {
     ORG_USER_NO_ORG: "Your account is not associated with an organization.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Cannot change the role of the organization owner.",
+    ORG_CANNOT_CHANGE_SELF_ROLE: "You cannot change your own role.",
     ORG_CANNOT_REMOVE_SELF: "You cannot remove yourself from the organization.",
     ORG_CANNOT_REMOVE_OWNER: "Cannot remove the organization owner.",
     ORG_CANNOT_TRANSFER_TO_SELF:

@@ -15,6 +15,7 @@ import {
   OrganizationsInvitesService,
   type InviteLinkRecord,
 } from "./services";
+import { Role } from "@haihire/shared";
 
 export type { InviteLinkRecord };
 
@@ -100,11 +101,7 @@ export class OrganizationsService implements OnModuleInit {
     return this.members.getMembers(userId);
   }
 
-  updateMemberRole(
-    callerId: string,
-    targetMemberId: string,
-    newRole: "ADMIN" | "MEMBER",
-  ) {
+  updateMemberRole(callerId: string, targetMemberId: string, newRole: Role) {
     return this.members.updateMemberRole(callerId, targetMemberId, newRole);
   }
 

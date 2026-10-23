@@ -79,6 +79,7 @@ export interface TranslationSchema {
     ORG_INVITE_REVOKED: string;
     ORG_USER_NO_ORG: string;
     ORG_CANNOT_CHANGE_OWNER_ROLE: string;
+    ORG_CANNOT_CHANGE_SELF_ROLE: string;
     ORG_CANNOT_REMOVE_SELF: string;
     ORG_CANNOT_REMOVE_OWNER: string;
     ORG_CANNOT_TRANSFER_TO_SELF: string;

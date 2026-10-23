@@ -13,7 +13,9 @@ describe("Organizations Extended DTO Specs", () => {
   // -------------------------------------------------------------
   describe("SwitchOrgDto", () => {
     it("should pass for valid organizationId string", async () => {
-      const dto = plainToInstance(SwitchOrgDto, { organizationId: "org-uuid-123" });
+      const dto = plainToInstance(SwitchOrgDto, {
+        organizationId: "org-uuid-123",
+      });
       const errors = await validate(dto);
       expect(errors.length).toBe(0);
     });
@@ -22,14 +24,18 @@ describe("Organizations Extended DTO Specs", () => {
       const dto = plainToInstance(SwitchOrgDto, {});
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints?.isNotEmpty).toBe("Organization ID is required");
+      expect(errors[0].constraints?.isNotEmpty).toBe(
+        "Organization ID is required",
+      );
     });
 
     it("should fail when organizationId is an empty string", async () => {
       const dto = plainToInstance(SwitchOrgDto, { organizationId: "" });
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints?.isNotEmpty).toBe("Organization ID is required");
+      expect(errors[0].constraints?.isNotEmpty).toBe(
+        "Organization ID is required",
+      );
     });
 
     it("should fail when organizationId is a non-string type (number)", async () => {
@@ -40,7 +46,9 @@ describe("Organizations Extended DTO Specs", () => {
     });
 
     it("should fail when organizationId is a nested object", async () => {
-      const dto = plainToInstance(SwitchOrgDto, { organizationId: { nested: "object" } });
+      const dto = plainToInstance(SwitchOrgDto, {
+        organizationId: { nested: "object" },
+      });
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].constraints?.isString).toBeDefined();
@@ -63,6 +71,26 @@ describe("Organizations Extended DTO Specs", () => {
       expect(errors.length).toBe(0);
     });
 
+    it("should pass when role is RECRUITER", async () => {
+      const dto = plainToInstance(UpdateMemberRoleDto, { role: "RECRUITER" });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+    });
+
+    it("should pass when role is HIRING_MANAGER", async () => {
+      const dto = plainToInstance(UpdateMemberRoleDto, {
+        role: "HIRING_MANAGER",
+      });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+    });
+
+    it("should pass when role is INTERVIEWER", async () => {
+      const dto = plainToInstance(UpdateMemberRoleDto, { role: "INTERVIEWER" });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+    });
+
     it("should fail when role is omitted", async () => {
       const dto = plainToInstance(UpdateMemberRoleDto, {});
       const errors = await validate(dto);
@@ -74,21 +102,38 @@ describe("Organizations Extended DTO Specs", () => {
       const dto = plainToInstance(UpdateMemberRoleDto, { role: "SUPERUSER" });
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints?.isIn).toBe("Role must be ADMIN or MEMBER");
+      expect(errors[0].constraints?.isIn).toBe(
+        "Role must be one of: ADMIN, RECRUITER, HIRING_MANAGER, INTERVIEWER, MEMBER",
+      );
+    });
+
+    it("should fail when role is SUPERADMIN", async () => {
+      const dto = plainToInstance(UpdateMemberRoleDto, { role: "SUPERADMIN" });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].constraints?.isIn).toBe(
+        "Role must be one of: ADMIN, RECRUITER, HIRING_MANAGER, INTERVIEWER, MEMBER",
+      );
     });
 
     it("should fail when role contains injection script / special chars", async () => {
-      const dto = plainToInstance(UpdateMemberRoleDto, { role: "<script>alert('xss')</script>" });
+      const dto = plainToInstance(UpdateMemberRoleDto, {
+        role: "<script>alert('xss')</script>",
+      });
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints?.isIn).toBe("Role must be ADMIN or MEMBER");
+      expect(errors[0].constraints?.isIn).toBe(
+        "Role must be one of: ADMIN, RECRUITER, HIRING_MANAGER, INTERVIEWER, MEMBER",
+      );
     });
 
     it("should fail when role is a number", async () => {
       const dto = plainToInstance(UpdateMemberRoleDto, { role: 1 });
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].constraints?.isIn).toBe("Role must be ADMIN or MEMBER");
+      expect(errors[0].constraints?.isIn).toBe(
+        "Role must be one of: ADMIN, RECRUITER, HIRING_MANAGER, INTERVIEWER, MEMBER",
+      );
     });
   });
 

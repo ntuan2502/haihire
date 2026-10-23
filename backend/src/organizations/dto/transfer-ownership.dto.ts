@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsUUID } from "class-validator";
+import { IsNotEmpty, IsString } from "class-validator";
 
 export class TransferOwnershipDto {
-  @IsUUID(undefined, { message: "newOwnerUserId must be a valid UUID" })
+  @IsString({ message: "newOwnerUserId must be a valid string" })
   @IsNotEmpty({ message: "New owner user ID is required" })
   newOwnerUserId!: string;
 }

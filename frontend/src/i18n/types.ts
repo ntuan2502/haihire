@@ -1396,6 +1396,8 @@ export interface TranslationSchema {
       emailTemplatesSub: string;
       roles: string;
       rolesSub: string;
+      auditLog: string;
+      auditLogSub: string;
     };
     placeholders: {
       orgName: string;
@@ -1498,6 +1500,31 @@ export interface TranslationSchema {
       roleInterviewer: string;
       roleMember: string;
       tableSummary: string;
+    };
+    auditLog: {
+      title: string;
+      description: string;
+      badge: string;
+      accessDenied: string;
+      filterAllActions: string;
+      filterAction: string;
+      colTimestamp: string;
+      colActor: string;
+      colAction: string;
+      colResource: string;
+      colMetadata: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      paginationShowing: string;
+      paginationPrev: string;
+      paginationNext: string;
+      systemActor: string;
+      noMetadata: string;
+      actionRolePermissionsUpdated: string;
+      actionRolePermissionsReset: string;
+      actionMemberRoleChanged: string;
+      actionOwnershipTransferred: string;
+      actionOrgDeleted: string;
     };
   };
   theme: {

@@ -17,6 +17,8 @@ export const queryKeys = {
   inviteLinks: () => ["organization", "invite-links"] as const,
   rolePermissionsMatrix: () =>
     ["organization", "roles", "permissions"] as const,
+  auditLogs: (params?: Record<string, unknown>) =>
+    ["organization", "audit-logs", params] as const,
   emailTemplates: (orgId?: string | null) =>
     ["email", "templates", { orgId }] as const,
   emailSettings: (orgId?: string | null) =>

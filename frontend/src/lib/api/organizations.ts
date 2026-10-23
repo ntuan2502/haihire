@@ -167,4 +167,46 @@ export const organizationsApi = {
     const response = await api.post<{ deleted: number }>(url);
     return response.data;
   },
+
+  getAuditLogs: async (params?: {
+    action?: string;
+    resource?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<AuditLogsResponse> => {
+    const query = new URLSearchParams();
+    if (params?.action) query.set("action", params.action);
+    if (params?.resource) query.set("resource", params.resource);
+    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.offset !== undefined)
+      query.set("offset", String(params.offset));
+    const qs = query.toString();
+    const url = `/organizations/my/audit-log${qs ? `?${qs}` : ""}`;
+    const response = await api.get<AuditLogsResponse>(url);
+    return response.data;
+  },
 };
+
+export interface OrganizationAuditLogRecord {
+  id: string;
+  organizationId: string;
+  actorId: string | null;
+  action: string;
+  resource: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  actor: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    avatarUrl: string | null;
+  } | null;
+}
+
+export interface AuditLogsResponse {
+  data: OrganizationAuditLogRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+}

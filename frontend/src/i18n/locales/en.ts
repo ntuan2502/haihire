@@ -1553,6 +1553,8 @@ export const en: TranslationSchema = {
       emailTemplatesSub: "Templates & SMTP",
       roles: "Roles & Permissions",
       rolesSub: "Custom permissions matrix",
+      auditLog: "Audit Log",
+      auditLogSub: "Security & activity events",
     },
     placeholders: {
       orgName: "e.g. Acme Corp",
@@ -1666,6 +1668,33 @@ export const en: TranslationSchema = {
       roleMember: "Member",
       tableSummary:
         "Editable role permissions matrix across 5 organizational roles",
+    },
+    auditLog: {
+      title: "Audit Log",
+      description:
+        "Track administrative changes, role permission updates, and member lifecycle events across your organization.",
+      badge: "Security & Governance",
+      accessDenied: "You do not have permission to view the audit log.",
+      filterAllActions: "All Actions",
+      filterAction: "Filter by action",
+      colTimestamp: "Timestamp",
+      colActor: "Actor",
+      colAction: "Action",
+      colResource: "Resource",
+      colMetadata: "Details",
+      emptyTitle: "No audit events found",
+      emptyDescription:
+        "No actions matching the selected filter have been recorded yet.",
+      paginationShowing: "Showing {offset} to {end} of {total} events",
+      paginationPrev: "Previous",
+      paginationNext: "Next",
+      systemActor: "System",
+      noMetadata: "No additional details",
+      actionRolePermissionsUpdated: "Permissions Updated",
+      actionRolePermissionsReset: "Permissions Reset",
+      actionMemberRoleChanged: "Member Role Changed",
+      actionOwnershipTransferred: "Ownership Transferred",
+      actionOrgDeleted: "Organization Deleted",
     },
   },
   theme: {

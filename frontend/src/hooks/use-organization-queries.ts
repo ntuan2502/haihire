@@ -224,3 +224,15 @@ export function useResetRolePermissionsMutation() {
     },
   });
 }
+
+export function useAuditLogsQuery(params?: {
+  action?: string;
+  resource?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return useQuery({
+    queryKey: queryKeys.auditLogs(params),
+    queryFn: () => organizationsApi.getAuditLogs(params),
+  });
+}

@@ -21,6 +21,7 @@ import {
   User as UserIcon,
   Lock,
   Mail,
+  History,
 } from "lucide-react";
 import { cn } from "cn";
 import { useI18n } from "@/i18n";
@@ -86,6 +87,13 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     label: "Roles & Permissions",
     sublabel: "RBAC matrix & overrides",
     icon: ShieldCheck,
+  },
+  {
+    id: "audit-log",
+    href: "/dashboard/settings/audit-log",
+    label: "Audit Log",
+    sublabel: "Security & activity events",
+    icon: History,
   },
   {
     id: "billing",
@@ -163,6 +171,10 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
     roles: {
       label: t("settings.tabs.roles"),
       sub: t("settings.tabs.rolesSub"),
+    },
+    "audit-log": {
+      label: t("settings.tabs.auditLog"),
+      sub: t("settings.tabs.auditLogSub"),
     },
     billing: {
       label: t("settings.tabs.billing"),

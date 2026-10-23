@@ -159,4 +159,27 @@ Controllers declare access requirements via `@RequirePermission(PERMISSIONS.<KEY
 [Controller Route Handler]
 ```
 
+---
+
+## 6. Permission Override Model
+
+HaiHire implements a lightweight, single-source-of-truth permission resolution model:
+
+1. **Default Fallback Matrix:**
+   - Static default permissions defined in `@haihire/shared` (`packages/shared/src/permissions.ts`) serve as the universal fallback for all organizations and roles.
+   - Newly registered organizations do NOT receive duplicate database records for default permissions (`OrganizationRolePermission` table remains completely clean with 0 records).
+2. **Delta-Only Overrides:**
+   - Customizations made through the Permissions Matrix UI are stored strictly as delta/override records.
+   - If an organization customizes a role's permissions, only the explicitly toggled entries are saved in `OrganizationRolePermission`.
+3. **Automatic Upstream Sync:**
+   - When new features or permissions are introduced in code (`permissions.ts`), organizations without explicit overrides automatically inherit the new defaults with zero database migrations or synchronization scripts.
+   - Organizations with overrides preserve their explicit choices while inheriting unchanged defaults.
+4. **Role Reset Semantics:**
+   - Resetting a role (`POST /organizations/my/roles/:role/reset`) deletes all override records for that role in the organization.
+   - Upon deletion, the role instantly falls back 100% to the system defaults in `permissions.ts`.
+5. **ADMIN Immutability Hardening:**
+   - All 42 permissions for the `ADMIN` role are strictly locked and immutable. Neither UI edits nor API calls can alter `ADMIN` permissions, preventing administrative lockouts and guaranteeing a recovery path.
+
+---
+
 _For coding rules and guard implementation standards, refer to [`docs/architecture/conventions.md`](conventions.md)._

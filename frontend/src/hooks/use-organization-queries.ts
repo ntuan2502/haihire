@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { organizationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Organization, User, InviteLink } from "@/types";
-import type { Role } from "@haihire/shared";
+import type { Role, Permission } from "@haihire/shared";
 import { queryKeys } from "./query-keys";
 
 export function useMyOrg() {
@@ -177,6 +177,37 @@ export function useRemoveMemberMutation() {
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orgMembers() });
+    },
+  });
+}
+
+export function useRolePermissionsMatrix() {
+  return useQuery<Record<Role, Record<Permission, boolean>>>({
+    queryKey: queryKeys.rolePermissionsMatrix(),
+    queryFn: () => organizationsApi.getRolePermissionsMatrix(),
+  });
+}
+
+export function useUpdateRolePermissionsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      role,
+      permissions,
+    }: {
+      role: Role;
+      permissions: Array<{ permission: Permission; granted: boolean }>;
+    }) => organizationsApi.updateRolePermissions(role, permissions),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.rolePermissionsMatrix(),
+      });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.rolePermissionsMatrix(),
+      });
     },
   });
 }

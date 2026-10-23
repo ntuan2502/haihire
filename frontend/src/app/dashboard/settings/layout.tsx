@@ -81,6 +81,13 @@ const SETTINGS_NAV_ITEMS: NavItem[] = [
     icon: Users,
   },
   {
+    id: "roles",
+    href: "/dashboard/settings/roles",
+    label: "Roles & Permissions",
+    sublabel: "RBAC matrix & overrides",
+    icon: ShieldCheck,
+  },
+  {
     id: "billing",
     href: "/dashboard/settings/billing",
     label: "Billing",
@@ -152,6 +159,10 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
     members: {
       label: t("settings.tabs.members"),
       sub: t("settings.tabs.membersSub"),
+    },
+    roles: {
+      label: t("settings.tabs.roles"),
+      sub: t("settings.tabs.rolesSub"),
     },
     billing: {
       label: t("settings.tabs.billing"),

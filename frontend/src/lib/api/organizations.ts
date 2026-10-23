@@ -1,6 +1,6 @@
 import { api } from "./client";
 import type { Organization, User, InviteLink } from "@/types";
-import type { Role } from "@haihire/shared";
+import type { Role, Permission } from "@haihire/shared";
 
 export const organizationsApi = {
   getPublicOrg: async (slug: string): Promise<Organization> => {
@@ -137,6 +137,26 @@ export const organizationsApi = {
     const response = await api.delete<{ success: boolean; message: string }>(
       `/organizations/my/members/${memberId}`,
     );
+    return response.data;
+  },
+
+  getRolePermissionsMatrix: async (): Promise<
+    Record<Role, Record<Permission, boolean>>
+  > => {
+    const response = await api.get<Record<Role, Record<Permission, boolean>>>(
+      "/organizations/my/roles/permissions",
+    );
+    return response.data;
+  },
+
+  updateRolePermissions: async (
+    role: Role,
+    permissions: Array<{ permission: Permission; granted: boolean }>,
+  ): Promise<{ role: Role; permissions: Record<Permission, boolean> }> => {
+    const response = await api.patch<{
+      role: Role;
+      permissions: Record<Permission, boolean>;
+    }>(`/organizations/my/roles/${role}/permissions`, { permissions });
     return response.data;
   },
 };

@@ -1393,6 +1393,8 @@ export interface TranslationSchema {
       accountSub: string;
       emailTemplates: string;
       emailTemplatesSub: string;
+      roles: string;
+      rolesSub: string;
     };
     placeholders: {
       orgName: string;
@@ -1458,6 +1460,35 @@ export interface TranslationSchema {
         enabled: string;
         disabled: string;
       };
+    };
+    rolesMatrix: {
+      title: string;
+      description: string;
+      badge: string;
+      readOnlyBadge: string;
+      readOnlyNotice: string;
+      saveButton: string;
+      savingButton: string;
+      resetButton: string;
+      saveSuccess: string;
+      saveError: string;
+      unsavedChanges: string;
+      permissionColumn: string;
+      categoryOrg: string;
+      categoryJob: string;
+      categoryCandidate: string;
+      categoryApplication: string;
+      categoryInterview: string;
+      categorySourcing: string;
+      categoryEmail: string;
+      categorySettings: string;
+      coreAdminProtected: string;
+      roleAdmin: string;
+      roleRecruiter: string;
+      roleHiringManager: string;
+      roleInterviewer: string;
+      roleMember: string;
+      tableSummary: string;
     };
   };
   theme: {

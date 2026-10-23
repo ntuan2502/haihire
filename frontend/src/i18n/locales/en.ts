@@ -1549,6 +1549,8 @@ export const en: TranslationSchema = {
       accountSub: "Profile & security",
       emailTemplates: "Email Templates",
       emailTemplatesSub: "Templates & SMTP",
+      roles: "Roles & Permissions",
+      rolesSub: "Custom permissions matrix",
     },
     placeholders: {
       orgName: "e.g. Acme Corp",
@@ -1618,6 +1620,39 @@ export const en: TranslationSchema = {
         enabled: "Active",
         disabled: "Paused",
       },
+    },
+    rolesMatrix: {
+      title: "Roles & Permissions Matrix",
+      description:
+        "Manage and customize granular role permissions for your organization.",
+      badge: "RBAC Matrix",
+      readOnlyBadge: "Read-only View",
+      readOnlyNotice:
+        "You do not have permission to modify roles. Contact an administrator to adjust permissions.",
+      saveButton: "Save Changes",
+      savingButton: "Saving...",
+      resetButton: "Reset Changes",
+      saveSuccess: "Role permissions saved successfully",
+      saveError: "Failed to save role permissions",
+      unsavedChanges: "You have unsaved changes",
+      permissionColumn: "Permission",
+      categoryOrg: "Organization",
+      categoryJob: "Jobs",
+      categoryCandidate: "Candidates",
+      categoryApplication: "Applications",
+      categoryInterview: "Interviews",
+      categorySourcing: "Sourcing",
+      categoryEmail: "Email",
+      categorySettings: "Settings",
+      coreAdminProtected:
+        "Core administrative permissions cannot be revoked from Admin.",
+      roleAdmin: "Admin",
+      roleRecruiter: "Recruiter",
+      roleHiringManager: "Hiring Manager",
+      roleInterviewer: "Interviewer",
+      roleMember: "Member",
+      tableSummary:
+        "Editable role permissions matrix across 5 organizational roles",
     },
   },
   theme: {

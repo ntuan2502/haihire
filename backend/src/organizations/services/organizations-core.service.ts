@@ -502,9 +502,11 @@ export class OrganizationsCoreService {
         .where((m) => m.organizationId.eq(orgId))
         .all();
 
-    const isMember = orgMembers.some((m) => m.userId === newOwnerUserId);
+    const targetMembership = orgMembers.find(
+      (m) => m.userId === newOwnerUserId,
+    );
 
-    if (!isMember) {
+    if (!targetMembership) {
       const targetUser = await this.prisma.db.orm.public.User.select(
         "id",
         "organizationId",
@@ -532,14 +534,32 @@ export class OrganizationsCoreService {
         updatedAt: toInstant(),
       });
 
-      await tx.orm.public.OrganizationMember.where((m) =>
-        m.organizationId.eq(orgId),
-      )
-        .where((m) => m.userId.eq(newOwnerUserId))
-        .update({
-          role: "ADMIN",
-          updatedAt: toInstant(),
+      if (targetMembership) {
+        await tx.orm.public.OrganizationMember.where((m) =>
+          m.id.eq(targetMembership.id),
+        )
+          .where((m) => m.organizationId.eq(orgId))
+          .update({
+            role: "ADMIN",
+            updatedAt: toInstant(),
+          });
+      } else {
+        const newMemberId = crypto.randomUUID();
+        await tx.orm.public.OrganizationMember.upsert({
+          create: {
+            id: newMemberId,
+            organizationId: orgId,
+            userId: newOwnerUserId,
+            role: "ADMIN",
+            updatedAt: toInstant(),
+          },
+          update: {
+            role: "ADMIN",
+            updatedAt: toInstant(),
+          },
+          conflictOn: { id: newMemberId },
         });
+      }
     });
 
     this.logger.log(

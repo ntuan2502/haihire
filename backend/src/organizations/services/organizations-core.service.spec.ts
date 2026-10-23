@@ -351,6 +351,22 @@ describe("OrganizationsCoreService", () => {
       );
       expect(memberEntryAfter?.role).toBe("ADMIN");
     });
+    it("creates a new OrganizationMember row with role ADMIN when target user has no existing membership entry", async () => {
+      const memberEntryBefore = organizationMemberTable.store.find(
+        (m) => m.organizationId === "org-1" && m.userId === "user-admin",
+      );
+      expect(memberEntryBefore).toBeUndefined();
+
+      const res = await service.transferOwnership("user-owner", "user-admin");
+      expect(res.success).toBe(true);
+      expect(res.newOwnerId).toBe("user-admin");
+
+      const memberEntryAfter = organizationMemberTable.store.find(
+        (m) => m.organizationId === "org-1" && m.userId === "user-admin",
+      );
+      expect(memberEntryAfter).toBeDefined();
+      expect(memberEntryAfter?.role).toBe("ADMIN");
+    });
 
     it("throws AppForbiddenException when non-owner attempts to transfer ownership", async () => {
       await expect(

@@ -36,6 +36,11 @@ export interface QueryBuilder<T extends MockRecord> {
   update(patch: Partial<T>): Promise<T | null>;
   updateAll(patch: Partial<T>): Promise<{ count: number }>;
   create(data: Partial<T>): Promise<T>;
+  upsert(args: {
+    create: Partial<T>;
+    update: Partial<T>;
+    conflictOn?: Record<string, unknown>;
+  }): Promise<T>;
   count(): Promise<number>;
   delete(): Promise<{ count: number }>;
   deleteAll(): Promise<{ count: number }>;
@@ -48,6 +53,11 @@ export interface MockTable<T extends MockRecord> {
   select(...fields: string[]): QueryBuilder<T>;
   where(predicate: PredicateFn<T>): QueryBuilder<T>;
   create(data: Partial<T>): Promise<T>;
+  upsert(args: {
+    create: Partial<T>;
+    update: Partial<T>;
+    conflictOn?: Record<string, unknown>;
+  }): Promise<T>;
   count(): Promise<number>;
   store: T[];
 }
@@ -262,6 +272,26 @@ export function createQueryBuilder<T extends MockRecord>(
       return projectRecord(record, state.fields);
     },
 
+    async upsert(args: {
+      create: Partial<T>;
+      update: Partial<T>;
+      conflictOn?: Record<string, unknown>;
+    }): Promise<T> {
+      let match: T | undefined;
+      if (args.conflictOn) {
+        match = store.find((item) =>
+          Object.entries(args.conflictOn!).every(([k, v]) => item[k] === v),
+        );
+      }
+      if (match) {
+        Object.assign(match, args.update);
+        return match;
+      } else {
+        const record = { ...args.create } as T;
+        store.push(record);
+        return record;
+      }
+    },
     async count(): Promise<number> {
       const filtered = store.filter((item) =>
         state.predicates.every((p) => evaluatePredicate(item, p)),
@@ -334,6 +364,26 @@ export function createMockTable<T extends MockRecord>(
       const record = { ...data } as T;
       store.push(record);
       return record;
+    },
+    async upsert(args: {
+      create: Partial<T>;
+      update: Partial<T>;
+      conflictOn?: Record<string, unknown>;
+    }): Promise<T> {
+      let match: T | undefined;
+      if (args.conflictOn) {
+        match = store.find((item) =>
+          Object.entries(args.conflictOn!).every(([k, v]) => item[k] === v),
+        );
+      }
+      if (match) {
+        Object.assign(match, args.update);
+        return match;
+      } else {
+        const record = { ...args.create } as T;
+        store.push(record);
+        return record;
+      }
     },
     async count(): Promise<number> {
       return store.length;

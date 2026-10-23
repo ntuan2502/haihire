@@ -124,6 +124,22 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
       expect(transformed.newOwnerUserId).toBe(seedTargetUserId);
     });
 
+    it("accepts multiple distinct RFC 4122 UUID v4 seed accounts without 400", async () => {
+      const validSeedIds = [
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000003",
+        "00000000-0000-4000-8000-0000000000b1",
+      ];
+
+      for (const id of validSeedIds) {
+        const transformed = await pipe.transform(
+          { newOwnerUserId: id },
+          { type: "body", metatype: TransferOwnershipDto },
+        );
+        expect(transformed.newOwnerUserId).toBe(id);
+      }
+    });
+
     it("accepts standard RFC 4122 UUID v4 format without 400", async () => {
       const payload = { newOwnerUserId: standardUuid };
       const transformed = await pipe.transform(payload, {
@@ -143,6 +159,24 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
           metatype: TransferOwnershipDto,
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it("rejects multiple legacy non-RFC 4122 pseudo-UUIDs across all demo account variants with 400", async () => {
+      const legacyIds = [
+        "00000000-0000-0000-0000-000000000001",
+        "00000000-0000-0000-0000-000000000002",
+        "00000000-0000-0000-0000-000000000003",
+        "00000000-0000-0000-0000-0000000000b1",
+      ];
+
+      for (const id of legacyIds) {
+        await expect(
+          pipe.transform(
+            { newOwnerUserId: id },
+            { type: "body", metatype: TransferOwnershipDto },
+          ),
+        ).rejects.toThrow(BadRequestException);
+      }
     });
 
     it("rejects non-string input (number) with 400 BadRequestException", async () => {

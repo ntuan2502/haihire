@@ -13,8 +13,14 @@ import {
   OrganizationsCoreService,
   OrganizationsMembersService,
   OrganizationsInvitesService,
+  OrganizationsRolesService,
+  OrganizationsAuditLogService,
   type InviteLinkRecord,
+  type OrgAuditLogFilter,
 } from "./services";
+import { Role, APP_ERROR_CODES } from "@haihire/shared";
+import { AppBadRequestException } from "../common/app-exception";
+import type { RolePermissionItemDto } from "./dto/role-permissions.dto";
 
 export type { InviteLinkRecord };
 
@@ -23,6 +29,8 @@ export class OrganizationsService implements OnModuleInit {
   private readonly core: OrganizationsCoreService;
   private readonly members: OrganizationsMembersService;
   private readonly invites: OrganizationsInvitesService;
+  private readonly roles: OrganizationsRolesService;
+  private readonly auditLog: OrganizationsAuditLogService;
 
   constructor(
     @Optional()
@@ -34,11 +42,32 @@ export class OrganizationsService implements OnModuleInit {
     @Optional()
     @Inject(OrganizationsInvitesService)
     invitesService?: OrganizationsInvitesService,
+    @Optional()
+    @Inject(OrganizationsRolesService)
+    rolesService?: OrganizationsRolesService,
+    @Optional()
+    @Inject(PrismaService)
+    prismaService?: PrismaService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    auditLogService?: OrganizationsAuditLogService,
   ) {
     if (coreOrPrisma instanceof OrganizationsCoreService) {
       this.core = coreOrPrisma;
       this.members = membersOrEvents as OrganizationsMembersService;
       this.invites = invitesService as OrganizationsInvitesService;
+      this.roles =
+        rolesService ||
+        new OrganizationsRolesService(
+          prismaService ||
+            (this.core as unknown as { prisma: PrismaService }).prisma,
+        );
+      this.auditLog =
+        auditLogService ||
+        new OrganizationsAuditLogService(
+          prismaService ||
+            (this.core as unknown as { prisma: PrismaService }).prisma,
+        );
     } else if (coreOrPrisma) {
       // Direct instantiation support for existing tests (e.g. new OrganizationsService(mockPrisma))
       const prisma = coreOrPrisma as PrismaService;
@@ -47,6 +76,8 @@ export class OrganizationsService implements OnModuleInit {
       this.core = new OrganizationsCoreService(prisma);
       this.members = new OrganizationsMembersService(prisma, events);
       this.invites = new OrganizationsInvitesService(prisma);
+      this.roles = new OrganizationsRolesService(prisma);
+      this.auditLog = new OrganizationsAuditLogService(prisma);
     } else {
       throw new Error(
         "OrganizationsService requires dependencies to be injected",
@@ -101,24 +132,28 @@ export class OrganizationsService implements OnModuleInit {
   }
 
   updateMemberRole(
-    callerId: string,
+    userId: string,
     targetMemberId: string,
-    newRole: "ADMIN" | "MEMBER",
+    newRole: Role | "ADMIN" | "MEMBER",
   ) {
-    return this.members.updateMemberRole(callerId, targetMemberId, newRole);
+    return this.members.updateMemberRole(
+      userId,
+      targetMemberId,
+      newRole as Role,
+    );
   }
 
-  removeMember(callerId: string, targetMemberId: string) {
-    return this.members.removeMember(callerId, targetMemberId);
+  removeMember(userId: string, targetMemberId: string) {
+    return this.members.removeMember(userId, targetMemberId);
   }
 
   // ==========================================
-  // 3. INVITE LINKS & TOKEN ENGINE
+  // 3. INVITE LINKS MANAGEMENT
   // ==========================================
   createInviteLink(
     userId: string,
     dto: { role?: string; expiresIn?: string; maxUses?: string },
-  ): Promise<InviteLinkRecord> {
+  ) {
     return this.invites.createInviteLink(userId, dto);
   }
 
@@ -140,5 +175,59 @@ export class OrganizationsService implements OnModuleInit {
 
   join(userId: string, dto: JoinOrgDto) {
     return this.invites.join(userId, dto);
+  }
+
+  // ==========================================
+  // 4. ROLES & PERMISSIONS MATRIX MANAGEMENT
+  // ==========================================
+  async getRolePermissionsMatrix(userId: string) {
+    const org = await this.getMyOrg(userId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.roles.getRolePermissionsMatrix(org.id);
+  }
+
+  async updateRolePermissions(
+    userId: string,
+    role: string,
+    updates: RolePermissionItemDto[],
+  ) {
+    const org = await this.getMyOrg(userId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.roles.updateRolePermissions(org.id, role, updates, userId);
+  }
+
+  async resetRolePermissions(userId: string, role?: string) {
+    const org = await this.getMyOrg(userId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.roles.resetRolePermissions(org.id, role, userId);
+  }
+
+  // ==========================================
+  // 5. AUDIT LOGGING
+  // ==========================================
+  async getAuditLogs(userId: string, filter: OrgAuditLogFilter = {}) {
+    const org = await this.getMyOrg(userId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.auditLog.findAllOrg(org.id, filter);
   }
 }

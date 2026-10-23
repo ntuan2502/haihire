@@ -85,6 +85,8 @@ export const vi: TranslationSchema = {
     ORG_USER_NO_ORG: "Tài khoản của bạn chưa được liên kết với tổ chức nào.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Không thể thay đổi vai trò của chủ sở hữu tổ chức.",
+    ORG_CANNOT_CHANGE_SELF_ROLE:
+      "Bạn không thể tự thay đổi vai trò của chính mình.",
     ORG_CANNOT_REMOVE_SELF: "Bạn không thể tự xóa chính mình khỏi tổ chức.",
     ORG_CANNOT_REMOVE_OWNER: "Không thể xóa chủ sở hữu khỏi tổ chức.",
     ORG_CANNOT_TRANSFER_TO_SELF:
@@ -95,6 +97,8 @@ export const vi: TranslationSchema = {
     ORG_MEMBER_NOT_FOUND: "Không tìm thấy thành viên trong tổ chức này.",
     ORG_FORBIDDEN_ACTION:
       "Bạn không có quyền thực hiện thao tác này trong tổ chức ({organizationId}).",
+    ORG_ADMIN_PERMISSIONS_IMMUTABLE:
+      "Quyền hạn của vai trò ADMIN là cố định và không thể thay đổi.",
     JOB_NOT_FOUND: "Không tìm thấy tin tuyển dụng ({id}).",
     JOB_ID_REQUIRED: "Vui lòng chọn vị trí tuyển dụng.",
     JOB_NOT_ACCEPTING_APPLICATIONS:
@@ -1410,6 +1414,9 @@ export const vi: TranslationSchema = {
       "Liên kết mời này sẽ bị vô hiệu hóa ngay lập tức và không thể sử dụng để tham gia tổ chức nữa.",
     roleOwner: "Chủ sở hữu",
     roleAdmin: "Quản trị viên",
+    roleRecruiter: "Chuyên viên tuyển dụng",
+    roleHiringManager: "Quản lý tuyển dụng",
+    roleInterviewer: "Người phỏng vấn",
     roleMember: "Thành viên",
     expires7Days: "7 ngày",
     expires30Days: "30 ngày",
@@ -1419,6 +1426,8 @@ export const vi: TranslationSchema = {
     noActiveInviteLinks: "Chưa có liên kết mời nào",
     noActiveInviteLinksDesc:
       "Tạo liên kết mời có hạn sử dụng hoặc một lần dùng với vai trò cụ thể để mời đội ngũ của bạn.",
+    updateRoleSuccess: "Cập nhật vai trò thành viên thành công.",
+    updateRoleError: "Không thể cập nhật vai trò thành viên.",
   },
   onboarding: {
     selectOrgTitle: "Chọn tổ chức làm việc",
@@ -1546,6 +1555,10 @@ export const vi: TranslationSchema = {
       accountSub: "Hồ sơ cá nhân & bảo mật",
       emailTemplates: "Mẫu Email & Gửi thư",
       emailTemplatesSub: "Mẫu thư tự động & SMTP",
+      roles: "Vai trò & Quyền hạn",
+      rolesSub: "Ma trận phân quyền tùy chỉnh",
+      auditLog: "Nhật ký kiểm toán",
+      auditLogSub: "Sự kiện bảo mật & hoạt động",
     },
     placeholders: {
       orgName: "VD: Acme Corp",
@@ -1616,6 +1629,75 @@ export const vi: TranslationSchema = {
         enabled: "Hoạt động",
         disabled: "Tạm dừng",
       },
+    },
+    rolesMatrix: {
+      title: "Ma trận Vai trò & Quyền hạn",
+      description:
+        "Quản lý và tùy chỉnh phân quyền chi tiết cho từng vai trò trong tổ chức.",
+      badge: "Ma trận RBAC",
+      readOnlyBadge: "Chế độ xem",
+      readOnlyNotice:
+        "Bạn không có quyền thay đổi phân quyền vai trò. Vui lòng liên hệ quản trị viên.",
+      saveButton: "Lưu thay đổi",
+      savingButton: "Đang lưu...",
+      resetButton: "Đặt lại",
+      saveSuccess: "Cập nhật phân quyền vai trò thành công",
+      saveError: "Không thể lưu phân quyền vai trò",
+      unsavedChanges: "Bạn có thay đổi chưa lưu",
+      permissionColumn: "Quyền hạn",
+      categoryOrg: "Tổ chức",
+      categoryJob: "Tin tuyển dụng",
+      categoryCandidate: "Ứng viên",
+      categoryApplication: "Hồ sơ ứng tuyển",
+      categoryInterview: "Phỏng vấn",
+      categorySourcing: "Nguồn ứng viên",
+      categoryEmail: "Email",
+      categorySettings: "Cài đặt & Tích hợp",
+      coreAdminProtected:
+        "Các quyền hạn quản trị cốt lõi không thể bị tước khỏi vai trò Admin.",
+      adminRoleImmutable:
+        "Quyền hạn của vai trò ADMIN là cố định và không thể thay đổi.",
+      resetDefaultButton: "Khôi phục mặc định",
+      resetDefaultConfirmTitle: "Khôi phục quyền mặc định",
+      resetDefaultConfirmMessage:
+        "Thao tác này sẽ đặt lại tất cả quyền của các vai trò về mặc định ban đầu. Bạn có muốn tiếp tục?",
+      resetDefaultConfirmButton: "Khôi phục",
+      resetDefaultCancelButton: "Hủy",
+      resetDefaultSuccess: "Đã khôi phục phân quyền các vai trò về mặc định.",
+      resetDefaultError: "Không thể khôi phục phân quyền về mặc định.",
+      roleAdmin: "Quản trị viên",
+      roleRecruiter: "Tuyển dụng",
+      roleHiringManager: "Trưởng bộ phận",
+      roleInterviewer: "Người phỏng vấn",
+      roleMember: "Thành viên",
+      tableSummary: "Ma trận phân quyền tùy chỉnh trên 5 vai trò tổ chức",
+    },
+    auditLog: {
+      title: "Nhật ký kiểm toán",
+      description:
+        "Theo dõi các thay đổi quản trị, cập nhật phân quyền vai trò và sự kiện vòng đời thành viên trong tổ chức.",
+      badge: "Bảo mật & Quản trị",
+      accessDenied: "Bạn không có quyền xem nhật ký kiểm toán.",
+      filterAllActions: "Tất cả hành động",
+      filterAction: "Lọc theo hành động",
+      colTimestamp: "Thời gian",
+      colActor: "Người thực hiện",
+      colAction: "Hành động",
+      colResource: "Tài nguyên",
+      colMetadata: "Chi tiết",
+      emptyTitle: "Không tìm thấy sự kiện kiểm toán nào",
+      emptyDescription:
+        "Chưa ghi nhận hành động nào phù hợp với bộ lọc đã chọn.",
+      paginationShowing: "Hiển thị {offset} đến {end} trên {total} sự kiện",
+      paginationPrev: "Trước",
+      paginationNext: "Sau",
+      systemActor: "Hệ thống",
+      noMetadata: "Không có chi tiết bổ sung",
+      actionRolePermissionsUpdated: "Cập nhật phân quyền",
+      actionRolePermissionsReset: "Khôi phục phân quyền",
+      actionMemberRoleChanged: "Thay đổi vai trò thành viên",
+      actionOwnershipTransferred: "Chuyển giao quyền sở hữu",
+      actionOrgDeleted: "Xóa tổ chức",
     },
   },
   theme: {

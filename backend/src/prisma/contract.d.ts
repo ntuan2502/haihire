@@ -34,9 +34,9 @@ import type {
 } from "@prisma/orm-postgres/contract/types";
 
 export type StorageHash =
-  StorageHashBase<"27ad2c189786c40967bdd866c3208aa93a0abebc0df1f9bd968e0b406aea06c6">;
+  StorageHashBase<"37268e47a5cca9b7b5f7c93112f32e754a7679247bfbf8f68c9d03f203587afb">;
 export type ExecutionHash =
-  ExecutionHashBase<"b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98">;
+  ExecutionHashBase<"b646acdbbf2061f6339799852f2b567bccfb7ac77332d7f5ca656de66115440a">;
 export type ProfileHash =
   ProfileHashBase<"3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2">;
 
@@ -759,6 +759,15 @@ export type FieldOutputTypes = {
       readonly slug: CodecTypes["pg/text@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
+    readonly OrganizationAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["output"];
+      readonly actorId: CodecTypes["pg/text@1"]["output"] | null;
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+      readonly id: CodecTypes["pg/text@1"]["output"];
+      readonly metadata: CodecTypes["pg/text@1"]["output"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["output"];
+      readonly resource: CodecTypes["pg/text@1"]["output"];
+    };
     readonly OrganizationMember: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly id: CodecTypes["pg/text@1"]["output"];
@@ -767,6 +776,16 @@ export type FieldOutputTypes = {
         "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly userId: CodecTypes["pg/text@1"]["output"];
+    };
+    readonly OrganizationRolePermission: {
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+      readonly granted: CodecTypes["pg/bool@1"]["output"];
+      readonly id: CodecTypes["pg/text@1"]["output"];
+      readonly organizationId: CodecTypes["pg/text@1"]["output"];
+      readonly permission: CodecTypes["pg/text@1"]["output"];
+      readonly role:
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
+      readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
     readonly OrganizationWebhookSetting: {
       readonly chatId: CodecTypes["pg/text@1"]["output"] | null;
@@ -781,6 +800,15 @@ export type FieldOutputTypes = {
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly updatedBy: CodecTypes["pg/text@1"]["output"] | null;
       readonly webhookUrl: CodecTypes["pg/text@1"]["output"];
+    };
+    readonly PlatformAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["output"];
+      readonly actorId: CodecTypes["pg/text@1"]["output"];
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+      readonly id: CodecTypes["pg/text@1"]["output"];
+      readonly metadata: CodecTypes["pg/text@1"]["output"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["output"];
+      readonly resource: CodecTypes["pg/text@1"]["output"];
     };
     readonly TrackingClick: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
@@ -1068,6 +1096,15 @@ export type FieldInputTypes = {
       readonly slug: CodecTypes["pg/text@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
+    readonly OrganizationAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["input"];
+      readonly actorId: CodecTypes["pg/text@1"]["input"] | null;
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
+      readonly id: CodecTypes["pg/text@1"]["input"];
+      readonly metadata: CodecTypes["pg/text@1"]["input"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["input"];
+      readonly resource: CodecTypes["pg/text@1"]["input"];
+    };
     readonly OrganizationMember: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly id: CodecTypes["pg/text@1"]["input"];
@@ -1076,6 +1113,16 @@ export type FieldInputTypes = {
         "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly userId: CodecTypes["pg/text@1"]["input"];
+    };
+    readonly OrganizationRolePermission: {
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
+      readonly granted: CodecTypes["pg/bool@1"]["input"];
+      readonly id: CodecTypes["pg/text@1"]["input"];
+      readonly organizationId: CodecTypes["pg/text@1"]["input"];
+      readonly permission: CodecTypes["pg/text@1"]["input"];
+      readonly role:
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
+      readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
     readonly OrganizationWebhookSetting: {
       readonly chatId: CodecTypes["pg/text@1"]["input"] | null;
@@ -1090,6 +1137,15 @@ export type FieldInputTypes = {
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly updatedBy: CodecTypes["pg/text@1"]["input"] | null;
       readonly webhookUrl: CodecTypes["pg/text@1"]["input"];
+    };
+    readonly PlatformAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["input"];
+      readonly actorId: CodecTypes["pg/text@1"]["input"];
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
+      readonly id: CodecTypes["pg/text@1"]["input"];
+      readonly metadata: CodecTypes["pg/text@1"]["input"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["input"];
+      readonly resource: CodecTypes["pg/text@1"]["input"];
     };
     readonly TrackingClick: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
@@ -1377,6 +1433,15 @@ export type StorageColumnTypes = {
       readonly slug: CodecTypes["pg/text@1"]["output"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
+    readonly organizationAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["output"];
+      readonly actorId: CodecTypes["pg/text@1"]["output"] | null;
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+      readonly id: CodecTypes["pg/text@1"]["output"];
+      readonly metadata: CodecTypes["pg/text@1"]["output"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["output"];
+      readonly resource: CodecTypes["pg/text@1"]["output"];
+    };
     readonly organizationMember: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly id: CodecTypes["pg/text@1"]["output"];
@@ -1385,6 +1450,16 @@ export type StorageColumnTypes = {
         "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly userId: CodecTypes["pg/text@1"]["output"];
+    };
+    readonly organizationRolePermission: {
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+      readonly granted: CodecTypes["pg/bool@1"]["output"];
+      readonly id: CodecTypes["pg/text@1"]["output"];
+      readonly organizationId: CodecTypes["pg/text@1"]["output"];
+      readonly permission: CodecTypes["pg/text@1"]["output"];
+      readonly role:
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
+      readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     };
     readonly organizationWebhookSetting: {
       readonly chatId: CodecTypes["pg/text@1"]["output"] | null;
@@ -1399,6 +1474,15 @@ export type StorageColumnTypes = {
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
       readonly updatedBy: CodecTypes["pg/text@1"]["output"] | null;
       readonly webhookUrl: CodecTypes["pg/text@1"]["output"];
+    };
+    readonly platformAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["output"];
+      readonly actorId: CodecTypes["pg/text@1"]["output"];
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+      readonly id: CodecTypes["pg/text@1"]["output"];
+      readonly metadata: CodecTypes["pg/text@1"]["output"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["output"];
+      readonly resource: CodecTypes["pg/text@1"]["output"];
     };
     readonly trackingClick: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
@@ -1686,6 +1770,15 @@ export type StorageColumnInputTypes = {
       readonly slug: CodecTypes["pg/text@1"]["input"];
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
+    readonly organizationAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["input"];
+      readonly actorId: CodecTypes["pg/text@1"]["input"] | null;
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
+      readonly id: CodecTypes["pg/text@1"]["input"];
+      readonly metadata: CodecTypes["pg/text@1"]["input"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["input"];
+      readonly resource: CodecTypes["pg/text@1"]["input"];
+    };
     readonly organizationMember: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly id: CodecTypes["pg/text@1"]["input"];
@@ -1694,6 +1787,16 @@ export type StorageColumnInputTypes = {
         "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly userId: CodecTypes["pg/text@1"]["input"];
+    };
+    readonly organizationRolePermission: {
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
+      readonly granted: CodecTypes["pg/bool@1"]["input"];
+      readonly id: CodecTypes["pg/text@1"]["input"];
+      readonly organizationId: CodecTypes["pg/text@1"]["input"];
+      readonly permission: CodecTypes["pg/text@1"]["input"];
+      readonly role:
+        "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
+      readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
     };
     readonly organizationWebhookSetting: {
       readonly chatId: CodecTypes["pg/text@1"]["input"] | null;
@@ -1708,6 +1811,15 @@ export type StorageColumnInputTypes = {
       readonly updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
       readonly updatedBy: CodecTypes["pg/text@1"]["input"] | null;
       readonly webhookUrl: CodecTypes["pg/text@1"]["input"];
+    };
+    readonly platformAuditLog: {
+      readonly action: CodecTypes["pg/text@1"]["input"];
+      readonly actorId: CodecTypes["pg/text@1"]["input"];
+      readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
+      readonly id: CodecTypes["pg/text@1"]["input"];
+      readonly metadata: CodecTypes["pg/text@1"]["input"] | null;
+      readonly organizationId: CodecTypes["pg/text@1"]["input"];
+      readonly resource: CodecTypes["pg/text@1"]["input"];
     };
     readonly trackingClick: {
       readonly createdAt: CodecTypes["pg/timestamptz-temporal@1"]["input"];
@@ -2040,6 +2152,7 @@ export namespace Models {
     slug: CodecTypes["pg/text@1"]["output"];
     updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
     activityLogs: public_ActivityLog[];
+    auditLogs: public_OrganizationAuditLog[];
     candidates: public_Candidate[];
     documents: public_CandidateDocument[];
     emailLogs: public_EmailLog[];
@@ -2049,11 +2162,13 @@ export namespace Models {
     jobs: public_Job[];
     members: public_OrganizationMember[];
     owner: public_User;
+    rolePermissions: public_OrganizationRolePermission[];
     trackingLinks: public_TrackingLink[];
     users: public_User[];
     webhookSettings: public_OrganizationWebhookSetting[];
     readonly [RelationKeys]?:
       | "activityLogs"
+      | "auditLogs"
       | "candidates"
       | "documents"
       | "emailLogs"
@@ -2063,9 +2178,22 @@ export namespace Models {
       | "jobs"
       | "members"
       | "owner"
+      | "rolePermissions"
       | "trackingLinks"
       | "users"
       | "webhookSettings";
+  };
+  export type public_OrganizationAuditLog = {
+    action: CodecTypes["pg/text@1"]["output"];
+    actorId: CodecTypes["pg/text@1"]["output"] | null;
+    createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+    id: CodecTypes["pg/text@1"]["output"];
+    metadata: CodecTypes["pg/text@1"]["output"] | null;
+    organizationId: CodecTypes["pg/text@1"]["output"];
+    resource: CodecTypes["pg/text@1"]["output"];
+    actor: public_User | null;
+    organization: public_Organization;
+    readonly [RelationKeys]?: "actor" | "organization";
   };
   export type public_OrganizationMember = {
     createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
@@ -2077,6 +2205,17 @@ export namespace Models {
     organization: public_Organization;
     user: public_User;
     readonly [RelationKeys]?: "organization" | "user";
+  };
+  export type public_OrganizationRolePermission = {
+    createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+    granted: CodecTypes["pg/bool@1"]["output"];
+    id: CodecTypes["pg/text@1"]["output"];
+    organizationId: CodecTypes["pg/text@1"]["output"];
+    permission: CodecTypes["pg/text@1"]["output"];
+    role: "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
+    updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+    organization: public_Organization;
+    readonly [RelationKeys]?: "organization";
   };
   export type public_OrganizationWebhookSetting = {
     chatId: CodecTypes["pg/text@1"]["output"] | null;
@@ -2093,6 +2232,16 @@ export namespace Models {
     webhookUrl: CodecTypes["pg/text@1"]["output"];
     organization: public_Organization;
     readonly [RelationKeys]?: "organization";
+  };
+  export type public_PlatformAuditLog = {
+    action: CodecTypes["pg/text@1"]["output"];
+    actorId: CodecTypes["pg/text@1"]["output"];
+    createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+    id: CodecTypes["pg/text@1"]["output"];
+    metadata: CodecTypes["pg/text@1"]["output"] | null;
+    organizationId: CodecTypes["pg/text@1"]["output"];
+    resource: CodecTypes["pg/text@1"]["output"];
+    readonly [RelationKeys]?: never;
   };
   export type public_TrackingClick = {
     createdAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
@@ -2161,6 +2310,7 @@ export namespace Models {
     role: "ADMIN" | "RECRUITER" | "HIRING_MANAGER" | "INTERVIEWER" | "MEMBER";
     tokenVersion: CodecTypes["pg/int4@1"]["output"];
     updatedAt: CodecTypes["pg/timestamptz-temporal@1"]["output"];
+    auditLogs: public_OrganizationAuditLog[];
     inviteLinks: public_InviteLink[];
     jobs: public_Job[];
     memberships: public_OrganizationMember[];
@@ -2168,6 +2318,7 @@ export namespace Models {
     ownedOrganizations: public_Organization[];
     trackingLinks: public_TrackingLink[];
     readonly [RelationKeys]?:
+      | "auditLogs"
       | "inviteLinks"
       | "jobs"
       | "memberships"
@@ -2190,8 +2341,11 @@ export declare const models: {
     InviteLink: Models.public_InviteLink;
     Job: Models.public_Job;
     Organization: Models.public_Organization;
+    OrganizationAuditLog: Models.public_OrganizationAuditLog;
     OrganizationMember: Models.public_OrganizationMember;
+    OrganizationRolePermission: Models.public_OrganizationRolePermission;
     OrganizationWebhookSetting: Models.public_OrganizationWebhookSetting;
+    PlatformAuditLog: Models.public_PlatformAuditLog;
     TrackingClick: Models.public_TrackingClick;
     TrackingLink: Models.public_TrackingLink;
     User: Models.public_User;
@@ -3646,6 +3800,103 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly organizationAuditLog: {
+              columns: {
+                readonly action: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly actorId: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: "timestamptz";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: "function";
+                    readonly expression: "now()";
+                  };
+                };
+                readonly id: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly metadata: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: true;
+                };
+                readonly organizationId: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly resource: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ["id"] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: "organizationAuditLog_actorId_idx_a58f6b4b";
+                  readonly prefix: "organizationAuditLog_actorId_idx";
+                  readonly columns: readonly ["actorId"];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: "organizationAuditLog_organizationId_action_idx_9ecdfcf3";
+                  readonly prefix: "organizationAuditLog_organizationId_action_idx";
+                  readonly columns: readonly ["organizationId", "action"];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: "organizationAuditLog_organizationId_createdAt_idx_c52d1cc3";
+                  readonly prefix: "organizationAuditLog_organizationId_createdAt_idx";
+                  readonly columns: readonly ["organizationId", "createdAt"];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: "organizationAuditLog_organizationId_idx_2e17ef41";
+                  readonly prefix: "organizationAuditLog_organizationId_idx";
+                  readonly columns: readonly ["organizationId"];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "organizationAuditLog";
+                    readonly columns: readonly ["organizationId"];
+                  };
+                  readonly target: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "organization";
+                    readonly columns: readonly ["id"];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "organizationAuditLog";
+                    readonly columns: readonly ["actorId"];
+                  };
+                  readonly target: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "user";
+                    readonly columns: readonly ["id"];
+                  };
+                },
+              ];
+            };
             readonly organizationMember: {
               columns: {
                 readonly createdAt: {
@@ -3731,6 +3982,85 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: "public" & NamespaceId;
                     readonly tableName: "user";
+                    readonly columns: readonly ["id"];
+                  };
+                },
+              ];
+            };
+            readonly organizationRolePermission: {
+              columns: {
+                readonly createdAt: {
+                  readonly nativeType: "timestamptz";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: "function";
+                    readonly expression: "now()";
+                  };
+                };
+                readonly granted: {
+                  readonly nativeType: "bool";
+                  readonly codecId: "pg/bool@1";
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: "literal";
+                    readonly value: DefaultLiteralValue<"pg/bool@1", true>;
+                  };
+                };
+                readonly id: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly organizationId: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly permission: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly role: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly updatedAt: {
+                  readonly nativeType: "timestamptz";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ["id"] };
+              uniques: readonly [
+                {
+                  readonly columns: readonly [
+                    "organizationId",
+                    "role",
+                    "permission",
+                  ];
+                },
+              ];
+              indexes: readonly [
+                {
+                  readonly name: "organizationRolePermission_organizationId_idx_2e17ef41";
+                  readonly prefix: "organizationRolePermission_organizationId_idx";
+                  readonly columns: readonly ["organizationId"];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "organizationRolePermission";
+                    readonly columns: readonly ["organizationId"];
+                  };
+                  readonly target: {
+                    readonly namespaceId: "public" & NamespaceId;
+                    readonly tableName: "organization";
                     readonly columns: readonly ["id"];
                   };
                 },
@@ -3839,6 +4169,66 @@ type ContractBase = Omit<
                   };
                 },
               ];
+            };
+            readonly platformAuditLog: {
+              columns: {
+                readonly action: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly actorId: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly createdAt: {
+                  readonly nativeType: "timestamptz";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: "function";
+                    readonly expression: "now()";
+                  };
+                };
+                readonly id: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly metadata: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: true;
+                };
+                readonly organizationId: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+                readonly resource: {
+                  readonly nativeType: "text";
+                  readonly codecId: "pg/text@1";
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ["id"] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: "platformAuditLog_action_idx_cd0d2116";
+                  readonly prefix: "platformAuditLog_action_idx";
+                  readonly columns: readonly ["action"];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: "platformAuditLog_createdAt_idx_9575dbd7";
+                  readonly prefix: "platformAuditLog_createdAt_idx";
+                  readonly columns: readonly ["createdAt"];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [];
             };
             readonly trackingClick: {
               columns: {
@@ -4396,13 +4786,25 @@ type ContractBase = Omit<
       readonly namespace: "public" & NamespaceId;
       readonly model: "Organization";
     };
+    readonly organizationAuditLog: {
+      readonly namespace: "public" & NamespaceId;
+      readonly model: "OrganizationAuditLog";
+    };
     readonly organizationMember: {
       readonly namespace: "public" & NamespaceId;
       readonly model: "OrganizationMember";
     };
+    readonly organizationRolePermission: {
+      readonly namespace: "public" & NamespaceId;
+      readonly model: "OrganizationRolePermission";
+    };
     readonly organizationWebhookSetting: {
       readonly namespace: "public" & NamespaceId;
       readonly model: "OrganizationWebhookSetting";
+    };
+    readonly platformAuditLog: {
+      readonly namespace: "public" & NamespaceId;
+      readonly model: "PlatformAuditLog";
     };
     readonly trackingClick: {
       readonly namespace: "public" & NamespaceId;
@@ -6071,6 +6473,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ["organizationId"];
                 };
               };
+              readonly auditLogs: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "OrganizationAuditLog";
+                };
+                readonly cardinality: "1:N";
+                readonly on: {
+                  readonly localFields: readonly ["id"];
+                  readonly targetFields: readonly ["organizationId"];
+                };
+              };
               readonly candidates: {
                 readonly to: {
                   readonly namespace: "public" & NamespaceId;
@@ -6172,6 +6585,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ["id"];
                 };
               };
+              readonly rolePermissions: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "OrganizationRolePermission";
+                };
+                readonly cardinality: "1:N";
+                readonly on: {
+                  readonly localFields: readonly ["id"];
+                  readonly targetFields: readonly ["organizationId"];
+                };
+              };
               readonly trackingLinks: {
                 readonly to: {
                   readonly namespace: "public" & NamespaceId;
@@ -6216,6 +6640,98 @@ type ContractBase = Omit<
                 readonly ownerId: { readonly column: "ownerId" };
                 readonly slug: { readonly column: "slug" };
                 readonly updatedAt: { readonly column: "updatedAt" };
+              };
+            };
+          };
+          readonly OrganizationAuditLog: {
+            readonly fields: {
+              readonly action: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly actorId: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly metadata: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly resource: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+            };
+            readonly relations: {
+              readonly actor: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "User";
+                };
+                readonly cardinality: "N:1";
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ["actorId"];
+                  readonly targetFields: readonly ["id"];
+                };
+              };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "Organization";
+                };
+                readonly cardinality: "N:1";
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ["organizationId"];
+                  readonly targetFields: readonly ["id"];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: "organizationAuditLog";
+              readonly namespaceId: "public";
+              readonly fields: {
+                readonly action: { readonly column: "action" };
+                readonly actorId: { readonly column: "actorId" };
+                readonly createdAt: { readonly column: "createdAt" };
+                readonly id: { readonly column: "id" };
+                readonly metadata: { readonly column: "metadata" };
+                readonly organizationId: { readonly column: "organizationId" };
+                readonly resource: { readonly column: "resource" };
               };
             };
           };
@@ -6300,6 +6816,86 @@ type ContractBase = Omit<
                 readonly role: { readonly column: "role" };
                 readonly updatedAt: { readonly column: "updatedAt" };
                 readonly userId: { readonly column: "userId" };
+              };
+            };
+          };
+          readonly OrganizationRolePermission: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                };
+              };
+              readonly granted: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/bool@1";
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly permission: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly role: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                };
+              };
+            };
+            readonly relations: {
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "Organization";
+                };
+                readonly cardinality: "N:1";
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ["organizationId"];
+                  readonly targetFields: readonly ["id"];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: "organizationRolePermission";
+              readonly namespaceId: "public";
+              readonly fields: {
+                readonly createdAt: { readonly column: "createdAt" };
+                readonly granted: { readonly column: "granted" };
+                readonly id: { readonly column: "id" };
+                readonly organizationId: { readonly column: "organizationId" };
+                readonly permission: { readonly column: "permission" };
+                readonly role: { readonly column: "role" };
+                readonly updatedAt: { readonly column: "updatedAt" };
               };
             };
           };
@@ -6420,6 +7016,73 @@ type ContractBase = Omit<
                 readonly updatedAt: { readonly column: "updatedAt" };
                 readonly updatedBy: { readonly column: "updatedBy" };
                 readonly webhookUrl: { readonly column: "webhookUrl" };
+              };
+            };
+          };
+          readonly PlatformAuditLog: {
+            readonly fields: {
+              readonly action: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly actorId: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/timestamptz-temporal@1";
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly metadata: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+              readonly resource: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: "scalar";
+                  readonly codecId: "pg/text@1";
+                };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: "platformAuditLog";
+              readonly namespaceId: "public";
+              readonly fields: {
+                readonly action: { readonly column: "action" };
+                readonly actorId: { readonly column: "actorId" };
+                readonly createdAt: { readonly column: "createdAt" };
+                readonly id: { readonly column: "id" };
+                readonly metadata: { readonly column: "metadata" };
+                readonly organizationId: { readonly column: "organizationId" };
+                readonly resource: { readonly column: "resource" };
               };
             };
           };
@@ -6807,6 +7470,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly auditLogs: {
+                readonly to: {
+                  readonly namespace: "public" & NamespaceId;
+                  readonly model: "OrganizationAuditLog";
+                };
+                readonly cardinality: "1:N";
+                readonly on: {
+                  readonly localFields: readonly ["id"];
+                  readonly targetFields: readonly ["actorId"];
+                };
+              };
               readonly inviteLinks: {
                 readonly to: {
                   readonly namespace: "public" & NamespaceId;
@@ -7408,6 +8082,17 @@ type ContractBase = Omit<
             readonly kind: "generator";
           };
           readonly ref: {
+            readonly entry: "organizationAuditLog";
+            readonly field: "id";
+            readonly namespace: "public";
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: "uuidv4";
+            readonly kind: "generator";
+          };
+          readonly ref: {
             readonly entry: "organizationMember";
             readonly field: "id";
             readonly namespace: "public";
@@ -7424,6 +8109,32 @@ type ContractBase = Omit<
           };
           readonly ref: {
             readonly entry: "organizationMember";
+            readonly field: "updatedAt";
+            readonly namespace: "public";
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: "uuidv4";
+            readonly kind: "generator";
+          };
+          readonly ref: {
+            readonly entry: "organizationRolePermission";
+            readonly field: "id";
+            readonly namespace: "public";
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: "instantNow";
+            readonly kind: "generator";
+          };
+          readonly onUpdate: {
+            readonly id: "instantNow";
+            readonly kind: "generator";
+          };
+          readonly ref: {
+            readonly entry: "organizationRolePermission";
             readonly field: "updatedAt";
             readonly namespace: "public";
           };
@@ -7451,6 +8162,17 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: "organizationWebhookSetting";
             readonly field: "updatedAt";
+            readonly namespace: "public";
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: "uuidv4";
+            readonly kind: "generator";
+          };
+          readonly ref: {
+            readonly entry: "platformAuditLog";
+            readonly field: "id";
             readonly namespace: "public";
           };
         },

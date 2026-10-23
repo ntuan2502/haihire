@@ -86,6 +86,7 @@ export const en: TranslationSchema = {
     ORG_USER_NO_ORG: "Your account is not associated with an organization.",
     ORG_CANNOT_CHANGE_OWNER_ROLE:
       "Cannot change the role of the organization owner.",
+    ORG_CANNOT_CHANGE_SELF_ROLE: "You cannot change your own role.",
     ORG_CANNOT_REMOVE_SELF: "You cannot remove yourself from the organization.",
     ORG_CANNOT_REMOVE_OWNER: "Cannot remove the organization owner.",
     ORG_CANNOT_TRANSFER_TO_SELF:
@@ -96,6 +97,8 @@ export const en: TranslationSchema = {
     ORG_MEMBER_NOT_FOUND: "Member not found in this organization.",
     ORG_FORBIDDEN_ACTION:
       "You do not have permission to perform this action in organization ({organizationId}).",
+    ORG_ADMIN_PERMISSIONS_IMMUTABLE:
+      "ADMIN role permissions are immutable and cannot be modified.",
     JOB_NOT_FOUND: "Job position ({id}) not found.",
     JOB_ID_REQUIRED: "Job position is required.",
     JOB_NOT_ACCEPTING_APPLICATIONS:
@@ -1407,6 +1410,9 @@ export const en: TranslationSchema = {
       "This invitation link will be invalidated immediately and can no longer be used to join.",
     roleOwner: "Owner",
     roleAdmin: "Admin",
+    roleRecruiter: "Recruiter",
+    roleHiringManager: "Hiring Manager",
+    roleInterviewer: "Interviewer",
     roleMember: "Member",
     expires7Days: "7 days",
     expires30Days: "30 days",
@@ -1416,6 +1422,8 @@ export const en: TranslationSchema = {
     noActiveInviteLinks: "No active invite links",
     noActiveInviteLinksDesc:
       "Generate expiring or single-use invite links with specific roles to invite your team.",
+    updateRoleSuccess: "Member role updated successfully.",
+    updateRoleError: "Failed to update member role.",
   },
   onboarding: {
     selectOrgTitle: "Select an organization",
@@ -1543,6 +1551,10 @@ export const en: TranslationSchema = {
       accountSub: "Profile & security",
       emailTemplates: "Email Templates",
       emailTemplatesSub: "Templates & SMTP",
+      roles: "Roles & Permissions",
+      rolesSub: "Custom permissions matrix",
+      auditLog: "Audit Log",
+      auditLogSub: "Security & activity events",
     },
     placeholders: {
       orgName: "e.g. Acme Corp",
@@ -1612,6 +1624,77 @@ export const en: TranslationSchema = {
         enabled: "Active",
         disabled: "Paused",
       },
+    },
+    rolesMatrix: {
+      title: "Roles & Permissions Matrix",
+      description:
+        "Manage and customize granular role permissions for your organization.",
+      badge: "RBAC Matrix",
+      readOnlyBadge: "Read-only View",
+      readOnlyNotice:
+        "You do not have permission to modify roles. Contact an administrator to adjust permissions.",
+      saveButton: "Save Changes",
+      savingButton: "Saving...",
+      resetButton: "Reset Changes",
+      saveSuccess: "Role permissions saved successfully",
+      saveError: "Failed to save role permissions",
+      unsavedChanges: "You have unsaved changes",
+      permissionColumn: "Permission",
+      categoryOrg: "Organization",
+      categoryJob: "Jobs",
+      categoryCandidate: "Candidates",
+      categoryApplication: "Applications",
+      categoryInterview: "Interviews",
+      categorySourcing: "Sourcing",
+      categoryEmail: "Email",
+      categorySettings: "Settings",
+      coreAdminProtected:
+        "Core administrative permissions cannot be revoked from Admin.",
+      adminRoleImmutable:
+        "ADMIN role permissions are immutable and cannot be modified.",
+      resetDefaultButton: "Reset to Default",
+      resetDefaultConfirmTitle: "Reset Role Permissions",
+      resetDefaultConfirmMessage:
+        "This will reset all role permissions to system defaults. Continue?",
+      resetDefaultConfirmButton: "Reset Permissions",
+      resetDefaultCancelButton: "Cancel",
+      resetDefaultSuccess:
+        "Role permissions have been reset to default values.",
+      resetDefaultError: "Failed to reset role permissions.",
+      roleAdmin: "Admin",
+      roleRecruiter: "Recruiter",
+      roleHiringManager: "Hiring Manager",
+      roleInterviewer: "Interviewer",
+      roleMember: "Member",
+      tableSummary:
+        "Editable role permissions matrix across 5 organizational roles",
+    },
+    auditLog: {
+      title: "Audit Log",
+      description:
+        "Track administrative changes, role permission updates, and member lifecycle events across your organization.",
+      badge: "Security & Governance",
+      accessDenied: "You do not have permission to view the audit log.",
+      filterAllActions: "All Actions",
+      filterAction: "Filter by action",
+      colTimestamp: "Timestamp",
+      colActor: "Actor",
+      colAction: "Action",
+      colResource: "Resource",
+      colMetadata: "Details",
+      emptyTitle: "No audit events found",
+      emptyDescription:
+        "No actions matching the selected filter have been recorded yet.",
+      paginationShowing: "Showing {offset} to {end} of {total} events",
+      paginationPrev: "Previous",
+      paginationNext: "Next",
+      systemActor: "System",
+      noMetadata: "No additional details",
+      actionRolePermissionsUpdated: "Permissions Updated",
+      actionRolePermissionsReset: "Permissions Reset",
+      actionMemberRoleChanged: "Member Role Changed",
+      actionOwnershipTransferred: "Ownership Transferred",
+      actionOrgDeleted: "Organization Deleted",
     },
   },
   theme: {

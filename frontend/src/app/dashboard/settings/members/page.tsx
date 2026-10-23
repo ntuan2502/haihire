@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, type FormEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  type FormEvent,
+} from "react";
 import { useAuth } from "@/context/auth-context";
 import {
   useOrgMembers,
@@ -13,7 +20,12 @@ import {
 } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CustomSelect } from "@/components/shared/custom-select";
+import {
+  CustomSelect,
+  type CustomSelectOption,
+} from "@/components/shared/custom-select";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { Role } from "@haihire/shared";
 import { ConfirmDestructiveModal } from "@/components/shared";
 import {
   UserPlus,
@@ -31,7 +43,6 @@ import {
   Trash2,
   Loader2,
   Plus,
-  User,
 } from "lucide-react";
 import type { InviteLink } from "@/types";
 import { useI18n } from "@/i18n";
@@ -41,6 +52,38 @@ import { getApiErrorMessage } from "@/lib/api-error";
 export default function MembersSettingsPage() {
   const { user, canEdit, isOwner } = useAuth();
   const { t } = useI18n();
+  const canManageMembers = useHasPermission("org:manage_members");
+
+  const roleOptions: CustomSelectOption<Role>[] = useMemo(
+    () => [
+      { value: Role.ADMIN, label: t("members.roleAdmin") },
+      { value: Role.RECRUITER, label: t("members.roleRecruiter") },
+      { value: Role.HIRING_MANAGER, label: t("members.roleHiringManager") },
+      { value: Role.INTERVIEWER, label: t("members.roleInterviewer") },
+      { value: Role.MEMBER, label: t("members.roleMember") },
+    ],
+    [t],
+  );
+
+  const getRoleLabel = useCallback(
+    (role: string): string => {
+      switch (role?.toUpperCase()) {
+        case Role.ADMIN:
+          return t("members.roleAdmin");
+        case Role.RECRUITER:
+          return t("members.roleRecruiter");
+        case Role.HIRING_MANAGER:
+          return t("members.roleHiringManager");
+        case Role.INTERVIEWER:
+          return t("members.roleInterviewer");
+        case Role.MEMBER:
+          return t("members.roleMember");
+        default:
+          return role || t("members.roleMember");
+      }
+    },
+    [t],
+  );
   const { data: members = [], refetch: refetchMembers } = useOrgMembers();
   const { data: serverInviteLinks = [], refetch: refetchLinks } =
     useInviteLinks();
@@ -177,15 +220,15 @@ export default function MembersSettingsPage() {
   };
 
   // Handle toggling member role (Admin <-> Member)
-  const handleToggleRole = async (memberId: string, currentRole: string) => {
-    const newRole = currentRole.toUpperCase() === "ADMIN" ? "MEMBER" : "ADMIN";
+  const handleRoleChange = async (memberId: string, newRole: Role) => {
     try {
       setActionLoadingId(memberId);
       await updateMemberRoleMutation.mutateAsync({ memberId, role: newRole });
-      setOpenMenuMemberId(null);
+      toast.success(t("members.updateRoleSuccess"));
+      refetchMembers?.();
     } catch (err) {
       console.error(err);
-      toast.error(getApiErrorMessage(err, t));
+      toast.error(getApiErrorMessage(err, t) || t("members.updateRoleError"));
       refetchMembers?.();
     } finally {
       setActionLoadingId(null);
@@ -249,18 +292,28 @@ export default function MembersSettingsPage() {
   // Derive members from server query, with fallback to current user
   const combinedMembers = useMemo(() => {
     if (members && members.length > 0) {
-      return members.map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
-        role: m.role || "MEMBER",
-        avatarUrl: m.avatarUrl,
-        isOwner: Boolean(
-          (m as { isOwner?: boolean }).isOwner ||
-          (user?.organization?.ownerId && user.organization.ownerId === m.id),
-        ),
-        isCurrent: m.id === user?.id || m.email === user?.email,
-      }));
+      return members
+        .map((m) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role || "MEMBER",
+          avatarUrl: m.avatarUrl,
+          createdAt: m.createdAt,
+          isOwner: Boolean(
+            (m as { isOwner?: boolean }).isOwner ||
+            (user?.organization?.ownerId && user.organization.ownerId === m.id),
+          ),
+          isCurrent: m.id === user?.id || m.email === user?.email,
+        }))
+        .sort((a, b) => {
+          if (a.isOwner && !b.isOwner) return -1;
+          if (!a.isOwner && b.isOwner) return 1;
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (timeA !== timeB) return timeA - timeB;
+          return a.id.localeCompare(b.id);
+        });
     }
 
     if (user) {
@@ -697,25 +750,40 @@ export default function MembersSettingsPage() {
 
                 {/* Right side role badge & actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {isMemberOwner ? (
+                  {isMemberOwner && (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 shadow-2xs">
                       <Crown className="h-3 w-3 text-amber-500 fill-amber-500" />
                       <span>{t("members.roleOwner")}</span>
                     </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {m.role?.toUpperCase() === "ADMIN" ? (
-                        <>
-                          <Shield className="h-3 w-3 text-blue-500" />
-                          <span>{t("members.roleAdmin")}</span>
-                        </>
-                      ) : (
-                        <>
-                          <User className="h-3 w-3 text-slate-400" />
-                          <span>{t("members.roleMember")}</span>
-                        </>
+                  )}
+
+                  {canManageMembers ? (
+                    <div className="flex items-center gap-1.5">
+                      {actionLoadingId === m.id && (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />
                       )}
-                    </span>
+                      <CustomSelect<Role>
+                        value={(m.role?.toUpperCase() as Role) || Role.MEMBER}
+                        onChange={(newRole) => handleRoleChange(m.id, newRole)}
+                        options={roleOptions}
+                        disabled={
+                          isMemberOwner ||
+                          m.isCurrent ||
+                          user?.id === m.id ||
+                          actionLoadingId === m.id
+                        }
+                        size="sm"
+                        aria-label={t("members.roleLabel")}
+                        className="w-36"
+                      />
+                    </div>
+                  ) : (
+                    !isMemberOwner && (
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        <Shield className="h-3 w-3 text-slate-400" />
+                        <span>{getRoleLabel(m.role)}</span>
+                      </span>
+                    )
                   )}
 
                   {canEdit && !isMemberOwner && !m.isCurrent && (
@@ -744,25 +812,6 @@ export default function MembersSettingsPage() {
                           ref={menuContainerRef}
                           className="absolute right-0 top-full mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
                         >
-                          <div className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                            {t("members.roleLabel")}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleToggleRole(m.id, m.role)}
-                            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer font-medium"
-                          >
-                            <Shield className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                            <span>
-                              {m.role?.toUpperCase() === "ADMIN"
-                                ? `${t("common.edit")}: ${t("members.roleMember")}`
-                                : `${t("common.edit")}: ${t("members.roleAdmin")}`}
-                            </span>
-                          </button>
-
-                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-
                           {isOwner && (
                             <>
                               <button

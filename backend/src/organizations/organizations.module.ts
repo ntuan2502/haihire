@@ -5,6 +5,8 @@ import {
   OrganizationsCoreService,
   OrganizationsMembersService,
   OrganizationsInvitesService,
+  OrganizationsRolesService,
+  OrganizationsAuditLogService,
 } from "./services";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthModule } from "../auth/auth.module";
@@ -18,8 +20,14 @@ import { EventsModule } from "../events/events.module";
     OrganizationsCoreService,
     OrganizationsMembersService,
     OrganizationsInvitesService,
+    OrganizationsRolesService,
+    OrganizationsAuditLogService,
     PrismaService,
   ],
-  exports: [OrganizationsService],
+  exports: [
+    OrganizationsService,
+    OrganizationsRolesService,
+    OrganizationsAuditLogService,
+  ],
 })
 export class OrganizationsModule {}

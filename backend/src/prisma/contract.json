@@ -48,12 +48,24 @@
       "model": "Organization",
       "namespace": "public"
     },
+    "organizationAuditLog": {
+      "model": "OrganizationAuditLog",
+      "namespace": "public"
+    },
     "organizationMember": {
       "model": "OrganizationMember",
       "namespace": "public"
     },
+    "organizationRolePermission": {
+      "model": "OrganizationRolePermission",
+      "namespace": "public"
+    },
     "organizationWebhookSetting": {
       "model": "OrganizationWebhookSetting",
+      "namespace": "public"
+    },
+    "platformAuditLog": {
+      "model": "PlatformAuditLog",
       "namespace": "public"
     },
     "trackingClick": {
@@ -2514,6 +2526,17 @@
                   "namespace": "public"
                 }
               },
+              "auditLogs": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
+                },
+                "to": {
+                  "model": "OrganizationAuditLog",
+                  "namespace": "public"
+                }
+              },
               "candidates": {
                 "cardinality": "1:N",
                 "on": {
@@ -2615,6 +2638,17 @@
                   "namespace": "public"
                 }
               },
+              "rolePermissions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["organizationId"]
+                },
+                "to": {
+                  "model": "OrganizationRolePermission",
+                  "namespace": "public"
+                }
+              },
               "trackingLinks": {
                 "cardinality": "1:N",
                 "on": {
@@ -2672,6 +2706,112 @@
               },
               "namespaceId": "public",
               "table": "organization"
+            }
+          },
+          "OrganizationAuditLog": {
+            "fields": {
+              "action": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "actorId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "metadata": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "resource": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "actor": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": ["actorId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "action": {
+                  "column": "action"
+                },
+                "actorId": {
+                  "column": "actorId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "metadata": {
+                  "column": "metadata"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "resource": {
+                  "column": "resource"
+                }
+              },
+              "namespaceId": "public",
+              "table": "organizationAuditLog"
             }
           },
           "OrganizationMember": {
@@ -2774,6 +2914,106 @@
               },
               "namespaceId": "public",
               "table": "organizationMember"
+            }
+          },
+          "OrganizationRolePermission": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "granted": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "permission": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "Role",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["organizationId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "granted": {
+                  "column": "granted"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "permission": {
+                  "column": "permission"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "organizationRolePermission"
             }
           },
           "OrganizationWebhookSetting": {
@@ -2930,6 +3170,87 @@
               },
               "namespaceId": "public",
               "table": "organizationWebhookSetting"
+            }
+          },
+          "PlatformAuditLog": {
+            "fields": {
+              "action": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "actorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "metadata": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "resource": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "action": {
+                  "column": "action"
+                },
+                "actorId": {
+                  "column": "actorId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "metadata": {
+                  "column": "metadata"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "resource": {
+                  "column": "resource"
+                }
+              },
+              "namespaceId": "public",
+              "table": "platformAuditLog"
             }
           },
           "TrackingClick": {
@@ -3382,6 +3703,17 @@
               }
             },
             "relations": {
+              "auditLogs": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["actorId"]
+                },
+                "to": {
+                  "model": "OrganizationAuditLog",
+                  "namespace": "public"
+                }
+              },
               "inviteLinks": {
                 "cardinality": "1:N",
                 "on": {
@@ -5144,6 +5476,107 @@
                 }
               ]
             },
+            "organizationAuditLog": {
+              "columns": {
+                "action": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "actorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "metadata": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "resource": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["organizationId"],
+                    "namespaceId": "public",
+                    "tableName": "organizationAuditLog"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": ["actorId"],
+                    "namespaceId": "public",
+                    "tableName": "organizationAuditLog"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "user"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["actorId"],
+                  "name": "organizationAuditLog_actorId_idx_a58f6b4b",
+                  "prefix": "organizationAuditLog_actorId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["organizationId", "action"],
+                  "name": "organizationAuditLog_organizationId_action_idx_9ecdfcf3",
+                  "prefix": "organizationAuditLog_organizationId_action_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["organizationId", "createdAt"],
+                  "name": "organizationAuditLog_organizationId_createdAt_idx_c52d1cc3",
+                  "prefix": "organizationAuditLog_organizationId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["organizationId"],
+                  "name": "organizationAuditLog_organizationId_idx_2e17ef41",
+                  "prefix": "organizationAuditLog_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"]
+              },
+              "uniques": []
+            },
             "organizationMember": {
               "checks": [
                 {
@@ -5249,6 +5682,97 @@
                 "columns": ["id"]
               },
               "uniques": []
+            },
+            "organizationRolePermission": {
+              "checks": [
+                {
+                  "expression": "\"role\" IN ('ADMIN', 'RECRUITER', 'HIRING_MANAGER', 'INTERVIEWER', 'MEMBER')",
+                  "name": "organizationRolePermission_role_check_24976965",
+                  "prefix": "organizationRolePermission_role_check"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "granted": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "permission": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Role",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": ["organizationId"],
+                    "namespaceId": "public",
+                    "tableName": "organizationRolePermission"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "public",
+                    "tableName": "organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["organizationId"],
+                  "name": "organizationRolePermission_organizationId_idx_2e17ef41",
+                  "prefix": "organizationRolePermission_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"]
+              },
+              "uniques": [
+                {
+                  "columns": ["organizationId", "role", "permission"]
+                }
+              ]
             },
             "organizationWebhookSetting": {
               "checks": [
@@ -5376,6 +5900,68 @@
                   "columns": ["organizationId", "eventType", "provider"]
                 }
               ]
+            },
+            "platformAuditLog": {
+              "columns": {
+                "action": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "actorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "metadata": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "organizationId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "resource": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": ["action"],
+                  "name": "platformAuditLog_action_idx_cd0d2116",
+                  "prefix": "platformAuditLog_action_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["createdAt"],
+                  "name": "platformAuditLog_createdAt_idx_9575dbd7",
+                  "prefix": "platformAuditLog_createdAt_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"]
+              },
+              "uniques": []
             },
             "trackingClick": {
               "columns": {
@@ -5914,10 +6500,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "27ad2c189786c40967bdd866c3208aa93a0abebc0df1f9bd968e0b406aea06c6"
+    "storageHash": "37268e47a5cca9b7b5f7c93112f32e754a7679247bfbf8f68c9d03f203587afb"
   },
   "execution": {
-    "executionHash": "b75b54935331d2bc3864f6718c6cc080dc9005dfb70981b0337e436cb0217a98",
+    "executionHash": "b646acdbbf2061f6339799852f2b567bccfb7ac77332d7f5ca656de66115440a",
     "mutations": {
       "defaults": [
         {
@@ -6212,6 +6798,17 @@
             "kind": "generator"
           },
           "ref": {
+            "entry": "organizationAuditLog",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
             "entry": "organizationMember",
             "field": "id",
             "namespace": "public"
@@ -6228,6 +6825,32 @@
           },
           "ref": {
             "entry": "organizationMember",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "organizationRolePermission",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "organizationRolePermission",
             "field": "updatedAt",
             "namespace": "public"
           }
@@ -6255,6 +6878,17 @@
           "ref": {
             "entry": "organizationWebhookSetting",
             "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "platformAuditLog",
+            "field": "id",
             "namespace": "public"
           }
         },

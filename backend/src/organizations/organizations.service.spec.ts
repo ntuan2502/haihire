@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { OrganizationsService } from "./organizations.service";
-import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
 
 describe("OrganizationsService - Multi-Tenant Organization Management", () => {
   let service: OrganizationsService;
@@ -64,6 +69,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         name: "HR Lead",
         role: "ADMIN",
         organizationId: null,
+        createdAt: new Date("2026-01-01T00:00:00Z"),
       },
       {
         id: "usr-2",
@@ -71,6 +77,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         name: "Admin",
         role: "ADMIN",
         organizationId: "org-1",
+        createdAt: new Date("2026-01-02T00:00:00Z"),
       },
       {
         id: "usr-3",
@@ -78,6 +85,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         name: "Member User",
         role: "MEMBER",
         organizationId: "org-1",
+        createdAt: new Date("2026-01-03T00:00:00Z"),
       },
     ];
 
@@ -135,7 +143,9 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                             eq: (target: string) => o.id === target,
                             in: (targets: string[]) => targets.includes(o.id),
                           },
-                          ownerId: { eq: (target: string) => o.ownerId === target },
+                          ownerId: {
+                            eq: (target: string) => o.ownerId === target,
+                          },
                         };
                         return predicateFn(mockRecord);
                       })
@@ -187,7 +197,9 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                             eq: (target: string) => u.id === target,
                             in: (arr: string[]) => arr.includes(u.id),
                           },
-                          organizationId: { eq: (target: string) => u.organizationId === target },
+                          organizationId: {
+                            eq: (target: string) => u.organizationId === target,
+                          },
                         };
                         return predicateFn(mockRecord);
                       })
@@ -214,20 +226,24 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
               })),
             },
             OrganizationMember: {
-              upsert: vi.fn().mockImplementation(async ({ create, update, conflictOn }) => {
-                const existingIndex = mockMembers.findIndex((m) => m.id === conflictOn?.id);
-                if (existingIndex >= 0) {
-                  Object.assign(mockMembers[existingIndex], update);
-                  return mockMembers[existingIndex];
-                }
-                const newMem = {
-                  ...create,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                };
-                mockMembers.push(newMem);
-                return newMem;
-              }),
+              upsert: vi
+                .fn()
+                .mockImplementation(async ({ create, update, conflictOn }) => {
+                  const existingIndex = mockMembers.findIndex(
+                    (m) => m.id === conflictOn?.id,
+                  );
+                  if (existingIndex >= 0) {
+                    Object.assign(mockMembers[existingIndex], update);
+                    return mockMembers[existingIndex];
+                  }
+                  const newMem = {
+                    ...create,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  };
+                  mockMembers.push(newMem);
+                  return newMem;
+                }),
               select: vi.fn().mockImplementation((..._fields: string[]) => ({
                 where: vi.fn().mockImplementation((predicateFn) => ({
                   first: vi.fn().mockImplementation(async () => {
@@ -235,7 +251,9 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                       const mockRecord = {
                         id: { eq: (target: string) => m.id === target },
                         userId: { eq: (target: string) => m.userId === target },
-                        organizationId: { eq: (target: string) => m.organizationId === target },
+                        organizationId: {
+                          eq: (target: string) => m.organizationId === target,
+                        },
                       };
                       return predicateFn(mockRecord);
                     });
@@ -245,8 +263,12 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                     return mockMembers
                       .filter((m) => {
                         const mockRecord = {
-                          userId: { eq: (target: string) => m.userId === target },
-                          organizationId: { eq: (target: string) => m.organizationId === target },
+                          userId: {
+                            eq: (target: string) => m.userId === target,
+                          },
+                          organizationId: {
+                            eq: (target: string) => m.organizationId === target,
+                          },
                         };
                         return predicateFn(mockRecord);
                       })
@@ -275,18 +297,26 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                   const toDelete = mockMembers.filter((m) => {
                     const mockRecord = {
                       id: { eq: (target: string) => m.id === target },
-                      organizationId: { eq: (target: string) => m.organizationId === target },
+                      organizationId: {
+                        eq: (target: string) => m.organizationId === target,
+                      },
                     };
                     return predicateFn(mockRecord);
                   });
-                  mockMembers = mockMembers.filter((m) => !toDelete.includes(m));
+                  mockMembers = mockMembers.filter(
+                    (m) => !toDelete.includes(m),
+                  );
                   return toDelete;
                 }),
               })),
             },
             InviteLink: {
               upsert: vi.fn().mockImplementation(async ({ create }) => {
-                mockLinks.push({ ...create, createdAt: new Date(), updatedAt: new Date() });
+                mockLinks.push({
+                  ...create,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                });
                 return create;
               }),
               select: vi.fn().mockImplementation((..._fields: string[]) => ({
@@ -305,7 +335,9 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                     return mockLinks
                       .filter((l) => {
                         const mockRecord = {
-                          organizationId: { eq: (target: string) => l.organizationId === target },
+                          organizationId: {
+                            eq: (target: string) => l.organizationId === target,
+                          },
                         };
                         return predicateFn(mockRecord);
                       })
@@ -509,6 +541,80 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it("14a. Should allow updating member role from MEMBER to RECRUITER", async () => {
+      const result = await service.updateMemberRole(
+        "usr-2",
+        "usr-3",
+        "RECRUITER",
+      );
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("RECRUITER");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.role).toBe("RECRUITER");
+    });
+
+    it("14b. Should allow updating member role from RECRUITER to HIRING_MANAGER", async () => {
+      await service.updateMemberRole("usr-2", "usr-3", "RECRUITER");
+      const result = await service.updateMemberRole(
+        "usr-2",
+        "usr-3",
+        "HIRING_MANAGER",
+      );
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("HIRING_MANAGER");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.role).toBe("HIRING_MANAGER");
+    });
+
+    it("14c. Should allow updating member role from HIRING_MANAGER to INTERVIEWER", async () => {
+      await service.updateMemberRole("usr-2", "usr-3", "HIRING_MANAGER");
+      const result = await service.updateMemberRole(
+        "usr-2",
+        "usr-3",
+        "INTERVIEWER",
+      );
+      expect(result.success).toBe(true);
+      expect(result.role).toBe("INTERVIEWER");
+
+      const usr3 = mockUsers.find((u) => u.id === "usr-3");
+      expect(usr3?.role).toBe("INTERVIEWER");
+    });
+
+    it("14d. Should REJECT updating own role with 400 (ORG_CANNOT_CHANGE_SELF_ROLE)", async () => {
+      // usr-2 is ADMIN, cannot change own role
+      await expect(
+        service.updateMemberRole("usr-2", "usr-2", "MEMBER"),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("14e. Should REJECT when non-admin non-owner attempts to update member role (403)", async () => {
+      // usr-3 is MEMBER
+      await expect(
+        service.updateMemberRole("usr-3", "usr-2", "ADMIN"),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("14f. Should maintain stable member list order (owner first, then createdAt asc) after role change", async () => {
+      const beforeMembers = await service.getMembers("usr-2");
+      expect(beforeMembers.map((m) => m.id)).toEqual([
+        "usr-1",
+        "usr-2",
+        "usr-3",
+      ]);
+
+      await service.updateMemberRole("usr-2", "usr-3", "HIRING_MANAGER");
+
+      const afterMembers = await service.getMembers("usr-2");
+      expect(afterMembers.map((m) => m.id)).toEqual([
+        "usr-1",
+        "usr-2",
+        "usr-3",
+      ]);
+      expect(afterMembers[2].role).toBe("HIRING_MANAGER");
+    });
+
     it("15. Should allow admin/owner to remove member from organization", async () => {
       // usr-2 is ADMIN in org-1, removing usr-3
       const result = await service.removeMember("usr-2", "usr-3");
@@ -609,15 +715,45 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       }
 
       const orgSelectSpy = vi.spyOn(
-        (mockPrismaService as { db: { orm: { public: { Organization: { select: (...args: unknown[]) => unknown } } } } }).db.orm.public.Organization,
+        (
+          mockPrismaService as {
+            db: {
+              orm: {
+                public: {
+                  Organization: { select: (...args: unknown[]) => unknown };
+                };
+              };
+            };
+          }
+        ).db.orm.public.Organization,
         "select",
       );
       const userSelectSpy = vi.spyOn(
-        (mockPrismaService as { db: { orm: { public: { User: { select: (...args: unknown[]) => unknown } } } } }).db.orm.public.User,
+        (
+          mockPrismaService as {
+            db: {
+              orm: {
+                public: { User: { select: (...args: unknown[]) => unknown } };
+              };
+            };
+          }
+        ).db.orm.public.User,
         "select",
       );
       const memberSelectSpy = vi.spyOn(
-        (mockPrismaService as { db: { orm: { public: { OrganizationMember: { select: (...args: unknown[]) => unknown } } } } }).db.orm.public.OrganizationMember,
+        (
+          mockPrismaService as {
+            db: {
+              orm: {
+                public: {
+                  OrganizationMember: {
+                    select: (...args: unknown[]) => unknown;
+                  };
+                };
+              };
+            };
+          }
+        ).db.orm.public.OrganizationMember,
         "select",
       );
 
@@ -630,9 +766,18 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(memberSelectSpy).toHaveBeenCalledTimes(1);
 
       // Verify members were upserted for the owners
-      const upsertSpy = (mockPrismaService as { db: { orm: { public: { OrganizationMember: { upsert: ReturnType<typeof vi.fn> } } } } }).db.orm.public.OrganizationMember.upsert;
+      const upsertSpy = (
+        mockPrismaService as {
+          db: {
+            orm: {
+              public: {
+                OrganizationMember: { upsert: ReturnType<typeof vi.fn> };
+              };
+            };
+          };
+        }
+      ).db.orm.public.OrganizationMember.upsert;
       expect(upsertSpy).toHaveBeenCalled();
     });
   });
 });
-

@@ -1,4 +1,5 @@
 import { IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Role } from "@haihire/shared";
 
 export class SwitchOrgDto {
   @IsString()
@@ -7,9 +8,21 @@ export class SwitchOrgDto {
 }
 
 export class UpdateMemberRoleDto {
-  @IsIn(["ADMIN", "MEMBER"], { message: "Role must be ADMIN or MEMBER" })
+  @IsIn(
+    [
+      Role.ADMIN,
+      Role.RECRUITER,
+      Role.HIRING_MANAGER,
+      Role.INTERVIEWER,
+      Role.MEMBER,
+    ],
+    {
+      message:
+        "Role must be one of: ADMIN, RECRUITER, HIRING_MANAGER, INTERVIEWER, MEMBER",
+    },
+  )
   @IsNotEmpty({ message: "Role is required" })
-  role!: "ADMIN" | "MEMBER";
+  role!: Role;
 }
 
 export class CreateInviteLinkDto {

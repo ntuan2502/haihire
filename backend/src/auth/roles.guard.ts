@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   AppForbiddenException,
   AppUnauthorizedException,
@@ -13,12 +13,18 @@ import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { PERMISSION_KEY } from "./require-permission.decorator";
 import { ROLES_KEY } from "./roles.decorator";
+import { PermissionResolverService } from "./permission-resolver.service";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(@Inject(Reflector) private readonly reflector: Reflector) {}
+  constructor(
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const requiredPermission = this.reflector.getAllAndOverride<Permission>(
       PERMISSION_KEY,
       [context.getHandler(), context.getClass()],
@@ -50,6 +56,20 @@ export class RolesGuard implements CanActivate {
     }
 
     if (requiredPermission) {
+      if (this.permissionResolver) {
+        return this.permissionResolver
+          .resolvePermission(user.organizationId, user.role, requiredPermission)
+          .then((allowed) => {
+            if (!allowed) {
+              throw new AppForbiddenException(
+                APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+                `Role '${user.role}' does not have the required permission '${requiredPermission}'.`,
+              );
+            }
+            return true;
+          });
+      }
+
       const allowed = hasPermission(user.role, requiredPermission);
       if (!allowed) {
         throw new AppForbiddenException(

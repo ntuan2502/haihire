@@ -79,6 +79,7 @@ export interface TranslationSchema {
     ORG_INVITE_REVOKED: string;
     ORG_USER_NO_ORG: string;
     ORG_CANNOT_CHANGE_OWNER_ROLE: string;
+    ORG_CANNOT_CHANGE_SELF_ROLE: string;
     ORG_CANNOT_REMOVE_SELF: string;
     ORG_CANNOT_REMOVE_OWNER: string;
     ORG_CANNOT_TRANSFER_TO_SELF: string;
@@ -86,6 +87,7 @@ export interface TranslationSchema {
     ORG_NOT_OWNER: string;
     ORG_MEMBER_NOT_FOUND: string;
     ORG_FORBIDDEN_ACTION: string;
+    ORG_ADMIN_PERMISSIONS_IMMUTABLE: string;
     JOB_NOT_FOUND: string;
     JOB_ID_REQUIRED: string;
     JOB_NOT_ACCEPTING_APPLICATIONS: string;
@@ -1266,6 +1268,9 @@ export interface TranslationSchema {
     revokeLinkConfirmWarning: string;
     roleOwner: string;
     roleAdmin: string;
+    roleRecruiter: string;
+    roleHiringManager: string;
+    roleInterviewer: string;
     roleMember: string;
     expires7Days: string;
     expires30Days: string;
@@ -1274,6 +1279,8 @@ export interface TranslationSchema {
     usesUnlimited: string;
     noActiveInviteLinks: string;
     noActiveInviteLinksDesc: string;
+    updateRoleSuccess: string;
+    updateRoleError: string;
   };
   onboarding: {
     selectOrgTitle: string;
@@ -1387,6 +1394,10 @@ export interface TranslationSchema {
       accountSub: string;
       emailTemplates: string;
       emailTemplatesSub: string;
+      roles: string;
+      rolesSub: string;
+      auditLog: string;
+      auditLogSub: string;
     };
     placeholders: {
       orgName: string;
@@ -1452,6 +1463,68 @@ export interface TranslationSchema {
         enabled: string;
         disabled: string;
       };
+    };
+    rolesMatrix: {
+      title: string;
+      description: string;
+      badge: string;
+      readOnlyBadge: string;
+      readOnlyNotice: string;
+      saveButton: string;
+      savingButton: string;
+      resetButton: string;
+      saveSuccess: string;
+      saveError: string;
+      unsavedChanges: string;
+      permissionColumn: string;
+      categoryOrg: string;
+      categoryJob: string;
+      categoryCandidate: string;
+      categoryApplication: string;
+      categoryInterview: string;
+      categorySourcing: string;
+      categoryEmail: string;
+      categorySettings: string;
+      coreAdminProtected: string;
+      adminRoleImmutable: string;
+      resetDefaultButton: string;
+      resetDefaultConfirmTitle: string;
+      resetDefaultConfirmMessage: string;
+      resetDefaultConfirmButton: string;
+      resetDefaultCancelButton: string;
+      resetDefaultSuccess: string;
+      resetDefaultError: string;
+      roleAdmin: string;
+      roleRecruiter: string;
+      roleHiringManager: string;
+      roleInterviewer: string;
+      roleMember: string;
+      tableSummary: string;
+    };
+    auditLog: {
+      title: string;
+      description: string;
+      badge: string;
+      accessDenied: string;
+      filterAllActions: string;
+      filterAction: string;
+      colTimestamp: string;
+      colActor: string;
+      colAction: string;
+      colResource: string;
+      colMetadata: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      paginationShowing: string;
+      paginationPrev: string;
+      paginationNext: string;
+      systemActor: string;
+      noMetadata: string;
+      actionRolePermissionsUpdated: string;
+      actionRolePermissionsReset: string;
+      actionMemberRoleChanged: string;
+      actionOwnershipTransferred: string;
+      actionOrgDeleted: string;
     };
   };
   theme: {

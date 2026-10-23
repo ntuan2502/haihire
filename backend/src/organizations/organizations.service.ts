@@ -192,4 +192,15 @@ export class OrganizationsService implements OnModuleInit {
     }
     return this.roles.updateRolePermissions(org.id, role, updates);
   }
+
+  async resetRolePermissions(userId: string, role?: string) {
+    const org = await this.getMyOrg(userId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.roles.resetRolePermissions(org.id, role);
+  }
 }

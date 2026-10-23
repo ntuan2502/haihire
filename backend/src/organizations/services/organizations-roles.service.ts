@@ -162,4 +162,57 @@ export class OrganizationsRolesService {
       permissions: fullMatrix[role],
     };
   }
+
+  /**
+   * Resets customized role permissions back to default for an entire organization or a specific role.
+   * Deletes persistent override records from OrganizationRolePermission and clears the cache.
+   * Modifying or resetting the ADMIN role is strictly forbidden.
+   */
+  async resetRolePermissions(
+    organizationId: string,
+    roleStr?: string,
+  ): Promise<{ deleted: number }> {
+    if (roleStr) {
+      if (roleStr === Role.ADMIN) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
+          "ADMIN role permissions are immutable and cannot be reset",
+        );
+      }
+      if (!CUSTOMIZABLE_ROLES.includes(roleStr as Role)) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          `Role ${roleStr} cannot be customized`,
+        );
+      }
+    }
+
+    const targetRole = roleStr ? (roleStr as Role) : undefined;
+    let deletedCount = 0;
+
+    await this.executeTx(async (tx) => {
+      let query = tx.orm.public.OrganizationRolePermission.where((p) =>
+        p.organizationId.eq(organizationId),
+      );
+      if (targetRole) {
+        query = query.where((p) => p.role.eq(targetRole));
+      }
+
+      const existing = await query.all();
+      const toDelete = existing.filter((item) => item.role !== Role.ADMIN);
+      deletedCount = toDelete.length;
+
+      for (const item of toDelete) {
+        await tx.orm.public.OrganizationRolePermission.where((p) =>
+          p.id.eq(item.id),
+        ).delete();
+      }
+    });
+
+    if (this.permissionResolver) {
+      this.permissionResolver.invalidateCache(organizationId);
+    }
+
+    return { deleted: deletedCount };
+  }
 }

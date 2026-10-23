@@ -130,6 +130,25 @@ export class OrganizationsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_roles")
+  @Post("my/roles/reset")
+  @HttpCode(HttpStatus.OK)
+  resetAllRolePermissions(@Request() req: { user: { id: string } }) {
+    return this.orgsService.resetRolePermissions(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_roles")
+  @Post("my/roles/:role/reset")
+  @HttpCode(HttpStatus.OK)
+  resetSingleRolePermissions(
+    @Request() req: { user: { id: string } },
+    @Param("role") role: string,
+  ) {
+    return this.orgsService.resetRolePermissions(req.user.id, role);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @RequirePermission("org:update")
   @Patch("my")
   updateMyOrg(

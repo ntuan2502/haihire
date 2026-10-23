@@ -25,6 +25,7 @@ describe("OrganizationsController", () => {
     updateMemberRole: vi.fn(),
     getRolePermissionsMatrix: vi.fn(),
     updateRolePermissions: vi.fn(),
+    resetRolePermissions: vi.fn(),
   };
 
   const ownerReq = {
@@ -294,6 +295,81 @@ describe("OrganizationsController", () => {
           controller.updateRolePermissions(nonOwnerAdminReq, Role.ADMIN, {
             permissions: [{ permission: "job:create", granted: false }],
           }),
+        ).rejects.toMatchObject({
+          code: APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
+        });
+      });
+
+      it("calls resetAllRolePermissions when admin requests reset of all roles", async () => {
+        const context = createMockContext(
+          ownerReq,
+          controller.resetAllRolePermissions,
+        );
+        expect(rolesGuard.canActivate(context)).toBe(true);
+
+        mockService.resetRolePermissions.mockResolvedValueOnce({ deleted: 4 });
+
+        const result = await controller.resetAllRolePermissions(ownerReq);
+        expect(result).toEqual({ deleted: 4 });
+        expect(mockService.resetRolePermissions).toHaveBeenCalledWith(
+          ownerReq.user.id,
+        );
+      });
+
+      it("calls resetSingleRolePermissions when admin requests reset of specific role", async () => {
+        const context = createMockContext(
+          nonOwnerAdminReq,
+          controller.resetSingleRolePermissions,
+        );
+        expect(rolesGuard.canActivate(context)).toBe(true);
+
+        mockService.resetRolePermissions.mockResolvedValueOnce({ deleted: 1 });
+
+        const result = await controller.resetSingleRolePermissions(
+          nonOwnerAdminReq,
+          Role.RECRUITER,
+        );
+        expect(result).toEqual({ deleted: 1 });
+        expect(mockService.resetRolePermissions).toHaveBeenCalledWith(
+          nonOwnerAdminReq.user.id,
+          Role.RECRUITER,
+        );
+      });
+
+      it("rejects non-admin MEMBER from calling reset endpoints -> 403 Forbidden", () => {
+        const contextAll = createMockContext(
+          memberReq,
+          controller.resetAllRolePermissions,
+        );
+        expect(() => rolesGuard.canActivate(contextAll)).toThrow(
+          AppForbiddenException,
+        );
+
+        const contextSingle = createMockContext(
+          memberReq,
+          controller.resetSingleRolePermissions,
+        );
+        expect(() => rolesGuard.canActivate(contextSingle)).toThrow(
+          AppForbiddenException,
+        );
+      });
+
+      it("rejects resetting ADMIN role with 400 ORG_ADMIN_PERMISSIONS_IMMUTABLE", async () => {
+        const context = createMockContext(
+          nonOwnerAdminReq,
+          controller.resetSingleRolePermissions,
+        );
+        expect(rolesGuard.canActivate(context)).toBe(true);
+
+        mockService.resetRolePermissions.mockRejectedValueOnce(
+          new AppBadRequestException(
+            APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
+            "ADMIN role permissions are immutable and cannot be reset",
+          ),
+        );
+
+        await expect(
+          controller.resetSingleRolePermissions(nonOwnerAdminReq, Role.ADMIN),
         ).rejects.toMatchObject({
           code: APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
         });

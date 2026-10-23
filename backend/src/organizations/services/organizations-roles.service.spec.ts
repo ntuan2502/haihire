@@ -106,6 +106,13 @@ describe("OrganizationsRolesService", () => {
         }
         return item || null;
       },
+      delete: async () => {
+        const idx = mockDbStore.findIndex((r) => r.id === filters.id);
+        if (idx !== -1) {
+          mockDbStore.splice(idx, 1);
+        }
+        return true;
+      },
     });
 
     const mockPrisma = {
@@ -247,6 +254,78 @@ describe("OrganizationsRolesService", () => {
         service.updateRolePermissions("org-123", "OWNER", [
           { permission: "org:view", granted: true },
         ]),
+      ).rejects.toThrow(AppBadRequestException);
+    });
+  });
+
+  describe("resetRolePermissions", () => {
+    it("resets a single role overrides and invalidates cache", async () => {
+      mockDbStore.push({
+        id: "recruiter-override-1",
+        organizationId: "org-123",
+        role: Role.RECRUITER,
+        permission: "org:delete",
+        granted: true,
+      });
+      mockDbStore.push({
+        id: "member-override-1",
+        organizationId: "org-123",
+        role: Role.MEMBER,
+        permission: "job:view",
+        granted: true,
+      });
+
+      const res = await service.resetRolePermissions("org-123", Role.RECRUITER);
+      expect(res.deleted).toBe(1);
+      expect(mockResolver.invalidateCache).toHaveBeenCalledWith("org-123");
+      expect(
+        mockDbStore.find((r) => r.role === Role.RECRUITER),
+      ).toBeUndefined();
+      expect(mockDbStore.find((r) => r.role === Role.MEMBER)).toBeDefined();
+
+      const matrix = await service.getRolePermissionsMatrix("org-123");
+      expect(matrix[Role.RECRUITER]["org:delete"]).toBe(false);
+    });
+
+    it("resets all custom role overrides across the organization", async () => {
+      mockDbStore.push({
+        id: "recruiter-override-1",
+        organizationId: "org-123",
+        role: Role.RECRUITER,
+        permission: "job:delete",
+        granted: true,
+      });
+      mockDbStore.push({
+        id: "member-override-1",
+        organizationId: "org-123",
+        role: Role.MEMBER,
+        permission: "job:view",
+        granted: true,
+      });
+
+      const res = await service.resetRolePermissions("org-123");
+      expect(res.deleted).toBe(2);
+      expect(mockResolver.invalidateCache).toHaveBeenCalledWith("org-123");
+      expect(mockDbStore.length).toBe(0);
+    });
+
+    it("rejects resetting ADMIN role with ORG_ADMIN_PERMISSIONS_IMMUTABLE", async () => {
+      await expect(
+        service.resetRolePermissions("org-123", Role.ADMIN),
+      ).rejects.toThrow(AppBadRequestException);
+
+      try {
+        await service.resetRolePermissions("org-123", Role.ADMIN);
+      } catch (err: unknown) {
+        expect((err as AppBadRequestException).code).toBe(
+          APP_ERROR_CODES.ORG_ADMIN_PERMISSIONS_IMMUTABLE,
+        );
+      }
+    });
+
+    it("rejects resetting an unsupported role like GUEST", async () => {
+      await expect(
+        service.resetRolePermissions("org-123", "GUEST"),
       ).rejects.toThrow(AppBadRequestException);
     });
   });

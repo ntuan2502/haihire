@@ -770,6 +770,10 @@ export async function runSeed(): Promise<void> {
   console.log("🏢 2. Seeding Organization & Demo Users...");
   console.log("==================================================");
 
+  // Architectural Note (Seed ID Format Audit):
+  // Demo IDs use fixed zero-padded pseudo-UUIDs (e.g. 00000000-0000-0000-0000-000000000001).
+  // Migration to deterministic RFC 4122 v4 UUIDs is deferred to a dedicated data-seeding task
+  // to avoid breaking existing local databases, E2E fixtures (seed-helpers.ts), and foreign key graphs.
   const adminUserId = "00000000-0000-0000-0000-000000000001";
   const adminOrgId = "00000000-0000-0000-0000-000000000002";
   const memberUserId = "00000000-0000-0000-0000-000000000003";

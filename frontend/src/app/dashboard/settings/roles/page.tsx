@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import {
   useRolePermissionsMatrix,
   useUpdateRolePermissionsMutation,
@@ -154,6 +154,9 @@ export default function RolesPermissionsPage() {
   }, [overrides]);
 
   const isCellChecked = (role: Role, permission: Permission): boolean => {
+    if (role === Role.ADMIN && CORE_ADMIN_PERMISSIONS.includes(permission)) {
+      return true;
+    }
     const key = `${role}:${permission}`;
     if (key in overrides) {
       return overrides[key];
@@ -209,7 +212,9 @@ export default function RolesPermissionsPage() {
       >();
 
       for (const [key, granted] of Object.entries(overrides)) {
-        const [roleStr, permStr] = key.split(":") as [Role, Permission];
+        const colonIdx = key.indexOf(":");
+        const roleStr = key.slice(0, colonIdx) as Role;
+        const permStr = key.slice(colonIdx + 1) as Permission;
         const list = roleUpdates.get(roleStr) || [];
         list.push({ permission: permStr, granted });
         roleUpdates.set(roleStr, list);
@@ -384,7 +389,7 @@ export default function RolesPermissionsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {CATEGORIES.map((category) => (
-                  <tr key={category.categoryKey} className="contents">
+                  <Fragment key={category.categoryKey}>
                     {/* Category Header Row */}
                     <tr className="bg-slate-100/75 dark:bg-slate-800/40 border-t border-b border-slate-200/80 dark:border-slate-800">
                       <td
@@ -447,7 +452,7 @@ export default function RolesPermissionsPage() {
                         })}
                       </tr>
                     ))}
-                  </tr>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

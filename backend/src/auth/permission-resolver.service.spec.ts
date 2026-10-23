@@ -141,4 +141,91 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
     await service.resolvePermission("org-cached", Role.MEMBER, "job:view");
     expect(selectQueryFn).toHaveBeenCalledTimes(3);
   });
+
+  it("6. ADMIN role is strictly immutable and always returns true even if DB has granted=false", async () => {
+    mockRecords.push({
+      organizationId: "org-admin-test",
+      role: Role.ADMIN,
+      permission: "job:create",
+      granted: false,
+    });
+    mockRecords.push({
+      organizationId: "org-admin-test",
+      role: Role.ADMIN,
+      permission: "candidate:delete",
+      granted: false,
+    });
+
+    const canCreate = await service.resolvePermission(
+      "org-admin-test",
+      Role.ADMIN,
+      "job:create",
+    );
+    const canDelete = await service.resolvePermission(
+      "org-admin-test",
+      Role.ADMIN,
+      "candidate:delete",
+    );
+
+    expect(canCreate).toBe(true);
+    expect(canDelete).toBe(true);
+    expect(selectQueryFn).not.toHaveBeenCalled();
+  });
+
+  it("7. ADMIN role is not affected by cache invalidation", async () => {
+    service.invalidateCache("org-admin-test");
+    const result = await service.resolvePermission(
+      "org-admin-test",
+      Role.ADMIN,
+      "candidate:delete",
+    );
+    expect(result).toBe(true);
+    expect(selectQueryFn).not.toHaveBeenCalled();
+  });
+
+  it("8. Other roles (RECRUITER, MEMBER) still use DB overrides normally and ignore ADMIN records in getOverrides", async () => {
+    mockRecords.push({
+      organizationId: "org-mixed",
+      role: Role.ADMIN,
+      permission: "job:view",
+      granted: false,
+    });
+    mockRecords.push({
+      organizationId: "org-mixed",
+      role: Role.RECRUITER,
+      permission: "job:delete",
+      granted: true,
+    });
+    mockRecords.push({
+      organizationId: "org-mixed",
+      role: Role.MEMBER,
+      permission: "candidate:view",
+      granted: true,
+    });
+
+    const recruiterDelete = await service.resolvePermission(
+      "org-mixed",
+      Role.RECRUITER,
+      "job:delete",
+    );
+    const memberCandidate = await service.resolvePermission(
+      "org-mixed",
+      Role.MEMBER,
+      "candidate:view",
+    );
+    const adminView = await service.resolvePermission(
+      "org-mixed",
+      Role.ADMIN,
+      "job:view",
+    );
+
+    expect(recruiterDelete).toBe(true);
+    expect(memberCandidate).toBe(true);
+    expect(adminView).toBe(true);
+
+    const overrides = await service.getOverrides("org-mixed");
+    expect(overrides.has("ADMIN:job:view")).toBe(false);
+    expect(overrides.get("RECRUITER:job:delete")).toBe(true);
+    expect(overrides.get("MEMBER:candidate:view")).toBe(true);
+  });
 });

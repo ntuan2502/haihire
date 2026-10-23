@@ -1,4 +1,4 @@
-import { Injectable, Inject } from "@nestjs/common";
+import { Injectable, Inject, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { hasPermission, type Permission, Role } from "@haihire/shared";
 
@@ -9,6 +9,7 @@ interface CacheEntry {
 
 @Injectable()
 export class PermissionResolverService {
+  private readonly logger = new Logger(PermissionResolverService.name);
   private readonly cache = new Map<string, CacheEntry>();
   private readonly ttlMs = 60_000; // 60 seconds
 
@@ -28,6 +29,11 @@ export class PermissionResolverService {
     role: Role,
     permission: Permission,
   ): Promise<boolean> {
+    // ADMIN permissions are strictly immutable and always granted
+    if (role === Role.ADMIN) {
+      return true;
+    }
+
     if (!organizationId) {
       return hasPermission(role, permission);
     }
@@ -62,6 +68,12 @@ export class PermissionResolverService {
 
     const overrides = new Map<string, boolean>();
     for (const r of records) {
+      if (r.role === Role.ADMIN) {
+        this.logger.warn(
+          `[PermissionResolver] ADMIN role override detected for permission '${r.permission}' in organization '${organizationId}', ignoring.`,
+        );
+        continue;
+      }
       overrides.set(`${r.role}:${r.permission}`, r.granted);
     }
 

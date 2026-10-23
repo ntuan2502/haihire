@@ -14,7 +14,9 @@ import {
   OrganizationsMembersService,
   OrganizationsInvitesService,
   OrganizationsRolesService,
+  OrganizationsAuditLogService,
   type InviteLinkRecord,
+  type OrgAuditLogFilter,
 } from "./services";
 import { Role, APP_ERROR_CODES } from "@haihire/shared";
 import { AppBadRequestException } from "../common/app-exception";
@@ -28,6 +30,7 @@ export class OrganizationsService implements OnModuleInit {
   private readonly members: OrganizationsMembersService;
   private readonly invites: OrganizationsInvitesService;
   private readonly roles: OrganizationsRolesService;
+  private readonly auditLog: OrganizationsAuditLogService;
 
   constructor(
     @Optional()
@@ -45,6 +48,9 @@ export class OrganizationsService implements OnModuleInit {
     @Optional()
     @Inject(PrismaService)
     prismaService?: PrismaService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    auditLogService?: OrganizationsAuditLogService,
   ) {
     if (coreOrPrisma instanceof OrganizationsCoreService) {
       this.core = coreOrPrisma;
@@ -53,6 +59,12 @@ export class OrganizationsService implements OnModuleInit {
       this.roles =
         rolesService ||
         new OrganizationsRolesService(
+          prismaService ||
+            (this.core as unknown as { prisma: PrismaService }).prisma,
+        );
+      this.auditLog =
+        auditLogService ||
+        new OrganizationsAuditLogService(
           prismaService ||
             (this.core as unknown as { prisma: PrismaService }).prisma,
         );
@@ -65,6 +77,7 @@ export class OrganizationsService implements OnModuleInit {
       this.members = new OrganizationsMembersService(prisma, events);
       this.invites = new OrganizationsInvitesService(prisma);
       this.roles = new OrganizationsRolesService(prisma);
+      this.auditLog = new OrganizationsAuditLogService(prisma);
     } else {
       throw new Error(
         "OrganizationsService requires dependencies to be injected",
@@ -190,7 +203,7 @@ export class OrganizationsService implements OnModuleInit {
         "User does not belong to an active organization",
       );
     }
-    return this.roles.updateRolePermissions(org.id, role, updates);
+    return this.roles.updateRolePermissions(org.id, role, updates, userId);
   }
 
   async resetRolePermissions(userId: string, role?: string) {
@@ -201,6 +214,20 @@ export class OrganizationsService implements OnModuleInit {
         "User does not belong to an active organization",
       );
     }
-    return this.roles.resetRolePermissions(org.id, role);
+    return this.roles.resetRolePermissions(org.id, role, userId);
+  }
+
+  // ==========================================
+  // 5. AUDIT LOGGING
+  // ==========================================
+  async getAuditLogs(userId: string, filter: OrgAuditLogFilter = {}) {
+    const org = await this.getMyOrg(userId);
+    if (!org) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.ORG_USER_NO_ORG,
+        "User does not belong to an active organization",
+      );
+    }
+    return this.auditLog.findAllOrg(org.id, filter);
   }
 }

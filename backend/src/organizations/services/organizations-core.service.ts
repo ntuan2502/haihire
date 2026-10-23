@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateOrgDto } from "../dto/create-org.dto";
@@ -11,6 +11,7 @@ import {
   AppNotFoundException,
 } from "../../common/app-exception";
 import { APP_ERROR_CODES } from "@haihire/shared";
+import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
 @Injectable()
 export class OrganizationsCoreService {
@@ -18,6 +19,9 @@ export class OrganizationsCoreService {
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   private async executeTx<T>(
@@ -392,6 +396,7 @@ export class OrganizationsCoreService {
     const currentOrg = await this.prisma.db.orm.public.Organization.select(
       "id",
       "ownerId",
+      "name",
     )
       .where((o) => o.id.eq(orgId))
       .first();
@@ -415,6 +420,14 @@ export class OrganizationsCoreService {
         "Only the organization owner can delete this organization.",
       );
     }
+
+    await this.auditLog?.logPlatform(
+      orgId,
+      userId,
+      "ORG_DELETED",
+      "ORGANIZATION",
+      { organizationName: currentOrg.name },
+    );
 
     // Execute atomic cleanup of users, memberships, and organization inside a single transaction
     await this.executeTx(async (tx) => {
@@ -531,6 +544,14 @@ export class OrganizationsCoreService {
 
     this.logger.log(
       `Transferred ownership of organization ${orgId} from ${userId} to ${newOwnerUserId}`,
+    );
+
+    await this.auditLog?.logOrg(
+      orgId,
+      userId,
+      "OWNERSHIP_TRANSFERRED",
+      "ORGANIZATION",
+      { oldOwnerId: userId, newOwnerId: newOwnerUserId },
     );
 
     return {

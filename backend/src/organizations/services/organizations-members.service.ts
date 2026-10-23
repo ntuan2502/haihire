@@ -14,6 +14,7 @@ import {
   AppNotFoundException,
 } from "../../common/app-exception";
 import { APP_ERROR_CODES, Role } from "@haihire/shared";
+import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
 @Injectable()
 export class OrganizationsMembersService implements OnModuleInit {
@@ -23,6 +24,9 @@ export class OrganizationsMembersService implements OnModuleInit {
     @Optional()
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   async onModuleInit() {
@@ -282,6 +286,8 @@ export class OrganizationsMembersService implements OnModuleInit {
       .where((u) => u.id.eq(targetMemberId))
       .first();
 
+    const oldRole = membership?.role || targetUser?.role || null;
+
     if (
       !membership &&
       (!targetUser || targetUser.organizationId !== targetOrgId)
@@ -329,6 +335,14 @@ export class OrganizationsMembersService implements OnModuleInit {
       organizationId: targetOrgId,
       role: newRole,
     });
+
+    await this.auditLog?.logOrg(
+      targetOrgId,
+      callerId,
+      "MEMBER_ROLE_CHANGED",
+      "MEMBER",
+      { memberId: targetMemberId, oldRole, newRole },
+    );
 
     return {
       success: true,

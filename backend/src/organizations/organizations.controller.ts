@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from "@nestjs/common";
@@ -146,6 +147,27 @@ export class OrganizationsController {
     @Param("role") role: string,
   ) {
     return this.orgsService.resetRolePermissions(req.user.id, role);
+  }
+
+  // ==========================================
+  // AUDIT LOG ENDPOINTS
+  // ==========================================
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:view_audit_log")
+  @Get("my/audit-log")
+  getAuditLogs(
+    @Request() req: { user: { id: string } },
+    @Query("action") action?: string,
+    @Query("resource") resource?: string,
+    @Query("limit") limit?: string,
+    @Query("offset") offset?: string,
+  ) {
+    return this.orgsService.getAuditLogs(req.user.id, {
+      action,
+      resource,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      offset: offset ? parseInt(offset, 10) : undefined,
+    });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

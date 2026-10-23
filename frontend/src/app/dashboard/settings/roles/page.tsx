@@ -63,6 +63,7 @@ const CATEGORIES: PermissionCategory[] = [
       "org:manage_roles",
       "org:manage_billing",
       "org:transfer_ownership",
+      "org:view_audit_log",
     ],
   },
   {

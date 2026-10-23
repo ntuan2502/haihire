@@ -12,6 +12,7 @@ import {
   type Permission,
 } from "@haihire/shared";
 import type { RolePermissionItemDto } from "../dto/role-permissions.dto";
+import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
 export const CUSTOMIZABLE_ROLES: Role[] = [
   Role.ADMIN,
@@ -36,6 +37,9 @@ export class OrganizationsRolesService {
     @Optional()
     @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
+    @Optional()
+    @Inject(OrganizationsAuditLogService)
+    private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
   private async executeTx<T>(
@@ -105,6 +109,7 @@ export class OrganizationsRolesService {
     organizationId: string,
     roleStr: string,
     updates: RolePermissionItemDto[],
+    actorId?: string,
   ): Promise<{ role: Role; permissions: Record<Permission, boolean> }> {
     if (roleStr === Role.ADMIN) {
       throw new AppBadRequestException(
@@ -155,6 +160,14 @@ export class OrganizationsRolesService {
       this.permissionResolver.invalidateCache(organizationId);
     }
 
+    await this.auditLog?.logOrg(
+      organizationId,
+      actorId || null,
+      "ROLE_PERMISSIONS_UPDATED",
+      "ROLE_PERMISSIONS",
+      { role: roleStr, permissions: updates },
+    );
+
     const fullMatrix = await this.getRolePermissionsMatrix(organizationId);
 
     return {
@@ -171,6 +184,7 @@ export class OrganizationsRolesService {
   async resetRolePermissions(
     organizationId: string,
     roleStr?: string,
+    actorId?: string,
   ): Promise<{ deleted: number }> {
     if (roleStr) {
       if (roleStr === Role.ADMIN) {
@@ -212,6 +226,14 @@ export class OrganizationsRolesService {
     if (this.permissionResolver) {
       this.permissionResolver.invalidateCache(organizationId);
     }
+
+    await this.auditLog?.logOrg(
+      organizationId,
+      actorId || null,
+      "ROLE_PERMISSIONS_RESET",
+      "ROLE_PERMISSIONS",
+      { role: roleStr || "ALL" },
+    );
 
     return { deleted: deletedCount };
   }

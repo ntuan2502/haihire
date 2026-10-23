@@ -23,6 +23,7 @@ export type Permission =
   | "org:manage_roles"
   | "org:manage_billing"
   | "org:transfer_ownership"
+  | "org:view_audit_log"
   // Job Requisition Management
   | "job:view"
   | "job:create"
@@ -81,6 +82,7 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   "org:manage_roles": [Role.ADMIN],
   "org:manage_billing": [],
   "org:transfer_ownership": [Role.ADMIN],
+  "org:view_audit_log": [Role.ADMIN],
 
   // Jobs
   "job:view": [

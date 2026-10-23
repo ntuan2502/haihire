@@ -26,6 +26,7 @@ describe("OrganizationsController", () => {
     getRolePermissionsMatrix: vi.fn(),
     updateRolePermissions: vi.fn(),
     resetRolePermissions: vi.fn(),
+    getAuditLogs: vi.fn(),
   };
 
   const ownerReq = {
@@ -414,6 +415,47 @@ describe("OrganizationsController", () => {
 
         expect(allowed).toBe(true);
       });
+    });
+  });
+
+  describe("GET /organizations/my/audit-log", () => {
+    it("delegates to service.getAuditLogs with query parameters and user id", async () => {
+      const mockResult = {
+        data: [],
+        total: 0,
+        limit: 20,
+        offset: 0,
+      };
+      mockService.getAuditLogs.mockResolvedValue(mockResult);
+
+      const result = await controller.getAuditLogs(
+        ownerReq,
+        "ROLE_PERMISSIONS_UPDATED",
+        "ROLE_PERMISSIONS",
+        "20",
+        "0",
+      );
+
+      expect(service.getAuditLogs).toHaveBeenCalledWith("user-owner", {
+        action: "ROLE_PERMISSIONS_UPDATED",
+        resource: "ROLE_PERMISSIONS",
+        limit: 20,
+        offset: 0,
+      });
+      expect(result).toBe(mockResult);
+    });
+
+    it("allows ADMIN access to audit log endpoint via RolesGuard", async () => {
+      const context = createMockContext(ownerReq, controller.getAuditLogs);
+      const allowed = await rolesGuard.canActivate(context);
+      expect(allowed).toBe(true);
+    });
+
+    it("rejects regular MEMBER without org:view_audit_log -> 403 Forbidden", () => {
+      const context = createMockContext(memberReq, controller.getAuditLogs);
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
     });
   });
 });

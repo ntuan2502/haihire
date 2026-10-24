@@ -3,7 +3,7 @@
 > Canonical metrics for the HaiHire Enterprise ATS platform.  
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
-**Last Updated:** 2026-10-22  
+**Last Updated:** 2026-10-24  
 **Platform Version:** v0.3.0 (Pre-release)
 
 ---
@@ -19,9 +19,9 @@
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 1,020 total (+149 tests added since v0.2.0: 871 → 1,020)
-  - Backend: 590 passing (Vitest, 57 test suites)
-  - Frontend: 430 passing (Vitest + JSDOM, 58 test suites)
+- **Automated Tests:** 1,119 total (+248 tests added since v0.2.0: 871 → 1,119)
+  - Backend: 664 passing (Vitest, 63 test suites)
+  - Frontend: 455 passing (Vitest + JSDOM, 60 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
   - Backend Coverage: 79.54% Statements (80.92% Lines, 62.35% Branch, 80.38% Funcs)
@@ -47,7 +47,7 @@
   13. `test:diff` — Test Count Delta & Anti-Regression Gate
   14. `lint:nextjs-conventions` — Next.js 16 File Conventions Audit (`proxy.ts` enforced)
   15. `lint:github-action-versions` — GitHub Actions Minimum Versions Audit (Node 24 action runtime)
-  16. `test` — Unit & Integration Test Suite (1,020 tests)
+  16. `test` — Unit & Integration Test Suite (1,119 tests)
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:** 23 specs across end-to-end recruitment lifecycle journeys
 - **Test Pass Rate:** 100% (Zero skipped, zero flaky, zero commented-out tests)

@@ -107,3 +107,25 @@
 - **Evidence:** Architectural review finding F-017 from Phase 3 Branch 2, and `contract.prisma` schema definition.
 - **Enforcement:** `v0.4.0` database migration and service implementation.
 - **History:** Discovered during Phase 3 Branch 2 review regarding ownership transfer auditing; formally resolved as finding F-017 and scheduled for `v0.4.0` implementation.
+
+---
+
+## D-010: RFC 4122 UUID v4 Compliance for Deterministic Seed and Demo Identifiers
+
+- **Date:** 2026-10-23
+- **Decision:** Mandate strict RFC 4122 UUID version 4 compliance (`00000000-0000-4000-8000-xxxxxxxxxxxx`) for all deterministic seed, demo, and test mock UUIDs across backend seed scripts, migrations, integration tests, and frontend mocks. Reject arbitrary non-RFC compliant UUID strings (such as pseudo-UUIDs `00000000-0000-0000-0000-000000000001` with version nibble `0` and variant nibble `0`). Revert any loose `@IsString()` validations on ID fields back to strict `@IsUUID()` (`@IsUUID("4")` or standard RFC 4122 validation).
+- **Rationale:** NestJS DTO validation pipes use class-validator's `@IsUUID()` which strictly verifies RFC 4122 variant and version bits. Non-compliant mock IDs caused runtime HTTP 400 Bad Request errors on `POST /organizations/my/transfer-ownership` when using demo data. Relaxing DTO validation to `@IsString()` was a dangerous workaround that weakened API contract integrity and allowed arbitrary invalid inputs. Standardizing seed IDs to conform to RFC 4122 UUID v4 preserves strong typing, prevents silent validation bypasses, and aligns deterministic mock data with production PostgreSQL UUID generation.
+- **Evidence:** Refactored seed IDs in `backend/prisma/seeds/`, DTO validation in `backend/src/organizations/dto/transfer-ownership.dto.ts`, and updated integration tests in `backend/test/organizations/transfer-ownership.spec.ts`.
+- **Enforcement:** Enforced at runtime by `DtoPipe` with `@IsUUID()`, and in integration tests asserting rejection of non-RFC-compliant strings.
+- **History:** Triggered during transfer ownership debugging where seed member ID `00000000-0000-0000-0000-000000000003` caused DTO validation failures. Temporarily patched with `@IsString()` in commit `b02dd1b` (workaround); project lead mandated reverting `@IsString()` back to strict `@IsUUID()` and migrating all deterministic seeds to RFC 4122 v4 compliance in commit `5d46d48`.
+
+---
+
+## D-011: Retention of ADMIN Role for Former Organization Owners Post-Transfer
+
+- **Date:** 2026-10-23
+- **Decision:** When an organization owner transfers ownership to another member (`POST /organizations/my/transfer-ownership`), the former owner retains the `ADMIN` role both globally (`User.role = Role.ADMIN`) and within tenant membership (`OrganizationMember.role = Role.ADMIN`), while the new owner's `User.role` and `OrganizationMember.role` are also updated/promoted to `ADMIN`. Dynamic ownership is transferred solely via `Organization.ownerId = newOwnerUserId`.
+- **Rationale:** Transferring ownership of an organization is an administrative delegation of tenant control (e.g., founder transferring executive ownership to an administrator or executive successor). Automatically demoting the former owner to a non-administrative role (`MEMBER` or `RECRUITER`) could cause immediate operational disruption, lock the primary stakeholder out of administrative configurations, or drop ongoing recruitment pipelines. Retaining `ADMIN` privileges guarantees continuity while dynamic ownership checks (`user.id === currentOrg.ownerId` per D-003) properly transition primary owner authority (e.g. org deletion, further ownership transfer).
+- **Evidence:** Implementation in `backend/src/organizations/services/organizations-core.service.ts` (`transferOwnership`), sequence diagram in `docs/architecture/security-rbac.md`, and integration test assertions in `backend/test/organizations/transfer-ownership.spec.ts`.
+- **Enforcement:** Verified via integration tests in `backend/test/organizations/transfer-ownership.spec.ts` asserting `ownerMember.role === "ADMIN"` and `oldOwnerUser.role === "ADMIN"` post-transfer.
+- **History:** Formalized during the RBAC transfer ownership audit and bug fix investigation on branch `fix/rbac-transfer-ownership-bugs` in commits `388d9c4` and `ac6e5fd`.

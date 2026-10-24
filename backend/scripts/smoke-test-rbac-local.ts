@@ -344,10 +344,14 @@ export async function runRbacSmokeTests(): Promise<void> {
     );
     const nonMemberBody = await nonMemberTransfer.json();
     assert(
-      nonMemberBody.error?.code === APP_ERROR_CODES.USER_NOT_IN_ORGANIZATION ||
+      nonMemberBody.error?.code ===
+        APP_ERROR_CODES.ORG_TRANSFER_TARGET_NOT_MEMBER ||
+        nonMemberBody.error?.code ===
+          APP_ERROR_CODES.USER_NOT_IN_ORGANIZATION ||
+        nonMemberBody.message?.includes("ORG_TRANSFER_TARGET_NOT_MEMBER") ||
         nonMemberBody.message?.includes("USER_NOT_IN_ORGANIZATION") ||
-        nonMemberBody.error === "USER_NOT_IN_ORGANIZATION",
-      `Expected USER_NOT_IN_ORGANIZATION error code, got ${JSON.stringify(nonMemberBody)}`,
+        nonMemberBody.message?.includes("Target user must be a member"),
+      `Expected member validation error code, got ${JSON.stringify(nonMemberBody)}`,
     );
 
     // Transfer ownership back to seed Admin for subsequent tests

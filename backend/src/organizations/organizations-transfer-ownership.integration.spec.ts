@@ -11,7 +11,11 @@ import {
   type MockTable,
 } from "../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../prisma/prisma.service";
-import { AppForbiddenException } from "../common/app-exception";
+import {
+  AppForbiddenException,
+  AppBadRequestException,
+  AppNotFoundException,
+} from "../common/app-exception";
 
 describe("Organizations Transfer Ownership Integration Specs", () => {
   const seedOwnerUserId = "00000000-0000-4000-8000-000000000001";
@@ -294,6 +298,98 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
 
       const org = organizationTable.store.find((o) => o.id === orgId);
       expect(org?.ownerId).toBe(seedTargetUserId);
+    });
+  });
+
+  describe("4. Edge Cases Verification", () => {
+    it("rejects transferOwnership to self with AppBadRequestException (ORG_CANNOT_TRANSFER_TO_SELF)", async () => {
+      await expect(
+        coreService.transferOwnership(seedOwnerUserId, seedOwnerUserId),
+      ).rejects.toThrow(AppBadRequestException);
+
+      try {
+        await coreService.transferOwnership(seedOwnerUserId, seedOwnerUserId);
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppBadRequestException);
+        expect((err as AppBadRequestException).code).toBe(
+          APP_ERROR_CODES.ORG_CANNOT_TRANSFER_TO_SELF,
+        );
+      }
+    });
+
+    it("rejects transferOwnership to non-member user ID with ORG_TRANSFER_TARGET_NOT_MEMBER", async () => {
+      const nonMemberUserId = "11111111-1111-4111-8111-111111111111";
+      await expect(
+        coreService.transferOwnership(seedOwnerUserId, nonMemberUserId),
+      ).rejects.toThrow(AppBadRequestException);
+
+      try {
+        await coreService.transferOwnership(seedOwnerUserId, nonMemberUserId);
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppBadRequestException);
+        expect((err as AppBadRequestException).code).toBe(
+          APP_ERROR_CODES.ORG_TRANSFER_TARGET_NOT_MEMBER,
+        );
+      }
+    });
+
+    it("rejects transferOwnership when caller user does not have an organizationId", async () => {
+      const userWithoutOrgId = "b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c99";
+      userTable.store.push({
+        id: userWithoutOrgId,
+        email: "no-org@haihire.local",
+        name: "No Org User",
+        role: "ADMIN",
+        organizationId: null,
+      });
+
+      await expect(
+        coreService.transferOwnership(userWithoutOrgId, seedTargetUserId),
+      ).rejects.toThrow(AppNotFoundException);
+
+      try {
+        await coreService.transferOwnership(userWithoutOrgId, seedTargetUserId);
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppNotFoundException);
+        expect((err as AppNotFoundException).code).toBe(
+          APP_ERROR_CODES.ORG_USER_NO_ORG,
+        );
+      }
+    });
+
+    it("executes sequential 2-hop transfer (A -> B -> C) correctly preserving ADMIN roles", async () => {
+      const userCId = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c99";
+
+      // Hop 1: A -> B
+      const hop1 = await coreService.transferOwnership(
+        seedOwnerUserId,
+        seedTargetUserId,
+      );
+      expect(hop1.success).toBe(true);
+      expect(hop1.newOwnerId).toBe(seedTargetUserId);
+      expect(organizationTable.store.find((o) => o.id === orgId)?.ownerId).toBe(
+        seedTargetUserId,
+      );
+
+      // Hop 2: B -> C
+      const hop2 = await coreService.transferOwnership(
+        seedTargetUserId,
+        userCId,
+      );
+      expect(hop2.success).toBe(true);
+      expect(hop2.newOwnerId).toBe(userCId);
+
+      // Verify final ownership and role invariants
+      const org = organizationTable.store.find((o) => o.id === orgId);
+      expect(org?.ownerId).toBe(userCId);
+
+      const userA = userTable.store.find((u) => u.id === seedOwnerUserId);
+      const userB = userTable.store.find((u) => u.id === seedTargetUserId);
+      const userC = userTable.store.find((u) => u.id === userCId);
+
+      expect(userA?.role).toBe("ADMIN");
+      expect(userB?.role).toBe("ADMIN");
+      expect(userC?.role).toBe("ADMIN");
     });
   });
 });

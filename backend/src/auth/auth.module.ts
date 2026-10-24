@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { AuthController } from "./auth.controller";
@@ -9,6 +9,7 @@ import { PermissionResolverService } from "./permission-resolver.service";
 import { RolesGuard } from "./roles.guard";
 import { env } from "../config/env";
 
+@Global()
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: "jwt" }),

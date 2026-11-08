@@ -9,7 +9,7 @@
 | Metric                           | Value                  | Reference / Notes                                   |
 | :------------------------------- | :--------------------- | :-------------------------------------------------- |
 | **Release Target**               | `v0.3.0`               | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
-| **Commit Baseline**              | `4598265` (2026-11-08) | Author: ntuan2502                                   |
+| **Commit Baseline**              | `f0cc819` (2026-11-08) | Author: ntuan2502                                   |
 | **Workspace Unit Tests**         | `963 passed`           | Backend: 540, Frontend: 423                         |
 | **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle                    |
 | **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates                    |

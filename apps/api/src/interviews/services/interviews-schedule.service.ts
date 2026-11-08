@@ -22,7 +22,7 @@ export type InterviewType =
 export type InterviewFormat = "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
 
 export interface InterviewUpdatePayload {
-  scheduledAt?: Temporal.Instant;
+  scheduledAt?: Date;
   type?: InterviewType;
   format?: InterviewFormat;
   linkOrLocation?: string;
@@ -30,7 +30,7 @@ export interface InterviewUpdatePayload {
   round?: number;
   notes?: string | null;
   scorecard?: string | null;
-  updatedAt?: Temporal.Instant;
+  updatedAt?: Date;
 }
 
 @Injectable()
@@ -92,7 +92,7 @@ export class InterviewsScheduleService {
       dto.scorecard,
     );
 
-    let scheduledInstant: Temporal.Instant;
+    let scheduledInstant: Date;
     if (dto.scheduledAt) {
       const parsed = new Date(dto.scheduledAt);
       scheduledInstant = toInstant(

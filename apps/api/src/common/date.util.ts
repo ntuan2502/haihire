@@ -8,7 +8,7 @@ export function toTimestamp(val: unknown): number {
   const parsed = new Date(String(val)).getTime();
   return Number.isNaN(parsed) ? 0 : parsed;
 }
-export function toInstant(d: Date | number = Date.now()): Temporal.Instant {
+export function toInstant(d: Date | number = Date.now()): Date {
   const ms = typeof d === "number" ? d : d.getTime();
-  return Temporal.Instant.fromEpochMilliseconds(ms);
+  return new Date(ms);
 }

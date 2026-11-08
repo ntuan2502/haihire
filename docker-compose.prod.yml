@@ -37,7 +37,7 @@ services:
           cpus: "0.5"
           memory: 512M
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -84,7 +84,11 @@ services:
           cpus: "0.1"
           memory: 64M
     healthcheck:
-      test: [ "CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi" ]
+      test:
+        [
+          "CMD-SHELL",
+          'if [ -n "$$REDIS_PASSWORD" ]; then redis-cli -a "$$REDIS_PASSWORD" ping; else redis-cli ping; fi',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -119,17 +123,21 @@ services:
           cpus: "0.2"
           memory: 128M
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:9000/minio/health/live || exit 1" ]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:9000/minio/health/live || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # ------------------------------------------------------------------------------
-  # 4. NestJS Production Backend Service
+  # 4. NestJS Production API Service
   # ------------------------------------------------------------------------------
-  backend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-backend:${IMAGE_TAG:-v1.0.0}
-    container_name: haihire-prod-backend
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-v1.0.0}
+    container_name: haihire-prod-api
     restart: unless-stopped
     env_file:
       - path: ./.env.production
@@ -164,7 +172,7 @@ services:
           cpus: "0.5"
           memory: 256M
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O - http://127.0.0.1:3001/health || exit 1" ]
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3001/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -173,11 +181,11 @@ services:
       - haihire-prod-network
 
   # ------------------------------------------------------------------------------
-  # 5. Next.js Production Frontend Service
+  # 5. Next.js Production Web Service
   # ------------------------------------------------------------------------------
-  frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-frontend:${IMAGE_TAG:-v1.0.0}
-    container_name: haihire-prod-frontend
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-web:${IMAGE_TAG:-v1.0.0}
+    container_name: haihire-prod-web
     restart: unless-stopped
     env_file:
       - path: ./.env.production
@@ -188,15 +196,15 @@ services:
       NODE_ENV: production
       PORT: 3000
       # Docker network overrides (internal service discovery)
-      INTERNAL_API_URL: http://backend:3001
-      BACKEND_HOST: backend
+      INTERNAL_API_URL: http://api:3001
+      BACKEND_HOST: api
       BACKEND_PORT: 3001
       MINIO_HOST: minio
       MINIO_PORT: 9000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
-      backend:
+      api:
         condition: service_healthy
     logging: *prod-logging
     deploy:
@@ -214,7 +222,7 @@ services:
   # 6. MinIO Orphan File Cleanup Cron Service (Runs daily at 04:00 AM)
   # ------------------------------------------------------------------------------
   orphan-cleanup:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-backend:${IMAGE_TAG:-v1.0.0}
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-v1.0.0}
     container_name: haihire-prod-orphan-cleanup
     restart: unless-stopped
     env_file:
@@ -267,7 +275,7 @@ services:
         limits:
           memory: 64M
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9091/-/healthy" ]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9091/-/healthy"]
       interval: 30s
       timeout: 5s
       retries: 3

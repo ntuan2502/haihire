@@ -23,8 +23,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/haihire-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/haihire-frontend
+  API_IMAGE: ghcr.io/${{ github.repository_owner }}/haihire-api
+  WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/haihire-web
 
 jobs:
   # ============================================================================
@@ -60,45 +60,45 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata for Backend
-        id: meta-backend
+      - name: Extract Docker metadata for API
+        id: meta-api
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.BACKEND_IMAGE }}
+          images: ${{ env.API_IMAGE }}
           tags: |
             type=raw,value=${{ steps.vars.outputs.TAG_NAME }}
             type=sha,prefix=sha-,format=short
             type=raw,value=latest,enable=${{ !contains(steps.vars.outputs.TAG_NAME, 'alpha') && !contains(steps.vars.outputs.TAG_NAME, 'beta') }}
 
-      - name: Build and push Backend Image
+      - name: Build and push API Image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/api/Dockerfile
           push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Extract Docker metadata for Frontend
-        id: meta-frontend
+      - name: Extract Docker metadata for Web
+        id: meta-web
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.FRONTEND_IMAGE }}
+          images: ${{ env.WEB_IMAGE }}
           tags: |
             type=raw,value=${{ steps.vars.outputs.TAG_NAME }}
             type=sha,prefix=sha-,format=short
             type=raw,value=latest,enable=${{ !contains(steps.vars.outputs.TAG_NAME, 'alpha') && !contains(steps.vars.outputs.TAG_NAME, 'beta') }}
 
-      - name: Build and push Frontend Image
+      - name: Build and push Web Image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/web/Dockerfile
           push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ steps.meta-web.outputs.tags }}
+          labels: ${{ steps.meta-web.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -120,10 +120,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Block Release on Backend CRITICAL Vulnerabilities (D-001 accepts High only)
+      - name: Block Release on API CRITICAL Vulnerabilities (D-015 verified)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.BACKEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
+          image-ref: ${{ env.API_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
           format: "table"
           exit-code: "1"
           severity: "CRITICAL"
@@ -132,30 +132,30 @@ jobs:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Trivy Scanner on Backend Image
+      - name: Run Trivy Scanner on API Image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.BACKEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
+          image-ref: ${{ env.API_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
           format: "sarif"
-          output: "trivy-backend-results.sarif"
+          output: "trivy-api-results.sarif"
           severity: "CRITICAL,HIGH"
           ignore-unfixed: true
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Backend SARIF Report (Code Scanning)
+      - name: Upload API SARIF Report (Code Scanning)
         uses: github/codeql-action/upload-sarif@v3
         continue-on-error: false
         if: always()
         with:
-          sarif_file: "trivy-backend-results.sarif"
-          category: "trivy-backend"
+          sarif_file: "trivy-api-results.sarif"
+          category: "trivy-api"
 
-      - name: Block Release on Frontend CRITICAL Vulnerabilities (D-001 accepts High only)
+      - name: Block Release on Web CRITICAL Vulnerabilities (D-015 verified)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.FRONTEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
+          image-ref: ${{ env.WEB_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
           format: "table"
           exit-code: "1"
           severity: "CRITICAL"
@@ -164,26 +164,26 @@ jobs:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Trivy Scanner on Frontend Image
+      - name: Run Trivy Scanner on Web Image
         uses: aquasecurity/trivy-action@master
         if: always()
         with:
-          image-ref: ${{ env.FRONTEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
+          image-ref: ${{ env.WEB_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}
           format: "sarif"
-          output: "trivy-frontend-results.sarif"
+          output: "trivy-web-results.sarif"
           severity: "CRITICAL,HIGH"
           ignore-unfixed: true
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Frontend SARIF Report (Code Scanning)
+      - name: Upload Web SARIF Report (Code Scanning)
         uses: github/codeql-action/upload-sarif@v3
         continue-on-error: false
         if: always()
         with:
-          sarif_file: "trivy-frontend-results.sarif"
-          category: "trivy-frontend"
+          sarif_file: "trivy-web-results.sarif"
+          category: "trivy-web"
 
       - name: Archive SARIF Vulnerability Reports
         uses: actions/upload-artifact@v6
@@ -220,8 +220,8 @@ jobs:
             ## 🚀 HaiHire Enterprise ATS ${{ needs.publish-images.outputs.tag-name }}
 
             Pre-built, immutable production container images have been published to GitHub Container Registry (GHCR):
-            - `${{ env.BACKEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}`
-            - `${{ env.FRONTEND_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}`
+            - `${{ env.API_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}`
+            - `${{ env.WEB_IMAGE }}:${{ needs.publish-images.outputs.tag-name }}`
 
             ### 📦 Manual Deployment Procedure
             ```bash

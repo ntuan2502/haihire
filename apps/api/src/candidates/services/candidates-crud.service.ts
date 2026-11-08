@@ -197,11 +197,11 @@ export class CandidatesCrudService {
       };
     }
 
-    let dateOfBirth: Temporal.Instant | null = null;
+    let dateOfBirth: Date | null = null;
     if (dto.dateOfBirth && dto.dateOfBirth.trim() && dto.dateOfBirth !== "—") {
       const parsed = new Date(dto.dateOfBirth.trim());
       if (!isNaN(parsed.getTime())) {
-        dateOfBirth = Temporal.Instant.fromEpochMilliseconds(parsed.getTime());
+        dateOfBirth = parsed;
       }
     }
 
@@ -262,7 +262,7 @@ export class CandidatesCrudService {
       ) {
         const parsed = new Date(dto.dateOfBirth.trim());
         updatePayload.dateOfBirth = !isNaN(parsed.getTime())
-          ? Temporal.Instant.fromEpochMilliseconds(parsed.getTime())
+          ? parsed
           : null;
       } else {
         updatePayload.dateOfBirth = null;

@@ -3,10 +3,10 @@
   "version": "0.3.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter api --filter web --parallel run dev",
+    "dev": "turbo run dev",
     "dev:api": "pnpm --filter api run dev",
     "dev:web": "pnpm --filter web run dev",
-    "start": "pnpm --filter api --filter web --parallel run start",
+    "start": "turbo run start",
     "start:api": "pnpm --filter api run start",
     "start:web": "pnpm --filter web run start",
     "build": "turbo run build",

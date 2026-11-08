@@ -97,9 +97,7 @@ export class OrganizationsInvitesService {
 
     const expiresAt =
       expiresInDays !== null
-        ? Temporal.Instant.fromEpochMilliseconds(
-            Date.now() + expiresInDays * 24 * 60 * 60 * 1000,
-          )
+        ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
         : null;
 
     // Calculate max uses

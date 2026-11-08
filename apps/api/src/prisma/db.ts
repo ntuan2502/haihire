@@ -30,7 +30,7 @@ dotenv.config();
 
 export type DeepPartialWithTemporal<T> = {
   [P in keyof T]?: T[P] extends Date
-    ? Date | Temporal.Instant | string | number | null
+    ? Date | string | number | null
     : T[P] | unknown;
 };
 

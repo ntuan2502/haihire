@@ -1652,7 +1652,7 @@ export async function runSeed(): Promise<void> {
     referrerDomain: string | null;
     ipHash: string;
     userAgent: string;
-    createdAt: Temporal.Instant;
+    createdAt: Date;
   }> = [];
 
   for (const item of SEED_TRACKING_LINKS) {
@@ -1796,7 +1796,7 @@ export async function runSeed(): Promise<void> {
     firstName: string;
     lastName: string;
     gender: "MALE" | "FEMALE" | "OTHER";
-    dateOfBirth: Temporal.Instant;
+    dateOfBirth: Date;
     email: string;
     phone: string;
     notes: string;
@@ -1804,8 +1804,8 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
-    createdAt: Temporal.Instant;
-    updatedAt: Temporal.Instant;
+    createdAt: Date;
+    updatedAt: Date;
   }> = [];
 
   const applicationsToInsert: Array<{
@@ -1829,14 +1829,14 @@ export async function runSeed(): Promise<void> {
     utmCampaign: string | null;
     utmTerm: string | null;
     utmContent: string | null;
-    createdAt: Temporal.Instant;
-    updatedAt: Temporal.Instant;
+    createdAt: Date;
+    updatedAt: Date;
   }> = [];
 
   const interviewsToInsert: Array<{
     id: string;
     applicationId: string;
-    scheduledAt: Temporal.Instant;
+    scheduledAt: Date;
     type:
       | "HR_SCREENING"
       | "TECHNICAL"
@@ -1849,7 +1849,7 @@ export async function runSeed(): Promise<void> {
     round: number;
     scorecard: string | null;
     notes: string | null;
-    updatedAt: Temporal.Instant;
+    updatedAt: Date;
   }> = [];
 
   function getCandidateDemographics(name: string, index: number) {

@@ -33,20 +33,20 @@ describe("toInstant", () => {
   it("should convert Date to Temporal.Instant", () => {
     const d = new Date("2026-09-21T12:00:00.000Z");
     const inst = toInstant(d);
-    expect(inst.epochMilliseconds).toBe(d.getTime());
+    expect(inst.getTime()).toBe(d.getTime());
   });
 
   it("should convert timestamp number to Temporal.Instant", () => {
     const ts = 1789948800000;
     const inst = toInstant(ts);
-    expect(inst.epochMilliseconds).toBe(ts);
+    expect(inst.getTime()).toBe(ts);
   });
 
   it("should default to current time when called without arguments", () => {
     const before = Date.now();
     const inst = toInstant();
     const after = Date.now();
-    expect(inst.epochMilliseconds).toBeGreaterThanOrEqual(before);
-    expect(inst.epochMilliseconds).toBeLessThanOrEqual(after);
+    expect(inst.getTime()).toBeGreaterThanOrEqual(before);
+    expect(inst.getTime()).toBeLessThanOrEqual(after);
   });
 });

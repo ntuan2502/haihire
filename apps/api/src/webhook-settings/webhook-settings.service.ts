@@ -257,7 +257,7 @@ export class WebhookSettingsService {
       chatId?: string | null;
       isEnabled?: boolean;
       updatedBy?: string;
-      updatedAt: Temporal.Instant;
+      updatedAt: Date;
     }
 
     const updatePayload: WebhookUpdatePayload = {

@@ -93,14 +93,14 @@ services:
       timeout: 5s
       retries: 5
 
-  # NestJS Backend Service
-  backend:
+  # NestJS API Service
+  api:
     profiles: ["app"]
     init: true
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: haihire-backend
+    container_name: haihire-api
     restart: unless-stopped
     env_file:
       - path: ./.env
@@ -139,14 +139,14 @@ services:
     networks:
       - haihire-network
 
-  # Next.js Frontend Service
-  frontend:
+  # Next.js Web Service
+  web:
     profiles: ["app"]
     init: true
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    container_name: haihire-frontend
+    container_name: haihire-web
     restart: unless-stopped
     env_file:
       - path: ./.env
@@ -154,15 +154,15 @@ services:
     environment:
       PORT: 3000
       NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-3001}
-      INTERNAL_API_URL: http://backend:3001
-      BACKEND_HOST: backend
+      INTERNAL_API_URL: http://api:3001
+      BACKEND_HOST: api
       BACKEND_PORT: 3001
       MINIO_HOST: minio
       MINIO_PORT: 9000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
-      backend:
+      api:
         condition: service_healthy
     logging: *default-logging
     networks:

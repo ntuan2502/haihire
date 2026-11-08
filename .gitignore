@@ -61,3 +61,7 @@ Thumbs.db
 docker-compose.override.yml
 scratch/
 **/scratch/
+
+# Turborepo
+.turbo/
+**/.turbo/

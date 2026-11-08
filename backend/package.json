@@ -1,7 +1,7 @@
 {
   "name": "backend",
+  "version": "0.3.0",
   "private": true,
-  "packageManager": "pnpm@12.6.0",
   "type": "module",
   "scripts": {
     "dev": "node --import tsx --watch --watch-path=src src/main.ts",
@@ -15,8 +15,7 @@
     "db:seed": "node --import tsx src/prisma/seed.ts",
     "db:verify": "prisma validate --schema src/prisma/schema.prisma",
     "db:status": "prisma migrate status --schema src/prisma/schema.prisma",
-    "contract:emit": "prisma generate --schema src/prisma/schema.prisma",
-    "check:prod-email-provider": "tsx scripts/check-prod-email-provider.ts"
+    "db:generate": "prisma generate --schema src/prisma/schema.prisma"
   },
   "dependencies": {
     "@haihire/shared": "workspace:*",
@@ -43,25 +42,24 @@
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.6.7"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.3.0",
-    "@types/node": "^26.6.5",
+    "@types/node": "catalog:",
     "@types/nodemailer": "^8.0.2",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.23.1",
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-v8": "catalog:",
     "esbuild": "^0.28.2",
-    "eslint": "^10.13.0",
+    "eslint": "catalog:",
     "globals": "^17.13.0",
     "prisma": "7.10.1",
-    "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
     "typescript-eslint": "^8.72.0",
-    "vitest": "5.0.5"
-  },
-  "version": "0.3.0"
+    "vitest": "catalog:"
+  }
 }

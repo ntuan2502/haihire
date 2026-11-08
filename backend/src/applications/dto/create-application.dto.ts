@@ -13,6 +13,14 @@ export class CreateApplicationDto {
   @IsOptional()
   candidateName?: string;
 
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+
+  @IsString()
+  @IsOptional()
+  lastName?: string;
+
   @IsEmail()
   @IsOptional()
   candidateEmail?: string;

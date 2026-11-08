@@ -170,10 +170,24 @@ export class ApplicationsSagaService {
           if (existingCandidate) {
             candidateId = existingCandidate.id;
           } else {
+            let firstName = dto.firstName?.trim() || null;
+            let lastName = dto.lastName?.trim() || null;
+            if (!firstName && !lastName && dto.candidateName) {
+              const parts = dto.candidateName.trim().split(/\s+/);
+              if (parts.length > 1) {
+                firstName = parts[0];
+                lastName = parts.slice(1).join(" ");
+              } else {
+                firstName = parts[0] || null;
+              }
+            }
+
             const newCandidate = await tx.orm.public.Candidate.create({
               id: crypto.randomUUID(),
               organizationId: orgId,
               name: dto.candidateName.trim(),
+              firstName,
+              lastName,
               email,
               phone: dto.candidatePhone?.trim() || null,
               notes: dto.notes || null,

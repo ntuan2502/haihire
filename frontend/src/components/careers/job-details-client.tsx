@@ -19,7 +19,6 @@ import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { buildCandidateNotes } from "@/lib/utils";
 import {
   getJobTypeLabel,
   getWorkplaceLabel,
@@ -166,19 +165,15 @@ export function JobDetailsClient({
       const formData = new FormData();
       formData.append("jobId", job.id);
       formData.append("candidateName", fullName);
+      formData.append("firstName", firstName.trim());
+      formData.append("lastName", lastName.trim());
       formData.append("candidateEmail", candidateEmail.trim());
-
-      const formattedNotes = buildCandidateNotes({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        customNotes: notes.trim() || undefined,
-      });
 
       if (candidatePhone.trim()) {
         formData.append("candidatePhone", candidatePhone.trim());
       }
-      if (formattedNotes) {
-        formData.append("notes", formattedNotes);
+      if (notes.trim()) {
+        formData.append("notes", notes.trim());
       }
       formData.append("resume", resumeFile);
 

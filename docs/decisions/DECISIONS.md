@@ -147,3 +147,12 @@
 - **Decision:** Webhook tests and deliveries use one HTTPS transport with a five-second deadline. Telegram and Discord require their provider URLs. The generic provider accepts public HTTPS destinations. Private destinations and redirects are rejected, including when a previously saved setting is used.
 - **Rationale:** Tenant-supplied URLs run from the backend network. DNS answers can change between configuration and delivery, so destination checks must cover the connection itself.
 - **Enforcement:** The transport validates the DNS addresses used by the connection while preserving the destination hostname for TLS. It discards response bodies and returns only a sanitized failure or HTTP status. The HTTP isolation suite and transport tests verify the policy.
+
+---
+
+## D-014: Metrics Endpoint Requires a Scrape Token in Production
+
+- **Date:** 2026-11-08
+- **Decision:** `GET /metrics` requires `Authorization: Bearer <METRICS_TOKEN>` whenever `METRICS_TOKEN` is configured. In production without a token, the endpoint returns 404. Development and test without a token remain open.
+- **Rationale:** Metrics expose queue depths, route latency, and failure rates, which reveal internal topology and activity to unauthenticated callers. A shared scrape token fits Prometheus `authorization` scrape configuration without adding user sessions to the metrics path.
+- **Enforcement:** `AppController` compares SHA-256 digests with `timingSafeEqual`. `METRICS_TOKEN` is validated in `backend/src/config/env.ts` (minimum 32 characters). `app.controller.spec.ts` covers the hidden, rejected, and accepted cases.

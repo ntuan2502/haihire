@@ -13,7 +13,7 @@
 | **Workspace Unit Tests**         | `963 passed`                      | Backend: 540, Frontend: 423                         |
 | **E2E Playwright Specs**         | `23 specs`                        | End-to-end recruitment lifecycle                    |
 | **CI Architecture Gates**        | `16/16 gates`                     | `pnpm check:all` mandatory gates                    |
-| **Environment Configuration**    | `55 keys`                         | 100% key parity & codebase sync                     |
+| **Environment Configuration**    | `56 keys`                         | 100% key parity & codebase sync                     |
 | **Pre-Release Dependencies**     | `3 packages (covered by ADR-001)` | Prisma 8 RC & effect override                       |
 | **Documentation Link Integrity** | `100% valid`                      | Audited via `pnpm lint:doc-links`                   |
 

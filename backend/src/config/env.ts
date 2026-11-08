@@ -78,6 +78,13 @@ const backendEnvSchema = z
       (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
       z.string().optional(),
     ),
+    METRICS_TOKEN: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z
+        .string()
+        .min(32, "METRICS_TOKEN must be at least 32 characters")
+        .optional(),
+    ),
     SEED_DEMO_ON_BOOT: z
       .enum(["true", "false", "1", "0"])
       .default("false")

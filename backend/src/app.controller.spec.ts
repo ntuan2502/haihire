@@ -3,6 +3,7 @@ import { AppController } from "./app.controller";
 import type { AppService, HealthCheckResult } from "./app.service";
 import type { MetricsService } from "./metrics/metrics.service";
 import { ServiceUnavailableException } from "@nestjs/common";
+import { env } from "./config/env";
 
 describe("AppController", () => {
   const mockMetrics = {
@@ -63,7 +64,9 @@ describe("AppController", () => {
       mockService as unknown as AppService,
       mockMetrics as unknown as MetricsService,
     );
-    await expect(controller.getHealth()).rejects.toThrow(ServiceUnavailableException);
+    await expect(controller.getHealth()).rejects.toThrow(
+      ServiceUnavailableException,
+    );
 
     try {
       await controller.getHealth();
@@ -83,5 +86,47 @@ describe("AppController", () => {
       mockMetrics as unknown as MetricsService,
     );
     expect(await controller.getMetrics()).toBe("# HELP metrics\n");
+  });
+
+  it("hides production metrics when the scrape token is absent", async () => {
+    const previousMode = env.NODE_ENV;
+    const previousToken = env.METRICS_TOKEN;
+    env.NODE_ENV = "production";
+    env.METRICS_TOKEN = undefined;
+    const controller = new AppController(
+      {} as AppService,
+      mockMetrics as unknown as MetricsService,
+    );
+    try {
+      await expect(controller.getMetrics()).rejects.toMatchObject({
+        status: 404,
+      });
+    } finally {
+      env.NODE_ENV = previousMode;
+      env.METRICS_TOKEN = previousToken;
+    }
+  });
+
+  it("requires the configured metrics bearer token", async () => {
+    const previousToken = env.METRICS_TOKEN;
+    const token = "a".repeat(32);
+    env.METRICS_TOKEN = token;
+    const controller = new AppController(
+      {} as AppService,
+      mockMetrics as unknown as MetricsService,
+    );
+    try {
+      await expect(controller.getMetrics()).rejects.toMatchObject({
+        status: 401,
+      });
+      await expect(
+        controller.getMetrics(`Bearer ${"b".repeat(32)}`),
+      ).rejects.toMatchObject({ status: 401 });
+      await expect(controller.getMetrics(`Bearer ${token}`)).resolves.toBe(
+        "# HELP metrics\n",
+      );
+    } finally {
+      env.METRICS_TOKEN = previousToken;
+    }
   });
 });

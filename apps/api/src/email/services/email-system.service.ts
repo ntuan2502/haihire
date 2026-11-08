@@ -117,23 +117,25 @@ export class EmailSystemService {
     });
 
     const logId = crypto.randomUUID();
-    const log = await this.prisma.db.orm.public.EmailLog.create({
-      id: logId,
-      scope: "SYSTEM",
-      organizationId: dto.organizationId || null,
-      candidateId: null,
-      applicationId: null,
-      senderId: null,
-      senderName: config.fromName,
-      senderEmail: config.fromEmail,
-      recipientEmail: dto.to,
-      recipientName: dto.recipientName || dto.to,
-      templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
-      subject: renderedSubject,
-      body: renderedBody,
-      status: sendResult.status,
-      errorMessage: sendResult.error || null,
-      updatedAt: toInstant(),
+    const log = await this.prisma.emailLog.create({
+      data: {
+        id: logId,
+        scope: "SYSTEM",
+        organizationId: dto.organizationId || null,
+        candidateId: null,
+        applicationId: null,
+        senderId: null,
+        senderName: config.fromName,
+        senderEmail: config.fromEmail,
+        recipientEmail: dto.to,
+        recipientName: dto.recipientName || dto.to,
+        templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
+        subject: renderedSubject,
+        body: renderedBody,
+        status: sendResult.status,
+        errorMessage: sendResult.error || null,
+        updatedAt: toInstant(),
+      },
     });
 
     return {
@@ -170,11 +172,9 @@ export class EmailSystemService {
   async getSystemLogs(options?: GetLogsOptions) {
     const opts = options || {};
 
-    const query = this.prisma.db.orm.public.EmailLog.where((l) =>
-      l.scope.eq("SYSTEM"),
-    );
-
-    const logs = await query.all();
+    const logs = await this.prisma.emailLog.findMany({
+      where: { scope: "SYSTEM" },
+    });
     let mapped = logs
       .map((l) => ({
         ...l,

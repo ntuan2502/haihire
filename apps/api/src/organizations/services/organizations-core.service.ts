@@ -27,12 +27,10 @@ export class OrganizationsCoreService {
   async create(userId: string, dto: CreateOrgDto) {
     const normalizedSlug = dto.slug.toLowerCase().trim();
 
-    const existing = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "slug",
-    )
-      .where((o) => o.slug.eq(normalizedSlug))
-      .first();
+    const existing = await this.prisma.organization.findFirst({
+      where: { slug: normalizedSlug },
+      select: { id: true, slug: true },
+    });
 
     if (existing) {
       throw new AppConflictException(
@@ -43,7 +41,8 @@ export class OrganizationsCoreService {
     }
 
     const orgId = crypto.randomUUID();
-    await this.prisma.db.orm.public.Organization.upsert({
+    await this.prisma.organization.upsert({
+      where: { slug: normalizedSlug },
       create: {
         id: orgId,
         name: dto.name.trim(),
@@ -54,18 +53,18 @@ export class OrganizationsCoreService {
       update: {
         ownerId: userId,
       },
-      conflictOn: { slug: normalizedSlug },
     });
 
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-      "createdAt",
-    )
-      .where((o) => o.slug.eq(normalizedSlug))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { slug: normalizedSlug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+        createdAt: true,
+      },
+    });
 
     if (!org) {
       throw new AppNotFoundException(
@@ -76,7 +75,8 @@ export class OrganizationsCoreService {
 
     // Record membership in OrganizationMember
     const memberId = crypto.randomUUID();
-    await this.prisma.db.orm.public.OrganizationMember.upsert({
+    await this.prisma.organizationMember.upsert({
+      where: { id: memberId },
       create: {
         id: memberId,
         organizationId: org.id,
@@ -85,13 +85,15 @@ export class OrganizationsCoreService {
         updatedAt: toInstant(),
       },
       update: {},
-      conflictOn: { id: memberId },
     });
 
     // Link current user to this organization and promote to ADMIN (Owner)
-    await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
-      organizationId: org.id,
-      role: "ADMIN",
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        organizationId: org.id,
+        role: "ADMIN",
+      },
     });
 
     return {
@@ -101,59 +103,63 @@ export class OrganizationsCoreService {
   }
 
   async getMyOrg(userId: string) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        organizationId: true,
+      },
+    });
 
     if (!user || !user.organizationId) {
       return null;
     }
 
-    return this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-      "createdAt",
-    )
-      .where((o) => o.id.eq(user.organizationId as string))
-      .first();
+    return this.prisma.organization.findFirst({
+      where: { id: user.organizationId as string },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+        createdAt: true,
+      },
+    });
   }
 
   async getMyOrgs(userId: string) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        organizationId: true,
+      },
+    });
 
     if (!user) {
       return [];
     }
 
-    const ownedOrgs = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-      "createdAt",
-    )
-      .where((o) => o.ownerId.eq(userId))
-      .all();
+    const ownedOrgs = await this.prisma.organization.findMany({
+      where: { ownerId: userId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+        createdAt: true,
+      },
+    });
 
     // Query all persistent memberships for this user
-    const userMemberships =
-      await this.prisma.db.orm.public.OrganizationMember.select(
-        "id",
-        "organizationId",
-        "role",
-      )
-        .where((m) => m.userId.eq(userId))
-        .all();
+    const userMemberships = await this.prisma.organizationMember.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        organizationId: true,
+        role: true,
+      },
+    });
 
     const memberOrgIds = [
       ...new Set([
@@ -164,28 +170,30 @@ export class OrganizationsCoreService {
 
     const memberOrgs =
       memberOrgIds.length > 0
-        ? await this.prisma.db.orm.public.Organization.select(
-            "id",
-            "name",
-            "slug",
-            "ownerId",
-            "createdAt",
-          )
-            .where((o) => o.id.in(memberOrgIds))
-            .all()
+        ? await this.prisma.organization.findMany({
+            where: { id: { in: memberOrgIds } },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              ownerId: true,
+              createdAt: true,
+            },
+          })
         : [];
 
     return [...ownedOrgs, ...memberOrgs];
   }
 
   async switchOrg(userId: string, targetOrgId: string) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-      "role",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        organizationId: true,
+        role: true,
+      },
+    });
 
     if (!user) {
       throw new AppNotFoundException(
@@ -194,15 +202,16 @@ export class OrganizationsCoreService {
       );
     }
 
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-      "createdAt",
-    )
-      .where((o) => o.id.eq(targetOrgId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: targetOrgId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+        createdAt: true,
+      },
+    });
 
     if (!org) {
       throw new AppNotFoundException(
@@ -213,14 +222,14 @@ export class OrganizationsCoreService {
 
     // Security: User must be owner, have an OrganizationMember record, or currently belong to the target org
     const isOwner = Boolean(org.ownerId && org.ownerId === userId);
-    const userMemberships =
-      await this.prisma.db.orm.public.OrganizationMember.select(
-        "id",
-        "organizationId",
-        "role",
-      )
-        .where((m) => m.userId.eq(userId))
-        .all();
+    const userMemberships = await this.prisma.organizationMember.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        organizationId: true,
+        role: true,
+      },
+    });
 
     const membership = userMemberships.find(
       (m) => m.organizationId === targetOrgId,
@@ -244,7 +253,8 @@ export class OrganizationsCoreService {
     // Self-healing: ensure membership record exists in OrganizationMember
     if (!membership) {
       const memberId = crypto.randomUUID();
-      await this.prisma.db.orm.public.OrganizationMember.upsert({
+      await this.prisma.organizationMember.upsert({
+        where: { id: memberId },
         create: {
           id: memberId,
           organizationId: targetOrgId,
@@ -253,24 +263,27 @@ export class OrganizationsCoreService {
           updatedAt: toInstant(),
         },
         update: {},
-        conflictOn: { id: memberId },
       });
     }
 
-    await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
-      organizationId: org.id,
-      role: targetRole,
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        organizationId: org.id,
+        role: targetRole,
+      },
     });
 
-    const updatedUser = await this.prisma.db.orm.public.User.select(
-      "id",
-      "email",
-      "name",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const updatedUser = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     return {
       success: true,
@@ -280,13 +293,14 @@ export class OrganizationsCoreService {
   }
 
   async updateMyOrg(userId: string, dto: UpdateOrgDto) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     if (!user || !user.organizationId) {
       throw new AppNotFoundException(
@@ -304,12 +318,13 @@ export class OrganizationsCoreService {
 
     const orgId = user.organizationId as string;
 
-    const currentOrg = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "slug",
-    )
-      .where((o) => o.id.eq(orgId))
-      .first();
+    const currentOrg = await this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        slug: true,
+      },
+    });
 
     if (!currentOrg) {
       throw new AppNotFoundException(
@@ -321,11 +336,10 @@ export class OrganizationsCoreService {
     if (dto.slug) {
       const normalizedSlug = dto.slug.toLowerCase().trim();
       if (normalizedSlug !== currentOrg.slug) {
-        const existing = await this.prisma.db.orm.public.Organization.select(
-          "id",
-        )
-          .where((o) => o.slug.eq(normalizedSlug))
-          .first();
+        const existing = await this.prisma.organization.findFirst({
+          where: { slug: normalizedSlug },
+          select: { id: true },
+        });
 
         if (existing) {
           throw new AppConflictException(
@@ -342,30 +356,33 @@ export class OrganizationsCoreService {
     if (dto.slug) updateData.slug = dto.slug.toLowerCase().trim();
 
     if (Object.keys(updateData).length > 0) {
-      await this.prisma.db.orm.public.Organization.where((o) =>
-        o.id.eq(orgId),
-      ).update(updateData);
+      await this.prisma.organization.update({
+        where: { id: orgId },
+        data: updateData,
+      });
     }
 
-    return this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-      "createdAt",
-    )
-      .where((o) => o.id.eq(orgId))
-      .first();
+    return this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+        createdAt: true,
+      },
+    });
   }
 
   async deleteMyOrg(userId: string) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     if (!user || !user.organizationId) {
       throw new AppNotFoundException(
@@ -376,13 +393,14 @@ export class OrganizationsCoreService {
 
     const orgId = user.organizationId as string;
 
-    const currentOrg = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "ownerId",
-      "name",
-    )
-      .where((o) => o.id.eq(orgId))
-      .first();
+    const currentOrg = await this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+      },
+    });
 
     if (!currentOrg) {
       throw new AppNotFoundException(
@@ -415,19 +433,20 @@ export class OrganizationsCoreService {
     // Execute atomic cleanup of users, memberships, and organization inside a single transaction
     await runInTransaction(this.prisma, async (tx) => {
       // Unlink users from this org
-      await tx.orm.public.User.where((u) =>
-        u.organizationId.eq(orgId),
-      ).updateAll({
-        organizationId: null,
+      await tx.user.updateMany({
+        where: { organizationId: orgId },
+        data: { organizationId: null },
       });
 
       // Clean up all memberships in this org
-      await tx.orm.public.OrganizationMember.where((m) =>
-        m.organizationId.eq(orgId),
-      ).deleteAll();
+      await tx.organizationMember.deleteMany({
+        where: { organizationId: orgId },
+      });
 
       // Delete organization
-      await tx.orm.public.Organization.where((o) => o.id.eq(orgId)).delete();
+      await tx.organization.delete({
+        where: { id: orgId },
+      });
     });
 
     return { success: true, message: "Organization deleted successfully" };
@@ -452,10 +471,11 @@ export class OrganizationsCoreService {
         "Target user must be a member of the organization",
       );
 
-    const orgId = await this.prisma.executeTx(async (tx) => {
-      const user = await tx.orm.public.User.select("organizationId")
-        .where((u) => u.id.eq(userId))
-        .first();
+    const orgId = await runInTransaction(this.prisma, async (tx) => {
+      const user = await tx.user.findFirst({
+        where: { id: userId },
+        select: { organizationId: true },
+      });
 
       if (!user?.organizationId) {
         throw new AppNotFoundException(
@@ -465,9 +485,10 @@ export class OrganizationsCoreService {
       }
       const organizationId = user.organizationId;
 
-      const currentOrg = await tx.orm.public.Organization.select("ownerId")
-        .where((o) => o.id.eq(organizationId))
-        .first();
+      const currentOrg = await tx.organization.findFirst({
+        where: { id: organizationId },
+        select: { ownerId: true },
+      });
 
       if (!currentOrg) {
         throw new AppNotFoundException(
@@ -479,57 +500,50 @@ export class OrganizationsCoreService {
         throw ownerRequired();
       }
 
-      const targetMembership = await tx.orm.public.OrganizationMember.select(
-        "id",
-      )
-        .where((m) => m.organizationId.eq(organizationId))
-        .where((m) => m.userId.eq(newOwnerUserId))
-        .first();
+      const targetMembership = await tx.organizationMember.findFirst({
+        where: { organizationId, userId: newOwnerUserId },
+        select: { id: true },
+      });
 
       if (!targetMembership) {
-        const target = await tx.orm.public.User.select("id")
-          .where((u) => u.id.eq(newOwnerUserId))
-          .where((u) => u.organizationId.eq(organizationId))
-          .first();
+        const target = await tx.user.findFirst({
+          where: { id: newOwnerUserId, organizationId },
+          select: { id: true },
+        });
         if (!target) {
           throw memberRequired();
         }
       }
 
       const now = toInstant();
-      // updateAll keeps the owner and tenant predicates in the SQL write.
-      const [transferred] = await tx.orm.public.Organization.where((o) =>
-        o.id.eq(organizationId),
-      )
-        .where((o) => o.ownerId.eq(userId))
-        .updateAll({ ownerId: newOwnerUserId, updatedAt: now });
-      if (!transferred) {
+      const transferred = await tx.organization.updateMany({
+        where: { id: organizationId, ownerId: userId },
+        data: { ownerId: newOwnerUserId, updatedAt: now },
+      });
+      if (transferred.count === 0) {
         throw ownerRequired();
       }
 
-      // User.role mirrors the active organization's role only.
-      const [promotedUser] = await tx.orm.public.User.where((u) =>
-        u.id.eq(newOwnerUserId),
-      )
-        .where((u) => u.organizationId.eq(organizationId))
-        .updateAll({ role: "ADMIN", updatedAt: now });
+      const promotedUser = await tx.user.updateMany({
+        where: { id: newOwnerUserId, organizationId },
+        data: { role: "ADMIN", updatedAt: now },
+      });
 
       if (targetMembership) {
-        const [promotedMembership] =
-          await tx.orm.public.OrganizationMember.where((m) =>
-            m.id.eq(targetMembership.id),
-          )
-            .where((m) => m.organizationId.eq(organizationId))
-            .updateAll({ role: "ADMIN", updatedAt: now });
-        if (!promotedMembership) {
+        const promotedMembership = await tx.organizationMember.updateMany({
+          where: { id: targetMembership.id, organizationId },
+          data: { role: "ADMIN", updatedAt: now },
+        });
+        if (promotedMembership.count === 0) {
           throw memberRequired();
         }
       } else {
-        if (!promotedUser) {
+        if (promotedUser.count === 0) {
           throw memberRequired();
         }
         const newMemberId = crypto.randomUUID();
-        await tx.orm.public.OrganizationMember.upsert({
+        await tx.organizationMember.upsert({
+          where: { id: newMemberId },
           create: {
             id: newMemberId,
             organizationId,
@@ -541,7 +555,6 @@ export class OrganizationsCoreService {
             role: "ADMIN",
             updatedAt: now,
           },
-          conflictOn: { id: newMemberId },
         });
       }
 
@@ -550,7 +563,7 @@ export class OrganizationsCoreService {
         userId,
         "OWNERSHIP_TRANSFERRED",
         "ORGANIZATION",
-        { oldOwnerId: userId, newOwnerId: newOwnerUserId },
+        { previousOwnerId: userId, newOwnerId: newOwnerUserId },
       );
 
       return organizationId;
@@ -567,14 +580,15 @@ export class OrganizationsCoreService {
   }
 
   async getPublicOrg(slug: string) {
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "createdAt",
-    )
-      .where((o) => o.slug.eq(slug))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        createdAt: true,
+      },
+    });
 
     if (!org) {
       throw new AppNotFoundException(

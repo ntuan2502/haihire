@@ -50,24 +50,26 @@ export class EmailSettingsService {
       return null;
     }
 
-    let settings = await this.prisma.db.orm.public.EmailSetting.where((s) =>
-      s.organizationId.eq(targetOrgId),
-    ).first();
+    let settings = await this.prisma.emailSetting.findFirst({
+      where: { organizationId: targetOrgId },
+    });
 
     if (!settings) {
-      settings = await this.prisma.db.orm.public.EmailSetting.create({
-        id: crypto.randomUUID(),
-        organizationId: targetOrgId,
-        provider: "SIMULATED",
-        fromName: "Recruitment Team",
-        fromEmail: "careers@workspace.com",
-        smtpHost: null,
-        smtpPort: null,
-        smtpUser: null,
-        smtpPass: null,
-        resendApiKey: null,
-        sendgridApiKey: null,
-        updatedAt: toInstant(),
+      settings = await this.prisma.emailSetting.create({
+        data: {
+          id: crypto.randomUUID(),
+          organizationId: targetOrgId,
+          provider: "SIMULATED",
+          fromName: "Recruitment Team",
+          fromEmail: "careers@workspace.com",
+          smtpHost: null,
+          smtpPort: null,
+          smtpUser: null,
+          smtpPass: null,
+          resendApiKey: null,
+          sendgridApiKey: null,
+          updatedAt: toInstant(),
+        },
       });
     }
 
@@ -84,9 +86,9 @@ export class EmailSettingsService {
       return null;
     }
 
-    const settings = await this.prisma.db.orm.public.EmailSetting.where((s) =>
-      s.organizationId.eq(organizationId),
-    ).first();
+    const settings = await this.prisma.emailSetting.findFirst({
+      where: { organizationId },
+    });
 
     if (!settings) {
       return null;
@@ -152,9 +154,9 @@ export class EmailSettingsService {
     userOrgId?: string | null,
   ) {
     const targetOrgId = this.resolveOrgId(userOrgId, organizationId, true)!;
-    const rawCurrent = await this.prisma.db.orm.public.EmailSetting.where((s) =>
-      s.organizationId.eq(targetOrgId),
-    ).first();
+    const rawCurrent = await this.prisma.emailSetting.findFirst({
+      where: { organizationId: targetOrgId },
+    });
 
     const currentId =
       rawCurrent?.id || (await this.getSettings(targetOrgId))?.id;
@@ -213,9 +215,10 @@ export class EmailSettingsService {
       }
     }
 
-    await this.prisma.db.orm.public.EmailSetting.where((s) =>
-      s.id.eq(currentId),
-    ).update(updateData);
+    await this.prisma.emailSetting.update({
+      where: { id: currentId },
+      data: updateData,
+    });
 
     return this.getSettings(targetOrgId);
   }

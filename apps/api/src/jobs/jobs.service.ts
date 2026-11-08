@@ -56,25 +56,19 @@ export class JobsService {
     let targetOrg: { id: string; name: string; slug: string } | null = null;
 
     if (filter?.organizationSlug) {
-      targetOrg = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-      )
-        .where((o) => o.slug.eq(filter.organizationSlug as string))
-        .first();
+      targetOrg = await this.prisma.organization.findFirst({
+        where: { slug: filter.organizationSlug as string },
+        select: { id: true, name: true, slug: true },
+      });
       if (!targetOrg) {
         return { data: [], total: 0, page, limit, totalPages: 0 };
       }
       targetOrgId = targetOrg.id;
     } else if (targetOrgId) {
-      targetOrg = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-      )
-        .where((o) => o.id.eq(targetOrgId as string))
-        .first();
+      targetOrg = await this.prisma.organization.findFirst({
+        where: { id: targetOrgId as string },
+        select: { id: true, name: true, slug: true },
+      });
     }
 
     const isPublic =
@@ -83,33 +77,31 @@ export class JobsService {
       Boolean(filter?.organizationSlug);
     const effectiveStatus = isPublic ? "PUBLISHED" : filter?.status;
 
-    const jobsQuery = this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "location",
-      "postalCode",
-      "experienceLevel",
-      "workplace",
-      "type",
-      "description",
-      "requirements",
-      "salaryRange",
-      "status",
-      "organizationId",
-      "createdById",
-      "createdAt",
-      "updatedAt",
-      "deletedAt",
-    );
-
-    let jobs = targetOrgId
-      ? await jobsQuery
-          .where((j) =>
-            j.organizationId.eq(targetOrgId!).and(j.deletedAt.isNull()),
-          )
-          .all()
-      : await jobsQuery.where((j) => j.deletedAt.isNull()).all();
+    let jobs = await this.prisma.job.findMany({
+      where: {
+        ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        title: true,
+        department: true,
+        location: true,
+        postalCode: true,
+        experienceLevel: true,
+        workplace: true,
+        type: true,
+        description: true,
+        requirements: true,
+        salaryRange: true,
+        status: true,
+        organizationId: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    });
 
     jobs = jobs.filter((j) => !j.deletedAt);
 
@@ -189,13 +181,14 @@ export class JobsService {
     // Fetch applications only relevant to these paged jobs
     const allApps =
       !isPublic && jobIds.length > 0
-        ? await this.prisma.db.orm.public.Application.select(
-            "id",
-            "jobId",
-            "stage",
-          )
-            .where((a) => a.jobId.in(jobIds))
-            .all()
+        ? await this.prisma.application.findMany({
+            where: { jobId: { in: jobIds } },
+            select: {
+              id: true,
+              jobId: true,
+              stage: true,
+            },
+          })
         : [];
 
     const appCountMap = new Map<
@@ -219,11 +212,13 @@ export class JobsService {
     if (targetOrg) {
       orgMap.set(targetOrg.id, targetOrg);
     } else {
-      const allOrgs = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-      ).all();
+      const allOrgs = await this.prisma.organization.findMany({
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      });
       for (const o of allOrgs) {
         orgMap.set(o.id, o);
       }
@@ -246,27 +241,28 @@ export class JobsService {
   }
 
   async findOne(id: string, tenantOrgId?: string | null, isPublic = false) {
-    const job = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "location",
-      "postalCode",
-      "experienceLevel",
-      "workplace",
-      "type",
-      "description",
-      "requirements",
-      "salaryRange",
-      "status",
-      "organizationId",
-      "createdById",
-      "createdAt",
-      "updatedAt",
-      "deletedAt",
-    )
-      .where((j) => j.id.eq(id))
-      .first();
+    const job = await this.prisma.job.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        department: true,
+        location: true,
+        postalCode: true,
+        experienceLevel: true,
+        workplace: true,
+        type: true,
+        description: true,
+        requirements: true,
+        salaryRange: true,
+        status: true,
+        organizationId: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    });
 
     if (!job || job.deletedAt) {
       throw new AppNotFoundException(
@@ -298,13 +294,14 @@ export class JobsService {
 
     let organization: { id: string; name: string; slug: string } | null = null;
     if (job.organizationId) {
-      organization = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-      )
-        .where((o) => o.id.eq(job.organizationId as string))
-        .first();
+      organization = await this.prisma.organization.findFirst({
+        where: { id: job.organizationId as string },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      });
     }
 
     if (isPublic) {
@@ -316,46 +313,51 @@ export class JobsService {
       };
     }
 
-    const applications = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "candidateId",
-      "jobId",
-      "stage",
-      "resumeUrl",
-      "resumeFileName",
-      "resumeFileSize",
-      "resumeMimeType",
-      "notes",
-      "orderIndex",
-      "createdAt",
-      "updatedAt",
-    )
-      .where((a) => a.jobId.eq(id))
-      .all();
+    const applications = await this.prisma.application.findMany({
+      where: { jobId: id },
+      select: {
+        id: true,
+        candidateId: true,
+        jobId: true,
+        stage: true,
+        resumeUrl: true,
+        resumeFileName: true,
+        resumeFileSize: true,
+        resumeMimeType: true,
+        notes: true,
+        orderIndex: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
     const candidates =
       candidateIds.length > 0
-        ? await this.prisma.db.orm.public.Candidate.select(
-            "id",
-            "name",
-            "email",
-            "phone",
-            "resumeUrl",
-            "resumeFileName",
-          )
-            .where((c) => c.id.in(candidateIds))
-            .all()
+        ? await this.prisma.candidate.findMany({
+            where: {
+              id: { in: candidateIds },
+              organizationId: job.organizationId,
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              resumeUrl: true,
+              resumeFileName: true,
+            },
+          })
         : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     // Fetch interviews for each application
     const appIds = [...new Set(applications.map((a) => a.id))];
     const jobInterviews =
-      appIds.length > 0 && Boolean(this.prisma.db.orm.public.Interview)
-        ? await this.prisma.db.orm.public.Interview.where((i) =>
-            i.applicationId.in(appIds),
-          ).all()
+      appIds.length > 0
+        ? await this.prisma.interview.findMany({
+            where: { applicationId: { in: appIds } },
+          })
         : [];
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of jobInterviews) {
@@ -406,13 +408,14 @@ export class JobsService {
   }
 
   async findBySlug(orgSlug: string, jobSlug: string) {
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-    )
-      .where((o) => o.slug.eq(orgSlug))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { slug: orgSlug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
 
     if (!org) {
       throw new AppNotFoundException(
@@ -422,27 +425,28 @@ export class JobsService {
       );
     }
 
-    const jobs = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "department",
-      "location",
-      "postalCode",
-      "experienceLevel",
-      "workplace",
-      "type",
-      "description",
-      "requirements",
-      "salaryRange",
-      "status",
-      "organizationId",
-      "createdById",
-      "createdAt",
-      "updatedAt",
-      "deletedAt",
-    )
-      .where((j) => j.organizationId.eq(org.id))
-      .all();
+    const jobs = await this.prisma.job.findMany({
+      where: { organizationId: org.id },
+      select: {
+        id: true,
+        title: true,
+        department: true,
+        location: true,
+        postalCode: true,
+        experienceLevel: true,
+        workplace: true,
+        type: true,
+        description: true,
+        requirements: true,
+        salaryRange: true,
+        status: true,
+        organizationId: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    });
 
     const activeJobs = jobs.filter(
       (j) =>
@@ -505,22 +509,24 @@ export class JobsService {
       );
     }
 
-    const created = await this.prisma.db.orm.public.Job.create({
-      id: crypto.randomUUID(),
-      title: dto.title,
-      department: dto.department,
-      location: dto.location,
-      postalCode: dto.postalCode ?? null,
-      experienceLevel: dto.experienceLevel ?? null,
-      workplace: dto.workplace ?? null,
-      type: dto.type ?? "FULL_TIME",
-      description: dto.description,
-      requirements: dto.requirements ?? null,
-      salaryRange: dto.salaryRange ?? null,
-      status: dto.status ?? "PUBLISHED",
-      organizationId: targetOrgId,
-      createdById: (userId || dto.createdById) ?? null,
-      updatedAt: toInstant(),
+    const created = await this.prisma.job.create({
+      data: {
+        id: crypto.randomUUID(),
+        title: dto.title,
+        department: dto.department,
+        location: dto.location,
+        postalCode: dto.postalCode ?? null,
+        experienceLevel: dto.experienceLevel ?? null,
+        workplace: dto.workplace ?? null,
+        type: dto.type ?? "FULL_TIME",
+        description: dto.description,
+        requirements: dto.requirements ?? null,
+        salaryRange: dto.salaryRange ?? null,
+        status: dto.status ?? "PUBLISHED",
+        organizationId: targetOrgId,
+        createdById: (userId || dto.createdById) ?? null,
+        updatedAt: toInstant(),
+      },
     });
 
     return created;
@@ -541,9 +547,9 @@ export class JobsService {
       );
     }
 
-    const updated = await this.prisma.db.orm.public.Job.where((j) =>
-      j.id.eq(id),
-    ).update({
+    const updated = await this.prisma.job.update({
+      where: { id },
+      data: {
       ...(dto.title !== undefined ? { title: dto.title } : {}),
       ...(dto.department !== undefined ? { department: dto.department } : {}),
       ...(dto.location !== undefined ? { location: dto.location } : {}),
@@ -563,7 +569,8 @@ export class JobsService {
         ? { salaryRange: dto.salaryRange }
         : {}),
       ...(dto.status !== undefined ? { status: dto.status } : {}),
-    });
+    },
+  });
 
     return updated;
   }
@@ -585,8 +592,11 @@ export class JobsService {
 
     // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
     await runInTransaction(this.prisma, async (tx) => {
-      await tx.orm.public.Job.where((j) => j.id.eq(id)).update({
-        deletedAt: toInstant(),
+      await tx.job.update({
+        where: { id },
+        data: {
+          deletedAt: toInstant(),
+        },
       });
     });
 

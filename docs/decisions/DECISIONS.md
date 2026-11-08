@@ -167,3 +167,14 @@
 - **Evidence:** `backend/src/prisma/schema.prisma`, `backend/src/prisma/db.ts`, and 690 passed backend unit tests.
 - **Enforcement:** Enforced via CI Gate 11 (`pnpm lint:doc-sync` Check 4) which now asserts 0 pre-release packages, and `pnpm lint:tenant-scope` which continues to verify 100% of Prisma queries are isolated by tenant.
 - **History:** D-001 initially accepted Prisma 8 RC and its transitive CVEs as a known limitation for `v0.3.0`. In Phase 3 refactoring, the user approved downgrading to Prisma 7.10.1 stable, fully eliminating the limitation and all 3 pre-release packages.
+
+---
+
+## D-016: Retirement of Legacy Prisma Query Composer Adapter & Full Migration to Canonical Prisma Client
+
+- **Date:** 2026-11-09
+- **Decision:** Fully retired the custom query composer wrapper (`apps/api/src/prisma/db.ts`) and fake `.raw` / `.db.orm.public.*` accessors. All 38 backend NestJS services, seeders (`seed.ts`), smoke tests, and test suites now use canonical native Prisma Client methods (`this.prisma.<model>.<action>`). Transactions use canonical `$transaction` or ALS-aware `runInTransaction(this.prisma, async (tx) => ...)`.
+- **Rationale:** The legacy `.db.orm.public.*` abstraction originated from an experimental Prisma 8 Composer wrapper that was artificially adapted to Prisma 7. It introduced non-standard syntax, unnecessary indirection, confusion when reading standard NestJS/Prisma documentation, and brittle typing. Migrating to canonical Prisma Client aligns 100% with official NestJS and Prisma best practices, unlocks full IDE autocompletion, eliminates custom wrappers, and improves PostgreSQL batch performance (e.g., instant `deleteMany` in seeders).
+- **Evidence:** 38 backend services migrated, `apps/api/src/prisma/db.ts` deleted via `git rm`, 697/697 API unit tests passing, and 100% tenant scoping compliance verified by `check-tenant-scoping.ts` (231/231 queries isolated).
+- **Enforcement:** Enforced via CI Gate 9 (`pnpm lint:tenant-scope`), CI Gate 1 (`pnpm typecheck`), and CI Gate 3 (`pnpm lint`).
+- **History:** Supersedes legacy composer references in D-015.

@@ -84,9 +84,9 @@ export class WebhookSettingsService {
       );
     }
 
-    const settings = await this.prisma.db.orm.public.OrganizationWebhookSetting
-      .where((s) => s.organizationId.eq(organizationId))
-      .all();
+    const settings = await this.prisma.organizationWebhookSetting.findMany({
+      where: { organizationId },
+    });
 
     return settings.map((s) => this.mapToResponse(s));
   }
@@ -102,9 +102,9 @@ export class WebhookSettingsService {
       );
     }
 
-    const setting = await this.prisma.db.orm.public.OrganizationWebhookSetting
-      .where((s) => s.id.eq(id))
-      .first();
+    const setting = await this.prisma.organizationWebhookSetting.findFirst({
+      where: { id },
+    });
 
     if (!setting) {
       throw new AppNotFoundException(
@@ -150,11 +150,13 @@ export class WebhookSettingsService {
     }
 
     // Check unique constraint [organizationId, eventType, provider]
-    const existing = await this.prisma.db.orm.public.OrganizationWebhookSetting
-      .where((s) => s.organizationId.eq(organizationId))
-      .where((s) => s.eventType.eq(dto.eventType))
-      .where((s) => s.provider.eq(dto.provider))
-      .first();
+    const existing = await this.prisma.organizationWebhookSetting.findFirst({
+      where: {
+        organizationId,
+        eventType: dto.eventType,
+        provider: dto.provider,
+      },
+    });
 
     if (existing) {
       throw new AppBadRequestException(
@@ -175,19 +177,21 @@ export class WebhookSettingsService {
       ? this.encryptionService.encrypt(dto.secretToken.trim())
       : null;
 
-    const setting = await this.prisma.db.orm.public.OrganizationWebhookSetting.create({
-      id: crypto.randomUUID(),
-      organizationId,
-      eventType: dto.eventType,
-      provider: dto.provider,
-      webhookUrl: encryptedUrl,
-      secretToken: encryptedSecret,
-      chatId: dto.chatId?.trim() || null,
-      isEnabled: dto.isEnabled ?? true,
-      createdAt: toInstant(),
-      updatedAt: toInstant(),
-      createdBy: userId,
-      updatedBy: userId,
+    const setting = await this.prisma.organizationWebhookSetting.create({
+      data: {
+        id: crypto.randomUUID(),
+        organizationId,
+        eventType: dto.eventType,
+        provider: dto.provider,
+        webhookUrl: encryptedUrl,
+        secretToken: encryptedSecret,
+        chatId: dto.chatId?.trim() || null,
+        isEnabled: dto.isEnabled ?? true,
+        createdAt: toInstant(),
+        updatedAt: toInstant(),
+        createdBy: userId,
+        updatedBy: userId,
+      },
     });
 
     return this.mapToResponse(setting);
@@ -206,9 +210,9 @@ export class WebhookSettingsService {
       );
     }
 
-    const existing = await this.prisma.db.orm.public.OrganizationWebhookSetting
-      .where((s) => s.id.eq(id))
-      .first();
+    const existing = await this.prisma.organizationWebhookSetting.findFirst({
+      where: { id },
+    });
 
     if (!existing) {
       throw new AppNotFoundException(
@@ -235,11 +239,13 @@ export class WebhookSettingsService {
       (dto.eventType && dto.eventType !== existing.eventType) ||
       (dto.provider && dto.provider !== existing.provider)
     ) {
-      const conflict = await this.prisma.db.orm.public.OrganizationWebhookSetting
-        .where((s) => s.organizationId.eq(organizationId))
-        .where((s) => s.eventType.eq(targetEventType))
-        .where((s) => s.provider.eq(targetProvider))
-        .first();
+      const conflict = await this.prisma.organizationWebhookSetting.findFirst({
+        where: {
+          organizationId,
+          eventType: targetEventType,
+          provider: targetProvider,
+        },
+      });
 
       if (conflict && conflict.id !== id) {
         throw new AppBadRequestException(
@@ -327,9 +333,10 @@ export class WebhookSettingsService {
       }
     }
 
-    const updated = await this.prisma.db.orm.public.OrganizationWebhookSetting
-      .where((s) => s.id.eq(id))
-      .update(updatePayload);
+    const updated = await this.prisma.organizationWebhookSetting.update({
+      where: { id },
+      data: updatePayload,
+    });
 
     if (!updated) {
       throw new AppNotFoundException(
@@ -352,9 +359,9 @@ export class WebhookSettingsService {
       );
     }
 
-    const existing = await this.prisma.db.orm.public.OrganizationWebhookSetting
-      .where((s) => s.id.eq(id))
-      .first();
+    const existing = await this.prisma.organizationWebhookSetting.findFirst({
+      where: { id },
+    });
 
     if (!existing) {
       throw new AppNotFoundException(
@@ -371,9 +378,9 @@ export class WebhookSettingsService {
       );
     }
 
-    await this.prisma.db.orm.public.OrganizationWebhookSetting
-      .where((s) => s.id.eq(id))
-      .delete();
+    await this.prisma.organizationWebhookSetting.delete({
+      where: { id },
+    });
 
     return { success: true };
   }
@@ -398,9 +405,9 @@ export class WebhookSettingsService {
     if (dto.id && (!dto.webhookUrl || dto.webhookUrl.includes("***"))) {
       const settingId = dto.id;
       // Test existing setting from database
-      const existing = await this.prisma.db.orm.public.OrganizationWebhookSetting
-        .where((s) => s.id.eq(settingId))
-        .first();
+      const existing = await this.prisma.organizationWebhookSetting.findFirst({
+        where: { id: settingId },
+      });
 
       if (!existing) {
         throw new AppNotFoundException(

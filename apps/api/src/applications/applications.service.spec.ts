@@ -1,3 +1,4 @@
+import { createMockTable, createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ApplicationsService } from "./applications.service";
 import { NotFoundException } from "@nestjs/common";
@@ -207,223 +208,26 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       extractObjectName: vi.fn().mockImplementation((url: string) => url.split("/").pop() || ""),
     };
 
-    mockPrismaService = {
-      db: {
-        orm: {
-          public: {
-            CandidateDocument: {
-              select: vi.fn().mockImplementation(() => ({
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockCandidateDocs.filter((d) => {
-                      const mockRecord = {
-                        candidateId: { eq: (target: string) => d.candidateId === target },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                  }),
-                })),
-              })),
-              create: vi.fn().mockImplementation(async (data) => {
-                mockCandidateDocs.push(data);
-                return data;
-              }),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                delete: vi.fn().mockImplementation(async () => {
-                  const idx = mockCandidateDocs.findIndex((d) => {
-                    const mockRecord = {
-                      id: { eq: (target: string) => d.id === target },
-                      url: { eq: (target: string) => d.url === target },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (idx !== -1) mockCandidateDocs.splice(idx, 1);
-                  return { count: 1 };
-                }),
-              })),
-            },
-            Job: {
-              select: vi.fn().mockImplementation((..._fields: string[]) => ({
-                all: vi.fn().mockImplementation(async () => {
-                  return mockJobs.map((j) => ({ ...j }));
-                }),
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockJobs.filter((j) => {
-                      const mockRecord = {
-                        id: {
-                          eq: (target: string) => j.id === target,
-                          in: (arr: string[]) => arr.includes(j.id),
-                        },
-                        organizationId: { eq: (target: string) => j.organizationId === target },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                  }),
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockJobs.find((j) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => j.id === target },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                    return match ? { ...match } : null;
-                  }),
-                })),
-              })),
-            },
-            Candidate: {
-              create: vi.fn().mockImplementation(async (data) => {
-                const newCand = { id: `cand-${Date.now()}`, ...data, createdAt: new Date(), updatedAt: new Date() };
-                mockCandidates.push(newCand);
-                return newCand;
-              }),
-              select: vi.fn().mockImplementation(() => {
-                const createWhereBuilder = (predicates: Array<(r: Record<string, { eq?: (t: string) => boolean; in?: (a: string[]) => boolean }>) => boolean>) => ({
-                  where: vi.fn().mockImplementation((nextFn) => createWhereBuilder([...predicates, nextFn])),
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockCandidates.filter((c) => {
-                      const mockRecord = {
-                        id: {
-                          eq: (target: string) => c.id === target,
-                          in: (arr: string[]) => arr.includes(c.id),
-                        },
-                        organizationId: { eq: (target: string) => c.organizationId === target },
-                        email: { eq: (target: string) => c.email === target },
-                      };
-                      return predicates.every((fn) => fn(mockRecord));
-                    });
-                  }),
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockCandidates.find((c) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => c.id === target },
-                        organizationId: { eq: (target: string) => c.organizationId === target },
-                        email: { eq: (target: string) => c.email === target },
-                      };
-                      return predicates.every((fn) => fn(mockRecord));
-                    });
-                    return match ? { ...match } : null;
-                  }),
-                });
+    const jobTable = createMockTable(mockJobs);
+    const appTable = createMockTable(mockApps);
+    const candidateTable = createMockTable(mockCandidates);
+    const candidateDocTable = createMockTable(mockCandidateDocs);
+    const interviewTable = createMockTable();
+    const trackingLinkTable = createMockTable();
+    const orgTable = createMockTable([
+      { id: "org-1", name: "Org 1", slug: "org-1" },
+      { id: "org-2", name: "Org 2", slug: "org-2" },
+    ]);
 
-                return {
-                  all: vi.fn().mockImplementation(async () => mockCandidates.map((c) => ({ ...c }))),
-                  where: vi.fn().mockImplementation((predicateFn) => createWhereBuilder([predicateFn])),
-                };
-              }),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                update: vi.fn().mockImplementation(async (updates) => {
-                  const target = mockCandidates.find((c) => {
-                    const mockRecord = {
-                      id: { eq: (targetId: string) => c.id === targetId },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (target) {
-                    Object.assign(target, updates);
-                    return { ...target };
-                  }
-                  return null;
-                }),
-              })),
-            },
-            Application: {
-              select: vi.fn().mockImplementation((..._fields: string[]) => {
-                const createAppWhereBuilder = (predicates: Array<(r: Record<string, { eq?: (t: string) => boolean; in?: (a: string[]) => boolean }>) => boolean>) => ({
-                  where: vi.fn().mockImplementation((nextFn) => createAppWhereBuilder([...predicates, nextFn])),
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockApps.filter((a) => {
-                      const mockRecord = {
-                        id: {
-                          eq: (target: string) => a.id === target,
-                          in: (arr: string[]) => arr.includes(a.id),
-                        },
-                        jobId: {
-                          eq: (target: string) => a.jobId === target,
-                          in: (arr: string[]) => arr.includes(a.jobId),
-                        },
-                        candidateId: {
-                          eq: (target: string) => a.candidateId === target,
-                          in: (arr: string[]) => arr.includes(a.candidateId),
-                        },
-                      };
-                      return predicates.every((fn) => fn(mockRecord));
-                    });
-                  }),
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockApps.find((a) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => a.id === target },
-                        jobId: { eq: (target: string) => a.jobId === target },
-                        candidateId: { eq: (target: string) => a.candidateId === target },
-                      };
-                      return predicates.every((fn) => fn(mockRecord));
-                    });
-                    return match ? { ...match } : null;
-                  }),
-                });
-
-                return {
-                  all: vi.fn().mockImplementation(async () => mockApps.map((a) => ({ ...a }))),
-                  where: vi.fn().mockImplementation((predicateFn) => createAppWhereBuilder([predicateFn])),
-                };
-              }),
-              create: vi.fn().mockImplementation(async (data) => {
-                const newApp = { id: `app-${Date.now()}`, ...data, createdAt: new Date(), updatedAt: new Date() };
-                mockApps.push(newApp);
-                return newApp;
-              }),
-              where: vi.fn().mockImplementation(function whereBuilder(predicateFn) {
-                const predicates = [predicateFn];
-                const builder = {
-                  where: vi.fn().mockImplementation((nextFn) => {
-                    predicates.push(nextFn);
-                    return builder;
-                  }),
-                  update: vi.fn().mockImplementation(async (updates) => {
-                    const target = mockApps.find((a) => {
-                      const mockRecord = {
-                        id: { eq: (targetId: string) => a.id === targetId },
-                        jobId: { eq: (targetId: string) => a.jobId === targetId },
-                        candidateId: { eq: (targetId: string) => a.candidateId === targetId },
-                        stage: { eq: (targetStage: string) => a.stage === targetStage },
-                      };
-                      return predicates.every((fn) => fn(mockRecord));
-                    });
-                    if (target) {
-                      Object.assign(target, updates);
-                      return { ...target };
-                    }
-                    return null;
-                  }),
-                  delete: vi.fn().mockImplementation(async () => {
-                    const idx = mockApps.findIndex((a) => {
-                      const mockRecord = {
-                        id: { eq: (targetId: string) => a.id === targetId },
-                        jobId: { eq: (targetId: string) => a.jobId === targetId },
-                        candidateId: { eq: (targetId: string) => a.candidateId === targetId },
-                      };
-                      return predicates.every((fn) => fn(mockRecord));
-                    });
-                    if (idx !== -1) mockApps.splice(idx, 1);
-                    return { count: 1 };
-                  }),
-                };
-                return builder;
-              }),
-            },
-            Interview: {
-              all: vi.fn().mockResolvedValue([]),
-              where: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockResolvedValue([]),
-              })),
-            },
-          },
-        },
-      },
-    };
-
+    mockPrismaService = createMockPrismaService({
+      job: jobTable,
+      application: appTable,
+      candidate: candidateTable,
+      candidateDocument: candidateDocTable,
+      interview: interviewTable,
+      trackingLink: trackingLinkTable,
+      organization: orgTable,
+    });
     const mockActivitiesService = {
       createActivity: vi.fn().mockResolvedValue({}),
       findByCandidate: vi.fn().mockResolvedValue([]),

@@ -25,27 +25,28 @@ export class CandidatesProfileService {
     tenantOrgId?: string | null,
     currentUser?: { id?: string; name?: string } | null,
   ) {
-    const candidate = await this.prisma.db.orm.public.Candidate.select(
-      "id",
-      "organizationId",
-      "name",
-      "firstName",
-      "lastName",
-      "gender",
-      "dateOfBirth",
-      "email",
-      "phone",
-      "notes",
-      "resumeUrl",
-      "resumeFileName",
-      "resumeFileSize",
-      "resumeMimeType",
-      "createdAt",
-      "updatedAt",
-      "deletedAt",
-    )
-      .where((c) => c.id.eq(id))
-      .first();
+    const candidate = await this.prisma.candidate.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        organizationId: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        gender: true,
+        dateOfBirth: true,
+        email: true,
+        phone: true,
+        notes: true,
+        resumeUrl: true,
+        resumeFileName: true,
+        resumeFileSize: true,
+        resumeMimeType: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    });
 
     if (!candidate || candidate.deletedAt) {
       throw new AppNotFoundException(
@@ -68,35 +69,39 @@ export class CandidatesProfileService {
     }
 
     // Fetch all applications for this candidate
-    const applications = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "candidateId",
-      "jobId",
-      "stage",
-      "resumeUrl",
-      "resumeFileName",
-      "resumeFileSize",
-      "resumeMimeType",
-      "notes",
-      "orderIndex",
-      "createdAt",
-      "updatedAt",
-    )
-      .where((a) => a.candidateId.eq(id))
-      .all();
+    const applications = await this.prisma.application.findMany({
+      where: { candidateId: id },
+      select: {
+        id: true,
+        candidateId: true,
+        jobId: true,
+        stage: true,
+        resumeUrl: true,
+        resumeFileName: true,
+        resumeFileSize: true,
+        resumeMimeType: true,
+        notes: true,
+        orderIndex: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     // Fetch jobs for each application
     const jobIds = [...new Set(applications.map((a) => a.jobId))];
     const jobs =
       jobIds.length > 0
-        ? await this.prisma.db.orm.public.Job.select(
-            "id",
-            "title",
-            "department",
-            "location",
-          )
-            .where((j) => j.id.in(jobIds))
-            .all()
+        ? await this.prisma.job.findMany({
+            where: {
+              id: { in: jobIds },
+            },
+            select: {
+              id: true,
+              title: true,
+              department: true,
+              location: true,
+            },
+          })
         : [];
     const jobMap = new Map(jobs.map((j) => [j.id, j]));
 
@@ -104,9 +109,9 @@ export class CandidatesProfileService {
     const appIds = [...new Set(applications.map((a) => a.id))];
     const candidateInterviews =
       appIds.length > 0
-        ? await this.prisma.db.orm.public.Interview.where((i) =>
-            i.applicationId.in(appIds),
-          ).all()
+        ? await this.prisma.interview.findMany({
+            where: { applicationId: { in: appIds } },
+          })
         : [];
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of candidateInterviews) {
@@ -127,17 +132,21 @@ export class CandidatesProfileService {
     // Aggregate all documents: candidate's documents + all documents from applications
     let dbDocs: CandidateDocument[] = [];
     try {
-      const queried = await this.prisma.db.orm.public.CandidateDocument.select(
-        "id",
-        "name",
-        "url",
-        "size",
-        "mimeType",
-        "type",
-        "createdAt",
-      )
-        .where((d) => d.candidateId.eq(id))
-        .all();
+      const queried = await this.prisma.candidateDocument.findMany({
+        where: {
+          candidateId: id,
+          organizationId: candidate.organizationId,
+        },
+        select: {
+          id: true,
+          name: true,
+          url: true,
+          size: true,
+          mimeType: true,
+          type: true,
+          createdAt: true,
+        },
+      });
       if (Array.isArray(queried) && queried.length > 0) {
         dbDocs = queried.map((d) => ({
           ...d,

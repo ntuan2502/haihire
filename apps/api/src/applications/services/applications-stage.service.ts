@@ -48,15 +48,18 @@ export class ApplicationsStageService {
       }
     }
 
-    const updatedRecord = await this.prisma.db.orm.public.Application
-      .where((a) => a.id.eq(id))
-      .where((a) => a.stage.eq(oldStage))
-      .update({
+    const updateResult = await this.prisma.application.updateMany({
+      where: {
+        id,
+        stage: oldStage,
+      },
+      data: {
         stage: dto.stage,
         ...(dto.orderIndex !== undefined ? { orderIndex: dto.orderIndex } : {}),
-      });
+      },
+    });
 
-    if (!updatedRecord) {
+    if (!updateResult || updateResult.count === 0) {
       throw new AppConflictException(
         APP_ERROR_CODES.APPLICATION_STAGE_CONFLICT,
         `Application stage conflict: the application has been modified by another request. Current stage is no longer '${oldStage}'.`,
@@ -91,9 +94,10 @@ export class ApplicationsStageService {
           const template = await this.emailService.getTemplateByType(orgId, "REJECTION");
           if (template && template.enabled) {
             let orgName = "Company";
-            const org = await this.prisma.db.orm.public.Organization.select("name")
-              .where((o) => o.id.eq(orgId))
-              .first();
+            const org = await this.prisma.organization.findFirst({
+              where: { id: orgId },
+              select: { name: true },
+            });
             if (org?.name) {
               orgName = org.name;
             }

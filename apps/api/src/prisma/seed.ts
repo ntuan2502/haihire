@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
 import { env } from "../config/env";
 import bcrypt from "bcryptjs";
-import { db } from "./db.ts";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
+export const prisma = new PrismaClient({ adapter });
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants.ts";
 import { toInstant } from "../common/date.util.ts";
 import { SourcingChannel } from "@haihire/shared";
@@ -630,141 +634,31 @@ let pendingSeed: Promise<void> | undefined;
 
 export async function runSeed(): Promise<void> {
   try {
-    await db.connect({ url: env.DATABASE_URL });
+    await prisma.$connect();
   } catch {
-    // already connected or composer client
+    // already connected
   }
 
   console.log("==================================================");
   console.log("🧹 1. Cleaning old database records...");
   console.log("==================================================");
 
-  await db.orm.public.EmailLog.all().then((logs) =>
-    Promise.all(
-      logs.map((l) =>
-        db.orm.public.EmailLog.where((x) => x.id.eq(l.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.EmailSetting.all().then((sets) =>
-    Promise.all(
-      sets.map((s) =>
-        db.orm.public.EmailSetting.where((x) => x.id.eq(s.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.EmailTemplate.all().then((tmpls) =>
-    Promise.all(
-      tmpls.map((t) =>
-        db.orm.public.EmailTemplate.where((x) => x.id.eq(t.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.ActivityLog.all().then((acts) =>
-    Promise.all(
-      acts.map((a) =>
-        db.orm.public.ActivityLog.where((x) => x.id.eq(a.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.CandidateDocument.all().then((docs) =>
-    Promise.all(
-      docs.map((d) =>
-        db.orm.public.CandidateDocument.where((x) => x.id.eq(d.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.Interview.all().then((intvs) =>
-    Promise.all(
-      intvs.map((i) =>
-        db.orm.public.Interview.where((x) => x.id.eq(i.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.Application.all().then((apps) =>
-    Promise.all(
-      apps.map((a) =>
-        db.orm.public.Application.where((x) => x.id.eq(a.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.TrackingClick.all().then((clicks) =>
-    Promise.all(
-      clicks.map((c) =>
-        db.orm.public.TrackingClick.where((x) => x.id.eq(c.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.TrackingLink.all().then((links) =>
-    Promise.all(
-      links.map((l) =>
-        db.orm.public.TrackingLink.where((x) => x.id.eq(l.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.Candidate.all().then((cands) =>
-    Promise.all(
-      cands.map((c) =>
-        db.orm.public.Candidate.where((x) => x.id.eq(c.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.InviteLink.all().then((links) =>
-    Promise.all(
-      links.map((l) =>
-        db.orm.public.InviteLink.where((x) => x.id.eq(l.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.OrganizationMember.all().then((members) =>
-    Promise.all(
-      members.map((m) =>
-        db.orm.public.OrganizationMember.where((x) => x.id.eq(m.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.Job.all().then((jobs) =>
-    Promise.all(
-      jobs.map((j) => db.orm.public.Job.where((x) => x.id.eq(j.id)).delete()),
-    ),
-  );
-
-  // Break mutual circular FK reference between User.organizationId and Organization.ownerId
-  await db.orm.public.User.all().then((users) =>
-    Promise.all(
-      users.map((u) =>
-        db.orm.public.User.where((x) => x.id.eq(u.id)).update({
-          organizationId: null,
-        }),
-      ),
-    ),
-  );
-
-  await db.orm.public.Organization.all().then((orgs) =>
-    Promise.all(
-      orgs.map((o) =>
-        db.orm.public.Organization.where((x) => x.id.eq(o.id)).delete(),
-      ),
-    ),
-  );
-
-  await db.orm.public.User.all().then((users) =>
-    Promise.all(
-      users.map((u) => db.orm.public.User.where((x) => x.id.eq(u.id)).delete()),
-    ),
-  );
+  await prisma.emailLog.deleteMany();
+  await prisma.emailSetting.deleteMany();
+  await prisma.emailTemplate.deleteMany();
+  await prisma.activityLog.deleteMany();
+  await prisma.candidateDocument.deleteMany();
+  await prisma.interview.deleteMany();
+  await prisma.application.deleteMany();
+  await prisma.trackingClick.deleteMany();
+  await prisma.trackingLink.deleteMany();
+  await prisma.candidate.deleteMany();
+  await prisma.inviteLink.deleteMany();
+  await prisma.organizationMember.deleteMany();
+  await prisma.job.deleteMany();
+  await prisma.user.updateMany({ data: { organizationId: null } });
+  await prisma.organization.deleteMany();
+  await prisma.user.deleteMany();
 
   console.log("==================================================");
   console.log("🏢 2. Seeding Organization & Demo Users...");
@@ -778,7 +672,7 @@ export async function runSeed(): Promise<void> {
   const memberUserId = "00000000-0000-4000-8000-000000000003";
 
   // 1. Create Admin User (pre-created so Organization.ownerId FK succeeds)
-  await db.orm.public.User.upsert({
+  await prisma.user.upsert({
     create: {
       id: adminUserId,
       email: DEMO_ACCOUNTS.ADMIN.email,
@@ -793,11 +687,11 @@ export async function runSeed(): Promise<void> {
       name: DEMO_ACCOUNTS.ADMIN.name,
       role: DEMO_ACCOUNTS.ADMIN.role,
     },
-    conflictOn: { email: DEMO_ACCOUNTS.ADMIN.email },
+    where: { email: DEMO_ACCOUNTS.ADMIN.email },
   });
 
   // 2. Create Org "Admin"
-  await db.orm.public.Organization.upsert({
+  await prisma.organization.upsert({
     create: {
       id: adminOrgId,
       name: "Admin",
@@ -809,16 +703,19 @@ export async function runSeed(): Promise<void> {
       name: "Admin",
       ownerId: adminUserId,
     },
-    conflictOn: { slug: "admin" },
+    where: { slug: "admin" },
   });
 
   // Link Admin User to organization
-  await db.orm.public.User.where((u) => u.id.eq(adminUserId)).update({
-    organizationId: adminOrgId,
+  await prisma.user.update({
+    where: { id: adminUserId },
+    data: {
+      organizationId: adminOrgId,
+    },
   });
 
   // 3. Create Org Member relationship
-  await db.orm.public.OrganizationMember.upsert({
+  await prisma.organizationMember.upsert({
     create: {
       id: "00000000-0000-4000-8000-000000000011",
       organizationId: adminOrgId,
@@ -827,11 +724,11 @@ export async function runSeed(): Promise<void> {
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-4000-8000-000000000011" },
+    where: { id: "00000000-0000-4000-8000-000000000011" },
   });
 
   // 4. Create Member User
-  await db.orm.public.User.upsert({
+  await prisma.user.upsert({
     create: {
       id: memberUserId,
       email: DEMO_ACCOUNTS.MEMBER.email,
@@ -847,10 +744,10 @@ export async function runSeed(): Promise<void> {
       role: DEMO_ACCOUNTS.MEMBER.role,
       organizationId: adminOrgId,
     },
-    conflictOn: { email: DEMO_ACCOUNTS.MEMBER.email },
+    where: { email: DEMO_ACCOUNTS.MEMBER.email },
   });
 
-  await db.orm.public.OrganizationMember.upsert({
+  await prisma.organizationMember.upsert({
     create: {
       id: "00000000-0000-4000-8000-000000000012",
       organizationId: adminOrgId,
@@ -859,11 +756,11 @@ export async function runSeed(): Promise<void> {
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-4000-8000-000000000012" },
+    where: { id: "00000000-0000-4000-8000-000000000012" },
   });
 
   // 5. Seed Email Settings for Admin Organization
-  await db.orm.public.EmailSetting.upsert({
+  await prisma.emailSetting.upsert({
     create: {
       id: "00000000-0000-4000-8000-000000000021",
       organizationId: adminOrgId,
@@ -877,7 +774,7 @@ export async function runSeed(): Promise<void> {
       fromName: "Admin Recruitment Team",
       fromEmail: "careers@tun.io.vn",
     },
-    conflictOn: { organizationId: adminOrgId },
+    where: { organizationId: adminOrgId },
   });
 
   // 6. Seed Demo Org Beta for Multi-Tenant Isolation Verification
@@ -888,7 +785,7 @@ export async function runSeed(): Promise<void> {
   const betaAppId = "00000000-0000-4000-8000-0000000000b5";
   const betaWebhookId = "00000000-0000-4000-8000-0000000000b6";
 
-  await db.orm.public.User.upsert({
+  await prisma.user.upsert({
     create: {
       id: betaAdminUserId,
       email: DEMO_ACCOUNTS.BETA_ADMIN.email,
@@ -903,10 +800,10 @@ export async function runSeed(): Promise<void> {
       name: DEMO_ACCOUNTS.BETA_ADMIN.name,
       role: DEMO_ACCOUNTS.BETA_ADMIN.role,
     },
-    conflictOn: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
+    where: { email: DEMO_ACCOUNTS.BETA_ADMIN.email },
   });
 
-  await db.orm.public.Organization.upsert({
+  await prisma.organization.upsert({
     create: {
       id: betaOrgId,
       name: "Beta Financials",
@@ -918,14 +815,17 @@ export async function runSeed(): Promise<void> {
       name: "Beta Financials",
       ownerId: betaAdminUserId,
     },
-    conflictOn: { slug: "beta-financials" },
+    where: { slug: "beta-financials" },
   });
 
-  await db.orm.public.User.where((u) => u.id.eq(betaAdminUserId)).update({
-    organizationId: betaOrgId,
+  await prisma.user.update({
+    where: { id: betaAdminUserId },
+    data: {
+      organizationId: betaOrgId,
+    },
   });
 
-  await db.orm.public.OrganizationMember.upsert({
+  await prisma.organizationMember.upsert({
     create: {
       id: "00000000-0000-4000-8000-0000000000bb",
       organizationId: betaOrgId,
@@ -934,10 +834,10 @@ export async function runSeed(): Promise<void> {
       updatedAt: toInstant(),
     },
     update: {},
-    conflictOn: { id: "00000000-0000-4000-8000-0000000000bb" },
+    where: { id: "00000000-0000-4000-8000-0000000000bb" },
   });
 
-  await db.orm.public.Job.upsert({
+  await prisma.job.upsert({
     create: {
       id: betaJobId,
       organizationId: betaOrgId,
@@ -959,10 +859,10 @@ export async function runSeed(): Promise<void> {
       title: "Beta Lead Quant Trader",
       status: "PUBLISHED",
     },
-    conflictOn: { id: betaJobId },
+    where: { id: betaJobId },
   });
 
-  await db.orm.public.Candidate.upsert({
+  await prisma.candidate.upsert({
     create: {
       id: betaCandidateId,
       organizationId: betaOrgId,
@@ -979,10 +879,10 @@ export async function runSeed(): Promise<void> {
     update: {
       name: "Tran Beta",
     },
-    conflictOn: { id: betaCandidateId },
+    where: { id: betaCandidateId },
   });
 
-  await db.orm.public.Application.upsert({
+  await prisma.application.upsert({
     create: {
       id: betaAppId,
       jobId: betaJobId,
@@ -996,10 +896,10 @@ export async function runSeed(): Promise<void> {
     update: {
       stage: "SCREENING",
     },
-    conflictOn: { id: betaAppId },
+    where: { id: betaAppId },
   });
 
-  await db.orm.public.OrganizationWebhookSetting.upsert({
+  await prisma.organizationWebhookSetting.upsert({
     create: {
       id: betaWebhookId,
       organizationId: betaOrgId,
@@ -1014,7 +914,7 @@ export async function runSeed(): Promise<void> {
     update: {
       isEnabled: true,
     },
-    conflictOn: { id: betaWebhookId },
+    where: { id: betaWebhookId },
   });
 
   console.log(`- Org: Admin (id: ${adminOrgId})`);
@@ -1147,7 +1047,7 @@ export async function runSeed(): Promise<void> {
     const jobAgeDays = 5 + Math.floor((i * 3.5) % 45);
     const jobCreatedAt = new Date(Date.now() - jobAgeDays * 86400000);
 
-    await db.orm.public.Job.upsert({
+    await prisma.job.upsert({
       create: {
         id: jobId,
         title: baseConfig.title,
@@ -1171,7 +1071,7 @@ export async function runSeed(): Promise<void> {
         status,
         organizationId: adminOrgId,
       },
-      conflictOn: { id: jobId },
+      where: { id: jobId },
     });
 
     createdJobIds.push(jobId);
@@ -1664,7 +1564,7 @@ export async function runSeed(): Promise<void> {
 
     const linkCreatedAt = new Date(Date.now() - item.ageDays * 86400000);
 
-    await db.orm.public.TrackingLink.upsert({
+    await prisma.trackingLink.upsert({
       create: {
         id: linkId,
         organizationId: adminOrgId,
@@ -1687,7 +1587,7 @@ export async function runSeed(): Promise<void> {
         updatedAt: toInstant(linkCreatedAt),
       },
       update: {},
-      conflictOn: { id: linkId },
+      where: { id: linkId },
     });
 
     createdTrackingLinks.push({
@@ -2279,10 +2179,10 @@ export async function runSeed(): Promise<void> {
     const chunk = candidatesToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
       chunk.map((cand) =>
-        db.orm.public.Candidate.upsert({
+        prisma.candidate.upsert({
           create: cand,
           update: {},
-          conflictOn: { id: cand.id },
+          where: { id: cand.id },
         }),
       ),
     );
@@ -2295,10 +2195,10 @@ export async function runSeed(): Promise<void> {
     const chunk = applicationsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
       chunk.map((app) =>
-        db.orm.public.Application.upsert({
+        prisma.application.upsert({
           create: app,
           update: {},
-          conflictOn: { id: app.id },
+          where: { id: app.id },
         }),
       ),
     );
@@ -2323,10 +2223,10 @@ export async function runSeed(): Promise<void> {
     const chunk = interviewsToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
       chunk.map((intv) =>
-        db.orm.public.Interview.upsert({
+        prisma.interview.upsert({
           create: intv,
           update: {},
-          conflictOn: { id: intv.id },
+          where: { id: intv.id },
         }),
       ),
     );
@@ -2342,10 +2242,10 @@ export async function runSeed(): Promise<void> {
     const chunk = clicksToInsert.slice(b, b + BATCH_SIZE);
     await Promise.all(
       chunk.map((click) =>
-        db.orm.public.TrackingClick.upsert({
+        prisma.trackingClick.upsert({
           create: click,
           update: {},
-          conflictOn: { id: click.id },
+          where: { id: click.id },
         }),
       ),
     );

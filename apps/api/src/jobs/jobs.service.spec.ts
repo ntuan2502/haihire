@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { createMockTable, createMockPrismaService } from "../test/helpers/prisma-composer-mock";
+import { describe, it, expect, beforeEach } from "vitest";
 import { JobsService } from "./jobs.service";
 import { JobsController } from "./jobs.controller";
 import { NotFoundException } from "@nestjs/common";
@@ -102,211 +103,22 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       },
     ];
 
-    mockPrismaService = {
-      db: {
-        orm: {
-          public: {
-            Job: {
-              select: vi.fn().mockImplementation((..._fields: string[]) => ({
-                all: vi.fn().mockImplementation(async () => {
-                  return mockJobs.map((j) => ({ ...j }));
-                }),
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockJobs
-                      .filter((j) => {
-                        const mockRecord = {
-                          id: {
-                            eq: (target: string) => ({
-                              and: (
-                                other:
-                                  | { value?: boolean }
-                                  | boolean
-                                  | null
-                                  | undefined,
-                              ) =>
-                                j.id === target &&
-                                (typeof other === "boolean"
-                                  ? other
-                                  : typeof other === "object" &&
-                                      other !== null &&
-                                      "value" in other
-                                    ? Boolean(
-                                        (other as { value: boolean }).value,
-                                      )
-                                    : Boolean(other)),
-                              value: j.id === target,
-                            }),
-                          },
-                          organizationId: {
-                            eq: (target: string) => ({
-                              and: (
-                                other:
-                                  | { value?: boolean }
-                                  | boolean
-                                  | null
-                                  | undefined,
-                              ) =>
-                                j.organizationId === target &&
-                                (typeof other === "boolean"
-                                  ? other
-                                  : typeof other === "object" &&
-                                      other !== null &&
-                                      "value" in other
-                                    ? Boolean(
-                                        (other as { value: boolean }).value,
-                                      )
-                                    : Boolean(other)),
-                              value: j.organizationId === target,
-                            }),
-                          },
-                          deletedAt: {
-                            isNull: () => ({
-                              and: (
-                                other:
-                                  | { value?: boolean }
-                                  | boolean
-                                  | null
-                                  | undefined,
-                              ) =>
-                                !j.deletedAt &&
-                                (typeof other === "boolean"
-                                  ? other
-                                  : typeof other === "object" &&
-                                      other !== null &&
-                                      "value" in other
-                                    ? Boolean(
-                                        (other as { value: boolean }).value,
-                                      )
-                                    : Boolean(other)),
-                              value: !j.deletedAt,
-                            }),
-                          },
-                        };
-                        const res = predicateFn(mockRecord);
-                        return typeof res === "object" &&
-                          res !== null &&
-                          "value" in res
-                          ? Boolean(res.value)
-                          : Boolean(res);
-                      })
-                      .map((j) => ({ ...j }));
-                  }),
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockJobs.find((j) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => j.id === target },
-                        organizationId: {
-                          eq: (target: string) => j.organizationId === target,
-                        },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                    return match ? { ...match } : null;
-                  }),
-                })),
-              })),
-              create: vi.fn().mockImplementation(async (data) => {
-                const newJob = {
-                  ...data,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                };
-                mockJobs.push(newJob);
-                return newJob;
-              }),
-              upsert: vi.fn().mockImplementation(async ({ create }) => {
-                mockJobs.push({
-                  ...create,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                });
-                return create;
-              }),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                update: vi.fn().mockImplementation(async (updates) => {
-                  const target = mockJobs.find((j) => {
-                    const mockRecord = {
-                      id: { eq: (targetId: string) => j.id === targetId },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (target) {
-                    Object.assign(target, updates);
-                    return { ...target };
-                  }
-                  return null;
-                }),
-                delete: vi.fn().mockImplementation(async () => {
-                  const idx = mockJobs.findIndex((j) => {
-                    const mockRecord = {
-                      id: { eq: (targetId: string) => j.id === targetId },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (idx !== -1) mockJobs.splice(idx, 1);
-                  return { count: 1 };
-                }),
-              })),
-            },
-            Application: {
-              select: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockImplementation(async () => {
-                  return mockApps.map((a) => ({ ...a }));
-                }),
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockApps.filter((a) => {
-                      const mockRecord = {
-                        jobId: {
-                          eq: (targetId: string) => a.jobId === targetId,
-                          in: (arr: string[]) => arr.includes(a.jobId),
-                        },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                  }),
-                })),
-              })),
-              where: vi.fn().mockImplementation(() => ({
-                delete: vi.fn().mockResolvedValue({ count: 1 }),
-              })),
-            },
-            Organization: {
-              select: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockResolvedValue([
-                  { id: "org-1", name: "Acme Corp", slug: "acme-corp" },
-                  { id: "org-2", name: "Beta Corp", slug: "beta-corp" },
-                ]),
-                where: vi.fn().mockImplementation(() => ({
-                  first: vi.fn().mockResolvedValue({
-                    id: "org-1",
-                    name: "Acme Corp",
-                    slug: "acme-corp",
-                  }),
-                })),
-              })),
-            },
-            Candidate: {
-              select: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockResolvedValue([]),
-                where: vi.fn().mockImplementation(() => ({
-                  all: vi.fn().mockResolvedValue([]),
-                  first: vi.fn().mockResolvedValue(null),
-                })),
-              })),
-            },
-            Interview: {
-              all: vi.fn().mockResolvedValue([]),
-              where: vi.fn().mockImplementation(() => ({
-                all: vi.fn().mockResolvedValue([]),
-              })),
-            },
-          },
-        },
-      },
-    };
+    const jobTable = createMockTable(mockJobs);
+    const appTable = createMockTable(mockApps);
+    const orgTable = createMockTable([
+      { id: "org-1", name: "Acme Corp", slug: "acme-corp" },
+      { id: "org-2", name: "Beta Corp", slug: "beta-corp" },
+    ]);
+    const candidateTable = createMockTable();
+    const interviewTable = createMockTable();
 
+    mockPrismaService = createMockPrismaService({
+      job: jobTable,
+      application: appTable,
+      organization: orgTable,
+      candidate: candidateTable,
+      interview: interviewTable,
+    });
     service = new JobsService(mockPrismaService as never);
   });
 

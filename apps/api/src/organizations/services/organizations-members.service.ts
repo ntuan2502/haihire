@@ -40,17 +40,21 @@ export class OrganizationsMembersService implements OnModuleInit {
   private async backfillMemberships() {
     // Single batched query across all 3 tables (O(1) database roundtrips on startup)
     const [allOrgs, allUsers, allMembers] = await Promise.all([
-      this.prisma.db.orm.public.Organization.select("id", "ownerId").all(),
-      this.prisma.db.orm.public.User.select(
-        "id",
-        "organizationId",
-        "role",
-      ).all(),
-      this.prisma.db.orm.public.OrganizationMember.select(
-        "id",
-        "organizationId",
-        "userId",
-      ).all(),
+      this.prisma.organization.findMany({ select: { id: true, ownerId: true } }),
+      this.prisma.user.findMany({
+        select: {
+          id: true,
+          organizationId: true,
+          role: true,
+        },
+      }),
+      this.prisma.organizationMember.findMany({
+        select: {
+          id: true,
+          organizationId: true,
+          userId: true,
+        },
+      }),
     ]);
 
     // Fast in-memory lookup set for (organizationId:userId) pairs
@@ -64,7 +68,8 @@ export class OrganizationsMembersService implements OnModuleInit {
         const pairKey = `${org.id}:${org.ownerId}`;
         if (!memberPairSet.has(pairKey)) {
           const id = crypto.randomUUID();
-          await this.prisma.db.orm.public.OrganizationMember.upsert({
+          await this.prisma.organizationMember.upsert({
+            where: { id },
             create: {
               id,
               organizationId: org.id,
@@ -73,7 +78,6 @@ export class OrganizationsMembersService implements OnModuleInit {
               updatedAt: toInstant(),
             },
             update: {},
-            conflictOn: { id },
           });
           memberPairSet.add(pairKey);
         }
@@ -86,7 +90,8 @@ export class OrganizationsMembersService implements OnModuleInit {
         const pairKey = `${user.organizationId}:${user.id}`;
         if (!memberPairSet.has(pairKey)) {
           const id = crypto.randomUUID();
-          await this.prisma.db.orm.public.OrganizationMember.upsert({
+          await this.prisma.organizationMember.upsert({
+            where: { id },
             create: {
               id,
               organizationId: user.organizationId,
@@ -95,7 +100,6 @@ export class OrganizationsMembersService implements OnModuleInit {
               updatedAt: toInstant(),
             },
             update: {},
-            conflictOn: { id },
           });
           memberPairSet.add(pairKey);
         }
@@ -104,52 +108,56 @@ export class OrganizationsMembersService implements OnModuleInit {
   }
 
   async getMembers(userId: string) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        organizationId: true,
+      },
+    });
 
     if (!user || !user.organizationId) {
       return [];
     }
 
     const currentOrgId = user.organizationId as string;
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "ownerId",
-    )
-      .where((o) => o.id.eq(currentOrgId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: currentOrgId },
+      select: {
+        id: true,
+        ownerId: true,
+      },
+    });
 
     // 1. Fetch all memberships recorded in OrganizationMember for this organization
     const memberships =
-      await this.prisma.db.orm.public.OrganizationMember.select(
-        "id",
-        "userId",
-        "role",
-        "createdAt",
-      )
-        .where((m) => m.organizationId.eq(currentOrgId))
-        .all();
+      await this.prisma.organizationMember.findMany({
+        where: { organizationId: currentOrgId },
+        select: {
+          id: true,
+          userId: true,
+          role: true,
+          createdAt: true,
+        },
+      });
 
     const memberUserIds = new Set(memberships.map((m) => m.userId));
     if (org?.ownerId) {
       memberUserIds.add(org.ownerId);
     }
 
-    const orgUsers = await this.prisma.db.orm.public.User.select(
-      "id",
-      "name",
-      "email",
-      "role",
-      "avatarUrl",
-      "organizationId",
-      "createdAt",
-    )
-      .where((u) => u.organizationId.eq(currentOrgId))
-      .all();
+    const orgUsers = await this.prisma.user.findMany({
+      where: { organizationId: currentOrgId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatarUrl: true,
+        organizationId: true,
+        createdAt: true,
+      },
+    });
 
     const additionalUserIds = Array.from(memberUserIds).filter(
       (id) => !orgUsers.some((u) => u.id === id),
@@ -157,17 +165,18 @@ export class OrganizationsMembersService implements OnModuleInit {
 
     const additionalUsers =
       additionalUserIds.length > 0
-        ? await this.prisma.db.orm.public.User.select(
-            "id",
-            "name",
-            "email",
-            "role",
-            "avatarUrl",
-            "organizationId",
-            "createdAt",
-          )
-            .where((u) => u.id.in(additionalUserIds))
-            .all()
+        ? await this.prisma.user.findMany({
+            where: { id: { in: additionalUserIds } },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              avatarUrl: true,
+              organizationId: true,
+              createdAt: true,
+            },
+          })
         : [];
 
     const allUsers = [...orgUsers, ...additionalUsers];
@@ -218,13 +227,14 @@ export class OrganizationsMembersService implements OnModuleInit {
     targetMemberId: string,
     newRole: Role,
   ) {
-    const caller = await this.prisma.db.orm.public.User.select(
-      "id",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(callerId))
-      .first();
+    const caller = await this.prisma.user.findFirst({
+      where: { id: callerId },
+      select: {
+        id: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     if (!caller || !caller.organizationId) {
       throw new AppNotFoundException(
@@ -234,12 +244,13 @@ export class OrganizationsMembersService implements OnModuleInit {
     }
 
     const targetOrgId = caller.organizationId as string;
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "ownerId",
-    )
-      .where((o) => o.id.eq(targetOrgId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: targetOrgId },
+      select: {
+        id: true,
+        ownerId: true,
+      },
+    });
 
     const isCallerOwner = Boolean(org && org.ownerId === caller.id);
     const isCallerAdmin = caller.role === "ADMIN";
@@ -268,23 +279,25 @@ export class OrganizationsMembersService implements OnModuleInit {
     }
 
     const orgMembers =
-      await this.prisma.db.orm.public.OrganizationMember.select(
-        "id",
-        "userId",
-        "role",
-      )
-        .where((m) => m.organizationId.eq(targetOrgId))
-        .all();
+      await this.prisma.organizationMember.findMany({
+        where: { organizationId: targetOrgId },
+        select: {
+          id: true,
+          userId: true,
+          role: true,
+        },
+      });
 
     const membership = orgMembers.find((m) => m.userId === targetMemberId);
 
-    const targetUser = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-      "role",
-    )
-      .where((u) => u.id.eq(targetMemberId))
-      .first();
+    const targetUser = await this.prisma.user.findFirst({
+      where: { id: targetMemberId },
+      select: {
+        id: true,
+        organizationId: true,
+        role: true,
+      },
+    });
 
     const oldRole = membership?.role || targetUser?.role || null;
 
@@ -299,14 +312,14 @@ export class OrganizationsMembersService implements OnModuleInit {
     }
 
     if (membership) {
-      await this.prisma.db.orm.public.OrganizationMember.where((m) =>
-        m.id.eq(membership.id),
-      ).update({
-        role: newRole,
+      await this.prisma.organizationMember.update({
+        where: { id: membership.id },
+        data: { role: newRole },
       });
     } else {
       const newMemberId = crypto.randomUUID();
-      await this.prisma.db.orm.public.OrganizationMember.upsert({
+      await this.prisma.organizationMember.upsert({
+        where: { id: newMemberId },
         create: {
           id: newMemberId,
           organizationId: targetOrgId,
@@ -315,16 +328,14 @@ export class OrganizationsMembersService implements OnModuleInit {
           updatedAt: toInstant(),
         },
         update: {},
-        conflictOn: { id: newMemberId },
       });
     }
 
     // If target user is currently active in this organization, update user.role
     if (targetUser && targetUser.organizationId === targetOrgId) {
-      await this.prisma.db.orm.public.User.where((u) =>
-        u.id.eq(targetMemberId),
-      ).update({
-        role: newRole,
+      await this.prisma.user.update({
+        where: { id: targetMemberId },
+        data: { role: newRole },
       });
     }
 
@@ -352,13 +363,14 @@ export class OrganizationsMembersService implements OnModuleInit {
   }
 
   async removeMember(callerId: string, targetMemberId: string) {
-    const caller = await this.prisma.db.orm.public.User.select(
-      "id",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(callerId))
-      .first();
+    const caller = await this.prisma.user.findFirst({
+      where: { id: callerId },
+      select: {
+        id: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     if (!caller || !caller.organizationId) {
       throw new AppNotFoundException(
@@ -368,12 +380,13 @@ export class OrganizationsMembersService implements OnModuleInit {
     }
 
     const targetOrgId = caller.organizationId as string;
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "ownerId",
-    )
-      .where((o) => o.id.eq(targetOrgId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: targetOrgId },
+      select: {
+        id: true,
+        ownerId: true,
+      },
+    });
 
     const isCallerOwner = Boolean(org && org.ownerId === caller.id);
     const isCallerAdmin = caller.role === "ADMIN";
@@ -401,35 +414,31 @@ export class OrganizationsMembersService implements OnModuleInit {
     }
 
     // Remove from OrganizationMember
-    const memberRecords =
-      await this.prisma.db.orm.public.OrganizationMember.select("id", "userId")
-        .where((m) => m.organizationId.eq(targetOrgId))
-        .all();
+    await this.prisma.organizationMember.deleteMany({
+      where: {
+        organizationId: targetOrgId,
+        userId: targetMemberId,
+      },
+    });
 
-    for (const record of memberRecords) {
-      if (record.userId === targetMemberId) {
-        await this.prisma.db.orm.public.OrganizationMember.where((m) =>
-          m.id.eq(record.id),
-        ).delete();
-      }
-    }
-
-    const targetUser = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(targetMemberId))
-      .first();
+    const targetUser = await this.prisma.user.findFirst({
+      where: { id: targetMemberId },
+      select: {
+        id: true,
+        organizationId: true,
+      },
+    });
 
     // If target user is currently viewing this organization, fallback to another org or null
     if (targetUser && targetUser.organizationId === targetOrgId) {
       const remainingMembership =
-        await this.prisma.db.orm.public.OrganizationMember.select(
-          "organizationId",
-          "role",
-        )
-          .where((m) => m.userId.eq(targetMemberId))
-          .first();
+        await this.prisma.organizationMember.findFirst({
+          where: { userId: targetMemberId },
+          select: {
+            organizationId: true,
+            role: true,
+          },
+        });
 
       const fallbackOrgId = remainingMembership
         ? remainingMembership.organizationId
@@ -438,11 +447,12 @@ export class OrganizationsMembersService implements OnModuleInit {
         ? remainingMembership.role
         : "MEMBER";
 
-      await this.prisma.db.orm.public.User.where((u) =>
-        u.id.eq(targetMemberId),
-      ).update({
-        organizationId: fallbackOrgId,
-        role: fallbackRole,
+      await this.prisma.user.update({
+        where: { id: targetMemberId },
+        data: {
+          organizationId: fallbackOrgId,
+          role: fallbackRole,
+        },
       });
     }
 

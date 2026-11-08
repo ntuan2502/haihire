@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { AppForbiddenException } from "../common/app-exception";
 import { PrismaService } from "../prisma/prisma.service";
-import { toTimestamp, toInstant } from "../common/date.util";
+import { toInstant } from "../common/date.util";
 import crypto from "node:crypto";
 
 export type ActivityType =
@@ -45,19 +45,21 @@ export class ActivitiesService {
     const id = crypto.randomUUID();
     const metadataStr = dto.metadata ? JSON.stringify(dto.metadata) : null;
 
-    return this.prisma.db.orm.public.ActivityLog.create({
-      id,
-      organizationId: dto.organizationId,
-      candidateId: dto.candidateId,
-      applicationId: dto.applicationId || null,
-      type: dto.type,
-      title: dto.title,
-      description: dto.description,
-      actorId: dto.actorId || null,
-      actorName: dto.actorName,
-      actorRole: dto.actorRole || null,
-      metadata: metadataStr,
-      updatedAt: toInstant(),
+    return this.prisma.activityLog.create({
+      data: {
+        id,
+        organizationId: dto.organizationId,
+        candidateId: dto.candidateId,
+        applicationId: dto.applicationId || null,
+        type: dto.type,
+        title: dto.title,
+        description: dto.description,
+        actorId: dto.actorId || null,
+        actorName: dto.actorName,
+        actorRole: dto.actorRole || null,
+        metadata: metadataStr,
+        updatedAt: toInstant(),
+      },
     });
   }
 
@@ -76,27 +78,31 @@ export class ActivitiesService {
     }
     const targetOrgId = tenantOrgId || organizationId || undefined;
 
-    let query = this.prisma.db.orm.public.ActivityLog
-      .where((a) => a.candidateId.eq(candidateId));
-
-    if (targetOrgId) {
-      query = query.where((a) => a.organizationId.eq(targetOrgId));
-    }
-
-    const activities = await query.all();
-    const sorted = activities
-      .map((item) => ({
-        ...item,
-        metadata: item.metadata ? this.safeParse(item.metadata) : null,
-      }))
-      .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
-
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
-    const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
-    const total = sorted.length;
-    const totalPages = Math.ceil(total / limit) || 1;
-    const data = sorted.slice((page - 1) * limit, page * limit);
+    const limit =
+      pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
 
+    const where = {
+      candidateId,
+      ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+    };
+
+    const [total, activities] = await Promise.all([
+      this.prisma.activityLog.count({ where }),
+      this.prisma.activityLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    const data = activities.map((item) => ({
+      ...item,
+      metadata: item.metadata ? this.safeParse(item.metadata) : null,
+    }));
+
+    const totalPages = Math.ceil(total / limit) || 1;
     return { data, total, page, limit, totalPages };
   }
 
@@ -115,27 +121,31 @@ export class ActivitiesService {
     }
     const targetOrgId = tenantOrgId || organizationId || undefined;
 
-    let query = this.prisma.db.orm.public.ActivityLog
-      .where((a) => a.applicationId.eq(applicationId));
-
-    if (targetOrgId) {
-      query = query.where((a) => a.organizationId.eq(targetOrgId));
-    }
-
-    const activities = await query.all();
-    const sorted = activities
-      .map((item) => ({
-        ...item,
-        metadata: item.metadata ? this.safeParse(item.metadata) : null,
-      }))
-      .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
-
     const page = pagination?.page && pagination.page > 0 ? pagination.page : 1;
-    const limit = pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
-    const total = sorted.length;
-    const totalPages = Math.ceil(total / limit) || 1;
-    const data = sorted.slice((page - 1) * limit, page * limit);
+    const limit =
+      pagination?.limit && pagination.limit > 0 ? pagination.limit : 20;
 
+    const where = {
+      applicationId,
+      ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+    };
+
+    const [total, activities] = await Promise.all([
+      this.prisma.activityLog.count({ where }),
+      this.prisma.activityLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    const data = activities.map((item) => ({
+      ...item,
+      metadata: item.metadata ? this.safeParse(item.metadata) : null,
+    }));
+
+    const totalPages = Math.ceil(total / limit) || 1;
     return { data, total, page, limit, totalPages };
   }
 

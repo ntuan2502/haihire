@@ -9,6 +9,7 @@ import {
 } from "../../common/app-exception";
 import {
   createMockTable,
+  createMockPrismaService,
   type MockTable,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
@@ -120,20 +121,17 @@ describe("ApplicationsSagaService", () => {
       },
     };
 
-    const mockDb = {
+    const _mockDb = {
       orm: mockOrm,
     };
 
-    mockPrisma = {
-      db: mockDb,
-      executeTx: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-      transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-    } as unknown as PrismaService;
-
+    mockPrisma = createMockPrismaService({
+      job: jobTable,
+      candidate: candidateTable,
+      application: applicationTable,
+      trackingLink: trackingLinkTable,
+      organization: organizationTable,
+    }) as unknown as PrismaService;
     mockMinio = {
       uploadFile: vi.fn().mockResolvedValue({
         url: "https://minio.local/resumes/uploaded-resume.pdf",

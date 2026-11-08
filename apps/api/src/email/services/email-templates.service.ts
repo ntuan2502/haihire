@@ -46,9 +46,9 @@ export class EmailTemplatesService {
       return [];
     }
 
-    const templates = await this.prisma.db.orm.public.EmailTemplate.where((t) =>
-      t.organizationId.eq(targetOrgId),
-    ).all();
+    const templates = await this.prisma.emailTemplate.findMany({
+      where: { organizationId: targetOrgId },
+    });
 
     if (templates.length === 0) {
       return this.seedDefaultTemplates(targetOrgId);
@@ -67,16 +67,18 @@ export class EmailTemplatesService {
   ): Promise<EnrichedEmailTemplate[]> {
     const created: EnrichedEmailTemplate[] = [];
     for (const def of DEFAULT_TEMPLATES) {
-      const item = await this.prisma.db.orm.public.EmailTemplate.create({
-        id: crypto.randomUUID(),
-        organizationId,
-        type: def.type,
-        name: def.name,
-        subject: def.subject,
-        body: def.body,
-        enabled: true,
-        variables: JSON.stringify(def.variables),
-        updatedAt: toInstant(),
+      const item = await this.prisma.emailTemplate.create({
+        data: {
+          id: crypto.randomUUID(),
+          organizationId,
+          type: def.type,
+          name: def.name,
+          subject: def.subject,
+          body: def.body,
+          enabled: true,
+          variables: JSON.stringify(def.variables),
+          updatedAt: toInstant(),
+        },
       });
       created.push({
         ...item,
@@ -107,21 +109,23 @@ export class EmailTemplatesService {
       organizationId,
       true,
     )!;
-    const existing = await this.prisma.db.orm.public.EmailTemplate.where((t) =>
-      t.organizationId.eq(targetOrgId),
-    )
-      .where((t) => t.type.eq(type as EmailTemplateType))
-      .first();
+    const existing = await this.prisma.emailTemplate.findFirst({
+      where: {
+        organizationId: targetOrgId,
+        type: type as EmailTemplateType,
+      },
+    });
 
     if (!existing) {
       await this.seedDefaultTemplates(targetOrgId);
     }
 
-    const current = await this.prisma.db.orm.public.EmailTemplate.where((t) =>
-      t.organizationId.eq(targetOrgId),
-    )
-      .where((t) => t.type.eq(type as EmailTemplateType))
-      .first();
+    const current = await this.prisma.emailTemplate.findFirst({
+      where: {
+        organizationId: targetOrgId,
+        type: type as EmailTemplateType,
+      },
+    });
 
     if (!current) {
       throw new AppNotFoundException(
@@ -140,13 +144,14 @@ export class EmailTemplatesService {
     if (dto.body !== undefined) updateData.body = dto.body;
     if (dto.enabled !== undefined) updateData.enabled = dto.enabled;
 
-    await this.prisma.db.orm.public.EmailTemplate.where((t) =>
-      t.id.eq(current.id),
-    ).update(updateData);
+    await this.prisma.emailTemplate.update({
+      where: { id: current.id },
+      data: updateData,
+    });
 
-    const updated = await this.prisma.db.orm.public.EmailTemplate.where((t) =>
-      t.id.eq(current.id),
-    ).first();
+    const updated = await this.prisma.emailTemplate.findFirst({
+      where: { id: current.id },
+    });
 
     return {
       ...updated,

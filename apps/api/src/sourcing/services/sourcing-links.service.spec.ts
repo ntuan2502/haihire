@@ -3,6 +3,7 @@ import { APP_ERROR_CODES, SourcingChannel } from "@haihire/shared";
 import { SourcingLinksService, parseDomain } from "./sourcing-links.service";
 import {
   createMockTable,
+  createMockPrismaService,
   type MockTable,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
@@ -106,17 +107,11 @@ describe("SourcingLinksService", () => {
       },
     ]);
 
-    mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            TrackingLink: trackingLinkTable,
-            Job: jobTable,
-            Application: applicationTable,
-          },
-        },
-      },
-    } as unknown as PrismaService;
+    mockPrisma = createMockPrismaService({
+      trackingLink: trackingLinkTable,
+      job: jobTable,
+      application: applicationTable,
+    });
 
     service = new SourcingLinksService(mockPrisma);
   });

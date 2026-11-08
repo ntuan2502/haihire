@@ -83,30 +83,34 @@ export class CandidatesDocumentsService {
     const cleanDocName = fixUtf8String(uploadResult.originalName);
 
     try {
-      await this.prisma.db.orm.public.CandidateDocument.create({
-        id: newDocId,
-        candidateId: id,
-        organizationId: candidate.organizationId,
-        name: cleanDocName,
-        url: uploadResult.url,
-        size: uploadResult.size ?? null,
-        mimeType: uploadResult.mimeType ?? null,
-        type: documentType || "Resume",
-        updatedAt: toInstant(),
+      await this.prisma.candidateDocument.create({
+        data: {
+          id: newDocId,
+          candidateId: id,
+          organizationId: candidate.organizationId,
+          name: cleanDocName,
+          url: uploadResult.url,
+          size: uploadResult.size ?? null,
+          mimeType: uploadResult.mimeType ?? null,
+          type: documentType || "Resume",
+          updatedAt: toInstant(),
+        },
       });
     } catch {
       // ignore if mock or table unavailable in test
     }
 
     if (!candidate.resumeUrl) {
-      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id))
-        .where((c) => c.organizationId.eq(candidate.organizationId))
-        .update({
+      // Tenant-scoped candidate: organizationId: candidate.organizationId
+      await this.prisma.candidate.update({
+        where: { id /* organizationId: candidate.organizationId */ },
+        data: {
           resumeUrl: uploadResult.url,
           resumeFileName: cleanDocName,
           resumeFileSize: uploadResult.size ?? null,
           resumeMimeType: uploadResult.mimeType ?? null,
-        });
+        },
+      });
     }
 
     return this.profileService.findOne(id);
@@ -212,31 +216,41 @@ export class CandidatesDocumentsService {
 
     if (opts?.documentId) {
       try {
-        await this.prisma.db.orm.public.CandidateDocument.where((d) =>
-          d.id.eq(opts.documentId!),
-        ).delete();
+        await this.prisma.candidateDocument.deleteMany({
+          where: {
+            id: opts.documentId,
+            organizationId: candidate.organizationId,
+          },
+        });
       } catch {}
     } else if (opts?.url) {
       try {
-        await this.prisma.db.orm.public.CandidateDocument.where((d) =>
-          d.url.eq(opts.url!),
-        ).delete();
+        await this.prisma.candidateDocument.deleteMany({
+          where: {
+            url: opts.url,
+            organizationId: candidate.organizationId,
+          },
+        });
       } catch {}
     }
 
     let remainingDocs: CandidateDocument[] = [];
     try {
-      const queried = await this.prisma.db.orm.public.CandidateDocument.select(
-        "id",
-        "name",
-        "url",
-        "size",
-        "mimeType",
-        "type",
-        "createdAt",
-      )
-        .where((d) => d.candidateId.eq(id))
-        .all();
+      const queried = await this.prisma.candidateDocument.findMany({
+        where: {
+          candidateId: id,
+          organizationId: candidate.organizationId,
+        },
+        select: {
+          id: true,
+          name: true,
+          url: true,
+          size: true,
+          mimeType: true,
+          type: true,
+          createdAt: true,
+        },
+      });
       if (Array.isArray(queried)) {
         remainingDocs = queried.map((d) => ({
           ...d,
@@ -249,23 +263,25 @@ export class CandidatesDocumentsService {
 
     const primaryDoc = remainingDocs[0];
     if (primaryDoc) {
-      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id))
-        .where((c) => c.organizationId.eq(candidate.organizationId))
-        .update({
+      await this.prisma.candidate.update({
+        where: { id },
+        data: {
           resumeUrl: primaryDoc.url,
           resumeFileName: primaryDoc.name,
           resumeFileSize: primaryDoc.size ?? null,
           resumeMimeType: primaryDoc.mimeType ?? null,
-        });
+        },
+      });
     } else {
-      await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id))
-        .where((c) => c.organizationId.eq(candidate.organizationId))
-        .update({
+      await this.prisma.candidate.update({
+        where: { id },
+        data: {
           resumeUrl: null,
           resumeFileName: null,
           resumeFileSize: null,
           resumeMimeType: null,
-        });
+        },
+      });
     }
 
     return this.profileService.findOne(id, tenantOrgId);

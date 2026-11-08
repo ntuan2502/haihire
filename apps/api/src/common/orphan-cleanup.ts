@@ -1,12 +1,13 @@
 import * as Minio from "minio";
-import { db } from "../prisma/db";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 export interface CleanupOptions {
   dryRun?: boolean;
   thresholdDays?: number;
   bucketName?: string;
   minioClient?: Minio.Client;
-  dbClient?: typeof db;
+  dbClient?: unknown;
 }
 
 export interface CleanupReport {
@@ -54,13 +55,37 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
       secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
     });
 
-  const activeDb = options.dbClient || db;
+  interface DbQueryable {
+    candidateDocument?: { findMany(args?: unknown): Promise<Array<{ url?: string | null }>> };
+    application?: { findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>> };
+    candidate?: { findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>> };
+    orm?: {
+      public: {
+        CandidateDocument: { select(field: string): { all(): Promise<Array<{ url?: string | null }>> } };
+        Application: { select(field: string): { all(): Promise<Array<{ resumeUrl?: string | null }>> } };
+        Candidate: { select(field: string): { all(): Promise<Array<{ resumeUrl?: string | null }>> } };
+      };
+    };
+  }
+  const activeDb: DbQueryable =
+    options.dbClient ||
+    new PrismaClient({
+      adapter: new PrismaPg({
+        connectionString:
+          process.env.DATABASE_URL ||
+          "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev",
+      }),
+    });
 
   // 1. Gather all active DB references for resume files
   const activeReferencedObjectNames = new Set<string>();
 
   try {
-    const candidateDocs = await activeDb.orm.public.CandidateDocument.select("url").all();
+    const candidateDocs = activeDb.candidateDocument
+      ? await activeDb.candidateDocument.findMany({ select: { url: true } })
+      : activeDb.orm
+        ? await activeDb.orm.public.CandidateDocument.select("url").all()
+        : [];
     for (const doc of candidateDocs) {
       if (doc.url) {
         const objName = extractObjectNameFromUrl(doc.url, bucketName);
@@ -72,7 +97,11 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
   }
 
   try {
-    const apps = await activeDb.orm.public.Application.select("resumeUrl").all();
+    const apps = activeDb.application
+      ? await activeDb.application.findMany({ select: { resumeUrl: true } })
+      : activeDb.orm
+        ? await activeDb.orm.public.Application.select("resumeUrl").all()
+        : [];
     for (const app of apps) {
       if (app.resumeUrl) {
         const objName = extractObjectNameFromUrl(app.resumeUrl, bucketName);
@@ -84,7 +113,11 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
   }
 
   try {
-    const candidates = await activeDb.orm.public.Candidate.select("resumeUrl").all();
+    const candidates = activeDb.candidate
+      ? await activeDb.candidate.findMany({ select: { resumeUrl: true } })
+      : activeDb.orm
+        ? await activeDb.orm.public.Candidate.select("resumeUrl").all()
+        : [];
     for (const cand of candidates) {
       if (cand.resumeUrl) {
         const objName = extractObjectNameFromUrl(cand.resumeUrl, bucketName);

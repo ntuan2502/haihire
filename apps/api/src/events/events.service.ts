@@ -118,20 +118,17 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
     }
     if (this.prisma) {
       try {
-        const user = await this.prisma.db.orm.public.User.select(
-          "organizationId",
-        )
-          .where((u) => u.id.eq(userId))
-          .first();
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { organizationId: true },
+        });
         if (user?.organizationId) {
           orgIds.add(user.organizationId);
         }
-        const memberships =
-          await this.prisma.db.orm.public.OrganizationMember.select(
-            "organizationId",
-          )
-            .where((m) => m.userId.eq(userId))
-            .all();
+        const memberships = await this.prisma.organizationMember.findMany({
+          where: { userId },
+          select: { organizationId: true },
+        });
         for (const m of memberships) {
           if (m.organizationId) {
             orgIds.add(m.organizationId);

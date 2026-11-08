@@ -5,18 +5,10 @@ import type { MinioService } from "./minio/minio.service";
 
 describe("AppService", () => {
   const createMockPrisma = (shouldPass = true) => ({
-    db: {
-      orm: {
-        public: {
-          User: {
-            select: () => ({
-              first: shouldPass
-                ? vi.fn().mockResolvedValue({ id: "1" })
-                : vi.fn().mockRejectedValue(new Error("DB Down")),
-            }),
-          },
-        },
-      },
+    user: {
+      findFirst: shouldPass
+        ? vi.fn().mockResolvedValue({ id: "1" })
+        : vi.fn().mockRejectedValue(new Error("DB Down")),
     },
   });
 

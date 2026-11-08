@@ -42,18 +42,8 @@ describe("TenantGuard", () => {
 
   it("should allow request if user is persistent member of requested org", async () => {
     const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationMember: {
-              select: () => ({
-                where: () => ({
-                  all: async () => [{ organizationId: "org-2" }],
-                }),
-              }),
-            },
-          },
-        },
+      organizationMember: {
+        findMany: async () => [{ organizationId: "org-2" }],
       },
     } as never;
 
@@ -75,18 +65,8 @@ describe("TenantGuard", () => {
 
   it("should throw AppForbiddenException if user has no membership in requested org", async () => {
     const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationMember: {
-              select: () => ({
-                where: () => ({
-                  all: async () => [{ organizationId: "org-other" }],
-                }),
-              }),
-            },
-          },
-        },
+      organizationMember: {
+        findMany: async () => [{ organizationId: "org-other" }],
       },
     } as never;
 

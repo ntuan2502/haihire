@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { createMockPrismaService } from "../../src/test/helpers/prisma-composer-mock";
 import { CandidatesController } from "../../src/candidates/candidates.controller";
 import { CandidatesService } from "../../src/candidates/candidates.service";
 import { ApplicationsController } from "../../src/applications/applications.controller";
@@ -154,144 +155,23 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
       activities: [],
     };
 
-    const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            Organization: {
-              select: () => ({
-                where: (pred: (o: { id: { eq: (id: string) => boolean } }) => unknown) => ({
-                  first: async () =>
-                    db.organizations.find((o) =>
-                      pred({ id: { eq: (target: string) => o.id === target } }),
-                    ) || null,
-                  all: async () => db.organizations,
-                }),
-              }),
-            },
-            OrganizationMember: {
-              select: () => ({
-                where: (pred: (m: { userId: { eq: (u: string) => boolean }; organizationId: { eq: (org: string) => boolean } }) => unknown) => ({
-                  all: async () =>
-                    db.orgMembers.filter((m) =>
-                      pred({
-                        userId: { eq: (target: string) => m.userId === target },
-                        organizationId: { eq: (target: string) => m.organizationId === target },
-                      }),
-                    ),
-                  first: async () =>
-                    db.orgMembers.find((m) =>
-                      pred({
-                        userId: { eq: (target: string) => m.userId === target },
-                        organizationId: { eq: (target: string) => m.organizationId === target },
-                      }),
-                    ) || null,
-                }),
-              }),
-            },
-            Job: {
-              select: () => ({
-                where: (pred: (j: { id: { eq: (id: string) => boolean } }) => unknown) => ({
-                  first: async () =>
-                    db.jobs.find((j) =>
-                      pred({ id: { eq: (target: string) => j.id === target } }),
-                    ) || null,
-                  all: async () => db.jobs,
-                }),
-              }),
-            },
-            Candidate: {
-              select: () => ({
-                where: (pred: (c: { id: { eq: (id: string) => boolean }; organizationId: { eq: (id: string) => boolean } }) => unknown) => ({
-                  first: async () =>
-                    db.candidates.find((c) =>
-                      pred({
-                        id: { eq: (target: string) => c.id === target },
-                        organizationId: { eq: (target: string) => c.organizationId === target },
-                      }),
-                    ) || null,
-                  all: async () => db.candidates,
-                }),
-              }),
-              where: (pred: (c: { id: { eq: (id: string) => boolean } }) => unknown) => ({
-                update: async (patch: Partial<MockDb["candidates"][number]>) => {
-                  const match = db.candidates.find((c) =>
-                    pred({ id: { eq: (target: string) => c.id === target } }),
-                  );
-                  if (match) {
-                    Object.assign(match, patch);
-                    return match;
-                  }
-                  return null;
-                },
-              }),
-            },
-            Application: {
-              select: () => ({
-                where: (pred: (a: { id: { eq: (id: string) => boolean } }) => unknown) => ({
-                  first: async () =>
-                    db.applications.find((a) =>
-                      pred({ id: { eq: (target: string) => a.id === target } }),
-                    ) || null,
-                  all: async () => db.applications,
-                }),
-              }),
-              where: (pred: (a: { id: { eq: (id: string) => boolean } }) => unknown) => ({
-                update: async (patch: Partial<MockDb["applications"][number]>) => {
-                  const match = db.applications.find((a) =>
-                    pred({ id: { eq: (target: string) => a.id === target } }),
-                  );
-                  if (match) {
-                    Object.assign(match, patch);
-                    return match;
-                  }
-                  return null;
-                },
-              }),
-            },
-            CandidateDocument: {
-              select: () => ({
-                where: (pred: (d: { candidateId: { eq: (id: string) => boolean } }) => unknown) => ({
-                  all: async () =>
-                    db.candidateDocuments.filter((d) =>
-                      pred({ candidateId: { eq: (target: string) => d.candidateId === target } }),
-                    ),
-                  first: async () =>
-                    db.candidateDocuments.find((d) =>
-                      pred({ candidateId: { eq: (target: string) => d.candidateId === target } }),
-                    ) || null,
-                }),
-              }),
-            },
-            ApplicationDocument: {
-              select: () => ({
-                where: (pred: (d: { applicationId: { eq: (id: string) => boolean } }) => unknown) => ({
-                  all: async () =>
-                    db.applicationDocuments.filter((d) =>
-                      pred({ applicationId: { eq: (target: string) => d.applicationId === target } }),
-                    ),
-                  first: async () =>
-                    db.applicationDocuments.find((d) =>
-                      pred({ applicationId: { eq: (target: string) => d.applicationId === target } }),
-                    ) || null,
-                }),
-              }),
-            },
-            ActivityLog: {
-              create: vi.fn().mockImplementation(async (data) => {
-                db.activities.push(data);
-                return data;
-              }),
-            },
-            Interview: {
-              where: () => ({
-                all: async () => [],
-              }),
-            },
-          },
-        },
-      },
-    };
+    const mockPrisma = createMockPrismaService({
+      organization: db.organizations,
+      organizationMember: db.orgMembers,
+      job: db.jobs,
+      candidate: db.candidates,
+      application: db.applications,
+      candidateDocument: db.candidateDocuments.map((d) => ({
+        ...d,
+        url: d.fileUrl,
+      })),
+      applicationDocument: db.applicationDocuments.map((d) => ({
+        ...d,
+        url: d.fileUrl,
+      })),
+      activityLog: db.activities,
+      interview: [],
+    });
 
     const mockMinioService = {
       getFileStream: vi.fn().mockImplementation(async () => {

@@ -62,11 +62,13 @@ export class WebhookNotifierService {
     // 1. Try per-organization settings from DB
     if (organizationId && this.prisma && this.encryptionService) {
       try {
-        const settings = await this.prisma.db.orm.public.OrganizationWebhookSetting
-          .where((s) => s.organizationId.eq(organizationId))
-          .where((s) => s.eventType.eq("DLQ_ALERT"))
-          .where((s) => s.isEnabled.eq(true))
-          .all();
+        const settings = await this.prisma.organizationWebhookSetting.findMany({
+          where: {
+            organizationId,
+            eventType: "DLQ_ALERT",
+            isEnabled: true,
+          },
+        });
 
         if (settings.length > 0) {
           for (const setting of settings) {

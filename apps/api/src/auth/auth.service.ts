@@ -1,9 +1,4 @@
-import {
-  Inject,
-  Injectable,
-} from "@nestjs/common";
-import { AppConflictException, AppUnauthorizedException } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { Injectable, Inject } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
@@ -11,6 +6,11 @@ import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import {
+  AppUnauthorizedException,
+  AppConflictException,
+} from "../common/app-exception";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
@@ -27,19 +27,20 @@ export class AuthService {
   async validateRecruiter(dto: LoginDto) {
     const normalizedEmail = dto.email.toLowerCase().trim();
 
-    let user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "email",
-      "name",
-      "password",
-      "role",
-      "avatarUrl",
-      "organizationId",
-      "tokenVersion",
-      "createdAt",
-    )
-      .where((u) => u.email.eq(normalizedEmail))
-      .first();
+    let user = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        password: true,
+        role: true,
+        avatarUrl: true,
+        organizationId: true,
+        tokenVersion: true,
+        createdAt: true,
+      },
+    });
 
     // Auto-provision demo accounts in non-production environments if database is fresh
     const isDevOrDemoEnabled = env.NODE_ENV !== "production";
@@ -56,15 +57,15 @@ export class AuthService {
 
         if (matchedDemo.role === "ADMIN") {
           const adminUserId = crypto.randomUUID();
-          const existingOrg = await this.prisma.db.orm.public.Organization.select(
-            "id",
-          )
-            .where((o) => o.slug.eq("admin"))
-            .first();
+          const existingOrg = await this.prisma.organization.findUnique({
+            where: { slug: "admin" },
+            select: { id: true },
+          });
 
           if (!existingOrg) {
             const newOrgId = crypto.randomUUID();
-            await this.prisma.db.orm.public.Organization.upsert({
+            await this.prisma.organization.upsert({
+              where: { slug: "admin" },
               create: {
                 id: newOrgId,
                 name: "Admin",
@@ -73,14 +74,14 @@ export class AuthService {
                 updatedAt: toInstant(),
               },
               update: { ownerId: adminUserId },
-              conflictOn: { slug: "admin" },
             });
             orgId = newOrgId;
           } else {
             orgId = existingOrg.id;
           }
 
-          user = await this.prisma.db.orm.public.User.upsert({
+          user = await this.prisma.user.upsert({
+            where: { email: normalizedEmail },
             create: {
               id: adminUserId,
               email: normalizedEmail,
@@ -96,10 +97,21 @@ export class AuthService {
               role: matchedDemo.role,
               organizationId: orgId,
             },
-            conflictOn: { email: normalizedEmail },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
+              avatarUrl: true,
+              organizationId: true,
+              tokenVersion: true,
+              createdAt: true,
+            },
           });
         } else {
-          user = await this.prisma.db.orm.public.User.upsert({
+          user = await this.prisma.user.upsert({
+            where: { email: normalizedEmail },
             create: {
               id: crypto.randomUUID(),
               email: normalizedEmail,
@@ -115,33 +127,50 @@ export class AuthService {
               role: matchedDemo.role,
               organizationId: null,
             },
-            conflictOn: { email: normalizedEmail },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
+              avatarUrl: true,
+              organizationId: true,
+              tokenVersion: true,
+              createdAt: true,
+            },
           });
         }
       }
     }
 
     if (!user || !user.password) {
-      throw new AppUnauthorizedException(APP_ERROR_CODES.INVALID_CREDENTIALS, "Invalid email or password");
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.INVALID_CREDENTIALS,
+        "Invalid email or password",
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new AppUnauthorizedException(APP_ERROR_CODES.INVALID_CREDENTIALS, "Invalid email or password");
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.INVALID_CREDENTIALS,
+        "Invalid email or password",
+      );
     }
 
     const { password: _, ...sanitizedUser } = user;
 
     let organization = null;
     if (sanitizedUser.organizationId) {
-      organization = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-        "ownerId",
-      )
-        .where((o) => o.id.eq(sanitizedUser.organizationId as string))
-        .first();
+      organization = await this.prisma.organization.findUnique({
+        where: { id: sanitizedUser.organizationId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          ownerId: true,
+        },
+      });
     }
 
     const isOwner = Boolean(
@@ -182,9 +211,10 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const normalizedEmail = dto.email.toLowerCase().trim();
 
-    const existing = await this.prisma.db.orm.public.User.select("id")
-      .where((u) => u.email.eq(normalizedEmail))
-      .first();
+    const existing = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
 
     if (existing) {
       throw new AppConflictException(
@@ -196,15 +226,17 @@ export class AuthService {
     const hashedPassword = bcrypt.hashSync(dto.password, 10);
     const id = crypto.randomUUID();
 
-    await this.prisma.db.orm.public.User.create({
-      id,
-      email: normalizedEmail,
-      name: dto.name.trim(),
-      password: hashedPassword,
-      role: "MEMBER",
-      organizationId: null,
-      tokenVersion: 0,
-      updatedAt: toInstant(),
+    await this.prisma.user.create({
+      data: {
+        id,
+        email: normalizedEmail,
+        name: dto.name.trim(),
+        password: hashedPassword,
+        role: "MEMBER",
+        organizationId: null,
+        tokenVersion: 0,
+        updatedAt: toInstant(),
+      },
     });
 
     const user = {
@@ -258,16 +290,17 @@ export class AuthService {
       );
     }
 
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "email",
-      "name",
-      "role",
-      "organizationId",
-      "tokenVersion",
-    )
-      .where((u) => u.id.eq(decoded.sub))
-      .first();
+    const user = await this.prisma.user.findUnique({
+      where: { id: decoded.sub },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        organizationId: true,
+        tokenVersion: true,
+      },
+    });
 
     if (!user) {
       throw new AppUnauthorizedException(
@@ -305,20 +338,22 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "tokenVersion",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        tokenVersion: true,
+      },
+    });
 
     if (user) {
-      await this.prisma.db.orm.public.User
-        .where((u) => u.id.eq(userId))
-        .update({
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
           tokenVersion: (user.tokenVersion ?? 0) + 1,
           updatedAt: toInstant(),
-        });
+        },
+      });
     }
   }
 
@@ -327,13 +362,14 @@ export class AuthService {
     currentPass: string,
     newPass: string,
   ): Promise<{ success: boolean }> {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "password",
-      "tokenVersion",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        password: true,
+        tokenVersion: true,
+      },
+    });
 
     if (!user || !user.password) {
       throw new AppUnauthorizedException(
@@ -351,45 +387,51 @@ export class AuthService {
     }
 
     const hashedPassword = bcrypt.hashSync(newPass, 10);
-    await this.prisma.db.orm.public.User
-      .where((u) => u.id.eq(userId))
-      .update({
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
         password: hashedPassword,
         tokenVersion: (user.tokenVersion ?? 0) + 1,
         updatedAt: toInstant(),
-      });
+      },
+    });
 
     return { success: true };
   }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "email",
-      "name",
-      "role",
-      "avatarUrl",
-      "organizationId",
-      "createdAt",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        avatarUrl: true,
+        organizationId: true,
+        createdAt: true,
+      },
+    });
 
     if (!user) {
-      throw new AppUnauthorizedException(APP_ERROR_CODES.USER_SESSION_EXPIRED, "User session expired or not found");
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "User session expired or not found",
+      );
     }
 
     let organization = null;
     let isOwner = false;
     if (user.organizationId) {
-      organization = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-        "ownerId",
-      )
-        .where((o) => o.id.eq(user.organizationId as string))
-        .first();
+      organization = await this.prisma.organization.findUnique({
+        where: { id: user.organizationId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          ownerId: true,
+        },
+      });
 
       if (organization && organization.ownerId === user.id) {
         isOwner = true;

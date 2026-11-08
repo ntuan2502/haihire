@@ -66,16 +66,17 @@ export class ApplicationsSagaService {
       );
     }
 
-    const job = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "status",
-      "organizationId",
-      "department",
-      "location",
-    )
-      .where((j) => j.id.eq(dto.jobId))
-      .first();
+    const job = await this.prisma.job.findFirst({
+      where: { id: dto.jobId },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        organizationId: true,
+        department: true,
+        location: true,
+      },
+    });
 
     if (!job) {
       throw new AppNotFoundException(
@@ -162,10 +163,13 @@ export class ApplicationsSagaService {
             );
           }
 
-          const existingCandidate = await tx.orm.public.Candidate.select("id")
-            .where((c) => c.organizationId.eq(orgId))
-            .where((c) => c.email.eq(email))
-            .first();
+          const existingCandidate = await tx.candidate.findFirst({
+            where: {
+              organizationId: orgId,
+              email,
+            },
+            select: { id: true },
+          });
 
           if (existingCandidate) {
             candidateId = existingCandidate.id;
@@ -182,31 +186,31 @@ export class ApplicationsSagaService {
               }
             }
 
-            const newCandidate = await tx.orm.public.Candidate.create({
-              id: crypto.randomUUID(),
-              organizationId: orgId,
-              name: dto.candidateName.trim(),
-              firstName,
-              lastName,
-              email,
-              phone: dto.candidatePhone?.trim() || null,
-              notes: dto.notes || null,
-              resumeUrl: uploadResult.url || null,
-              resumeFileName: uploadResult.originalName || null,
-              resumeFileSize: uploadResult.size || null,
-              resumeMimeType: uploadResult.mimeType || "application/pdf",
-              updatedAt: toInstant(),
+            const newCandidate = await tx.candidate.create({
+              data: {
+                id: crypto.randomUUID(),
+                organizationId: orgId,
+                name: dto.candidateName.trim(),
+                firstName,
+                lastName,
+                email,
+                phone: dto.candidatePhone?.trim() || null,
+                notes: dto.notes || null,
+                resumeUrl: uploadResult.url || null,
+                resumeFileName: uploadResult.originalName || null,
+                resumeFileSize: uploadResult.size || null,
+                resumeMimeType: uploadResult.mimeType || "application/pdf",
+                updatedAt: toInstant(),
+              },
             });
             candidateId = newCandidate.id;
           }
         } else {
           // Validate candidate exists and belongs to the same organization as the target job
-          const existingCandidate = await tx.orm.public.Candidate.select(
-            "id",
-            "organizationId",
-          )
-            .where((c) => c.id.eq(candidateId as string))
-            .first();
+          const existingCandidate = await tx.candidate.findFirst({
+            where: { id: candidateId as string },
+            select: { id: true, organizationId: true },
+          });
 
           if (!existingCandidate) {
             throw new AppNotFoundException(
@@ -225,10 +229,13 @@ export class ApplicationsSagaService {
           }
         }
 
-        const existingApplication = await tx.orm.public.Application.select("id")
-          .where((a) => a.candidateId.eq(candidateId as string))
-          .where((a) => a.jobId.eq(dto.jobId))
-          .first();
+        const existingApplication = await tx.application.findFirst({
+          where: {
+            candidateId: candidateId as string,
+            jobId: dto.jobId,
+          },
+          select: { id: true },
+        });
 
         if (existingApplication) {
           throw new AppConflictException(
@@ -237,31 +244,30 @@ export class ApplicationsSagaService {
           );
         }
 
-        const existingInStage = await tx.orm.public.Application.select(
-          "id",
-          "orderIndex",
-        )
-          .where((a) => a.jobId.eq(dto.jobId))
-          .all();
+        const existingInStage = await tx.application.findMany({
+          where: { jobId: dto.jobId },
+          select: { id: true, orderIndex: true },
+        });
 
         const maxOrder = existingInStage.reduce(
-          (max, item) => Math.max(max, item.orderIndex),
+          (max: number, item: { orderIndex: number }) => Math.max(max, item.orderIndex),
           -1,
         );
 
         // 5. Resolve Sourcing / Attribution
         if (dto.ref) {
-          const link = await tx.orm.public.TrackingLink.select(
-            "id",
-            "organizationId",
-            "source",
-            "customSource",
-            "campaign",
-            "isActive",
-            "deletedAt",
-          )
-            .where((l) => l.token.eq(dto.ref as string))
-            .first();
+          const link = await tx.trackingLink.findFirst({
+            where: { token: dto.ref as string },
+            select: {
+              id: true,
+              organizationId: true,
+              source: true,
+              customSource: true,
+              campaign: true,
+              isActive: true,
+              deletedAt: true,
+            },
+          });
 
           if (
             link &&
@@ -322,23 +328,25 @@ export class ApplicationsSagaService {
         }
 
         // 6. Save Application record
-        return await tx.orm.public.Application.create({
-          id: crypto.randomUUID(),
-          candidateId: candidateId as string,
-          jobId: dto.jobId,
-          stage: "APPLIED",
-          resumeUrl: uploadResult.url || null,
-          resumeFileName: uploadResult.originalName || null,
-          resumeFileSize: uploadResult.size || null,
-          resumeMimeType: uploadResult.mimeType || "application/pdf",
-          notes: dto.notes || null,
-          orderIndex: maxOrder + 1,
-          trackingLinkId,
-          sourceChannel,
-          sourceDetails,
-          referrerDomain,
-          utmCampaign,
-          updatedAt: toInstant(),
+        return await tx.application.create({
+          data: {
+            id: crypto.randomUUID(),
+            candidateId: candidateId as string,
+            jobId: dto.jobId,
+            stage: "APPLIED",
+            resumeUrl: uploadResult.url || null,
+            resumeFileName: uploadResult.originalName || null,
+            resumeFileSize: uploadResult.size || null,
+            resumeMimeType: uploadResult.mimeType || "application/pdf",
+            notes: dto.notes || null,
+            orderIndex: maxOrder + 1,
+            trackingLinkId,
+            sourceChannel,
+            sourceDetails,
+            referrerDomain,
+            utmCampaign,
+            updatedAt: toInstant(),
+          },
         });
       });
     } catch (dbError) {
@@ -429,11 +437,10 @@ export class ApplicationsSagaService {
           );
           if (template && template.enabled) {
             let orgName = "Company";
-            const org = await this.prisma.db.orm.public.Organization.select(
-              "name",
-            )
-              .where((o) => o.id.eq(orgId))
-              .first();
+            const org = await this.prisma.organization.findFirst({
+              where: { id: orgId },
+              select: { name: true },
+            });
             if (org?.name) {
               orgName = org.name;
             }

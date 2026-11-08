@@ -49,9 +49,9 @@ export class InterviewsScheduleService {
   ) {}
 
   async create(dto: CreateInterviewDto, organizationId?: string | null) {
-    const app = await this.prisma.db.orm.public.Application.where((a) =>
-      a.id.eq(dto.applicationId),
-    ).first();
+    const app = await this.prisma.application.findFirst({
+      where: { id: dto.applicationId },
+    });
     if (!app) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND,
@@ -68,14 +68,14 @@ export class InterviewsScheduleService {
     }
 
     const candidate = app.candidateId
-      ? await this.prisma.db.orm.public.Candidate.where((c) =>
-          c.id.eq(app.candidateId),
-        ).first()
+      ? await this.prisma.candidate.findFirst({
+          where: { id: app.candidateId },
+        })
       : null;
     const job = app.jobId
-      ? await this.prisma.db.orm.public.Job.where((j) =>
-          j.id.eq(app.jobId),
-        ).first()
+      ? await this.prisma.job.findFirst({
+          where: { id: app.jobId },
+        })
       : null;
     const orgId = candidate?.organizationId || job?.organizationId;
 
@@ -110,18 +110,20 @@ export class InterviewsScheduleService {
       );
     }
 
-    await this.prisma.db.orm.public.Interview.create({
-      id,
-      applicationId: dto.applicationId,
-      scheduledAt: scheduledInstant,
-      type: dto.type as InterviewType,
-      format: (dto.format as InterviewFormat) || "MEET",
-      linkOrLocation: dto.linkOrLocation || "",
-      interviewer: dto.interviewer,
-      round: dto.round || 1,
-      scorecard: scorecardStr,
-      notes: dto.notes || null,
-      updatedAt: toInstant(),
+    await this.prisma.interview.create({
+      data: {
+        id,
+        applicationId: dto.applicationId,
+        scheduledAt: scheduledInstant,
+        type: dto.type as InterviewType,
+        format: (dto.format as InterviewFormat) || "MEET",
+        linkOrLocation: dto.linkOrLocation || "",
+        interviewer: dto.interviewer,
+        round: dto.round || 1,
+        scorecard: scorecardStr,
+        notes: dto.notes || null,
+        updatedAt: toInstant(),
+      },
     });
 
     if (
@@ -129,10 +131,11 @@ export class InterviewsScheduleService {
       app.stage !== "OFFER" &&
       app.stage !== "HIRED"
     ) {
-      await this.prisma.db.orm.public.Application.where((a) =>
-        a.id.eq(app.id),
-      ).update({
-        stage: "INTERVIEW",
+      await this.prisma.application.update({
+        where: { id: app.id },
+        data: {
+          stage: "INTERVIEW",
+        },
       });
     }
 
@@ -168,11 +171,10 @@ export class InterviewsScheduleService {
           );
           if (template && template.enabled) {
             let orgName = "Company";
-            const org = await this.prisma.db.orm.public.Organization.select(
-              "name",
-            )
-              .where((o) => o.id.eq(orgId))
-              .first();
+            const org = await this.prisma.organization.findFirst({
+              where: { id: orgId },
+              select: { name: true },
+            });
             if (org?.name) {
               orgName = org.name;
             }
@@ -266,9 +268,10 @@ export class InterviewsScheduleService {
     }
     updateData.updatedAt = toInstant();
 
-    await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).update(
-      updateData,
-    );
+    await this.prisma.interview.update({
+      where: { id },
+      data: updateData,
+    });
     const updated = await this.queryService.findOne(id, tenantOrgId);
 
     const candidate = updated.application?.candidate;
@@ -303,9 +306,9 @@ export class InterviewsScheduleService {
 
   async remove(id: string, tenantOrgId?: string | null) {
     await this.queryService.findOne(id, tenantOrgId);
-    await this.prisma.db.orm.public.Interview.where((i) =>
-      i.id.eq(id),
-    ).delete();
+    await this.prisma.interview.delete({
+      where: { id },
+    });
     return { success: true, message: `Interview ${id} deleted successfully` };
   }
 }

@@ -44,18 +44,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "email",
-      "name",
-      "role",
-      "avatarUrl",
-      "organizationId",
-      "tokenVersion",
-      "createdAt",
-    )
-      .where((u) => u.id.eq(payload.sub))
-      .first();
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        avatarUrl: true,
+        organizationId: true,
+        tokenVersion: true,
+        createdAt: true,
+      },
+    });
 
     if (!user) {
       throw new AppUnauthorizedException(
@@ -81,14 +82,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ownerId: string;
     } | null = null;
     if (user.organizationId) {
-      const org = await this.prisma.db.orm.public.Organization.select(
-        "id",
-        "name",
-        "slug",
-        "ownerId",
-      )
-        .where((o) => o.id.eq(user.organizationId as string))
-        .first();
+      const org = await this.prisma.organization.findUnique({
+        where: { id: user.organizationId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          ownerId: true,
+        },
+      });
 
       if (org) {
         organization = org;
@@ -98,8 +100,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     return {
       ...user,
-      isOwner,
       organization,
+      isOwner,
     };
   }
 }

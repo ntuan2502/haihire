@@ -1,8 +1,9 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { OrganizationsCoreService } from "./organizations-core.service";
 import {
   createMockTable,
+  createMockPrismaService,
   type MockTable,
   type ProxyRecord,
 } from "../../test/helpers/prisma-composer-mock";
@@ -95,19 +96,15 @@ describe("OrganizationsCoreService", () => {
       },
     };
 
-    const mockDb = {
+    const _mockDb = {
       orm: mockOrm,
     };
 
-    mockPrisma = {
-      db: mockDb,
-      executeTx: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-      transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-    } as unknown as PrismaService;
+    mockPrisma = createMockPrismaService({
+      user: userTable,
+      organization: organizationTable,
+      organizationMember: organizationMemberTable,
+    }) as unknown as PrismaService;
 
     service = new OrganizationsCoreService(mockPrisma);
   });

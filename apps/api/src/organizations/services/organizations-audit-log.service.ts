@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
 import { PrismaService } from "../../prisma/prisma.service";
-import { toInstant, toTimestamp } from "../../common/date.util";
+import { toInstant } from "../../common/date.util";
 
 export interface OrgAuditLogFilter {
   action?: string;
@@ -43,14 +43,16 @@ export class OrganizationsAuditLogService {
   ) {
     const id = crypto.randomUUID();
     const metadataStr = metadata ? JSON.stringify(metadata) : null;
-    return this.prisma.client.orm.public.OrganizationAuditLog.create({
-      id,
-      organizationId,
-      actorId: actorId || null,
-      action,
-      resource,
-      metadata: metadataStr,
-      createdAt: toInstant(),
+    return this.prisma.organizationAuditLog.create({
+      data: {
+        id,
+        organizationId,
+        actorId: actorId || null,
+        action,
+        resource,
+        metadata: metadataStr,
+        createdAt: toInstant(),
+      },
     });
   }
 
@@ -63,14 +65,16 @@ export class OrganizationsAuditLogService {
   ) {
     const id = crypto.randomUUID();
     const metadataStr = metadata ? JSON.stringify(metadata) : null;
-    return this.prisma.db.orm.public.PlatformAuditLog.create({
-      id,
-      organizationId,
-      actorId,
-      action,
-      resource,
-      metadata: metadataStr,
-      createdAt: toInstant(),
+    return this.prisma.platformAuditLog.create({
+      data: {
+        id,
+        organizationId,
+        actorId,
+        action,
+        resource,
+        metadata: metadataStr,
+        createdAt: toInstant(),
+      },
     });
   }
 
@@ -78,29 +82,20 @@ export class OrganizationsAuditLogService {
     const limit = Math.min(Math.max(filter.limit ?? 50, 1), 100);
     const offset = Math.max(filter.offset ?? 0, 0);
 
-    let query = this.prisma.db.orm.public.OrganizationAuditLog.select(
-      "id",
-      "organizationId",
-      "actorId",
-      "action",
-      "resource",
-      "metadata",
-      "createdAt",
-    ).where((l) => l.organizationId.eq(organizationId));
+        const where: Record<string, unknown> = { organizationId };
+    if (filter.action) where.action = filter.action;
+    if (filter.resource) where.resource = filter.resource;
 
-    if (filter.action) {
-      query = query.where((l) => l.action.eq(filter.action!));
-    }
-    if (filter.resource) {
-      query = query.where((l) => l.resource.eq(filter.resource!));
-    }
-
-    const logs = await query.all();
-    const sorted = logs.sort(
-      (a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt),
-    );
-    const total = sorted.length;
-    const pagedLogs = sorted.slice(offset, offset + limit);
+    const [total, pagedLogs] = await Promise.all([
+      this.prisma.organizationAuditLog.count({ where: { ...where, organizationId } }),
+      this.prisma.organizationAuditLog.findMany({
+        where: { ...where, organizationId },
+        orderBy: { createdAt: "desc" },
+        skip: offset,
+        take: limit,
+      }),
+    ]);
+    // Pagination handled by Prisma database query
 
     const actorIds = Array.from(
       new Set(pagedLogs.map((l) => l.actorId).filter(Boolean)),
@@ -108,16 +103,17 @@ export class OrganizationsAuditLogService {
 
     const actors =
       actorIds.length > 0
-        ? await this.prisma.db.orm.public.User.select(
-            "id",
-            "name",
-            "email",
-            "role",
-            "avatarUrl",
-            "organizationId",
-          )
-            .where((u) => u.id.in(actorIds))
-            .all()
+        ? await this.prisma.user.findMany({
+            where: { id: { in: actorIds } },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              avatarUrl: true,
+              organizationId: true,
+            },
+          })
         : [];
 
     const actorMap = new Map(actors.map((u) => [u.id, u]));
@@ -145,32 +141,21 @@ export class OrganizationsAuditLogService {
     const limit = Math.min(Math.max(filter.limit ?? 50, 1), 100);
     const offset = Math.max(filter.offset ?? 0, 0);
 
-    let query = this.prisma.db.orm.public.PlatformAuditLog.select(
-      "id",
-      "organizationId",
-      "actorId",
-      "action",
-      "resource",
-      "metadata",
-      "createdAt",
-    );
+        const where: Record<string, unknown> = {};
+    if (filter.organizationId) where.organizationId = filter.organizationId;
+    if (filter.action) where.action = filter.action;
+    if (filter.resource) where.resource = filter.resource;
 
-    if (filter.organizationId) {
-      query = query.where((l) => l.organizationId.eq(filter.organizationId!));
-    }
-    if (filter.action) {
-      query = query.where((l) => l.action.eq(filter.action!));
-    }
-    if (filter.resource) {
-      query = query.where((l) => l.resource.eq(filter.resource!));
-    }
-
-    const logs = await query.all();
-    const sorted = logs.sort(
-      (a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt),
-    );
-    const total = sorted.length;
-    const pagedLogs = sorted.slice(offset, offset + limit);
+    const [total, pagedLogs] = await Promise.all([
+      this.prisma.platformAuditLog.count({ where }),
+      this.prisma.platformAuditLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: offset,
+        take: limit,
+      }),
+    ]);
+    // Pagination handled by database query
 
     const data = pagedLogs.map((log) => ({
       id: log.id,

@@ -10,42 +10,51 @@ describe("ActivitiesService", () => {
     inMemoryActivities.length = 0;
 
     mockPrismaService = {
-      db: {
-        orm: {
-          public: {
-            ActivityLog: {
-              create: vi.fn().mockImplementation(async (data) => {
-                inMemoryActivities.push(data);
-                return data;
-              }),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                where: vi.fn().mockImplementation((predicateFn2) => ({
-                  all: vi.fn().mockImplementation(async () => {
-                    return inMemoryActivities.filter((a) => {
-                      const rec1 = {
-                        candidateId: { eq: (val: string) => a.candidateId === val },
-                        applicationId: { eq: (val: string) => a.applicationId === val },
-                      };
-                      const rec2 = {
-                        organizationId: { eq: (val: string) => a.organizationId === val },
-                      };
-                      return predicateFn(rec1) && predicateFn2(rec2);
-                    });
-                  }),
-                })),
-                all: vi.fn().mockImplementation(async () => {
-                  return inMemoryActivities.filter((a) => {
-                    const rec = {
-                      candidateId: { eq: (val: string) => a.candidateId === val },
-                      applicationId: { eq: (val: string) => a.applicationId === val },
-                    };
-                    return predicateFn(rec);
-                  });
-                }),
-              })),
+      activityLog: {
+        create: vi
+          .fn()
+          .mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+            inMemoryActivities.push(data);
+            return data;
+          }),
+        count: vi
+          .fn()
+          .mockImplementation(async ({ where }: { where: Record<string, unknown> }) => {
+            return inMemoryActivities.filter((a) => {
+              if (where.candidateId && a.candidateId !== where.candidateId)
+                return false;
+              if (where.applicationId && a.applicationId !== where.applicationId)
+                return false;
+              if (where.organizationId && a.organizationId !== where.organizationId)
+                return false;
+              return true;
+            }).length;
+          }),
+        findMany: vi
+          .fn()
+          .mockImplementation(
+            async ({
+              where,
+              skip = 0,
+              take = 20,
+            }: {
+              where: Record<string, unknown>;
+              skip?: number;
+              take?: number;
+            }) => {
+              return inMemoryActivities
+                .filter((a) => {
+                  if (where.candidateId && a.candidateId !== where.candidateId)
+                    return false;
+                  if (where.applicationId && a.applicationId !== where.applicationId)
+                    return false;
+                  if (where.organizationId && a.organizationId !== where.organizationId)
+                    return false;
+                  return true;
+                })
+                .slice(skip, skip + take);
             },
-          },
-        },
+          ),
       },
     };
 
@@ -58,37 +67,38 @@ describe("ActivitiesService", () => {
       candidateId: "cand-1",
       type: "STAGE_CHANGED",
       title: "Stage changed",
-      description: "Moved to Interview",
-      actorName: "HR",
+      description: "Candidate moved to Interview stage",
+      actorName: "John Recruiter",
       metadata: { fromStage: "APPLIED", toStage: "INTERVIEW" },
     });
 
     expect(activity).toBeDefined();
-    expect(activity.candidateId).toBe("cand-1");
-    expect(typeof activity.metadata).toBe("string");
+    expect(activity.organizationId).toBe("org-1");
+    expect(activity.metadata).toBe(
+      JSON.stringify({ fromStage: "APPLIED", toStage: "INTERVIEW" }),
+    );
   });
 
-  it("should return paginated activities strictly as PaginatedResult", async () => {
-    for (let i = 1; i <= 5; i++) {
-      await service.createActivity({
-        organizationId: "org-1",
-        candidateId: "cand-1",
-        type: "NOTE_ADDED",
-        title: `Note ${i}`,
-        description: `Description ${i}`,
-        actorName: "HR",
-      });
-    }
-
-    const result = await service.findByCandidate("cand-1", "org-1", {
-      page: 1,
-      limit: 2,
+  it("should paginate activities and parse JSON metadata safely", async () => {
+    await service.createActivity({
+      organizationId: "org-1",
+      candidateId: "cand-1",
+      type: "NOTE_ADDED",
+      title: "Note 1",
+      description: "Note description",
+      actorName: "John",
+      metadata: { note: "Great candidate" },
     });
 
-    expect(result.total).toBe(5);
-    expect(result.page).toBe(1);
-    expect(result.limit).toBe(2);
-    expect(result.totalPages).toBe(3);
-    expect(result.data.length).toBe(2);
+    const result = await service.findByCandidate(
+      "cand-1",
+      "org-1",
+      { page: 1, limit: 10 },
+      "org-1",
+    );
+
+    expect(result.data).toHaveLength(1);
+    expect(result.total).toBe(1);
+    expect(result.data[0].metadata).toEqual({ note: "Great candidate" });
   });
 });

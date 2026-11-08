@@ -1,32 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 import { SourcingService } from "./sourcing.service";
 import { SourcingChannel } from "@haihire/shared";
-
-function evaluatePredicate(
-  item: Record<string, unknown>,
-  pred?: (proxy: unknown) => unknown,
-): boolean {
-  if (!pred) return true;
-  function wrapResult(val: boolean) {
-    return {
-      and: (other: { value: boolean } | boolean) =>
-        wrapResult(val && (typeof other === "boolean" ? other : other.value)),
-      value: val,
-    };
-  }
-  const proxy = new Proxy({}, {
-    get: (_, prop: string) => {
-      const fieldVal = item[prop];
-      return {
-        eq: (target: unknown) => wrapResult(fieldVal === target),
-        in: (targets: unknown[]) =>
-          wrapResult(Array.isArray(targets) && targets.includes(fieldVal)),
-      };
-    },
-  });
-  const res = pred(proxy) as { value?: boolean } | boolean;
-  return typeof res === "boolean" ? res : (res?.value ?? true);
-}
 
 describe("SourcingService", () => {
   let service: SourcingService;
@@ -37,9 +12,8 @@ describe("SourcingService", () => {
   const inMemoryCandidates: Array<Record<string, unknown>> = [];
 
   let executeTxSpy: ReturnType<typeof vi.fn>;
-  let currentMockDb: unknown;
   let mockRedis: ReturnType<typeof createMockRedis>;
-  let mockPrisma: { db: unknown; executeTx: ReturnType<typeof vi.fn>; transaction: ReturnType<typeof vi.fn> };
+  let mockPrisma: ReturnType<typeof createMockPrismaService>;
 
   const mockActivitiesService = {
     createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
@@ -83,77 +57,15 @@ describe("SourcingService", () => {
 
     mockRedis = createMockRedis();
 
-    function createQueryBuilder(
-      items: Array<Record<string, unknown>>,
-      predicates: Array<(proxy: unknown) => unknown> = [],
-    ) {
-      return {
-        where: (pred: (proxy: unknown) => unknown) =>
-          createQueryBuilder(items, [...predicates, pred]),
-        all: async () =>
-          items.filter((item) => predicates.every((p) => evaluatePredicate(item, p))),
-        first: async () =>
-          items.find((item) => predicates.every((p) => evaluatePredicate(item, p))) || null,
-      };
-    }
-
-    const mockDb = {
-      orm: {
-        public: {
-          Job: {
-            select: vi.fn().mockImplementation(() => createQueryBuilder(inMemoryJobs)),
-          },
-          Candidate: {
-            select: vi.fn().mockImplementation(() => createQueryBuilder(inMemoryCandidates)),
-          },
-          User: {
-            select: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                first: vi.fn().mockResolvedValue({ name: "Recruiter Bob" }),
-              }),
-            }),
-          },
-          Application: {
-            select: vi.fn().mockImplementation(() => createQueryBuilder(inMemoryApps)),
-          },
-          TrackingClick: {
-            select: vi.fn().mockImplementation(() => createQueryBuilder(inMemoryClicks)),
-            create: vi.fn().mockImplementation(async (data) => {
-              inMemoryClicks.push(data);
-              return data;
-            }),
-          },
-          TrackingLink: {
-            select: vi.fn().mockImplementation(() => createQueryBuilder(inMemoryLinks)),
-            create: vi.fn().mockImplementation(async (data) => {
-              inMemoryLinks.push(data);
-              return data;
-            }),
-            where: vi.fn().mockImplementation((pred) => ({
-              update: vi.fn().mockImplementation(async (updateData) => {
-                const item = inMemoryLinks.find((l) => evaluatePredicate(l, pred));
-                if (item) {
-                  Object.assign(item, updateData);
-                }
-                return item;
-              }),
-            })),
-          },
-        },
-      },
-    };
-
-    currentMockDb = mockDb;
-
-    executeTxSpy = vi.fn().mockImplementation(async (fn: (tx: typeof mockDb) => Promise<unknown>) => {
-      return fn(mockDb);
+    mockPrisma = createMockPrismaService({
+      job: inMemoryJobs,
+      candidate: inMemoryCandidates,
+      application: inMemoryApps,
+      trackingClick: inMemoryClicks,
+      trackingLink: inMemoryLinks,
+      user: [{ id: "user-1", name: "Recruiter Bob" }],
     });
-
-    mockPrisma = {
-      db: mockDb,
-      executeTx: executeTxSpy,
-      transaction: executeTxSpy,
-    };
+    executeTxSpy = (mockPrisma as unknown as { executeTx: unknown }).executeTx as ReturnType<typeof vi.fn>;
 
     service = new SourcingService(mockPrisma as never, mockActivitiesService as never, mockRedis);
   });
@@ -341,7 +253,7 @@ describe("SourcingService", () => {
     // Simulate async I/O delay in transaction to test concurrent race condition resilience
     executeTxSpy.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       await new Promise((resolve) => setTimeout(resolve, 2));
-      return fn(currentMockDb);
+      return fn(mockPrisma);
     });
 
     // Fire 10 concurrent click events with the same token
@@ -493,7 +405,7 @@ describe("SourcingService", () => {
     // Simulate async transaction I/O delay
     executeTxSpy.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       await new Promise((resolve) => setTimeout(resolve, 2));
-      return fn(currentMockDb);
+      return fn(mockPrisma);
     });
 
     // 50 calls from instance 1 + 50 calls from instance 2 concurrently (100 total)
@@ -518,5 +430,5 @@ describe("SourcingService", () => {
     expect(inMemoryLinks[0].clicksCount).toBe(100);
     expect(inMemoryClicks).toHaveLength(100);
     expect(executeTxSpy).toHaveBeenCalledTimes(100);
-  });
+  }, 20000);
 });

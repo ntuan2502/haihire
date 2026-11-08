@@ -53,13 +53,14 @@ export class SourcingMetricsService {
     }
 
     // 1. Fetch organization's jobs
-    const jobs = await this.prisma.db.orm.public.Job.select(
-      "id",
-      "title",
-      "organizationId",
-    )
-      .where((j) => j.organizationId.eq(organizationId))
-      .all();
+    const jobs = await this.prisma.job.findMany({
+      where: { organizationId },
+      select: {
+        id: true,
+        title: true,
+        organizationId: true,
+      },
+    });
 
     const orgJobIds = new Set(jobs.map((j) => j.id));
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
@@ -82,20 +83,21 @@ export class SourcingMetricsService {
     }
 
     // 2. Fetch applications for target jobs (scoped to target jobs belonging to organization)
-    const rawApplications = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "jobId",
-      "candidateId",
-      "stage",
-      "sourceChannel",
-      "sourceDetails",
-      "referrerDomain",
-      "utmCampaign",
-      "trackingLinkId",
-      "createdAt",
-    )
-      .where((a) => a.jobId.in(targetJobIds))
-      .all();
+    const rawApplications = await this.prisma.application.findMany({
+      where: { jobId: { in: targetJobIds } },
+      select: {
+        id: true,
+        jobId: true,
+        candidateId: true,
+        stage: true,
+        sourceChannel: true,
+        sourceDetails: true,
+        referrerDomain: true,
+        utmCampaign: true,
+        trackingLinkId: true,
+        createdAt: true,
+      },
+    });
 
     const filteredApplications = rawApplications.filter((app) => {
       if (minTimestamp !== null) {
@@ -112,29 +114,33 @@ export class SourcingMetricsService {
       new Set(filteredApplications.map((a) => a.candidateId)),
     );
     const candidates = candidateIds.length > 0
-      ? await this.prisma.db.orm.public.Candidate.select("id", "name", "email")
-          .where((c) => c.organizationId.eq(organizationId))
-          .where((c) => c.id.in(candidateIds))
-          .all()
+      ? await this.prisma.candidate.findMany({
+          where: {
+            organizationId,
+            id: { in: candidateIds },
+          },
+          select: { id: true, name: true, email: true },
+        })
       : [];
     const candidateMap = new Map(
       candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
     );
 
     // 4. Fetch tracking links for organization
-    const trackingLinks = await this.prisma.db.orm.public.TrackingLink.select(
-      "id",
-      "organizationId",
-      "name",
-      "token",
-      "source",
-      "jobId",
-      "clicksCount",
-      "isActive",
-      "deletedAt",
-    )
-      .where((l) => l.organizationId.eq(organizationId))
-      .all();
+    const trackingLinks = await this.prisma.trackingLink.findMany({
+      where: { organizationId },
+      select: {
+        id: true,
+        organizationId: true,
+        name: true,
+        token: true,
+        source: true,
+        jobId: true,
+        clicksCount: true,
+        isActive: true,
+        deletedAt: true,
+      },
+    });
 
     const nonDeletedLinks = trackingLinks.filter((l) => !l.deletedAt);
     const activeLinksCount = nonDeletedLinks.filter((l) => l.isActive).length;
@@ -240,12 +246,13 @@ export class SourcingMetricsService {
       .filter((l) => (jobId ? l.jobId === jobId : true))
       .map((l) => l.id);
     const clicks = targetLinkIds.length > 0
-      ? await this.prisma.db.orm.public.TrackingClick.select(
-          "referrerDomain",
-          "createdAt",
-        )
-          .where((c) => c.trackingLinkId.in(targetLinkIds))
-          .all()
+      ? await this.prisma.trackingClick.findMany({
+          where: { trackingLinkId: { in: targetLinkIds } },
+          select: {
+            referrerDomain: true,
+            createdAt: true,
+          },
+        })
       : [];
     for (const clk of clicks) {
       if (clk.referrerDomain) {
@@ -325,29 +332,30 @@ export class SourcingMetricsService {
       );
     }
 
-    const link = await this.prisma.db.orm.public.TrackingLink.select(
-      "id",
-      "organizationId",
-      "name",
-      "token",
-      "source",
-      "customSource",
-      "jobId",
-      "campaign",
-      "medium",
-      "utmSource",
-      "utmMedium",
-      "utmCampaign",
-      "utmTerm",
-      "utmContent",
-      "clicksCount",
-      "isActive",
-      "deletedAt",
-      "createdAt",
-      "updatedAt",
-    )
-      .where((l) => l.id.eq(id))
-      .first();
+    const link = await this.prisma.trackingLink.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        organizationId: true,
+        name: true,
+        token: true,
+        source: true,
+        customSource: true,
+        jobId: true,
+        campaign: true,
+        medium: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmTerm: true,
+        utmContent: true,
+        clicksCount: true,
+        isActive: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     if (!link || link.deletedAt) {
       throw new AppNotFoundException(
@@ -367,9 +375,10 @@ export class SourcingMetricsService {
     let jobTitle: string | null = null;
     let jobType: string | null = null;
     if (link.jobId) {
-      const j = await this.prisma.db.orm.public.Job.select("title", "type")
-        .where((x) => x.id.eq(link.jobId as string))
-        .first();
+      const j = await this.prisma.job.findFirst({
+        where: { id: link.jobId as string },
+        select: { title: true, type: true },
+      });
       jobTitle = j?.title || null;
       jobType = j?.type || null;
     }
@@ -386,13 +395,14 @@ export class SourcingMetricsService {
     }
 
     // 3. Fetch clicks for this link
-    const allClicks = await this.prisma.db.orm.public.TrackingClick.select(
-      "id",
-      "referrerDomain",
-      "createdAt",
-    )
-      .where((c) => c.trackingLinkId.eq(link.id))
-      .all();
+    const allClicks = await this.prisma.trackingClick.findMany({
+      where: { trackingLinkId: link.id },
+      select: {
+        id: true,
+        referrerDomain: true,
+        createdAt: true,
+      },
+    });
 
     const filteredClicks = allClicks.filter((c) => {
       if (minTimestamp !== null) {
@@ -407,22 +417,23 @@ export class SourcingMetricsService {
         : filteredClicks.length;
 
     // 4. Fetch all applications attributed to this link
-    const allAttributedApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "candidateId",
-      "jobId",
-      "stage",
-      "referrerDomain",
-      "sourceDetails",
-      "utmSource",
-      "utmMedium",
-      "utmCampaign",
-      "utmTerm",
-      "utmContent",
-      "createdAt",
-    )
-      .where((a) => a.trackingLinkId.eq(link.id))
-      .all();
+    const allAttributedApps = await this.prisma.application.findMany({
+      where: { trackingLinkId: link.id },
+      select: {
+        id: true,
+        candidateId: true,
+        jobId: true,
+        stage: true,
+        referrerDomain: true,
+        sourceDetails: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmTerm: true,
+        utmContent: true,
+        createdAt: true,
+      },
+    });
 
     const allTimeAttributed = allAttributedApps.length;
 
@@ -503,14 +514,17 @@ export class SourcingMetricsService {
     );
     const candidates =
       candidateIds.length > 0
-        ? await this.prisma.db.orm.public.Candidate.select(
-            "id",
-            "name",
-            "email",
-          )
-            .where((c) => c.organizationId.eq(organizationId))
-            .where((c) => c.id.in(candidateIds))
-            .all()
+        ? await this.prisma.candidate.findMany({
+            where: {
+              organizationId,
+              id: { in: candidateIds },
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          })
         : [];
     const candMap = new Map(
       candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
@@ -519,10 +533,13 @@ export class SourcingMetricsService {
     const appJobIds = Array.from(new Set(filteredApps.map((a) => a.jobId)));
     const jobs =
       appJobIds.length > 0
-        ? await this.prisma.db.orm.public.Job.select("id", "title", "type")
-            .where((j) => j.organizationId.eq(organizationId))
-            .where((j) => j.id.in(appJobIds))
-            .all()
+        ? await this.prisma.job.findMany({
+            where: {
+              organizationId,
+              id: { in: appJobIds },
+            },
+            select: { id: true, title: true, type: true },
+          })
         : [];
     const jobMap = new Map(
       jobs.map((j) => [j.id, { title: j.title, type: j.type }]),
@@ -634,9 +651,10 @@ export class SourcingMetricsService {
     const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
 
     // Fetch jobs for organization
-    const jobs = await this.prisma.db.orm.public.Job.select("id", "title")
-      .where((j) => j.organizationId.eq(organizationId))
-      .all();
+    const jobs = await this.prisma.job.findMany({
+      where: { organizationId },
+      select: { id: true, title: true },
+    });
     const orgJobIds = new Set(jobs.map((j) => j.id));
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
@@ -652,19 +670,20 @@ export class SourcingMetricsService {
     }
 
     // Fetch applications scoped to target organization jobs
-    const allApps = await this.prisma.db.orm.public.Application.select(
-      "id",
-      "jobId",
-      "candidateId",
-      "stage",
-      "sourceChannel",
-      "sourceDetails",
-      "utmCampaign",
-      "trackingLinkId",
-      "createdAt",
-    )
-      .where((a) => a.jobId.in(targetJobIds))
-      .all();
+    const allApps = await this.prisma.application.findMany({
+      where: { jobId: { in: targetJobIds } },
+      select: {
+        id: true,
+        jobId: true,
+        candidateId: true,
+        stage: true,
+        sourceChannel: true,
+        sourceDetails: true,
+        utmCampaign: true,
+        trackingLinkId: true,
+        createdAt: true,
+      },
+    });
 
     let filtered = allApps;
 
@@ -675,10 +694,13 @@ export class SourcingMetricsService {
     // Fetch candidates scoped to organization
     const candidateIds = Array.from(new Set(filtered.map((a) => a.candidateId)));
     const candidates = candidateIds.length > 0
-      ? await this.prisma.db.orm.public.Candidate.select("id", "name", "email")
-          .where((c) => c.organizationId.eq(organizationId))
-          .where((c) => c.id.in(candidateIds))
-          .all()
+      ? await this.prisma.candidate.findMany({
+          where: {
+            organizationId,
+            id: { in: candidateIds },
+          },
+          select: { id: true, name: true, email: true },
+        })
       : [];
     const candidateMap = new Map(
       candidates.map((c) => [c.id, { name: c.name, email: c.email }]),

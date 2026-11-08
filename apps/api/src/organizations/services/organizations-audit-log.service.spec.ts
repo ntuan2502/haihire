@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
-import type { PrismaService } from "../../prisma/prisma.service";
+import { createMockPrismaService } from "../../test/helpers/prisma-composer-mock";
 
 describe("OrganizationsAuditLogService", () => {
   let service: OrganizationsAuditLogService;
@@ -43,148 +43,13 @@ describe("OrganizationsAuditLogService", () => {
       },
     ];
 
-    const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationAuditLog: {
-              create: vi
-                .fn()
-                .mockImplementation(
-                  (data: {
-                    id: string;
-                    organizationId: string;
-                    actorId: string | null;
-                    action: string;
-                    resource: string;
-                    metadata: string | null;
-                    createdAt: string;
-                  }) => {
-                    mockOrgLogs.push(data);
-                    return Promise.resolve(data);
-                  },
-                ),
-              select: vi.fn().mockImplementation(() => {
-                let filtered = [...mockOrgLogs];
-                const chain = {
-                  where: (predicateFn: (l: unknown) => boolean) => {
-                    const probe = {
-                      organizationId: {
-                        eq: (val: string) => {
-                          filtered = filtered.filter(
-                            (l) => l.organizationId === val,
-                          );
-                          return true;
-                        },
-                      },
-                      action: {
-                        eq: (val: string) => {
-                          filtered = filtered.filter((l) => l.action === val);
-                          return true;
-                        },
-                      },
-                      resource: {
-                        eq: (val: string) => {
-                          filtered = filtered.filter((l) => l.resource === val);
-                          return true;
-                        },
-                      },
-                    };
-                    predicateFn(probe);
-                    return chain;
-                  },
-                  all: vi
-                    .fn()
-                    .mockImplementation(() => Promise.resolve(filtered)),
-                };
-                return chain;
-              }),
-            },
-            PlatformAuditLog: {
-              create: vi
-                .fn()
-                .mockImplementation(
-                  (data: {
-                    id: string;
-                    organizationId: string;
-                    actorId: string;
-                    action: string;
-                    resource: string;
-                    metadata: string | null;
-                    createdAt: string;
-                  }) => {
-                    mockPlatformLogs.push(data);
-                    return Promise.resolve(data);
-                  },
-                ),
-              select: vi.fn().mockImplementation(() => {
-                let filtered = [...mockPlatformLogs];
-                const chain = {
-                  where: (predicateFn: (l: unknown) => boolean) => {
-                    const probe = {
-                      organizationId: {
-                        eq: (val: string) => {
-                          filtered = filtered.filter(
-                            (l) => l.organizationId === val,
-                          );
-                          return true;
-                        },
-                      },
-                      action: {
-                        eq: (val: string) => {
-                          filtered = filtered.filter((l) => l.action === val);
-                          return true;
-                        },
-                      },
-                      resource: {
-                        eq: (val: string) => {
-                          filtered = filtered.filter((l) => l.resource === val);
-                          return true;
-                        },
-                      },
-                    };
-                    predicateFn(probe);
-                    return chain;
-                  },
-                  all: vi
-                    .fn()
-                    .mockImplementation(() => Promise.resolve(filtered)),
-                };
-                return chain;
-              }),
-            },
-            User: {
-              select: vi.fn().mockImplementation(() => ({
-                where: (predicateFn: (u: unknown) => boolean) => {
-                  let ids: string[] = [];
-                  const probe = {
-                    id: {
-                      in: (val: string[]) => {
-                        ids = val;
-                        return true;
-                      },
-                    },
-                  };
-                  predicateFn(probe);
-                  return {
-                    all: vi
-                      .fn()
-                      .mockImplementation(() =>
-                        Promise.resolve(
-                          mockUsers.filter((u) => ids.includes(u.id)),
-                        ),
-                      ),
-                  };
-                },
-              })),
-            },
-          },
-        },
-      },
-    } as unknown as PrismaService;
-    Object.defineProperty(mockPrisma, "client", { get: () => mockPrisma.db });
+    const mockPrisma = createMockPrismaService({
+      organizationAuditLog: mockOrgLogs,
+      platformAuditLog: mockPlatformLogs,
+      user: mockUsers,
+    });
 
-    service = new OrganizationsAuditLogService(mockPrisma);
+    service = new OrganizationsAuditLogService(mockPrisma as never);
   });
 
   describe("logOrg", () => {

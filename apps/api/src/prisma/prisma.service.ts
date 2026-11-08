@@ -1,62 +1,72 @@
 import { Injectable } from "@nestjs/common";
-import type { OnModuleInit } from "@nestjs/common";
+import type { OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import type { PrismaClient } from "@prisma/client";
-import { connectDatabase, db } from "./db";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
 import { toInstant } from "../common/date.util";
 import { backendEnv } from "../config/env";
 
+const connectionString =
+  process.env.DATABASE_URL ||
+  "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev";
+
 @Injectable()
-export class PrismaService implements OnModuleInit {
-  readonly db = db;
-  private readonly als = new AsyncLocalStorage<typeof db>();
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
+  private readonly als = new AsyncLocalStorage<PrismaService>();
 
-  get client(): typeof db {
-    return this.als.getStore() ?? this.db;
+  constructor() {
+    const adapter = new PrismaPg({ connectionString });
+    super({ adapter });
   }
 
-  get raw(): PrismaClient {
-    return (this.db as unknown as { $client: PrismaClient }).$client;
+  /**
+   * Alias for current transactional context or the base PrismaService instance.
+   */
+  get tx(): PrismaService {
+    return this.als.getStore() ?? this;
   }
 
-  async transaction<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+  /**
+   * Executes a callback within a database transaction, automatically propagating
+   * AsyncLocalStorage context so nested transactional calls reuse the same transaction.
+   */
+  async transaction<T>(fn: (tx: PrismaService) => Promise<T>): Promise<T> {
     const existing = this.als.getStore();
     if (existing) {
       return fn(existing);
     }
-
-    const client = this.db as unknown as {
-      transaction?: (cb: (tx: typeof db) => Promise<T>) => Promise<T>;
-    };
-    if (typeof client.transaction === "function") {
-      return client.transaction((tx) => this.als.run(tx, () => fn(tx)));
-    }
-    return this.als.run(this.db, () => fn(this.db));
+    return this.$transaction(async (txClient) => {
+      return this.als.run(txClient as PrismaService, () => fn(txClient as PrismaService));
+    }) as Promise<T>;
   }
 
-  async executeTx<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+  async executeTx<T>(fn: (tx: PrismaService) => Promise<T>): Promise<T> {
     return this.transaction(fn);
   }
 
   async onModuleInit() {
     try {
-      await connectDatabase();
+      await this.$connect();
 
       if (
         backendEnv.SEED_DEMO_ON_BOOT &&
         backendEnv.NODE_ENV !== "production"
       ) {
-        const existingUser = await this.db.orm.public.User.select("id").first();
+        const existingUser = await this.user.findFirst({ select: { id: true } });
         if (!existingUser) {
           const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
           const adminUserId = crypto.randomUUID();
           const adminOrgId = crypto.randomUUID();
           const memberUserId = crypto.randomUUID();
 
-          await this.db.orm.public.Organization.upsert({
+          await this.organization.upsert({
+            where: { id: adminOrgId },
             create: {
               id: adminOrgId,
               name: "Admin",
@@ -70,10 +80,10 @@ export class PrismaService implements OnModuleInit {
               ownerId: adminUserId,
               updatedAt: toInstant(),
             },
-            conflictOn: { id: adminOrgId },
           });
 
-          await this.db.orm.public.User.upsert({
+          await this.user.upsert({
+            where: { email: DEMO_ACCOUNTS.ADMIN.email },
             create: {
               id: adminUserId,
               email: DEMO_ACCOUNTS.ADMIN.email,
@@ -91,10 +101,10 @@ export class PrismaService implements OnModuleInit {
               organizationId: adminOrgId,
               updatedAt: toInstant(),
             },
-            conflictOn: { email: DEMO_ACCOUNTS.ADMIN.email },
           });
 
-          await this.db.orm.public.User.upsert({
+          await this.user.upsert({
+            where: { email: DEMO_ACCOUNTS.MEMBER.email },
             create: {
               id: memberUserId,
               email: DEMO_ACCOUNTS.MEMBER.email,
@@ -110,7 +120,6 @@ export class PrismaService implements OnModuleInit {
               role: "MEMBER",
               updatedAt: toInstant(),
             },
-            conflictOn: { email: DEMO_ACCOUNTS.MEMBER.email },
           });
           console.log(
             `Initialized default demo accounts: ${DEMO_ACCOUNTS.ADMIN.email} (ADMIN - Org Admin), ${DEMO_ACCOUNTS.MEMBER.email} (MEMBER - No Org)`,
@@ -122,6 +131,10 @@ export class PrismaService implements OnModuleInit {
       console.warn("Database connection pending or initializing...", msg);
     }
   }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
 }
 
 /**
@@ -130,18 +143,17 @@ export class PrismaService implements OnModuleInit {
  */
 export async function runInTransaction<T>(
   prisma: PrismaService,
-  fn: (tx: PrismaService["db"]) => Promise<T>,
+  fn: (tx: PrismaService) => Promise<T>,
 ): Promise<T> {
-  const p = prisma as unknown as {
-    transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-    executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-    db: PrismaService["db"];
-  };
+  const p = prisma as unknown as { transaction?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T>; executeTx?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T>; $transaction?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T> };
   if (typeof p.transaction === "function") {
     return p.transaction(fn);
   }
   if (typeof p.executeTx === "function") {
     return p.executeTx(fn);
   }
-  return fn(p.db ?? prisma.db);
+  if (typeof p.$transaction === "function") {
+    return p.$transaction(fn);
+  }
+  return fn(prisma);
 }

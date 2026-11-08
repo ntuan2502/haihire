@@ -1,7 +1,11 @@
 #!/usr/bin/env tsx
 import { spawn, execSync, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
-import { db } from "../src/prisma/db";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL || "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev" });
+const prisma = new PrismaClient({ adapter });
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../src/auth/constants";
 import { APP_ERROR_CODES, Role, PERMISSION_LIST } from "@haihire/shared";
 
@@ -109,37 +113,36 @@ async function cleanupDb(): Promise<void> {
   console.log("🧹 Running idempotent cleanup...");
   try {
     // 1. Restore Organization ownership to seed Admin
-    await db.orm.public.Organization.where((o) => o.id.eq(ADMIN_ORG_ID)).update(
-      {
-        ownerId: ADMIN_USER_ID,
-      },
-    );
+    await prisma.organization.update({
+      where: { id: ADMIN_ORG_ID },
+      data: { ownerId: ADMIN_USER_ID },
+    });
 
     // 2. Restore User roles
-    await db.orm.public.User.where((u) => u.id.eq(ADMIN_USER_ID)).update({
-      role: "ADMIN",
+    await prisma.user.update({
+      where: { id: ADMIN_USER_ID },
+      data: { role: "ADMIN" },
     });
-    await db.orm.public.User.where((u) => u.id.eq(MEMBER_USER_ID)).update({
-      role: "MEMBER",
+    await prisma.user.update({
+      where: { id: MEMBER_USER_ID },
+      data: { role: "MEMBER" },
     });
 
     // 3. Restore OrganizationMember roles
-    await db.orm.public.OrganizationMember.where((m) =>
-      m.organizationId.eq(ADMIN_ORG_ID),
-    )
-      .where((m) => m.userId.eq(ADMIN_USER_ID))
-      .update({ role: "ADMIN" });
+    await prisma.organizationMember.updateMany({
+      where: { organizationId: ADMIN_ORG_ID, userId: ADMIN_USER_ID },
+      data: { role: "ADMIN" },
+    });
 
-    await db.orm.public.OrganizationMember.where((m) =>
-      m.organizationId.eq(ADMIN_ORG_ID),
-    )
-      .where((m) => m.userId.eq(MEMBER_USER_ID))
-      .update({ role: "MEMBER" });
+    await prisma.organizationMember.updateMany({
+      where: { organizationId: ADMIN_ORG_ID, userId: MEMBER_USER_ID },
+      data: { role: "MEMBER" },
+    });
 
     // 4. Delete any OrganizationRolePermission overrides
-    await db.orm.public.OrganizationRolePermission.where((p) =>
-      p.organizationId.eq(ADMIN_ORG_ID),
-    ).delete();
+    await prisma.organizationRolePermission.deleteMany({
+      where: { organizationId: ADMIN_ORG_ID },
+    });
 
     console.log("✅ Cleanup completed successfully.");
   } catch (err) {
@@ -155,9 +158,10 @@ export async function runRbacSmokeTests(): Promise<void> {
   await ensureServerRunning();
 
   // Find candidate for candidate:view assertion
-  const candidate = await db.orm.public.Candidate.select("id")
-    .where((c) => c.organizationId.eq(ADMIN_ORG_ID))
-    .first();
+  const candidate = await prisma.candidate.findFirst({
+    where: { organizationId: ADMIN_ORG_ID },
+    select: { id: true },
+  });
   const testCandidateId =
     candidate?.id || "151ec18b-9340-47a7-af44-3366560e4c48";
 
@@ -202,43 +206,46 @@ export async function runRbacSmokeTests(): Promise<void> {
     );
 
     // Assert DB state post-transfer
-    const org = await db.orm.public.Organization.select("ownerId")
-      .where((o) => o.id.eq(ADMIN_ORG_ID))
-      .first();
+    const org = await prisma.organization.findUnique({
+      where: { id: ADMIN_ORG_ID },
+      select: { ownerId: true },
+    });
     assert(
       org?.ownerId === MEMBER_USER_ID,
       "DB Organization.ownerId must be new owner",
     );
 
-    const targetUser = await db.orm.public.User.select("role")
-      .where((u) => u.id.eq(MEMBER_USER_ID))
-      .first();
+    const targetUser = await prisma.user.findUnique({
+      where: { id: MEMBER_USER_ID },
+      select: { role: true },
+    });
     assert(
       targetUser?.role === "ADMIN",
       "Target User.role must be promoted to ADMIN",
     );
 
-    const targetMember = await db.orm.public.OrganizationMember.select("role")
-      .where((m) => m.organizationId.eq(ADMIN_ORG_ID))
-      .where((m) => m.userId.eq(MEMBER_USER_ID))
-      .first();
+    const targetMember = await prisma.organizationMember.findFirst({
+      where: { organizationId: ADMIN_ORG_ID, userId: MEMBER_USER_ID },
+      select: { role: true },
+    });
     assert(
       targetMember?.role === "ADMIN",
       "Target OrganizationMember.role must be ADMIN",
     );
 
-    const oldOwnerUser = await db.orm.public.User.select("role")
-      .where((u) => u.id.eq(ADMIN_USER_ID))
-      .first();
+    const oldOwnerUser = await prisma.user.findUnique({
+      where: { id: ADMIN_USER_ID },
+      select: { role: true },
+    });
     assert(
       oldOwnerUser?.role === "ADMIN",
       "Former owner User.role must retain ADMIN",
     );
 
-    const oldOwnerMember = await db.orm.public.OrganizationMember.select("role")
-      .where((m) => m.organizationId.eq(ADMIN_ORG_ID))
-      .where((m) => m.userId.eq(ADMIN_USER_ID))
-      .first();
+    const oldOwnerMember = await prisma.organizationMember.findFirst({
+      where: { organizationId: ADMIN_ORG_ID, userId: ADMIN_USER_ID },
+      select: { role: true },
+    });
     assert(
       oldOwnerMember?.role === "ADMIN",
       "Former owner OrganizationMember.role must retain ADMIN",
@@ -502,13 +509,12 @@ export async function runRbacSmokeTests(): Promise<void> {
     );
 
     // Assert DB contains exactly 1 override record
-    const overridesCount =
-      await db.orm.public.OrganizationRolePermission.select("id")
-        .where((p) => p.organizationId.eq(ADMIN_ORG_ID))
-        .all();
+    const overridesCount = await prisma.organizationRolePermission.count({
+      where: { organizationId: ADMIN_ORG_ID },
+    });
     assert(
-      overridesCount.length === 1,
-      `DB overrides expected 1 record, got ${overridesCount.length}`,
+      overridesCount === 1,
+      `DB overrides expected 1 record, got ${overridesCount}`,
     );
 
     // Step 4.3: Login as Recruiter and verify 403 on endpoint requiring candidate:view
@@ -543,13 +549,12 @@ export async function runRbacSmokeTests(): Promise<void> {
     );
 
     // Assert DB contains 0 overrides after reset
-    const overridesAfterReset =
-      await db.orm.public.OrganizationRolePermission.select("id")
-        .where((p) => p.organizationId.eq(ADMIN_ORG_ID))
-        .all();
+    const overridesAfterReset = await prisma.organizationRolePermission.count({
+      where: { organizationId: ADMIN_ORG_ID },
+    });
     assert(
-      overridesAfterReset.length === 0,
-      `DB overrides expected 0 after reset, got ${overridesAfterReset.length}`,
+      overridesAfterReset === 0,
+      `DB overrides expected 0 after reset, got ${overridesAfterReset}`,
     );
 
     // Step 4.5: Recruiter calls candidate endpoint again -> 200 OK

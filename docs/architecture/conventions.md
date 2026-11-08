@@ -98,13 +98,15 @@
 
 ## 9. Database, ORM & Transaction Architecture
 
-1. **Prisma Schema Architecture:** All database models live in `apps/api/src/prisma/schema.prisma`.
-   - _Rationale:_ Uses standard PostgreSQL driver adapters with full type safety and zero pre-release dependencies.
-2. **Cascade Deletion Integrity:** Child entities (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must declare `onDelete: Cascade` targeting their parent root.
+1. **Canonical Prisma Client API:** All database access must use canonical native Prisma Client methods directly on `PrismaService` (`this.prisma.<model>.<action>`). Custom query composer adapters, fake `.raw` accessors, and legacy wrappers are strictly prohibited.
+   - _Rationale:_ Eliminates indirection, aligns 100% with official NestJS and Prisma documentation, unlocks complete TypeScript IDE autocompletion, and enables high-performance native PostgreSQL batch operations (such as `deleteMany`).
+2. **Prisma Schema Architecture:** All database models live in `apps/api/src/prisma/schema.prisma`.
+   - _Rationale:_ Uses standard PostgreSQL driver adapters (`@prisma/adapter-pg`) with full type safety and zero pre-release dependencies.
+3. **Cascade Deletion Integrity:** Child entities (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must declare `onDelete: Cascade` targeting their parent root.
    - _Rationale:_ Guarantees database-level atomic cascade deletion and eliminates orphan child records.
-3. **AsyncLocalStorage Transaction Propagation:** Use `PrismaService.executeTx()` for transactional business operations.
-   - _Rationale:_ Reuses the active database transaction across nested services without manual parameter passing.
-4. **Distributed Saga Pattern:** Operations crossing MinIO object storage and PostgreSQL must use Saga compensation with BullMQ dead-letter queue (DLQ) retry fallbacks.
+4. **AsyncLocalStorage Transaction Propagation:** Use `runInTransaction(this.prisma, async (tx) => ...)` or `PrismaService.transaction()` / `executeTx()` for transactional business operations.
+   - _Rationale:_ Reuses the active database transaction across nested services without manual parameter passing, while gracefully falling back to mock or direct Prisma clients in unit tests.
+5. **Distributed Saga Pattern:** Operations crossing MinIO object storage and PostgreSQL must use Saga compensation with BullMQ dead-letter queue (DLQ) retry fallbacks.
    - _Rationale:_ Ensures storage and database consistency even during network or service crashes.
 
 ---

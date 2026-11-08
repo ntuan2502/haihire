@@ -6,10 +6,10 @@ import {
   ORPHAN_CLEANUP_DLQ,
   type OrphanCleanupJobData,
 } from "../applications/orphan-cleanup.processor";
-import { cleanupOrphans } from "../common/orphan-cleanup";
+import { cleanupOrphans, type CleanupOptions } from "../common/orphan-cleanup";
+import { createMockPrismaService } from "./helpers/prisma-composer-mock";
 import type { Job, Queue } from "bullmq";
 import * as Minio from "minio";
-import type { db } from "../prisma/db";
 import type { PrismaService } from "../prisma/prisma.service";
 import type { MinioService } from "../minio/minio.service";
 import type { ActivitiesService } from "../activities/activities.service";
@@ -63,61 +63,19 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         }),
       } as unknown as Queue;
 
-      const mockDb = {
-        orm: {
-          public: {
-            Job: {
-              select: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  first: vi.fn().mockResolvedValue({
-                    id: "job-1",
-                    title: "Senior Engineer",
-                    organizationId: "org-1",
-                    status: "PUBLISHED",
-                  }),
-                }),
-              }),
-            },
-            Candidate: {
-              select: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  first: vi.fn().mockResolvedValue(null),
-                }),
-              }),
-              create: vi.fn().mockResolvedValue({
-                id: "cand-1",
-                name: "John",
-                email: "john@test.com",
-                organizationId: "org-1",
-              }),
-            },
-            CandidateDocument: {
-              create: vi.fn().mockResolvedValue({ id: "doc-1" }),
-            },
-            Application: {
-              select: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  all: vi.fn().mockResolvedValue([]),
-                  first: vi.fn().mockResolvedValue(null),
-                }),
-              }),
-              create: vi.fn().mockResolvedValue({
-                id: "app-1",
-                candidateId: "cand-1",
-                jobId: "job-1",
-                stage: "APPLIED",
-              }),
-            },
+      mockPrisma = createMockPrismaService({
+        job: [
+          {
+            id: "job-1",
+            title: "Senior Engineer",
+            organizationId: "org-1",
+            status: "PUBLISHED",
           },
-        },
-      };
-
-      mockPrisma = {
-        db: mockDb,
-        client: mockDb,
-        transaction: vi.fn(),
-        executeTx: vi.fn(),
-      } as unknown as PrismaService & { transaction: ReturnType<typeof vi.fn> };
+        ],
+        candidate: [],
+        candidateDocument: [],
+        application: [],
+      }) as unknown as PrismaService & { transaction: ReturnType<typeof vi.fn> };
 
       mockMinio = {
         uploadFile: vi.fn().mockResolvedValue({
@@ -392,7 +350,7 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
             },
           },
         },
-      } as unknown as typeof db;
+      } as unknown as CleanupOptions["dbClient"];
 
       const report = await cleanupOrphans({
         dryRun: false,
@@ -454,7 +412,7 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
             Candidate: { select: vi.fn().mockReturnValue({ all: vi.fn().mockResolvedValue([]) }) },
           },
         },
-      } as unknown as typeof db;
+      } as unknown as CleanupOptions["dbClient"];
 
       const report = await cleanupOrphans({
         dryRun: true, // DRY-RUN ACTIVE

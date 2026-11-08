@@ -5,59 +5,39 @@ import { AppUnauthorizedException } from "../common/app-exception";
 describe("JwtStrategy", () => {
   let strategy: JwtStrategy;
   let mockPrisma: {
-    db: {
-      orm: {
-        public: {
-          User: {
-            select: unknown;
-          };
-          Organization: {
-            select: unknown;
-          };
-        };
-      };
+    user: {
+      findUnique: ReturnType<typeof vi.fn>;
+    };
+    organization: {
+      findUnique: ReturnType<typeof vi.fn>;
     };
   };
 
   beforeEach(() => {
     mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            User: {
-              select: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  first: vi.fn().mockImplementation(async () => {
-                    return {
-                      id: "usr-123",
-                      email: "test@example.com",
-                      name: "Test User",
-                      role: "ADMIN",
-                      avatarUrl: null,
-                      organizationId: "org-1",
-                      tokenVersion: 1,
-                      createdAt: new Date(),
-                    };
-                  }),
-                }),
-              }),
-            },
-            Organization: {
-              select: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  first: vi.fn().mockImplementation(async () => {
-                    return {
-                      id: "org-1",
-                      name: "Test Org",
-                      slug: "test-org",
-                      ownerId: "usr-123",
-                    };
-                  }),
-                }),
-              }),
-            },
-          },
-        },
+      user: {
+        findUnique: vi.fn().mockImplementation(async () => {
+          return {
+            id: "usr-123",
+            email: "test@example.com",
+            name: "Test User",
+            role: "ADMIN",
+            avatarUrl: null,
+            organizationId: "org-1",
+            tokenVersion: 1,
+            createdAt: new Date(),
+          };
+        }),
+      },
+      organization: {
+        findUnique: vi.fn().mockImplementation(async () => {
+          return {
+            id: "org-1",
+            name: "Test Org",
+            slug: "test-org",
+            ownerId: "usr-123",
+          };
+        }),
       },
     };
 
@@ -82,15 +62,11 @@ describe("JwtStrategy", () => {
   });
 
   it("should return isOwner as false when user is not the organization owner", async () => {
-    mockPrisma.db.orm.public.Organization.select = vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue({
-          id: "org-1",
-          name: "Test Org",
-          slug: "test-org",
-          ownerId: "other-user-999",
-        }),
-      }),
+    mockPrisma.organization.findUnique = vi.fn().mockResolvedValue({
+      id: "org-1",
+      name: "Test Org",
+      slug: "test-org",
+      ownerId: "other-user-999",
     });
 
     const user = await strategy.validate({
@@ -104,17 +80,13 @@ describe("JwtStrategy", () => {
   });
 
   it("should return isOwner as false and organization as null when user has no organizationId", async () => {
-    mockPrisma.db.orm.public.User.select = vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue({
-          id: "usr-no-org",
-          email: "noorg@example.com",
-          name: "No Org User",
-          role: "MEMBER",
-          organizationId: null,
-          tokenVersion: 0,
-        }),
-      }),
+    mockPrisma.user.findUnique = vi.fn().mockResolvedValue({
+      id: "usr-no-org",
+      email: "noorg@example.com",
+      name: "No Org User",
+      role: "MEMBER",
+      organizationId: null,
+      tokenVersion: 0,
     });
 
     const user = await strategy.validate({
@@ -142,16 +114,12 @@ describe("JwtStrategy", () => {
   });
 
   it("should accept legacy session tokens without tokenVersion if user is at default version 0", async () => {
-    mockPrisma.db.orm.public.User.select = vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue({
-          id: "usr-legacy",
-          email: "legacy@example.com",
-          name: "Legacy User",
-          role: "MEMBER",
-          tokenVersion: 0,
-        }),
-      }),
+    mockPrisma.user.findUnique = vi.fn().mockResolvedValue({
+      id: "usr-legacy",
+      email: "legacy@example.com",
+      name: "Legacy User",
+      role: "MEMBER",
+      tokenVersion: 0,
     });
 
     const user = await strategy.validate({
@@ -166,11 +134,7 @@ describe("JwtStrategy", () => {
   });
 
   it("should throw AppUnauthorizedException if user does not exist", async () => {
-    mockPrisma.db.orm.public.User.select = vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        first: vi.fn().mockResolvedValue(null),
-      }),
-    });
+    mockPrisma.user.findUnique = vi.fn().mockResolvedValue(null);
 
     await expect(
       strategy.validate({
@@ -188,7 +152,6 @@ describe("JwtStrategy", () => {
       },
     };
 
-    // Access extractor configured in strategy
     const extractor = (
       strategy as unknown as {
         _jwtFromRequest: (req: unknown) => string | null;

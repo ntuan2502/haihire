@@ -57,14 +57,14 @@ export class PermissionResolverService {
       return cached.overrides;
     }
 
-    const records =
-      await this.prisma.db.orm.public.OrganizationRolePermission.select(
-        "role",
-        "permission",
-        "granted",
-      )
-        .where((p) => p.organizationId.eq(organizationId))
-        .all();
+    const records = await this.prisma.organizationRolePermission.findMany({
+      where: { organizationId },
+      select: {
+        role: true,
+        permission: true,
+        granted: true,
+      },
+    });
 
     const overrides = new Map<string, boolean>();
     for (const r of records) {

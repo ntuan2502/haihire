@@ -11,47 +11,25 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
     permission: string;
     granted: boolean;
   }>;
-  let selectQueryFn: ReturnType<typeof vi.fn>;
+  let findManyFn: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     mockRecords = [];
 
-    selectQueryFn = vi.fn().mockImplementation((...fields: string[]) => ({
-      where: vi.fn().mockImplementation((predicateFn) => ({
-        all: vi.fn().mockImplementation(async () => {
-          return mockRecords
-            .filter((r) => {
-              const mockRecord = {
-                organizationId: {
-                  eq: (target: string) => r.organizationId === target,
-                },
-                role: {
-                  eq: (target: string) => r.role === target,
-                },
-                permission: {
-                  eq: (target: string) => r.permission === target,
-                },
-              };
-              return predicateFn(mockRecord);
-            })
-            .map((r) => {
-              const proj: Record<string, unknown> = {};
-              for (const f of fields) proj[f] = r[f as keyof typeof r];
-              return proj;
-            });
-        }),
-      })),
-    }));
+    findManyFn = vi.fn().mockImplementation(async ({ where }: { where?: { organizationId?: string } } = {}) => {
+      const orgId = where?.organizationId;
+      return mockRecords
+        .filter((r) => !orgId || r.organizationId === orgId)
+        .map((r) => ({
+          role: r.role,
+          permission: r.permission,
+          granted: r.granted,
+        }));
+    });
 
     const mockPrismaService = {
-      db: {
-        orm: {
-          public: {
-            OrganizationRolePermission: {
-              select: selectQueryFn,
-            },
-          },
-        },
+      organizationRolePermission: {
+        findMany: findManyFn,
       },
     };
 
@@ -119,7 +97,7 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
   it("5. Caches queries in memory to avoid repetitive DB calls and respects invalidateCache", async () => {
     // First query executes DB fetch
     await service.resolvePermission("org-cached", Role.MEMBER, "job:view");
-    expect(selectQueryFn).toHaveBeenCalledTimes(1);
+    expect(findManyFn).toHaveBeenCalledTimes(1);
 
     // Second query uses cache (no DB call)
     await service.resolvePermission(
@@ -127,19 +105,19 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
       Role.MEMBER,
       "candidate:view",
     );
-    expect(selectQueryFn).toHaveBeenCalledTimes(1);
+    expect(findManyFn).toHaveBeenCalledTimes(1);
 
     // Invalidate cache for org-cached
     service.invalidateCache("org-cached");
 
     // Next query hits DB again
     await service.resolvePermission("org-cached", Role.MEMBER, "job:view");
-    expect(selectQueryFn).toHaveBeenCalledTimes(2);
+    expect(findManyFn).toHaveBeenCalledTimes(2);
 
     // Invalidate all cache
     service.invalidateCache();
     await service.resolvePermission("org-cached", Role.MEMBER, "job:view");
-    expect(selectQueryFn).toHaveBeenCalledTimes(3);
+    expect(findManyFn).toHaveBeenCalledTimes(3);
   });
 
   it("6. ADMIN role is strictly immutable and always returns true even if DB has granted=false", async () => {
@@ -169,7 +147,7 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
 
     expect(canCreate).toBe(true);
     expect(canDelete).toBe(true);
-    expect(selectQueryFn).not.toHaveBeenCalled();
+    expect(findManyFn).not.toHaveBeenCalled();
   });
 
   it("7. ADMIN role is not affected by cache invalidation", async () => {
@@ -180,7 +158,7 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
       "candidate:delete",
     );
     expect(result).toBe(true);
-    expect(selectQueryFn).not.toHaveBeenCalled();
+    expect(findManyFn).not.toHaveBeenCalled();
   });
 
   it("8. Other roles (RECRUITER, MEMBER) still use DB overrides normally and ignore ADMIN records in getOverrides", async () => {

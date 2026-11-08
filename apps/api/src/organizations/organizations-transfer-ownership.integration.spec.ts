@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { BadRequestException } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { DtoPipe } from "../common/dto-validation.pipe";
@@ -8,6 +8,7 @@ import { OrganizationsController } from "./organizations.controller";
 import { OrganizationsService } from "./organizations.service";
 import {
   createMockTable,
+  createMockPrismaService,
   type MockTable,
 } from "../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../prisma/prisma.service";
@@ -88,19 +89,15 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
       },
     };
 
-    const mockDb = {
+    const _mockDb = {
       orm: mockOrm,
     };
 
-    mockPrisma = {
-      db: mockDb,
-      executeTx: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-      transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-    } as unknown as PrismaService;
+    mockPrisma = createMockPrismaService({
+      user: userTable,
+      organization: organizationTable,
+      organizationMember: organizationMemberTable,
+    }) as unknown as PrismaService;
 
     coreService = new OrganizationsCoreService(mockPrisma);
 

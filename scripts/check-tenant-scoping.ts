@@ -32,7 +32,7 @@ export interface TenantScopingAuditResult {
 }
 
 export const PRISMA_QUERY_REGEX =
-  /(?:this\.prisma\.db|tx|db)\.orm\.public\.([A-Za-z0-9_]+)(?:\s*\.\s*([A-Za-z0-9_]+))?/g;
+  /(?:(?:this\.)?prisma(?:\.db)?|tx|db)(?:\.orm\.public)?\.([A-Za-z0-9_]+)(?:\s*\.\s*([A-Za-z0-9_]+))?/g;
 
 /**
  * Determines the repository root directory regardless of current working directory.
@@ -141,15 +141,32 @@ export function checkTenantScoping(options?: {
     let match: RegExpExecArray | null;
 
     while ((match = regex.exec(content)) !== null) {
-      totalQueries++;
-      const modelName = match[1];
-      const methodName = match[2];
       const matchIndex = match.index;
       const lineNumber = content.slice(0, matchIndex).split("\n").length;
       const lineSnippet = lines[lineNumber - 1]?.trim() || "";
 
-      // Step 1: Check model name against MODELS_WITHOUT_ORG_COLUMN
-      if (MODELS_WITHOUT_ORG_COLUMN.has(modelName)) {
+      // Skip import statements and comments
+      if (
+        lineSnippet.startsWith("import ") ||
+        lineSnippet.startsWith("export ") ||
+        lineSnippet.startsWith("//") ||
+        lineSnippet.startsWith("/*") ||
+        lineSnippet.startsWith("*")
+      ) {
+        continue;
+      }
+
+      totalQueries++;
+      const modelName = match[1];
+      const methodName = match[2];
+
+      // Step 1: Check model name against MODELS_WITHOUT_ORG_COLUMN (case-insensitive)
+      const isModelWithoutOrg =
+        MODELS_WITHOUT_ORG_COLUMN.has(modelName) ||
+        Array.from(MODELS_WITHOUT_ORG_COLUMN).some(
+          (m) => m.toLowerCase() === modelName.toLowerCase(),
+        );
+      if (isModelWithoutOrg) {
         modelWhitelistCount++;
         continue;
       }

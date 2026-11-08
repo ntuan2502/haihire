@@ -8,6 +8,7 @@ import {
 } from "./services";
 import {
   createMockTable,
+  createMockPrismaService,
   type MockTable,
 } from "../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../prisma/prisma.service";
@@ -164,19 +165,11 @@ describe("CandidatesService (Characterization Tests)", () => {
       },
     };
 
-    const mockDb = {
+    const _mockDb = {
       orm: mockOrm,
     };
 
-    mockPrisma = {
-      db: mockDb,
-      executeTx: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-      transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
-        fn(mockDb),
-      ),
-    } as unknown as PrismaService;
+    mockPrisma = createMockPrismaService({ Candidate: candidateTable, Application: applicationTable, Job: jobTable, Interview: interviewTable, CandidateDocument: candidateDocTable }) as unknown as PrismaService;
 
     mockMinio = {
       uploadFile: vi.fn().mockResolvedValue({

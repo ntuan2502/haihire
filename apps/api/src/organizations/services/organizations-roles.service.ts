@@ -67,13 +67,14 @@ export class OrganizationsRolesService {
     }
 
     const overrides =
-      await this.prisma.db.orm.public.OrganizationRolePermission.select(
-        "role",
-        "permission",
-        "granted",
-      )
-        .where((p) => p.organizationId.eq(organizationId))
-        .all();
+      await this.prisma.organizationRolePermission.findMany({
+        where: { organizationId },
+        select: {
+          role: true,
+          permission: true,
+          granted: true,
+        },
+      });
 
     for (const record of overrides) {
       const role = record.role as Role;
@@ -116,30 +117,35 @@ export class OrganizationsRolesService {
 
     await runInTransaction(this.prisma, async (tx) => {
       for (const update of updates) {
-        const existing = await tx.orm.public.OrganizationRolePermission.where(
-          (p) => p.organizationId.eq(organizationId),
-        )
-          .where((p) => p.role.eq(role))
-          .where((p) => p.permission.eq(update.permission))
-          .first();
-
-        if (existing) {
-          await tx.orm.public.OrganizationRolePermission.where((p) =>
-            p.id.eq(existing.id),
-          )
-            .where((p) => p.organizationId.eq(organizationId))
-            .update({
-              granted: update.granted,
-              updatedAt: toInstant(),
-            });
-        } else {
-          await tx.orm.public.OrganizationRolePermission.create({
-            id: crypto.randomUUID(),
+        const existing = await tx.organizationRolePermission.findFirst({
+          where: {
             organizationId,
             role,
             permission: update.permission,
-            granted: update.granted,
-            updatedAt: toInstant(),
+          },
+        });
+
+        if (existing) {
+          await tx.organizationRolePermission.update({
+            where: {
+              id: existing.id,
+              organizationId,
+            },
+            data: {
+              granted: update.granted,
+              updatedAt: toInstant(),
+            },
+          });
+        } else {
+          await tx.organizationRolePermission.create({
+            data: {
+              id: crypto.randomUUID(),
+              organizationId,
+              role,
+              permission: update.permission,
+              granted: update.granted,
+              updatedAt: toInstant(),
+            },
           });
         }
       }
@@ -201,23 +207,24 @@ export class OrganizationsRolesService {
     let deletedCount = 0;
 
     await runInTransaction(this.prisma, async (tx) => {
-      let query = tx.orm.public.OrganizationRolePermission.where((p) =>
-        p.organizationId.eq(organizationId),
-      );
+      const where: { organizationId: string; role?: Role } = { organizationId };
       if (targetRole) {
-        query = query.where((p) => p.role.eq(targetRole));
+        where.role = targetRole;
       }
 
-      const existing = await query.all();
-      const toDelete = existing.filter((item) => item.role !== Role.ADMIN);
+      const existing = await tx.organizationRolePermission.findMany({
+        where: { ...where, organizationId },
+      });
+      const toDelete = existing.filter((item: { role: Role; id: string }) => item.role !== Role.ADMIN);
       deletedCount = toDelete.length;
 
-      for (const item of toDelete) {
-        await tx.orm.public.OrganizationRolePermission.where((p) =>
-          p.id.eq(item.id),
-        )
-          .where((p) => p.organizationId.eq(organizationId))
-          .delete();
+      if (toDelete.length > 0) {
+        await tx.organizationRolePermission.deleteMany({
+          where: {
+            id: { in: toDelete.map((item: { id: string }) => item.id) },
+            organizationId,
+          },
+        });
       }
     });
 

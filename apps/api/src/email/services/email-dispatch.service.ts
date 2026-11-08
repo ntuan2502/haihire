@@ -117,23 +117,25 @@ export class EmailDispatchService {
     });
 
     const logId = crypto.randomUUID();
-    const log = await this.prisma.db.orm.public.EmailLog.create({
-      id: logId,
-      scope: "ORGANIZATION",
-      organizationId,
-      candidateId: dto.candidateId || null,
-      applicationId: dto.applicationId || null,
-      senderId: senderUser?.id || null,
-      senderName: fromName,
-      senderEmail: fromEmail,
-      recipientEmail: dto.to,
-      recipientName: dto.recipientName,
-      templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
-      subject: renderedSubject,
-      body: renderedBody,
-      status: sendResult.status,
-      errorMessage: sendResult.error || null,
-      updatedAt: toInstant(),
+    const log = await this.prisma.emailLog.create({
+      data: {
+        id: logId,
+        scope: "ORGANIZATION",
+        organizationId,
+        candidateId: dto.candidateId || null,
+        applicationId: dto.applicationId || null,
+        senderId: senderUser?.id || null,
+        senderName: fromName,
+        senderEmail: fromEmail,
+        recipientEmail: dto.to,
+        recipientName: dto.recipientName,
+        templateType: (dto.templateType as EmailTemplateType) || "CUSTOM",
+        subject: renderedSubject,
+        body: renderedBody,
+        status: sendResult.status,
+        errorMessage: sendResult.error || null,
+        updatedAt: toInstant(),
+      },
     });
 
     // Record candidate activity timeline event
@@ -213,15 +215,18 @@ export class EmailDispatchService {
 
     const opts = options || {};
 
-    let query = this.prisma.db.orm.public.EmailLog.where((l) =>
-      l.organizationId.eq(targetOrgId),
-    ).where((l) => l.scope.eq("ORGANIZATION"));
+    const where: Record<string, unknown> = {
+      organizationId: targetOrgId,
+      scope: "ORGANIZATION",
+    };
 
     if (opts.candidateId) {
-      query = query.where((l) => l.candidateId.eq(opts.candidateId!));
+      where.candidateId = opts.candidateId;
     }
 
-    const logs = await query.all();
+    const logs = await this.prisma.emailLog.findMany({
+      where: { ...where, organizationId: targetOrgId },
+    });
     let mapped = logs
       .map((l) => ({
         ...l,

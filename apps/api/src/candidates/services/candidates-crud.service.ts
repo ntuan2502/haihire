@@ -48,71 +48,50 @@ export class CandidatesCrudService {
       };
     }
 
-    const candidates = await this.prisma.db.orm.public.Candidate.select(
-      "id",
-      "organizationId",
-      "name",
-      "firstName",
-      "lastName",
-      "gender",
-      "dateOfBirth",
-      "email",
-      "phone",
-      "notes",
-      "resumeUrl",
-      "resumeFileName",
-      "resumeFileSize",
-      "resumeMimeType",
-      "createdAt",
-      "updatedAt",
-      "deletedAt",
-    )
-      .where((c) => c.organizationId.eq(targetOrgId).and(c.deletedAt.isNull()))
-      .all();
+    const where: Record<string, unknown> = {
+      organizationId: targetOrgId,
+      deletedAt: null,
+    };
 
-    let filtered = candidates.filter((c) => !c.deletedAt);
-
-    if (filtered.length === 0) {
-      return {
-        data: [],
-        total: 0,
-        page: 1,
-        limit: options?.limit || 10,
-        totalPages: 0,
-      };
-    }
     if (options?.search && options.search.trim() !== "") {
-      const q = options.search.trim().toLowerCase();
-      filtered = filtered.filter(
-        (c) =>
-          (c.name || "").toLowerCase().includes(q) ||
-          (c.email || "").toLowerCase().includes(q) ||
-          (c.phone && c.phone.includes(q)) ||
-          (c.notes && c.notes.toLowerCase().includes(q)),
-      );
+      const q = options.search.trim();
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q } },
+        { notes: { contains: q, mode: "insensitive" } },
+      ];
     }
 
-    const total = filtered.length;
     const page = options?.page && options.page > 0 ? options.page : 1;
     const limit = options?.limit && options.limit > 0 ? options.limit : 20;
-    const totalPages = Math.ceil(total / limit) || 1;
 
-    // Slicing on server for this page
-    const pagedCandidates = filtered.slice((page - 1) * limit, page * limit);
-    const candidateIds = pagedCandidates.map((c) => c.id);
+    const [total, candidates] = await Promise.all([
+      this.prisma.candidate.count({ where }),
+      this.prisma.candidate.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+    const candidateIds = candidates.map((c) => c.id);
 
     // Fetch applications only for the candidates in the current page
     const allApps =
       candidateIds.length > 0
-        ? await this.prisma.db.orm.public.Application.select(
-            "id",
-            "candidateId",
-            "jobId",
-            "stage",
-            "createdAt",
-          )
-            .where((a) => a.candidateId.in(candidateIds))
-            .all()
+        ? await this.prisma.application.findMany({
+            where: { candidateId: { in: candidateIds } },
+            select: {
+              id: true,
+              candidateId: true,
+              jobId: true,
+              stage: true,
+              createdAt: true,
+            },
+          })
         : [];
 
     const appsByCandidate = new Map<string, typeof allApps>();
@@ -122,7 +101,7 @@ export class CandidatesCrudService {
       appsByCandidate.set(app.candidateId, list);
     }
 
-    const data = pagedCandidates.map((c) => {
+    const data = candidates.map((c) => {
       const apps = appsByCandidate.get(c.id) || [];
       return {
         ...c,
@@ -161,10 +140,13 @@ export class CandidatesCrudService {
     const email = dto.email.trim().toLowerCase();
 
     // Check unique email per organization
-    const existing = await this.prisma.db.orm.public.Candidate.select("id")
-      .where((c) => c.organizationId.eq(orgId))
-      .where((c) => c.email.eq(email))
-      .first();
+    const existing = await this.prisma.candidate.findFirst({
+      where: {
+        organizationId: orgId,
+        email,
+      },
+      select: { id: true },
+    });
 
     if (existing) {
       throw new AppConflictException(
@@ -217,22 +199,24 @@ export class CandidatesCrudService {
       }
     }
 
-    const created = await this.prisma.db.orm.public.Candidate.create({
-      id: crypto.randomUUID(),
-      organizationId: orgId,
-      name: dto.name.trim(),
-      firstName,
-      lastName,
-      gender: dto.gender ? dto.gender : null,
-      dateOfBirth,
-      email,
-      phone: dto.phone?.trim() || null,
-      notes: dto.notes || null,
-      resumeUrl: uploadResult.url || null,
-      resumeFileName: uploadResult.originalName || null,
-      resumeFileSize: uploadResult.size || null,
-      resumeMimeType: uploadResult.mimeType || "application/pdf",
-      updatedAt: toInstant(),
+    const created = await this.prisma.candidate.create({
+      data: {
+        id: crypto.randomUUID(),
+        organizationId: orgId,
+        name: dto.name.trim(),
+        firstName,
+        lastName,
+        gender: dto.gender ? dto.gender : null,
+        dateOfBirth,
+        email,
+        phone: dto.phone?.trim() || null,
+        notes: dto.notes || null,
+        resumeUrl: uploadResult.url || null,
+        resumeFileName: uploadResult.originalName || null,
+        resumeFileSize: uploadResult.size || null,
+        resumeMimeType: uploadResult.mimeType || "application/pdf",
+        updatedAt: toInstant(),
+      },
     });
 
     return created;
@@ -277,9 +261,10 @@ export class CandidatesCrudService {
     if (dto.resumeFileName !== undefined)
       updatePayload.resumeFileName = dto.resumeFileName;
 
-    await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(id)).update(
-      updatePayload,
-    );
+    await this.prisma.candidate.update({
+      where: { id },
+      data: updatePayload,
+    });
     return this.profileService.findOne(id, tenantOrgId);
   }
 
@@ -288,8 +273,11 @@ export class CandidatesCrudService {
 
     // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
     await runInTransaction(this.prisma, async (tx) => {
-      await tx.orm.public.Candidate.where((c) => c.id.eq(id)).update({
-        deletedAt: toInstant(),
+      await tx.candidate.update({
+        where: { id },
+        data: {
+          deletedAt: toInstant(),
+        },
       });
     });
 

@@ -232,15 +232,8 @@ describe("WebhookNotifierService", () => {
     ];
 
     const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationWebhookSetting: {
-              where: vi.fn().mockReturnThis(),
-              all: vi.fn().mockResolvedValue(mockDbSettings),
-            },
-          },
-        },
+      organizationWebhookSetting: {
+        findMany: vi.fn().mockResolvedValue(mockDbSettings),
       },
     };
 
@@ -294,15 +287,8 @@ describe("WebhookNotifierService", () => {
     ];
 
     const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationWebhookSetting: {
-              where: vi.fn().mockReturnThis(),
-              all: vi.fn().mockResolvedValue(mockDbSettings),
-            },
-          },
-        },
+      organizationWebhookSetting: {
+        findMany: vi.fn().mockResolvedValue(mockDbSettings),
       },
     };
 
@@ -334,15 +320,8 @@ describe("WebhookNotifierService", () => {
 
   it("Case 12: falls back to global env config when org has no matching settings", async () => {
     const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationWebhookSetting: {
-              where: vi.fn().mockReturnThis(),
-              all: vi.fn().mockResolvedValue([]),
-            },
-          },
-        },
+      organizationWebhookSetting: {
+        findMany: vi.fn().mockResolvedValue([]),
       },
     };
 
@@ -400,15 +379,8 @@ describe("WebhookNotifierService", () => {
     ];
 
     const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationWebhookSetting: {
-              where: vi.fn().mockReturnThis(),
-              all: vi.fn().mockResolvedValue(mockDbSettings),
-            },
-          },
-        },
+      organizationWebhookSetting: {
+        findMany: vi.fn().mockResolvedValue(mockDbSettings),
       },
     };
 
@@ -441,15 +413,8 @@ describe("WebhookNotifierService", () => {
 
   it("Case 14: logs warning and does not crash when org has no settings and global config is null", async () => {
     const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationWebhookSetting: {
-              where: vi.fn().mockReturnThis(),
-              all: vi.fn().mockResolvedValue([]),
-            },
-          },
-        },
+      organizationWebhookSetting: {
+        findMany: vi.fn().mockResolvedValue([]),
       },
     };
 

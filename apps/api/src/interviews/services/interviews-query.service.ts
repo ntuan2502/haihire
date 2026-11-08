@@ -42,18 +42,52 @@ export class InterviewsQueryService {
     const targetOrgId =
       options?.tenantOrgId || options?.organizationId || undefined;
 
-    type InterviewRecord = Awaited<
-      ReturnType<typeof this.prisma.db.orm.public.Interview.all>
-    >[number];
-    type AppRecord = Awaited<
-      ReturnType<typeof this.prisma.db.orm.public.Application.all>
-    >[number];
-    type CandidateRecord = Awaited<
-      ReturnType<typeof this.prisma.db.orm.public.Candidate.all>
-    >[number];
-    type JobRecord = Awaited<
-      ReturnType<typeof this.prisma.db.orm.public.Job.all>
-    >[number];
+    interface InterviewRecord {
+      id: string;
+      applicationId: string;
+      scheduledAt: Date | string;
+      type: string;
+      format: string;
+      linkOrLocation: string;
+      interviewer: string;
+      round: number;
+      feedback?: string | null;
+      score?: number | null;
+      status?: string | null;
+      createdAt?: Date | string | null;
+      updatedAt?: Date | string | null;
+      deletedAt?: Date | string | null;
+      [key: string]: unknown;
+    }
+
+    interface AppRecord {
+      id: string;
+      candidateId: string;
+      jobId: string;
+      stage?: string | null;
+      matchScore?: number | null;
+      notes?: string | null;
+      createdAt?: Date | string | null;
+      updatedAt?: Date | string | null;
+      [key: string]: unknown;
+    }
+
+    interface CandidateRecord {
+      id: string;
+      name: string;
+      email?: string | null;
+      phone?: string | null;
+      organizationId?: string | null;
+      [key: string]: unknown;
+    }
+
+    interface JobRecord {
+      id: string;
+      title: string;
+      department?: string | null;
+      organizationId?: string | null;
+      [key: string]: unknown;
+    }
 
     const defaultLimit =
       options?.limit && options.limit > 0 ? options.limit : 20;
@@ -63,20 +97,20 @@ export class InterviewsQueryService {
     const appsMap = new Map<string, AppRecord>();
 
     if (options?.applicationId) {
-      interviews = await this.prisma.db.orm.public.Interview.where((i) =>
-        i.applicationId.eq(options.applicationId!),
-      ).all();
+      interviews = await this.prisma.interview.findMany({
+        where: { applicationId: options.applicationId! },
+      });
     } else if (options?.jobId) {
-      const targetApps = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "candidateId",
-        "jobId",
-        "stage",
-        "matchScore",
-        "notes",
-      )
-        .where((a) => a.jobId.eq(options.jobId!))
-        .all();
+      const targetApps = await this.prisma.application.findMany({
+        where: { jobId: options.jobId! },
+        select: {
+          id: true,
+          candidateId: true,
+          jobId: true,
+          stage: true,
+          matchScore: true,
+        },
+      });
 
       if (targetApps.length === 0) {
         return {
@@ -91,15 +125,14 @@ export class InterviewsQueryService {
         appsMap.set(a.id, a as unknown as AppRecord);
       }
       const appIds = targetApps.map((a) => a.id);
-      interviews = await this.prisma.db.orm.public.Interview.where((i) =>
-        i.applicationId.in(appIds),
-      ).all();
+      interviews = await this.prisma.interview.findMany({
+        where: { applicationId: { in: appIds } },
+      });
     } else if (targetOrgId) {
-      const orgCandidates = await this.prisma.db.orm.public.Candidate.select(
-        "id",
-      )
-        .where((c) => c.organizationId.eq(targetOrgId))
-        .all();
+      const orgCandidates = await this.prisma.candidate.findMany({
+        where: { organizationId: targetOrgId },
+        select: { id: true },
+      });
 
       if (orgCandidates.length === 0) {
         return {
@@ -112,16 +145,17 @@ export class InterviewsQueryService {
       }
       const candidateIds = orgCandidates.map((c) => c.id);
 
-      const targetApps = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "candidateId",
-        "jobId",
-        "stage",
-        "matchScore",
-        "notes",
-      )
-        .where((a) => a.candidateId.in(candidateIds))
-        .all();
+      const targetApps = await this.prisma.application.findMany({
+        where: { candidateId: { in: candidateIds } },
+        select: {
+          id: true,
+          candidateId: true,
+          jobId: true,
+          stage: true,
+          matchScore: true,
+          notes: true,
+        },
+      });
 
       if (targetApps.length === 0) {
         return {
@@ -136,27 +170,27 @@ export class InterviewsQueryService {
         appsMap.set(a.id, a as unknown as AppRecord);
       }
       const appIds = targetApps.map((a) => a.id);
-      interviews = await this.prisma.db.orm.public.Interview.where((i) =>
-        i.applicationId.in(appIds),
-      ).all();
+      interviews = await this.prisma.interview.findMany({
+        where: { applicationId: { in: appIds } },
+      });
     } else {
-      interviews = await this.prisma.db.orm.public.Interview.all();
+      interviews = await this.prisma.interview.findMany();
     }
 
     const neededAppIds = [
       ...new Set(interviews.map((i) => i.applicationId)),
     ].filter((id) => !appsMap.has(id));
     if (neededAppIds.length > 0) {
-      const fetchedApps = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "candidateId",
-        "jobId",
-        "stage",
-        "matchScore",
-        "notes",
-      )
-        .where((a) => a.id.in(neededAppIds))
-        .all();
+      const fetchedApps = await this.prisma.application.findMany({
+        where: { id: { in: neededAppIds } },
+        select: {
+          id: true,
+          candidateId: true,
+          jobId: true,
+          stage: true,
+          matchScore: true,
+        },
+      });
       for (const a of fetchedApps) {
         appsMap.set(a.id, a as unknown as AppRecord);
       }
@@ -167,17 +201,21 @@ export class InterviewsQueryService {
     ];
     const candidatesMap = new Map<string, CandidateRecord>();
     if (candidateIds.length > 0) {
-      const candidates = await this.prisma.db.orm.public.Candidate.select(
-        "id",
-        "name",
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        "organizationId",
-      )
-        .where((c) => c.id.in(candidateIds))
-        .all();
+      const candidates = await this.prisma.candidate.findMany({
+        where: {
+          id: { in: candidateIds },
+          ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+        },
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          organizationId: true,
+        },
+      });
       for (const c of candidates) {
         candidatesMap.set(c.id, c as unknown as CandidateRecord);
       }
@@ -188,14 +226,18 @@ export class InterviewsQueryService {
     ];
     const jobsMap = new Map<string, JobRecord>();
     if (jobIds.length > 0) {
-      const jobs = await this.prisma.db.orm.public.Job.select(
-        "id",
-        "title",
-        "department",
-        "organizationId",
-      )
-        .where((j) => j.id.in(jobIds))
-        .all();
+      const jobs = await this.prisma.job.findMany({
+        where: {
+          id: { in: jobIds },
+          ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+        },
+        select: {
+          id: true,
+          title: true,
+          department: true,
+          organizationId: true,
+        },
+      });
       for (const j of jobs) {
         jobsMap.set(j.id, j as unknown as JobRecord);
       }
@@ -375,9 +417,9 @@ export class InterviewsQueryService {
   }
 
   async findOne(id: string, tenantOrgId?: string | null) {
-    const intv = await this.prisma.db.orm.public.Interview.where((i) =>
-      i.id.eq(id),
-    ).first();
+    const intv = await this.prisma.interview.findFirst({
+      where: { id },
+    });
     if (!intv) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
@@ -386,18 +428,18 @@ export class InterviewsQueryService {
       );
     }
 
-    const app = await this.prisma.db.orm.public.Application.where((a) =>
-      a.id.eq(intv.applicationId),
-    ).first();
+    const app = await this.prisma.application.findFirst({
+      where: { id: intv.applicationId },
+    });
     const candidate = app
-      ? await this.prisma.db.orm.public.Candidate.where((c) =>
-          c.id.eq(app.candidateId),
-        ).first()
+      ? await this.prisma.candidate.findFirst({
+          where: { id: app.candidateId },
+        })
       : null;
     const job = app
-      ? await this.prisma.db.orm.public.Job.where((j) =>
-          j.id.eq(app.jobId),
-        ).first()
+      ? await this.prisma.job.findFirst({
+          where: { id: app.jobId },
+        })
       : null;
 
     const interviewOrgId = candidate?.organizationId || job?.organizationId;

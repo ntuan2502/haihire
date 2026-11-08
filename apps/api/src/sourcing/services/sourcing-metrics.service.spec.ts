@@ -4,6 +4,7 @@ import { SourcingMetricsService } from "./sourcing-metrics.service";
 import { AppForbiddenException } from "../../common/app-exception";
 import {
   createMockTable,
+  createMockPrismaService,
   type MockTable,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
@@ -187,19 +188,13 @@ describe("SourcingMetricsService", () => {
       },
     ]);
 
-    mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            Job: jobTable,
-            Application: applicationTable,
-            Candidate: candidateTable,
-            TrackingLink: trackingLinkTable,
-            TrackingClick: trackingClickTable,
-          },
-        },
-      },
-    } as unknown as PrismaService;
+    mockPrisma = createMockPrismaService({
+      job: jobTable,
+      application: applicationTable,
+      candidate: candidateTable,
+      trackingLink: trackingLinkTable,
+      trackingClick: trackingClickTable,
+    });
 
     service = new SourcingMetricsService(mockPrisma);
   });

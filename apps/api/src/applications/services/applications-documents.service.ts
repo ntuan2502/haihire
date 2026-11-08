@@ -87,20 +87,23 @@ export class ApplicationsDocumentsService {
 
     if (existing.candidateId) {
       try {
-        const cand = await this.prisma.db.orm.public.Candidate.select("id", "organizationId")
-          .where((c) => c.id.eq(existing.candidateId))
-          .first();
+        const cand = await this.prisma.candidate.findFirst({
+          where: { id: existing.candidateId },
+          select: { id: true, organizationId: true },
+        });
         if (cand) {
-          await this.prisma.db.orm.public.CandidateDocument.create({
-            id: newDocId,
-            candidateId: cand.id,
-            organizationId: cand.organizationId,
-            name: cleanDocName,
-            url: uploadResult.url,
-            size: uploadResult.size ?? null,
-            mimeType: uploadResult.mimeType ?? null,
-            type: documentType || "Resume",
-            updatedAt: toInstant(),
+          await this.prisma.candidateDocument.create({
+            data: {
+              id: newDocId,
+              candidateId: cand.id,
+              organizationId: cand.organizationId,
+              name: cleanDocName,
+              url: uploadResult.url,
+              size: uploadResult.size ?? null,
+              mimeType: uploadResult.mimeType ?? null,
+              type: documentType || "Resume",
+              updatedAt: toInstant(),
+            },
           });
         }
       } catch {
@@ -108,13 +111,14 @@ export class ApplicationsDocumentsService {
       }
     }
 
-    await this.prisma.db.orm.public.Application.where(
-      (a) => a.id.eq(id),
-    ).update({
-      resumeUrl: uploadResult.url,
-      resumeFileName: cleanDocName,
-      resumeFileSize: uploadResult.size ?? null,
-      resumeMimeType: uploadResult.mimeType ?? null,
+    await this.prisma.application.update({
+      where: { id },
+      data: {
+        resumeUrl: uploadResult.url,
+        resumeFileName: cleanDocName,
+        resumeFileSize: uploadResult.size ?? null,
+        resumeMimeType: uploadResult.mimeType ?? null,
+      },
     });
 
     return this.query.findOne(id, tenantOrgId);
@@ -225,21 +229,22 @@ export class ApplicationsDocumentsService {
 
     if (opts?.documentId) {
       try {
-        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.id.eq(opts.documentId!)).delete();
+        await this.prisma.candidateDocument.deleteMany({ where: { id: opts.documentId! } });
       } catch {}
     } else if (opts?.url) {
       try {
-        await this.prisma.db.orm.public.CandidateDocument.where((d) => d.url.eq(opts.url!)).delete();
+        await this.prisma.candidateDocument.deleteMany({ where: { url: opts.url! } });
       } catch {}
     }
 
-    await this.prisma.db.orm.public.Application.where(
-      (a) => a.id.eq(id),
-    ).update({
-      resumeUrl: null,
-      resumeFileName: null,
-      resumeFileSize: null,
-      resumeMimeType: null,
+    await this.prisma.application.update({
+      where: { id },
+      data: {
+        resumeUrl: null,
+        resumeFileName: null,
+        resumeFileSize: null,
+        resumeMimeType: null,
+      },
     });
 
     return this.query.findOne(id, tenantOrgId);
@@ -247,19 +252,20 @@ export class ApplicationsDocumentsService {
 
   async getCandidateDocuments(candidateId: string): Promise<CandidateDocument[]> {
     try {
-      const queried = await this.prisma.db.orm.public.CandidateDocument.select(
-        "id",
-        "candidateId",
-        "organizationId",
-        "name",
-        "url",
-        "size",
-        "mimeType",
-        "type",
-        "createdAt",
-      )
-        .where((d) => d.candidateId.eq(candidateId))
-        .all();
+      const queried = await this.prisma.candidateDocument.findMany({
+        where: { candidateId },
+        select: {
+          id: true,
+          candidateId: true,
+          organizationId: true,
+          name: true,
+          url: true,
+          size: true,
+          mimeType: true,
+          type: true,
+          createdAt: true,
+        },
+      });
       return queried.map((d) => ({
         ...d,
         createdAt: d.createdAt ? new Date(toTimestamp(d.createdAt)).toISOString() : new Date().toISOString(),

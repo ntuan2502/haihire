@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { OrganizationsService } from "./organizations.service";
 import {
-  createQueryBuilder,
-  type PredicateFn,
+  createMockPrismaService,
 } from "../test/helpers/prisma-composer-mock";
 import {
   BadRequestException,
@@ -95,7 +94,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
     mockLinks = [];
 
-    let mockMembers: MockMember[] = [
+    const mockMembers: MockMember[] = [
       {
         id: "mem-2",
         organizationId: "org-1",
@@ -112,250 +111,13 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       },
     ];
 
-    mockPrismaService = {
-      db: {
-        orm: {
-          public: {
-            Organization: {
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockOrgs.find((o) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => o.id === target },
-                        slug: {
-                          eq: (target: string) =>
-                            o.slug.toLowerCase() === target.toLowerCase(),
-                        },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-
-                    if (!match) return null;
-                    if (fields.length > 0) {
-                      const proj: Record<string, unknown> = {};
-                      for (const f of fields) proj[f] = match[f];
-                      return proj;
-                    }
-                    return { ...match };
-                  }),
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockOrgs
-                      .filter((o) => {
-                        const mockRecord = {
-                          id: {
-                            eq: (target: string) => o.id === target,
-                            in: (targets: string[]) => targets.includes(o.id),
-                          },
-                          ownerId: {
-                            eq: (target: string) => o.ownerId === target,
-                          },
-                        };
-                        return predicateFn(mockRecord);
-                      })
-                      .map((o) => ({ ...o }));
-                  }),
-                })),
-                all: vi.fn().mockImplementation(async () => {
-                  return mockOrgs.map((o) => ({ ...o }));
-                }),
-              })),
-              upsert: vi.fn().mockImplementation(async ({ create }) => {
-                const newOrg = {
-                  id: `org-${mockOrgs.length + 1}`,
-                  name: create.name,
-                  slug: create.slug,
-                  createdAt: new Date(),
-                };
-                mockOrgs.push(newOrg);
-                return newOrg;
-              }),
-            },
-            User: {
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockUsers.find((u) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => u.id === target },
-                        email: {
-                          eq: (target: string) =>
-                            u.email.toLowerCase() === target.toLowerCase(),
-                        },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                    if (!match) return null;
-                    if (fields.length > 0) {
-                      const proj: Record<string, unknown> = {};
-                      for (const f of fields) proj[f] = match[f];
-                      return proj;
-                    }
-                    return { ...match };
-                  }),
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockUsers
-                      .filter((u) => {
-                        const mockRecord = {
-                          id: {
-                            eq: (target: string) => u.id === target,
-                            in: (arr: string[]) => arr.includes(u.id),
-                          },
-                          organizationId: {
-                            eq: (target: string) => u.organizationId === target,
-                          },
-                        };
-                        return predicateFn(mockRecord);
-                      })
-                      .map((u) => ({ ...u }));
-                  }),
-                })),
-                all: vi.fn().mockImplementation(async () => {
-                  return mockUsers.map((u) => ({ ...u }));
-                }),
-              })),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                update: vi.fn().mockImplementation(async (updates) => {
-                  const targetUser = mockUsers.find((u) => {
-                    const mockRecord = {
-                      id: { eq: (target: string) => u.id === target },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (targetUser) {
-                    Object.assign(targetUser, updates);
-                  }
-                  return targetUser;
-                }),
-              })),
-            },
-            OrganizationMember: {
-              upsert: vi
-                .fn()
-                .mockImplementation(async ({ create, update, conflictOn }) => {
-                  const existingIndex = mockMembers.findIndex(
-                    (m) => m.id === conflictOn?.id,
-                  );
-                  if (existingIndex >= 0) {
-                    Object.assign(mockMembers[existingIndex], update);
-                    return mockMembers[existingIndex];
-                  }
-                  const newMem = {
-                    ...create,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  };
-                  mockMembers.push(newMem);
-                  return newMem;
-                }),
-              select: vi.fn().mockImplementation((..._fields: string[]) => ({
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockMembers.find((m) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => m.id === target },
-                        userId: { eq: (target: string) => m.userId === target },
-                        organizationId: {
-                          eq: (target: string) => m.organizationId === target,
-                        },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                    return match ? { ...match } : null;
-                  }),
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockMembers
-                      .filter((m) => {
-                        const mockRecord = {
-                          userId: {
-                            eq: (target: string) => m.userId === target,
-                          },
-                          organizationId: {
-                            eq: (target: string) => m.organizationId === target,
-                          },
-                        };
-                        return predicateFn(mockRecord);
-                      })
-                      .map((m) => ({ ...m }));
-                  }),
-                })),
-                all: vi.fn().mockImplementation(async () => {
-                  return mockMembers.map((m) => ({ ...m }));
-                }),
-              })),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                update: vi.fn().mockImplementation(async (updates) => {
-                  const target = mockMembers.find((m) => {
-                    const mockRecord = {
-                      id: { eq: (target: string) => m.id === target },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (target) {
-                    Object.assign(target, updates);
-                    return { ...target };
-                  }
-                  return null;
-                }),
-                delete: vi.fn().mockImplementation(async () => {
-                  const toDelete = mockMembers.filter((m) => {
-                    const mockRecord = {
-                      id: { eq: (target: string) => m.id === target },
-                      organizationId: {
-                        eq: (target: string) => m.organizationId === target,
-                      },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  mockMembers = mockMembers.filter(
-                    (m) => !toDelete.includes(m),
-                  );
-                  return toDelete;
-                }),
-              })),
-            },
-            InviteLink: {
-              upsert: vi.fn().mockImplementation(async ({ create }) => {
-                mockLinks.push({
-                  ...create,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                });
-                return create;
-              }),
-              select: vi.fn().mockImplementation((..._fields: string[]) => ({
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockLinks.find((l) => {
-                      const mockRecord = {
-                        token: { eq: (target: string) => l.token === target },
-                        id: { eq: (target: string) => l.id === target },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-                    return match ? { ...match } : null;
-                  }),
-                  all: vi.fn().mockImplementation(async () => {
-                    return mockLinks
-                      .filter((l) => {
-                        const mockRecord = {
-                          organizationId: {
-                            eq: (target: string) => l.organizationId === target,
-                          },
-                        };
-                        return predicateFn(mockRecord);
-                      })
-                      .map((l) => ({ ...l }));
-                  }),
-                })),
-              })),
-              where: (predicate: PredicateFn<MockLink>) =>
-                createQueryBuilder(mockLinks).where(predicate),
-            },
-          },
-        },
-      },
-    };
+    mockPrismaService = createMockPrismaService({
+      organization: mockOrgs,
+      user: mockUsers,
+      organizationMember: mockMembers,
+      inviteLink: mockLinks,
+      organizationInviteLink: mockLinks,
+    });
 
     service = new OrganizationsService(mockPrismaService as never);
   });
@@ -718,46 +480,16 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       }
 
       const orgSelectSpy = vi.spyOn(
-        (
-          mockPrismaService as {
-            db: {
-              orm: {
-                public: {
-                  Organization: { select: (...args: unknown[]) => unknown };
-                };
-              };
-            };
-          }
-        ).db.orm.public.Organization,
-        "select",
+        (mockPrismaService as unknown as { organization: { findMany: (...args: unknown[]) => unknown } }).organization,
+        "findMany",
       );
       const userSelectSpy = vi.spyOn(
-        (
-          mockPrismaService as {
-            db: {
-              orm: {
-                public: { User: { select: (...args: unknown[]) => unknown } };
-              };
-            };
-          }
-        ).db.orm.public.User,
-        "select",
+        (mockPrismaService as unknown as { user: { findMany: (...args: unknown[]) => unknown } }).user,
+        "findMany",
       );
       const memberSelectSpy = vi.spyOn(
-        (
-          mockPrismaService as {
-            db: {
-              orm: {
-                public: {
-                  OrganizationMember: {
-                    select: (...args: unknown[]) => unknown;
-                  };
-                };
-              };
-            };
-          }
-        ).db.orm.public.OrganizationMember,
-        "select",
+        (mockPrismaService as unknown as { organizationMember: { findMany: (...args: unknown[]) => unknown } }).organizationMember,
+        "findMany",
       );
 
       // 3. Execute startup backfill
@@ -769,17 +501,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(memberSelectSpy).toHaveBeenCalledTimes(1);
 
       // Verify members were upserted for the owners
-      const upsertSpy = (
-        mockPrismaService as {
-          db: {
-            orm: {
-              public: {
-                OrganizationMember: { upsert: ReturnType<typeof vi.fn> };
-              };
-            };
-          };
-        }
-      ).db.orm.public.OrganizationMember.upsert;
+      const upsertSpy = (mockPrismaService as unknown as { organizationMember: { upsert: unknown } }).organizationMember.upsert;
       expect(upsertSpy).toHaveBeenCalled();
     });
   });

@@ -3,10 +3,7 @@ import { EmailService, interpolate, DEFAULT_TEMPLATES } from "./email.service";
 import { EmailTransporterFactory } from "./transporters/transporter.factory";
 import { EncryptionService } from "../common/encryption.service";
 import { env } from "../config/env";
-import {
-  createQueryBuilder,
-  type PredicateFn,
-} from "../test/helpers/prisma-composer-mock";
+import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 
 describe("EmailService", () => {
   let service: EmailService;
@@ -24,109 +21,12 @@ describe("EmailService", () => {
     const inMemorySettings: Array<Record<string, unknown>> = [];
     const inMemoryLogs: Array<Record<string, unknown>> = [];
 
-    mockPrismaService = {
-      db: {
-        orm: {
-          public: {
-            EmailTemplate: {
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                where: vi.fn().mockImplementation((predicateFn2) => ({
-                  first: vi.fn().mockImplementation(async () => {
-                    return (
-                      inMemoryTemplates.find((t) => {
-                        const rec1 = {
-                          organizationId: {
-                            eq: (val: string) => t.organizationId === val,
-                          },
-                        };
-                        const rec2 = {
-                          type: { eq: (val: string) => t.type === val },
-                        };
-                        return predicateFn(rec1) && predicateFn2(rec2);
-                      }) || null
-                    );
-                  }),
-                })),
-                all: vi.fn().mockImplementation(async () => {
-                  return inMemoryTemplates.filter((t) => {
-                    const rec = {
-                      organizationId: {
-                        eq: (val: string) => t.organizationId === val,
-                      },
-                    };
-                    return predicateFn(rec);
-                  });
-                }),
-                first: vi.fn().mockImplementation(async () => {
-                  return (
-                    inMemoryTemplates.find((t) => {
-                      const rec = {
-                        id: {
-                          eq: (val: string) => t.id === val,
-                        },
-                        organizationId: {
-                          eq: (val: string) => t.organizationId === val,
-                        },
-                      };
-                      return predicateFn(rec);
-                    }) || null
-                  );
-                }),
-                update: vi.fn().mockImplementation(async (data) => {
-                  if (inMemoryTemplates[0]) {
-                    Object.assign(inMemoryTemplates[0], data);
-                  }
-                  return inMemoryTemplates[0];
-                }),
-              })),
-              create: vi.fn().mockImplementation(async (data) => {
-                inMemoryTemplates.push(data);
-                return data;
-              }),
-            },
-            EmailSetting: {
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                first: vi.fn().mockImplementation(async () => {
-                  return (
-                    inMemorySettings.find((s) => {
-                      const rec = {
-                        organizationId: {
-                          eq: (val: string) => s.organizationId === val,
-                        },
-                      };
-                      return predicateFn(rec);
-                    }) || null
-                  );
-                }),
-                update: vi.fn().mockImplementation(async (data) => {
-                  if (inMemorySettings[0]) {
-                    Object.assign(inMemorySettings[0], data);
-                  }
-                  return inMemorySettings[0];
-                }),
-              })),
-              create: vi.fn().mockImplementation(async (data) => {
-                inMemorySettings.push(data);
-                return data;
-              }),
-            },
-            EmailLog: {
-              where: (predicate: PredicateFn<Record<string, unknown>>) =>
-                createQueryBuilder(inMemoryLogs).where(predicate),
-              create: vi.fn().mockImplementation(async (data) => {
-                inMemoryLogs.push(data);
-                return data;
-              }),
-            },
-            Organization: {
-              select: vi.fn().mockImplementation(() => ({
-                first: vi.fn().mockResolvedValue({ id: "org-1" }),
-              })),
-            },
-          },
-        },
-      },
-    };
+    mockPrismaService = createMockPrismaService({
+      emailTemplate: inMemoryTemplates,
+      emailSetting: inMemorySettings,
+      emailLog: inMemoryLogs,
+      organization: [{ id: "org-1" }],
+    });
 
     service = new EmailService(
       mockPrismaService as never,

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { toInstant } from "../../common/date.util";
 import { parseDomain } from "./sourcing-links.service";
 
@@ -102,18 +102,19 @@ export class SourcingLockService {
       async () => {
         let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
 
-        await this.prisma.executeTx(async (tx) => {
-          const link = await tx.orm.public.TrackingLink.select(
-            "id",
-            "token",
-            "source",
-            "jobId",
-            "clicksCount",
-            "isActive",
-            "deletedAt",
-          )
-            .where((l) => l.token.eq(token))
-            .first();
+        await runInTransaction(this.prisma, async (tx) => {
+          const link = await tx.trackingLink.findFirst({
+            where: { token },
+            select: {
+              id: true,
+              token: true,
+              source: true,
+              jobId: true,
+              clicksCount: true,
+              isActive: true,
+              deletedAt: true,
+            },
+          });
 
           if (!link || link.deletedAt || !link.isActive) {
             return;
@@ -123,19 +124,24 @@ export class SourcingLockService {
           const ipHash = ip ? crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16) : null;
 
           // Atomic update of click counter inside transaction
-          await tx.orm.public.TrackingLink.where((l) => l.id.eq(link.id)).update({
-            clicksCount: (link.clicksCount || 0) + 1,
-            updatedAt: toInstant(),
+          await tx.trackingLink.update({
+            where: { id: link.id },
+            data: {
+              clicksCount: (link.clicksCount || 0) + 1,
+              updatedAt: toInstant(),
+            },
           });
 
           // Record click audit log in same atomic transaction
-          await tx.orm.public.TrackingClick.create({
-            id: crypto.randomUUID(),
-            trackingLinkId: link.id,
-            referrer: referrer || null,
-            referrerDomain: domain,
-            ipHash,
-            userAgent: userAgent ? userAgent.slice(0, 255) : null,
+          await tx.trackingClick.create({
+            data: {
+              id: crypto.randomUUID(),
+              trackingLinkId: link.id,
+              referrer: referrer || null,
+              referrerDomain: domain,
+              ipHash,
+              userAgent: userAgent ? userAgent.slice(0, 255) : null,
+            },
           });
 
           recordedLink = {

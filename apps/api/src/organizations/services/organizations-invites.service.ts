@@ -37,14 +37,15 @@ export class OrganizationsInvitesService {
     userId: string,
     dto: { role?: string; expiresIn?: string; maxUses?: string },
   ): Promise<InviteLinkRecord> {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "name",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     if (!user || !user.organizationId) {
       throw new AppNotFoundException(
@@ -53,14 +54,15 @@ export class OrganizationsInvitesService {
       );
     }
 
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-    )
-      .where((o) => o.id.eq(user.organizationId as string))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: user.organizationId as string },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+      },
+    });
 
     if (!org) {
       throw new AppNotFoundException(
@@ -113,8 +115,8 @@ export class OrganizationsInvitesService {
     const id = crypto.randomUUID();
     const linkRole = dto.role === "ADMIN" ? "ADMIN" : "MEMBER";
 
-    await this.prisma.db.orm.public.InviteLink.upsert({
-      create: {
+    await this.prisma.inviteLink.create({
+      data: {
         id,
         token,
         organizationId: org.id,
@@ -126,8 +128,6 @@ export class OrganizationsInvitesService {
         createdById: user.id,
         updatedAt: toInstant(),
       },
-      update: {},
-      conflictOn: { id: "00000000-0000-4000-8000-000000000000" },
     });
 
     return {
@@ -148,27 +148,29 @@ export class OrganizationsInvitesService {
   }
 
   async getInviteLinks(userId: string): Promise<InviteLinkRecord[]> {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     if (!user || !user.organizationId) {
       return [];
     }
 
     const orgId = user.organizationId as string;
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-    )
-      .where((o) => o.id.eq(orgId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+      },
+    });
 
     const isOwner = Boolean(org && org.ownerId === user.id);
     const isAdmin = user.role === "ADMIN";
@@ -178,26 +180,28 @@ export class OrganizationsInvitesService {
       return [];
     }
 
-    const allLinks = await this.prisma.db.orm.public.InviteLink.select(
-      "id",
-      "token",
-      "role",
-      "expiresAt",
-      "maxUses",
-      "usesCount",
-      "status",
-      "organizationId",
-      "createdById",
-      "createdAt",
-    )
-      .where((l) => l.organizationId.eq(orgId))
-      .all();
+    const allLinks = await this.prisma.inviteLink.findMany({
+      where: { organizationId: orgId },
+      select: {
+        id: true,
+        token: true,
+        role: true,
+        expiresAt: true,
+        maxUses: true,
+        usesCount: true,
+        status: true,
+        organizationId: true,
+        createdById: true,
+        createdAt: true,
+      },
+    });
 
     const links = allLinks.filter((l) => l.status !== "REVOKED");
 
-    const users = await this.prisma.db.orm.public.User.select("id", "name")
-      .where((u) => u.organizationId.eq(orgId))
-      .all();
+    const users = await this.prisma.user.findMany({
+      where: { organizationId: orgId },
+      select: { id: true, name: true },
+    });
     const userMap = new Map(users.map((u) => [u.id, u.name]));
 
     return links.map((link) => {
@@ -232,13 +236,14 @@ export class OrganizationsInvitesService {
   }
 
   async revokeInviteLink(userId: string, linkId: string) {
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        organizationId: true,
+      },
+    });
 
     if (!user || !user.organizationId) {
       throw new AppNotFoundException(
@@ -248,12 +253,13 @@ export class OrganizationsInvitesService {
     }
 
     const orgId = user.organizationId;
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "ownerId",
-    )
-      .where((o) => o.id.eq(orgId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: orgId },
+      select: {
+        id: true,
+        ownerId: true,
+      },
+    });
 
     const isOwner = Boolean(org && org.ownerId === user.id);
     const isAdmin = user.role === "ADMIN";
@@ -265,13 +271,15 @@ export class OrganizationsInvitesService {
       );
     }
 
-    const revoked = await this.prisma.db.orm.public.InviteLink.where((l) =>
-      l.id.eq(linkId),
-    )
-      .where((l) => l.organizationId.eq(orgId))
-      .update({ status: "REVOKED" });
+    const { count } = await this.prisma.inviteLink.updateMany({
+      where: {
+        id: linkId,
+        organizationId: orgId,
+      },
+      data: { status: "REVOKED" },
+    });
 
-    if (!revoked) {
+    if (count === 0) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.ORG_INVITE_INVALID,
         "Invite link not found in the active organization",
@@ -282,19 +290,20 @@ export class OrganizationsInvitesService {
   }
 
   async getPublicInvite(token: string) {
-    const link = await this.prisma.db.orm.public.InviteLink.select(
-      "id",
-      "token",
-      "role",
-      "expiresAt",
-      "maxUses",
-      "usesCount",
-      "status",
-      "organizationId",
-      "createdById",
-    )
-      .where((l) => l.token.eq(token))
-      .first();
+    const link = await this.prisma.inviteLink.findFirst({
+      where: { token },
+      select: {
+        id: true,
+        token: true,
+        role: true,
+        expiresAt: true,
+        maxUses: true,
+        usesCount: true,
+        status: true,
+        organizationId: true,
+        createdById: true,
+      },
+    });
 
     if (!link) {
       return {
@@ -327,19 +336,21 @@ export class OrganizationsInvitesService {
       };
     }
 
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-    )
-      .where((o) => o.id.eq(link.organizationId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: link.organizationId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
 
     let createdByName = "Team Member";
     if (link.createdById) {
-      const creator = await this.prisma.db.orm.public.User.select("id", "name")
-        .where((u) => u.id.eq(link.createdById as string))
-        .first();
+      const creator = await this.prisma.user.findFirst({
+        where: { id: link.createdById as string },
+        select: { id: true, name: true },
+      });
       if (creator?.name) {
         createdByName = creator.name;
       }
@@ -362,18 +373,19 @@ export class OrganizationsInvitesService {
   }
 
   async joinByToken(userId: string, token: string) {
-    const link = await this.prisma.db.orm.public.InviteLink.select(
-      "id",
-      "token",
-      "role",
-      "expiresAt",
-      "maxUses",
-      "usesCount",
-      "status",
-      "organizationId",
-    )
-      .where((l) => l.token.eq(token))
-      .first();
+    const link = await this.prisma.inviteLink.findFirst({
+      where: { token },
+      select: {
+        id: true,
+        token: true,
+        role: true,
+        expiresAt: true,
+        maxUses: true,
+        usesCount: true,
+        status: true,
+        organizationId: true,
+      },
+    });
 
     if (!link) {
       throw new AppNotFoundException(
@@ -404,21 +416,22 @@ export class OrganizationsInvitesService {
     }
 
     // Check if user is already a member of this organization
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        organizationId: true,
+      },
+    });
 
-    const userMemberships =
-      await this.prisma.db.orm.public.OrganizationMember.select(
-        "id",
-        "organizationId",
-        "role",
-      )
-        .where((m) => m.userId.eq(userId))
-        .all();
+    const userMemberships = await this.prisma.organizationMember.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        organizationId: true,
+        role: true,
+      },
+    });
 
     const isAlreadyMember =
       userMemberships.some((m) => m.organizationId === link.organizationId) ||
@@ -437,7 +450,8 @@ export class OrganizationsInvitesService {
 
     // Record persistent membership in OrganizationMember
     const newMemberId = crypto.randomUUID();
-    await this.prisma.db.orm.public.OrganizationMember.upsert({
+    await this.prisma.organizationMember.upsert({
+      where: { id: newMemberId },
       create: {
         id: newMemberId,
         organizationId: link.organizationId,
@@ -446,12 +460,14 @@ export class OrganizationsInvitesService {
         updatedAt: toInstant(),
       },
       update: {},
-      conflictOn: { id: newMemberId },
     });
 
-    await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
-      organizationId: link.organizationId,
-      role: assignedRole,
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        organizationId: link.organizationId,
+        role: assignedRole,
+      },
     });
 
     // Increment uses count
@@ -461,20 +477,22 @@ export class OrganizationsInvitesService {
         ? "EXPIRED"
         : link.status;
 
-    await this.prisma.db.orm.public.InviteLink.where((l) =>
-      l.id.eq(link.id),
-    ).update({
-      usesCount: nextUses,
-      status: nextStatus,
+    await this.prisma.inviteLink.update({
+      where: { id: link.id },
+      data: {
+        usesCount: nextUses,
+        status: nextStatus,
+      },
     });
 
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-    )
-      .where((o) => o.id.eq(link.organizationId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: link.organizationId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
 
     return {
       success: true,
@@ -499,17 +517,18 @@ export class OrganizationsInvitesService {
       rawInput = parts[parts.length - 1].split("?")[0].trim();
     }
 
-    const inviteLink = await this.prisma.db.orm.public.InviteLink.select(
-      "id",
-      "organizationId",
-      "role",
-      "status",
-      "expiresAt",
-      "maxUses",
-      "usesCount",
-    )
-      .where((l) => l.token.eq(rawInput))
-      .first();
+    const inviteLink = await this.prisma.inviteLink.findFirst({
+      where: { token: rawInput },
+      select: {
+        id: true,
+        organizationId: true,
+        role: true,
+        status: true,
+        expiresAt: true,
+        maxUses: true,
+        usesCount: true,
+      },
+    });
 
     if (!inviteLink || inviteLink.status !== "ACTIVE") {
       throw new AppNotFoundException(
@@ -538,15 +557,16 @@ export class OrganizationsInvitesService {
       );
     }
 
-    const org = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "name",
-      "slug",
-      "ownerId",
-      "createdAt",
-    )
-      .where((o) => o.id.eq(inviteLink.organizationId))
-      .first();
+    const org = await this.prisma.organization.findFirst({
+      where: { id: inviteLink.organizationId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        ownerId: true,
+        createdAt: true,
+      },
+    });
 
     if (!org) {
       throw new AppNotFoundException(
@@ -558,14 +578,14 @@ export class OrganizationsInvitesService {
     const assignedRole = inviteLink.role === "ADMIN" ? "ADMIN" : "MEMBER";
 
     // Check if user already has an active membership in this organization
-    const userMemberships =
-      await this.prisma.db.orm.public.OrganizationMember.select(
-        "id",
-        "organizationId",
-        "role",
-      )
-        .where((m) => m.userId.eq(userId))
-        .all();
+    const userMemberships = await this.prisma.organizationMember.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        organizationId: true,
+        role: true,
+      },
+    });
 
     const existingMembership = userMemberships.find(
       (m) => m.organizationId === org.id,
@@ -573,12 +593,13 @@ export class OrganizationsInvitesService {
 
     if (existingMembership) {
       // User is already a member - switch active organization to this org
-      await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update(
-        {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
           organizationId: org.id,
           role: existingMembership.role,
         },
-      );
+      });
 
       return {
         organization: org,
@@ -587,15 +608,17 @@ export class OrganizationsInvitesService {
       };
     }
 
-    await this.prisma.db.orm.public.InviteLink.where((l) =>
-      l.id.eq(inviteLink.id),
-    ).update({
-      usesCount: inviteLink.usesCount + 1,
+    await this.prisma.inviteLink.update({
+      where: { id: inviteLink.id },
+      data: {
+        usesCount: inviteLink.usesCount + 1,
+      },
     });
 
     // Record new persistent membership
     const newMemberId = crypto.randomUUID();
-    await this.prisma.db.orm.public.OrganizationMember.upsert({
+    await this.prisma.organizationMember.upsert({
+      where: { id: newMemberId },
       create: {
         id: newMemberId,
         organizationId: org.id,
@@ -604,12 +627,14 @@ export class OrganizationsInvitesService {
         updatedAt: toInstant(),
       },
       update: {},
-      conflictOn: { id: newMemberId },
     });
 
-    await this.prisma.db.orm.public.User.where((u) => u.id.eq(userId)).update({
-      organizationId: org.id,
-      role: assignedRole,
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        organizationId: org.id,
+        role: assignedRole,
+      },
     });
 
     return {

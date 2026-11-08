@@ -55,99 +55,141 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
     ];
 
     mockPrismaService = {
-      db: {
-        orm: {
-          public: {
-            User: {
-              select: vi.fn().mockImplementation((...fields: string[]) => ({
-                where: vi.fn().mockImplementation((predicateFn) => ({
-                  first: vi.fn().mockImplementation(async () => {
-                    const match = mockUsers.find((u) => {
-                      const mockRecord = {
-                        email: {
-                          eq: (target: string) =>
-                            u.email.toLowerCase() === target.toLowerCase(),
-                        },
-                        id: { eq: (target: string) => u.id === target },
-                      };
-                      return predicateFn(mockRecord);
-                    });
-
-                    if (!match) return null;
-
-                    if (fields.length > 0) {
-                      const projected: Record<string, unknown> = {};
-                      const matchRecord = match as Record<string, unknown>;
-                      for (const field of fields) {
-                        projected[field] = matchRecord[field];
-                      }
-                      return projected;
-                    }
-
-                    return { ...match };
-                  }),
-                })),
-              })),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                first: vi.fn().mockImplementation(async () => {
-                  const match = mockUsers.find((u) => {
-                    const mockRecord = {
-                      id: { eq: (target: string) => u.id === target },
-                      email: { eq: (target: string) => u.email === target },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  return match || null;
-                }),
-                update: vi.fn().mockImplementation(async (data) => {
-                  const match = mockUsers.find((u) => {
-                    const mockRecord = {
-                      id: { eq: (target: string) => u.id === target },
-                      email: { eq: (target: string) => u.email === target },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (match) {
-                    Object.assign(match, data);
-                  }
-                  return match;
-                }),
-              })),
-              create: vi.fn().mockImplementation(async (data) => {
-                const newUser = {
-                  ...data,
-                  tokenVersion: data.tokenVersion ?? 0,
-                  organizationId: null,
-                  createdAt: new Date(),
-                };
-                mockUsers.push(newUser);
-                return newUser;
-              }),
-              upsert: vi.fn().mockImplementation(async ({ create }) => {
-                const newUser = {
-                  ...create,
-                  tokenVersion: create.tokenVersion ?? 0,
-                  organizationId: null,
-                  createdAt: new Date(),
-                };
-                mockUsers.push(newUser);
-                return newUser;
-              }),
+      user: {
+        findFirst: vi
+          .fn()
+          .mockImplementation(
+            async ({ where }: { where: { email?: string; id?: string } }) => {
+              return (
+                mockUsers.find((u) => {
+                  if (
+                    where.email &&
+                    u.email.toLowerCase() !== where.email.toLowerCase()
+                  )
+                    return false;
+                  if (where.id && u.id !== where.id) return false;
+                  return true;
+                }) || null
+              );
             },
-            Organization: {
-              select: vi.fn().mockReturnValue({
-                where: vi.fn().mockReturnValue({
-                  first: vi.fn().mockImplementation(async () => ({
-                    id: "org-1",
-                    name: "Acme Corp",
-                    slug: "acme",
-                    ownerId: "usr-admin",
-                  })),
-                }),
-              }),
+          ),
+        findUnique: vi
+          .fn()
+          .mockImplementation(
+            async ({ where }: { where: { email?: string; id?: string } }) => {
+              return (
+                mockUsers.find((u) => {
+                  if (
+                    where.email &&
+                    u.email.toLowerCase() !== where.email.toLowerCase()
+                  )
+                    return false;
+                  if (where.id && u.id !== where.id) return false;
+                  return true;
+                }) || null
+              );
             },
-          },
-        },
+          ),
+        create: vi
+          .fn()
+          .mockImplementation(
+            async ({ data }: { data: Record<string, unknown> }) => {
+              const newUser = {
+                ...data,
+                tokenVersion: (data.tokenVersion as number) ?? 0,
+                organizationId: (data.organizationId as string) ?? null,
+                createdAt: new Date(),
+              } as (typeof mockUsers)[0];
+              mockUsers.push(newUser);
+              return newUser;
+            },
+          ),
+        upsert: vi
+          .fn()
+          .mockImplementation(
+            async ({
+              create,
+              update,
+              where,
+            }: {
+              create: Record<string, unknown>;
+              update: Record<string, unknown>;
+              where: { email?: string; id?: string };
+            }) => {
+              const existing = mockUsers.find((u) => {
+                if (
+                  where.email &&
+                  u.email.toLowerCase() === where.email.toLowerCase()
+                )
+                  return true;
+                if (where.id && u.id === where.id) return true;
+                return false;
+              });
+              if (existing) {
+                Object.assign(existing, update);
+                return existing;
+              }
+              const newUser = {
+                ...create,
+                tokenVersion: (create.tokenVersion as number) ?? 0,
+                organizationId: (create.organizationId as string) ?? null,
+                createdAt: new Date(),
+              } as (typeof mockUsers)[0];
+              mockUsers.push(newUser);
+              return newUser;
+            },
+          ),
+        update: vi
+          .fn()
+          .mockImplementation(
+            async ({
+              where,
+              data,
+            }: {
+              where: { id: string };
+              data: {
+                tokenVersion?: number | { increment?: number };
+                password?: string;
+              };
+            }) => {
+              const user = mockUsers.find((u) => u.id === where.id);
+              if (user) {
+                if (
+                  typeof data.tokenVersion === "object" &&
+                  data.tokenVersion?.increment
+                ) {
+                  user.tokenVersion += data.tokenVersion.increment;
+                } else if (typeof data.tokenVersion === "number") {
+                  user.tokenVersion = data.tokenVersion;
+                }
+                if (data.password) {
+                  user.password = data.password;
+                }
+              }
+              return user;
+            },
+          ),
+      },
+      organization: {
+        findUnique: vi.fn().mockImplementation(async () => ({
+          id: "org-1",
+          name: "Acme Corp",
+          slug: "acme",
+          ownerId: "usr-admin",
+        })),
+        findFirst: vi.fn().mockImplementation(async () => ({
+          id: "org-1",
+          name: "Acme Corp",
+          slug: "acme",
+          ownerId: "usr-admin",
+        })),
+        upsert: vi
+          .fn()
+          .mockImplementation(
+            async ({ create }: { create: Record<string, unknown> }) => ({
+              ...create,
+            }),
+          ),
       },
     };
 
@@ -303,7 +345,9 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
       expect(result.success).toBe(true);
       expect(mockUsers[0].tokenVersion).toBe(1);
-      expect(bcrypt.compareSync("new-secure-pass-123", mockUsers[0].password)).toBe(true);
+      expect(
+        bcrypt.compareSync("new-secure-pass-123", mockUsers[0].password),
+      ).toBe(true);
     });
 
     it("13. Should reject changePassword when current password does not match", async () => {

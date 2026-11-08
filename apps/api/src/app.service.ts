@@ -68,7 +68,7 @@ export class AppService {
 
     // 1. PostgreSQL check
     try {
-      await this.prismaService.db.orm.public.User.select("id").first();
+      await this.prismaService.user.findFirst({ select: { id: true } });
     } catch {
       postgresStatus = "down";
       downServices.push("postgres");

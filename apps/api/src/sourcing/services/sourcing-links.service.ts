@@ -54,29 +54,30 @@ export class SourcingLinksService {
     const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
     const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
 
-    const links = await this.prisma.db.orm.public.TrackingLink.select(
-      "id",
-      "organizationId",
-      "name",
-      "token",
-      "source",
-      "customSource",
-      "jobId",
-      "campaign",
-      "medium",
-      "utmSource",
-      "utmMedium",
-      "utmCampaign",
-      "utmTerm",
-      "utmContent",
-      "clicksCount",
-      "isActive",
-      "deletedAt",
-      "createdAt",
-      "updatedAt",
-    )
-      .where((l) => l.organizationId.eq(organizationId))
-      .all();
+    const links = await this.prisma.trackingLink.findMany({
+      where: { organizationId },
+      select: {
+        id: true,
+        organizationId: true,
+        name: true,
+        token: true,
+        source: true,
+        customSource: true,
+        jobId: true,
+        campaign: true,
+        medium: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmTerm: true,
+        utmContent: true,
+        clicksCount: true,
+        isActive: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     // Filter out deleted links
     let filtered = links.filter((l) => !l.deletedAt);
@@ -106,21 +107,25 @@ export class SourcingLinksService {
     // Get jobs to map job titles (scoped by organizationId)
     const jobIds = Array.from(new Set(filtered.map((l) => l.jobId).filter(Boolean))) as string[];
     const jobs = jobIds.length > 0
-      ? await this.prisma.db.orm.public.Job.select("id", "title")
-          .where((j) => j.organizationId.eq(organizationId))
-          .where((j) => j.id.in(jobIds))
-          .all()
+      ? await this.prisma.job.findMany({
+          where: {
+            organizationId,
+            id: { in: jobIds },
+          },
+          select: { id: true, title: true },
+        })
       : [];
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
     // Count applications for each link (scoped to links belonging to this organization)
     const scopedLinkIds = filtered.map((l) => l.id);
     const allApps = scopedLinkIds.length > 0
-      ? await this.prisma.db.orm.public.Application.select(
-          "trackingLinkId",
-        )
-          .where((a) => a.trackingLinkId.in(scopedLinkIds))
-          .all()
+      ? await this.prisma.application.findMany({
+          where: {
+            trackingLinkId: { in: scopedLinkIds },
+          },
+          select: { trackingLinkId: true },
+        })
       : [];
     const appCountMap = new Map<string, number>();
     for (const app of allApps) {
@@ -188,9 +193,10 @@ export class SourcingLinksService {
     }
 
     if (dto.jobId) {
-      const job = await this.prisma.db.orm.public.Job.select("id", "organizationId")
-        .where((j) => j.id.eq(dto.jobId as string))
-        .first();
+      const job = await this.prisma.job.findFirst({
+        where: { id: dto.jobId as string },
+        select: { id: true, organizationId: true },
+      });
       if (!job || job.organizationId !== organizationId) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.JOB_NOT_FOUND,
@@ -208,30 +214,35 @@ export class SourcingLinksService {
     const utmTerm = dto.utmTerm?.trim() || null;
     const utmContent = dto.utmContent?.trim() || null;
 
-    const created = await this.prisma.db.orm.public.TrackingLink.create({
-      id,
-      organizationId,
-      name: dto.name.trim(),
-      token,
-      source: dto.source,
-      customSource: dto.customSource?.trim() || null,
-      jobId: dto.jobId || null,
-      campaign: utmCampaign,
-      medium: utmMedium,
-      utmSource,
-      utmMedium,
-      utmCampaign,
-      utmTerm,
-      utmContent,
-      clicksCount: 0,
-      isActive: true,
-      createdById: userId || null,
-      updatedAt: toInstant(),
+    const created = await this.prisma.trackingLink.create({
+      data: {
+        id,
+        organizationId,
+        name: dto.name.trim(),
+        token,
+        source: dto.source,
+        customSource: dto.customSource?.trim() || null,
+        jobId: dto.jobId || null,
+        campaign: utmCampaign,
+        medium: utmMedium,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        utmTerm,
+        utmContent,
+        clicksCount: 0,
+        isActive: true,
+        createdById: userId || null,
+        updatedAt: toInstant(),
+      },
     });
 
     let jobTitle: string | null = null;
     if (dto.jobId) {
-      const j = await this.prisma.db.orm.public.Job.select("title").where((x) => x.id.eq(dto.jobId as string)).first();
+      const j = await this.prisma.job.findFirst({
+        where: { id: dto.jobId as string },
+        select: { title: true },
+      });
       jobTitle = j?.title || null;
     }
 
@@ -265,13 +276,14 @@ export class SourcingLinksService {
     id: string,
     dto: UpdateTrackingLinkDto,
   ): Promise<void> {
-    const link = await this.prisma.db.orm.public.TrackingLink.select(
-      "id",
-      "organizationId",
-      "deletedAt",
-    )
-      .where((l) => l.id.eq(id))
-      .first();
+    const link = await this.prisma.trackingLink.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        organizationId: true,
+        deletedAt: true,
+      },
+    });
 
     if (!link || link.deletedAt) {
       throw new AppNotFoundException(
@@ -307,17 +319,21 @@ export class SourcingLinksService {
     if (dto.utmContent !== undefined) updateData.utmContent = dto.utmContent?.trim() || null;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
-    await this.prisma.db.orm.public.TrackingLink.where((l) => l.id.eq(id)).update(updateData);
+    await this.prisma.trackingLink.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   async deleteLink(organizationId: string, id: string): Promise<void> {
-    const link = await this.prisma.db.orm.public.TrackingLink.select(
-      "id",
-      "organizationId",
-      "deletedAt",
-    )
-      .where((l) => l.id.eq(id))
-      .first();
+    const link = await this.prisma.trackingLink.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        organizationId: true,
+        deletedAt: true,
+      },
+    });
 
     if (!link || link.deletedAt) {
       throw new AppNotFoundException(
@@ -333,29 +349,33 @@ export class SourcingLinksService {
       );
     }
 
-    await this.prisma.db.orm.public.TrackingLink.where((l) => l.id.eq(id)).update({
-      deletedAt: toInstant(),
-      isActive: false,
-      updatedAt: toInstant(),
+    await this.prisma.trackingLink.update({
+      where: { id },
+      data: {
+        deletedAt: toInstant(),
+        isActive: false,
+        updatedAt: toInstant(),
+      },
     });
   }
 
   async findLinkByToken(token: string) {
     if (!token) return null;
-    return this.prisma.db.orm.public.TrackingLink.select(
-      "id",
-      "token",
-      "name",
-      "source",
-      "customSource",
-      "jobId",
-      "campaign",
-      "medium",
-      "isActive",
-      "deletedAt",
-      "organizationId",
-    )
-      .where((l) => l.token.eq(token))
-      .first();
+    return this.prisma.trackingLink.findFirst({
+      where: { token },
+      select: {
+        id: true,
+        token: true,
+        name: true,
+        source: true,
+        customSource: true,
+        jobId: true,
+        campaign: true,
+        medium: true,
+        isActive: true,
+        deletedAt: true,
+        organizationId: true,
+      },
+    });
   }
 }

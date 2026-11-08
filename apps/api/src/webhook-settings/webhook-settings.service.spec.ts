@@ -10,18 +10,23 @@ import {
   AppNotFoundException,
 } from "../common/app-exception";
 
+type MockWebhookTable = {
+  findMany: ReturnType<typeof vi.fn>;
+  findFirst: ReturnType<typeof vi.fn>;
+  create: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  where: ReturnType<typeof vi.fn>;
+  all: ReturnType<typeof vi.fn>;
+  first: ReturnType<typeof vi.fn>;
+};
+
 type MockPrisma = {
+  organizationWebhookSetting: MockWebhookTable;
   db: {
     orm: {
       public: {
-        OrganizationWebhookSetting: {
-          where: ReturnType<typeof vi.fn>;
-          all: ReturnType<typeof vi.fn>;
-          first: ReturnType<typeof vi.fn>;
-          create: ReturnType<typeof vi.fn>;
-          update: ReturnType<typeof vi.fn>;
-          delete: ReturnType<typeof vi.fn>;
-        };
+        OrganizationWebhookSetting: MockWebhookTable;
       };
     };
   };
@@ -41,50 +46,49 @@ describe("WebhookSettingsService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    const webhookTable: MockWebhookTable = {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockImplementation((args: { data?: Record<string, unknown> } | Record<string, unknown>) =>
+        Promise.resolve({
+          ...(args?.data || args),
+          createdAt: 1775534400000,
+          updatedAt: 1775534400000,
+        }),
+      ),
+      update: vi.fn().mockImplementation((args: unknown) => {
+        const payload = (args as { data?: Record<string, unknown> })?.data || (args as Record<string, unknown>);
+        return Promise.resolve({
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+          webhookUrl: "enc:https://api.telegram.org/bot999/sendMessage",
+          secretToken: null,
+          chatId: "-100999",
+          isEnabled: true,
+          createdAt: 1775534400000,
+          updatedAt: 1775534400000,
+          createdBy: "user-1",
+          updatedBy: "user-1",
+          ...payload,
+        });
+      }),
+      delete: vi.fn().mockResolvedValue({ count: 1 }),
+      where: vi.fn(),
+      all: vi.fn(),
+      first: vi.fn(),
+    };
+    webhookTable.where.mockReturnValue(webhookTable);
+    webhookTable.all = webhookTable.findMany;
+    webhookTable.first = webhookTable.findFirst;
+
     mockPrisma = {
+      organizationWebhookSetting: webhookTable,
       db: {
         orm: {
           public: {
-            OrganizationWebhookSetting: {
-              where: vi.fn().mockImplementation((predicate: unknown) => {
-                if (typeof predicate === "function") {
-                  predicate({
-                    id: { eq: vi.fn() },
-                    organizationId: { eq: vi.fn() },
-                    eventType: { eq: vi.fn() },
-                    provider: { eq: vi.fn() },
-                  });
-                }
-                return mockPrisma.db.orm.public.OrganizationWebhookSetting;
-              }),
-              all: vi.fn().mockResolvedValue([]),
-              first: vi.fn().mockResolvedValue(null),
-              create: vi.fn().mockImplementation((data) =>
-                Promise.resolve({
-                  ...data,
-                  createdAt: 1775534400000,
-                  updatedAt: 1775534400000,
-                }),
-              ),
-              update: vi.fn().mockImplementation((data) =>
-                Promise.resolve({
-                  id: "setting-1",
-                  organizationId: "org-1",
-                  eventType: "DLQ_ALERT",
-                  provider: "TELEGRAM",
-                  webhookUrl: "enc:https://api.telegram.org/bot999/sendMessage",
-                  secretToken: null,
-                  chatId: "-100999",
-                  isEnabled: true,
-                  createdAt: 1775534400000,
-                  updatedAt: 1775534400000,
-                  createdBy: "user-1",
-                  updatedBy: "user-1",
-                  ...data,
-                }),
-              ),
-              delete: vi.fn().mockResolvedValue({ count: 1 }),
-            },
+            OrganizationWebhookSetting: webhookTable,
           },
         },
       },
@@ -121,11 +125,13 @@ describe("WebhookSettingsService", () => {
       );
       expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          organizationId: "org-1",
-          eventType: "DLQ_ALERT",
-          provider: "TELEGRAM",
-          webhookUrl: "enc:https://api.telegram.org/bot123456:ABC-DEF/sendMessage",
-          chatId: "-100123456789",
+          data: expect.objectContaining({
+            organizationId: "org-1",
+            eventType: "DLQ_ALERT",
+            provider: "TELEGRAM",
+            webhookUrl: "enc:https://api.telegram.org/bot123456:ABC-DEF/sendMessage",
+            chatId: "-100123456789",
+          }),
         }),
       );
       expect(result.webhookUrl).toBe("https://api.telegram.org/bot***/sendMessage");
@@ -295,10 +301,14 @@ describe("WebhookSettingsService", () => {
       });
 
       expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
-        expect.not.objectContaining({ webhookUrl: expect.anything() }),
+        expect.objectContaining({
+          data: expect.not.objectContaining({ webhookUrl: expect.anything() }),
+        }),
       );
       expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
-        expect.objectContaining({ isEnabled: false }),
+        expect.objectContaining({
+          data: expect.objectContaining({ isEnabled: false }),
+        }),
       );
     });
 
@@ -420,7 +430,9 @@ describe("WebhookSettingsService", () => {
       );
       expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          webhookUrl: "enc:https://api.telegram.org/botnew-token:123/sendMessage",
+          data: expect.objectContaining({
+            webhookUrl: "enc:https://api.telegram.org/botnew-token:123/sendMessage",
+          }),
         }),
       );
     });
@@ -446,7 +458,9 @@ describe("WebhookSettingsService", () => {
         secretToken: "",
       });
       expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
-        expect.objectContaining({ secretToken: null }),
+        expect.objectContaining({
+          data: expect.objectContaining({ secretToken: null }),
+        }),
       );
 
       // 3. Masked secret keeps existing
@@ -454,7 +468,9 @@ describe("WebhookSettingsService", () => {
         secretToken: "••••••••••••••••",
       });
       expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
-        expect.not.objectContaining({ secretToken: expect.anything() }),
+        expect.objectContaining({
+          data: expect.not.objectContaining({ secretToken: expect.anything() }),
+        }),
       );
     });
 

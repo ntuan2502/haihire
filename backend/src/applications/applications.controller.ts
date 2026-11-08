@@ -26,6 +26,7 @@ import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { resumeFileFilter } from "../common/upload-utils";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 
 @Controller("applications")
 export class ApplicationsController {
@@ -35,7 +36,7 @@ export class ApplicationsController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
   findAll(
     @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -61,7 +62,7 @@ export class ApplicationsController {
   }
 
   @Get("job/:jobId")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
   findByJob(
     @Param("jobId") jobId: string,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
@@ -73,7 +74,7 @@ export class ApplicationsController {
   }
 
   @Get(":id")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
   findOne(
     @Param("id") id: string,
     @Request() req: { user?: { organizationId?: string | null } },
@@ -101,7 +102,7 @@ export class ApplicationsController {
   }
 
   @Patch(":id/stage")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:update_stage")
   updateStage(
     @Param("id") id: string,
@@ -116,7 +117,7 @@ export class ApplicationsController {
   }
 
   @Patch(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:update")
   updateCandidate(
     @Param("id") id: string,
@@ -131,7 +132,7 @@ export class ApplicationsController {
   }
 
   @Post(":id/documents")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:document_upload")
   @UseInterceptors(
     FileInterceptor("file", {
@@ -154,7 +155,7 @@ export class ApplicationsController {
   }
 
   @Get(":id/documents/download")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:document_download")
   async downloadDocument(
     @Param("id") id: string,
@@ -187,7 +188,7 @@ export class ApplicationsController {
   }
 
   @Delete(":id/documents")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:document_delete")
   deleteDocument(
     @Param("id") id: string,
@@ -203,7 +204,7 @@ export class ApplicationsController {
   }
 
   @Delete(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("application:delete")
   remove(
     @Param("id") id: string,

@@ -19,6 +19,7 @@ import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 
 @Controller("jobs")
 export class JobsController {
@@ -61,7 +62,6 @@ export class JobsController {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       tenantOrgId: req?.user?.organizationId,
-      isAuthenticated: Boolean(req?.user),
     });
   }
 
@@ -79,11 +79,12 @@ export class JobsController {
     @Param("id") id: string,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.jobsService.findOne(id, req?.user?.organizationId, !req?.user);
+    const tenantOrgId = req?.user?.organizationId;
+    return this.jobsService.findOne(id, tenantOrgId, !tenantOrgId);
   }
 
   @Post()
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:create")
   create(
     @Body(DtoPipe(CreateJobDto)) dto: CreateJobDto,
@@ -97,7 +98,7 @@ export class JobsController {
   }
 
   @Patch(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:update")
   update(
     @Param("id") id: string,
@@ -108,7 +109,7 @@ export class JobsController {
   }
 
   @Delete(":id")
-  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
   @RequirePermission("job:delete")
   remove(
     @Param("id") id: string,

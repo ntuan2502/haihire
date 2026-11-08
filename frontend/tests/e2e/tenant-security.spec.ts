@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 import {
+  SEED_BETA_CANDIDATE_ID,
   getOrgAlphaId,
   getOrgBetaId,
   getBetaJobId,
@@ -118,7 +120,70 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     expect(body.code).toMatch(/FORBIDDEN|ORG_FORBIDDEN_ACTION|CROSS_TENANT/);
   });
 
+  test("only the invite's organization can revoke it", async ({ request }) => {
+    const betaCookies = await loginAsAdmin(request, "admin@beta.test");
+    const inviteResponse = await request.post("/api/organizations/my/invite-links", {
+      headers: { Cookie: alphaCookies, Authorization: `Bearer ${authToken}` },
+      data: { role: "Member" },
+    });
+    expect(inviteResponse.status()).toBe(201);
+    const { id, token } = await inviteResponse.json();
+
+    const revokePath = `/api/organizations/my/invite-links/${id}`;
+    const crossTenant = await request.delete(revokePath, {
+      headers: {
+        Cookie: betaCookies,
+        Authorization: `Bearer ${betaCookies.replace(/^haihire_token=/, "")}`,
+      },
+    });
+    expect(crossTenant.status()).toBe(404);
+
+    const preview = await request.get(`/api/organizations/invite-links/public/${token}`);
+    expect(await preview.json()).toMatchObject({ valid: true });
+
+    const ownTenant = await request.delete(revokePath, {
+      headers: { Cookie: alphaCookies, Authorization: `Bearer ${authToken}` },
+    });
+    expect(ownTenant.status()).toBe(200);
+  });
+
   // === EDGE CASES ===
+
+  test("a newly registered account can read public jobs but cannot read tenant records", async ({ request }) => {
+    const unauthenticated = await request.get(`/api/applications/${betaAppId}`);
+    expect(unauthenticated.status()).toBe(401);
+
+    const registration = await request.post("/api/auth/register", {
+      data: {
+        name: "Tenant Isolation Test",
+        email: `tenant-isolation-${randomUUID()}@example.com`,
+        password: "TenantIsolationTest2026!",
+      },
+    });
+    expect(registration.status()).toBe(201);
+    const { user, accessToken } = await registration.json();
+    expect(user.organizationId).toBeNull();
+    const headers = { Authorization: `Bearer ${accessToken}` };
+
+    for (const path of [
+      `/api/candidates?organizationId=${betaOrgId}`,
+      `/api/candidates/${SEED_BETA_CANDIDATE_ID}`,
+      `/api/applications?organizationId=${betaOrgId}`,
+      `/api/applications/job/${betaJobId}`,
+      `/api/applications/${betaAppId}`,
+    ]) {
+      const response = await request.get(path, { headers });
+      expect(response.status(), path).toBe(403);
+    }
+
+    const response = await request.get(`/api/jobs/${betaJobId}`, { headers });
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toMatchObject({
+      id: betaJobId,
+      applications: [],
+      applicationsCount: 0,
+    });
+  });
 
   test("Org Alpha user with no organizationId query gets own data only", async ({ request }) => {
     const res = await request.get("/api/candidates", {

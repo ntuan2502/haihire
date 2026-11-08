@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { OrganizationsService } from "./organizations.service";
 import {
+  createQueryBuilder,
+  type PredicateFn,
+} from "../test/helpers/prisma-composer-mock";
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -27,7 +31,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
     organizationId: string | null;
     [key: string]: unknown;
   }
-  interface MockLink {
+  interface MockLink extends Record<string, unknown> {
     id: string;
     token: string;
     organizationId: string;
@@ -345,21 +349,8 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
                   }),
                 })),
               })),
-              where: vi.fn().mockImplementation((predicateFn) => ({
-                update: vi.fn().mockImplementation(async (updates) => {
-                  const target = mockLinks.find((l) => {
-                    const mockRecord = {
-                      id: { eq: (target: string) => l.id === target },
-                    };
-                    return predicateFn(mockRecord);
-                  });
-                  if (target) {
-                    Object.assign(target, updates);
-                    return { ...target };
-                  }
-                  return null;
-                }),
-              })),
+              where: (predicate: PredicateFn<MockLink>) =>
+                createQueryBuilder(mockLinks).where(predicate),
             },
           },
         },
@@ -496,6 +487,18 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       const preview = await service.getPublicInvite(link.token);
       expect(preview.valid).toBe(true);
       expect(preview.organization?.name).toBe("Acme Corp");
+    });
+
+    it("rejects revocation of another organization's invite link", async () => {
+      const invite = await service.createInviteLink("usr-2", {
+        role: "Member",
+      });
+      mockLinks[0].organizationId = "org-2";
+
+      await expect(
+        service.revokeInviteLink("usr-2", invite.id),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockLinks[0].status).toBe("ACTIVE");
     });
 
     it("11. Should allow unassociated user to join organization via invite token", async () => {

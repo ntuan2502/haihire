@@ -40,20 +40,15 @@ export class JobsService {
     page?: number;
     limit?: number;
     tenantOrgId?: string | null;
-    isAuthenticated?: boolean;
   }) {
     const page = filter?.page && filter.page > 0 ? filter.page : 1;
     const limit = filter?.limit && filter.limit > 0 ? filter.limit : 20;
 
-    const isAuthenticated = filter?.isAuthenticated ?? (!filter?.organizationSlug);
-    const isPublic = !isAuthenticated;
-    const effectiveStatus = isPublic ? "PUBLISHED" : filter?.status;
     const userOrgId = filter?.tenantOrgId || undefined;
 
     if (
-      isAuthenticated &&
-      effectiveStatus &&
-      effectiveStatus !== "PUBLISHED" &&
+      filter?.status &&
+      filter.status !== "PUBLISHED" &&
       filter?.organizationId &&
       userOrgId &&
       filter.organizationId !== userOrgId
@@ -81,6 +76,10 @@ export class JobsService {
         .where((o) => o.id.eq(targetOrgId as string))
         .first();
     }
+
+    const isPublic =
+      !userOrgId || targetOrgId !== userOrgId || Boolean(filter?.organizationSlug);
+    const effectiveStatus = isPublic ? "PUBLISHED" : filter?.status;
 
     const jobsQuery = this.prisma.db.orm.public.Job.select(
       "id",
@@ -171,7 +170,7 @@ export class JobsService {
     const jobIdSet = new Set(jobIds);
 
     // Fetch applications only relevant to these paged jobs
-    const allApps = jobIds.length > 0
+    const allApps = !isPublic && jobIds.length > 0
       ? await this.prisma.db.orm.public.Application.select(
           "id",
           "jobId",

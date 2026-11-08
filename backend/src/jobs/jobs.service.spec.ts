@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { JobsService } from "./jobs.service";
+import { JobsController } from "./jobs.controller";
 import { NotFoundException } from "@nestjs/common";
 import { JobStatus, JobType } from "./dto/create-job.dto";
 
@@ -231,7 +232,10 @@ describe("JobsService - Multi-Tenant Job Management", () => {
 
   describe("Multi-Tenant Isolation", () => {
     it("should return only jobs belonging to org-1 when filtered by org-1", async () => {
-      const results = await service.findAll({ organizationId: "org-1" });
+      const results = await service.findAll({
+        organizationId: "org-1",
+        tenantOrgId: "org-1",
+      });
 
       expect(results.total).toBe(2);
       expect(results.data.length).toBe(2);
@@ -240,7 +244,10 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should return only jobs belonging to org-2 when filtered by org-2", async () => {
-      const results = await service.findAll({ organizationId: "org-2" });
+      const results = await service.findAll({
+        organizationId: "org-2",
+        tenantOrgId: "org-2",
+      });
 
       expect(results.total).toBe(1);
       expect(results.data.length).toBe(1);
@@ -249,7 +256,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should compute application metrics correctly per job", async () => {
-      const results = await service.findAll({ organizationId: "org-1" });
+      const results = await service.findAll({ tenantOrgId: "org-1" });
       const job1 = results.data.find((j) => j.id === "job-1");
 
       expect(job1?.applicationsCount).toBe(2);
@@ -258,7 +265,11 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
 
     it("should paginate jobs correctly", async () => {
-      const paged = await service.findAll({ organizationId: "org-1", page: 1, limit: 1 });
+      const paged = await service.findAll({
+        tenantOrgId: "org-1",
+        page: 1,
+        limit: 1,
+      });
 
       expect(paged.total).toBe(2);
       expect(paged.page).toBe(1);
@@ -271,7 +282,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
   describe("Filtering & Searching", () => {
     it("should filter by status", async () => {
       const published = await service.findAll({
-        organizationId: "org-1",
+        tenantOrgId: "org-1",
         status: "PUBLISHED",
       });
       expect(published.total).toBe(1);
@@ -279,7 +290,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       expect(published.data[0].id).toBe("job-1");
 
       const drafts = await service.findAll({
-        organizationId: "org-1",
+        tenantOrgId: "org-1",
         status: "DRAFT",
       });
       expect(drafts.total).toBe(1);
@@ -289,7 +300,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
 
     it("should search jobs by keyword", async () => {
       const searchResults = await service.findAll({
-        organizationId: "org-1",
+        tenantOrgId: "org-1",
         search: "Full-Stack",
       });
       expect(searchResults.total).toBe(1);
@@ -371,7 +382,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     });
   });
 
-  describe("Public Career Page Visibility (Unauthenticated)", () => {
+  describe("Public Career Page Visibility", () => {
     beforeEach(() => {
       // Add CLOSED and ARCHIVED jobs to test complete lifecycle isolation
       mockJobs.push(
@@ -404,10 +415,35 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       );
     });
 
+    it("limits an authenticated account without an active organization to public jobs", async () => {
+      const controller = new JobsController(service);
+      const request = { user: { organizationId: null } };
+
+      const results = await controller.findAll(request);
+      expect(results.data.map((job) => job.status)).toEqual([
+        "PUBLISHED",
+        "PUBLISHED",
+      ]);
+      expect(results.data.map((job) => job.applicationsCount)).toEqual([0, 0]);
+      await expect(controller.findOne("job-2", request)).rejects.toThrow(
+        NotFoundException,
+      );
+      const published = await controller.findOne("job-1", request);
+      expect(published.applications).toEqual([]);
+    });
+
+    it("applies public visibility when an authenticated user lists another organization's jobs", async () => {
+      const results = await service.findAll({
+        organizationSlug: "acme-corp",
+        tenantOrgId: "org-2",
+      });
+
+      expect(results.data.map((job) => job.id)).toEqual(["job-1"]);
+    });
+
     it("should return ONLY PUBLISHED jobs for unauthenticated career page requests", async () => {
       const results = await service.findAll({
         organizationSlug: "acme-corp",
-        isAuthenticated: false,
       });
 
       // job-1 is PUBLISHED; job-2 is DRAFT; job-closed is CLOSED; job-archived is ARCHIVED
@@ -421,7 +457,6 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       const draftReq = await service.findAll({
         organizationSlug: "acme-corp",
         status: "DRAFT",
-        isAuthenticated: false,
       });
       // Should not return draft jobs
       expect(draftReq.data.some((j) => j.status === "DRAFT")).toBe(false);
@@ -429,7 +464,6 @@ describe("JobsService - Multi-Tenant Job Management", () => {
       const closedReq = await service.findAll({
         organizationSlug: "acme-corp",
         status: "CLOSED",
-        isAuthenticated: false,
       });
       expect(closedReq.data.some((j) => j.status === "CLOSED" || j.status === "ARCHIVED")).toBe(false);
     });

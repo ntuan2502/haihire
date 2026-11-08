@@ -249,11 +249,12 @@ export class OrganizationsInvitesService {
       );
     }
 
+    const orgId = user.organizationId;
     const org = await this.prisma.db.orm.public.Organization.select(
       "id",
       "ownerId",
     )
-      .where((o) => o.id.eq(user.organizationId as string))
+      .where((o) => o.id.eq(orgId))
       .first();
 
     const isOwner = Boolean(org && org.ownerId === user.id);
@@ -266,11 +267,18 @@ export class OrganizationsInvitesService {
       );
     }
 
-    await this.prisma.db.orm.public.InviteLink.where((l) =>
+    const revoked = await this.prisma.db.orm.public.InviteLink.where((l) =>
       l.id.eq(linkId),
-    ).update({
-      status: "REVOKED",
-    });
+    )
+      .where((l) => l.organizationId.eq(orgId))
+      .update({ status: "REVOKED" });
+
+    if (!revoked) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.ORG_INVITE_INVALID,
+        "Invite link not found in the active organization",
+      );
+    }
 
     return { success: true, message: "Invite link revoked successfully" };
   }

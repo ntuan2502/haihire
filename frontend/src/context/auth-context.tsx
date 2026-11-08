@@ -34,7 +34,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TOKEN_KEY = "haihire_recruiter_token";
 const USER_KEY = "haihire_recruiter_user";
 
-function setAuthCookies(token: string, hasOrg: boolean) {
+function setAuthCookies(token: string | null | undefined, hasOrg: boolean) {
   if (typeof document === "undefined") return;
   const maxAge = 60 * 60 * 24 * 7; // 7 days
   const secure =
@@ -75,10 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Synchronize user profile with backend in real-time
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
-      const savedToken = localStorage.getItem(TOKEN_KEY);
-      if (!savedToken) return null;
+      const savedToken =
+        typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+      if (savedToken) {
+        api.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
+      }
 
-      api.defaults.headers.common.Authorization = `Bearer ${savedToken}`;
       const response = await api.get<User>("/auth/me");
       const latestUser = response.data;
 

@@ -17,9 +17,7 @@ import {
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
-import { Search, ArrowUpDown, Menu, User } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { CustomSelect } from "@/components/shared/custom-select";
+// UI icons & inputs moved to PipelineCandidatesSidebar
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
@@ -50,7 +48,7 @@ import { useAuth } from "@/context/auth-context";
 
 // Extracted Sub-Components
 import { PipelineStageSelector } from "@/components/jobs/pipeline/pipeline-stage-selector";
-import { PipelineCandidateCard } from "@/components/jobs/pipeline/pipeline-candidate-card";
+import { PipelineCandidatesSidebar } from "@/components/jobs/pipeline/page-components";
 import { PipelineCandidateDetail } from "@/components/jobs/pipeline/pipeline-candidate-detail";
 
 function JobPipelinePageContent() {
@@ -560,97 +558,19 @@ function JobPipelinePageContent() {
       {/* 2. Main Master-Detail Workspace */}
       <main className="flex-1 min-h-0 flex overflow-hidden">
         {/* LEFT COLUMN: Candidates List */}
-        <aside
-          className={`w-full ${isListCollapsed ? "md:w-0 md:hidden" : "md:w-80 lg:w-84"} shrink-0 flex flex-col h-full border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all duration-200 ${
-            mobileDetailOpen ? "hidden md:flex" : "flex"
-          }`}
-        >
-          {/* Search box & Toolbar */}
-          <div className="shrink-0 p-3 border-b border-slate-200/80 dark:border-slate-800 space-y-2">
-            <div className="relative">
-              <Search
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"
-                aria-hidden="true"
-              />
-              <Input
-                type="text"
-                name="candidates-search"
-                placeholder={t("candidates.searchCandidates")}
-                aria-label={t("candidates.searchCandidates")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 pr-3 text-xs bg-slate-50/70 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl"
-              />
-            </div>
-
-            {/* Sort toolbar */}
-            <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
-              <CustomSelect
-                value={sortBy}
-                onChange={(val) =>
-                  setSortBy(val as "score" | "newest" | "oldest" | "name")
-                }
-                size="sm"
-                icon={ArrowUpDown}
-                options={[
-                  { value: "score", label: t("applications.columns.score") },
-                  { value: "newest", label: t("candidates.columns.added") },
-                  { value: "oldest", label: t("common.created") },
-                  { value: "name", label: t("candidates.candidateName") },
-                ]}
-                className="w-auto"
-                triggerClassName="h-7 text-xs py-1 px-2.5 font-semibold"
-              />
-
-              <button
-                type="button"
-                disabled
-                className="h-6 w-6 rounded-md flex items-center justify-center text-slate-400 opacity-40 cursor-not-allowed transition-colors"
-                title="Filter options"
-              >
-                <Menu className="h-3 w-3" />
-              </button>
-            </div>
-
-            <p className="text-[10px] text-slate-400 font-medium pt-0.5">
-              {candidateCountText}
-            </p>
-          </div>
-
-          {/* Candidates List Container */}
-          <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 scrollbar-thin">
-            {filteredCandidates.length === 0 ? (
-              <div className="pt-8 pb-6 px-4 flex flex-col items-center text-center space-y-2 text-slate-400">
-                <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                  <User className="h-5 w-5" />
-                </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {t("candidates.noCandidatesYet")}
-                  </h4>
-                  <p className="text-[11px] text-slate-400">
-                    {t("candidates.noApplicationsMatchingStage")}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              filteredCandidates.map((candidate) => (
-                <PipelineCandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  isSelected={
-                    String(candidate.id) === String(selectedAppId) ||
-                    String(candidate.candidateId) === String(selectedAppId)
-                  }
-                  onSelect={() => {
-                    handleSelectCandidate(candidate.id);
-                  }}
-                  canDrag={canEdit}
-                />
-              ))
-            )}
-          </div>
-        </aside>
+        <PipelineCandidatesSidebar
+          isListCollapsed={isListCollapsed}
+          mobileDetailOpen={mobileDetailOpen}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortByChange={setSortBy}
+          candidateCountText={candidateCountText}
+          filteredCandidates={filteredCandidates}
+          selectedAppId={selectedAppId}
+          onSelectCandidate={handleSelectCandidate}
+          canEdit={canEdit}
+        />
 
         {/* RIGHT COLUMN: Candidate Detail Content */}
         <PipelineCandidateDetail

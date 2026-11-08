@@ -6,7 +6,7 @@
  */
 
 // 1. Models that physically DO NOT have an `organizationId` column in schema
-// (contract.prisma). These models inherit tenant context from relational parents
+// (schema.prisma). These models inherit tenant context from relational parents
 // or use primary key scoping.
 export const MODELS_WITHOUT_ORG_COLUMN = new Set([
   "Interview", // Inherits tenant context via applicationId -> job.organizationId

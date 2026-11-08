@@ -137,7 +137,7 @@ haihire/
   - _Variables & Functions:_ `camelCase` (`executeTx`, `getApiErrorMessage`, `downloadAuthenticatedFile`).
   - _React Components:_ `PascalCase` (`WizardHeader`, `MetricCard`, `CustomSelect`).
   - _Classes & DTOs:_ `PascalCase` (`CreateJobDto`, `PrismaService`, `GlobalExceptionFilter`).
-  - _Database Schema:_ PostgreSQL tables mapped via `snake_case` in `backend/src/prisma/contract.prisma` (e.g. `@@map("job")`, `@@map("candidate")`).
+  - _Database Schema:_ PostgreSQL tables mapped via `snake_case` in `backend/src/prisma/schema.prisma` (e.g. `@@map("job")`, `@@map("candidate")`).
 - **File Structure Blueprint:**
   - _Frontend Component:_
     ```typescript
@@ -223,7 +223,7 @@ haihire/
 ## 6. CRITICAL ARCHITECTURAL CONSTRAINTS
 
 - **Sensitive Files (Do Not Modify Without Caution):**
-  1. `backend/src/prisma/contract.prisma` & `contract.json`: Prisma 8 RC ORM schema contract. Schema changes require `pnpm contract:emit` and `pnpm db:update`.
+  1. `backend/src/prisma/schema.prisma` & `contract.json`: Prisma 8 RC ORM schema contract. Schema changes require `pnpm contract:emit` and `pnpm db:update`.
   2. `backend/src/common/dto-validation.pipe.ts`: Bridge protecting validation metatypes from bundler tree-shaking.
   3. `frontend/src/app/layout.tsx`: Anti-FOUC theme script `<Script id="theme-init" strategy="beforeInteractive">`. Do not replace with raw `<script>` tags.
   4. `backend/src/applications/applications.service.ts`: Core Saga resume upload logic. Houses MinIO compensating deletions and BullMQ DLQ triggers.

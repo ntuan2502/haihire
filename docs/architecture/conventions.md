@@ -99,7 +99,7 @@
 ## 9. Database, ORM & Transaction Architecture
 
 1. **Prisma 8 Contract-First Schema:** All database models live in `backend/src/prisma/contract.prisma`.
-   - _Rationale:_ Generates compiled, deterministic runtime codecs and contracts.
+   - _Rationale:_ Uses standard PostgreSQL driver adapters with full type safety and zero pre-release dependencies.
 2. **Cascade Deletion Integrity:** Child entities (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must declare `onDelete: Cascade` targeting their parent root.
    - _Rationale:_ Guarantees database-level atomic cascade deletion and eliminates orphan child records.
 3. **AsyncLocalStorage Transaction Propagation:** Use `PrismaService.executeTx()` for transactional business operations.

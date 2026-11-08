@@ -10,8 +10,6 @@ export default tseslint.config(
       "dist/**",
       "node_modules/**",
       "migrations/**",
-      "src/prisma/contract.d.ts",
-      ".agents/**",
     ],
   },
   eslint.configs.recommended,

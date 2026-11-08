@@ -6,6 +6,7 @@ import { backendEnv } from "../config/env";
 vi.mock("./db", () => ({
   connectDatabase: vi.fn(),
   db: {
+    $client: { mockPrismaClient: true },
     orm: {
       public: {
         User: {
@@ -39,6 +40,14 @@ describe("PrismaService", () => {
     (backendEnv as { NODE_ENV: string }).NODE_ENV = originalEnvValues.NODE_ENV;
     (backendEnv as { SEED_DEMO_ON_BOOT: boolean }).SEED_DEMO_ON_BOOT =
       originalEnvValues.SEED_DEMO_ON_BOOT;
+  });
+
+  it("should expose raw client", () => {
+    expect(service.raw).toBeDefined();
+    expect(
+      (service.raw as unknown as { mockPrismaClient: boolean })
+        .mockPrismaClient,
+    ).toBe(true);
   });
 
   it("should have db property defined", () => {

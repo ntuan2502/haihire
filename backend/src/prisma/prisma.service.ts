@@ -3,6 +3,7 @@ import type { OnModuleInit } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
+import type { PrismaClient } from "@prisma/client";
 import { connectDatabase, db } from "./db";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
 import { toInstant } from "../common/date.util";
@@ -15,6 +16,10 @@ export class PrismaService implements OnModuleInit {
 
   get client(): typeof db {
     return this.als.getStore() ?? this.db;
+  }
+
+  get raw(): PrismaClient {
+    return (this.db as unknown as { $client: PrismaClient }).$client;
   }
 
   async transaction<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {

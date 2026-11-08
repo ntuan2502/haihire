@@ -41,7 +41,7 @@ function waitForBackend(host: string, port: number, timeoutMs = 60000): Promise<
       socket.on("error", () => {
         socket.destroy();
         if (Date.now() - start > timeoutMs) {
-          console.warn(`[frontend dev] Backend on port ${port} not reachable within timeout. Starting frontend anyway.`);
+          console.warn(`[web dev] Backend on port ${port} not reachable within timeout. Starting web anyway.`);
           resolve(false);
         } else {
           setTimeout(tryConnect, 400);

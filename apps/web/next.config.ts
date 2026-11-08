@@ -3,9 +3,21 @@ import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
 
-const repoRoot = process.cwd().endsWith("frontend")
-  ? path.resolve(process.cwd(), "..")
-  : process.cwd();
+function findWorkspaceRoot(): string {
+  let curr = process.cwd();
+  while (curr !== path.dirname(curr)) {
+    if (fs.existsSync(path.join(curr, "pnpm-workspace.yaml"))) {
+      return curr;
+    }
+    curr = path.dirname(curr);
+  }
+  return process.cwd();
+}
+
+const repoRoot = findWorkspaceRoot();
+
+
+
 const rootEnv = path.resolve(repoRoot, ".env");
 if (fs.existsSync(rootEnv)) {
   process.loadEnvFile(rootEnv);
@@ -62,7 +74,7 @@ function getAllowedDevOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  outputFileTracingRoot: path.resolve(process.cwd(), ".."),
+  outputFileTracingRoot: repoRoot,
   allowedDevOrigins: getAllowedDevOrigins(),
   images: {
     remotePatterns: [

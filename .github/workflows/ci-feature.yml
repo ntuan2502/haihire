@@ -134,14 +134,14 @@ jobs:
                 process.exit(1);
               }
               console.log('✅ Direct dependencies security audit PASSED. Zero Critical/High direct vulnerabilities.');
-              console.log('ℹ️ Transitive High vulnerabilities from Prisma 8 RC composer accepted per docs/decisions/DECISIONS.md#d-001');
+              console.log('ℹ️ Dependencies verified against Prisma 7.10.1 GA stable (D-015).');
             } catch (e) {
               console.log('Audit output parse error, skipping', e);
             }
           "
 
   # ============================================================================
-  # 3. UNIT TESTS: BACKEND & FRONTEND TEST SUITES
+  # 3. UNIT TESTS: API & WEB TEST SUITES
   # ============================================================================
   unit-tests:
     name: Fast Unit & Integration Tests

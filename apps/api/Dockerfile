@@ -54,7 +54,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --prod --filter @haihire/shared --filter api... --frozen-lockfile || \
     pnpm install --prod --filter @haihire/shared --filter api...
 
-# Copy compiled code, Prisma 8 schema & contract with non-root ownership
+# Copy compiled code and Prisma schema with non-root ownership
 COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src
 COPY --chown=node:node --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --chown=node:node --from=builder /app/apps/api/src/prisma ./apps/api/src/prisma

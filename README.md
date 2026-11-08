@@ -7,16 +7,16 @@
 
 <!-- STATS:START -->
 
-| Metric                           | Value                             | Reference / Notes                                   |
-| :------------------------------- | :-------------------------------- | :-------------------------------------------------- |
-| **Release Target**               | `v0.3.0`                          | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
-| **Commit Baseline**              | `a12ffa8` (2026-10-21)            | Author: Tún                                         |
-| **Workspace Unit Tests**         | `963 passed`                      | Backend: 540, Frontend: 423                         |
-| **E2E Playwright Specs**         | `23 specs`                        | End-to-end recruitment lifecycle                    |
-| **CI Architecture Gates**        | `16/16 gates`                     | `pnpm check:all` mandatory gates                    |
-| **Environment Configuration**    | `56 keys`                         | 100% key parity & codebase sync                     |
-| **Pre-Release Dependencies**     | `3 packages (covered by ADR-001)` | Prisma 8 RC & effect override                       |
-| **Documentation Link Integrity** | `100% valid`                      | Audited via `pnpm lint:doc-links`                   |
+| Metric                           | Value                  | Reference / Notes                                   |
+| :------------------------------- | :--------------------- | :-------------------------------------------------- |
+| **Release Target**               | `v0.3.0`               | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
+| **Commit Baseline**              | `4598265` (2026-11-08) | Author: ntuan2502                                   |
+| **Workspace Unit Tests**         | `963 passed`           | Backend: 540, Frontend: 423                         |
+| **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle                    |
+| **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates                    |
+| **Environment Configuration**    | `56 keys`              | 100% key parity & codebase sync                     |
+| **Pre-Release Dependencies**     | `0 (GA only)`          | Prisma 8 RC & effect override                       |
+| **Documentation Link Integrity** | `100% valid`           | Audited via `pnpm lint:doc-links`                   |
 
 <!-- STATS:END -->
 

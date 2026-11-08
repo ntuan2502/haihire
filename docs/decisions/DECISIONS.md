@@ -13,7 +13,7 @@
 - **Rationale:** Upgraded to Prisma 8 RC to leverage contract-first PostgreSQL 17 features, schema compilation (`contract.prisma`), and modern TypeScript types. The 11 High CVEs originate in transitive dependencies of build/composer tooling and do not execute within the production runtime container. Full exit from this limitation will occur upon Prisma 8 GA release.
 - **Evidence:** Audit reports in `package.json`, `.github/workflows/ci-feature.yml` lines 136-137, and `scripts/check-doc-sync.ts`.
 - **Enforcement:** CI Gate 12 (`pnpm lint:doc-sync`) Check 4 verifies that all pre-release packages are covered by decisions in this file. Security audit gates in CI (`trivy-action`, `pnpm audit`) block on Critical vulnerabilities while allowing documented High build-time CVEs.
-- **History:** Formally documented in `ADR-001-prisma-8-rc.md` (superseded by this entry in Phase 4 IA refactor).
+- **History:** Formally documented in `ADR-001-prisma-8-rc.md` (superseded by this entry in Phase 4 IA refactor). Superseded by D-015 upon downgrading to Prisma 7.10.1 stable.
 
 ---
 
@@ -156,3 +156,14 @@
 - **Decision:** `GET /metrics` requires `Authorization: Bearer <METRICS_TOKEN>` whenever `METRICS_TOKEN` is configured. In production without a token, the endpoint returns 404. Development and test without a token remain open.
 - **Rationale:** Metrics expose queue depths, route latency, and failure rates, which reveal internal topology and activity to unauthenticated callers. A shared scrape token fits Prometheus `authorization` scrape configuration without adding user sessions to the metrics path.
 - **Enforcement:** `AppController` compares SHA-256 digests with `timingSafeEqual`. `METRICS_TOKEN` is validated in `backend/src/config/env.ts` (minimum 32 characters). `app.controller.spec.ts` covers the hidden, rejected, and accepted cases.
+
+---
+
+## D-015: Downgrade from Prisma 8 RC to Prisma 7.10.1 Stable
+
+- **Date:** 2026-11-08
+- **Decision:** Replaced pre-release Prisma 8 RC (`@prisma/orm-postgres@8.0.0-rc.13`, `prisma@8.0.0-rc.19`, `effect@4.0.0-rc.118`) with Prisma 7.10.1 stable (`@prisma/client@7.10.1`, `prisma@7.10.1`, `@prisma/adapter-pg@7.10.1`). Standardized schema on `backend/src/prisma/schema.prisma` and implemented a fully typed adapter layer (`createPrisma7Adapter`) preserving backward compatibility for `db.orm.public.*` call sites and tenant scoping verification (CI Gate 9). Supersedes D-001.
+- **Rationale:** Prisma 8 RC is a pre-release Composer framework that pulled 11 High transitive CVEs from Hono/Alchemy into the dependency tree and required experimental engine overrides (`effect: 4.0.0-rc.118`). Prisma 7.10.1 is the official stable GA release of Prisma ORM, providing robust PostgreSQL driver adapter support (`@prisma/adapter-pg`), zero pre-release transitive dependencies, and complete supply-chain stability.
+- **Evidence:** `backend/src/prisma/schema.prisma`, `backend/src/prisma/db.ts`, and 690 passed backend unit tests.
+- **Enforcement:** Enforced via CI Gate 11 (`pnpm lint:doc-sync` Check 4) which now asserts 0 pre-release packages, and `pnpm lint:tenant-scope` which continues to verify 100% of Prisma queries are isolated by tenant.
+- **History:** D-001 initially accepted Prisma 8 RC and its transitive CVEs as a known limitation for `v0.3.0`. In Phase 3 refactoring, the user approved downgrading to Prisma 7.10.1 stable, fully eliminating the limitation and all 3 pre-release packages.

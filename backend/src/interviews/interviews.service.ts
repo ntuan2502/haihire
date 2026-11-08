@@ -1,48 +1,34 @@
-import {
-  Inject,
-  Injectable,
-} from "@nestjs/common";
-import { APP_ERROR_CODES } from "@haihire/shared";
-import {
-  AppBadRequestException,
-  AppForbiddenException,
-  AppNotFoundException,
-} from "../common/app-exception";
-import crypto from "node:crypto";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
-import { fixUtf8String } from "../applications/applications.service";
-import { toTimestamp, toInstant } from "../common/date.util";
-import { formatInterviewRecord } from "./constants";
-
 import { ActivitiesService } from "../activities/activities.service";
 import { EmailService } from "../email/email.service";
-import { buildDynamicEmailContext } from "../email/variable-registry";
+import {
+  InterviewsQueryService,
+  InterviewsScheduleService,
+  InterviewsScorecardService,
+} from "./services";
+import type {
+  FindAllInterviewsOptions,
+  InterviewType,
+  InterviewFormat,
+  InterviewUpdatePayload,
+} from "./services";
 
-export type InterviewType =
-  | "HR_SCREENING"
-  | "TECHNICAL"
-  | "CULTURE_FIT"
-  | "FINAL_ROUND"
-  | "ASSESSMENT";
-
-export type InterviewFormat = "MEET" | "ZOOM" | "TEAMS" | "OFFICE";
-
-export interface InterviewUpdatePayload {
-  scheduledAt?: Temporal.Instant;
-  type?: InterviewType;
-  format?: InterviewFormat;
-  linkOrLocation?: string;
-  interviewer?: string;
-  round?: number;
-  notes?: string | null;
-  scorecard?: string | null;
-  updatedAt?: Temporal.Instant;
-}
+export type {
+  InterviewType,
+  InterviewFormat,
+  InterviewUpdatePayload,
+  FindAllInterviewsOptions,
+};
 
 @Injectable()
 export class InterviewsService {
+  private readonly queryService: InterviewsQueryService;
+  private readonly scheduleService: InterviewsScheduleService;
+  private readonly scorecardService: InterviewsScorecardService;
+
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
@@ -50,590 +36,51 @@ export class InterviewsService {
     private readonly activitiesService: ActivitiesService,
     @Inject(EmailService)
     private readonly emailService: EmailService,
-  ) {}
-
-  async findAll(options?: {
-    organizationId?: string;
-    jobId?: string;
-    applicationId?: string;
-    page?: number;
-    limit?: number;
-    search?: string;
-    tab?: string;
-    sortBy?: string;
-    tenantOrgId?: string | null;
-  }) {
-    if (options?.organizationId && options?.tenantOrgId && options.organizationId !== options.tenantOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
-        "Access denied: cannot access interviews from another organization.",
-        { organizationId: options.organizationId },
+    @Optional()
+    @Inject(InterviewsQueryService)
+    queryService?: InterviewsQueryService,
+    @Optional()
+    @Inject(InterviewsScheduleService)
+    scheduleService?: InterviewsScheduleService,
+    @Optional()
+    @Inject(InterviewsScorecardService)
+    scorecardService?: InterviewsScorecardService,
+  ) {
+    this.queryService = queryService ?? new InterviewsQueryService(this.prisma);
+    this.scorecardService =
+      scorecardService ?? new InterviewsScorecardService();
+    this.scheduleService =
+      scheduleService ??
+      new InterviewsScheduleService(
+        this.prisma,
+        this.activitiesService,
+        this.emailService,
+        this.queryService,
+        this.scorecardService,
       );
-    }
-    const targetOrgId = options?.tenantOrgId || options?.organizationId || undefined;
+  }
 
-    type InterviewRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Interview.all>>[number];
-    type AppRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Application.all>>[number];
-    type CandidateRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Candidate.all>>[number];
-    type JobRecord = Awaited<ReturnType<typeof this.prisma.db.orm.public.Job.all>>[number];
-
-    const defaultLimit = options?.limit && options.limit > 0 ? options.limit : 20;
-    const defaultPage = options?.page && options.page > 0 ? options.page : 1;
-
-    let interviews: InterviewRecord[] = [];
-    const appsMap = new Map<string, AppRecord>();
-
-    if (options?.applicationId) {
-      interviews = await this.prisma.db.orm.public.Interview
-        .where((i) => i.applicationId.eq(options.applicationId!))
-        .all();
-    } else if (options?.jobId) {
-      const targetApps = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "candidateId",
-        "jobId",
-        "stage",
-        "matchScore",
-        "notes",
-      )
-        .where((a) => a.jobId.eq(options.jobId!))
-        .all();
-
-      if (targetApps.length === 0) {
-        return {
-          data: [],
-          total: 0,
-          page: defaultPage,
-          limit: defaultLimit,
-          totalPages: 0,
-        };
-      }
-      for (const a of targetApps) {
-        appsMap.set(a.id, a as unknown as AppRecord);
-      }
-      const appIds = targetApps.map((a) => a.id);
-      interviews = await this.prisma.db.orm.public.Interview
-        .where((i) => i.applicationId.in(appIds))
-        .all();
-    } else if (targetOrgId) {
-      const orgCandidates = await this.prisma.db.orm.public.Candidate.select("id")
-        .where((c) => c.organizationId.eq(targetOrgId))
-        .all();
-
-      if (orgCandidates.length === 0) {
-        return {
-          data: [],
-          total: 0,
-          page: defaultPage,
-          limit: defaultLimit,
-          totalPages: 0,
-        };
-      }
-      const candidateIds = orgCandidates.map((c) => c.id);
-
-      const targetApps = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "candidateId",
-        "jobId",
-        "stage",
-        "matchScore",
-        "notes",
-      )
-        .where((a) => a.candidateId.in(candidateIds))
-        .all();
-
-      if (targetApps.length === 0) {
-        return {
-          data: [],
-          total: 0,
-          page: defaultPage,
-          limit: defaultLimit,
-          totalPages: 0,
-        };
-      }
-      for (const a of targetApps) {
-        appsMap.set(a.id, a as unknown as AppRecord);
-      }
-      const appIds = targetApps.map((a) => a.id);
-      interviews = await this.prisma.db.orm.public.Interview
-        .where((i) => i.applicationId.in(appIds))
-        .all();
-    } else {
-      interviews = await this.prisma.db.orm.public.Interview.all();
-    }
-
-    const neededAppIds = [...new Set(interviews.map((i) => i.applicationId))].filter(
-      (id) => !appsMap.has(id),
-    );
-    if (neededAppIds.length > 0) {
-      const fetchedApps = await this.prisma.db.orm.public.Application.select(
-        "id",
-        "candidateId",
-        "jobId",
-        "stage",
-        "matchScore",
-        "notes",
-      )
-        .where((a) => a.id.in(neededAppIds))
-        .all();
-      for (const a of fetchedApps) {
-        appsMap.set(a.id, a as unknown as AppRecord);
-      }
-    }
-
-    const candidateIds = [...new Set(Array.from(appsMap.values()).map((a) => a.candidateId))];
-    const candidatesMap = new Map<string, CandidateRecord>();
-    if (candidateIds.length > 0) {
-      const candidates = await this.prisma.db.orm.public.Candidate.select(
-        "id",
-        "name",
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        "organizationId",
-      )
-        .where((c) => c.id.in(candidateIds))
-        .all();
-      for (const c of candidates) {
-        candidatesMap.set(c.id, c as unknown as CandidateRecord);
-      }
-    }
-
-    const jobIds = [...new Set(Array.from(appsMap.values()).map((a) => a.jobId))];
-    const jobsMap = new Map<string, JobRecord>();
-    if (jobIds.length > 0) {
-      const jobs = await this.prisma.db.orm.public.Job.select(
-        "id",
-        "title",
-        "department",
-        "organizationId",
-      )
-        .where((j) => j.id.in(jobIds))
-        .all();
-      for (const j of jobs) {
-        jobsMap.set(j.id, j as unknown as JobRecord);
-      }
-    }
-
-    // Group interviews by applicationId so each candidate appears once with all interview rounds
-    const interviewsByApp = new Map<string, typeof interviews>();
-    for (const intv of interviews) {
-      const list = interviewsByApp.get(intv.applicationId) || [];
-      list.push(intv);
-      interviewsByApp.set(intv.applicationId, list);
-    }
-
-    const scheduledItems = Array.from(interviewsByApp.entries()).map(([appId, appInterviews]) => {
-      const app = appsMap.get(appId);
-      const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
-      const job = app ? jobsMap.get(app.jobId) : undefined;
-
-      const formattedInterviews = appInterviews.map((intv) =>
-        formatInterviewRecord(intv),
-      );
-
-      // Sort rounds descending (most recent first)
-      formattedInterviews.sort((a, b) => {
-        const dtA = `${a.date} ${a.time || "00:00"}`;
-        const dtB = `${b.date} ${b.time || "00:00"}`;
-        return dtB.localeCompare(dtA);
-      });
-
-      const today = new Date().toISOString().split("T")[0];
-      const upcoming = formattedInterviews
-        .filter((i) => i.date >= today)
-        .sort((a, b) => {
-          const dtA = `${a.date} ${a.time || "00:00"}`;
-          const dtB = `${b.date} ${b.time || "00:00"}`;
-          return dtA.localeCompare(dtB);
-        })[0];
-      const primary = upcoming || formattedInterviews[0];
-
-      return {
-        id: primary.id,
-        applicationId: appId,
-        date: primary.date,
-        time: primary.time,
-        type: primary.type,
-        format: primary.format,
-        linkOrLocation: primary.linkOrLocation,
-        interviewer: primary.interviewer,
-        round: primary.round,
-        scorecard: primary.scorecard,
-        notes: primary.notes,
-        createdAt: primary.createdAt,
-        updatedAt: primary.updatedAt,
-        application: app
-          ? {
-              ...app,
-              candidate: candidate ? { ...candidate, name: fixUtf8String(candidate.name) } : undefined,
-              job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
-              candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
-              candidateEmail: candidate?.email || "",
-              candidatePhone: candidate?.phone || null,
-              interviews: formattedInterviews,
-            }
-          : undefined,
-        candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
-        candidateEmail: candidate?.email,
-        jobTitle: job ? fixUtf8String(job.title) : undefined,
-        jobId: app?.jobId,
-        organizationId: candidate?.organizationId || job?.organizationId,
-      };
-    });
-
-    const scheduledAppIds = new Set(interviewsByApp.keys());
-    const awaitingApps = Array.from(appsMap.values()).filter(
-      (a) => a.stage === "INTERVIEW" && !scheduledAppIds.has(a.id),
-    );
-
-    const awaitingItems = (options?.tab !== "UPCOMING" ? awaitingApps : []).map((app) => {
-      const candidate = candidatesMap.get(app.candidateId);
-      const job = jobsMap.get(app.jobId);
-      return {
-        id: `awaiting-${app.id}`,
-        applicationId: app.id,
-        date: "",
-        time: "",
-        type: "HR_SCREENING",
-        format: "MEET" as const,
-        linkOrLocation: "",
-        interviewer: "",
-        round: 1,
-        scorecard: null,
-        notes: null,
-        createdAt: app.createdAt || new Date().toISOString(),
-        updatedAt: app.updatedAt || new Date().toISOString(),
-        application: {
-          ...app,
-          candidate: candidate ? { ...candidate, name: fixUtf8String(candidate.name) } : undefined,
-          job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
-          candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
-          candidateEmail: candidate?.email || "",
-          candidatePhone: candidate?.phone || null,
-          interviews: [],
-        },
-        candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
-        candidateEmail: candidate?.email,
-        jobTitle: job ? fixUtf8String(job.title) : undefined,
-        jobId: app.jobId,
-        organizationId: candidate?.organizationId || job?.organizationId,
-      };
-    });
-
-    const allItems = [...scheduledItems, ...awaitingItems]
-      .filter((item) => {
-        if (targetOrgId && item.organizationId !== targetOrgId) {
-          return false;
-        }
-        if (options?.jobId && item.jobId !== options.jobId) {
-          return false;
-        }
-        if (options?.search && options.search.trim() !== "") {
-          const q = options.search.trim().toLowerCase();
-          const matches =
-            item.candidateName.toLowerCase().includes(q) ||
-            (item.candidateEmail && item.candidateEmail.toLowerCase().includes(q)) ||
-            (item.jobTitle && item.jobTitle.toLowerCase().includes(q)) ||
-            item.interviewer.toLowerCase().includes(q) ||
-            item.linkOrLocation.toLowerCase().includes(q);
-          if (!matches) return false;
-        }
-        if (options?.tab === "UPCOMING") {
-          if (!item.date) return false;
-        }
-        if (options?.tab === "AWAITING") {
-          if (item.date) return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        if (options?.sortBy === "name") {
-          return a.candidateName.localeCompare(b.candidateName);
-        }
-        if (options?.sortBy === "newest") {
-          return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
-        }
-        if (a.date && !b.date) return -1;
-        if (!a.date && b.date) return 1;
-        if (a.date && b.date) {
-          const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
-          const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
-          return dateA - dateB;
-        }
-        return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
-      });
-
-    const total = allItems.length;
-    const page = defaultPage;
-    const limit = defaultLimit;
-    const totalPages = Math.ceil(total / limit) || 1;
-    const data = allItems.slice((page - 1) * limit, page * limit);
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-    };
+  async findAll(options?: FindAllInterviewsOptions) {
+    return this.queryService.findAll(options);
   }
 
   async findOne(id: string, tenantOrgId?: string | null) {
-    const intv = await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).first();
-    if (!intv) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.INTERVIEW_NOT_FOUND,
-        `Interview with ID ${id} not found`,
-        { id },
-      );
-    }
-
-    const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(intv.applicationId)).first();
-    const candidate = app
-      ? await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(app.candidateId)).first()
-      : null;
-    const job = app
-      ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
-      : null;
-
-    const interviewOrgId = candidate?.organizationId || job?.organizationId;
-    if (tenantOrgId && interviewOrgId && interviewOrgId !== tenantOrgId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.INTERVIEW_INVALID_ORGANIZATION,
-        "Access denied: interview belongs to another organization.",
-        { id, organizationId: interviewOrgId },
-      );
-    }
-
-    const formatted = formatInterviewRecord(intv);
-
-    return {
-      ...formatted,
-      organizationId: interviewOrgId,
-      application: app
-        ? {
-            ...app,
-            candidate: candidate ? { ...candidate, name: fixUtf8String(candidate.name) } : undefined,
-            job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
-          }
-        : undefined,
-      candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
-      candidateEmail: candidate?.email,
-      jobTitle: job ? fixUtf8String(job.title) : undefined,
-    };
+    return this.queryService.findOne(id, tenantOrgId);
   }
 
   async create(dto: CreateInterviewDto, organizationId?: string | null) {
-    const app = await this.prisma.db.orm.public.Application.where((a) => a.id.eq(dto.applicationId)).first();
-    if (!app) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.INTERVIEW_APP_NOT_FOUND,
-        `Application with ID ${dto.applicationId} not found`,
-        { applicationId: dto.applicationId, id: dto.applicationId },
-      );
-    }
-
-    if (app.stage === "REJECTED") {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.VALIDATION_ERROR,
-        "Cannot schedule an interview for a rejected application. Reopen the application before scheduling.",
-      );
-    }
-
-    const candidate = app.candidateId
-      ? await this.prisma.db.orm.public.Candidate.where((c) => c.id.eq(app.candidateId)).first()
-      : null;
-    const job = app.jobId
-      ? await this.prisma.db.orm.public.Job.where((j) => j.id.eq(app.jobId)).first()
-      : null;
-    const orgId = candidate?.organizationId || job?.organizationId;
-
-    if (organizationId && orgId && orgId !== organizationId) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
-        "Access denied: application belongs to another organization.",
-        { applicationId: dto.applicationId, organizationId },
-      );
-    }
-
-    const id = crypto.randomUUID();
-    const scorecardStr = dto.scorecard ? (typeof dto.scorecard === "string" ? dto.scorecard : JSON.stringify(dto.scorecard)) : null;
-
-    let scheduledInstant: Temporal.Instant;
-    if (dto.scheduledAt) {
-      const parsed = new Date(dto.scheduledAt);
-      scheduledInstant = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
-    } else {
-      const rawDate = dto.date || new Date().toISOString().split("T")[0];
-      const rawTime = dto.time && dto.time.length === 5 ? `${dto.time}:00` : (dto.time || "00:00:00");
-      const parsed = new Date(`${rawDate}T${rawTime}Z`);
-      scheduledInstant = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
-    }
-
-    await this.prisma.db.orm.public.Interview.create({
-      id,
-      applicationId: dto.applicationId,
-      scheduledAt: scheduledInstant,
-      type: dto.type as InterviewType,
-      format: (dto.format as InterviewFormat) || "MEET",
-      linkOrLocation: dto.linkOrLocation || "",
-      interviewer: dto.interviewer,
-      round: dto.round || 1,
-      scorecard: scorecardStr,
-      notes: dto.notes || null,
-      updatedAt: toInstant(),
-    });
-
-    if (app.stage !== "INTERVIEW" && app.stage !== "OFFER" && app.stage !== "HIRED") {
-      await this.prisma.db.orm.public.Application.where((a) => a.id.eq(app.id)).update({
-        stage: "INTERVIEW",
-      });
-    }
-
-    const createdInterview = await this.findOne(id);
-
-    // Record activity log & optionally send interview invitation email
-    if (candidate && orgId) {
-      await this.activitiesService.createActivity({
-        organizationId: orgId,
-        candidateId: candidate.id,
-        applicationId: app.id,
-        type: "INTERVIEW_SCHEDULED",
-        title: `Interview Scheduled (${dto.type})`,
-        description: `Round ${dto.round || 1} interview on ${dto.date} at ${dto.time} with ${dto.interviewer}`,
-        actorName: dto.interviewer,
-        actorRole: "INTERVIEWER",
-        metadata: {
-          interviewId: id,
-          date: dto.date,
-          time: dto.time,
-          format: dto.format || "MEET",
-          type: dto.type,
-          interviewer: dto.interviewer,
-          round: dto.round || 1,
-        },
-      });
-
-      if (dto.sendInvitationEmail && candidate.email) {
-        try {
-          const template = await this.emailService.getTemplateByType(orgId, "INTERVIEW_INVITATION");
-          if (template && template.enabled) {
-            let orgName = "Company";
-            const org = await this.prisma.db.orm.public.Organization.select("name")
-              .where((o) => o.id.eq(orgId))
-              .first();
-            if (org?.name) {
-              orgName = org.name;
-            }
-
-            await this.emailService.sendEmail(
-              {
-                to: candidate.email,
-                recipientName: candidate.name,
-                subject: template.subject,
-                body: template.body,
-                templateType: "INTERVIEW_INVITATION",
-                candidateId: candidate.id,
-                applicationId: app.id,
-                variables: buildDynamicEmailContext({
-                  candidate: {
-                    name: candidate.name,
-                    email: candidate.email,
-                    phone: candidate.phone,
-                  },
-                  job: {
-                    title: job?.title || "Vị trí tuyển dụng",
-                    department: job?.department || "",
-                    location: job?.location || "",
-                  },
-                  organization: { name: orgName },
-                  interview: {
-                    date: dto.date,
-                    time: dto.time,
-                    format: dto.format || "Google Meet",
-                    linkOrLocation: dto.linkOrLocation || "https://meet.google.com",
-                    interviewer: dto.interviewer,
-                  },
-                  sender: { name: dto.interviewer },
-                }),
-              },
-              orgId,
-              { name: dto.interviewer },
-            );
-          }
-        } catch (emailErr) {
-          console.warn("Failed to send auto interview invitation email:", emailErr);
-        }
-      }
-    }
-
-    return createdInterview;
+    return this.scheduleService.create(dto, organizationId);
   }
 
-  async update(id: string, dto: UpdateInterviewDto, tenantOrgId?: string | null) {
-    const existing = await this.findOne(id, tenantOrgId);
-
-    const updateData: InterviewUpdatePayload = {};
-    if (dto.scheduledAt !== undefined) {
-      const parsed = new Date(dto.scheduledAt);
-      updateData.scheduledAt = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
-    } else if (dto.date !== undefined || dto.time !== undefined) {
-      const newDate = dto.date !== undefined ? dto.date : existing.date;
-      const rawTime = dto.time !== undefined ? dto.time : existing.time;
-      const newTime = rawTime && rawTime.length === 5 ? `${rawTime}:00` : (rawTime || "00:00:00");
-      const parsed = new Date(`${newDate}T${newTime}Z`);
-      updateData.scheduledAt = toInstant(!isNaN(parsed.getTime()) ? parsed : Date.now());
-    }
-
-    if (dto.type !== undefined) updateData.type = dto.type as InterviewType;
-    if (dto.format !== undefined) updateData.format = dto.format as InterviewFormat;
-    if (dto.linkOrLocation !== undefined) updateData.linkOrLocation = dto.linkOrLocation;
-    if (dto.interviewer !== undefined) updateData.interviewer = dto.interviewer;
-    if (dto.round !== undefined) updateData.round = dto.round;
-    if (dto.notes !== undefined) updateData.notes = dto.notes;
-    if (dto.scorecard !== undefined) {
-      updateData.scorecard = typeof dto.scorecard === "string" ? dto.scorecard : JSON.stringify(dto.scorecard);
-    }
-    updateData.updatedAt = toInstant();
-
-    await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).update(updateData);
-    const updated = await this.findOne(id, tenantOrgId);
-
-    const candidate = updated.application?.candidate;
-    if (candidate && candidate.organizationId) {
-      const isScorecardUpdate = dto.scorecard !== undefined;
-      await this.activitiesService.createActivity({
-        organizationId: candidate.organizationId,
-        candidateId: candidate.id,
-        applicationId: updated.applicationId,
-        type: isScorecardUpdate ? "SCORECARD_SUBMITTED" : "INTERVIEW_UPDATED",
-        title: isScorecardUpdate
-          ? `Scorecard Submitted (${updated.type})`
-          : `Interview Updated (${updated.type})`,
-        description: isScorecardUpdate
-          ? `Scorecard submitted by ${updated.interviewer}`
-          : `Interview schedule updated to ${updated.time} on ${updated.date}`,
-        actorName: updated.interviewer,
-        actorRole: "INTERVIEWER",
-        metadata: {
-          interviewId: id,
-          type: updated.type,
-          interviewer: updated.interviewer,
-          date: updated.date,
-          time: updated.time,
-          changes: Object.keys(updateData),
-        },
-      });
-    }
-
-    return updated;
+  async update(
+    id: string,
+    dto: UpdateInterviewDto,
+    tenantOrgId?: string | null,
+  ) {
+    return this.scheduleService.update(id, dto, tenantOrgId);
   }
 
   async remove(id: string, tenantOrgId?: string | null) {
-    await this.findOne(id, tenantOrgId);
-    await this.prisma.db.orm.public.Interview.where((i) => i.id.eq(id)).delete();
-    return { success: true, message: `Interview ${id} deleted successfully` };
+    return this.scheduleService.remove(id, tenantOrgId);
   }
 }

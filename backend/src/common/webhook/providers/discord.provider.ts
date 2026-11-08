@@ -1,3 +1,4 @@
+import { postWebhook } from "../webhook-http";
 import type {
   WebhookMessage,
   WebhookProvider,
@@ -18,7 +19,9 @@ export class DiscordProvider implements WebhookProvider {
 
     const shortEventId = message.eventId ? message.eventId.slice(0, 8) : "";
     const baseFooter = message.footer || "HaiHire Enterprise ATS";
-    const footerText = shortEventId ? `${baseFooter} • Event: ${shortEventId}...` : baseFooter;
+    const footerText = shortEventId
+      ? `${baseFooter} • Event: ${shortEventId}...`
+      : baseFooter;
 
     const payload = {
       embeds: [
@@ -36,37 +39,6 @@ export class DiscordProvider implements WebhookProvider {
       ],
     };
 
-    try {
-      const response = await fetch(this.config.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        let errorDetails = "";
-        try {
-          errorDetails = await response.text();
-        } catch {
-          // Ignore response read error
-        }
-        return {
-          success: false,
-          statusCode: response.status,
-          errorMessage: `Discord webhook returned HTTP ${response.status}${errorDetails ? `: ${errorDetails}` : ""}`,
-        };
-      }
-
-      return {
-        success: true,
-        statusCode: response.status,
-      };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return {
-        success: false,
-        errorMessage: `Discord network error: ${msg}`,
-      };
-    }
+    return postWebhook("DISCORD", this.config.url, JSON.stringify(payload));
   }
 }

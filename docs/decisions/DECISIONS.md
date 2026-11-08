@@ -138,3 +138,12 @@
 - **Decision:** System email uses deployment configuration and is dispatched by internal services and workers. Organization email APIs use the active organization's settings and return only `ORGANIZATION` delivery logs for that organization. System email routes and their former tenant permission are removed.
 - **Rationale:** Organization ownership grants authority over recruitment email. System delivery and its logs have platform-wide scope.
 - **Enforcement:** `EmailDispatchService` requires a valid organization sender and provider configuration before enqueueing and again before delivery. `SIMULATED` organization delivery is available in development and test. The email service and HTTP isolation tests cover both scopes.
+
+---
+
+## D-013: Webhook Delivery Requires Public HTTPS Destinations
+
+- **Date:** 2026-11-08
+- **Decision:** Webhook tests and deliveries use one HTTPS transport with a five-second deadline. Telegram and Discord require their provider URLs. The generic provider accepts public HTTPS destinations. Private destinations and redirects are rejected, including when a previously saved setting is used.
+- **Rationale:** Tenant-supplied URLs run from the backend network. DNS answers can change between configuration and delivery, so destination checks must cover the connection itself.
+- **Enforcement:** The transport validates the DNS addresses used by the connection while preserving the destination hostname for TLS. It discards response bodies and returns only a sanitized failure or HTTP status. The HTTP isolation suite and transport tests verify the policy.

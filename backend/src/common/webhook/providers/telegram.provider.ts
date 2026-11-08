@@ -1,3 +1,4 @@
+import { postWebhook } from "../webhook-http";
 import type {
   WebhookMessage,
   WebhookProvider,
@@ -6,10 +7,7 @@ import type {
 } from "../webhook-provider.interface";
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export class TelegramProvider implements WebhookProvider {
@@ -41,37 +39,6 @@ export class TelegramProvider implements WebhookProvider {
       disable_web_page_preview: true,
     };
 
-    try {
-      const response = await fetch(this.config.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        let errorDetails = "";
-        try {
-          errorDetails = await response.text();
-        } catch {
-          // Ignore response read error
-        }
-        return {
-          success: false,
-          statusCode: response.status,
-          errorMessage: `Telegram API returned HTTP ${response.status}${errorDetails ? `: ${errorDetails}` : ""}`,
-        };
-      }
-
-      return {
-        success: true,
-        statusCode: response.status,
-      };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return {
-        success: false,
-        errorMessage: `Telegram network error: ${msg}`,
-      };
-    }
+    return postWebhook("TELEGRAM", this.config.url, JSON.stringify(payload));
   }
 }

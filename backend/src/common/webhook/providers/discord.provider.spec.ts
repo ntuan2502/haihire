@@ -1,9 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DiscordProvider } from "./discord.provider";
-import type { WebhookMessage, WebhookProviderConfig } from "../webhook-provider.interface";
+import type {
+  WebhookMessage,
+  WebhookProviderConfig,
+} from "../webhook-provider.interface";
+
+import { mockWebhookRequest } from "../../../test/helpers/mock-webhook-request";
+
+vi.mock("node:https", () => ({ request: vi.fn() }));
 
 describe("DiscordProvider", () => {
-  const originalFetch = globalThis.fetch;
   const config: WebhookProviderConfig = {
     type: "DISCORD",
     url: "https://discord.com/api/webhooks/123456789/abcdefghijklmnopqrstuvwxyz",
@@ -27,58 +33,52 @@ describe("DiscordProvider", () => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-    vi.restoreAllMocks();
-  });
-
   it("Case 1: formats Discord embed with red color for critical severity and posts JSON with eventId in footer", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 204,
-    } as Response);
-    globalThis.fetch = mockFetch;
+    const { requestMock, end } = mockWebhookRequest(204);
 
     const provider = new DiscordProvider(config);
     const result = await provider.send(sampleMessage);
 
     expect(result.success).toBe(true);
     expect(result.statusCode).toBe(204);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenCalledTimes(1);
 
-    const callArgs = mockFetch.mock.calls[0];
-    const body = JSON.parse(callArgs[1].body as string);
+    const body = JSON.parse(end.mock.calls[0][0]);
 
     expect(body.embeds).toHaveLength(1);
     const embed = body.embeds[0];
     expect(embed.title).toBe("🚨 HaiHire DLQ Alert");
     expect(embed.color).toBe(0xe74c3c); // Red for critical
     expect(embed.fields).toHaveLength(3);
-    expect(embed.fields[0]).toEqual({ name: "Queue", value: "orphan-cleanup-dlq", inline: false });
-    expect(embed.footer).toEqual({ text: "HaiHire Enterprise ATS • Event: 550e8400..." });
+    expect(embed.fields[0]).toEqual({
+      name: "Queue",
+      value: "orphan-cleanup-dlq",
+      inline: false,
+    });
+    expect(embed.footer).toEqual({
+      text: "HaiHire Enterprise ATS • Event: 550e8400...",
+    });
     expect(embed.timestamp).toBe("2026-10-07T10:00:00.000Z");
   });
 
   it("Case 2: sets warning color (0xF39C12) and info color (0x3498DB) based on severity", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 204 } as Response);
-    globalThis.fetch = mockFetch;
+    const { end } = mockWebhookRequest(204);
 
     const provider = new DiscordProvider(config);
 
     // Warning
     await provider.send({ ...sampleMessage, severity: "warning" });
-    let body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    let body = JSON.parse(end.mock.calls[0][0]);
     expect(body.embeds[0].color).toBe(0xf39c12);
 
     // Info
     await provider.send({ ...sampleMessage, severity: "info" });
-    body = JSON.parse(mockFetch.mock.calls[1][1].body as string);
+    body = JSON.parse(end.mock.calls[1][0]);
     expect(body.embeds[0].color).toBe(0x3498db);
   });
 
   it("Case 3: applies default footer with eventId when footer is omitted", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 204 } as Response);
-    globalThis.fetch = mockFetch;
+    const { end } = mockWebhookRequest(204);
 
     const provider = new DiscordProvider(config);
     const msgWithoutFooter: WebhookMessage = {
@@ -91,57 +91,53 @@ describe("DiscordProvider", () => {
     };
 
     await provider.send(msgWithoutFooter);
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
-    expect(body.embeds[0].footer.text).toBe("HaiHire Enterprise ATS • Event: abcdef12...");
+    const body = JSON.parse(end.mock.calls[0][0]);
+    expect(body.embeds[0].footer.text).toBe(
+      "HaiHire Enterprise ATS • Event: abcdef12...",
+    );
   });
 
   it("Case 4: returns failure with status code when Discord API responds with error (e.g. 404 / 400)", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 404,
-      text: vi.fn().mockResolvedValue('{"message": "Unknown Webhook"}'),
-    } as unknown as Response);
+    const { destroy } = mockWebhookRequest(404);
 
     const provider = new DiscordProvider(config);
     const result = await provider.send(sampleMessage);
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(404);
-    expect(result.errorMessage).toContain("Discord webhook returned HTTP 404");
+    expect(result.errorMessage).toContain("Webhook returned HTTP 404");
+    expect(destroy).toHaveBeenCalledOnce();
   });
 
-  it("Case 4b: handles HTTP failure when response.text() throws gracefully", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: vi.fn().mockRejectedValue(new Error("Cannot read response stream")),
-    } as unknown as Response);
+  it("Case 4b: discards the response body on HTTP failure", async () => {
+    const { destroy } = mockWebhookRequest(500);
 
     const provider = new DiscordProvider(config);
     const result = await provider.send(sampleMessage);
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(500);
-    expect(result.errorMessage).toBe("Discord webhook returned HTTP 500");
+    expect(result.errorMessage).toBe("Webhook returned HTTP 500");
+    expect(destroy).toHaveBeenCalledOnce();
   });
 
-  it("Case 5: returns failure with error message when fetch throws a network exception", async () => {
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Discord connection reset by peer"));
+  it("Case 5: returns failure with error message when the connection fails", async () => {
+    mockWebhookRequest(new Error("Discord connection reset by peer"));
 
     const provider = new DiscordProvider(config);
     const result = await provider.send(sampleMessage);
 
     expect(result.success).toBe(false);
-    expect(result.errorMessage).toContain("Discord network error: Discord connection reset");
+    expect(result.errorMessage).toBe("Webhook connection failed");
   });
 
   it("Case 6: handles non-Error network exception gracefully", async () => {
-    globalThis.fetch = vi.fn().mockRejectedValue("Fatal discord socket error");
+    mockWebhookRequest("Fatal discord socket error");
 
     const provider = new DiscordProvider(config);
     const result = await provider.send(sampleMessage);
 
     expect(result.success).toBe(false);
-    expect(result.errorMessage).toBe("Discord network error: Fatal discord socket error");
+    expect(result.errorMessage).toBe("Webhook connection failed");
   });
 });

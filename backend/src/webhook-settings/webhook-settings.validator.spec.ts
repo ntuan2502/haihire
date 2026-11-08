@@ -15,13 +15,13 @@ describe("WebhookSettingsValidator", () => {
       ).toBe("webhookUrl must be a string");
     });
 
-    it("allows masked URLs during update", () => {
+    it("requires a complete URL for create and ad hoc testing", () => {
       expect(
         validateWebhookProviderConfig(
           "TELEGRAM",
           "https://api.telegram.org/bot***/sendMessage",
         ),
-      ).toBeNull();
+      ).toBe("A complete webhook URL is required");
     });
 
     it("validates Telegram URL format and chatId", () => {
@@ -76,10 +76,7 @@ describe("WebhookSettingsValidator", () => {
 
     it("validates Generic URL HTTPS protocol and rejects chatId", () => {
       expect(
-        validateWebhookProviderConfig(
-          "GENERIC",
-          "http://insecure.com/webhook",
-        ),
+        validateWebhookProviderConfig("GENERIC", "http://insecure.com/webhook"),
       ).toBe("webhookUrl for Generic webhook must use HTTPS");
 
       expect(
@@ -91,11 +88,24 @@ describe("WebhookSettingsValidator", () => {
       ).toBe("chatId must not be provided for Generic webhooks");
 
       expect(
-        validateWebhookProviderConfig(
-          "GENERIC",
-          "https://valid.com/webhook",
-        ),
+        validateWebhookProviderConfig("GENERIC", "https://valid.com/webhook"),
       ).toBeNull();
+    });
+
+    it("rejects private destinations, encoded loopback, and credentials in webhook URLs", () => {
+      for (const url of [
+        "https://127.0.0.1/path",
+        "https://2130706433/path",
+        "https://169.254.169.254/path",
+        "https://[::ffff:10.0.0.1]/path",
+        "https://host.internal/path",
+        "https://name:password@hooks.example.com/path",
+      ]) {
+        expect(
+          validateWebhookProviderConfig("GENERIC", url),
+          url,
+        ).not.toBeNull();
+      }
     });
 
     it("rejects unsupported provider", () => {

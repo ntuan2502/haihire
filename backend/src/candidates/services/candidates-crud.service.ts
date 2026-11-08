@@ -11,7 +11,6 @@ import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { CandidatesProfileService } from "./candidates-profile.service";
 import { CreateCandidateDto } from "../dto/create-candidate.dto";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
-import { fixUtf8String } from "../../common/doc-utils";
 import { validateUploadedFile } from "../../common/upload-utils";
 import { toInstant } from "../../common/date.util";
 
@@ -127,11 +126,11 @@ export class CandidatesCrudService {
       const apps = appsByCandidate.get(c.id) || [];
       return {
         ...c,
-        name: fixUtf8String(c.name),
-        firstName: fixUtf8String(c.firstName),
-        lastName: fixUtf8String(c.lastName),
-        notes: fixUtf8String(c.notes),
-        resumeFileName: fixUtf8String(c.resumeFileName),
+        name: c.name,
+        firstName: c.firstName,
+        lastName: c.lastName,
+        notes: c.notes,
+        resumeFileName: c.resumeFileName,
         applicationsCount: apps.length,
         applications: apps,
       };

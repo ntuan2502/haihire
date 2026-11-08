@@ -8,7 +8,6 @@ import {
 import { PrismaService, runInTransaction } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
-import { fixUtf8String } from "../applications/applications.service";
 import crypto from "node:crypto";
 import { toTimestamp, toInstant } from "../common/date.util";
 
@@ -374,11 +373,11 @@ export class JobsService {
       }
       list.push({
         ...intv,
-        type: fixUtf8String(intv.type),
-        linkOrLocation: fixUtf8String(intv.linkOrLocation),
-        interviewer: fixUtf8String(intv.interviewer),
+        type: intv.type || "",
+        linkOrLocation: intv.linkOrLocation || "",
+        interviewer: intv.interviewer || "",
         scorecard: parsedScorecard,
-        notes: intv.notes ? fixUtf8String(intv.notes) : null,
+        notes: intv.notes || null,
       });
       interviewsByApp.set(intv.applicationId, list);
     }

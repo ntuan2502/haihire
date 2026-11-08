@@ -1,5 +1,4 @@
 import { toTimestamp } from "../common/date.util";
-import { fixUtf8String } from "../common/doc-utils";
 
 export {
   INTERVIEW_TYPES,
@@ -54,11 +53,10 @@ export function formatInterviewRecord<T extends RawInterviewLike>(intv: T) {
     date,
     time,
     scheduledAt: intv.scheduledAt,
-    type: fixUtf8String(intv.type as string),
-    linkOrLocation: fixUtf8String(intv.linkOrLocation as string),
-    interviewer: fixUtf8String(intv.interviewer as string),
+    type: (intv.type as string) || "",
+    linkOrLocation: (intv.linkOrLocation as string) || "",
+    interviewer: (intv.interviewer as string) || "",
     scorecard: parsedScorecard,
-    notes: intv.notes ? fixUtf8String(intv.notes as string) : null,
+    notes: (intv.notes as string) || null,
   };
 }
-

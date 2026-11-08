@@ -5,7 +5,6 @@ import {
   AppNotFoundException,
 } from "../../common/app-exception";
 import { PrismaService } from "../../prisma/prisma.service";
-import { fixUtf8String } from "../../applications/applications.service";
 import { toTimestamp } from "../../common/date.util";
 import { formatInterviewRecord } from "../constants";
 
@@ -255,24 +254,18 @@ export class InterviewsQueryService {
             ? {
                 ...app,
                 candidate: candidate
-                  ? { ...candidate, name: fixUtf8String(candidate.name) }
+                  ? { ...candidate, name: candidate.name }
                   : undefined,
-                job: job
-                  ? { ...job, title: fixUtf8String(job.title) }
-                  : undefined,
-                candidateName: candidate
-                  ? fixUtf8String(candidate.name)
-                  : "Candidate",
+                job: job ? { ...job, title: job.title } : undefined,
+                candidateName: candidate ? candidate.name : "Candidate",
                 candidateEmail: candidate?.email || "",
                 candidatePhone: candidate?.phone || null,
                 interviews: formattedInterviews,
               }
             : undefined,
-          candidateName: candidate
-            ? fixUtf8String(candidate.name)
-            : "Candidate",
+          candidateName: candidate ? candidate.name : "Candidate",
           candidateEmail: candidate?.email,
-          jobTitle: job ? fixUtf8String(job.title) : undefined,
+          jobTitle: job ? job.title : undefined,
           jobId: app?.jobId,
           organizationId: candidate?.organizationId || job?.organizationId,
         };
@@ -305,21 +298,17 @@ export class InterviewsQueryService {
           application: {
             ...app,
             candidate: candidate
-              ? { ...candidate, name: fixUtf8String(candidate.name) }
+              ? { ...candidate, name: candidate.name }
               : undefined,
-            job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
-            candidateName: candidate
-              ? fixUtf8String(candidate.name)
-              : "Candidate",
+            job: job ? { ...job, title: job.title } : undefined,
+            candidateName: candidate ? candidate.name : "Candidate",
             candidateEmail: candidate?.email || "",
             candidatePhone: candidate?.phone || null,
             interviews: [],
           },
-          candidateName: candidate
-            ? fixUtf8String(candidate.name)
-            : "Candidate",
+          candidateName: candidate ? candidate.name : "Candidate",
           candidateEmail: candidate?.email,
-          jobTitle: job ? fixUtf8String(job.title) : undefined,
+          jobTitle: job ? job.title : undefined,
           jobId: app.jobId,
           organizationId: candidate?.organizationId || job?.organizationId,
         };
@@ -429,14 +418,14 @@ export class InterviewsQueryService {
         ? {
             ...app,
             candidate: candidate
-              ? { ...candidate, name: fixUtf8String(candidate.name) }
+              ? { ...candidate, name: candidate.name }
               : undefined,
-            job: job ? { ...job, title: fixUtf8String(job.title) } : undefined,
+            job: job ? { ...job, title: job.title } : undefined,
           }
         : undefined,
-      candidateName: candidate ? fixUtf8String(candidate.name) : "Candidate",
+      candidateName: candidate ? candidate.name : "Candidate",
       candidateEmail: candidate?.email,
-      jobTitle: job ? fixUtf8String(job.title) : undefined,
+      jobTitle: job ? job.title : undefined,
     };
   }
 }

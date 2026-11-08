@@ -1,6 +1,6 @@
 import { APP_ERROR_CODES } from "../packages/shared/src/errors";
-import { vi } from "../apps/frontend/src/i18n/locales/vi";
-import { en } from "../apps/frontend/src/i18n/locales/en";
+import { vi } from "../apps/web/src/i18n/locales/vi";
+import { en } from "../apps/web/src/i18n/locales/en";
 
 const codes = Object.keys(APP_ERROR_CODES) as (keyof typeof APP_ERROR_CODES)[];
 

@@ -32,10 +32,8 @@ const individualFiles = [
   path.join(rootDir, "README.md"),
   path.join(rootDir, "CHANGELOG.md"),
   path.join(rootDir, "CONTRIBUTING.md"),
-  path.join(rootDir, "apps", "backend", "README.md"),
-  path.join(rootDir, "backend", "README.md"),
-  path.join(rootDir, "apps", "frontend", "README.md"),
-  path.join(rootDir, "frontend", "README.md"),
+  path.join(rootDir, "apps", "api", "README.md"),
+  path.join(rootDir, "apps", "web", "README.md"),
   path.join(rootDir, "packages", "shared", "README.md"),
 ];
 

@@ -41,16 +41,16 @@ Both `.env.example` and `.env.production.example` follow a unified 10-section or
 
 When executing `pnpm dev` from the repository root:
 
-1. **Backend Loading:**
-   - [`apps/backend/src/config/env.ts`](../../apps/backend/src/config/env.ts) locates the repository root and loads root `.env`.
+1. **Backend / API Loading:**
+   - [`apps/api/src/config/env.ts`](../../apps/api/src/config/env.ts) locates the repository root and loads root `.env`.
    - Dynamic port synchronization automatically maps `BACKEND_PORT` to `PORT`, and ensures localhost URLs for Postgres, MinIO, and Frontend align.
-   - NestJS [`apps/backend/src/app.module.ts`](../../apps/backend/src/app.module.ts) configures `ConfigModule` to search `['../../.env', '../.env', '.env']`.
-2. **Frontend Loading:**
-   - [`apps/frontend/scripts/dev.ts`](../../apps/frontend/scripts/dev.ts) loads root `.env` and sets `process.env.PORT` from `FRONTEND_PORT`.
-   - [`apps/frontend/next.config.ts`](../../apps/frontend/next.config.ts) loads root `.env` to configure API rewrites (`/api/*` -> `http://127.0.0.1:13001`) and allowed dev origins.
-   - Runtime Zod validation in [`apps/frontend/src/lib/env.ts`](../../apps/frontend/src/lib/env.ts) ensures `INTERNAL_API_URL` is set during SSR.
+   - NestJS [`apps/api/src/app.module.ts`](../../apps/api/src/app.module.ts) configures `ConfigModule` to search `['../../.env', '../.env', '.env']`.
+2. **Frontend / Web Loading:**
+   - [`apps/web/scripts/dev.ts`](../../apps/web/scripts/dev.ts) loads root `.env` and sets `process.env.PORT` from `FRONTEND_PORT`.
+   - [`apps/web/next.config.ts`](../../apps/web/next.config.ts) loads root `.env` to configure API rewrites (`/api/*` -> `http://127.0.0.1:13001`) and allowed dev origins.
+   - Runtime Zod validation in [`apps/web/src/lib/env.ts`](../../apps/web/src/lib/env.ts) ensures `INTERNAL_API_URL` is set during SSR.
 3. **Prisma CLI Loading:**
-   - Prisma CLI automatically climbs parent directories and loads root `..\..\.env` when executing from `apps/backend/`.
+   - Prisma CLI automatically climbs parent directories and loads root `..\..\.env` when executing from `apps/api/`.
 
 ---
 

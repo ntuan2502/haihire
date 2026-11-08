@@ -15,9 +15,7 @@ export interface EndpointAudit {
   line: number;
 }
 
-const backendDir = fs.existsSync(path.resolve(__dirname, "../apps/backend/src"))
-  ? path.resolve(__dirname, "../apps/backend/src")
-  : path.resolve(__dirname, "../backend/src");
+const backendDir = path.resolve(__dirname, "../apps/api/src");
 
 function getAllFiles(dir: string, ext = ".ts"): string[] {
   let results: string[] = [];

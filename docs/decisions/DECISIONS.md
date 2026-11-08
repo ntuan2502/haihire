@@ -126,7 +126,7 @@
 - **Date:** 2026-10-23
 - **Decision:** The former owner retains `ADMIN` in the transferred organization. The recipient's membership in that organization becomes `ADMIN`. The transfer updates the recipient's `User.role` only if their active organization is the one being transferred. Dynamic ownership remains in `Organization.ownerId`.
 - **Rationale:** Transferring ownership of an organization is an administrative delegation of tenant control (e.g., founder transferring executive ownership to an administrator or executive successor). Automatically demoting the former owner to a non-administrative role (`MEMBER` or `RECRUITER`) could cause immediate operational disruption, lock the primary stakeholder out of administrative configurations, or drop ongoing recruitment pipelines. Retaining `ADMIN` privileges guarantees continuity while dynamic ownership checks (`user.id === currentOrg.ownerId` per D-003) properly transition primary owner authority (e.g. org deletion, further ownership transfer).
-- **Evidence:** See the [ownership transfer flow](../architecture/security-rbac.md#7-ownership-transfer-flow) and the [HTTP regression tests](../../apps/frontend/tests/e2e/ownership-transfer.spec.ts).
+- **Evidence:** See the [ownership transfer flow](../architecture/security-rbac.md#7-ownership-transfer-flow) and the [HTTP regression tests](../../apps/web/tests/e2e/ownership-transfer.spec.ts).
 - **Enforcement:** The owner update matches the current owner ID within a transaction. The losing request leaves roles and audit records intact.
 - **History:** Established in commits `388d9c4` and `ac6e5fd`. Updated on 2026-11-08 to scope `User.role` to the active organization and make competing transfers safe.
 

@@ -21,10 +21,10 @@ jobs:
     name: Detect Changed Paths
     runs-on: ubuntu-latest
     outputs:
-      docs-only: ${{ steps.filter.outputs.docs == 'true' && steps.filter.outputs.backend == 'false' && steps.filter.outputs.frontend == 'false' && steps.filter.outputs.ci == 'false' }}
+      docs-only: ${{ steps.filter.outputs.docs == 'true' && steps.filter.outputs.api == 'false' && steps.filter.outputs.web == 'false' && steps.filter.outputs.ci == 'false' }}
       docs: ${{ steps.filter.outputs.docs }}
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
       ci: ${{ steps.filter.outputs.ci }}
     steps:
       - name: Checkout repository
@@ -39,12 +39,12 @@ jobs:
               - 'docs/**'
               - '*.md'
               - 'LICENSE'
-            backend:
-              - 'apps/backend/**'
+            api:
+              - 'apps/api/**'
               - 'packages/shared/**'
               - 'pnpm-lock.yaml'
-            frontend:
-              - 'apps/frontend/**'
+            web:
+              - 'apps/web/**'
               - 'packages/shared/**'
               - 'pnpm-lock.yaml'
             ci:
@@ -111,7 +111,7 @@ jobs:
         run: pnpm lint:doc-links
 
       - name: Audit Direct Production Dependencies
-        if: needs.path-filter.outputs.docs-only != 'true' && (needs.path-filter.outputs.backend == 'true' || needs.path-filter.outputs.frontend == 'true' || needs.path-filter.outputs.ci == 'true')
+        if: needs.path-filter.outputs.docs-only != 'true' && (needs.path-filter.outputs.api == 'true' || needs.path-filter.outputs.web == 'true' || needs.path-filter.outputs.ci == 'true')
         run: |
           node -e "
             const cp = require('child_process');
@@ -177,10 +177,10 @@ jobs:
       - name: Setup minimal CI environment
         run: cp .env.example .env
 
-      - name: Run Backend Unit & Integration Tests
-        if: needs.path-filter.outputs.backend == 'true' || needs.path-filter.outputs.ci == 'true'
-        run: pnpm --filter backend test
+      - name: Run API Unit & Integration Tests
+        if: needs.path-filter.outputs.api == 'true' || needs.path-filter.outputs.ci == 'true'
+        run: pnpm --filter api test
 
-      - name: Run Frontend Unit & Component Tests
-        if: needs.path-filter.outputs.frontend == 'true' || needs.path-filter.outputs.ci == 'true'
-        run: pnpm --filter frontend test
+      - name: Run Web Unit & Component Tests
+        if: needs.path-filter.outputs.web == 'true' || needs.path-filter.outputs.ci == 'true'
+        run: pnpm --filter web test

@@ -6,10 +6,9 @@ import {
   extractObjectNameFromUrl,
   type CleanupOptions,
   type CleanupReport,
-} from "../apps/backend/src/common/orphan-cleanup";
+} from "../apps/api/src/common/orphan-cleanup";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-dotenv.config({ path: path.resolve(process.cwd(), "apps/backend/.env") });
 dotenv.config();
 
 export {

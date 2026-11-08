@@ -99,7 +99,7 @@ services:
     init: true
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: apps/api/Dockerfile
     container_name: haihire-backend
     restart: unless-stopped
     env_file:
@@ -145,7 +145,7 @@ services:
     init: true
     build:
       context: .
-      dockerfile: apps/frontend/Dockerfile
+      dockerfile: apps/web/Dockerfile
     container_name: haihire-frontend
     restart: unless-stopped
     env_file:

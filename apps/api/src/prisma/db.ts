@@ -26,8 +26,6 @@ import path from "node:path";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
-dotenv.config({ path: path.resolve(process.cwd(), "apps/backend/.env") });
-dotenv.config({ path: path.resolve(process.cwd(), "backend/.env") });
 dotenv.config();
 
 export type DeepPartialWithTemporal<T> = {

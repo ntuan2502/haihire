@@ -11,18 +11,8 @@ interface PackageJson {
 
 const packagePaths = [
   { label: "Root", path: path.join(rootDir, "package.json") },
-  {
-    label: "Backend",
-    path: fs.existsSync(path.join(rootDir, "apps", "backend", "package.json"))
-      ? path.join(rootDir, "apps", "backend", "package.json")
-      : path.join(rootDir, "backend", "package.json"),
-  },
-  {
-    label: "Frontend",
-    path: fs.existsSync(path.join(rootDir, "apps", "frontend", "package.json"))
-      ? path.join(rootDir, "apps", "frontend", "package.json")
-      : path.join(rootDir, "frontend", "package.json"),
-  },
+  { label: "Api", path: path.join(rootDir, "apps", "api", "package.json") },
+  { label: "Web", path: path.join(rootDir, "apps", "web", "package.json") },
   {
     label: "Shared",
     path: path.join(rootDir, "packages", "shared", "package.json"),

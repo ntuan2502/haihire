@@ -18,19 +18,18 @@ export const MODELS_WITHOUT_ORG_COLUMN = new Set([
 // 2. Non-tenant-scoped or infrastructure service files excluded from tenant audit
 export const NON_TENANT_SCOPED_FILES = [
   // Auth has no organization context during login / token verification
-  "backend/src/auth/auth.service.ts",
-  // Users service reads global system / demo user seeds
+  "apps/api/src/auth/auth.service.ts",
   // Infrastructure services
-  "backend/src/app.service.ts",
-  "backend/src/common/encryption.service.ts",
-  "backend/src/common/webhook/webhook-notifier.service.ts",
-  "backend/src/email/email.service.ts",
-  "backend/src/events/events.service.ts",
-  "backend/src/metrics/metrics.service.ts",
-  "backend/src/minio/minio.service.ts",
-  "backend/src/prisma/prisma.service.ts",
+  "apps/api/src/app.service.ts",
+  "apps/api/src/common/encryption.service.ts",
+  "apps/api/src/common/webhook/webhook-notifier.service.ts",
+  "apps/api/src/email/email.service.ts",
+  "apps/api/src/events/events.service.ts",
+  "apps/api/src/metrics/metrics.service.ts",
+  "apps/api/src/minio/minio.service.ts",
+  "apps/api/src/prisma/prisma.service.ts",
   // Public careers endpoints (unauthenticated candidates browsing jobs)
-  "backend/src/jobs/jobs.public.service.ts",
+  "apps/api/src/jobs/jobs.public.service.ts",
 ];
 
 // 3. The 8 tenant-scoped business modules subject to strict static analysis

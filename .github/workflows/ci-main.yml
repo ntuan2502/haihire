@@ -248,8 +248,8 @@ jobs:
 
       - name: Run Database Migrations & Seed
         run: |
-          pnpm --filter ./backend run db:update
-          pnpm --filter ./backend run db:seed
+          pnpm --filter api run db:update
+          pnpm --filter api run db:seed
         env:
           DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           DEMO_SEED_PASSWORD: dev-seed-password-2026
@@ -307,7 +307,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/backend/Dockerfile
+          file: apps/api/Dockerfile
           push: false
           tags: test-backend:latest
           cache-from: type=gha
@@ -316,7 +316,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/frontend/Dockerfile
+          file: apps/web/Dockerfile
           push: false
           tags: test-frontend:latest
           cache-from: type=gha

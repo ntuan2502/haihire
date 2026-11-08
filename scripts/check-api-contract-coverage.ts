@@ -1,14 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const backendDir = fs.existsSync(path.resolve(__dirname, "../apps/backend/src"))
-  ? path.resolve(__dirname, "../apps/backend/src")
-  : path.resolve(__dirname, "../backend/src");
-const frontendDir = fs.existsSync(
-  path.resolve(__dirname, "../apps/frontend/src"),
-)
-  ? path.resolve(__dirname, "../apps/frontend/src")
-  : path.resolve(__dirname, "../frontend/src");
+const backendDir = path.resolve(__dirname, "../apps/api/src");
+const frontendDir = path.resolve(__dirname, "../apps/web/src");
 
 interface EndpointDef {
   controller: string;

@@ -79,13 +79,13 @@ pnpm test                # Run complete unit & integration test suite (1,019 tes
 pnpm test:diff           # Verify test count delta against HEAD~1 (regression gate)
 
 # Linting & Static Analysis
-pnpm lint                # ESLint across backend and frontend workspaces
+pnpm lint                # ESLint across API and Web workspaces
 pnpm typecheck           # TypeScript compiler typecheck (tsc --noEmit)
 pnpm lint:doc-links      # Verify zero broken relative markdown links (Gate 10)
 pnpm lint:doc-sync       # Verify documentation, env parity, and decisions sync (Gate 11)
 pnpm lint:tenant-scope   # Verify 100% of Prisma queries isolated by tenant organizationId (Gate 9)
 
 # Development
-pnpm dev                 # Start development servers (backend: 13001, frontend: 13000)
+pnpm dev                 # Start development servers (API: 13001, Web: 13000)
 pnpm build               # Build all workspace packages and applications
 ```

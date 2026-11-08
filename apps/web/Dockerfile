@@ -14,16 +14,16 @@ WORKDIR /app
 # Copy root workspace manifests
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.json ./
 COPY packages/shared/package.json ./packages/shared/
-COPY apps/frontend/package.json apps/frontend/tsconfig.json ./apps/frontend/
+COPY apps/web/package.json apps/web/tsconfig.json ./apps/web/
 
 # Install build dependencies using BuildKit pnpm store cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --filter @haihire/shared --filter frontend... --frozen-lockfile || \
-    pnpm install --filter @haihire/shared --filter frontend...
+    pnpm install --filter @haihire/shared --filter web... --frozen-lockfile || \
+    pnpm install --filter @haihire/shared --filter web...
 
 # Copy source code
 COPY packages/shared ./packages/shared
-COPY apps/frontend ./apps/frontend
+COPY apps/web ./apps/web
 
 # Set backend host for Next.js build-time rewrite route manifest
 ENV BACKEND_HOST=backend
@@ -38,7 +38,7 @@ ENV NEXT_PUBLIC_MINIO_URL=$NEXT_PUBLIC_MINIO_URL
 ENV INTERNAL_API_URL=$INTERNAL_API_URL
 
 # Build shared and Next.js frontend with output: "standalone"
-RUN pnpm --filter @haihire/shared run build && pnpm --filter frontend run build
+RUN pnpm --filter @haihire/shared run build && pnpm --filter web run build
 
 # Stage 2: Production ultra-lean runtime (standalone mode)
 FROM node:26-alpine AS runner
@@ -59,13 +59,13 @@ ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy Next.js standalone build artifacts and static assets (zero package install needed)
-COPY --from=builder --chown=node:node /app/apps/frontend/public ./apps/frontend/public
-COPY --from=builder --chown=node:node /app/apps/frontend/.next/standalone ./
-COPY --from=builder --chown=node:node /app/apps/frontend/.next/static ./apps/frontend/.next/static
+COPY --from=builder --chown=node:node /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=node:node /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
 
 USER node
 
-WORKDIR /app/apps/frontend
+WORKDIR /app/apps/web
 
 EXPOSE 3000
 

@@ -4,9 +4,9 @@ import { checkNextJsConventions } from "../check-nextjs-conventions";
 
 describe("CI Gate: lint:nextjs-conventions (scripts/check-nextjs-conventions.ts)", () => {
   const rootDir = "/mock/project";
-  const proxyPath = path.join(rootDir, "frontend/src/proxy.ts");
-  const proxySpecPath = path.join(rootDir, "frontend/src/proxy.spec.ts");
-  const middlewarePath = path.join(rootDir, "frontend/src/middleware.ts");
+  const proxyPath = path.join(rootDir, "apps/web/src/proxy.ts");
+  const proxySpecPath = path.join(rootDir, "apps/web/src/proxy.spec.ts");
+  const middlewarePath = path.join(rootDir, "apps/web/src/middleware.ts");
 
   it("Test 1: passes when proxy.ts and proxy.spec.ts exist with valid proxy export and no middleware.ts", () => {
     const existingFiles = new Set([proxyPath, proxySpecPath]);

@@ -23,8 +23,8 @@ $$\text{MAJOR}.\text{MINOR}.\text{PATCH}$$
 To eliminate cross-package drift and ensure deterministic production builds, all packages in the HaiHire monorepo share a unified version in lockstep:
 
 1. **Root Manifest:** [`package.json`](../../package.json)
-2. **Backend Service:** [`apps/backend/package.json`](../../apps/backend/package.json)
-3. **Frontend Application:** [`apps/frontend/package.json`](../../apps/frontend/package.json)
+2. **API Service:** [`apps/api/package.json`](../../apps/api/package.json)
+3. **Web Application:** [`apps/web/package.json`](../../apps/web/package.json)
 4. **Shared Library:** [`packages/shared/package.json`](../../packages/shared/package.json)
 
 ### Automated Version Synchronization Scripts

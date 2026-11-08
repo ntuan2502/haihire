@@ -87,7 +87,7 @@ flowchart TB
 ## 3. Service Topology & Request Flow
 
 1. **Client Ingress:** Requests hit the Edge Gateway or Next.js Frontend depending on route.
-2. **Edge Proxy Interception:** `frontend/src/proxy.ts` inspects session authentication cookies (`haihire_token`, `haihire_has_org`) and handles server-side redirects (e.g. unauthenticated users requesting `/dashboard` are redirected to `/auth/login`).
+2. **Edge Proxy Interception:** `apps/web/src/proxy.ts` inspects session authentication cookies (`haihire_token`, `haihire_has_org`) and handles server-side redirects (e.g. unauthenticated users requesting `/dashboard` are redirected to `/auth/login`).
 3. **API Routing:**
    - Client requests to `/api/*` are forwarded via Next.js proxy rewrites to the NestJS backend on internal port `13001`.
    - Direct requests to public career pages (`/careers/[orgSlug]/[jobSlug]`) execute as React Server Components (RSC) fetching metadata directly from the backend.
@@ -96,7 +96,7 @@ flowchart TB
    - `RolesGuard` evaluates dynamic ownership via `Organization.ownerId` (granting super-admin bypass) and verifies permissions declared via `@RequirePermission()`.
    - Every controller `@Body()` parameter is validated by `DtoPipe` to enforce fail-fast Zod/class-validator schemas.
 5. **Data Persistence:**
-   - Relational entities are persisted to PostgreSQL 17 via Prisma 8 contract (`src/prisma/contract.prisma`).
+   - Relational entities are persisted to PostgreSQL 17 via Prisma schema (`apps/api/src/prisma/schema.prisma`).
    - Transactions use `PrismaService.executeTx()` with `AsyncLocalStorage` for propagation.
    - File uploads execute via the Saga coordinator combining MinIO S3 storage and DB commits with compensating rollbacks.
    - Background tasks (emails, webhooks, metrics) are dispatched to BullMQ queues powered by Valkey.
@@ -105,7 +105,7 @@ flowchart TB
 
 ## 4. Backend Modules
 
-The backend monolith is structured into domain modules located under `backend/src/`:
+The backend monolith is structured into domain modules located under `apps/api/src/`:
 
 - `applications/`: Candidate application submissions, pipeline progression, and distributed Saga orchestration.
 - `auth/`: Authentication, JWT issuance, cookie handling, passport strategies, and permission guards.
@@ -117,6 +117,6 @@ The backend monolith is structured into domain modules located under `backend/sr
 - `jobs/`: Job requisitions, custom hiring pipelines, and stage management.
 - `metrics/`: Prometheus metrics collection and alerting probes.
 - `organizations/`: Multi-tenant organization boundaries, memberships, and dynamic ownership.
-- `prisma/`: Prisma 8 contract, database client, and transaction management.
+- `prisma/`: Prisma schema, database client, and transaction management.
 - `sourcing/`: Sourcing channels, tracking links, and attribution clicks.
 - `webhook-settings/`: Outbound tenant webhook notifications (Discord, Telegram, Generic).

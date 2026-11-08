@@ -53,11 +53,10 @@ function waitForBackend(host: string, port: number, timeoutMs = 60000): Promise<
 }
 
 async function main() {
-  console.log(`[frontend dev] Waiting for backend on ${backendHost}:${backendPort}...`);
+  console.log(`[web dev] Waiting for backend on ${backendHost}:${backendPort}...`);
   await waitForBackend(backendHost, backendPort);
-  console.log(`[frontend dev] Starting Next.js on port ${frontendPort}...`);
+  console.log(`[web dev] Starting Next.js on port ${frontendPort}...`);
 
-  const nextBin = path.resolve(__dirname, "../node_modules/.bin/next");
   const child = spawn("pnpm", ["exec", "next", "dev"], {
     stdio: "inherit",
     env: { ...process.env, PORT: String(frontendPort) },

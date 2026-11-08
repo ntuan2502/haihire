@@ -11,20 +11,20 @@ WORKDIR /app
 # Copy root workspace manifests
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.json ./
 COPY packages/shared/package.json ./packages/shared/
-COPY apps/backend/package.json ./apps/backend/
+COPY apps/api/package.json ./apps/api/
 
 # Install build dependencies using BuildKit pnpm store cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --filter @haihire/shared --filter backend... --frozen-lockfile || \
-    pnpm install --filter @haihire/shared --filter backend...
+    pnpm install --filter @haihire/shared --filter api... --frozen-lockfile || \
+    pnpm install --filter @haihire/shared --filter api...
 
 # Copy source code
 COPY packages/shared ./packages/shared
-COPY apps/backend ./apps/backend
+COPY apps/api ./apps/api
 COPY scripts ./scripts
 
 # Build shared and backend (esbuild produces dist/server.mjs)
-RUN pnpm --filter @haihire/shared run build && pnpm --filter backend run build
+RUN pnpm --filter @haihire/shared run build && pnpm --filter api run build
 
 # Stage 2: Production lean runtime
 FROM node:26-alpine AS runner
@@ -47,20 +47,20 @@ ENV NODE_ENV=production
 # Copy root package manifests
 COPY --chown=node:node pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.json ./
 COPY --chown=node:node packages/shared/package.json ./packages/shared/
-COPY --chown=node:node apps/backend/package.json ./apps/backend/
+COPY --chown=node:node apps/api/package.json ./apps/api/
 
 # Install production dependencies with cache mount (instantaneous from cache)
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --prod --filter @haihire/shared --filter backend... --frozen-lockfile || \
-    pnpm install --prod --filter @haihire/shared --filter backend...
+    pnpm install --prod --filter @haihire/shared --filter api... --frozen-lockfile || \
+    pnpm install --prod --filter @haihire/shared --filter api...
 
 # Copy compiled code, Prisma 8 schema & contract with non-root ownership
 COPY --chown=node:node --from=builder /app/packages/shared/src ./packages/shared/src
-COPY --chown=node:node --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --chown=node:node --from=builder /app/apps/backend/src/prisma ./apps/backend/src/prisma
+COPY --chown=node:node --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --chown=node:node --from=builder /app/apps/api/src/prisma ./apps/api/src/prisma
 COPY --chown=node:node --from=builder /app/scripts ./scripts
 
-WORKDIR /app/apps/backend
+WORKDIR /app/apps/api
 
 USER node
 

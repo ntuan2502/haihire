@@ -67,11 +67,7 @@ function normalizeRelativePath(filePath: string): string {
  */
 export function findTenantServiceFiles(baseDir?: string): string[] {
   const root = getWorkspaceRoot();
-  const targetDir =
-    baseDir ||
-    (fs.existsSync(path.resolve(root, "apps/backend/src"))
-      ? path.resolve(root, "apps/backend/src")
-      : path.resolve(root, "backend/src"));
+  const targetDir = baseDir || path.resolve(root, "apps/api/src");
   const result: string[] = [];
   if (!fs.existsSync(targetDir)) return result;
 
@@ -86,26 +82,19 @@ export function findTenantServiceFiles(baseDir?: string): string[] {
         const normRel = normalizeRelativePath(fullPath);
 
         // Skip files present in NON_TENANT_SCOPED_FILES
-        const isNonTenant = NON_TENANT_SCOPED_FILES.some(
-          (f) =>
-            normRel.endsWith(f.replace(/\\/g, "/")) ||
-            normRel.endsWith(
-              f.replace(/\\/g, "/").replace(/^backend\//, "apps/backend/"),
-            ),
+        const isNonTenant = NON_TENANT_SCOPED_FILES.some((f) =>
+          normRel.endsWith(f.replace(/\\/g, "/")),
         );
         if (isNonTenant) {
           continue;
         }
 
-        // If scanning within backend/src, verify module is in TENANT_SCOPED_MODULES
-        const isBackendSrc =
-          normRel.startsWith("apps/backend/src/") ||
-          normRel.startsWith("backend/src/");
+        // If scanning within apps/api/src, verify module is in TENANT_SCOPED_MODULES
+        const isBackendSrc = normRel.startsWith("apps/api/src/");
         if (isBackendSrc) {
           const isTenantModule = TENANT_SCOPED_MODULES.some(
             (mod) =>
-              normRel.startsWith(`apps/backend/src/${mod}/`) ||
-              normRel.startsWith(`backend/src/${mod}/`) ||
+              normRel.startsWith(`apps/api/src/${mod}/`) ||
               normRel.includes(`/${mod}/`),
           );
           if (!isTenantModule) {

@@ -7,7 +7,7 @@
 
 ## 1. Pure TypeScript Mandate
 
-1. **100% TypeScript Files:** Every file across `backend/`, `frontend/`, `packages/shared/`, and `scripts/` must use TypeScript extensions (`.ts`, `.tsx`, `.mts`, `.cts`). Zero plain JavaScript (`.js`, `.cjs`, `.mjs`) files are permitted anywhere in application code.
+1. **100% TypeScript Files:** Every file across `apps/api/`, `apps/web/`, `packages/shared/`, and `scripts/` must use TypeScript extensions (`.ts`, `.tsx`, `.mts`, `.cts`). Zero plain JavaScript (`.js`, `.cjs`, `.mjs`) files are permitted anywhere in application code.
    - _Rationale:_ Eliminates runtime type divergence and guarantees end-to-end type safety across the monorepo.
 2. **Tooling Exception:** Standard tooling configuration files required by ESM runners (e.g. `vitest.config.mts`, `eslint.config.mjs`) are permitted as build-time configurations.
    - _Rationale:_ Necessary for external Node.js tooling compatibility.
@@ -26,8 +26,8 @@
 ## 3. Centralized Fail-Fast Environment Validation (Zod)
 
 1. **Centralized Schemas:** All environment variables must be declared and validated via centralized Zod schemas:
-   - Backend: `backend/src/config/env.ts` (`backendEnv`)
-   - Frontend: `frontend/src/lib/env.ts` (`env`)
+   - API: `apps/api/src/config/env.ts` (`backendEnv`)
+   - Web: `apps/web/src/lib/env.ts` (`env`)
    - _Rationale:_ Eliminates scattered `process.env` lookups and ensures configuration integrity.
 2. **Zero Fallbacks for Secrets:** Never provide fallback defaults for security secrets (`JWT_SECRET`, `ENCRYPTION_SECRET`, `DATABASE_URL`).
    - _Rationale:_ Prevents deploying insecure default credentials to production environments.
@@ -69,7 +69,7 @@
 
 ## 7. Component Architecture & Frontend Conventions
 
-1. **5-Layer Modular Structure (`frontend/src/components/`):**
+1. **5-Layer Modular Structure (`apps/web/src/components/`):**
    - `ui/`: Pristine Shadcn UI primitives added via official CLI (`pnpx shadcn add`).
    - `shared/`: Reusable ATS UI controls, custom selects, badges, and guards.
    - `layout/`: Global navigation and layout shells.
@@ -98,7 +98,7 @@
 
 ## 9. Database, ORM & Transaction Architecture
 
-1. **Prisma 8 Contract-First Schema:** All database models live in `backend/src/prisma/contract.prisma`.
+1. **Prisma Schema Architecture:** All database models live in `apps/api/src/prisma/schema.prisma`.
    - _Rationale:_ Uses standard PostgreSQL driver adapters with full type safety and zero pre-release dependencies.
 2. **Cascade Deletion Integrity:** Child entities (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must declare `onDelete: Cascade` targeting their parent root.
    - _Rationale:_ Guarantees database-level atomic cascade deletion and eliminates orphan child records.

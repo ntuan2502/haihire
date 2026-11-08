@@ -19,9 +19,9 @@ Runbook checklist and release validation gates for production deployments of Hai
 # Verify email provider gate for production
 NODE_ENV=production SYSTEM_EMAIL_PROVIDER=RESEND pnpm check:prod-email-provider
 
-# Verify cross-tenant isolation test suite (Vitest in backend)
-pnpm test:backend -- cross-tenant
-# (Note: pnpm test:e2e targets Playwright browser tests; backend isolation suite runs via Vitest above)
+# Verify cross-tenant isolation test suite (Vitest in api)
+pnpm test:api -- cross-tenant
+# (Note: pnpm test:e2e targets Playwright browser tests; api isolation suite runs via Vitest above)
 
 # Verify Prometheus alert rules compliance (CI Gate 6)
 pnpm lint:prometheus-rules

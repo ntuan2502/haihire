@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
 
-// Load root .env regardless of CWD (works from root, apps/backend/, or deeper)
+// Load root .env regardless of CWD (works from root, apps/api/, or deeper)
 function findWorkspaceRoot(): string {
   let curr = process.cwd();
   while (curr !== path.dirname(curr)) {

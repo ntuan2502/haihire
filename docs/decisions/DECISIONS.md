@@ -124,11 +124,11 @@
 ## D-011: Retention of ADMIN Role for Former Organization Owners Post-Transfer
 
 - **Date:** 2026-10-23
-- **Decision:** When an organization owner transfers ownership to another member (`POST /organizations/my/transfer-ownership`), the former owner retains the `ADMIN` role both globally (`User.role = Role.ADMIN`) and within tenant membership (`OrganizationMember.role = Role.ADMIN`), while the new owner's `User.role` and `OrganizationMember.role` are also updated/promoted to `ADMIN`. Dynamic ownership is transferred solely via `Organization.ownerId = newOwnerUserId`.
+- **Decision:** The former owner retains `ADMIN` in the transferred organization. The recipient's membership in that organization becomes `ADMIN`. The transfer updates the recipient's `User.role` only if their active organization is the one being transferred. Dynamic ownership remains in `Organization.ownerId`.
 - **Rationale:** Transferring ownership of an organization is an administrative delegation of tenant control (e.g., founder transferring executive ownership to an administrator or executive successor). Automatically demoting the former owner to a non-administrative role (`MEMBER` or `RECRUITER`) could cause immediate operational disruption, lock the primary stakeholder out of administrative configurations, or drop ongoing recruitment pipelines. Retaining `ADMIN` privileges guarantees continuity while dynamic ownership checks (`user.id === currentOrg.ownerId` per D-003) properly transition primary owner authority (e.g. org deletion, further ownership transfer).
-- **Evidence:** Implementation in `backend/src/organizations/services/organizations-core.service.ts` (`transferOwnership`), sequence diagram in `docs/architecture/security-rbac.md`, and integration test assertions in `backend/test/organizations/transfer-ownership.spec.ts`.
-- **Enforcement:** Verified via integration tests in `backend/test/organizations/transfer-ownership.spec.ts` asserting `ownerMember.role === "ADMIN"` and `oldOwnerUser.role === "ADMIN"` post-transfer.
-- **History:** Formalized during the RBAC transfer ownership audit and bug fix investigation on branch `fix/rbac-transfer-ownership-bugs` in commits `388d9c4` and `ac6e5fd`.
+- **Evidence:** See the [ownership transfer flow](../architecture/security-rbac.md#7-ownership-transfer-flow) and the [HTTP regression tests](../../frontend/tests/e2e/ownership-transfer.spec.ts).
+- **Enforcement:** The owner update matches the current owner ID within a transaction. The losing request leaves roles and audit records intact.
+- **History:** Established in commits `388d9c4` and `ac6e5fd`. Updated on 2026-11-08 to scope `User.role` to the active organization and make competing transfers safe.
 
 ---
 

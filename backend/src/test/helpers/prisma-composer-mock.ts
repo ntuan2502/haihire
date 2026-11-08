@@ -34,7 +34,7 @@ export interface QueryBuilder<T extends MockRecord> {
   all(): Promise<T[]>;
   first(): Promise<T | null>;
   update(patch: Partial<T>): Promise<T | null>;
-  updateAll(patch: Partial<T>): Promise<{ count: number }>;
+  updateAll(patch: Partial<T>): Promise<T[]>;
   create(data: Partial<T>): Promise<T>;
   upsert(args: {
     create: Partial<T>;
@@ -255,15 +255,15 @@ export function createQueryBuilder<T extends MockRecord>(
       return null;
     },
 
-    async updateAll(patch: Partial<T>): Promise<{ count: number }> {
-      let updatedCount = 0;
+    async updateAll(patch: Partial<T>): Promise<T[]> {
+      const updatedRows: T[] = [];
       for (const item of store) {
         if (state.predicates.every((p) => evaluatePredicate(item, p))) {
           Object.assign(item, patch);
-          updatedCount++;
+          updatedRows.push(projectRecord(item, state.fields));
         }
       }
-      return { count: updatedCount };
+      return updatedRows;
     },
 
     async create(data: Partial<T>): Promise<T> {

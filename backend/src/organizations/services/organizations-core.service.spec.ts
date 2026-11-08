@@ -4,6 +4,7 @@ import { OrganizationsCoreService } from "./organizations-core.service";
 import {
   createMockTable,
   type MockTable,
+  type ProxyRecord,
 } from "../../test/helpers/prisma-composer-mock";
 import type { PrismaService } from "../../prisma/prisma.service";
 
@@ -366,6 +367,56 @@ describe("OrganizationsCoreService", () => {
       );
       expect(memberEntryAfter).toBeDefined();
       expect(memberEntryAfter?.role).toBe("ADMIN");
+    });
+
+    it("promotes membership in the transferred organization while keeping the target's role in the active organization", async () => {
+      await userTable
+        .where((u: ProxyRecord) => u.id.eq("user-member"))
+        .update({
+          organizationId: "org-2",
+        });
+
+      await service.transferOwnership("user-owner", "user-member");
+
+      expect(
+        organizationTable.store.find((org) => org.id === "org-1")?.ownerId,
+      ).toBe("user-member");
+      expect(
+        organizationMemberTable.store.find((m) => m.id === "mem-2")?.role,
+      ).toBe("ADMIN");
+      expect(userTable.store.find((u) => u.id === "user-member")).toMatchObject(
+        { organizationId: "org-2", role: "MEMBER" },
+      );
+    });
+
+    it("allows only one of two competing transfers by the same owner", async () => {
+      await userTable
+        .where((u: ProxyRecord) => u.id.eq("user-admin"))
+        .update({ role: "MEMBER" });
+
+      const transfers = await Promise.allSettled([
+        service.transferOwnership("user-owner", "user-member"),
+        service.transferOwnership("user-owner", "user-admin"),
+      ]);
+
+      expect(
+        transfers.filter((result) => result.status === "fulfilled"),
+      ).toHaveLength(1);
+      expect(transfers).toContainEqual(
+        expect.objectContaining({
+          status: "rejected",
+          reason: expect.objectContaining({
+            code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          }),
+        }),
+      );
+      const ownerId = organizationTable.store.find(
+        (org) => org.id === "org-1",
+      )?.ownerId;
+      const loserId = ownerId === "user-member" ? "user-admin" : "user-member";
+      expect(userTable.store.find((u) => u.id === loserId)?.role).toBe(
+        "MEMBER",
+      );
     });
 
     it("throws AppForbiddenException when non-owner attempts to transfer ownership", async () => {

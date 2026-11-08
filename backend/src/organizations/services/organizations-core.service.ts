@@ -458,120 +458,122 @@ export class OrganizationsCoreService {
       );
     }
 
-    const user = await this.prisma.db.orm.public.User.select(
-      "id",
-      "role",
-      "organizationId",
-    )
-      .where((u) => u.id.eq(userId))
-      .first();
-
-    if (!user || !user.organizationId) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.ORG_USER_NO_ORG,
-        "User is not associated with an organization",
-      );
-    }
-
-    const orgId = user.organizationId as string;
-
-    const currentOrg = await this.prisma.db.orm.public.Organization.select(
-      "id",
-      "ownerId",
-    )
-      .where((o) => o.id.eq(orgId))
-      .first();
-
-    if (!currentOrg) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.ORG_NOT_FOUND,
-        "Organization not found",
-      );
-    }
-
-    if (currentOrg.ownerId !== userId) {
-      throw new AppForbiddenException(
+    const ownerRequired = () =>
+      new AppForbiddenException(
         APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
         "Only the organization owner can transfer ownership.",
       );
-    }
+    const memberRequired = () =>
+      new AppBadRequestException(
+        APP_ERROR_CODES.ORG_TRANSFER_TARGET_NOT_MEMBER,
+        "Target user must be a member of the organization",
+      );
 
-    // Verify target user is a member of this organization
-    const orgMembers =
-      await this.prisma.db.orm.public.OrganizationMember.select("id", "userId")
-        .where((m) => m.organizationId.eq(orgId))
-        .all();
-
-    const targetMembership = orgMembers.find(
-      (m) => m.userId === newOwnerUserId,
-    );
-
-    if (!targetMembership) {
-      const targetUser = await this.prisma.db.orm.public.User.select(
-        "id",
-        "organizationId",
-      )
-        .where((u) => u.id.eq(newOwnerUserId))
+    const orgId = await this.prisma.executeTx(async (tx) => {
+      const user = await tx.orm.public.User.select("organizationId")
+        .where((u) => u.id.eq(userId))
         .first();
 
-      if (!targetUser || targetUser.organizationId !== orgId) {
-        throw new AppBadRequestException(
-          APP_ERROR_CODES.ORG_TRANSFER_TARGET_NOT_MEMBER,
-          "Target user must be a member of the organization",
+      if (!user?.organizationId) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.ORG_USER_NO_ORG,
+          "User is not associated with an organization",
         );
       }
-    }
+      const organizationId = user.organizationId;
 
-    await this.executeTx(async (tx) => {
-      await tx.orm.public.Organization.where((o) => o.id.eq(orgId)).update({
-        ownerId: newOwnerUserId,
-        updatedAt: toInstant(),
-      });
+      const currentOrg = await tx.orm.public.Organization.select("ownerId")
+        .where((o) => o.id.eq(organizationId))
+        .first();
 
-      // Promote new owner to ADMIN to ensure full organizational management access
-      await tx.orm.public.User.where((u) => u.id.eq(newOwnerUserId)).update({
-        role: "ADMIN",
-        updatedAt: toInstant(),
-      });
+      if (!currentOrg) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.ORG_NOT_FOUND,
+          "Organization not found",
+        );
+      }
+      if (currentOrg.ownerId !== userId) {
+        throw ownerRequired();
+      }
+
+      const targetMembership = await tx.orm.public.OrganizationMember.select(
+        "id",
+      )
+        .where((m) => m.organizationId.eq(organizationId))
+        .where((m) => m.userId.eq(newOwnerUserId))
+        .first();
+
+      if (!targetMembership) {
+        const target = await tx.orm.public.User.select("id")
+          .where((u) => u.id.eq(newOwnerUserId))
+          .where((u) => u.organizationId.eq(organizationId))
+          .first();
+        if (!target) {
+          throw memberRequired();
+        }
+      }
+
+      const now = toInstant();
+      // updateAll keeps the owner and tenant predicates in the SQL write.
+      const [transferred] = await tx.orm.public.Organization.where((o) =>
+        o.id.eq(organizationId),
+      )
+        .where((o) => o.ownerId.eq(userId))
+        .updateAll({ ownerId: newOwnerUserId, updatedAt: now });
+      if (!transferred) {
+        throw ownerRequired();
+      }
+
+      // User.role mirrors the active organization's role only.
+      const [promotedUser] = await tx.orm.public.User.where((u) =>
+        u.id.eq(newOwnerUserId),
+      )
+        .where((u) => u.organizationId.eq(organizationId))
+        .updateAll({ role: "ADMIN", updatedAt: now });
 
       if (targetMembership) {
-        await tx.orm.public.OrganizationMember.where((m) =>
-          m.id.eq(targetMembership.id),
+        const [promotedMembership] = await tx.orm.public.OrganizationMember.where(
+          (m) => m.id.eq(targetMembership.id),
         )
-          .where((m) => m.organizationId.eq(orgId))
-          .update({
-            role: "ADMIN",
-            updatedAt: toInstant(),
-          });
+          .where((m) => m.organizationId.eq(organizationId))
+          .updateAll({ role: "ADMIN", updatedAt: now });
+        if (!promotedMembership) {
+          throw memberRequired();
+        }
       } else {
+        if (!promotedUser) {
+          throw memberRequired();
+        }
         const newMemberId = crypto.randomUUID();
         await tx.orm.public.OrganizationMember.upsert({
           create: {
             id: newMemberId,
-            organizationId: orgId,
+            organizationId,
             userId: newOwnerUserId,
             role: "ADMIN",
-            updatedAt: toInstant(),
+            updatedAt: now,
           },
           update: {
             role: "ADMIN",
-            updatedAt: toInstant(),
+            updatedAt: now,
           },
           conflictOn: { id: newMemberId },
         });
       }
+
+      await this.auditLog?.logOrg(
+        organizationId,
+        userId,
+        "OWNERSHIP_TRANSFERRED",
+        "ORGANIZATION",
+        { oldOwnerId: userId, newOwnerId: newOwnerUserId },
+      );
+
+      return organizationId;
     });
 
     this.logger.log(
       `Transferred ownership of organization ${orgId} from ${userId} to ${newOwnerUserId}`,
-    );
-
-    await this.auditLog?.logOrg(
-      orgId,
-      userId,
-      "OWNERSHIP_TRANSFERRED",
-      "ORGANIZATION",
-      { oldOwnerId: userId, newOwnerId: newOwnerUserId },
     );
 
     return {

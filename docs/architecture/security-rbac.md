@@ -196,26 +196,17 @@ sequenceDiagram
     Owner->>API: POST /organizations/my/transfer-ownership { newOwnerUserId }
     API->>API: DtoPipe validates UUID v4 (RFC 4122)
     API->>Core: transferOwnership(currentOwnerId, newOwnerUserId)
-    Core->>Core: Step 1: Verify caller is active Organization.ownerId
-    Core->>Core: Step 2: Verify target is a member of the organization
     Core->>DB: Begin Transaction (executeTx)
-    DB->>DB: Step 3: Update Organization.ownerId = newOwnerUserId
-    DB->>DB: Step 4: Promote target User.role = ADMIN
-    DB->>DB: Step 5: Upsert target OrganizationMember with role ADMIN
-    DB->>DB: Step 6: Retain former owner User.role = ADMIN
+    DB->>DB: Verify current owner and target membership
+    DB->>DB: Update ownerId only if it still matches the caller
+    DB->>DB: Promote target membership in the transferred organization
+    DB->>DB: Promote User.role only if active in the transferred organization
+    DB->>DB: Record the ownership transfer audit entry
     DB-->>Core: Commit Transaction
-    Core->>Core: Emit audit log & WebSocket event
     Core-->>API: 200 OK { success: true, newOwnerId }
 ```
 
-### 6-Step Transaction Verification:
-
-1. **Step 1 (Caller Verification):** Verifies caller is the current `ownerId` of the organization (`AppForbiddenException` on mismatch).
-2. **Step 2 (Target Verification):** Confirms target belongs to the tenant (`OrganizationMember` record or matching `User.organizationId`).
-3. **Step 3 (Organization Transfer):** Atomically updates `Organization.ownerId` to `newOwnerUserId`.
-4. **Step 4 (User Role Promotion):** Promotes target `User.role` to `ADMIN` so global user identity reflects administrative privileges.
-5. **Step 5 (Membership Upsert):** Upserts `OrganizationMember` with `role: ADMIN` (handles edge cases where membership entry did not previously exist).
-6. **Step 6 (Former Owner Status):** Former owner retains `ADMIN` role, ensuring continuous administrative access without unexpected lockout.
+The recipient must have a membership in the organization or a matching `User.organizationId` from older data. The transfer creates a missing membership only while the recipient still has that organization active. When requests compete, the first successful owner update invalidates the other request's owner check. Role changes and the audit entry commit together. The former owner's `ADMIN` access follows [D-011](../decisions/DECISIONS.md#d-011-retention-of-admin-role-for-former-organization-owners-post-transfer).
 
 ---
 

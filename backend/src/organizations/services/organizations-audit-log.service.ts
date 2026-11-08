@@ -43,7 +43,7 @@ export class OrganizationsAuditLogService {
   ) {
     const id = crypto.randomUUID();
     const metadataStr = metadata ? JSON.stringify(metadata) : null;
-    return this.prisma.db.orm.public.OrganizationAuditLog.create({
+    return this.prisma.client.orm.public.OrganizationAuditLog.create({
       id,
       organizationId,
       actorId: actorId || null,

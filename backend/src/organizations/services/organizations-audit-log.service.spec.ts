@@ -182,6 +182,7 @@ describe("OrganizationsAuditLogService", () => {
         },
       },
     } as unknown as PrismaService;
+    Object.defineProperty(mockPrisma, "client", { get: () => mockPrisma.db });
 
     service = new OrganizationsAuditLogService(mockPrisma);
   });

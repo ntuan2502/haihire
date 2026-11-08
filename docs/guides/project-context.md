@@ -234,7 +234,7 @@ haihire/
      - `backend/src/organizations/organizations.service.ts` (~1.1k lines).
      - `backend/src/sourcing/sourcing.service.ts` (~988 lines).
      - `frontend/src/components/jobs/job-list.tsx` (~900 lines).
-  2. _Legacy Table Mappings:_ 9 tables in `contract.prisma` retain legacy camelCase `@@map` directives (`organizationMember`, `trackingLink`...) pending future migration.
+  2. _Table Mappings:_ Normalized to canonical PostgreSQL `snake_case` in `schema.prisma` (`organization_member`, `tracking_link`, etc.).
 - **Common Pitfalls to Avoid:**
   - _React SyntheticEvent Leakage:_ When passing callbacks to `onClick`, if the target function accepts optional arguments (`onDelete(id?: string)`), do **not** bind directly `onClick={onDelete}`. React will pass the `MouseEvent` as the first argument, resulting in `"[object Object]"` URL parameters. Always bind via arrow function: `onClick={() => onDelete(id)}`.
   - _Cross-Platform File Path Sanitization:_ Never use `path.basename()` to clean uploaded filenames; it does not strip Windows `\` separators on Linux CI hosts. Always use universal regex: `.replace(/^.*[/\\]/, "")`.

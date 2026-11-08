@@ -186,6 +186,7 @@ model User {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime @updatedAt
 
+  @@index([organizationId])
   @@map("user")
 }
 
@@ -200,7 +201,7 @@ model OrganizationMember {
   updatedAt      DateTime @updatedAt
 
   @@index([organizationId, userId])
-  @@map("organizationMember")
+  @@map("organization_member")
 }
 
 model OrganizationRolePermission {
@@ -215,7 +216,7 @@ model OrganizationRolePermission {
 
   @@unique([organizationId, role, permission])
   @@index([organizationId])
-  @@map("organizationRolePermission")
+  @@map("organization_role_permission")
 }
 
 model InviteLink {
@@ -233,7 +234,7 @@ model InviteLink {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@map("inviteLink")
+  @@map("invite_link")
 }
 
 model Job {
@@ -364,7 +365,7 @@ model EmailTemplate {
   updatedAt      DateTime @updatedAt
 
   @@unique([organizationId, type])
-  @@map("emailTemplate")
+  @@map("email_template")
 }
 
 model EmailSetting {
@@ -383,7 +384,7 @@ model EmailSetting {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@map("emailSetting")
+  @@map("email_setting")
 }
 
 model EmailLog {
@@ -411,7 +412,7 @@ model EmailLog {
 
   @@index([organizationId, createdAt])
   @@index([scope, createdAt])
-  @@map("emailLog")
+  @@map("email_log")
 }
 
 model ActivityLog {
@@ -434,7 +435,7 @@ model ActivityLog {
 
   @@index([organizationId, createdAt])
   @@index([candidateId])
-  @@map("activityLog")
+  @@map("activity_log")
 }
 
 model CandidateDocument {
@@ -453,7 +454,7 @@ model CandidateDocument {
 
   @@index([candidateId])
   @@index([organizationId])
-  @@map("candidateDocument")
+  @@map("candidate_document")
 }
 
 model TrackingLink {
@@ -485,7 +486,7 @@ model TrackingLink {
 
   @@index([organizationId, isActive])
   @@index([token])
-  @@map("trackingLink")
+  @@map("tracking_link")
 }
 
 model TrackingClick {
@@ -500,7 +501,7 @@ model TrackingClick {
 
   @@index([trackingLinkId, createdAt])
   @@index([referrerDomain])
-  @@map("trackingClick")
+  @@map("tracking_click")
 }
 
 model OrganizationWebhookSetting {
@@ -521,7 +522,7 @@ model OrganizationWebhookSetting {
 
   @@unique([organizationId, eventType, provider])
   @@index([organizationId])
-  @@map("organizationWebhookSetting")
+  @@map("organization_webhook_setting")
 }
 
 model OrganizationAuditLog {
@@ -538,7 +539,7 @@ model OrganizationAuditLog {
 
   @@index([organizationId, createdAt])
   @@index([organizationId, action])
-  @@map("organizationAuditLog")
+  @@map("organization_audit_log")
 }
 
 model PlatformAuditLog {
@@ -552,7 +553,7 @@ model PlatformAuditLog {
 
   @@index([createdAt])
   @@index([action])
-  @@map("platformAuditLog")
+  @@map("platform_audit_log")
 }
 
 

@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           typeof window !== "undefined" &&
           window.location.pathname.startsWith("/dashboard")
         ) {
-          router.replace("/onboarding/create-org");
+          router.replace("/auth/onboarding");
         }
       }
 
@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               typeof window !== "undefined" &&
               window.location.pathname.startsWith("/dashboard")
             ) {
-              router.replace("/onboarding/create-org");
+              router.replace("/auth/onboarding");
             }
           }
         } else if (payload.type === "MEMBER_ROLE_UPDATED") {

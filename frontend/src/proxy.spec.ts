@@ -77,4 +77,51 @@ describe("Next.js 16 Edge Proxy (frontend/src/proxy.ts)", () => {
       "http://localhost:3000/auth/onboarding",
     );
   });
+
+  it("allows safe internal redirect parameter for authenticated user", () => {
+    const req = createMockRequest(
+      "/auth/login",
+      {
+        haihire_token: "jwt-token-xyz-12345",
+        haihire_has_org: "true",
+      },
+      "redirect=/dashboard/jobs",
+    );
+
+    const res = proxy(req);
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe(
+      "http://localhost:3000/dashboard/jobs",
+    );
+  });
+
+  it("prevents open redirect attacks via protocol-relative URLs", () => {
+    const req = createMockRequest(
+      "/auth/login",
+      {
+        haihire_token: "jwt-token-xyz-12345",
+        haihire_has_org: "true",
+      },
+      "redirect=//evil.com/phish",
+    );
+
+    const res = proxy(req);
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://localhost:3000/dashboard");
+  });
+
+  it("prevents open redirect attacks via backslash prefix", () => {
+    const req = createMockRequest(
+      "/auth/login",
+      {
+        haihire_token: "jwt-token-xyz-12345",
+        haihire_has_org: "true",
+      },
+      "redirect=/\\evil.com",
+    );
+
+    const res = proxy(req);
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://localhost:3000/dashboard");
+  });
 });

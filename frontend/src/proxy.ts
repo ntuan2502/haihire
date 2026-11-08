@@ -15,7 +15,12 @@ export function proxy(request: NextRequest) {
   // Server-side redirect immediately at HTTP layer (0ms flash, no HTML rendered)
   if (isAuthPage && token) {
     const redirectParam = request.nextUrl.searchParams.get("redirect");
-    if (redirectParam && redirectParam.startsWith("/")) {
+    if (
+      redirectParam &&
+      redirectParam.startsWith("/") &&
+      !redirectParam.startsWith("//") &&
+      !redirectParam.startsWith("/\\")
+    ) {
       return NextResponse.redirect(new URL(redirectParam, request.url));
     }
     if (!hasOrg) {
@@ -27,7 +32,15 @@ export function proxy(request: NextRequest) {
   // 2. If user is NOT authenticated and tries to visit /dashboard or /auth/onboarding
   if ((isDashboardPage || isOnboardingPage) && !token) {
     const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("redirect", `${pathname}${search}`);
+    const targetRedirect = `${pathname}${search}`;
+    // Only set safe redirect path
+    if (
+      targetRedirect.startsWith("/") &&
+      !targetRedirect.startsWith("//") &&
+      !targetRedirect.startsWith("/\\")
+    ) {
+      loginUrl.searchParams.set("redirect", targetRedirect);
+    }
     return NextResponse.redirect(loginUrl);
   }
 

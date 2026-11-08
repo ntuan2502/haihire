@@ -18,8 +18,7 @@ async function bootstrap() {
   const metricsService = app.get(MetricsService, { strict: false });
 
   // Strict CORS whitelist from FRONTEND_URL
-  const allowedOrigins = env.FRONTEND_URL
-    .split(",")
+  const allowedOrigins = env.FRONTEND_URL.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
 
@@ -30,93 +29,138 @@ async function bootstrap() {
   });
 
   // Standard HTTP security headers
-  app.use((_req: unknown, res: { setHeader: (k: string, v: string) => void }, next: () => void) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    res.setHeader("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self';");
-    next();
-  });
+  app.use(
+    (
+      _req: unknown,
+      res: { setHeader: (k: string, v: string) => void },
+      next: () => void,
+    ) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("X-Frame-Options", "DENY");
+      res.setHeader("X-XSS-Protection", "1; mode=block");
+      res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+      res.setHeader(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=()",
+      );
+      res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self';",
+      );
+      next();
+    },
+  );
 
   // Production HTTPS redirection
   if (env.NODE_ENV === "production") {
-    app.use((req: IncomingMessage & { secure?: boolean; headers: Record<string, string | string[] | undefined>; url?: string }, res: ServerResponse, next: () => void) => {
-      const forwardedProto = req.headers["x-forwarded-proto"];
-      const isHttps = req.secure || forwardedProto === "https";
-      if (!isHttps) {
-        const host = req.headers.host || "localhost";
-        res.writeHead(301, {
-          Location: `https://${host}${req.url || ""}`,
-        });
-        res.end();
-        return;
-      }
-      next();
-    });
+    app.use(
+      (
+        req: IncomingMessage & {
+          secure?: boolean;
+          headers: Record<string, string | string[] | undefined>;
+          url?: string;
+        },
+        res: ServerResponse,
+        next: () => void,
+      ) => {
+        const forwardedProto = req.headers["x-forwarded-proto"];
+        const isHttps = req.secure || forwardedProto === "https";
+        if (!isHttps) {
+          const host = req.headers.host || "localhost";
+          res.writeHead(301, {
+            Location: `https://${host}${req.url || ""}`,
+          });
+          res.end();
+          return;
+        }
+        next();
+      },
+    );
   }
 
   // Structured Logging & Prometheus Request Recording Middleware (Zero PII leak)
-  app.use((req: IncomingMessage & { originalUrl?: string; url?: string; user?: { id?: string; organizationId?: string } }, res: ServerResponse, next: () => void) => {
-    const start = Date.now();
-    const rawUrl = req.originalUrl || req.url || "/";
-    const cleanPath = rawUrl.split("?")[0];
+  app.use(
+    (
+      req: IncomingMessage & {
+        originalUrl?: string;
+        url?: string;
+        user?: { id?: string; organizationId?: string };
+      },
+      res: ServerResponse,
+      next: () => void,
+    ) => {
+      const start = Date.now();
+      const rawUrl = req.originalUrl || req.url || "/";
+      const cleanPath = rawUrl.split("?")[0];
 
-    res.on("finish", () => {
-      const durationMs = Date.now() - start;
-      const status = res.statusCode;
+      res.on("finish", () => {
+        const durationMs = Date.now() - start;
+        const status = res.statusCode;
 
-      // 1. Record Prometheus metrics
-      if (metricsService) {
-        metricsService.recordRequest(cleanPath, status, durationMs);
-      }
-
-      // 2. Structured JSON logging (skip polling noise on /health and /metrics unless error)
-      if ((cleanPath === "/health" || cleanPath === "/metrics") && status < 400) {
-        return;
-      }
-
-      const logPayload = {
-        level: status >= 500 ? "error" : status >= 400 ? "warn" : "info",
-        timestamp: new Date().toISOString(),
-        type: "HTTP_ACCESS",
-        requestId:
-          correlationStorage.getStore()?.requestId ||
-          (res.getHeader("X-Request-ID") as string) ||
-          "-",
-        method: req.method,
-        path: cleanPath,
-        status,
-        latencyMs: durationMs,
-        userId: req.user?.id || "-",
-        orgId: req.user?.organizationId || "-",
-      };
-      console.log(JSON.stringify(logPayload));
-    });
-
-    next();
-  });
-
-  // Lightweight cookie parser middleware
-  app.use((req: { headers?: { cookie?: string }; cookies?: Record<string, string> }, _res: unknown, next: () => void) => {
-    if (req.headers?.cookie && !req.cookies) {
-      const parsed: Record<string, string> = {};
-      const pairs = req.headers.cookie.split(";");
-      for (const pair of pairs) {
-        const idx = pair.indexOf("=");
-        if (idx > 0) {
-          const key = decodeURIComponent(pair.slice(0, idx).trim());
-          const val = decodeURIComponent(pair.slice(idx + 1).trim());
-          parsed[key] = val;
+        // 1. Record Prometheus metrics
+        if (metricsService) {
+          metricsService.recordRequest(cleanPath, status, durationMs);
         }
+
+        // 2. Structured JSON logging (skip polling noise on /health and /metrics unless error)
+        if (
+          (cleanPath === "/health" || cleanPath === "/metrics") &&
+          status < 400
+        ) {
+          return;
+        }
+
+        const logPayload = {
+          level: status >= 500 ? "error" : status >= 400 ? "warn" : "info",
+          timestamp: new Date().toISOString(),
+          type: "HTTP_ACCESS",
+          requestId:
+            correlationStorage.getStore()?.requestId ||
+            (res.getHeader("X-Request-ID") as string) ||
+            "-",
+          method: req.method,
+          path: cleanPath,
+          status,
+          latencyMs: durationMs,
+          userId: req.user?.id || "-",
+          orgId: req.user?.organizationId || "-",
+        };
+        console.log(JSON.stringify(logPayload));
+      });
+
+      next();
+    },
+  );
+
+  // Lightweight cookie parser middleware with safe decodeURIComponent guard
+  app.use(
+    (
+      req: { headers?: { cookie?: string }; cookies?: Record<string, string> },
+      _res: unknown,
+      next: () => void,
+    ) => {
+      if (req.headers?.cookie && !req.cookies) {
+        const parsed: Record<string, string> = {};
+        const pairs = req.headers.cookie.split(";");
+        for (const pair of pairs) {
+          const idx = pair.indexOf("=");
+          if (idx > 0) {
+            try {
+              const key = decodeURIComponent(pair.slice(0, idx).trim());
+              const val = decodeURIComponent(pair.slice(idx + 1).trim());
+              parsed[key] = val;
+            } catch {
+              // Malformed URL encoding in cookie string, ignore malformed pair safely
+            }
+          }
+        }
+        req.cookies = parsed;
+      } else if (!req.cookies) {
+        req.cookies = {};
       }
-      req.cookies = parsed;
-    } else if (!req.cookies) {
-      req.cookies = {};
-    }
-    next();
-  });
+      next();
+    },
+  );
 
   // Global validation pipe for incoming request payloads
   app.useGlobalPipes(
@@ -132,9 +176,13 @@ async function bootstrap() {
 
   // Graceful shutdown on SIGTERM / SIGINT with 30s timeout guard
   const gracefulShutdown = async (signal: string) => {
-    console.log(`[Lifecycle] Received ${signal}. Starting 30s graceful shutdown drain...`);
+    console.log(
+      `[Lifecycle] Received ${signal}. Starting 30s graceful shutdown drain...`,
+    );
     const forceExitTimer = setTimeout(() => {
-      console.error("[Lifecycle] Graceful shutdown timeout (30s) exceeded. Forcing process exit.");
+      console.error(
+        "[Lifecycle] Graceful shutdown timeout (30s) exceeded. Forcing process exit.",
+      );
       process.exit(1);
     }, 30000);
     forceExitTimer.unref?.();
@@ -163,4 +211,3 @@ bootstrap().catch((error) => {
   console.error("Failed to start server", error);
   process.exit(1);
 });
-

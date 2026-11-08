@@ -42,9 +42,14 @@ export function checkDtoPipeCoverage(baseDir?: string): {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // Check if line contains @Body() parameter
-      if (line.includes("@Body()")) {
-        // Unpiped @Body() detected
+      // Check if line contains unpiped or non-DtoPipe @Body parameter
+      if (line.includes("@Body(") && !line.includes("@Body(DtoPipe")) {
+        violations.push({
+          file: path.relative(process.cwd(), file),
+          line: i + 1,
+          snippet: line.trim(),
+        });
+      } else if (line.includes("@Body()")) {
         violations.push({
           file: path.relative(process.cwd(), file),
           line: i + 1,
@@ -66,25 +71,41 @@ export function checkDtoPipeCoverage(baseDir?: string): {
 
 // Standalone execution
 if (process.argv[1]?.endsWith("check-dtopipe-coverage.ts")) {
-  console.log("==================================================================");
-  console.log("      CI ARCHITECTURE GATE: DTOPIPE VALIDATION COVERAGE CHECK     ");
-  console.log("==================================================================");
+  console.log(
+    "==================================================================",
+  );
+  console.log(
+    "      CI ARCHITECTURE GATE: DTOPIPE VALIDATION COVERAGE CHECK     ",
+  );
+  console.log(
+    "==================================================================",
+  );
 
   const result = checkDtoPipeCoverage();
 
   console.log(`Controllers Scanned: ${result.totalControllers}`);
-  console.log(`Properly Piped Endpoints (@Body(DtoPipe)): ${result.totalPiped}`);
+  console.log(
+    `Properly Piped Endpoints (@Body(DtoPipe)): ${result.totalPiped}`,
+  );
 
   if (!result.compliant) {
-    console.error(`\n[CI GATE FAILED] Found ${result.violations.length} unpiped @Body() parameters:`);
+    console.error(
+      `\n[CI GATE FAILED] Found ${result.violations.length} unpiped @Body() parameters:`,
+    );
     for (const v of result.violations) {
       console.error(`  - ${v.file}:${v.line} -> ${v.snippet}`);
     }
-    console.error("\nRemediation: Wrap the DTO class with DtoPipe(<DtoClass>) in @Body decorator.");
+    console.error(
+      "\nRemediation: Wrap the DTO class with DtoPipe(<DtoClass>) in @Body decorator.",
+    );
     process.exit(1);
   } else {
-    console.log(`\n[CI GATE PASSED] 100% of @Body() parameters are protected by DtoPipe.`);
-    console.log("==================================================================");
+    console.log(
+      `\n[CI GATE PASSED] 100% of @Body() parameters are protected by DtoPipe.`,
+    );
+    console.log(
+      "==================================================================",
+    );
     process.exit(0);
   }
 }

@@ -8,6 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Lock, Sparkles } from "lucide-react";
 import { useI18n } from "@/i18n";
 
+const KNOWN_TABS = new Set([
+  "account",
+  "localization",
+  "notifications",
+  "career-page",
+  "billing",
+  "integrations",
+  "ai-configuration",
+  "privacy-retention",
+  "sso",
+]);
+
 export default function SubSettingsPage() {
   const router = useRouter();
   const params = useParams();
@@ -18,7 +30,8 @@ export default function SubSettingsPage() {
   const { t } = useI18n();
 
   useEffect(() => {
-    if (tab && tab !== "account") {
+    // Only redirect if tab is completely unknown or not in known list
+    if (tab && !KNOWN_TABS.has(tab)) {
       router.replace("/dashboard/settings");
     }
   }, [tab, router]);

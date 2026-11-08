@@ -6,12 +6,12 @@ import {
   findTenantServiceFiles,
   checkTenantScoping,
   formatReport,
-} from "./check-tenant-scoping.ts";
+} from "../check-tenant-scoping.ts";
 import {
   MODELS_WITHOUT_ORG_COLUMN,
   NON_TENANT_SCOPED_FILES,
   TENANT_SCOPED_MODULES,
-} from "./tenant-scoping.config.ts";
+} from "../tenant-scoping.config.ts";
 
 describe("Tenant Scoping Static Analysis Gate (check-tenant-scoping)", () => {
   let tempDir: string;
@@ -31,7 +31,9 @@ describe("Tenant Scoping Static Analysis Gate (check-tenant-scoping)", () => {
     const files = findTenantServiceFiles();
     expect(files.length).toBeGreaterThanOrEqual(8);
     for (const mod of TENANT_SCOPED_MODULES) {
-      const matched = files.some((f) => f.replace(/\\/g, "/").includes(`/${mod}/`));
+      const matched = files.some((f) =>
+        f.replace(/\\/g, "/").includes(`/${mod}/`),
+      );
       expect(matched).toBe(true);
     }
   });
@@ -160,7 +162,9 @@ export class GuardedService {
     });
 
     expect(passedReport).toContain("[CI GATE PASSED]");
-    expect(passedReport).toContain("All 213 tenant-scoped queries are properly isolated!");
+    expect(passedReport).toContain(
+      "All 213 tenant-scoped queries are properly isolated!",
+    );
 
     const failedReport = formatReport({
       compliant: false,

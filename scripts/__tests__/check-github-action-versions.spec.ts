@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkGithubActionVersions } from "./check-github-action-versions";
+import { checkGithubActionVersions } from "../check-github-action-versions";
 
 describe("CI Gate: lint:github-action-versions (scripts/check-github-action-versions.ts)", () => {
   it("Test 1: passes when workflow uses dorny/paths-filter@v4", () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   parseControllerContent,
   runPermissionAudit,
-} from "./audit-permissions.ts";
+} from "../audit-permissions.ts";
 
 describe("audit-permissions: class-level inheritance & AST extraction", () => {
   it("extracts class-level @RequirePermission when method does not declare one", () => {

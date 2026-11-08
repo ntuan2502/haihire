@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as path from "node:path";
-import { checkNextJsConventions } from "./check-nextjs-conventions";
+import { checkNextJsConventions } from "../check-nextjs-conventions";
 
 describe("CI Gate: lint:nextjs-conventions (scripts/check-nextjs-conventions.ts)", () => {
   const rootDir = "/mock/project";

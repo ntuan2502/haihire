@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { validateProdEmailProvider } from "./check-prod-email-provider.ts";
+import { validateProdEmailProvider } from "../check-prod-email-provider.ts";
 
 describe("CI Gate: check-prod-email-provider", () => {
   const originalEnv = { ...process.env };

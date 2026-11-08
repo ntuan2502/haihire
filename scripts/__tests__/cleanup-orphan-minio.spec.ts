@@ -3,7 +3,7 @@ import {
   pushMetrics,
   pushFailureMetric,
   type CleanupReport,
-} from "./cleanup-orphan-minio.ts";
+} from "../cleanup-orphan-minio.ts";
 
 describe("MinIO Orphan Cleanup Pushgateway Metrics", () => {
   const originalEnv = { ...process.env };
@@ -15,7 +15,10 @@ describe("MinIO Orphan Cleanup Pushgateway Metrics", () => {
     preservedGraceCount: 10,
     deletedCount: 20,
     bytesFreed: 52428800, // 50 MB
-    deletedFiles: ["tenants/org-1/resumes/orphan1.pdf", "tenants/org-2/resumes/orphan2.pdf"],
+    deletedFiles: [
+      "tenants/org-1/resumes/orphan1.pdf",
+      "tenants/org-2/resumes/orphan2.pdf",
+    ],
   };
 
   beforeEach(() => {
@@ -67,26 +70,52 @@ describe("MinIO Orphan Cleanup Pushgateway Metrics", () => {
     await pushMetrics(mockReport);
 
     expect(capturedBody).toContain("minio_orphan_cleanup_scanned_total 150");
-    expect(capturedBody).toContain("minio_orphan_cleanup_orphans_found_total 30");
+    expect(capturedBody).toContain(
+      "minio_orphan_cleanup_orphans_found_total 30",
+    );
     expect(capturedBody).toContain("minio_orphan_cleanup_preserved_total 10");
     expect(capturedBody).toContain("minio_orphan_cleanup_deleted_total 20");
-    expect(capturedBody).toContain("minio_orphan_cleanup_bytes_freed_total 52428800");
-    expect(capturedBody).toContain("minio_orphan_cleanup_last_run_timestamp_seconds ");
+    expect(capturedBody).toContain(
+      "minio_orphan_cleanup_bytes_freed_total 52428800",
+    );
+    expect(capturedBody).toContain(
+      "minio_orphan_cleanup_last_run_timestamp_seconds ",
+    );
     expect(capturedBody).toContain("minio_orphan_cleanup_success 1");
 
     // Assert HELP and TYPE definitions
     expect(capturedBody).toContain("# HELP minio_orphan_cleanup_scanned_total");
-    expect(capturedBody).toContain("# TYPE minio_orphan_cleanup_scanned_total gauge");
-    expect(capturedBody).toContain("# HELP minio_orphan_cleanup_orphans_found_total");
-    expect(capturedBody).toContain("# TYPE minio_orphan_cleanup_orphans_found_total gauge");
-    expect(capturedBody).toContain("# HELP minio_orphan_cleanup_preserved_total");
-    expect(capturedBody).toContain("# TYPE minio_orphan_cleanup_preserved_total gauge");
+    expect(capturedBody).toContain(
+      "# TYPE minio_orphan_cleanup_scanned_total gauge",
+    );
+    expect(capturedBody).toContain(
+      "# HELP minio_orphan_cleanup_orphans_found_total",
+    );
+    expect(capturedBody).toContain(
+      "# TYPE minio_orphan_cleanup_orphans_found_total gauge",
+    );
+    expect(capturedBody).toContain(
+      "# HELP minio_orphan_cleanup_preserved_total",
+    );
+    expect(capturedBody).toContain(
+      "# TYPE minio_orphan_cleanup_preserved_total gauge",
+    );
     expect(capturedBody).toContain("# HELP minio_orphan_cleanup_deleted_total");
-    expect(capturedBody).toContain("# TYPE minio_orphan_cleanup_deleted_total gauge");
-    expect(capturedBody).toContain("# HELP minio_orphan_cleanup_bytes_freed_total");
-    expect(capturedBody).toContain("# TYPE minio_orphan_cleanup_bytes_freed_total gauge");
-    expect(capturedBody).toContain("# HELP minio_orphan_cleanup_last_run_timestamp_seconds");
-    expect(capturedBody).toContain("# TYPE minio_orphan_cleanup_last_run_timestamp_seconds gauge");
+    expect(capturedBody).toContain(
+      "# TYPE minio_orphan_cleanup_deleted_total gauge",
+    );
+    expect(capturedBody).toContain(
+      "# HELP minio_orphan_cleanup_bytes_freed_total",
+    );
+    expect(capturedBody).toContain(
+      "# TYPE minio_orphan_cleanup_bytes_freed_total gauge",
+    );
+    expect(capturedBody).toContain(
+      "# HELP minio_orphan_cleanup_last_run_timestamp_seconds",
+    );
+    expect(capturedBody).toContain(
+      "# TYPE minio_orphan_cleanup_last_run_timestamp_seconds gauge",
+    );
     expect(capturedBody).toContain("# HELP minio_orphan_cleanup_success");
     expect(capturedBody).toContain("# TYPE minio_orphan_cleanup_success gauge");
   });
@@ -116,12 +145,16 @@ describe("MinIO Orphan Cleanup Pushgateway Metrics", () => {
       text: async () => "Internal Server Error",
     } as Response);
 
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     await expect(pushMetrics(mockReport)).resolves.not.toThrow();
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Pushgateway returned 500: Internal Server Error"),
+      expect.stringContaining(
+        "Pushgateway returned 500: Internal Server Error",
+      ),
     );
   });
 
@@ -129,13 +162,19 @@ describe("MinIO Orphan Cleanup Pushgateway Metrics", () => {
   it("Test 5: handles fetch network error (connection refused) without throwing", async () => {
     process.env.PUSHGATEWAY_URL = "http://pushgateway:9091";
 
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("ECONNREFUSED 127.0.0.1:9091"));
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(
+      new Error("ECONNREFUSED 127.0.0.1:9091"),
+    );
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     await expect(pushMetrics(mockReport)).resolves.not.toThrow();
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to push metrics to Pushgateway: ECONNREFUSED 127.0.0.1:9091"),
+      expect.stringContaining(
+        "Failed to push metrics to Pushgateway: ECONNREFUSED 127.0.0.1:9091",
+      ),
     );
   });
 
@@ -163,14 +202,16 @@ describe("MinIO Orphan Cleanup Pushgateway Metrics", () => {
     process.env.PUSHGATEWAY_URL = "http://pushgateway:9091";
 
     let capturedBody = "";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
-      capturedBody = init?.body as string;
-      return {
-        ok: true,
-        status: 200,
-        text: async () => "OK",
-      } as Response;
-    });
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (_url, init) => {
+        capturedBody = init?.body as string;
+        return {
+          ok: true,
+          status: 200,
+          text: async () => "OK",
+        } as Response;
+      });
 
     await pushFailureMetric();
 

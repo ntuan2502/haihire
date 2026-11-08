@@ -28,11 +28,14 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
 dotenv.config();
 
-export type DeepPartialWithTemporal<T> = {
+export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends Date
     ? Date | string | number | null
     : T[P] | unknown;
 };
+
+/** @deprecated Alias for backwards compatibility */
+export type DeepPartialWithTemporal<T> = DeepPartial<T>;
 
 export type PredicateProxy<T> = {
   [K in keyof T]-?: {
@@ -348,7 +351,7 @@ export function createPrisma7Adapter(
           return result as TResult | null;
         },
         async updateAll(
-          patch: DeepPartialWithTemporal<TModel> | Record<string, unknown>,
+          patch: DeepPartial<TModel> | Record<string, unknown>,
         ): Promise<TResult[]> {
           const data = sanitizeData(patch as Record<string, unknown>);
           if (delegate.updateMany) {
@@ -395,7 +398,7 @@ export function createPrisma7Adapter(
         return delegate.count ? delegate.count() : 0;
       },
       async create(
-        data: DeepPartialWithTemporal<TModel> | Record<string, unknown>,
+        data: DeepPartial<TModel> | Record<string, unknown>,
       ): Promise<TModel> {
         const result = delegate.create
           ? await delegate.create({
@@ -409,8 +412,8 @@ export function createPrisma7Adapter(
         update,
         conflictOn,
       }: {
-        create: DeepPartialWithTemporal<TModel> | Record<string, unknown>;
-        update: DeepPartialWithTemporal<TModel> | Record<string, unknown>;
+        create: DeepPartial<TModel> | Record<string, unknown>;
+        update: DeepPartial<TModel> | Record<string, unknown>;
         conflictOn: Record<string, unknown> | PredicateFn<TModel>;
       }): Promise<TModel> {
         let where: Record<string, unknown>;
@@ -434,7 +437,7 @@ export function createPrisma7Adapter(
         set,
         where: whereFn,
       }: {
-        set: DeepPartialWithTemporal<TModel> | Record<string, unknown>;
+        set: DeepPartial<TModel> | Record<string, unknown>;
         where?: Record<string, unknown> | PredicateFn<TModel>;
       }): Promise<{ count: number }> {
         let where: Record<string, unknown> = {};

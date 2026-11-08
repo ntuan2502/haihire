@@ -5,6 +5,9 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
+    "@haihire/shared#build": {
+      "outputs": []
+    },
     "test": {
       "outputs": []
     },

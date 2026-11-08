@@ -2,13 +2,13 @@ packages:
   - "apps/*"
   - "packages/*"
 catalog:
-  "@types/node": ^26.6.5
-  "@vitest/coverage-v8": 5.0.5
-  eslint: ^10.13.0
+  "@types/node": ^26.6.6
+  "@vitest/coverage-v8": 5.1.0
+  eslint: ^10.14.0
   prettier: ^3.9.10
   tsx: ^4.23.15
   typescript: ^6.0.3
-  vitest: 5.0.5
+  vitest: 5.1.0
   zod: ^4.6.7
 overrides:
   follow-redirects: ">=1.16.2"

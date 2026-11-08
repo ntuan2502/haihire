@@ -60,7 +60,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
-    "@playwright/test": "^1.64.1",
+    "@playwright/test": "^1.65.0",
     "eslint": "catalog:",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",

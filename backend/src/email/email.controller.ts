@@ -18,14 +18,11 @@ import { AVAILABLE_VARIABLES } from "./variable-registry";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
-import {
-  SendSystemEmailDto,
-  SendSystemTestEmailDto,
-} from "./dto/send-system-email.dto";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
 
 @Controller("email")
-@UseGuards(AuthGuard("jwt"), RolesGuard)
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
 export class EmailController {
   constructor(
     @Inject(EmailService)
@@ -149,41 +146,5 @@ export class EmailController {
       },
       req.user.organizationId,
     );
-  }
-
-  @Get("system/config")
-  @RequirePermission("email:manage_system")
-  getSystemConfig() {
-    return this.emailService.getSystemEmailConfig();
-  }
-
-  @Post("system/test")
-  @RequirePermission("email:manage_system")
-  sendSystemTestEmail(
-    @Body(DtoPipe(SendSystemTestEmailDto)) dto: SendSystemTestEmailDto,
-  ) {
-    return this.emailService.sendSystemTestEmail(dto);
-  }
-
-  @Post("system/send")
-  @RequirePermission("email:manage_system")
-  sendSystemEmail(@Body(DtoPipe(SendSystemEmailDto)) dto: SendSystemEmailDto) {
-    return this.emailService.sendSystemEmail(dto);
-  }
-
-  @Get("system/logs")
-  @RequirePermission("email:manage_system")
-  getSystemLogs(
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-    @Query("search") search?: string,
-    @Query("status") status?: string,
-  ) {
-    return this.emailService.getSystemLogs({
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      search,
-      status,
-    });
   }
 }

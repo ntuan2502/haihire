@@ -122,7 +122,6 @@ const CATEGORIES: PermissionCategory[] = [
       "email:send",
       "email:manage_templates",
       "email:manage_settings",
-      "email:manage_system",
     ],
   },
   {

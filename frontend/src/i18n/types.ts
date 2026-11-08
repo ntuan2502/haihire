@@ -112,6 +112,7 @@ export interface TranslationSchema {
     INTERVIEW_INVALID_ORGANIZATION: string;
     EMAIL_TEMPLATE_NOT_FOUND: string;
     EMAIL_SETTINGS_NOT_FOUND: string;
+    EMAIL_SETTINGS_INVALID: string;
     EMAIL_ORG_REQUIRED: string;
     INVALID_CREDENTIALS: string;
     USER_EMAIL_EXISTS: string;

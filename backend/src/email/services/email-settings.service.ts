@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
+import { isEmail } from "class-validator";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import {
   AppBadRequestException,
@@ -10,6 +11,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { EncryptionService } from "../../common/encryption.service";
 import { UpdateEmailSettingDto } from "../dto/update-setting.dto";
 import { toInstant } from "../../common/date.util";
+import { env } from "../../config/env";
 
 @Injectable()
 export class EmailSettingsService {
@@ -87,15 +89,61 @@ export class EmailSettingsService {
     ).first();
 
     if (!settings) {
-      return this.getSettings(organizationId);
+      return null;
     }
 
-    return {
-      ...settings,
-      smtpPass: this.encryptionService.decrypt(settings.smtpPass),
-      resendApiKey: this.encryptionService.decrypt(settings.resendApiKey),
-      sendgridApiKey: this.encryptionService.decrypt(settings.sendgridApiKey),
-    };
+    try {
+      return {
+        ...settings,
+        smtpPass: this.encryptionService.decrypt(settings.smtpPass),
+        resendApiKey: this.encryptionService.decrypt(settings.resendApiKey),
+        sendgridApiKey: this.encryptionService.decrypt(settings.sendgridApiKey),
+      };
+    } catch {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.EMAIL_SETTINGS_INVALID,
+        "Saved email credentials could not be decrypted. Save them again before sending email.",
+      );
+    }
+  }
+
+  async requireDeliverySettings(organizationId: string) {
+    const settings = await this.getRawSettings(organizationId);
+    if (!settings) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.EMAIL_SETTINGS_NOT_FOUND,
+        "Configure organization email settings before sending recruitment email.",
+      );
+    }
+
+    const validSmtp =
+      settings.provider === "SMTP" &&
+      settings.smtpHost?.trim() &&
+      settings.smtpUser?.trim() &&
+      settings.smtpPass?.trim() &&
+      settings.smtpPort !== null &&
+      Number.isInteger(settings.smtpPort) &&
+      settings.smtpPort >= 1 &&
+      settings.smtpPort <= 65535;
+    const validResend =
+      settings.provider === "RESEND" && settings.resendApiKey?.trim();
+    const validSendGrid =
+      settings.provider === "SENDGRID" && settings.sendgridApiKey?.trim();
+    const allowSimulation =
+      settings.provider === "SIMULATED" && env.NODE_ENV !== "production";
+
+    if (
+      !settings.fromName.trim() ||
+      !isEmail(settings.fromEmail) ||
+      !(validSmtp || validResend || validSendGrid || allowSimulation)
+    ) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.EMAIL_SETTINGS_INVALID,
+        "Configure a valid sender and provider credentials before sending recruitment email.",
+      );
+    }
+
+    return settings;
   }
 
   async updateSettings(

@@ -76,7 +76,7 @@ All client applications translate `code` through localized dictionaries (`vi.ts`
 | **ApplicationsController** | `/applications` | Candidate job applications, resume upload saga, Kanban stage updates with state machine validation, download presigned URLs. |
 | **CandidatesController** | `/candidates` | Candidate profiles, talent pool search, document attachments, activity history. |
 | **InterviewsController** | `/interviews` | Interview scheduling, Google/Outlook calendar invites, interviewer scorecards, evaluation criteria. |
-| **EmailController** | `/email` | System email settings (SMTP / Resend / SendGrid), template customization, async BullMQ email dispatch, delivery logs. |
+| **EmailController** | `/email` | Organization email settings (SMTP / Resend / SendGrid), templates, async BullMQ dispatch, and organization delivery logs. |
 | **SourcingController** | `/sourcing` | Multi-channel tracking link generator (5 UTM parameters), deduplicated click analytics, source attribution logs. |
 | **ActivitiesController** | `/activities` | Comprehensive audit trail logs for candidate and application mutations (PII-scrubbed). |
 | **WebhookSettingsController** | `/webhook-settings` | Per-organization multi-channel notification webhook configurations (Telegram, Discord, Generic HMAC). |

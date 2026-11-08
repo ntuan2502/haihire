@@ -149,6 +149,52 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
 
   // === EDGE CASES ===
 
+  test("an organization owner cannot access system email routes", async ({ request }) => {
+    const headers = { Authorization: `Bearer ${authToken}` };
+    for (const path of ["config", "logs"]) {
+      const response = await request.get(`/api/email/system/${path}`, { headers });
+      expect(response.status(), path).toBe(404);
+    }
+    for (const path of ["test", "send"]) {
+      const response = await request.post(`/api/email/system/${path}`, { headers });
+      expect(response.status(), path).toBe(404);
+    }
+  });
+
+  test("recruitment email is rejected when the organization's provider is missing or incomplete", async ({ request }) => {
+    const slug = `email-isolation-${randomUUID()}`;
+    const registration = await request.post("/api/auth/register", {
+      data: {
+        name: "Email Isolation Test",
+        email: `${slug}@example.com`,
+        password: "TenantIsolationTest2026!",
+      },
+    });
+    expect(registration.status()).toBe(201);
+    const { accessToken } = await registration.json();
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    const organization = await request.post("/api/organizations", {
+      headers,
+      data: { name: "Email Isolation Test", slug },
+    });
+    expect(organization.status()).toBe(201);
+
+    const testEmail = { headers, data: { to: "candidate@example.com" } };
+    const missing = await request.post("/api/email/test", testEmail);
+    expect(missing.status()).toBe(400);
+    expect(await missing.json()).toMatchObject({ code: "EMAIL_SETTINGS_NOT_FOUND" });
+
+    const settings = await request.put("/api/email/settings", {
+      headers,
+      data: { provider: "RESEND", fromEmail: "recruitment@example.com" },
+    });
+    expect(settings.status()).toBe(200);
+
+    const incomplete = await request.post("/api/email/test", testEmail);
+    expect(incomplete.status()).toBe(400);
+    expect(await incomplete.json()).toMatchObject({ code: "EMAIL_SETTINGS_INVALID" });
+  });
+
   test("a newly registered account can read public jobs but cannot read tenant records", async ({ request }) => {
     const unauthenticated = await request.get(`/api/applications/${betaAppId}`);
     expect(unauthenticated.status()).toBe(401);
@@ -171,6 +217,7 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
       `/api/applications?organizationId=${betaOrgId}`,
       `/api/applications/job/${betaJobId}`,
       `/api/applications/${betaAppId}`,
+      `/api/email/logs?organizationId=${betaOrgId}`,
     ]) {
       const response = await request.get(path, { headers });
       expect(response.status(), path).toBe(403);

@@ -67,7 +67,7 @@ Following the removal of the static `Role.OWNER` enum value in [D-003](../decisi
 
 ---
 
-## 4. The 41 Granular Permissions Matrix
+## 4. Tenant Permission Matrix
 
 Declared in `@haihire/shared` (`packages/shared/src/permissions.ts`):
 
@@ -130,7 +130,6 @@ Declared in `@haihire/shared` (`packages/shared/src/permissions.ts`):
 - `email:send`: Send recruitment emails to candidates.
 - `email:manage_templates`: Author and edit organization email templates.
 - `email:manage_settings`: Configure SMTP, SendGrid, or Resend credentials.
-- `email:manage_system`: Manage system-level email dispatches.
 - `settings:manage_integrations`: Configure outbound webhooks (Discord, Telegram, Generic).
 
 ---

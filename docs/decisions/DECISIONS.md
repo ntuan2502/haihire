@@ -129,3 +129,12 @@
 - **Evidence:** Implementation in `backend/src/organizations/services/organizations-core.service.ts` (`transferOwnership`), sequence diagram in `docs/architecture/security-rbac.md`, and integration test assertions in `backend/test/organizations/transfer-ownership.spec.ts`.
 - **Enforcement:** Verified via integration tests in `backend/test/organizations/transfer-ownership.spec.ts` asserting `ownerMember.role === "ADMIN"` and `oldOwnerUser.role === "ADMIN"` post-transfer.
 - **History:** Formalized during the RBAC transfer ownership audit and bug fix investigation on branch `fix/rbac-transfer-ownership-bugs` in commits `388d9c4` and `ac6e5fd`.
+
+---
+
+## D-012: Separate System and Organization Email
+
+- **Date:** 2026-11-08
+- **Decision:** System email uses deployment configuration and is dispatched by internal services and workers. Organization email APIs use the active organization's settings and return only `ORGANIZATION` delivery logs for that organization. System email routes and their former tenant permission are removed.
+- **Rationale:** Organization ownership grants authority over recruitment email. System delivery and its logs have platform-wide scope.
+- **Enforcement:** `EmailDispatchService` requires a valid organization sender and provider configuration before enqueueing and again before delivery. `SIMULATED` organization delivery is available in development and test. The email service and HTTP isolation tests cover both scopes.

@@ -63,7 +63,6 @@ export type Permission =
   | "email:send"
   | "email:manage_templates"
   | "email:manage_settings"
-  | "email:manage_system"
   // Settings & Integrations
   | "settings:manage_integrations";
 
@@ -172,7 +171,6 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   "email:send": [Role.ADMIN, Role.RECRUITER],
   "email:manage_templates": [Role.ADMIN],
   "email:manage_settings": [Role.ADMIN],
-  "email:manage_system": [Role.ADMIN],
 
   // Settings & Integrations
   "settings:manage_integrations": [Role.ADMIN],

@@ -40,6 +40,7 @@ export class EmailDispatchService {
       true,
     )!;
     if (this.emailQueue) {
+      await this.settingsService.requireDeliverySettings(targetOrgId);
       try {
         const candidateKey = dto.candidateId || dto.to.toLowerCase();
         const appKey = dto.applicationId || "general";
@@ -86,27 +87,26 @@ export class EmailDispatchService {
     organizationId: string,
     senderUser?: { id?: string; name?: string; email?: string },
   ) {
-    const settings = await this.settingsService.getRawSettings(organizationId);
+    const settings =
+      await this.settingsService.requireDeliverySettings(organizationId);
 
     const variables = dto.variables || {};
     const renderedSubject = interpolate(dto.subject, variables);
     const renderedBody = interpolate(dto.body, variables);
 
-    const fromName =
-      senderUser?.name || settings?.fromName || "Recruitment Team";
-    const fromEmail =
-      settings?.fromEmail || senderUser?.email || "careers@workspace.com";
+    const fromName = senderUser?.name || settings.fromName;
+    const fromEmail = settings.fromEmail;
 
     const transporter = EmailTransporterFactory.create({
-      provider: settings?.provider || "SIMULATED",
+      provider: settings.provider,
       fromName,
       fromEmail,
-      smtpHost: settings?.smtpHost,
-      smtpPort: settings?.smtpPort,
-      smtpUser: settings?.smtpUser,
-      smtpPass: settings?.smtpPass,
-      resendApiKey: settings?.resendApiKey,
-      sendgridApiKey: settings?.sendgridApiKey,
+      smtpHost: settings.smtpHost,
+      smtpPort: settings.smtpPort,
+      smtpUser: settings.smtpUser,
+      smtpPass: settings.smtpPass,
+      resendApiKey: settings.resendApiKey,
+      sendgridApiKey: settings.sendgridApiKey,
     });
 
     const sendResult = await transporter.send({
@@ -146,7 +146,7 @@ export class EmailDispatchService {
         title: `Email Sent: ${renderedSubject}`,
         description: `Sent to ${dto.recipientName} (${dto.to}) - Status: ${sendResult.status}`,
         actorId: senderUser?.id || null,
-        actorName: senderUser?.name || settings?.fromName || "Recruiting Team",
+        actorName: fromName,
         actorRole: "ADMIN",
         metadata: {
           emailLogId: logId,
@@ -173,20 +173,21 @@ export class EmailDispatchService {
       organizationId,
       true,
     )!;
-    const settings = await this.settingsService.getRawSettings(targetOrgId);
+    const settings =
+      await this.settingsService.requireDeliverySettings(targetOrgId);
     return this.sendEmail(
       {
         to: dto.to,
         recipientName: "Test Recipient",
-        subject: `[Test] Kiểm tra kết nối gửi email - ${settings?.fromName || "ATS"}`,
+        subject: `[Test] Kiểm tra kết nối gửi email - ${settings.fromName}`,
         body: `<div style="font-family: sans-serif; line-height: 1.6; color: #1e293b; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
   <h2 style="color: #0284c7;">Kiểm tra cấu hình Email thành công! ✅</h2>
   <p>Email này được gửi từ hệ thống ATS để xác thực cấu hình gửi thư của bạn.</p>
   <p><strong>Cấu hình hiện tại:</strong></p>
   <ul>
-    <li>Provider: ${settings?.provider || "SIMULATED"}</li>
-    <li>From Name: ${settings?.fromName || "Recruitment Team"}</li>
-    <li>From Email: ${settings?.fromEmail || "careers@workspace.com"}</li>
+    <li>Provider: ${settings.provider}</li>
+    <li>From Name: ${settings.fromName}</li>
+    <li>From Email: ${settings.fromEmail}</li>
   </ul>
 </div>`,
         templateType: "CUSTOM",
@@ -214,7 +215,7 @@ export class EmailDispatchService {
 
     let query = this.prisma.db.orm.public.EmailLog.where((l) =>
       l.organizationId.eq(targetOrgId),
-    );
+    ).where((l) => l.scope.eq("ORGANIZATION"));
 
     if (opts.candidateId) {
       query = query.where((l) => l.candidateId.eq(opts.candidateId!));

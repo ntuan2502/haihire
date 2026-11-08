@@ -137,6 +137,8 @@ export const en: TranslationSchema = {
       "Requested email template '{templateType}' not found.",
     EMAIL_SETTINGS_NOT_FOUND:
       "Email settings not configured for this organization.",
+    EMAIL_SETTINGS_INVALID:
+      "Check your organization's sender address and email provider credentials before sending.",
     EMAIL_ORG_REQUIRED: "Organization ID is required for email settings.",
     INVALID_CREDENTIALS: "Invalid email or password.",
     USER_EMAIL_EXISTS: "An account with this email already exists.",

@@ -3,6 +3,10 @@ import { EmailService, interpolate, DEFAULT_TEMPLATES } from "./email.service";
 import { EmailTransporterFactory } from "./transporters/transporter.factory";
 import { EncryptionService } from "../common/encryption.service";
 import { env } from "../config/env";
+import {
+  createQueryBuilder,
+  type PredicateFn,
+} from "../test/helpers/prisma-composer-mock";
 
 describe("EmailService", () => {
   let service: EmailService;
@@ -10,7 +14,7 @@ describe("EmailService", () => {
   let mockActivitiesService: { createActivity: ReturnType<typeof vi.fn> };
   let encryptionService: EncryptionService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     encryptionService = new EncryptionService();
     mockActivitiesService = {
       createActivity: vi.fn().mockResolvedValue({ id: "act-1" }),
@@ -107,12 +111,8 @@ describe("EmailService", () => {
               }),
             },
             EmailLog: {
-              where: vi.fn().mockImplementation((_predicateFn) => ({
-                where: vi.fn().mockImplementation(() => ({
-                  all: vi.fn().mockResolvedValue(inMemoryLogs),
-                })),
-                all: vi.fn().mockResolvedValue(inMemoryLogs),
-              })),
+              where: (predicate: PredicateFn<Record<string, unknown>>) =>
+                createQueryBuilder(inMemoryLogs).where(predicate),
               create: vi.fn().mockImplementation(async (data) => {
                 inMemoryLogs.push(data);
                 return data;
@@ -133,6 +133,7 @@ describe("EmailService", () => {
       mockActivitiesService as never,
       encryptionService,
     );
+    await service.updateSettings("org-test", { provider: "SIMULATED" });
   });
 
   describe("Variable Interpolation", () => {
@@ -212,6 +213,102 @@ describe("EmailService", () => {
           type: "EMAIL_SENT",
         }),
       );
+    });
+  });
+
+  describe("Organization delivery configuration", () => {
+    const email = {
+      to: "candidate@example.com",
+      recipientName: "Candidate",
+      subject: "Interview invitation",
+      body: "Please confirm your availability.",
+    };
+
+    it("rejects a missing configuration before enqueueing recruitment email", async () => {
+      const queue = {
+        add: vi.fn().mockResolvedValue({ id: "unexpected-job" }),
+      };
+      const queuedService = new EmailService(
+        mockPrismaService as never,
+        mockActivitiesService as never,
+        encryptionService,
+        queue as never,
+      );
+
+      await expect(
+        queuedService.sendEmail(email, "org-unconfigured"),
+      ).rejects.toMatchObject({
+        code: "EMAIL_SETTINGS_NOT_FOUND",
+      });
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it.each(["SMTP", "RESEND", "SENDGRID", "UNKNOWN"])(
+      "rejects incomplete or unsupported %s settings in the worker",
+      async (provider) => {
+        await service.updateSettings("org-test", { provider });
+        const transporter = vi
+          .spyOn(EmailTransporterFactory, "create")
+          .mockReturnValue({
+            send: vi
+              .fn()
+              .mockResolvedValue({ status: "FAILED", success: false }),
+          });
+
+        try {
+          await expect(
+            service.executeSendEmail(email, "org-test"),
+          ).rejects.toMatchObject({
+            code: "EMAIL_SETTINGS_INVALID",
+          });
+          expect(transporter).not.toHaveBeenCalled();
+        } finally {
+          transporter.mockRestore();
+        }
+      },
+    );
+
+    it("excludes system emails tagged with an organization ID from its logs", async () => {
+      vi.spyOn(service, "getRawSystemEmailConfig").mockReturnValue({
+        ...service.getRawSystemEmailConfig(),
+        provider: "SIMULATED",
+      });
+      await service.sendSystemEmail({ ...email, organizationId: "org-test" });
+
+      expect((await service.getLogs("org-test")).data).toEqual([]);
+      expect((await service.getSystemLogs()).data).toHaveLength(1);
+    });
+
+    it("uses the organization's configured sender and credentials for recruitment email", async () => {
+      await service.updateSettings("org-test", {
+        provider: "RESEND",
+        fromEmail: "recruiting@example.com",
+        resendApiKey: "re_test_only",
+      });
+      const send = vi.fn().mockResolvedValue({ status: "SENT", success: true });
+      const transporter = vi
+        .spyOn(EmailTransporterFactory, "create")
+        .mockReturnValue({ send });
+
+      try {
+        await expect(
+          service.sendEmail(email, "org-test", {
+            email: "personal@example.com",
+          }),
+        ).resolves.toMatchObject({
+          scope: "ORGANIZATION",
+          senderEmail: "recruiting@example.com",
+        });
+        expect(transporter).toHaveBeenCalledWith(
+          expect.objectContaining({
+            provider: "RESEND",
+            resendApiKey: "re_test_only",
+          }),
+        );
+        expect(send).toHaveBeenCalledOnce();
+      } finally {
+        transporter.mockRestore();
+      }
     });
   });
 

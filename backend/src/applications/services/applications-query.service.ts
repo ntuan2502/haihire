@@ -4,7 +4,7 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
 import { formatInterviewRecord } from "../../interviews/constants";
@@ -18,23 +18,6 @@ export class ApplicationsQueryService {
     @Inject(ActivitiesService)
     private readonly activitiesService?: ActivitiesService,
   ) {}
-
-  private async executeTx<T>(
-    fn: (tx: PrismaService["db"]) => Promise<T>,
-  ): Promise<T> {
-    const p = this.prisma as unknown as {
-      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      db: PrismaService["db"];
-    };
-    if (typeof p.transaction === "function") {
-      return p.transaction(fn);
-    }
-    if (typeof p.executeTx === "function") {
-      return p.executeTx(fn);
-    }
-    return fn(this.prisma.db);
-  }
 
   async findByJob(jobId: string, organizationId?: string) {
     const job = await this.prisma.db.orm.public.Job.select(
@@ -486,7 +469,7 @@ export class ApplicationsQueryService {
       }
     }
 
-    await this.executeTx(async (tx) => {
+    await runInTransaction(this.prisma, async (tx) => {
       try {
         const txObj = tx as unknown as {
           orm: {

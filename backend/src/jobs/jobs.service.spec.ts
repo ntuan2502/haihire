@@ -22,6 +22,7 @@ describe("JobsService - Multi-Tenant Job Management", () => {
     createdById?: string | null;
     createdAt: Date;
     updatedAt?: Date;
+    deletedAt?: Date | null;
   }
 
   interface MockApp {
@@ -115,10 +116,79 @@ describe("JobsService - Multi-Tenant Job Management", () => {
                     return mockJobs
                       .filter((j) => {
                         const mockRecord = {
-                          id: { eq: (target: string) => j.id === target },
-                          organizationId: { eq: (target: string) => j.organizationId === target },
+                          id: {
+                            eq: (target: string) => ({
+                              and: (
+                                other:
+                                  | { value?: boolean }
+                                  | boolean
+                                  | null
+                                  | undefined,
+                              ) =>
+                                j.id === target &&
+                                (typeof other === "boolean"
+                                  ? other
+                                  : typeof other === "object" &&
+                                      other !== null &&
+                                      "value" in other
+                                    ? Boolean(
+                                        (other as { value: boolean }).value,
+                                      )
+                                    : Boolean(other)),
+                              value: j.id === target,
+                            }),
+                          },
+                          organizationId: {
+                            eq: (target: string) => ({
+                              and: (
+                                other:
+                                  | { value?: boolean }
+                                  | boolean
+                                  | null
+                                  | undefined,
+                              ) =>
+                                j.organizationId === target &&
+                                (typeof other === "boolean"
+                                  ? other
+                                  : typeof other === "object" &&
+                                      other !== null &&
+                                      "value" in other
+                                    ? Boolean(
+                                        (other as { value: boolean }).value,
+                                      )
+                                    : Boolean(other)),
+                              value: j.organizationId === target,
+                            }),
+                          },
+                          deletedAt: {
+                            isNull: () => ({
+                              and: (
+                                other:
+                                  | { value?: boolean }
+                                  | boolean
+                                  | null
+                                  | undefined,
+                              ) =>
+                                !j.deletedAt &&
+                                (typeof other === "boolean"
+                                  ? other
+                                  : typeof other === "object" &&
+                                      other !== null &&
+                                      "value" in other
+                                    ? Boolean(
+                                        (other as { value: boolean }).value,
+                                      )
+                                    : Boolean(other)),
+                              value: !j.deletedAt,
+                            }),
+                          },
                         };
-                        return predicateFn(mockRecord);
+                        const res = predicateFn(mockRecord);
+                        return typeof res === "object" &&
+                          res !== null &&
+                          "value" in res
+                          ? Boolean(res.value)
+                          : Boolean(res);
                       })
                       .map((j) => ({ ...j }));
                   }),
@@ -126,7 +196,9 @@ describe("JobsService - Multi-Tenant Job Management", () => {
                     const match = mockJobs.find((j) => {
                       const mockRecord = {
                         id: { eq: (target: string) => j.id === target },
-                        organizationId: { eq: (target: string) => j.organizationId === target },
+                        organizationId: {
+                          eq: (target: string) => j.organizationId === target,
+                        },
                       };
                       return predicateFn(mockRecord);
                     });
@@ -135,12 +207,20 @@ describe("JobsService - Multi-Tenant Job Management", () => {
                 })),
               })),
               create: vi.fn().mockImplementation(async (data) => {
-                const newJob = { ...data, createdAt: new Date(), updatedAt: new Date() };
+                const newJob = {
+                  ...data,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
                 mockJobs.push(newJob);
                 return newJob;
               }),
               upsert: vi.fn().mockImplementation(async ({ create }) => {
-                mockJobs.push({ ...create, createdAt: new Date(), updatedAt: new Date() });
+                mockJobs.push({
+                  ...create,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                });
                 return create;
               }),
               where: vi.fn().mockImplementation((predicateFn) => ({
@@ -239,8 +319,12 @@ describe("JobsService - Multi-Tenant Job Management", () => {
 
       expect(results.total).toBe(2);
       expect(results.data.length).toBe(2);
-      expect(results.data.every((j) => j.organizationId === "org-1")).toBe(true);
-      expect(results.data.some((j) => j.title.includes("Competitor Org"))).toBe(false);
+      expect(results.data.every((j) => j.organizationId === "org-1")).toBe(
+        true,
+      );
+      expect(results.data.some((j) => j.title.includes("Competitor Org"))).toBe(
+        false,
+      );
     });
 
     it("should return only jobs belonging to org-2 when filtered by org-2", async () => {
@@ -465,7 +549,11 @@ describe("JobsService - Multi-Tenant Job Management", () => {
         organizationSlug: "acme-corp",
         status: "CLOSED",
       });
-      expect(closedReq.data.some((j) => j.status === "CLOSED" || j.status === "ARCHIVED")).toBe(false);
+      expect(
+        closedReq.data.some(
+          (j) => j.status === "CLOSED" || j.status === "ARCHIVED",
+        ),
+      ).toBe(false);
     });
 
     it("should throw NotFoundException when public user tries to access a DRAFT job via findBySlug", async () => {

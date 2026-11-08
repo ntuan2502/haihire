@@ -1,15 +1,8 @@
-import {
-  Inject,
-  Injectable,
-  Optional,
-} from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import crypto from "node:crypto";
-import {
-  APP_ERROR_CODES,
-  SourcingChannel,
-} from "@haihire/shared";
+import { APP_ERROR_CODES, SourcingChannel } from "@haihire/shared";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -17,12 +10,15 @@ import {
   AppNotFoundException,
 } from "../../common/app-exception";
 import { MinioService } from "../../minio/minio.service";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { EmailService } from "../../email/email.service";
 import { buildDynamicEmailContext } from "../../email/variable-registry";
 import { CreateApplicationDto } from "../dto/create-application.dto";
-import { validateUploadedFile, sanitizeFilename } from "../../common/upload-utils";
+import {
+  validateUploadedFile,
+  sanitizeFilename,
+} from "../../common/upload-utils";
 import { fixUtf8String } from "../../common/doc-utils";
 import { toInstant } from "../../common/date.util";
 import { ApplicationsQueryService } from "./applications-query.service";
@@ -47,22 +43,8 @@ export class ApplicationsSagaService {
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
   ) {
-    this.query = queryService || new ApplicationsQueryService(prisma, activitiesService);
-  }
-
-  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
-    const p = this.prisma as unknown as {
-      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      db: PrismaService["db"];
-    };
-    if (typeof p.transaction === "function") {
-      return p.transaction(fn);
-    }
-    if (typeof p.executeTx === "function") {
-      return p.executeTx(fn);
-    }
-    return fn(this.prisma.db);
+    this.query =
+      queryService || new ApplicationsQueryService(prisma, activitiesService);
   }
 
   async create(
@@ -110,7 +92,13 @@ export class ApplicationsSagaService {
     }
 
     // 1. Upload CV to MinIO S3 Object Storage if file is provided (SAGA Step 1: Pre-transaction storage upload)
-    let uploadResult: { url: string; originalName: string; size: number; mimeType: string; fileName?: string } = {
+    let uploadResult: {
+      url: string;
+      originalName: string;
+      size: number;
+      mimeType: string;
+      fileName?: string;
+    } = {
       url: "",
       originalName: "Candidate Resume",
       size: 0,
@@ -121,8 +109,14 @@ export class ApplicationsSagaService {
 
     if (file) {
       validateUploadedFile(file);
-      uploadResult = await this.minioService.uploadFile(file, "resumes", job.organizationId);
-      uploadResult.originalName = sanitizeFilename(fixUtf8String(file.originalname || "resume.pdf"));
+      uploadResult = await this.minioService.uploadFile(
+        file,
+        "resumes",
+        job.organizationId,
+      );
+      uploadResult.originalName = sanitizeFilename(
+        fixUtf8String(file.originalname || "resume.pdf"),
+      );
       uploadedFileInMinio = true;
     } else if (dto.resumeUrl) {
       uploadResult = {
@@ -147,7 +141,7 @@ export class ApplicationsSagaService {
     let utmCampaign: string | null = dto.utmCampaign?.trim() || null;
 
     try {
-      created = await this.executeTx(async (tx) => {
+      created = await runInTransaction(this.prisma, async (tx) => {
         // 2. Resolve or create Candidate
         let candidateId = dto.candidateId;
 
@@ -193,7 +187,10 @@ export class ApplicationsSagaService {
           }
         } else {
           // Validate candidate exists and belongs to the same organization as the target job
-          const existingCandidate = await tx.orm.public.Candidate.select("id", "organizationId")
+          const existingCandidate = await tx.orm.public.Candidate.select(
+            "id",
+            "organizationId",
+          )
             .where((c) => c.id.eq(candidateId as string))
             .first();
 
@@ -203,7 +200,10 @@ export class ApplicationsSagaService {
               `Candidate with ID ${candidateId} not found`,
             );
           }
-          if (job.organizationId && existingCandidate.organizationId !== job.organizationId) {
+          if (
+            job.organizationId &&
+            existingCandidate.organizationId !== job.organizationId
+          ) {
             throw new AppForbiddenException(
               APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
               "Candidate does not belong to the target job's organization.",
@@ -256,7 +256,8 @@ export class ApplicationsSagaService {
             (!job.organizationId || link.organizationId === job.organizationId)
           ) {
             trackingLinkId = link.id;
-            sourceChannel = (link.source as SourcingChannel) || SourcingChannel.OTHER;
+            sourceChannel =
+              (link.source as SourcingChannel) || SourcingChannel.OTHER;
             sourceDetails = link.customSource || null;
             if (!utmCampaign && link.campaign) {
               utmCampaign = link.campaign;
@@ -271,17 +272,31 @@ export class ApplicationsSagaService {
               norm = `https://${norm}`;
             }
             const parsed = new URL(norm);
-            referrerDomain = parsed.hostname.replace(/^www\./, "").toLowerCase();
+            referrerDomain = parsed.hostname
+              .replace(/^www\./, "")
+              .toLowerCase();
 
-            if (referrerDomain.includes("linkedin.com")) sourceChannel = SourcingChannel.LINKEDIN;
-            else if (referrerDomain.includes("indeed.com")) sourceChannel = SourcingChannel.INDEED;
-            else if (referrerDomain.includes("google.com")) sourceChannel = SourcingChannel.GOOGLE_JOBS;
-            else if (referrerDomain.includes("glassdoor.com")) sourceChannel = SourcingChannel.GLASSDOOR;
-            else if (referrerDomain.includes("facebook.com")) sourceChannel = SourcingChannel.FACEBOOK;
-            else if (referrerDomain.includes("twitter.com") || referrerDomain.includes("x.com")) sourceChannel = SourcingChannel.TWITTER_X;
-            else if (referrerDomain.includes("reddit.com")) sourceChannel = SourcingChannel.REDDIT;
-            else if (referrerDomain.includes("stackoverflow.com")) sourceChannel = SourcingChannel.STACK_OVERFLOW;
-            else if (referrerDomain.includes("handshake.com")) sourceChannel = SourcingChannel.HANDSHAKE;
+            if (referrerDomain.includes("linkedin.com"))
+              sourceChannel = SourcingChannel.LINKEDIN;
+            else if (referrerDomain.includes("indeed.com"))
+              sourceChannel = SourcingChannel.INDEED;
+            else if (referrerDomain.includes("google.com"))
+              sourceChannel = SourcingChannel.GOOGLE_JOBS;
+            else if (referrerDomain.includes("glassdoor.com"))
+              sourceChannel = SourcingChannel.GLASSDOOR;
+            else if (referrerDomain.includes("facebook.com"))
+              sourceChannel = SourcingChannel.FACEBOOK;
+            else if (
+              referrerDomain.includes("twitter.com") ||
+              referrerDomain.includes("x.com")
+            )
+              sourceChannel = SourcingChannel.TWITTER_X;
+            else if (referrerDomain.includes("reddit.com"))
+              sourceChannel = SourcingChannel.REDDIT;
+            else if (referrerDomain.includes("stackoverflow.com"))
+              sourceChannel = SourcingChannel.STACK_OVERFLOW;
+            else if (referrerDomain.includes("handshake.com"))
+              sourceChannel = SourcingChannel.HANDSHAKE;
             else if (referrerDomain) sourceChannel = SourcingChannel.OTHER;
           } catch {
             // Ignore URL parse error
@@ -315,12 +330,17 @@ export class ApplicationsSagaService {
     } catch (dbError) {
       // Step 3: Compensating action — rollback MinIO uploaded file
       if (uploadedFileInMinio && (uploadResult.fileName || uploadResult.url)) {
-        const objectToDelete = uploadResult.fileName || this.minioService.extractObjectName(uploadResult.url);
+        const objectToDelete =
+          uploadResult.fileName ||
+          this.minioService.extractObjectName(uploadResult.url);
         if (objectToDelete) {
           try {
             await this.minioService.deleteFile(objectToDelete);
           } catch (compensationErr: unknown) {
-            const errMsg = compensationErr instanceof Error ? compensationErr.message : String(compensationErr);
+            const errMsg =
+              compensationErr instanceof Error
+                ? compensationErr.message
+                : String(compensationErr);
             if (this.orphanCleanupQueue) {
               try {
                 await this.orphanCleanupQueue.add(
@@ -342,12 +362,20 @@ export class ApplicationsSagaService {
                     removeOnFail: false,
                   },
                 );
-                console.warn(`Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`);
+                console.warn(
+                  `Compensating delete failed for ${objectToDelete}, queued for retry in DLQ: ${errMsg}`,
+                );
               } catch (queueErr: unknown) {
-                console.error("Failed to enqueue orphan file to cleanup queue:", queueErr);
+                console.error(
+                  "Failed to enqueue orphan file to cleanup queue:",
+                  queueErr,
+                );
               }
             } else {
-              console.warn("Failed to delete MinIO file during transaction compensation:", compensationErr);
+              console.warn(
+                "Failed to delete MinIO file during transaction compensation:",
+                compensationErr,
+              );
             }
           }
         }
@@ -381,10 +409,15 @@ export class ApplicationsSagaService {
 
       if (result.candidate.email) {
         try {
-          const template = await this.emailService.getTemplateByType(orgId, "APPLICATION_CONFIRMATION");
+          const template = await this.emailService.getTemplateByType(
+            orgId,
+            "APPLICATION_CONFIRMATION",
+          );
           if (template && template.enabled) {
             let orgName = "Company";
-            const org = await this.prisma.db.orm.public.Organization.select("name")
+            const org = await this.prisma.db.orm.public.Organization.select(
+              "name",
+            )
               .where((o) => o.id.eq(orgId))
               .first();
             if (org?.name) {

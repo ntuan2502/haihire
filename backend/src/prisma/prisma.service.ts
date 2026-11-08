@@ -61,22 +61,31 @@ export class PrismaService implements OnModuleInit {
             },
             update: {
               name: "Admin",
+              slug: "admin",
               ownerId: adminUserId,
+              updatedAt: toInstant(),
             },
-            conflictOn: { slug: "admin" },
+            conflictOn: { id: adminOrgId },
           });
 
           await this.db.orm.public.User.upsert({
             create: {
               id: adminUserId,
               email: DEMO_ACCOUNTS.ADMIN.email,
-              name: DEMO_ACCOUNTS.ADMIN.name,
-              role: DEMO_ACCOUNTS.ADMIN.role,
+              name: "Demo Admin",
               password: hashedPassword,
+              role: "ADMIN",
               organizationId: adminOrgId,
               updatedAt: toInstant(),
             },
-            update: {},
+            update: {
+              email: DEMO_ACCOUNTS.ADMIN.email,
+              name: "Demo Admin",
+              password: hashedPassword,
+              role: "ADMIN",
+              organizationId: adminOrgId,
+              updatedAt: toInstant(),
+            },
             conflictOn: { email: DEMO_ACCOUNTS.ADMIN.email },
           });
 
@@ -84,13 +93,18 @@ export class PrismaService implements OnModuleInit {
             create: {
               id: memberUserId,
               email: DEMO_ACCOUNTS.MEMBER.email,
-              name: DEMO_ACCOUNTS.MEMBER.name,
-              role: DEMO_ACCOUNTS.MEMBER.role,
+              name: "Demo Member",
               password: hashedPassword,
-              organizationId: null,
+              role: "MEMBER",
               updatedAt: toInstant(),
             },
-            update: {},
+            update: {
+              email: DEMO_ACCOUNTS.MEMBER.email,
+              name: "Demo Member",
+              password: hashedPassword,
+              role: "MEMBER",
+              updatedAt: toInstant(),
+            },
             conflictOn: { email: DEMO_ACCOUNTS.MEMBER.email },
           });
           console.log(
@@ -103,4 +117,26 @@ export class PrismaService implements OnModuleInit {
       console.warn("Database connection pending or initializing...", msg);
     }
   }
+}
+
+/**
+ * Executes a callback within a database transaction, reusing an existing ALS context
+ * or falling back gracefully to mock / plain DB runners across unit tests and production.
+ */
+export async function runInTransaction<T>(
+  prisma: PrismaService,
+  fn: (tx: PrismaService["db"]) => Promise<T>,
+): Promise<T> {
+  const p = prisma as unknown as {
+    transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
+    executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
+    db: PrismaService["db"];
+  };
+  if (typeof p.transaction === "function") {
+    return p.transaction(fn);
+  }
+  if (typeof p.executeTx === "function") {
+    return p.executeTx(fn);
+  }
+  return fn(p.db ?? prisma.db);
 }

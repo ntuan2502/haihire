@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import bcrypt from "bcryptjs";
+import { evaluatePredicate } from "./helpers/prisma-composer-mock";
 import { AuthService } from "../auth/auth.service";
 import { JobsService } from "../jobs/jobs.service";
 import { ApplicationsService } from "../applications/applications.service";
@@ -95,12 +96,20 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
             },
             Job: {
               create: vi.fn().mockImplementation(async (record) => {
-                const newJob = { id: `job-${Date.now()}`, ...record, createdAt: new Date() };
+                const newJob = {
+                  id: `job-${Date.now()}`,
+                  ...record,
+                  createdAt: new Date(),
+                };
                 dbState.jobs.push(newJob);
                 return newJob;
               }),
               upsert: vi.fn().mockImplementation(async ({ create }) => {
-                const newJob = { id: `job-${Date.now()}`, ...create, createdAt: new Date() };
+                const newJob = {
+                  id: `job-${Date.now()}`,
+                  ...create,
+                  createdAt: new Date(),
+                };
                 dbState.jobs.push(newJob);
                 return newJob;
               }),
@@ -109,24 +118,13 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
                 where: vi.fn().mockImplementation((predicateFn) => ({
                   all: vi.fn().mockImplementation(async () => {
                     return dbState.jobs.filter((j) =>
-                      predicateFn({
-                        organizationId: { eq: (target: string) => j.organizationId === target },
-                        id: {
-                          eq: (target: string) => j.id === target,
-                          in: (arr: string[]) => arr.includes(j.id as string),
-                        },
-                      }),
+                      evaluatePredicate(j, predicateFn),
                     );
                   }),
                   first: vi.fn().mockImplementation(async () => {
                     return (
                       dbState.jobs.find((j) =>
-                        predicateFn({
-                          id: {
-                            eq: (target: string) => j.id === target,
-                            in: (arr: string[]) => arr.includes(j.id as string),
-                          },
-                        }),
+                        evaluatePredicate(j, predicateFn),
                       ) || null
                     );
                   }),
@@ -146,25 +144,26 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
               }),
               select: vi.fn().mockImplementation((..._fields: string[]) => {
                 const createCandidateQuery = (
-                  predicates: Array<(c: Record<string, unknown>) => boolean> = [],
+                  predicates: Array<
+                    (c: Record<string, unknown>) => boolean
+                  > = [],
                 ) => ({
                   where: vi.fn().mockImplementation((predicateFn) => {
                     return createCandidateQuery([
                       ...predicates,
-                      (c) =>
-                        predicateFn({
-                          organizationId: { eq: (target: string) => c.organizationId === target },
-                          id: { eq: (target: string) => c.id === target },
-                          email: { eq: (target: string) => c.email === target },
-                        }),
+                      (c) => evaluatePredicate(c, predicateFn),
                     ]);
                   }),
                   all: vi.fn().mockImplementation(async () => {
-                    return dbState.candidates.filter((c) => predicates.every((p) => p(c)));
+                    return dbState.candidates.filter((c) =>
+                      predicates.every((p) => p(c)),
+                    );
                   }),
                   first: vi.fn().mockImplementation(async () => {
                     return (
-                      dbState.candidates.find((c) => predicates.every((p) => p(c))) || null
+                      dbState.candidates.find((c) =>
+                        predicates.every((p) => p(c)),
+                      ) || null
                     );
                   }),
                 });
@@ -173,7 +172,9 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
               where: vi.fn().mockImplementation((predicateFn) => ({
                 update: vi.fn().mockImplementation(async (updates) => {
                   const target = dbState.candidates.find((c) =>
-                    predicateFn({ id: { eq: (targetId: string) => c.id === targetId } }),
+                    predicateFn({
+                      id: { eq: (targetId: string) => c.id === targetId },
+                    }),
                   );
                   if (target) {
                     Object.assign(target, updates);
@@ -183,7 +184,9 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
                 }),
                 delete: vi.fn().mockImplementation(async () => {
                   const idx = dbState.candidates.findIndex((c) =>
-                    predicateFn({ id: { eq: (target: string) => c.id === target } }),
+                    predicateFn({
+                      id: { eq: (target: string) => c.id === target },
+                    }),
                   );
                   if (idx !== -1) {
                     const deleted = dbState.candidates.splice(idx, 1)[0];
@@ -205,7 +208,9 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
                   dbState.documents = dbState.documents.filter(
                     (d) =>
                       !predicateFn({
-                        candidateId: { eq: (target: string) => d.candidateId === target },
+                        candidateId: {
+                          eq: (target: string) => d.candidateId === target,
+                        },
                         id: { eq: (target: string) => d.id === target },
                         url: { eq: (target: string) => d.url === target },
                       }),
@@ -227,7 +232,9 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
               }),
               select: vi.fn().mockImplementation((..._fields: string[]) => {
                 const createApplicationQuery = (
-                  predicates: Array<(a: Record<string, unknown>) => boolean> = [],
+                  predicates: Array<
+                    (a: Record<string, unknown>) => boolean
+                  > = [],
                 ) => ({
                   where: vi.fn().mockImplementation((predicateFn) => {
                     return createApplicationQuery([
@@ -236,64 +243,82 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
                         predicateFn({
                           candidateId: {
                             eq: (target: string) => a.candidateId === target,
-                            in: (arr: string[]) => arr.includes(a.candidateId as string),
+                            in: (arr: string[]) =>
+                              arr.includes(a.candidateId as string),
                           },
                           jobId: {
                             eq: (target: string) => a.jobId === target,
-                            in: (arr: string[]) => arr.includes(a.jobId as string),
+                            in: (arr: string[]) =>
+                              arr.includes(a.jobId as string),
                           },
                           id: { eq: (target: string) => a.id === target },
                         }),
                     ]);
                   }),
                   all: vi.fn().mockImplementation(async () => {
-                    return dbState.applications.filter((a) => predicates.every((p) => p(a)));
+                    return dbState.applications.filter((a) =>
+                      predicates.every((p) => p(a)),
+                    );
                   }),
                   first: vi.fn().mockImplementation(async () => {
                     return (
-                      dbState.applications.find((a) => predicates.every((p) => p(a))) || null
+                      dbState.applications.find((a) =>
+                        predicates.every((p) => p(a)),
+                      ) || null
                     );
                   }),
                 });
                 return createApplicationQuery();
               }),
-              where: vi.fn().mockImplementation(function whereBuilder(predicateFn) {
-                const predicates = [predicateFn];
-                const builder = {
-                  where: vi.fn().mockImplementation((nextFn) => {
-                    predicates.push(nextFn);
-                    return builder;
-                  }),
-                  update: vi.fn().mockImplementation(async (updates) => {
-                    const target = dbState.applications.find((a) => {
-                      const mockRecord = {
-                        id: { eq: (target: string) => a.id === target },
-                        jobId: { eq: (target: string) => a.jobId === target },
-                        candidateId: { eq: (target: string) => a.candidateId === target },
-                        stage: { eq: (target: string) => a.stage === target },
-                      };
-                      return predicates.every((fn) => fn(mockRecord));
-                    });
-                    if (target) {
-                      Object.assign(target, updates);
-                      return { ...target };
-                    }
-                    return null;
-                  }),
-                  delete: vi.fn().mockImplementation(async () => {
-                    const idx = dbState.applications.findIndex((a) =>
-                      predicates.every((fn) => fn({ id: { eq: (target: string) => a.id === target } })),
-                    );
-                    if (idx !== -1) dbState.applications.splice(idx, 1);
-                    return { count: 1 };
-                  }),
-                };
-                return builder;
-              }),
+              where: vi
+                .fn()
+                .mockImplementation(function whereBuilder(predicateFn) {
+                  const predicates = [predicateFn];
+                  const builder = {
+                    where: vi.fn().mockImplementation((nextFn) => {
+                      predicates.push(nextFn);
+                      return builder;
+                    }),
+                    update: vi.fn().mockImplementation(async (updates) => {
+                      const target = dbState.applications.find((a) => {
+                        const mockRecord = {
+                          id: { eq: (target: string) => a.id === target },
+                          jobId: { eq: (target: string) => a.jobId === target },
+                          candidateId: {
+                            eq: (target: string) => a.candidateId === target,
+                          },
+                          stage: { eq: (target: string) => a.stage === target },
+                        };
+                        return predicates.every((fn) => fn(mockRecord));
+                      });
+                      if (target) {
+                        Object.assign(target, updates);
+                        return { ...target };
+                      }
+                      return null;
+                    }),
+                    delete: vi.fn().mockImplementation(async () => {
+                      const idx = dbState.applications.findIndex((a) =>
+                        predicates.every((fn) =>
+                          fn({
+                            id: { eq: (target: string) => a.id === target },
+                          }),
+                        ),
+                      );
+                      if (idx !== -1) dbState.applications.splice(idx, 1);
+                      return { count: 1 };
+                    }),
+                  };
+                  return builder;
+                }),
             },
             ActivityLog: {
               create: vi.fn().mockImplementation(async (record) => {
-                const newActivity = { id: `act-${Date.now()}`, ...record, createdAt: new Date() };
+                const newActivity = {
+                  id: `act-${Date.now()}`,
+                  ...record,
+                  createdAt: new Date(),
+                };
                 dbState.activities.push(newActivity);
                 return newActivity;
               }),
@@ -325,7 +350,11 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
 
     const mockActivitiesService = {
       createActivity: vi.fn().mockImplementation(async (record) => {
-        dbState.activities.push({ id: `act-${Date.now()}`, ...record, createdAt: new Date() });
+        dbState.activities.push({
+          id: `act-${Date.now()}`,
+          ...record,
+          createdAt: new Date(),
+        });
         return record;
       }),
     };
@@ -337,7 +366,10 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
 
     authService = new AuthService(mockPrisma as never, mockJwtService as never);
     jobsService = new JobsService(mockPrisma as never);
-    candidatesService = new CandidatesService(mockPrisma as never, mockMinioService as never);
+    candidatesService = new CandidatesService(
+      mockPrisma as never,
+      mockMinioService as never,
+    );
     applicationsService = new ApplicationsService(
       mockPrisma as never,
       mockMinioService as never,
@@ -357,16 +389,15 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     expect(loginResult.user.organizationId).toBe("org-test-1");
 
     // 2. Job Creation Step
-    const createdJob = await jobsService.create(
-      {
-        title: "Senior Full-Stack Engineer (E2E)",
-        department: "Engineering",
-        location: "Hanoi, Vietnam",
-        type: "FULL_TIME",
-        description: "Leading frontend and backend development in TypeScript.",
-        status: "PUBLISHED",
-        organizationId: "org-test-1",
-      });
+    const createdJob = await jobsService.create({
+      title: "Senior Full-Stack Engineer (E2E)",
+      department: "Engineering",
+      location: "Hanoi, Vietnam",
+      type: "FULL_TIME",
+      description: "Leading frontend and backend development in TypeScript.",
+      status: "PUBLISHED",
+      organizationId: "org-test-1",
+    });
     expect(createdJob).toBeDefined();
     expect(createdJob.title).toBe("Senior Full-Stack Engineer (E2E)");
     expect(dbState.jobs.length).toBe(1);
@@ -408,10 +439,10 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     expect(pagedCandidates.data[0].name).toBe("Nguyen Van A");
 
     // 5. Kanban Stage Transition (Move from APPLIED to INTERVIEW)
-    const updatedApp = await applicationsService.updateStage(
-      createdApp.id,
-      { stage: "INTERVIEW", orderIndex: 1 },
-    );
+    const updatedApp = await applicationsService.updateStage(createdApp.id, {
+      stage: "INTERVIEW",
+      orderIndex: 1,
+    });
     expect(updatedApp.stage).toBe("INTERVIEW");
 
     // 6. Verify Soft Deletion of Candidate (Two-Tier Deletion Protocol)
@@ -419,10 +450,14 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     expect(deleteResult.success).toBe(true);
 
     // Verify candidate is marked with deletedAt and excluded from active listing
-    const candidateInDb = dbState.candidates.find((c) => c.id === createdCandidate.id);
+    const candidateInDb = dbState.candidates.find(
+      (c) => c.id === createdCandidate.id,
+    );
     expect(candidateInDb?.deletedAt).toBeDefined();
 
-    const pagedAfterDelete = await candidatesService.findAll("org-1", { limit: 10 });
+    const pagedAfterDelete = await candidatesService.findAll("org-1", {
+      limit: 10,
+    });
     expect(pagedAfterDelete.data.length).toBe(0);
   });
 });

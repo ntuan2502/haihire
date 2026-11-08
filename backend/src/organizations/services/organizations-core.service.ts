@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { CreateOrgDto } from "../dto/create-org.dto";
 import { UpdateOrgDto } from "../dto/update-org.dto";
 import { toInstant } from "../../common/date.util";
@@ -23,23 +23,6 @@ export class OrganizationsCoreService {
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
-
-  private async executeTx<T>(
-    fn: (tx: PrismaService["db"]) => Promise<T>,
-  ): Promise<T> {
-    const p = this.prisma as unknown as {
-      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      db: PrismaService["db"];
-    };
-    if (typeof p.transaction === "function") {
-      return p.transaction(fn);
-    }
-    if (typeof p.executeTx === "function") {
-      return p.executeTx(fn);
-    }
-    return fn(this.prisma.db);
-  }
 
   async create(userId: string, dto: CreateOrgDto) {
     const normalizedSlug = dto.slug.toLowerCase().trim();
@@ -430,7 +413,7 @@ export class OrganizationsCoreService {
     );
 
     // Execute atomic cleanup of users, memberships, and organization inside a single transaction
-    await this.executeTx(async (tx) => {
+    await runInTransaction(this.prisma, async (tx) => {
       // Unlink users from this org
       await tx.orm.public.User.where((u) =>
         u.organizationId.eq(orgId),
@@ -532,11 +515,12 @@ export class OrganizationsCoreService {
         .updateAll({ role: "ADMIN", updatedAt: now });
 
       if (targetMembership) {
-        const [promotedMembership] = await tx.orm.public.OrganizationMember.where(
-          (m) => m.id.eq(targetMembership.id),
-        )
-          .where((m) => m.organizationId.eq(organizationId))
-          .updateAll({ role: "ADMIN", updatedAt: now });
+        const [promotedMembership] =
+          await tx.orm.public.OrganizationMember.where((m) =>
+            m.id.eq(targetMembership.id),
+          )
+            .where((m) => m.organizationId.eq(organizationId))
+            .updateAll({ role: "ADMIN", updatedAt: now });
         if (!promotedMembership) {
           throw memberRequired();
         }

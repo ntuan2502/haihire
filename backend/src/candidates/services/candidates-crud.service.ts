@@ -7,7 +7,7 @@ import {
   AppForbiddenException,
 } from "../../common/app-exception";
 import { MinioService } from "../../minio/minio.service";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { CandidatesProfileService } from "./candidates-profile.service";
 import { CreateCandidateDto } from "../dto/create-candidate.dto";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
@@ -25,23 +25,6 @@ export class CandidatesCrudService {
     @Inject(CandidatesProfileService)
     private readonly profileService: CandidatesProfileService,
   ) {}
-
-  private async executeTx<T>(
-    fn: (tx: PrismaService["db"]) => Promise<T>,
-  ): Promise<T> {
-    const p = this.prisma as unknown as {
-      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      db: PrismaService["db"];
-    };
-    if (typeof p.transaction === "function") {
-      return p.transaction(fn);
-    }
-    if (typeof p.executeTx === "function") {
-      return p.executeTx(fn);
-    }
-    return fn(this.prisma.db);
-  }
 
   async findAll(
     organizationId?: string,
@@ -85,7 +68,7 @@ export class CandidatesCrudService {
       "updatedAt",
       "deletedAt",
     )
-      .where((c) => c.organizationId.eq(targetOrgId))
+      .where((c) => c.organizationId.eq(targetOrgId).and(c.deletedAt.isNull()))
       .all();
 
     let filtered = candidates.filter((c) => !c.deletedAt);
@@ -305,7 +288,7 @@ export class CandidatesCrudService {
     await this.profileService.findOne(id, tenantOrgId);
 
     // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
-    await this.executeTx(async (tx) => {
+    await runInTransaction(this.prisma, async (tx) => {
       await tx.orm.public.Candidate.where((c) => c.id.eq(id)).update({
         deletedAt: toInstant(),
       });

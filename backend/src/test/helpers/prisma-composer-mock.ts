@@ -21,6 +21,8 @@ export interface ProxyField {
   };
   gt: (target: unknown) => { and: (other: unknown) => unknown; value: boolean };
   lt: (target: unknown) => { and: (other: unknown) => unknown; value: boolean };
+  isNull: () => { and: (other: unknown) => unknown; value: boolean };
+  isNotNull: () => { and: (other: unknown) => unknown; value: boolean };
 }
 
 export type ProxyRecord = Record<string, ProxyField>;
@@ -118,6 +120,9 @@ export function evaluatePredicate<T extends MockRecord>(
               (fieldVal as number | string | Date) <
                 (target as number | string | Date),
           ),
+        isNull: () => wrapResult(fieldVal === null || fieldVal === undefined),
+        isNotNull: () =>
+          wrapResult(fieldVal !== null && fieldVal !== undefined),
       };
     },
   });

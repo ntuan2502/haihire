@@ -1,6 +1,6 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { toInstant } from "../../common/date.util";
 import { AppBadRequestException } from "../../common/app-exception";
@@ -45,23 +45,6 @@ export class OrganizationsRolesService {
     @Inject(EventsService)
     private readonly eventsService?: EventsService,
   ) {}
-
-  private async executeTx<T>(
-    fn: (tx: PrismaService["db"]) => Promise<T>,
-  ): Promise<T> {
-    const p = this.prisma as unknown as {
-      transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>;
-      db: PrismaService["db"];
-    };
-    if (typeof p.transaction === "function") {
-      return p.transaction(fn);
-    }
-    if (typeof p.executeTx === "function") {
-      return p.executeTx(fn);
-    }
-    return fn(this.prisma.db);
-  }
 
   /**
    * Returns the complete matrix of 5 roles x all permissions for the specified organization.
@@ -131,7 +114,7 @@ export class OrganizationsRolesService {
 
     const role = roleStr as Role;
 
-    await this.executeTx(async (tx) => {
+    await runInTransaction(this.prisma, async (tx) => {
       for (const update of updates) {
         const existing = await tx.orm.public.OrganizationRolePermission.where(
           (p) => p.organizationId.eq(organizationId),
@@ -217,7 +200,7 @@ export class OrganizationsRolesService {
     const targetRole = roleStr ? (roleStr as Role) : undefined;
     let deletedCount = 0;
 
-    await this.executeTx(async (tx) => {
+    await runInTransaction(this.prisma, async (tx) => {
       let query = tx.orm.public.OrganizationRolePermission.where((p) =>
         p.organizationId.eq(organizationId),
       );

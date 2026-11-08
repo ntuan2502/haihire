@@ -1,7 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
-import { AppNotFoundException, AppForbiddenException, AppBadRequestException } from "../common/app-exception";
-import { PrismaService } from "../prisma/prisma.service";
+import {
+  AppNotFoundException,
+  AppForbiddenException,
+  AppBadRequestException,
+} from "../common/app-exception";
+import { PrismaService, runInTransaction } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import { fixUtf8String } from "../applications/applications.service";
@@ -14,17 +18,6 @@ export class JobsService {
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
   ) {}
-
-  private async executeTx<T>(fn: (tx: PrismaService["db"]) => Promise<T>): Promise<T> {
-    const p = this.prisma as unknown as { transaction?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; executeTx?: (cb: (tx: PrismaService["db"]) => Promise<T>) => Promise<T>; db: PrismaService["db"] };
-    if (typeof p.transaction === "function") {
-      return p.transaction(fn);
-    }
-    if (typeof p.executeTx === "function") {
-      return p.executeTx(fn);
-    }
-    return fn(this.prisma.db);
-  }
 
   async findAll(filter?: {
     status?: string;
@@ -64,7 +57,11 @@ export class JobsService {
     let targetOrg: { id: string; name: string; slug: string } | null = null;
 
     if (filter?.organizationSlug) {
-      targetOrg = await this.prisma.db.orm.public.Organization.select("id", "name", "slug")
+      targetOrg = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+      )
         .where((o) => o.slug.eq(filter.organizationSlug as string))
         .first();
       if (!targetOrg) {
@@ -72,13 +69,19 @@ export class JobsService {
       }
       targetOrgId = targetOrg.id;
     } else if (targetOrgId) {
-      targetOrg = await this.prisma.db.orm.public.Organization.select("id", "name", "slug")
+      targetOrg = await this.prisma.db.orm.public.Organization.select(
+        "id",
+        "name",
+        "slug",
+      )
         .where((o) => o.id.eq(targetOrgId as string))
         .first();
     }
 
     const isPublic =
-      !userOrgId || targetOrgId !== userOrgId || Boolean(filter?.organizationSlug);
+      !userOrgId ||
+      targetOrgId !== userOrgId ||
+      Boolean(filter?.organizationSlug);
     const effectiveStatus = isPublic ? "PUBLISHED" : filter?.status;
 
     const jobsQuery = this.prisma.db.orm.public.Job.select(
@@ -102,13 +105,19 @@ export class JobsService {
     );
 
     let jobs = targetOrgId
-      ? await jobsQuery.where((j) => j.organizationId.eq(targetOrgId!)).all()
-      : await jobsQuery.all();
+      ? await jobsQuery
+          .where((j) =>
+            j.organizationId.eq(targetOrgId!).and(j.deletedAt.isNull()),
+          )
+          .all()
+      : await jobsQuery.where((j) => j.deletedAt.isNull()).all();
 
     jobs = jobs.filter((j) => !j.deletedAt);
 
     if (effectiveStatus) {
-      const statuses = effectiveStatus.split(",").map((s) => s.trim().toUpperCase());
+      const statuses = effectiveStatus
+        .split(",")
+        .map((s) => s.trim().toUpperCase());
       jobs = jobs.filter((j) => {
         if (statuses.includes("CLOSED") && j.status === "ARCHIVED") return true;
         return statuses.includes(j.status);
@@ -124,12 +133,21 @@ export class JobsService {
       jobs = jobs.filter((j) => j.type && types.includes(j.type.toUpperCase()));
     }
     if (filter?.experienceLevel) {
-      const levels = filter.experienceLevel.split(",").map((l) => l.trim().toUpperCase());
-      jobs = jobs.filter((j) => j.experienceLevel && levels.includes(j.experienceLevel.toUpperCase()));
+      const levels = filter.experienceLevel
+        .split(",")
+        .map((l) => l.trim().toUpperCase());
+      jobs = jobs.filter(
+        (j) =>
+          j.experienceLevel && levels.includes(j.experienceLevel.toUpperCase()),
+      );
     }
     if (filter?.workplace) {
-      const places = filter.workplace.split(",").map((w) => w.trim().toUpperCase());
-      jobs = jobs.filter((j) => j.workplace && places.includes(j.workplace.toUpperCase()));
+      const places = filter.workplace
+        .split(",")
+        .map((w) => w.trim().toUpperCase());
+      jobs = jobs.filter(
+        (j) => j.workplace && places.includes(j.workplace.toUpperCase()),
+      );
     }
     if (filter?.search) {
       const s = filter.search.toLowerCase();
@@ -170,15 +188,16 @@ export class JobsService {
     const jobIdSet = new Set(jobIds);
 
     // Fetch applications only relevant to these paged jobs
-    const allApps = !isPublic && jobIds.length > 0
-      ? await this.prisma.db.orm.public.Application.select(
-          "id",
-          "jobId",
-          "stage",
-        )
-          .where((a) => a.jobId.in(jobIds))
-          .all()
-      : [];
+    const allApps =
+      !isPublic && jobIds.length > 0
+        ? await this.prisma.db.orm.public.Application.select(
+            "id",
+            "jobId",
+            "stage",
+          )
+            .where((a) => a.jobId.in(jobIds))
+            .all()
+        : [];
 
     const appCountMap = new Map<
       string,
@@ -194,7 +213,10 @@ export class JobsService {
       item.byStage[app.stage] = (item.byStage[app.stage] || 0) + 1;
     }
 
-    const orgMap = new Map<string, { id: string; name: string; slug: string }>();
+    const orgMap = new Map<
+      string,
+      { id: string; name: string; slug: string }
+    >();
     if (targetOrg) {
       orgMap.set(targetOrg.id, targetOrg);
     } else {
@@ -211,7 +233,9 @@ export class JobsService {
     return {
       data: pagedJobs.map((job) => ({
         ...job,
-        organization: job.organizationId ? orgMap.get(job.organizationId) ?? null : null,
+        organization: job.organizationId
+          ? (orgMap.get(job.organizationId) ?? null)
+          : null,
         applicationsCount: appCountMap.get(job.id)?.total ?? 0,
         applicationsByStage: appCountMap.get(job.id)?.byStage ?? {},
       })),
@@ -261,7 +285,11 @@ export class JobsService {
       );
     }
 
-    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+    if (
+      tenantOrgId &&
+      job.organizationId &&
+      tenantOrgId !== job.organizationId
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
@@ -307,25 +335,28 @@ export class JobsService {
       .all();
 
     const candidateIds = [...new Set(applications.map((a) => a.candidateId))];
-    const candidates = candidateIds.length > 0
-      ? await this.prisma.db.orm.public.Candidate.select(
-          "id",
-          "name",
-          "email",
-          "phone",
-          "resumeUrl",
-          "resumeFileName",
-        )
-          .where((c) => c.id.in(candidateIds))
-          .all()
-      : [];
+    const candidates =
+      candidateIds.length > 0
+        ? await this.prisma.db.orm.public.Candidate.select(
+            "id",
+            "name",
+            "email",
+            "phone",
+            "resumeUrl",
+            "resumeFileName",
+          )
+            .where((c) => c.id.in(candidateIds))
+            .all()
+        : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
     // Fetch interviews for each application
     const appIds = [...new Set(applications.map((a) => a.id))];
     const jobInterviews =
       appIds.length > 0 && Boolean(this.prisma.db.orm.public.Interview)
-        ? await this.prisma.db.orm.public.Interview.where((i) => i.applicationId.in(appIds)).all()
+        ? await this.prisma.db.orm.public.Interview.where((i) =>
+            i.applicationId.in(appIds),
+          ).all()
         : [];
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of jobInterviews) {
@@ -333,7 +364,10 @@ export class JobsService {
       let parsedScorecard: Record<string, unknown> | null = null;
       if (intv.scorecard) {
         try {
-          parsedScorecard = JSON.parse(intv.scorecard) as Record<string, unknown>;
+          parsedScorecard = JSON.parse(intv.scorecard) as Record<
+            string,
+            unknown
+          >;
         } catch {
           parsedScorecard = null;
         }
@@ -358,7 +392,8 @@ export class JobsService {
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: a.resumeUrl || candidate?.resumeUrl || "",
-        resumeFileName: a.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
+        resumeFileName:
+          a.resumeFileName || candidate?.resumeFileName || "Resume.pdf",
         interviews: interviewsByApp.get(a.id) || [],
       };
     });
@@ -411,7 +446,8 @@ export class JobsService {
       .all();
 
     const activeJobs = jobs.filter(
-      (j) => !j.deletedAt && (j.status === "PUBLISHED" || j.status === "CLOSED"),
+      (j) =>
+        !j.deletedAt && (j.status === "PUBLISHED" || j.status === "CLOSED"),
     );
 
     const slugify = (str: string) =>
@@ -445,8 +481,16 @@ export class JobsService {
     return this.findOne(matchedJob.id, undefined, true);
   }
 
-  async create(dto: CreateJobDto, tenantOrgId?: string | null, userId?: string | null) {
-    if (dto.organizationId && tenantOrgId && dto.organizationId !== tenantOrgId) {
+  async create(
+    dto: CreateJobDto,
+    tenantOrgId?: string | null,
+    userId?: string | null,
+  ) {
+    if (
+      dto.organizationId &&
+      tenantOrgId &&
+      dto.organizationId !== tenantOrgId
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: cannot create job for another organization.",
@@ -486,7 +530,11 @@ export class JobsService {
   async update(id: string, dto: UpdateJobDto, tenantOrgId?: string | null) {
     const job = await this.findOne(id);
 
-    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+    if (
+      tenantOrgId &&
+      job.organizationId &&
+      tenantOrgId !== job.organizationId
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
@@ -506,7 +554,9 @@ export class JobsService {
         : {}),
       ...(dto.workplace !== undefined ? { workplace: dto.workplace } : {}),
       ...(dto.type !== undefined ? { type: dto.type } : {}),
-      ...(dto.description !== undefined ? { description: dto.description } : {}),
+      ...(dto.description !== undefined
+        ? { description: dto.description }
+        : {}),
       ...(dto.requirements !== undefined
         ? { requirements: dto.requirements }
         : {}),
@@ -522,7 +572,11 @@ export class JobsService {
   async remove(id: string, tenantOrgId?: string | null) {
     const job = await this.findOne(id);
 
-    if (tenantOrgId && job.organizationId && tenantOrgId !== job.organizationId) {
+    if (
+      tenantOrgId &&
+      job.organizationId &&
+      tenantOrgId !== job.organizationId
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
         "Access denied: job belongs to another organization.",
@@ -531,7 +585,7 @@ export class JobsService {
     }
 
     // Soft delete within atomic transaction (Two-Tier Deletion Protocol)
-    await this.executeTx(async (tx) => {
+    await runInTransaction(this.prisma, async (tx) => {
       await tx.orm.public.Job.where((j) => j.id.eq(id)).update({
         deletedAt: toInstant(),
       });

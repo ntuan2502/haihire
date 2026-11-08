@@ -42,15 +42,15 @@ Both `.env.example` and `.env.production.example` follow a unified 10-section or
 When executing `pnpm dev` from the repository root:
 
 1. **Backend Loading:**
-   - [`backend/src/config/env.ts`](../../backend/src/config/env.ts) locates the repository root and loads root `.env`.
+   - [`apps/backend/src/config/env.ts`](../../apps/backend/src/config/env.ts) locates the repository root and loads root `.env`.
    - Dynamic port synchronization automatically maps `BACKEND_PORT` to `PORT`, and ensures localhost URLs for Postgres, MinIO, and Frontend align.
-   - NestJS [`backend/src/app.module.ts`](../../backend/src/app.module.ts) configures `ConfigModule` to search `['../.env', '.env']`.
+   - NestJS [`apps/backend/src/app.module.ts`](../../apps/backend/src/app.module.ts) configures `ConfigModule` to search `['../../.env', '../.env', '.env']`.
 2. **Frontend Loading:**
-   - [`frontend/scripts/dev.ts`](../../frontend/scripts/dev.ts) loads root `../../.env` and sets `process.env.PORT` from `FRONTEND_PORT`.
-   - [`frontend/next.config.ts`](../../frontend/next.config.ts) loads root `.env` to configure API rewrites (`/api/*` -> `http://127.0.0.1:13001`) and allowed dev origins.
-   - Runtime Zod validation in [`frontend/src/lib/env.ts`](../../frontend/src/lib/env.ts) ensures `INTERNAL_API_URL` is set during SSR.
+   - [`apps/frontend/scripts/dev.ts`](../../apps/frontend/scripts/dev.ts) loads root `.env` and sets `process.env.PORT` from `FRONTEND_PORT`.
+   - [`apps/frontend/next.config.ts`](../../apps/frontend/next.config.ts) loads root `.env` to configure API rewrites (`/api/*` -> `http://127.0.0.1:13001`) and allowed dev origins.
+   - Runtime Zod validation in [`apps/frontend/src/lib/env.ts`](../../apps/frontend/src/lib/env.ts) ensures `INTERNAL_API_URL` is set during SSR.
 3. **Prisma CLI Loading:**
-   - Prisma 8 CLI automatically climbs parent directories and loads root `..\.env` when executing from `backend/`.
+   - Prisma CLI automatically climbs parent directories and loads root `..\..\.env` when executing from `apps/backend/`.
 
 ---
 

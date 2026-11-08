@@ -21,7 +21,9 @@ export function detectPreReleasePackages(): string[] {
   const root = process.cwd();
   const manifestPaths = [
     join(root, "package.json"),
+    join(root, "apps", "backend", "package.json"),
     join(root, "backend", "package.json"),
+    join(root, "apps", "frontend", "package.json"),
     join(root, "frontend", "package.json"),
     join(root, "packages", "shared", "package.json"),
   ];

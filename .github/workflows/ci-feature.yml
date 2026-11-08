@@ -40,11 +40,11 @@ jobs:
               - '*.md'
               - 'LICENSE'
             backend:
-              - 'backend/**'
+              - 'apps/backend/**'
               - 'packages/shared/**'
               - 'pnpm-lock.yaml'
             frontend:
-              - 'frontend/**'
+              - 'apps/frontend/**'
               - 'packages/shared/**'
               - 'pnpm-lock.yaml'
             ci:

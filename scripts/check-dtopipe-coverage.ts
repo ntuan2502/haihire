@@ -13,7 +13,11 @@ export function checkDtoPipeCoverage(baseDir?: string): {
   totalPiped: number;
   violations: Violation[];
 } {
-  const targetDir = baseDir || path.resolve(process.cwd(), "backend/src");
+  const targetDir =
+    baseDir ||
+    (fs.existsSync(path.resolve(process.cwd(), "apps/backend/src"))
+      ? path.resolve(process.cwd(), "apps/backend/src")
+      : path.resolve(process.cwd(), "backend/src"));
 
   function findControllers(dir: string): string[] {
     const list: string[] = [];

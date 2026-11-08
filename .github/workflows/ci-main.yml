@@ -307,7 +307,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: backend/Dockerfile
+          file: apps/backend/Dockerfile
           push: false
           tags: test-backend:latest
           cache-from: type=gha
@@ -316,7 +316,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: frontend/Dockerfile
+          file: apps/frontend/Dockerfile
           push: false
           tags: test-frontend:latest
           cache-from: type=gha

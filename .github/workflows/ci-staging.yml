@@ -35,8 +35,8 @@ jobs:
         with:
           filters: |
             code:
-              - 'backend/**'
-              - 'frontend/**'
+              - 'apps/backend/**'
+              - 'apps/frontend/**'
               - 'packages/**'
               - 'package.json'
               - 'pnpm-lock.yaml'
@@ -413,8 +413,8 @@ jobs:
       - name: Cache Next.js build
         uses: actions/cache@v5
         with:
-          path: ${{ github.workspace }}/frontend/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('frontend/src/**', 'frontend/public/**') }}
+          path: ${{ github.workspace }}/apps/frontend/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/frontend/src/**', 'apps/frontend/public/**') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 

@@ -1,6 +1,5 @@
 packages:
-  - "backend"
-  - "frontend"
+  - "apps/*"
   - "packages/*"
 catalog:
   "@types/node": ^26.6.5

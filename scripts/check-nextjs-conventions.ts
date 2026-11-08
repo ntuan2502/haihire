@@ -24,6 +24,8 @@ export function checkNextJsConventions(
 
   // Check 1: middleware.ts must NOT exist in frontend or frontend/src
   const forbiddenMiddlewarePaths = [
+    path.join(rootDir, "apps/frontend/src/middleware.ts"),
+    path.join(rootDir, "apps/frontend/middleware.ts"),
     path.join(rootDir, "frontend/src/middleware.ts"),
     path.join(rootDir, "frontend/middleware.ts"),
   ];
@@ -38,7 +40,12 @@ export function checkNextJsConventions(
   }
 
   // Check 2: proxy.ts MUST exist and export function proxy
-  const proxyPath = path.join(rootDir, "frontend/src/proxy.ts");
+  const proxyPath =
+    [
+      path.join(rootDir, "apps/frontend/src/proxy.ts"),
+      path.join(rootDir, "frontend/src/proxy.ts"),
+    ].find((p) => fileExists(p)) ||
+    path.join(rootDir, "apps/frontend/src/proxy.ts");
   if (!fileExists(proxyPath)) {
     errors.push(
       "Required Next.js 16 edge proxy file is missing: frontend/src/proxy.ts",
@@ -64,7 +71,12 @@ export function checkNextJsConventions(
   }
 
   // Check 3: proxy.spec.ts MUST exist (test coverage)
-  const proxySpecPath = path.join(rootDir, "frontend/src/proxy.spec.ts");
+  const proxySpecPath =
+    [
+      path.join(rootDir, "apps/frontend/src/proxy.spec.ts"),
+      path.join(rootDir, "frontend/src/proxy.spec.ts"),
+    ].find((p) => fileExists(p)) ||
+    path.join(rootDir, "apps/frontend/src/proxy.spec.ts");
   if (!fileExists(proxySpecPath)) {
     errors.push(
       "Required unit test file is missing: frontend/src/proxy.spec.ts",

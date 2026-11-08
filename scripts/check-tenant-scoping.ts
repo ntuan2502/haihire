@@ -38,6 +38,11 @@ export const PRISMA_QUERY_REGEX =
  * Determines the repository root directory regardless of current working directory.
  */
 function getWorkspaceRoot(): string {
+  let curr = process.cwd();
+  while (curr && curr !== path.dirname(curr)) {
+    if (fs.existsSync(path.resolve(curr, "pnpm-workspace.yaml"))) return curr;
+    curr = path.dirname(curr);
+  }
   if (fs.existsSync(path.resolve(process.cwd(), "pnpm-workspace.yaml"))) {
     return process.cwd();
   }
@@ -62,7 +67,11 @@ function normalizeRelativePath(filePath: string): string {
  */
 export function findTenantServiceFiles(baseDir?: string): string[] {
   const root = getWorkspaceRoot();
-  const targetDir = baseDir || path.resolve(root, "backend/src");
+  const targetDir =
+    baseDir ||
+    (fs.existsSync(path.resolve(root, "apps/backend/src"))
+      ? path.resolve(root, "apps/backend/src")
+      : path.resolve(root, "backend/src"));
   const result: string[] = [];
   if (!fs.existsSync(targetDir)) return result;
 
@@ -77,18 +86,25 @@ export function findTenantServiceFiles(baseDir?: string): string[] {
         const normRel = normalizeRelativePath(fullPath);
 
         // Skip files present in NON_TENANT_SCOPED_FILES
-        const isNonTenant = NON_TENANT_SCOPED_FILES.some((f) =>
-          normRel.endsWith(f.replace(/\\/g, "/")),
+        const isNonTenant = NON_TENANT_SCOPED_FILES.some(
+          (f) =>
+            normRel.endsWith(f.replace(/\\/g, "/")) ||
+            normRel.endsWith(
+              f.replace(/\\/g, "/").replace(/^backend\//, "apps/backend/"),
+            ),
         );
         if (isNonTenant) {
           continue;
         }
 
         // If scanning within backend/src, verify module is in TENANT_SCOPED_MODULES
-        const isBackendSrc = normRel.startsWith("backend/src/");
+        const isBackendSrc =
+          normRel.startsWith("apps/backend/src/") ||
+          normRel.startsWith("backend/src/");
         if (isBackendSrc) {
           const isTenantModule = TENANT_SCOPED_MODULES.some(
             (mod) =>
+              normRel.startsWith(`apps/backend/src/${mod}/`) ||
               normRel.startsWith(`backend/src/${mod}/`) ||
               normRel.includes(`/${mod}/`),
           );
@@ -113,7 +129,8 @@ export function checkTenantScoping(options?: {
   baseDir?: string;
   files?: string[];
 }): TenantScopingAuditResult {
-  const filesToScan = options?.files || findTenantServiceFiles(options?.baseDir);
+  const filesToScan =
+    options?.files || findTenantServiceFiles(options?.baseDir);
 
   let totalQueries = 0;
   let explicitFilterCount = 0;
@@ -229,14 +246,22 @@ export function checkTenantScoping(options?: {
  */
 export function formatReport(result: TenantScopingAuditResult): string {
   const lines: string[] = [];
-  lines.push("==================================================================");
-  lines.push("      CI ARCHITECTURE GATE: TENANT SCOPING AUDIT                  ");
-  lines.push("==================================================================");
+  lines.push(
+    "==================================================================",
+  );
+  lines.push(
+    "      CI ARCHITECTURE GATE: TENANT SCOPING AUDIT                  ",
+  );
+  lines.push(
+    "==================================================================",
+  );
   lines.push(`Scanned files: ${result.totalFiles}`);
   lines.push(`Total queries inspected: ${result.totalQueries}`);
   lines.push(`Safe queries: ${result.safeQueries}`);
   lines.push(`Unsafe queries: ${result.unsafeQueries}`);
-  lines.push("------------------------------------------------------------------");
+  lines.push(
+    "------------------------------------------------------------------",
+  );
 
   if (result.compliant) {
     lines.push(
@@ -256,9 +281,13 @@ export function formatReport(result: TenantScopingAuditResult): string {
         `  • ${result.patternMatchCount} queries matched safe query patterns`,
       );
     }
-    lines.push("==================================================================");
+    lines.push(
+      "==================================================================",
+    );
   } else {
-    lines.push(`[CI GATE FAILED] Found ${result.violations.length} unsafe queries:\n`);
+    lines.push(
+      `[CI GATE FAILED] Found ${result.violations.length} unsafe queries:\n`,
+    );
     result.violations.forEach((v, index) => {
       lines.push(`${index + 1}. ${v.file}:${v.line}`);
       lines.push(`   Query: ${v.snippet}`);
@@ -272,7 +301,9 @@ export function formatReport(result: TenantScopingAuditResult): string {
     lines.push(
       "  - Add to whitelist in scripts/tenant-scoping.config.ts with reason.",
     );
-    lines.push("==================================================================");
+    lines.push(
+      "==================================================================",
+    );
   }
 
   return lines.join("\n");
@@ -281,7 +312,9 @@ export function formatReport(result: TenantScopingAuditResult): string {
 // Standalone execution
 if (
   process.argv[1]?.endsWith("check-tenant-scoping.ts") ||
-  process.argv[1]?.replace(/\\/g, "/").endsWith("scripts/check-tenant-scoping.ts")
+  process.argv[1]
+    ?.replace(/\\/g, "/")
+    .endsWith("scripts/check-tenant-scoping.ts")
 ) {
   const result = checkTenantScoping();
   const report = formatReport(result);

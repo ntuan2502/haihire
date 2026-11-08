@@ -35,8 +35,8 @@ jobs:
         with:
           filters: |
             code:
-              - 'backend/**'
-              - 'frontend/**'
+              - 'apps/backend/**'
+              - 'apps/frontend/**'
               - 'packages/**'
               - 'package.json'
               - 'pnpm-lock.yaml'

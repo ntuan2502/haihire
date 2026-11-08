@@ -60,7 +60,7 @@ export function checkPathExistence(): CheckResult {
   // Match relative paths like backend/..., frontend/..., packages/..., scripts/..., docs/...
   // Exclude URLs (http/https), globs (*), ellipses (...), placeholders (<...>, {...}), and template tokens
   const pathRegex =
-    /(?:[`"'\s(]|^)((?:backend|frontend|packages|scripts|docs)\/[a-zA-Z0-9._/-]+)(?:[`"'\s)]|$)/g;
+    /(?:[`"'\s(]|^)((?:apps\/backend|apps\/frontend|backend|frontend|packages|scripts|docs)\/[a-zA-Z0-9._/-]+)(?:[`"'\s)]|$)/g;
 
   for (const filePath of mdFiles) {
     const content = readFileSync(filePath, "utf-8");
@@ -107,7 +107,14 @@ export function checkPathExistence(): CheckResult {
         }
 
         const absoluteTarget = resolve(root, candidate);
-        if (!existsSync(absoluteTarget)) {
+        const altTarget =
+          candidate.startsWith("backend/") || candidate.startsWith("frontend/")
+            ? resolve(root, "apps", candidate)
+            : null;
+        if (
+          !existsSync(absoluteTarget) &&
+          (!altTarget || !existsSync(altTarget))
+        ) {
           // Check if parent directory exists (for planned new files or parameterized paths like [id])
           if (!candidate.includes("[id]") && !candidate.includes(":id")) {
             brokenPaths.push(

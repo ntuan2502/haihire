@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
 import { toInstant } from "../common/date.util";
 import { backendEnv } from "../config/env";
@@ -16,12 +17,20 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  private readonly pool: Pool;
   private readonly als = new AsyncLocalStorage<PrismaService>();
   private readonly self: PrismaService;
 
   constructor() {
-    const adapter = new PrismaPg({ connectionString });
+    const pool = new Pool({
+      connectionString,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
+    const adapter = new PrismaPg(pool);
     super({ adapter });
+    this.pool = pool;
     this.self = this;
   }
 
@@ -134,6 +143,7 @@ export class PrismaService
 
   async onModuleDestroy() {
     await this.$disconnect();
+    await this.pool?.end();
   }
 }
 

@@ -71,4 +71,12 @@ describe("PrismaService transaction context", () => {
     expect(prisma.$transaction).toHaveBeenCalledTimes(2);
     expect(prisma.tx === baseClient).toBe(true);
   });
+
+  it("disconnects prisma client and ends the pool on onModuleDestroy", async () => {
+    const disconnectSpy = vi.spyOn(prisma, "$disconnect").mockResolvedValue();
+    const endSpy = vi.spyOn((prisma as unknown as { pool: { end: () => Promise<void> } }).pool, "end").mockResolvedValue();
+    await prisma.onModuleDestroy();
+    expect(disconnectSpy).toHaveBeenCalledTimes(1);
+    expect(endSpy).toHaveBeenCalledTimes(1);
+  });
 });

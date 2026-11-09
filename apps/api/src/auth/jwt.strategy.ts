@@ -9,8 +9,9 @@ import { env } from "../config/env";
 
 export interface JwtPayload {
   sub: string;
-  email: string;
-  role: string;
+  email?: string;
+  role?: string;
+  type?: string;
   tokenVersion?: number;
 }
 
@@ -31,7 +32,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
               /(?:^|;\s*)haihire_token=([^;]+)/,
             );
             if (match) {
-              return decodeURIComponent(match[1]);
+              try {
+                return decodeURIComponent(match[1]);
+              } catch {
+                return null;
+              }
             }
           }
           return null;
@@ -44,6 +49,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    if (payload.type === "refresh") {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.UNAUTHORIZED,
+        "Refresh token cannot be used as an access token",
+      );
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {

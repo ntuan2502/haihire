@@ -193,4 +193,33 @@ describe("JwtStrategy", () => {
     const token = extractor(reqWithBearer);
     expect(token).toBe("my-bearer-token");
   });
+
+  it("should reject token when payload type is 'refresh' (H-02)", async () => {
+    await expect(
+      strategy.validate({
+        sub: "usr-123",
+        type: "refresh",
+        tokenVersion: 1,
+      }),
+    ).rejects.toThrow("Refresh token cannot be used as an access token");
+
+    // Ensure database lookup was never reached
+    expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("should safely return null when raw cookie contains malformed percent encoding (H-02)", () => {
+    const reqWithMalformedCookie = {
+      headers: {
+        cookie: "haihire_token=%E0%A4%A; test=123",
+      },
+    };
+
+    const extractor = (
+      strategy as unknown as {
+        _jwtFromRequest: (req: unknown) => string | null;
+      }
+    )._jwtFromRequest;
+    const token = extractor(reqWithMalformedCookie);
+    expect(token).toBeNull();
+  });
 });

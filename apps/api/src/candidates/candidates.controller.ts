@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Inject,
+  Optional,
   Param,
   Patch,
   Post,
@@ -25,6 +26,8 @@ import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { resumeFileFilter } from "../common/upload-utils";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { hasPermission, Role } from "@haihire/shared";
+import { PermissionResolverService } from "../auth/permission-resolver.service";
 
 @Controller("candidates")
 @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
@@ -32,11 +35,15 @@ export class CandidatesController {
   constructor(
     @Inject(CandidatesService)
     private readonly candidatesService: CandidatesService,
+    @Optional() @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
   ) {}
 
   @Get()
-  findAll(
-    @Request() req: { user?: { id?: string; organizationId?: string | null } },
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view_basic")
+  async findAll(
+    @Request() req: { user?: { id?: string; role?: string; isOwner?: boolean; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -44,7 +51,7 @@ export class CandidatesController {
   ) {
     const pageNum = page ? parseInt(page, 10) : undefined;
     const limitNum = limit ? parseInt(limit, 10) : undefined;
-    return this.candidatesService.findAll(
+    const result = await this.candidatesService.findAll(
       organizationId,
       {
         page: pageNum,
@@ -53,6 +60,26 @@ export class CandidatesController {
       },
       req?.user?.organizationId,
     );
+    const user = req.user;
+    const fullAccess = user?.isOwner || (this.permissionResolver
+      ? await this.permissionResolver.resolvePermission(user?.organizationId, user?.role as Role, "candidate:view")
+      : hasPermission(user?.role || "", "candidate:view"));
+    if (fullAccess) return result;
+    return {
+      ...result,
+      data: result.data.map((candidate) => ({
+        id: candidate.id,
+        name: candidate.name,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        email: candidate.email,
+        phone: candidate.phone,
+        organizationId: candidate.organizationId,
+        createdAt: candidate.createdAt,
+        applicationsCount: candidate.applicationsCount,
+        applications: candidate.applications,
+      })),
+    };
   }
 
   @Get(":id")

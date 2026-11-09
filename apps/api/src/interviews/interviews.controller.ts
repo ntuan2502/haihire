@@ -18,9 +18,11 @@ import { InterviewsService } from "./interviews.service";
 import { CreateInterviewDto } from "./dto/create-interview.dto";
 import { UpdateInterviewDto } from "./dto/update-interview.dto";
 import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { SubmitScorecardDto } from "./dto/submit-scorecard.dto";
 
 @Controller("interviews")
-@UseGuards(AuthGuard("jwt"))
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
 export class InterviewsController {
   constructor(
     @Inject(InterviewsService)
@@ -28,6 +30,7 @@ export class InterviewsController {
   ) {}
 
   @Get()
+  @RequirePermission("interview:view")
   findAll(
     @Request() req: { user?: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -55,6 +58,7 @@ export class InterviewsController {
   }
 
   @Get(":id")
+  @RequirePermission("interview:view")
   findOne(
     @Param("id") id: string,
     @Request() req: { user?: { organizationId?: string | null } },
@@ -77,10 +81,14 @@ export class InterviewsController {
   @RequirePermission("interview:scorecard_submit")
   submitScorecard(
     @Param("id") id: string,
-    @Body(DtoPipe(UpdateInterviewDto)) dto: UpdateInterviewDto,
+    @Body(DtoPipe(SubmitScorecardDto)) dto: SubmitScorecardDto,
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
-    return this.interviewsService.update(id, dto, req?.user?.organizationId);
+    return this.interviewsService.update(
+      id,
+      { scorecard: dto.scorecard },
+      req?.user?.organizationId,
+    );
   }
 
   @Patch(":id")

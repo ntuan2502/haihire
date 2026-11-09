@@ -62,6 +62,24 @@ describe("CandidatesController", () => {
     rolesGuard = new RolesGuard(reflector);
   });
 
+  it("allows MEMBER basic list access without exposing CVs or private notes", async () => {
+    const context = {
+      getHandler: () => controller.findAll,
+      getClass: () => CandidatesController,
+      switchToHttp: () => ({ getRequest: () => memberReq }),
+    } as unknown as ExecutionContext;
+    expect(rolesGuard.canActivate(context)).toBe(true);
+    mockService.findAll.mockResolvedValue({
+      total: 1,
+      data: [{ id: "candidate-1", name: "Alice", email: "alice@example.com", phone: "123", notes: "private", resumeUrl: "private-url", documents: [{ id: "secret" }], applications: [], applicationsCount: 0 }],
+    });
+    const result = await controller.findAll(memberReq);
+    expect(result.data[0]).toMatchObject({ name: "Alice", email: "alice@example.com" });
+    expect(result.data[0]).not.toHaveProperty("notes");
+    expect(result.data[0]).not.toHaveProperty("resumeUrl");
+    expect(result.data[0]).not.toHaveProperty("documents");
+  });
+
   const createMockContext = (req: { user?: unknown }): ExecutionContext =>
     ({
       getHandler: () => controller.downloadDocument,

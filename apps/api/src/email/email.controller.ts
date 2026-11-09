@@ -30,11 +30,13 @@ export class EmailController {
   ) {}
 
   @Get("variables")
+  @RequirePermission("email:view")
   getVariables() {
     return AVAILABLE_VARIABLES;
   }
 
   @Get("templates")
+  @RequirePermission("email:view")
   getTemplates(
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -62,6 +64,7 @@ export class EmailController {
   }
 
   @Get("settings")
+  @RequirePermission("email:view")
   getSettings(
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -126,6 +129,7 @@ export class EmailController {
   }
 
   @Get("logs")
+  @RequirePermission("email:view")
   getLogs(
     @Request() req: { user: { organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,

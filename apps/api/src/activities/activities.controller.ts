@@ -13,9 +13,12 @@ import { AuthGuard } from "@nestjs/passport";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActivitiesService } from "./activities.service";
 import { CreateActivityRecordDto } from "./dto/create-activity-record.dto";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { RolesGuard } from "../auth/roles.guard";
+import { RequirePermission } from "../auth/require-permission.decorator";
 
 @Controller("activities")
-@UseGuards(AuthGuard("jwt"))
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
 export class ActivitiesController {
   constructor(
     @Inject(ActivitiesService)
@@ -23,6 +26,7 @@ export class ActivitiesController {
   ) {}
 
   @Get("candidate/:candidateId")
+  @RequirePermission("candidate:view")
   findByCandidate(
     @Param("candidateId") candidateId: string,
     @Request() req: { user?: { organizationId?: string | null } },
@@ -42,6 +46,7 @@ export class ActivitiesController {
   }
 
   @Get("application/:applicationId")
+  @RequirePermission("candidate:view")
   findByApplication(
     @Param("applicationId") applicationId: string,
     @Request() req: { user?: { organizationId?: string | null } },

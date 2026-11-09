@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Inject,
+  Optional,
   Param,
   Patch,
   Post,
@@ -20,12 +21,16 @@ import { UpdateJobDto } from "./dto/update-job.dto";
 import { JobsService } from "./jobs.service";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { hasPermission, Role } from "@haihire/shared";
+import { PermissionResolverService } from "../auth/permission-resolver.service";
 
 @Controller("jobs")
 export class JobsController {
   constructor(
     @Inject(JobsService)
     private readonly jobsService: JobsService,
+    @Optional() @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
   ) {}
 
   @Get()
@@ -65,6 +70,14 @@ export class JobsController {
     });
   }
 
+  @Get("public")
+  findPublic(@Query("limit") limit?: string) {
+    return this.jobsService.findAll({
+      status: "PUBLISHED",
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
   @Get("careers/:orgSlug/:jobSlug")
   findBySlug(
     @Param("orgSlug") orgSlug: string,
@@ -75,12 +88,16 @@ export class JobsController {
 
   @Get(":id")
   @UseGuards(OptionalJwtAuthGuard)
-  findOne(
+  async findOne(
     @Param("id") id: string,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request() req?: { user?: { role?: string; isOwner?: boolean; organizationId?: string | null } },
   ) {
     const tenantOrgId = req?.user?.organizationId;
-    return this.jobsService.findOne(id, tenantOrgId, !tenantOrgId);
+    const user = req?.user;
+    const fullAccess = user?.isOwner || (this.permissionResolver
+      ? await this.permissionResolver.resolvePermission(tenantOrgId, user?.role as Role, "candidate:view")
+      : hasPermission(user?.role || "", "candidate:view"));
+    return this.jobsService.findOne(id, tenantOrgId, !tenantOrgId, Boolean(fullAccess));
   }
 
   @Post()

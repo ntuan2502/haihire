@@ -55,6 +55,13 @@ function clearAuthCookies() {
   document.cookie = `haihire_has_org=; path=/; max-age=0; SameSite=Lax${secure}`;
 }
 
+function isSessionRequiredRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/auth/onboarding")
+  );
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -102,11 +109,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number } };
       if (axiosError?.response?.status === 401) {
-        logout();
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        clearAuthCookies();
+        delete api.defaults.headers.common.Authorization;
+
+        if (
+          typeof window !== "undefined" &&
+          isSessionRequiredRoute(window.location.pathname)
+        ) {
+          router.replace("/auth/login");
+        }
       }
       return null;
     }
-  }, [logout, router]);
+  }, [router]);
 
   // Initialize auth state from localStorage and verify with backend
   useEffect(() => {

@@ -27,6 +27,7 @@ describe("ApplicationsController", () => {
 
   const mockService = {
     findAll: vi.fn(),
+    findByJob: vi.fn(),
     findOne: vi.fn(),
     uploadDocument: vi.fn(),
     prepareDocumentDownload: vi.fn(),
@@ -62,9 +63,14 @@ describe("ApplicationsController", () => {
     rolesGuard = new RolesGuard(reflector);
   });
 
-  const createMockContext = (req: { user?: unknown }): ExecutionContext =>
+  type RouteHandler = (...args: never[]) => unknown;
+
+  const createMockContext = (
+    req: { user?: unknown },
+    handler: RouteHandler = controller.downloadDocument as RouteHandler,
+  ): ExecutionContext =>
     ({
-      getHandler: () => controller.downloadDocument,
+      getHandler: () => handler,
       getClass: () => ApplicationsController,
       switchToHttp: () => ({
         getRequest: () => req,
@@ -132,6 +138,50 @@ describe("ApplicationsController", () => {
       expect(() => rolesGuard.canActivate(context)).toThrow(
         AppUnauthorizedException,
       );
+    });
+  });
+
+  describe("Application Read Endpoints RBAC Guards (F02)", () => {
+    const invalidRoleReq = {
+      user: {
+        id: "guest-1",
+        email: "guest@haihire.local",
+        role: "INVALID_ROLE",
+        organizationId: "org-1",
+      },
+    };
+
+    it("findAll: allows authenticated user with application:view and rejects unauthenticated/unauthorized", () => {
+      const allowedContext = createMockContext(recruiterReq, controller.findAll);
+      expect(rolesGuard.canActivate(allowedContext)).toBe(true);
+
+      const unauthContext = createMockContext(unauthenticatedReq, controller.findAll);
+      expect(() => rolesGuard.canActivate(unauthContext)).toThrow(AppUnauthorizedException);
+
+      const forbiddenContext = createMockContext(invalidRoleReq, controller.findAll);
+      expect(() => rolesGuard.canActivate(forbiddenContext)).toThrow(AppForbiddenException);
+    });
+
+    it("findByJob: allows authenticated user with application:view and rejects unauthenticated/unauthorized", () => {
+      const allowedContext = createMockContext(recruiterReq, controller.findByJob);
+      expect(rolesGuard.canActivate(allowedContext)).toBe(true);
+
+      const unauthContext = createMockContext(unauthenticatedReq, controller.findByJob);
+      expect(() => rolesGuard.canActivate(unauthContext)).toThrow(AppUnauthorizedException);
+
+      const forbiddenContext = createMockContext(invalidRoleReq, controller.findByJob);
+      expect(() => rolesGuard.canActivate(forbiddenContext)).toThrow(AppForbiddenException);
+    });
+
+    it("findOne: allows authenticated user with application:view and rejects unauthenticated/unauthorized", () => {
+      const allowedContext = createMockContext(recruiterReq, controller.findOne);
+      expect(rolesGuard.canActivate(allowedContext)).toBe(true);
+
+      const unauthContext = createMockContext(unauthenticatedReq, controller.findOne);
+      expect(() => rolesGuard.canActivate(unauthContext)).toThrow(AppUnauthorizedException);
+
+      const forbiddenContext = createMockContext(invalidRoleReq, controller.findOne);
+      expect(() => rolesGuard.canActivate(forbiddenContext)).toThrow(AppForbiddenException);
     });
   });
 });

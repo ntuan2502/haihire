@@ -36,7 +36,8 @@ export class ApplicationsController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
   findAll(
     @Request() req: { user?: { id?: string; organizationId?: string | null } },
     @Query("organizationId") organizationId?: string,
@@ -62,7 +63,8 @@ export class ApplicationsController {
   }
 
   @Get("job/:jobId")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
   findByJob(
     @Param("jobId") jobId: string,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
@@ -74,7 +76,8 @@ export class ApplicationsController {
   }
 
   @Get(":id")
-  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard)
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
   findOne(
     @Param("id") id: string,
     @Request() req: { user?: { organizationId?: string | null } },

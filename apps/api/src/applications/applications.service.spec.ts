@@ -205,7 +205,12 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       getObjectStream: vi.fn().mockResolvedValue({
         pipe: vi.fn(),
       }),
-      extractObjectName: vi.fn().mockImplementation((url: string) => url.split("/").pop() || ""),
+      extractObjectName: vi.fn().mockImplementation((url: string) => {
+        if (!url) return "";
+        const idx = url.indexOf("tenants/");
+        if (idx !== -1) return url.slice(idx);
+        return url.split("/").pop() || "";
+      }),
     };
 
     const jobTable = createMockTable(mockJobs);
@@ -479,6 +484,21 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       const updated = await service.uploadDocument("app-2", mockFile, "Portfolio");
       expect(updated).toBeDefined();
       expect(mockMinioService.uploadFile).toHaveBeenCalled();
+    });
+
+    it("should throw AppServiceUnavailableException when MinIO upload fails (H-06)", async () => {
+      const mockFile = {
+        originalname: "portfolio.pdf",
+        mimetype: "application/pdf",
+        size: 2048,
+        buffer: Buffer.from("%PDF-1.4\ntest pdf content\n%%EOF"),
+      } as Express.Multer.File;
+
+      mockMinioService.uploadFile = vi.fn().mockRejectedValue(new Error("MinIO storage unavailable"));
+
+      await expect(
+        service.uploadDocument("app-2", mockFile, "Portfolio"),
+      ).rejects.toThrow("Failed to upload document to storage service");
     });
 
     it("should get candidate documents list", async () => {

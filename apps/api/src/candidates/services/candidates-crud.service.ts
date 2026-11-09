@@ -25,6 +25,21 @@ export class CandidatesCrudService {
     private readonly profileService: CandidatesProfileService,
   ) {}
 
+  private assertValidTenantResumeUrl(resumeUrl: string, orgId: string): void {
+    if (!resumeUrl || !resumeUrl.trim()) return;
+    const safeTenant = orgId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+    const objName = this.minioService.extractObjectName(resumeUrl);
+    if (objName.startsWith("tenants/")) {
+      const expectedPrefix = `tenants/${safeTenant}/`;
+      if (!objName.startsWith(expectedPrefix)) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.FORBIDDEN,
+          "Cross-tenant resume reference is not permitted",
+        );
+      }
+    }
+  }
+
   async findAll(
     organizationId?: string,
     options?: { page?: number; limit?: number; search?: string },
@@ -171,6 +186,7 @@ export class CandidatesCrudService {
       validateUploadedFile(file);
       uploadResult = await this.minioService.uploadFile(file, "resumes", orgId);
     } else if (dto.resumeUrl) {
+      this.assertValidTenantResumeUrl(dto.resumeUrl, orgId);
       uploadResult = {
         url: dto.resumeUrl,
         originalName: dto.resumeFileName || "Candidate Profile",
@@ -227,7 +243,7 @@ export class CandidatesCrudService {
     dto: UpdateCandidateDto,
     tenantOrgId?: string | null,
   ) {
-    await this.profileService.findOne(id, tenantOrgId);
+    const existing = await this.profileService.findOne(id, tenantOrgId);
 
     const updatePayload: Record<string, unknown> = {};
     if (dto.name !== undefined) updatePayload.name = dto.name.trim();
@@ -257,7 +273,12 @@ export class CandidatesCrudService {
     if (dto.phone !== undefined)
       updatePayload.phone = dto.phone?.trim() || null;
     if (dto.notes !== undefined) updatePayload.notes = dto.notes;
-    if (dto.resumeUrl !== undefined) updatePayload.resumeUrl = dto.resumeUrl;
+    if (dto.resumeUrl !== undefined) {
+      if (dto.resumeUrl) {
+        this.assertValidTenantResumeUrl(dto.resumeUrl, existing.organizationId);
+      }
+      updatePayload.resumeUrl = dto.resumeUrl;
+    }
     if (dto.resumeFileName !== undefined)
       updatePayload.resumeFileName = dto.resumeFileName;
 

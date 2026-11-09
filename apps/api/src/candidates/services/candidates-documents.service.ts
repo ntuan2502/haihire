@@ -5,6 +5,7 @@ import {
   AppBadRequestException,
   AppForbiddenException,
   AppNotFoundException,
+  AppServiceUnavailableException,
 } from "../../common/app-exception";
 import { MinioService } from "../../minio/minio.service";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -56,11 +57,6 @@ export class CandidatesDocumentsService {
       originalName: string;
       size: number;
       mimeType: string;
-    } = {
-      url: `/uploads/${Date.now()}-${cleanOriginalName}`,
-      originalName: cleanOriginalName,
-      size: file.size || 0,
-      mimeType: file.mimetype || "application/pdf",
     };
 
     try {
@@ -71,12 +67,10 @@ export class CandidatesDocumentsService {
       );
       uploadResult.originalName = cleanOriginalName;
     } catch {
-      uploadResult = {
-        url: `/uploads/${Date.now()}-${cleanOriginalName}`,
-        originalName: cleanOriginalName,
-        size: file.size,
-        mimeType: file.mimetype,
-      };
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Failed to upload document to storage service",
+      );
     }
 
     const newDocId = crypto.randomUUID();
@@ -167,8 +161,14 @@ export class CandidatesDocumentsService {
 
     let stream: NodeJS.ReadableStream;
     try {
-      stream = await this.minioService.getObjectStream(downloadUrl);
-    } catch {
+      stream = await this.minioService.getObjectStream(
+        downloadUrl,
+        candidate.organizationId,
+      );
+    } catch (err: unknown) {
+      if (err instanceof AppForbiddenException) {
+        throw err;
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
         "Document file could not be retrieved from storage",

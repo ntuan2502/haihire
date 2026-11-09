@@ -100,6 +100,7 @@ export interface TranslationSchema {
     CANDIDATE_ORG_MISMATCH: string;
     CANDIDATE_ALREADY_APPLIED: string;
     DOCUMENT_FILE_REQUIRED: string;
+    DOCUMENT_UPLOAD_FAILED: string;
     DOCUMENT_NOT_FOUND: string;
     DOCUMENT_RETRIEVE_FAILED: string;
     UPLOAD_TRUNCATED_FILE: string;

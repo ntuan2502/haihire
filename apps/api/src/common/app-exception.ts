@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { type AppErrorCode } from "@haihire/shared";
@@ -96,6 +97,21 @@ export class AppUnauthorizedException extends UnauthorizedException {
   ) {
     super({
       statusCode: HttpStatus.UNAUTHORIZED,
+      code,
+      message: defaultMessage,
+      params,
+    });
+  }
+}
+
+export class AppServiceUnavailableException extends ServiceUnavailableException {
+  constructor(
+    public readonly code: AppErrorCode,
+    defaultMessage: string,
+    public readonly params?: Record<string, string | number>,
+  ) {
+    super({
+      statusCode: HttpStatus.SERVICE_UNAVAILABLE,
       code,
       message: defaultMessage,
       params,

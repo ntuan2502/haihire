@@ -339,6 +339,35 @@ describe("ApplicationsSagaService", () => {
         }),
       ).rejects.toThrow(AppConflictException);
     });
+
+    it("throws AppForbiddenException when resumeUrl belongs to another tenant (C-01)", async () => {
+      await expect(
+        service.create({
+          jobId: "job-1",
+          candidateName: "Attacker",
+          candidateEmail: "attacker@test.local",
+          resumeUrl: "https://minio.local/tenants/other-org/resumes/secret.pdf",
+        }),
+      ).rejects.toThrow("Cross-tenant resume reference is not permitted");
+    });
+
+    it("throws AppForbiddenException when reusing candidateId but referencing another resumeUrl (C-01)", async () => {
+      candidateTable.store.push({
+        id: "cand-with-cv",
+        name: "Legit Candidate",
+        email: "legit@example.com",
+        organizationId: "org-1",
+        resumeUrl: "https://minio.local/tenants/org-1/resumes/legit-cv.pdf",
+      });
+
+      await expect(
+        service.create({
+          jobId: "job-1",
+          candidateId: "cand-with-cv",
+          resumeUrl: "https://minio.local/tenants/org-1/resumes/tampered-cv.pdf",
+        }),
+      ).rejects.toThrow("Referenced resume does not belong to this candidate.");
+    });
   });
 
   describe("Group 3: Sourcing Attribution", () => {

@@ -118,6 +118,7 @@ export const en: TranslationSchema = {
     CANDIDATE_ALREADY_APPLIED:
       "Candidate has already applied to this job position.",
     DOCUMENT_FILE_REQUIRED: "Please provide a valid document file.",
+    DOCUMENT_UPLOAD_FAILED: "Failed to upload document to storage service.",
     DOCUMENT_NOT_FOUND: "Requested document ({name}) was not found.",
     DOCUMENT_RETRIEVE_FAILED: "Could not retrieve document file from storage.",
     UPLOAD_TRUNCATED_FILE:

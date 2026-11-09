@@ -120,6 +120,16 @@ export class ApplicationsSagaService {
       );
       uploadedFileInMinio = true;
     } else if (dto.resumeUrl) {
+      if (job.organizationId) {
+        const safeTenant = job.organizationId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+        const objName = this.minioService.extractObjectName(dto.resumeUrl);
+        if (objName.startsWith("tenants/") && !objName.startsWith(`tenants/${safeTenant}/`)) {
+          throw new AppForbiddenException(
+            APP_ERROR_CODES.FORBIDDEN,
+            "Cross-tenant resume reference is not permitted",
+          );
+        }
+      }
       uploadResult = {
         url: dto.resumeUrl,
         originalName: dto.resumeFileName || "Candidate Resume",
@@ -209,7 +219,14 @@ export class ApplicationsSagaService {
           // Validate candidate exists and belongs to the same organization as the target job
           const existingCandidate = await tx.candidate.findFirst({
             where: { id: candidateId as string },
-            select: { id: true, organizationId: true },
+            select: {
+              id: true,
+              organizationId: true,
+              resumeUrl: true,
+              resumeFileName: true,
+              resumeFileSize: true,
+              resumeMimeType: true,
+            },
           });
 
           if (!existingCandidate) {
@@ -226,6 +243,28 @@ export class ApplicationsSagaService {
               APP_ERROR_CODES.CANDIDATE_ORG_MISMATCH,
               "Candidate does not belong to the target job's organization.",
             );
+          }
+
+          if (!uploadedFileInMinio && dto.resumeUrl) {
+            const matchesPrimary = existingCandidate.resumeUrl === dto.resumeUrl;
+            let matchesDoc = false;
+            if (!matchesPrimary) {
+              const doc = await tx.candidateDocument.findFirst({
+                where: { candidateId: existingCandidate.id, url: dto.resumeUrl },
+                select: { id: true },
+              });
+              matchesDoc = Boolean(doc);
+            }
+            if (!matchesPrimary && !matchesDoc) {
+              throw new AppForbiddenException(
+                APP_ERROR_CODES.FORBIDDEN,
+                "Referenced resume does not belong to this candidate.",
+              );
+            }
+            if (matchesPrimary) {
+              uploadResult.size = existingCandidate.resumeFileSize || 0;
+              uploadResult.mimeType = existingCandidate.resumeMimeType || "application/pdf";
+            }
           }
         }
 

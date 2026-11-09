@@ -179,6 +179,9 @@ describe("CandidatesService (Characterization Tests)", () => {
         mimeType: "application/pdf",
       }),
       extractObjectName: vi.fn().mockImplementation((url: string) => {
+        if (!url) return "";
+        const idx = url.indexOf("tenants/");
+        if (idx !== -1) return url.slice(idx);
         const parts = url.split("/");
         return parts[parts.length - 1];
       }),
@@ -349,6 +352,7 @@ describe("CandidatesService (Characterization Tests)", () => {
       expect(result.stream).toBeDefined();
       expect(mockMinio.getObjectStream).toHaveBeenCalledWith(
         "https://minio.local/resumes/org-1/resume-1.pdf",
+        "org-1",
       );
 
       // Verify download audit logging
@@ -421,6 +425,50 @@ describe("CandidatesService (Characterization Tests)", () => {
         "https://minio.local/resumes/org-1/uploaded-file.pdf",
       );
       expect(result.resumeFileName).toBe("My_Resume.pdf");
+    });
+
+    it("throws AppServiceUnavailableException when MinIO upload fails during document upload (H-06)", async () => {
+      const mockFile = {
+        fieldname: "file",
+        originalname: "Broken.pdf",
+        encoding: "7bit",
+        mimetype: "application/pdf",
+        size: 512,
+        buffer: Buffer.from("%PDF-1.4\n%%EOF"),
+      } as Express.Multer.File;
+
+      mockMinio.uploadFile = vi.fn().mockRejectedValue(new Error("MinIO connection timeout"));
+
+      await expect(
+        service.uploadDocument("cand-2", mockFile, "Resume", "org-1"),
+      ).rejects.toThrow("Failed to upload document to storage service");
+    });
+
+    it("rejects candidate creation with cross-tenant resumeUrl (C-01)", async () => {
+      await expect(
+        service.create(
+          {
+            name: "Hacker Candidate",
+            email: "hacker@test.local",
+            organizationId: "org-1",
+            resumeUrl: "https://minio.local/resumes/tenants/victim-org/resumes/victim-cv.pdf",
+          },
+          undefined,
+          "org-1",
+        ),
+      ).rejects.toThrow("Cross-tenant resume reference is not permitted");
+    });
+
+    it("rejects candidate update with cross-tenant resumeUrl (C-01)", async () => {
+      await expect(
+        service.update(
+          "cand-1",
+          {
+            resumeUrl: "https://minio.local/resumes/tenants/other-org/resumes/victim-cv.pdf",
+          },
+          "org-1",
+        ),
+      ).rejects.toThrow("Cross-tenant resume reference is not permitted");
     });
 
     it("deletes a document and resets or falls back candidate resume", async () => {

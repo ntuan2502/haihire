@@ -119,6 +119,7 @@ export const vi: TranslationSchema = {
     CANDIDATE_ALREADY_APPLIED:
       "Ứng viên này đã nộp hồ sơ ứng tuyển vào vị trí này rồi.",
     DOCUMENT_FILE_REQUIRED: "Vui lòng cung cấp tệp tài liệu hợp lệ.",
+    DOCUMENT_UPLOAD_FAILED: "Tải tài liệu lên dịch vụ lưu trữ thất bại.",
     DOCUMENT_NOT_FOUND: "Không tìm thấy tệp tài liệu ({name}).",
     DOCUMENT_RETRIEVE_FAILED:
       "Không thể tải về tệp tài liệu từ hệ thống lưu trữ.",

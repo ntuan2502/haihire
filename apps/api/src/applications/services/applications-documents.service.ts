@@ -8,6 +8,7 @@ import {
   AppBadRequestException,
   AppForbiddenException,
   AppNotFoundException,
+  AppServiceUnavailableException,
 } from "../../common/app-exception";
 import { PrismaService } from "../../prisma/prisma.service";
 import { MinioService } from "../../minio/minio.service";
@@ -56,30 +57,23 @@ export class ApplicationsDocumentsService {
       fixUtf8String(file.originalname || "document.pdf"),
     );
 
+    const targetOrgId = existing.job?.organizationId || tenantOrgId;
+
     let uploadResult: {
       url: string;
       originalName: string;
       size: number;
       mimeType: string;
-    } = {
-      url: `/uploads/${Date.now()}-${cleanOriginalName}`,
-      originalName: cleanOriginalName,
-      size: file.size || 0,
-      mimeType: file.mimetype || "application/pdf",
     };
-
-    const targetOrgId = existing.job?.organizationId || tenantOrgId;
 
     try {
       uploadResult = await this.minioService.uploadFile(file, "resumes", targetOrgId);
       uploadResult.originalName = cleanOriginalName;
     } catch {
-      uploadResult = {
-        url: `/uploads/${Date.now()}-${cleanOriginalName}`,
-        originalName: cleanOriginalName,
-        size: file.size,
-        mimeType: file.mimetype,
-      };
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Failed to upload document to storage service",
+      );
     }
 
     const newDocId = crypto.randomUUID();
@@ -175,10 +169,19 @@ export class ApplicationsDocumentsService {
     const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
     const encodedFileName = encodeURIComponent(cleanFileName);
 
+    const appOrgId =
+      app?.job?.organizationId ||
+      app?.candidate?.organizationId ||
+      tenantOrgId ||
+      null;
+
     let stream: NodeJS.ReadableStream;
     try {
-      stream = await this.minioService.getObjectStream(downloadUrl);
-    } catch {
+      stream = await this.minioService.getObjectStream(downloadUrl, appOrgId);
+    } catch (err: unknown) {
+      if (err instanceof AppForbiddenException) {
+        throw err;
+      }
       throw new AppNotFoundException(
         APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
         "Document file could not be retrieved from storage",

@@ -19,6 +19,7 @@ export const createJobSchema = z.object({
   salaryRange: z.string().optional(),
   status: z.nativeEnum(JobStatus).optional(),
   organizationId: z.string().nullable().optional(),
+  createdById: z.string().nullable().optional(),
 });
 
 export type CreateJobSchema = z.infer<typeof createJobSchema>;

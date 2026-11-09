@@ -1,6 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
-import { downloadAuthenticatedFile, api } from "./client";
+import { downloadAuthenticatedFile, getDocumentUrl, api } from "./client";
+
+describe("getDocumentUrl (client.ts)", () => {
+  it("returns empty string for empty input", () => {
+    expect(getDocumentUrl("")).toBe("");
+  });
+
+  it("appends disposition=inline for document download URLs", () => {
+    const url = "/applications/app-1/documents/download?url=https%3A%2F%2Fminio%2Fcv.pdf";
+    const result = getDocumentUrl(url);
+    expect(result).toContain("disposition=inline");
+    expect(result).toContain("/applications/app-1/documents/download");
+  });
+});
 
 describe("downloadAuthenticatedFile (client.ts)", () => {
   beforeEach(() => {

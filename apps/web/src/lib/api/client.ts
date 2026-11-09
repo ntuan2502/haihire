@@ -21,13 +21,22 @@ export const getApiBaseUrl = () => {
 
 export const getDocumentUrl = (url: string) => {
   if (!url) return "";
+  const apiUrl = getApiBaseUrl().replace(/\/+$/, "");
+  if (url.includes("/documents/download")) {
+    const separator = url.includes("?") ? "&" : "?";
+    const fullUrl = url.startsWith("http")
+      ? url
+      : `${apiUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+    return fullUrl.includes("disposition=")
+      ? fullUrl
+      : `${fullUrl}${separator}disposition=inline`;
+  }
   if (url.includes("/haihire-resumes/")) {
     const idx = url.indexOf("/haihire-resumes/");
     return url.slice(idx);
   }
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const apiUrl = getApiBaseUrl();
-  return `${apiUrl.replace(/\/+$/, "")}${url.startsWith("/") ? "" : "/"}${url}`;
+  return `${apiUrl}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
 export const api = axios.create({

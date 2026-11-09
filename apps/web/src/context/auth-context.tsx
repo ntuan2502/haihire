@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { api, getApiBaseUrl } from "@/lib/api/client";
 import type { User, Organization } from "@/types";
 
@@ -73,6 +74,13 @@ function isSessionRequiredRoute(pathname: string): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  let queryClient: ReturnType<typeof useQueryClient> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    queryClient = useQueryClient();
+  } catch {
+    queryClient = null;
+  }
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,10 +113,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     clearAuthCookies();
+    queryClient?.clear();
     api.post("/auth/logout").catch(() => {});
     delete api.defaults.headers.common.Authorization;
     router.replace("/auth/login");
-  }, [router]);
+  }, [queryClient, router]);
 
   // Synchronize user profile with backend in real-time
   const refreshUser = useCallback(async (): Promise<User | null> => {
@@ -146,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         clearAuthCookies();
+        queryClient?.clear();
         delete api.defaults.headers.common.Authorization;
 
         if (
@@ -157,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return null;
     }
-  }, [router]);
+  }, [queryClient, router]);
 
   // Initialize auth state from localStorage and verify with backend
   useEffect(() => {
@@ -324,6 +334,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserOrg = (org: Organization, updatedRole?: string) => {
     if (!user) return;
+    queryClient?.clear();
     const isOwner = Boolean(
       (org as { ownerId?: string })?.ownerId &&
       (org as { ownerId?: string }).ownerId === user.id,

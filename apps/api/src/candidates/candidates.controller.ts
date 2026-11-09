@@ -161,6 +161,7 @@ export class CandidatesController {
     @Param("id") id: string,
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
+    @Query("disposition") disposition: string,
     @Res() res: Response,
     @Request()
     req: {
@@ -176,9 +177,10 @@ export class CandidatesController {
         req?.user,
       );
 
+    const dispType = disposition === "inline" ? "inline" : "attachment";
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodedFileName}`,
+      `${dispType}; filename="${asciiFallback}"; filename*=UTF-8''${encodedFileName}`,
     );
     if (mimeType) {
       res.setHeader("Content-Type", mimeType);

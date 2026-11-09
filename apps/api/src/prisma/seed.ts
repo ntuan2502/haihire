@@ -633,6 +633,16 @@ class InterviewSlotManager {
 let pendingSeed: Promise<void> | undefined;
 
 export async function runSeed(): Promise<void> {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_PRODUCTION_SEED !== "true"
+  ) {
+    throw new Error(
+      "CRITICAL SAFETY ABORT: Refusing to wipe database in PRODUCTION (NODE_ENV=production). " +
+        "To override, explicitly set ALLOW_PRODUCTION_SEED=true.",
+    );
+  }
+
   try {
     await prisma.$connect();
   } catch {

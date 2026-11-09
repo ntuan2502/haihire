@@ -182,6 +182,47 @@ describe("Career Pages React Server Components (RSC) Audit (Phase 16A)", () => {
       expect(schemaData.title).toBe("Staff Platform Engineer");
     });
 
+    it("escapes '<' as '\\u003c' in JSON-LD structured data to prevent XSS (C-02)", async () => {
+      global.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/organizations/public/techcorp")) {
+          return {
+            ok: true,
+            json: async () => ({ id: "org-1", name: "TechCorp Global", slug: "techcorp" }),
+          };
+        }
+        if (url.includes("/jobs/careers/")) {
+          return {
+            ok: true,
+            json: async () => ({
+              id: "job-xss",
+              title: "Frontend Engineer</script><script>alert('xss')</script>",
+              slug: "frontend-engineer",
+              department: "Engineering",
+              location: "Remote",
+              type: "FULL_TIME",
+              status: "PUBLISHED",
+              description: "Must be skilled in React.</script><script>alert('pwned')</script>",
+            }),
+          };
+        }
+        return { ok: false };
+      });
+
+      const element = await JobDetailPage({
+        params: Promise.resolve({ orgSlug: "techcorp", jobSlug: "frontend-engineer" }),
+      });
+      const { container } = render(element);
+
+      const scriptTag = container.querySelector('script[type="application/ld+json"]');
+      expect(scriptTag).not.toBeNull();
+      const rawScriptHtml = scriptTag?.innerHTML || "";
+      expect(rawScriptHtml).not.toContain("</script>");
+      expect(rawScriptHtml).toContain("\\u003c/script>");
+
+      const parsed = JSON.parse(scriptTag?.textContent || "{}");
+      expect(parsed.title).toBe("Frontend Engineer</script><script>alert('xss')</script>");
+    });
+
     it("renders JobClosed component without calling notFound when status is CLOSED", async () => {
       global.fetch = vi.fn().mockImplementation(async (url: string) => {
         if (url.includes("/organizations/public/techcorp")) {

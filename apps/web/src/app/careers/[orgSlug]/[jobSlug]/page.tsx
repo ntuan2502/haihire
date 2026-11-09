@@ -129,7 +129,9 @@ export default async function CareerJobSlugPage({ params }: PageProps) {
       {/* Schema.org JobPosting Structured Data for SEO / Search Engine Preview */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
       />
 
       {/* Semantic server-rendered content for crawlers & robots */}

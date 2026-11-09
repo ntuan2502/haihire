@@ -15,9 +15,9 @@ services:
     container_name: haihire-prod-postgres
     restart: unless-stopped
     env_file:
-      - path: ./.env.production
-        required: false
       - path: ./.env
+        required: false
+      - path: ./.env.production
         required: false
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -51,9 +51,9 @@ services:
     container_name: haihire-prod-redis
     restart: unless-stopped
     env_file:
-      - path: ./.env.production
-        required: false
       - path: ./.env
+        required: false
+      - path: ./.env.production
         required: false
     # maxmemory-policy noeviction ensures BullMQ jobs are never evicted.
     # When memory is full, Valkey rejects writes instead of losing data.
@@ -101,9 +101,9 @@ services:
     container_name: haihire-prod-minio
     restart: unless-stopped
     env_file:
-      - path: ./.env.production
-        required: false
       - path: ./.env
+        required: false
+      - path: ./.env.production
         required: false
     command: server /data
     environment:
@@ -140,9 +140,9 @@ services:
     container_name: haihire-prod-api
     restart: unless-stopped
     env_file:
-      - path: ./.env.production
-        required: false
       - path: ./.env
+        required: false
+      - path: ./.env.production
         required: false
     environment:
       NODE_ENV: production
@@ -188,9 +188,9 @@ services:
     container_name: haihire-prod-web
     restart: unless-stopped
     env_file:
-      - path: ./.env.production
-        required: false
       - path: ./.env
+        required: false
+      - path: ./.env.production
         required: false
     environment:
       NODE_ENV: production
@@ -227,9 +227,9 @@ services:
     restart: unless-stopped
     user: root
     env_file:
-      - path: ./.env.production
-        required: false
       - path: ./.env
+        required: false
+      - path: ./.env.production
         required: false
     command: >
       /bin/sh -c "

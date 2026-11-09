@@ -41,7 +41,7 @@
   7. `lint:api-contract` — API Contract & Leaks Audit (87 REST endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 PromQL alert rules)
   9. `lint:tenant-scope` — Tenant Scoping Static Analysis (238 Prisma queries isolated)
-  10. `lint:doc-links` — Documentation Markdown Link Integrity (42 markdown files)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (31 markdown files)
   11. `lint:doc-sync` — Documentation Synchronization & Drift Gate
   12. `check:prod-email` — Production Email Provider Validation (prohibits simulated provider in prod)
   13. `test:diff` — Test Count Delta & Anti-Regression Gate

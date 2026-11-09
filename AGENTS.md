@@ -9,7 +9,7 @@
 | Metric                           | Value                  | Reference / Notes                                   |
 | :------------------------------- | :--------------------- | :-------------------------------------------------- |
 | **Release Target**               | `v0.3.0`               | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
-| **Commit Baseline**              | `ba61af8` (2026-11-09) | Author: ntuan2502                                   |
+| **Commit Baseline**              | `8dd7724` (2026-11-09) | Author: ntuan2502                                   |
 | **Workspace Unit Tests**         | `963 passed`           | Backend: 540, Frontend: 423                         |
 | **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle                    |
 | **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates                    |
@@ -30,7 +30,7 @@ All AI agents operating in this repository must strictly adhere to the following
    - [**Decisions Log**](docs/decisions/DECISIONS.md): Unified record of all architectural decisions (D-001 through D-007) superseding legacy ADRs.
 2. **What to Read for Specific Tasks:**
    - **Developer Guides & Workflows:** [docs/guides/onboarding.md](docs/guides/onboarding.md) (onboarding, definition of done, QA testcases, project context, roadmap).
-   - **Releases & Versioning:** [docs/releases/v0.3.0.md](docs/releases/v0.3.0.md) and [CHANGELOG.md](CHANGELOG.md) (read when dealing with releases, version tags, or migration logs).
+   - **Releases & Versioning:** [CHANGELOG.md](CHANGELOG.md) and [docs/runbooks/versioning.md](docs/runbooks/versioning.md) (release policy, SemVer baseline, and changelog updates).
 3. **What to Write & Update:**
    - **Rules & Standards:** Any new persistent coding or architectural convention must be added directly to [docs/architecture/conventions.md](docs/architecture/conventions.md).
    - **Architectural Decisions:** Any significant design choice, trade-off, or pre-release package adoption must be recorded in [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md).

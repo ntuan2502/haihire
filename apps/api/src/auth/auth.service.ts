@@ -1,4 +1,7 @@
-import { Injectable, Inject } from "@nestjs/common";
+import { Injectable, Inject, Optional } from "@nestjs/common";
+import type Redis from "ioredis";
+import { REDIS_CLIENT } from "../redis/redis.module";
+import { PermissionResolverService } from "./permission-resolver.service";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
@@ -11,7 +14,7 @@ import {
   AppConflictException,
   AppBadRequestException,
 } from "../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { APP_ERROR_CODES, Role, type Permission, PERMISSIONS, hasPermission } from "@haihire/shared";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
@@ -23,6 +26,12 @@ export class AuthService {
     private readonly prisma: PrismaService,
     @Inject(JwtService)
     private readonly jwtService: JwtService,
+    @Optional()
+    @Inject(REDIS_CLIENT)
+    private readonly redis?: Redis,
+    @Optional()
+    @Inject(PermissionResolverService)
+    private readonly permissionResolver?: PermissionResolverService,
   ) {}
 
   async validateRecruiter(dto: LoginDto) {
@@ -198,7 +207,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh", tokenVersion },
+      { sub: user.id, type: "refresh", tokenVersion, jti: crypto.randomUUID() },
       { expiresIn: "7d" },
     );
 
@@ -262,7 +271,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh", tokenVersion: 0 },
+      { sub: user.id, type: "refresh", tokenVersion: 0, jti: crypto.randomUUID() },
       { expiresIn: "7d" },
     );
 
@@ -274,7 +283,19 @@ export class AuthService {
   }
 
   async refreshToken(dto: RefreshTokenDto) {
-    let decoded: { sub: string; type?: string; tokenVersion?: number };
+    if (!dto.refreshToken) {
+      throw new AppUnauthorizedException(
+        APP_ERROR_CODES.USER_SESSION_EXPIRED,
+        "No refresh token provided",
+      );
+    }
+
+    let decoded: {
+      sub: string;
+      type?: string;
+      tokenVersion?: number;
+      jti?: string;
+    };
     try {
       decoded = this.jwtService.verify(dto.refreshToken);
     } catch {
@@ -319,6 +340,33 @@ export class AuthService {
       );
     }
 
+    // Refresh Token Rotation (RTR): Detect reuse of previously exchanged refresh token
+    if (this.redis && decoded.jti) {
+      try {
+        const isRevoked = await this.redis.get(`revoked_rt:${decoded.jti}`);
+        if (isRevoked) {
+          // Token reuse detected! Invalidate all sessions for this user.
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { tokenVersion: { increment: 1 } },
+          });
+          throw new AppUnauthorizedException(
+            APP_ERROR_CODES.USER_SESSION_EXPIRED,
+            "Compromised refresh token reuse detected. All sessions revoked.",
+          );
+        }
+        // Mark this refresh token jti as revoked with a 7-day TTL
+        await this.redis.set(
+          `revoked_rt:${decoded.jti}`,
+          "1",
+          "EX",
+          7 * 24 * 3600,
+        );
+      } catch (err) {
+        if (err instanceof AppUnauthorizedException) throw err;
+      }
+    }
+
     const payload = {
       sub: user.id,
       email: user.email,
@@ -328,7 +376,12 @@ export class AuthService {
 
     const newAccessToken = this.jwtService.sign(payload);
     const newRefreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh", tokenVersion: userTokenVersion },
+      {
+        sub: user.id,
+        type: "refresh",
+        tokenVersion: userTokenVersion,
+        jti: crypto.randomUUID(),
+      },
       { expiresIn: "7d" },
     );
 
@@ -436,7 +489,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
-      { sub: updatedUser.id, type: "refresh", tokenVersion },
+      { sub: updatedUser.id, type: "refresh", tokenVersion, jti: crypto.randomUUID() },
       { expiresIn: "7d" },
     );
 
@@ -500,5 +553,29 @@ export class AuthService {
       isOwner,
       organization,
     };
+  }
+
+  async getMyPermissions(user: {
+    id: string;
+    role: Role;
+    organizationId?: string | null;
+    isOwner?: boolean;
+  }) {
+    if (this.permissionResolver) {
+      const permissions = await this.permissionResolver.resolveAllPermissions(
+        user.organizationId,
+        user.role,
+        user.isOwner ?? false,
+      );
+      return { permissions };
+    }
+
+    if (user.isOwner || user.role === Role.ADMIN) {
+      return { permissions: Object.keys(PERMISSIONS) as Permission[] };
+    }
+    const permissions = (Object.keys(PERMISSIONS) as Permission[]).filter((p) =>
+      hasPermission(user.role, p),
+    );
+    return { permissions };
   }
 }

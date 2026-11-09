@@ -368,5 +368,56 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
       expect(mockUsers[0].tokenVersion).toBe(0);
     });
+
+    it("14. Should detect refresh token reuse with Redis and invalidate all sessions", async () => {
+      const mockRedis = {
+        get: vi.fn().mockResolvedValue("1"), // already revoked
+        set: vi.fn().mockResolvedValue("OK"),
+      };
+      const authServiceWithRedis = new AuthService(
+        mockPrismaService as never,
+        mockJwtService as never,
+        mockRedis as never,
+      );
+
+      mockJwtService.verify.mockReturnValueOnce({
+        sub: "usr-admin",
+        type: "refresh",
+        tokenVersion: 0,
+        jti: "compromised-jti-uuid",
+      });
+
+      await expect(
+        authServiceWithRedis.refreshToken({ refreshToken: "valid-looking-token" }),
+      ).rejects.toThrow("Compromised refresh token reuse detected");
+
+      expect(mockUsers[0].tokenVersion).toBe(1);
+    });
+
+    it("15. Should resolve permissions using getMyPermissions", async () => {
+      const mockResolver = {
+        resolveAllPermissions: vi.fn().mockResolvedValue(["candidate:view", "candidate:create"]),
+      };
+      const authServiceWithResolver = new AuthService(
+        mockPrismaService as never,
+        mockJwtService as never,
+        undefined,
+        mockResolver as never,
+      );
+
+      const result = await authServiceWithResolver.getMyPermissions({
+        id: "usr-member",
+        role: "MEMBER" as const,
+        organizationId: "org-1",
+        isOwner: false,
+      });
+
+      expect(result.permissions).toEqual(["candidate:view", "candidate:create"]);
+      expect(mockResolver.resolveAllPermissions).toHaveBeenCalledWith(
+        "org-1",
+        "MEMBER",
+        false,
+      );
+    });
   });
 });

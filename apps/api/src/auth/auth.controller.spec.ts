@@ -12,6 +12,7 @@ describe("AuthController", () => {
     changePassword: ReturnType<typeof vi.fn>;
     logout: ReturnType<typeof vi.fn>;
     getProfile: ReturnType<typeof vi.fn>;
+    getMyPermissions: ReturnType<typeof vi.fn>;
   };
 
   let mockResponse: {
@@ -27,6 +28,7 @@ describe("AuthController", () => {
       changePassword: vi.fn(),
       logout: vi.fn(),
       getProfile: vi.fn(),
+      getMyPermissions: vi.fn(),
     };
     mockResponse = {
       cookie: vi.fn(),
@@ -89,7 +91,7 @@ describe("AuthController", () => {
   });
 
   describe("login, register, and refresh cookie setting", () => {
-    it("login sets haihire_token HttpOnly cookie", async () => {
+    it("login sets haihire_token and haihire_refresh_token HttpOnly cookies", async () => {
       const loginResult = {
         accessToken: "access-token-login",
         refreshToken: "refresh-token-login",
@@ -108,9 +110,49 @@ describe("AuthController", () => {
         "access-token-login",
         expect.objectContaining({ httpOnly: true }),
       );
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        "haihire_refresh_token",
+        "refresh-token-login",
+        expect.objectContaining({ httpOnly: true }),
+      );
     });
 
-    it("logout clears haihire_token cookie with maxAge 0", async () => {
+    it("refresh extracts refresh token from cookie when body is empty", async () => {
+      const refreshResult = {
+        accessToken: "new-access",
+        refreshToken: "new-refresh",
+      };
+      mockAuthService.refreshToken.mockResolvedValue(refreshResult);
+
+      const req = {
+        cookies: {
+          haihire_refresh_token: "cookie-refresh-token",
+        },
+      };
+
+      const result = await controller.refresh(
+        req,
+        {},
+        mockResponse as unknown as Response,
+      );
+
+      expect(mockAuthService.refreshToken).toHaveBeenCalledWith({
+        refreshToken: "cookie-refresh-token",
+      });
+      expect(result).toBe(refreshResult);
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        "haihire_token",
+        "new-access",
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        "haihire_refresh_token",
+        "new-refresh",
+        expect.objectContaining({ httpOnly: true }),
+      );
+    });
+
+    it("logout clears haihire_token and haihire_refresh_token cookies with maxAge 0", async () => {
       mockAuthService.logout.mockResolvedValue(undefined);
 
       const result = await controller.logout(
@@ -124,6 +166,27 @@ describe("AuthController", () => {
         "",
         expect.objectContaining({ maxAge: 0, httpOnly: true }),
       );
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        "haihire_refresh_token",
+        "",
+        expect.objectContaining({ maxAge: 0, httpOnly: true }),
+      );
+    });
+
+    it("getMyPermissions delegates to authService.getMyPermissions", async () => {
+      const user = {
+        id: "u-1",
+        role: "MEMBER" as const,
+        organizationId: "org-1",
+        isOwner: false,
+      };
+      const expectedPermissions = { permissions: ["candidate:view"] };
+      mockAuthService.getMyPermissions.mockResolvedValue(expectedPermissions);
+
+      const result = await controller.getMyPermissions({ user });
+
+      expect(mockAuthService.getMyPermissions).toHaveBeenCalledWith(user);
+      expect(result).toBe(expectedPermissions);
     });
   });
 });

@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { hasPermission, type Permission, Role } from "@haihire/shared";
+import { hasPermission, type Permission, Role, PERMISSIONS } from "@haihire/shared";
 
 interface CacheEntry {
   overrides: Map<string, boolean>;
@@ -46,6 +46,33 @@ export class PermissionResolverService {
     }
 
     return hasPermission(role, permission);
+  }
+
+  /**
+   * Resolves all active permissions granted to a specific role in an organization.
+   */
+  async resolveAllPermissions(
+    organizationId: string | null | undefined,
+    role: Role,
+    isOwner = false,
+  ): Promise<Permission[]> {
+    const allPermissions = Object.keys(PERMISSIONS) as Permission[];
+    if (isOwner || role === Role.ADMIN) {
+      return allPermissions;
+    }
+
+    const granted: Permission[] = [];
+    for (const permission of allPermissions) {
+      const allowed = await this.resolvePermission(
+        organizationId,
+        role,
+        permission,
+      );
+      if (allowed) {
+        granted.push(permission);
+      }
+    }
+    return granted;
   }
 
   /**

@@ -1056,6 +1056,7 @@ export interface TranslationSchema {
     feedbackPlaceholder: string;
     saveScorecard: string;
     savingScorecard: string;
+    scorecardNoPermission: string;
     recommendations: {
       strongYes: string;
       strongYesDesc: string;
@@ -1371,6 +1372,20 @@ export interface TranslationSchema {
     proEnterpriseDesc: string;
     enterpriseFeatureDesc: string;
     viewUpgradePlans: string;
+    changePasswordTitle: string;
+    changePasswordSub: string;
+    currentPassword: string;
+    currentPasswordPlaceholder: string;
+    newPassword: string;
+    newPasswordPlaceholder: string;
+    confirmNewPassword: string;
+    confirmNewPasswordPlaceholder: string;
+    updatePasswordBtn: string;
+    updatingPassword: string;
+    passwordChangedSuccess: string;
+    passwordMismatchError: string;
+    passwordTooShortError: string;
+    currentPasswordRequiredError: string;
     tabs: {
       general: string;
       generalSub: string;

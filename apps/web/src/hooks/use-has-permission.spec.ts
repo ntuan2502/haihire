@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useHasPermission } from "./use-has-permission";
 import * as AuthContextModule from "@/context/auth-context";
-import { Role, type User } from "@haihire/shared";
+import * as OrgQueriesModule from "./use-organization-queries";
+import { Role, type User, type Permission } from "@haihire/shared";
 
 describe("useHasPermission hook", () => {
   const mockUserRole = (role: Role | null, isOwner = false) => {
@@ -33,6 +34,10 @@ describe("useHasPermission hook", () => {
       canEdit: role === Role.ADMIN || isOwner,
     });
   };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("returns false if user is not authenticated", () => {
     mockUserRole(null);
@@ -124,5 +129,39 @@ describe("useHasPermission hook", () => {
       useHasPermission("job:create"),
     );
     expect(writeForbidden.current).toBe(false);
+  });
+
+  describe("Dynamic RBAC Overrides (organizationRolePermission)", () => {
+    it("respects dynamic override when admin turns OFF interview:scorecard_submit for INTERVIEWER", () => {
+      mockUserRole(Role.INTERVIEWER, false);
+      vi.spyOn(OrgQueriesModule, "useRolePermissionsMatrix").mockReturnValue({
+        data: {
+          [Role.INTERVIEWER]: {
+            "interview:scorecard_submit": false,
+          } as Record<Permission, boolean>,
+        } as Record<Role, Record<Permission, boolean>>,
+      } as ReturnType<typeof OrgQueriesModule.useRolePermissionsMatrix>);
+
+      const { result } = renderHook(() =>
+        useHasPermission("interview:scorecard_submit"),
+      );
+      expect(result.current).toBe(false);
+    });
+
+    it("respects dynamic override when admin turns ON interview:scorecard_submit for MEMBER", () => {
+      mockUserRole(Role.MEMBER, false);
+      vi.spyOn(OrgQueriesModule, "useRolePermissionsMatrix").mockReturnValue({
+        data: {
+          [Role.MEMBER]: {
+            "interview:scorecard_submit": true,
+          } as Record<Permission, boolean>,
+        } as Record<Role, Record<Permission, boolean>>,
+      } as ReturnType<typeof OrgQueriesModule.useRolePermissionsMatrix>);
+
+      const { result } = renderHook(() =>
+        useHasPermission("interview:scorecard_submit"),
+      );
+      expect(result.current).toBe(true);
+    });
   });
 });

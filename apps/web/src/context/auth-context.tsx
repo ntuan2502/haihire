@@ -5,12 +5,11 @@ import {
   useContext,
   useState,
   useEffect,
-  useRef,
   useCallback,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { api, getApiBaseUrl } from "@/lib/api";
+import { api, getApiBaseUrl } from "@/lib/api/client";
 import type { User, Organization } from "@/types";
 
 interface AuthContextType {
@@ -32,6 +31,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = "haihire_recruiter_token";
+const REFRESH_TOKEN_KEY = "haihire_recruiter_refresh_token";
 const USER_KEY = "haihire_recruiter_user";
 
 function setAuthCookies(token: string | null | undefined, hasOrg: boolean) {
@@ -72,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     clearAuthCookies();
     api.post("/auth/logout").catch(() => {});
@@ -112,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null);
         setUser(null);
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         clearAuthCookies();
         delete api.defaults.headers.common.Authorization;
@@ -141,21 +143,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthCookies(savedToken, Boolean(parsedUser.organizationId));
       }
     } catch (err) {
-      console.error("Failed to load saved session", err);
+      console.error("Failed to parse stored auth user:", err);
     } finally {
       setLoading(false);
     }
 
-    // Immediately verify with server on load
     refreshUser();
   }, [refreshUser]);
 
-  const userRef = useRef(user);
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
-
-  // Real-time synchronization via Server-Sent Events (SSE)
+  // SSE Real-Time Sync & Background Visibility Wake-Up
   const currentUserId = user?.id;
   useEffect(() => {
     if (!token || !currentUserId) return;
@@ -167,65 +163,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     eventSource.onmessage = (e) => {
       try {
-        const payload = JSON.parse(e.data);
-        if (!payload || !payload.type) return;
+        const data = JSON.parse(e.data);
 
-        // Broadcast to application components
+        // Notify entire app of SSE events
         if (typeof window !== "undefined") {
           window.dispatchEvent(
-            new CustomEvent("ats:sse_event", { detail: payload }),
+            new CustomEvent("ats:sse_event", { detail: data }),
           );
         }
 
-        const currentUser = userRef.current;
-        if (payload.type === "MEMBER_REMOVED") {
-          // If this user was removed from the organization, kick out immediately!
-          if (currentUser && payload.targetUserId === currentUser.id) {
-            const updatedUser: User = {
-              ...currentUser,
-              organizationId: null,
-              organization: null,
-            };
-            setUser(updatedUser);
-            localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-            setAuthCookies(token, false);
+        if (data.type === "ORGANIZATION_REMOVED") {
+          if (data.userId === currentUserId) {
+            refreshUser().then((updatedUser) => {
+              if (!updatedUser) return;
+              setUser(updatedUser);
+              localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+              setAuthCookies(token, false);
 
-            if (
-              typeof window !== "undefined" &&
-              window.location.pathname.startsWith("/dashboard")
-            ) {
-              router.replace("/auth/onboarding");
-            }
-          }
-        } else if (payload.type === "MEMBER_ROLE_UPDATED") {
-          // If this user's role was updated, update state and re-sync
-          if (payload.targetUserId === currentUser?.id && payload.role) {
-            setUser((prev) => {
-              if (!prev) return prev;
-              const updated = {
-                ...prev,
-                role: payload.role as "ADMIN" | "MEMBER",
-              };
-              localStorage.setItem(USER_KEY, JSON.stringify(updated));
-              return updated;
+              if (
+                typeof window !== "undefined" &&
+                window.location.pathname.startsWith("/dashboard")
+              ) {
+                router.replace("/auth/onboarding");
+              }
             });
-            // Re-sync with server to ensure complete consistency
-            refreshUser();
           }
-        } else if (payload.type === "PERMISSIONS_CHANGED") {
-          // Re-sync current user to refresh permissions and role state
-          refreshUser();
+        } else if (data.type === "ORGANIZATION_SWITCHED") {
+          if (data.userId === currentUserId) {
+            refreshUser().then((updatedUser) => {
+              if (updatedUser) {
+                setUser(updatedUser);
+                localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+                setAuthCookies(token, Boolean(updatedUser.organizationId));
+              }
+            });
+          }
+        } else if (data.type === "ROLE_CHANGED") {
+          if (data.userId === currentUserId) {
+            refreshUser().then((updatedUser) => {
+              if (updatedUser) {
+                setUser(updatedUser);
+                localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+              }
+            });
+          }
         }
       } catch (err) {
-        console.error("Failed to parse SSE event", err);
+        console.error("[SSE Auth] Failed to parse message:", err);
       }
     };
 
     eventSource.onerror = (err) => {
-      console.warn("SSE stream disconnected, auto-reconnecting...", err);
+      console.warn("[SSE Auth] Connection dropped or reconnecting...", err);
     };
 
-    // Tab focus listener for background safety net (no spam polling)
     const handleFocus = () => {
       refreshUser();
     };
@@ -249,17 +240,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<User> => {
     const response = await api.post<{
       accessToken: string;
+      refreshToken?: string;
       user: User;
     }>("/auth/login", {
       email,
       password,
     });
 
-    const { accessToken, user: userData } = response.data;
+    const { accessToken, refreshToken, user: userData } = response.data;
 
     setToken(accessToken);
     setUser(userData);
     localStorage.setItem(TOKEN_KEY, accessToken);
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 
@@ -274,6 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<User> => {
     const response = await api.post<{
       accessToken: string;
+      refreshToken?: string;
       user: User;
     }>("/auth/register", {
       name,
@@ -281,11 +277,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
 
-    const { accessToken, user: userData } = response.data;
+    const { accessToken, refreshToken, user: userData } = response.data;
 
     setToken(accessToken);
     setUser(userData);
     localStorage.setItem(TOKEN_KEY, accessToken);
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setAuthCookies(accessToken, Boolean(userData.organizationId));
 

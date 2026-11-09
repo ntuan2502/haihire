@@ -14,6 +14,7 @@ import type {
   UpdateInterviewInput,
   PaginatedResult,
 } from "@/types";
+import type { InterviewScorecard } from "@/lib/interviews";
 import { queryKeys } from "./query-keys";
 
 export function useInterviews(params?: {
@@ -103,6 +104,34 @@ export function useUpdateInterviewMutation() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateInterviewInput }) =>
       interviewsApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.interview(variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.interview(variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useSubmitScorecardMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      scorecard,
+    }: {
+      id: string;
+      scorecard: InterviewScorecard | Record<string, unknown> | string;
+    }) => interviewsApi.submitScorecard(id, scorecard),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({

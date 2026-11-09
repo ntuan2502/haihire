@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type { Interview, CreateInterviewInput, UpdateInterviewInput, PaginatedResult } from "@/types";
+import type { InterviewScorecard } from "../interviews";
 
 export const interviewsApi = {
   getAll: async (params?: {
@@ -28,6 +29,16 @@ export const interviewsApi = {
 
   update: async (id: string, data: UpdateInterviewInput): Promise<Interview> => {
     const response = await api.patch<Interview>(`/interviews/${id}`, data);
+    return response.data;
+  },
+
+  submitScorecard: async (
+    id: string,
+    scorecard: InterviewScorecard | Record<string, unknown> | string,
+  ): Promise<Interview> => {
+    const response = await api.patch<Interview>(`/interviews/${id}/scorecard`, {
+      scorecard,
+    });
     return response.data;
   },
 

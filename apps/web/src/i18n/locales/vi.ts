@@ -1192,6 +1192,7 @@ export const vi: TranslationSchema = {
       "Ghi lại điểm mạnh, điểm cần cải thiện hoặc lý do đưa ra khuyến nghị tuyển dụng trên...",
     saveScorecard: "Lưu phiếu đánh giá",
     savingScorecard: "Đang lưu...",
+    scorecardNoPermission: "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
     recommendations: {
       strongYes: "Tuyển ngay",
       strongYesDesc: "Rất xuất sắc, đạt trọn vẹn tiêu chí",
@@ -1533,6 +1534,20 @@ export const vi: TranslationSchema = {
     enterpriseFeatureDesc:
       "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
     viewUpgradePlans: "Xem các gói nâng cấp",
+    changePasswordTitle: "Đổi mật khẩu",
+    changePasswordSub: "Cập nhật mật khẩu tài khoản định kỳ để bảo đảm an toàn thông tin",
+    currentPassword: "Mật khẩu hiện tại",
+    currentPasswordPlaceholder: "Nhập mật khẩu hiện tại",
+    newPassword: "Mật khẩu mới",
+    newPasswordPlaceholder: "Nhập mật khẩu mới (tối thiểu 6 ký tự)",
+    confirmNewPassword: "Xác nhận mật khẩu mới",
+    confirmNewPasswordPlaceholder: "Nhập lại mật khẩu mới",
+    updatePasswordBtn: "Cập nhật mật khẩu",
+    updatingPassword: "Đang cập nhật mật khẩu...",
+    passwordChangedSuccess: "Đổi mật khẩu thành công.",
+    passwordMismatchError: "Mật khẩu xác nhận không khớp.",
+    passwordTooShortError: "Mật khẩu mới phải có ít nhất 6 ký tự.",
+    currentPasswordRequiredError: "Vui lòng nhập mật khẩu hiện tại.",
     tabs: {
       general: "Chung",
       generalSub: "Hồ sơ tổ chức",

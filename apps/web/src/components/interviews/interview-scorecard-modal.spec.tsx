@@ -3,9 +3,9 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { InterviewScorecardModal } from "./interview-scorecard-modal";
 import type { Application, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
+import * as UseHasPermissionModule from "@/hooks/use-has-permission";
 
-const mockUpdateInterviewMutateAsync = vi.fn();
-const mockUpdateCandidateMutateAsync = vi.fn();
+const mockSubmitScorecardMutateAsync = vi.fn();
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
@@ -14,14 +14,14 @@ vi.mock("@/context/auth-context", () => ({
 }));
 
 vi.mock("@/hooks/use-queries", () => ({
-  useUpdateInterviewMutation: () => ({
-    mutateAsync: mockUpdateInterviewMutateAsync,
+  useSubmitScorecardMutation: () => ({
+    mutateAsync: mockSubmitScorecardMutateAsync,
     isPending: false,
   }),
-  useUpdateCandidateMutation: () => ({
-    mutateAsync: mockUpdateCandidateMutateAsync,
-    isPending: false,
-  }),
+}));
+
+vi.mock("@/hooks/use-has-permission", () => ({
+  useHasPermission: vi.fn().mockReturnValue(true),
 }));
 
 vi.mock("@/i18n", () => ({
@@ -39,6 +39,7 @@ vi.mock("@/i18n", () => ({
         "interviews.feedbackPlaceholder": "Ghi chú về kỹ năng chuyên môn, thái độ...",
         "interviews.saveScorecard": "Lưu đánh giá",
         "interviews.savingScorecard": "Đang lưu...",
+        "interviews.scorecardNoPermission": "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
         "common.close": "Đóng",
       };
       return dict[key] || key;
@@ -81,6 +82,7 @@ describe("InterviewScorecardModal Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(UseHasPermissionModule.useHasPermission).mockReturnValue(true);
   });
 
   it("does not render when isOpen is false or missing interview/application", () => {
@@ -91,7 +93,7 @@ describe("InterviewScorecardModal Component", () => {
         application={mockApplication}
         interview={mockInterview}
         job={mockJob}
-      />
+      />,
     );
 
     expect(screen.queryByText("Đánh giá phỏng vấn")).not.toBeInTheDocument();
@@ -106,7 +108,7 @@ describe("InterviewScorecardModal Component", () => {
         application={mockApplication}
         interview={mockInterview}
         job={mockJob}
-      />
+      />,
     );
 
     expect(screen.getByText("Đánh giá phỏng vấn")).toBeInTheDocument();
@@ -115,8 +117,8 @@ describe("InterviewScorecardModal Component", () => {
     expect(screen.getByText("Tuyển (Yes)")).toBeInTheDocument();
   });
 
-  it("allows selecting recommendation and filling feedback before saving", async () => {
-    mockUpdateInterviewMutateAsync.mockResolvedValueOnce({ id: "int-100" });
+  it("allows selecting recommendation and filling feedback before saving via submitScorecard", async () => {
+    mockSubmitScorecardMutateAsync.mockResolvedValueOnce({ id: "int-100" });
     const handleClose = vi.fn();
     const handleSaved = vi.fn();
 
@@ -128,7 +130,7 @@ describe("InterviewScorecardModal Component", () => {
         interview={mockInterview}
         job={mockJob}
         onSaved={handleSaved}
-      />
+      />,
     );
 
     // Select Strong Yes
@@ -139,7 +141,7 @@ describe("InterviewScorecardModal Component", () => {
 
     // Type feedback
     const feedbackInput = screen.getByPlaceholderText(
-      "Ghi chú về kỹ năng chuyên môn, thái độ..."
+      "Ghi chú về kỹ năng chuyên môn, thái độ...",
     );
     fireEvent.change(feedbackInput, {
       target: { value: "Excellent knowledge of TypeScript and distributed systems." },
@@ -152,18 +154,37 @@ describe("InterviewScorecardModal Component", () => {
     }
 
     await waitFor(() => {
-      expect(mockUpdateInterviewMutateAsync).toHaveBeenCalledWith({
+      expect(mockSubmitScorecardMutateAsync).toHaveBeenCalledWith({
         id: "int-100",
-        data: {
-          scorecard: expect.objectContaining({
-            recommendation: "STRONG_YES",
-            feedback: "Excellent knowledge of TypeScript and distributed systems.",
-            evaluatedBy: "Recruiter Alice",
-          }),
-        },
+        scorecard: expect.objectContaining({
+          recommendation: "STRONG_YES",
+          feedback: "Excellent knowledge of TypeScript and distributed systems.",
+          evaluatedBy: "Recruiter Alice",
+        }),
       });
       expect(handleSaved).toHaveBeenCalledTimes(1);
       expect(handleClose).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("disables save button and displays warning banner when user lacks interview:scorecard_submit permission", () => {
+    vi.mocked(UseHasPermissionModule.useHasPermission).mockReturnValue(false);
+
+    render(
+      <InterviewScorecardModal
+        isOpen={true}
+        onClose={vi.fn()}
+        application={mockApplication}
+        interview={mockInterview}
+        job={mockJob}
+      />,
+    );
+
+    expect(
+      screen.getByText("Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn."),
+    ).toBeInTheDocument();
+
+    const saveBtn = screen.getByText("Lưu đánh giá").closest("button");
+    expect(saveBtn).toBeDisabled();
   });
 });

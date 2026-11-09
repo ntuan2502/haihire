@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type InternalAxiosRequestConfig } from "axios";
 import { env } from "../env";
 
 export const getApiBaseUrl = () => {
@@ -52,6 +52,126 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Silent Token Refresh Queue & Handling
+interface QueueItem {
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}
+
+let isRefreshing = false;
+let failedQueue: QueueItem[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Response Interceptor for 401 Silent Refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error?.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
+
+    if (
+      error?.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
+      const url = originalRequest.url || "";
+      if (
+        url.includes("/auth/login") ||
+        url.includes("/auth/register") ||
+        url.includes("/auth/refresh")
+      ) {
+        return Promise.reject(error);
+      }
+
+      if (typeof window === "undefined") {
+        return Promise.reject(error);
+      }
+
+      const refreshToken = localStorage.getItem(
+        "haihire_recruiter_refresh_token",
+      );
+      if (!refreshToken) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token: string) => {
+              if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+              }
+              resolve(api.request(originalRequest));
+            },
+            reject,
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshRes = await axios.post<{
+          accessToken: string;
+          refreshToken?: string;
+        }>(
+          `${getApiBaseUrl()}/auth/refresh`,
+          { refreshToken },
+          { withCredentials: true },
+        );
+
+        const newAccessToken = refreshRes.data.accessToken;
+        const newRefreshToken = refreshRes.data.refreshToken;
+
+        localStorage.setItem("haihire_recruiter_token", newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem(
+            "haihire_recruiter_refresh_token",
+            newRefreshToken,
+          );
+        }
+
+        const maxAge = 60 * 60 * 24 * 7;
+        const secure =
+          window.location.protocol === "https:" ? "; Secure" : "";
+        document.cookie = `haihire_token=${newAccessToken}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+
+        api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        }
+
+        processQueue(null, newAccessToken);
+        return api.request(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        localStorage.removeItem("haihire_recruiter_token");
+        localStorage.removeItem("haihire_recruiter_refresh_token");
+        localStorage.removeItem("haihire_recruiter_user");
+        document.cookie = `haihire_token=; path=/; max-age=0; SameSite=Lax`;
+        delete api.defaults.headers.common.Authorization;
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export async function downloadAuthenticatedFile(
   downloadPath: string,

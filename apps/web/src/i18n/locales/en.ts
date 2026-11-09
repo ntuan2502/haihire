@@ -1188,6 +1188,7 @@ export const en: TranslationSchema = {
       "Record strengths, areas of improvement, or justification for your hiring recommendation...",
     saveScorecard: "Save Scorecard",
     savingScorecard: "Saving...",
+    scorecardNoPermission: "You do not have permission to submit or edit interview scorecards.",
     recommendations: {
       strongYes: "Strong Yes",
       strongYesDesc: "Outstanding, meets all criteria fully",
@@ -1529,6 +1530,20 @@ export const en: TranslationSchema = {
     enterpriseFeatureDesc:
       "This module provides enterprise-level integrations, retention safeguards, and dedicated custom AI models.",
     viewUpgradePlans: "View Upgrade Plans",
+    changePasswordTitle: "Change Password",
+    changePasswordSub: "Update your account password to maintain security",
+    currentPassword: "Current Password",
+    currentPasswordPlaceholder: "Enter your current password",
+    newPassword: "New Password",
+    newPasswordPlaceholder: "Enter new password (min. 6 characters)",
+    confirmNewPassword: "Confirm New Password",
+    confirmNewPasswordPlaceholder: "Re-enter new password",
+    updatePasswordBtn: "Update Password",
+    updatingPassword: "Updating Password...",
+    passwordChangedSuccess: "Password changed successfully.",
+    passwordMismatchError: "New passwords do not match.",
+    passwordTooShortError: "Password must be at least 6 characters.",
+    currentPasswordRequiredError: "Current password is required.",
     tabs: {
       general: "General",
       generalSub: "Organization profile",

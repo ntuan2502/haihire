@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { MinioModule } from "../minio/minio.module";
-import { PrismaService } from "../prisma/prisma.service";
+
 import { ApplicationsController } from "./applications.controller";
 import {
   ApplicationsService,
@@ -38,7 +38,7 @@ import { CommonModule } from "../common/common.module";
     ApplicationsSagaService,
     ApplicationsStageService,
     ApplicationsDocumentsService,
-    PrismaService,
+
     OrphanCleanupProcessor,
   ],
   exports: [ApplicationsService, BullModule],

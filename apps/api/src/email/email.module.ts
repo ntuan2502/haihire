@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
-import { PrismaService } from "../prisma/prisma.service";
+
 import { ActivitiesModule } from "../activities/activities.module";
 import { WebhookModule } from "../common/webhook/webhook.module";
 import { EncryptionService } from "../common/encryption.service";
@@ -33,7 +33,7 @@ import {
   ],
   controllers: [EmailController],
   providers: [
-    PrismaService,
+
     EncryptionService,
     EmailService,
     EmailDispatchService,

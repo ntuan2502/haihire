@@ -4,7 +4,7 @@ import { PassportModule } from "@nestjs/passport";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./jwt.strategy";
-import { PrismaService } from "../prisma/prisma.service";
+
 import { PermissionResolverService } from "./permission-resolver.service";
 import { RolesGuard } from "./roles.guard";
 import { env } from "../config/env";
@@ -25,7 +25,7 @@ import { env } from "../config/env";
   providers: [
     AuthService,
     JwtStrategy,
-    PrismaService,
+
     PermissionResolverService,
     RolesGuard,
   ],

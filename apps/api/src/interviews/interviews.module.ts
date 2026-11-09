@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+
 import { InterviewsController } from "./interviews.controller";
 import { InterviewsService } from "./interviews.service";
 import {
@@ -18,7 +18,7 @@ import { EmailModule } from "../email/email.module";
     InterviewsQueryService,
     InterviewsScheduleService,
     InterviewsScorecardService,
-    PrismaService,
+
   ],
   exports: [
     InterviewsService,

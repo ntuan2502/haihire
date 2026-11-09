@@ -8,7 +8,7 @@ import {
   OrganizationsRolesService,
   OrganizationsAuditLogService,
 } from "./services";
-import { PrismaService } from "../prisma/prisma.service";
+
 import { AuthModule } from "../auth/auth.module";
 import { EventsModule } from "../events/events.module";
 
@@ -22,7 +22,7 @@ import { EventsModule } from "../events/events.module";
     OrganizationsInvitesService,
     OrganizationsRolesService,
     OrganizationsAuditLogService,
-    PrismaService,
+
   ],
   exports: [
     OrganizationsService,

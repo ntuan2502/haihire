@@ -315,8 +315,8 @@ describe("CandidatesService (Characterization Tests)", () => {
 
       expect(created).toBeDefined();
       expect(created.name).toBe("Tran Van Minh");
-      expect(created.firstName).toBe("Minh");
-      expect(created.lastName).toBe("Tran Van");
+      expect(created.firstName).toBe("Tran");
+      expect(created.lastName).toBe("Van Minh");
       expect(created.email).toBe("tranvanminh@example.com");
       expect(created.dateOfBirth).toBeDefined();
     });
@@ -469,6 +469,42 @@ describe("CandidatesService (Characterization Tests)", () => {
           "org-1",
         ),
       ).rejects.toThrow("Cross-tenant resume reference is not permitted");
+    });
+
+    it("rejects tenant overrides before creating candidates or uploading files", async () => {
+      await expect(service.create({
+        name: "Attacker",
+        email: "attacker@example.com",
+        organizationId: "org-2",
+      }, undefined, "org-1")).rejects.toThrow(AppForbiddenException);
+      expect(candidateTable.store).toHaveLength(4);
+      expect(mockMinio.uploadFile).not.toHaveBeenCalled();
+    });
+
+    it("reports document deletion failures without clearing the candidate resume", async () => {
+      vi.spyOn(mockPrisma.candidateDocument, "deleteMany").mockRejectedValueOnce(new Error("Database unavailable"));
+      await expect(service.deleteDocument("cand-1", { documentId: "doc-1" }, "org-1"))
+        .rejects.toThrow("Database unavailable");
+      expect(candidateTable.store.find((candidate) => candidate.id === "cand-1")?.resumeUrl)
+        .toBe("https://minio.local/resumes/org-1/resume-1.pdf");
+    });
+
+    it("reports document lookup failures without clearing the candidate resume", async () => {
+      vi.spyOn(mockPrisma.candidateDocument, "findMany")
+        .mockResolvedValueOnce([])
+        .mockRejectedValueOnce(new Error("Database unavailable"));
+      await expect(service.deleteDocument("cand-1", undefined, "org-1"))
+        .rejects.toThrow("Database unavailable");
+      expect(candidateTable.store.find((candidate) => candidate.id === "cand-1")?.resumeUrl)
+        .toBe("https://minio.local/resumes/org-1/resume-1.pdf");
+    });
+
+    it.each([
+      { documentId: "doc-1" },
+      { url: "https://minio.local/resumes/org-1/cert.pdf" },
+    ])("does not delete another candidate's document using %j", async (selector) => {
+      await service.deleteDocument("cand-2", selector, "org-1");
+      expect(candidateDocTable.store.some((doc) => doc.id === "doc-1")).toBe(true);
     });
 
     it("deletes a document and resets or falls back candidate resume", async () => {

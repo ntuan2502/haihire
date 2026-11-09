@@ -1,3 +1,4 @@
+import { createTestOrganizationsService } from "../test/helpers/service-factories";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { OrganizationsService } from "./organizations.service";
 import {
@@ -119,7 +120,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       organizationInviteLink: mockLinks,
     });
 
-    service = new OrganizationsService(mockPrismaService as never);
+    service = createTestOrganizationsService(mockPrismaService as never);
   });
 
   describe("Organization Core", () => {

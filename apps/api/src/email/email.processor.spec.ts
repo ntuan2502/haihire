@@ -52,6 +52,13 @@ describe("EmailProcessor", () => {
   });
 
   describe("process", () => {
+    it.each(["send-email", "send-system-email"])("rejects resolved FAILED delivery for %s so BullMQ retries", async (name) => {
+      mockEmailService.executeSendEmail.mockResolvedValueOnce({ status: "FAILED", errorMessage: "SMTP unavailable" });
+      mockEmailService.executeSendSystemEmail.mockResolvedValueOnce({ status: "FAILED", success: false, error: "SMTP unavailable" });
+      const job = { id: "failed", name, data: { dto: {}, organizationId: "org-1" } } as unknown as Job<SendEmailJobData | SendSystemEmailJobData>;
+
+      await expect(processor.process(job)).rejects.toThrow("SMTP unavailable");
+    });
     it("processes regular send-email job via EmailService.executeSendEmail", async () => {
       const job = {
         id: "job-send-email-1",

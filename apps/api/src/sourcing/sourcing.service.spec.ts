@@ -309,22 +309,19 @@ describe("SourcingService", () => {
       deletedAt: null,
     });
 
-    // Simulate another instance holding the lock for 40ms
-    mockRedis.store.set("click:lock:lnk-retry", {
-      value: "held-by-other-node",
-      expiresAt: Date.now() + 40,
-    });
+    // Reject the first acquisition independently of scheduler timing.
+    mockRedis.set.mockResolvedValueOnce(null);
 
     const result = await service.recordClick(
       "lnk-retry",
       "https://linkedin.com",
       "127.0.0.1",
       "Browser",
-      { retryIntervalMs: 15, maxWaitMs: 1000 },
+      { retryIntervalMs: 1, maxWaitMs: 1000 },
     );
 
     expect(result.success).toBe(true);
-    expect(mockRedis.set.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(mockRedis.set).toHaveBeenCalledTimes(2);
     expect(inMemoryLinks[0].clicksCount).toBe(1);
     expect(mockRedis.store.has("click:lock:lnk-retry")).toBe(false);
   });

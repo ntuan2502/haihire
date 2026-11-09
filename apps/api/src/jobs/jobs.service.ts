@@ -240,7 +240,7 @@ export class JobsService {
     };
   }
 
-  async findOne(id: string, tenantOrgId?: string | null, isPublic = false) {
+  async findOne(id: string, tenantOrgId?: string | null, isPublic = false, fullCandidateAccess = true) {
     const job = await this.prisma.job.findFirst({
       where: { id },
       select: {
@@ -386,6 +386,24 @@ export class JobsService {
 
     const populatedApps = applications.map((a) => {
       const candidate = candidateMap.get(a.candidateId);
+      if (!fullCandidateAccess) {
+        return {
+          id: a.id,
+          candidateId: a.candidateId,
+          jobId: a.jobId,
+          stage: a.stage,
+          orderIndex: a.orderIndex,
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+          candidate: candidate ? {
+            id: candidate.id, name: candidate.name, email: candidate.email, phone: candidate.phone,
+          } : undefined,
+          candidateName: candidate?.name || "Unknown",
+          candidateEmail: candidate?.email || "",
+          candidatePhone: candidate?.phone || null,
+          interviews: [],
+        };
+      }
       return {
         ...a,
         candidate,

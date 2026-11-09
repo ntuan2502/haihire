@@ -48,14 +48,22 @@ export class EmailProcessor extends WorkerHost {
     try {
       if (job.name === "send-system-email") {
         const data = job.data as SendSystemEmailJobData;
-        return await this.emailService.executeSendSystemEmail(data.dto);
+        const result = await this.emailService.executeSendSystemEmail(data.dto);
+        if (result.status === "FAILED") {
+          throw new Error(result.error || "System email delivery failed");
+        }
+        return result;
       }
       const data = job.data as SendEmailJobData;
-      return await this.emailService.executeSendEmail(
+      const result = await this.emailService.executeSendEmail(
         data.dto,
         data.organizationId,
         data.senderUser,
       );
+      if (result.status === "FAILED") {
+        throw new Error(result.errorMessage || "Email delivery failed");
+      }
+      return result;
     } catch (err) {
       this.logger.error(`Failed to process email job ${job.id}:`, err);
       throw err;

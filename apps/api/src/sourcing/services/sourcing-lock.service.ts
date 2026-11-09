@@ -127,7 +127,7 @@ export class SourcingLockService {
           await tx.trackingLink.update({
             where: { id: link.id },
             data: {
-              clicksCount: (link.clicksCount || 0) + 1,
+              clicksCount: { increment: 1 },
               updatedAt: toInstant(),
             },
           });

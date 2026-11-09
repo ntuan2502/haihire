@@ -1,3 +1,4 @@
+import { queryEmailLogs } from "./email-log-query";
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { InjectQueue } from "@nestjs/bullmq";
@@ -11,7 +12,7 @@ import { ActivitiesService } from "../../activities/activities.service";
 import { EmailSettingsService } from "./email-settings.service";
 import { SendEmailDto, SendTestEmailDto } from "../dto/send-email.dto";
 import { EmailTransporterFactory } from "../transporters/transporter.factory";
-import { toTimestamp, toInstant } from "../../common/date.util";
+import { toInstant } from "../../common/date.util";
 import type { GetLogsOptions } from "./email-system.service";
 
 @Injectable()
@@ -46,7 +47,7 @@ export class EmailDispatchService {
         const appKey = dto.applicationId || "general";
         const templateKey = dto.templateType || "custom";
         const timeBucket = Math.floor(Date.now() / (5 * 60 * 1000));
-        const deterministicJobId = `email:${targetOrgId}:${templateKey}:${candidateKey}:${appKey}:${timeBucket}`;
+        const deterministicJobId = `email-${crypto.createHash("sha256").update(JSON.stringify([targetOrgId, templateKey, candidateKey, appKey, timeBucket])).digest("hex")}`;
 
         const job = await this.emailQueue.add(
           "send-email",
@@ -213,55 +214,10 @@ export class EmailDispatchService {
       return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
     }
 
-    const opts = options || {};
-
-    const where: Record<string, unknown> = {
-      organizationId: targetOrgId,
-      scope: "ORGANIZATION",
-    };
-
-    if (opts.candidateId) {
-      where.candidateId = opts.candidateId;
-    }
-
-    const logs = await this.prisma.emailLog.findMany({
-      where: { ...where, organizationId: targetOrgId },
-    });
-    let mapped = logs
-      .map((l) => ({
-        ...l,
-        candidateName: l.recipientName || "Ứng viên",
-        candidateEmail: l.recipientEmail || "",
-      }))
-      .sort((a, b) => toTimestamp(b.sentAt) - toTimestamp(a.sentAt));
-
-    if (opts.status && opts.status !== "ALL") {
-      mapped = mapped.filter((l) => l.status === opts.status);
-    }
-
-    if (opts.search && opts.search.trim() !== "") {
-      const s = opts.search.trim().toLowerCase();
-      mapped = mapped.filter(
-        (l) =>
-          (l.candidateName || "").toLowerCase().includes(s) ||
-          (l.candidateEmail || "").toLowerCase().includes(s) ||
-          (l.subject || "").toLowerCase().includes(s),
-      );
-    }
-
-    const total = mapped.length;
-    const page = opts.page && opts.page > 0 ? opts.page : 1;
-    const limit = opts.limit && opts.limit > 0 ? opts.limit : 20;
-    const totalPages = Math.ceil(total / limit) || 1;
-
-    const data = mapped.slice((page - 1) * limit, page * limit);
-
+    const result = await queryEmailLogs(this.prisma, { organizationId: targetOrgId, scope: "ORGANIZATION" }, options);
     return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
+      ...result,
+      data: result.data.map((l) => ({ ...l, candidateName: l.recipientName || "Ứng viên", candidateEmail: l.recipientEmail || "" })),
     };
   }
 }

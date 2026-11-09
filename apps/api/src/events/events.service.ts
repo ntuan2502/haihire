@@ -7,8 +7,8 @@ import {
   type OnModuleInit,
   type OnModuleDestroy,
 } from "@nestjs/common";
-import { Subject, Observable, merge, interval, of, from } from "rxjs";
-import { filter, map, switchMap } from "rxjs/operators";
+import { Subject, Observable, merge, interval, of } from "rxjs";
+import { concatMap, filter, map } from "rxjs/operators";
 import { JwtService } from "@nestjs/jwt";
 import type Redis from "ioredis";
 import { REDIS_CLIENT } from "../redis/redis.module";
@@ -110,35 +110,13 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
 
   async resolveUserOrgIds(
     userId: string,
-    tokenOrgId?: string | null,
   ): Promise<Set<string>> {
-    const orgIds = new Set<string>();
-    if (tokenOrgId) {
-      orgIds.add(tokenOrgId);
-    }
-    if (this.prisma) {
-      try {
-        const user = await this.prisma.user.findUnique({
-          where: { id: userId },
-          select: { organizationId: true },
-        });
-        if (user?.organizationId) {
-          orgIds.add(user.organizationId);
-        }
-        const memberships = await this.prisma.organizationMember.findMany({
-          where: { userId },
-          select: { organizationId: true },
-        });
-        for (const m of memberships) {
-          if (m.organizationId) {
-            orgIds.add(m.organizationId);
-          }
-        }
-      } catch {
-        // Fall back to tokenOrgId if database query is unavailable
-      }
-    }
-    return orgIds;
+    if (!this.prisma) throw new Error("PrismaService not available");
+    const memberships = await this.prisma.organizationMember.findMany({
+      where: { userId },
+      select: { organizationId: true },
+    });
+    return new Set(memberships.map((membership) => membership.organizationId));
   }
 
   subscribeWithToken(token?: string): Observable<MessageEvent> {
@@ -153,7 +131,7 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
       throw new Error("JwtService not available");
     }
 
-    let payload: { sub?: string; id?: string; organizationId?: string };
+    let payload: { sub?: string; type?: string; tokenVersion?: number };
     try {
       payload = this.jwtService.verify(token);
     } catch {
@@ -163,16 +141,44 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
       );
     }
 
-    const userId = payload.sub || payload.id;
-    if (!userId) {
+    const userId = payload.sub;
+    if (!userId || (payload.type !== undefined && payload.type !== "access")) {
       throw new AppUnauthorizedException(
         APP_ERROR_CODES.SSE_UNAUTHORIZED,
         "Invalid token payload for SSE stream",
       );
     }
 
-    return from(this.resolveUserOrgIds(userId, payload.organizationId)).pipe(
-      switchMap((orgIds) => this.subscribe(userId, orgIds)),
+    return merge(
+      of<AppEvent>({ type: "CONNECTED" }),
+      interval(15000).pipe(map((): AppEvent => ({ type: "HEARTBEAT" }))),
+      this.events$,
+    ).pipe(
+      concatMap(async (event) => {
+        try {
+          // Re-verification also expires an already open stream at token expiry.
+          const currentPayload = this.jwtService!.verify<typeof payload>(token);
+          if (!this.prisma) throw new Error("PrismaService not available");
+          const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, tokenVersion: true },
+          });
+          if (!user || (user.tokenVersion ?? 0) !== (currentPayload.tokenVersion ?? 0)) {
+            throw new Error("User session revoked");
+          }
+          const orgIds = await this.resolveUserOrgIds(userId);
+          const allowed = event.targetUserId
+            ? event.targetUserId === userId
+            : !event.organizationId || orgIds.has(event.organizationId);
+          return allowed ? { data: event } as MessageEvent : null;
+        } catch {
+          throw new AppUnauthorizedException(
+            APP_ERROR_CODES.SSE_UNAUTHORIZED,
+            "SSE session is no longer authorized",
+          );
+        }
+      }),
+      filter((event): event is MessageEvent => event !== null),
     );
   }
 

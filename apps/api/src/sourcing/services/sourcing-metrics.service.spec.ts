@@ -10,6 +10,17 @@ import {
 import type { PrismaService } from "../../prisma/prisma.service";
 
 describe("SourcingMetricsService", () => {
+  it("rejects a supplied job outside the active organization", async () => {
+    const prisma = createMockPrismaService({
+      job: createMockTable([
+        { id: "foreign-job", organizationId: "org-other", title: "Private job" },
+      ]),
+    });
+    const metrics = new SourcingMetricsService(prisma as unknown as PrismaService);
+    await expect(metrics.getStats("org-1", "30d", "foreign-job"))
+      .rejects.toBeInstanceOf(AppForbiddenException);
+  });
+
   let service: SourcingMetricsService;
 
   let jobTable: MockTable<Record<string, unknown>>;

@@ -1,5 +1,7 @@
 import { Logger } from "@nestjs/common";
-import nodemailer, { type TransportOptions, type Transporter } from "nodemailer";
+import nodemailer, { type Transporter } from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
+import { createConnection } from "node:net";
 import {
   lookupPublicAddress,
   validatePublicHost,
@@ -44,7 +46,26 @@ export class SmtpTransporter implements IEmailTransporter {
         user: config.smtpUser || "",
         pass: config.smtpPass || "",
       },
-      lookup: lookupPublicAddress,
+      getSocket: (_options, callback) => {
+        const socket = createConnection({
+          host: rawHost,
+          port,
+          lookup: lookupPublicAddress,
+        });
+        const onError = (error: Error) => {
+          socket.destroy();
+          callback(error, undefined);
+        };
+        socket.setTimeout(5000, () => socket.destroy(new Error("SMTP connection timed out")));
+        socket.once("error", onError);
+        socket.once("connect", () => {
+          socket.setTimeout(0);
+          socket.removeListener("error", onError);
+          // Nodemailer upgrades this raw socket for implicit TLS or STARTTLS,
+          // retaining rawHost for SNI and certificate hostname verification.
+          callback(null, { connection: socket });
+        });
+      },
       tls: {
         // Enforce valid TLS certificate in production, allow self-signed in dev/test
         rejectUnauthorized: isProduction,
@@ -53,7 +74,7 @@ export class SmtpTransporter implements IEmailTransporter {
       connectionTimeout: 5000,
       greetingTimeout: 5000,
       socketTimeout: 10000,
-    } as TransportOptions);
+    } satisfies SMTPTransport.Options);
   }
 
   async send(payload: EmailSendPayload): Promise<EmailSendResult> {

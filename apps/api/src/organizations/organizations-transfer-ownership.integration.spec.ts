@@ -6,6 +6,7 @@ import { TransferOwnershipDto } from "./dto/transfer-ownership.dto";
 import { OrganizationsCoreService } from "./services/organizations-core.service";
 import { OrganizationsController } from "./organizations.controller";
 import { OrganizationsService } from "./organizations.service";
+import { createTestOrganizationsService } from "../test/helpers/service-factories";
 import {
   createMockTable,
   createMockPrismaService,
@@ -102,13 +103,7 @@ describe("Organizations Transfer Ownership Integration Specs", () => {
     coreService = new OrganizationsCoreService(mockPrisma);
 
     // Wire OrganizationsService with coreService
-    orgService = new OrganizationsService(
-      coreService,
-      undefined,
-      undefined,
-      undefined,
-      mockPrisma,
-    );
+    orgService = createTestOrganizationsService(mockPrisma);
 
     controller = new OrganizationsController(orgService);
   });

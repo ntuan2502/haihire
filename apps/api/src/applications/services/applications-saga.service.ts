@@ -2,7 +2,7 @@ import { Inject, Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES, SourcingChannel } from "@haihire/shared";
+import { APP_ERROR_CODES, SourcingChannel, inferCandidateName } from "@haihire/shared";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -184,17 +184,9 @@ export class ApplicationsSagaService {
           if (existingCandidate) {
             candidateId = existingCandidate.id;
           } else {
-            let firstName = dto.firstName?.trim() || null;
-            let lastName = dto.lastName?.trim() || null;
-            if (!firstName && !lastName && dto.candidateName) {
-              const parts = dto.candidateName.trim().split(/\s+/);
-              if (parts.length > 1) {
-                firstName = parts[0];
-                lastName = parts.slice(1).join(" ");
-              } else {
-                firstName = parts[0] || null;
-              }
-            }
+            const inferredName = inferCandidateName(dto.candidateName, dto.firstName, dto.lastName);
+            const firstName = inferredName.firstName || null;
+            const lastName = inferredName.lastName || null;
 
             const newCandidate = await tx.candidate.create({
               data: {
@@ -516,6 +508,14 @@ export class ApplicationsSagaService {
       }
     }
 
+    if (!currentUser) {
+      return {
+        id: result.id,
+        jobId: result.jobId,
+        stage: result.stage,
+        createdAt: result.createdAt,
+      };
+    }
     return result;
   }
 }

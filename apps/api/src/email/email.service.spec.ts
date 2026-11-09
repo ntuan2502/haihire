@@ -1,3 +1,4 @@
+import { createTestEmailService } from "../test/helpers/service-factories";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { EmailService, interpolate, DEFAULT_TEMPLATES } from "./email.service";
 import { EmailTransporterFactory } from "./transporters/transporter.factory";
@@ -28,7 +29,7 @@ describe("EmailService", () => {
       organization: [{ id: "org-1" }],
     });
 
-    service = new EmailService(
+    service = createTestEmailService(
       mockPrismaService as never,
       mockActivitiesService as never,
       encryptionService,
@@ -128,7 +129,7 @@ describe("EmailService", () => {
       const queue = {
         add: vi.fn().mockResolvedValue({ id: "unexpected-job" }),
       };
-      const queuedService = new EmailService(
+      const queuedService = createTestEmailService(
         mockPrismaService as never,
         mockActivitiesService as never,
         encryptionService,
@@ -266,7 +267,7 @@ describe("EmailService", () => {
         add: vi.fn().mockResolvedValue({ id: "job-123" }),
       };
 
-      const queuedService = new EmailService(
+      const queuedService = createTestEmailService(
         mockPrismaService as never,
         mockActivitiesService as never,
         encryptionService,
@@ -611,7 +612,7 @@ describe("EmailService", () => {
         add: vi.fn().mockResolvedValue({ id: "job-det-123" }),
       };
 
-      const queuedService = new EmailService(
+      const queuedService = createTestEmailService(
         mockPrismaService as never,
         mockActivitiesService as never,
         encryptionService,
@@ -636,7 +637,7 @@ describe("EmailService", () => {
         expect.any(Object),
         expect.objectContaining({
           jobId: expect.stringMatching(
-            /^email:org-test:INTERVIEW_INVITATION:cand-999:app-888:\d+$/,
+            /^email-[a-f0-9]{64}$/,
           ),
           attempts: 3,
           backoff: {
@@ -652,7 +653,7 @@ describe("EmailService", () => {
         add: vi.fn().mockRejectedValue(new Error("Redis Out of Memory")),
       };
 
-      const fallbackService = new EmailService(
+      const fallbackService = createTestEmailService(
         mockPrismaService as never,
         mockActivitiesService as never,
         encryptionService,

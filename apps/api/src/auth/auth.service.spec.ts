@@ -326,6 +326,11 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
   });
 
   describe("Logout & Password Revocation Flow", () => {
+    it("preserves both revocations when two logout requests read the same version", async () => {
+      await Promise.all([authService.logout("usr-admin"), authService.logout("usr-admin")]);
+      expect(mockUsers[0].tokenVersion).toBe(2);
+    });
+
     it("11. Should increment user tokenVersion on logout", async () => {
       expect(mockUsers[0].tokenVersion).toBe(0);
 

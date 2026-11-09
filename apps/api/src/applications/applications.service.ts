@@ -1,15 +1,5 @@
-import {
-  Inject,
-  Injectable,
-  Optional,
-} from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import type { Queue } from "bullmq";
+import { Inject, Injectable } from "@nestjs/common";
 import type { CandidateDocument } from "@haihire/shared";
-import { PrismaService } from "../prisma/prisma.service";
-import { MinioService } from "../minio/minio.service";
-import { ActivitiesService } from "../activities/activities.service";
-import { EmailService } from "../email/email.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
@@ -31,46 +21,12 @@ export {
 
 @Injectable()
 export class ApplicationsService {
-  private readonly query: ApplicationsQueryService;
-  private readonly saga: ApplicationsSagaService;
-  private readonly stage: ApplicationsStageService;
-  private readonly documents: ApplicationsDocumentsService;
-
   constructor(
-    @Optional() @Inject(ApplicationsQueryService) queryOrPrisma?: ApplicationsQueryService | PrismaService,
-    @Optional() @Inject(ApplicationsSagaService) sagaOrMinio?: ApplicationsSagaService | MinioService,
-    @Optional() @Inject(ApplicationsStageService) stageOrActivities?: ApplicationsStageService | ActivitiesService,
-    @Optional() @Inject(ApplicationsDocumentsService) docsOrEmail?: ApplicationsDocumentsService | EmailService,
-    @Optional() @InjectQueue("orphan-cleanup-queue") queueOrDocs?: Queue | ApplicationsDocumentsService,
-    @Optional() @Inject(MinioService) minioService?: MinioService,
-    @Optional() @Inject(ActivitiesService) activitiesService?: ActivitiesService,
-    @Optional() @Inject(EmailService) emailService?: EmailService,
-  ) {
-    if (queryOrPrisma instanceof ApplicationsQueryService) {
-      // NestJS Dependency Injection path
-      this.query = queryOrPrisma;
-      this.saga = sagaOrMinio as ApplicationsSagaService;
-      this.stage = stageOrActivities as ApplicationsStageService;
-      this.documents = (docsOrEmail as ApplicationsDocumentsService) || (queueOrDocs as ApplicationsDocumentsService);
-    } else if (queryOrPrisma) {
-      // Direct instantiation support for existing unit & integration tests:
-      // new ApplicationsService(mockPrisma, mockMinio, mockActivities, mockEmail, mockQueue?)
-      const prisma = queryOrPrisma as PrismaService;
-      const minio = (sagaOrMinio ?? minioService) as MinioService;
-      const activities = (stageOrActivities ?? activitiesService) as ActivitiesService;
-      const email = (docsOrEmail ?? emailService) as EmailService;
-      const queue = (queueOrDocs && typeof (queueOrDocs as Queue).add === "function")
-        ? (queueOrDocs as Queue)
-        : undefined;
-
-      this.query = new ApplicationsQueryService(prisma, activities);
-      this.saga = new ApplicationsSagaService(prisma, minio, activities, email, queue, this.query);
-      this.stage = new ApplicationsStageService(prisma, activities, email, this.query);
-      this.documents = new ApplicationsDocumentsService(prisma, minio, activities, this.query);
-    } else {
-      throw new Error("ApplicationsService requires dependencies to be injected");
-    }
-  }
+    @Inject(ApplicationsQueryService) private readonly query: ApplicationsQueryService,
+    @Inject(ApplicationsSagaService) private readonly saga: ApplicationsSagaService,
+    @Inject(ApplicationsStageService) private readonly stage: ApplicationsStageService,
+    @Inject(ApplicationsDocumentsService) private readonly documents: ApplicationsDocumentsService,
+  ) {}
 
   // ==========================================
   // 1. QUERY & LIFECYCLE OPERATIONS

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
+import { APP_ERROR_CODES } from "@haihire/shared";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -16,7 +16,7 @@ import {
   validateUploadedFile,
   sanitizeFilename,
 } from "../../common/upload-utils";
-import { toTimestamp, toInstant } from "../../common/date.util";
+import { toInstant } from "../../common/date.util";
 
 @Injectable()
 export class CandidatesDocumentsService {
@@ -215,51 +215,38 @@ export class CandidatesDocumentsService {
     const candidate = await this.profileService.findOne(id, tenantOrgId);
 
     if (opts?.documentId) {
-      try {
-        await this.prisma.candidateDocument.deleteMany({
-          where: {
-            id: opts.documentId,
-            organizationId: candidate.organizationId,
-          },
-        });
-      } catch {}
-    } else if (opts?.url) {
-      try {
-        await this.prisma.candidateDocument.deleteMany({
-          where: {
-            url: opts.url,
-            organizationId: candidate.organizationId,
-          },
-        });
-      } catch {}
-    }
-
-    let remainingDocs: CandidateDocument[] = [];
-    try {
-      const queried = await this.prisma.candidateDocument.findMany({
+      await this.prisma.candidateDocument.deleteMany({
         where: {
+          id: opts.documentId,
           candidateId: id,
           organizationId: candidate.organizationId,
         },
-        select: {
-          id: true,
-          name: true,
-          url: true,
-          size: true,
-          mimeType: true,
-          type: true,
-          createdAt: true,
+      });
+    } else if (opts?.url) {
+      await this.prisma.candidateDocument.deleteMany({
+        where: {
+          url: opts.url,
+          candidateId: id,
+          organizationId: candidate.organizationId,
         },
       });
-      if (Array.isArray(queried)) {
-        remainingDocs = queried.map((d) => ({
-          ...d,
-          createdAt: d.createdAt
-            ? new Date(toTimestamp(d.createdAt)).toISOString()
-            : new Date().toISOString(),
-        }));
-      }
-    } catch {}
+    }
+
+    const remainingDocs = await this.prisma.candidateDocument.findMany({
+      where: {
+        candidateId: id,
+        organizationId: candidate.organizationId,
+      },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        size: true,
+        mimeType: true,
+        type: true,
+        createdAt: true,
+      },
+    });
 
     const primaryDoc = remainingDocs[0];
     if (primaryDoc) {

@@ -1,7 +1,7 @@
+import { createTestOrganizationsService } from "./helpers/service-factories";
+import { createTestApplicationsService } from "./helpers/service-factories";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { ApplicationsService } from "../applications/applications.service";
-import { OrganizationsService } from "../organizations/organizations.service";
 import { JobsService } from "../jobs/jobs.service";
 import { CandidatesService } from "../candidates/candidates.service";
 import type { PrismaService } from "../prisma/prisma.service";
@@ -257,7 +257,7 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
 
   describe("ApplicationsService::create (Saga & DB Transaction)", () => {
     it("Happy Path: executes within a transaction and commits candidate & application", async () => {
-      const appService = new ApplicationsService(
+      const appService = createTestApplicationsService(
         mockPrisma,
         mockMinio,
         mockActivities,
@@ -291,7 +291,7 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
     });
 
     it("Failure Scenario & Repro: DB failure triggers transaction rollback AND MinIO compensating delete", async () => {
-      const appService = new ApplicationsService(
+      const appService = createTestApplicationsService(
         mockPrisma,
         mockMinio,
         mockActivities,
@@ -362,7 +362,7 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
         orderIndex: 0,
       });
 
-      const appService = new ApplicationsService(
+      const appService = createTestApplicationsService(
         mockPrisma,
         mockMinio,
         mockActivities,
@@ -378,7 +378,7 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
 
   describe("OrganizationsService::deleteMyOrg", () => {
     it("unlinks users, deletes memberships, and deletes organization atomically inside a single transaction", async () => {
-      const orgService = new OrganizationsService(mockPrisma);
+      const orgService = createTestOrganizationsService(mockPrisma);
 
       const res = await orgService.deleteMyOrg("user-owner");
       expect(res.success).toBe(true);

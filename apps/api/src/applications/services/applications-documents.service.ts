@@ -228,16 +228,32 @@ export class ApplicationsDocumentsService {
     opts?: { documentId?: string; url?: string },
     tenantOrgId?: string | null,
   ) {
-    await this.query.findOne(id, tenantOrgId);
+    const app = await this.query.findOne(id, tenantOrgId);
+
+    const organizationId = app.job?.organizationId || app.candidate?.organizationId;
+    if (!organizationId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
+        "Application organization is required to delete documents",
+      );
+    }
 
     if (opts?.documentId) {
-      try {
-        await this.prisma.candidateDocument.deleteMany({ where: { id: opts.documentId! } });
-      } catch {}
+      await this.prisma.candidateDocument.deleteMany({
+        where: {
+          id: opts.documentId,
+          candidateId: app.candidateId,
+          organizationId,
+        },
+      });
     } else if (opts?.url) {
-      try {
-        await this.prisma.candidateDocument.deleteMany({ where: { url: opts.url! } });
-      } catch {}
+      await this.prisma.candidateDocument.deleteMany({
+        where: {
+          url: opts.url,
+          candidateId: app.candidateId,
+          organizationId,
+        },
+      });
     }
 
     await this.prisma.application.update({

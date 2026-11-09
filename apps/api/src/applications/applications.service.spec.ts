@@ -1,3 +1,4 @@
+import { createTestApplicationsService } from "../test/helpers/service-factories";
 import { createMockTable, createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ApplicationsService } from "./applications.service";
@@ -243,7 +244,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       sendEmail: vi.fn().mockResolvedValue({}),
     };
 
-    service = new ApplicationsService(
+    service = createTestApplicationsService(
       mockPrismaService as never,
       mockMinioService as never,
       mockActivitiesService as never,
@@ -492,7 +493,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       });
 
       expect(created).toBeDefined();
-      expect(created.candidateName).toBe("David Beckham");
+      expect(created).not.toHaveProperty("candidateName");
       expect(created.jobId).toBe("job-org1-a");
     });
   });
@@ -559,6 +560,28 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
           "https://s3.local/other-org-bucket/secret.pdf",
         ),
       ).rejects.toThrow();
+    });
+
+    it.each([
+      { documentId: "doc-1" },
+      { url: "https://s3.local/resumes/alice.pdf" },
+    ])("preserves another candidate's document when deleting through an application: %j", async (selector) => {
+      await service.deleteDocument("app-2", selector, "org-1");
+      expect(mockCandidateDocs.some((doc) => doc.id === "doc-1")).toBe(true);
+    });
+
+    it.each([
+      { documentId: "foreign-doc" },
+      { url: "https://s3.local/resumes/foreign.pdf" },
+    ])("preserves documents in another tenant: %j", async (selector) => {
+      mockCandidateDocs.push({
+        id: "foreign-doc",
+        candidateId: "cand-3",
+        organizationId: "org-2",
+        url: "https://s3.local/resumes/foreign.pdf",
+      });
+      await service.deleteDocument("app-2", selector, "org-1");
+      expect(mockCandidateDocs.some((doc) => doc.id === "foreign-doc")).toBe(true);
     });
 
     it("should delete document and clear resume fields from application", async () => {

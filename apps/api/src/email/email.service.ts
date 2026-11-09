@@ -1,9 +1,4 @@
-import { Inject, Injectable, Optional } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
-import { PrismaService } from "../prisma/prisma.service";
-import { ActivitiesService } from "../activities/activities.service";
-import { EncryptionService } from "../common/encryption.service";
+import { Inject, Injectable } from "@nestjs/common";
 import { UpdateEmailTemplateDto } from "./dto/update-template.dto";
 import { UpdateEmailSettingDto } from "./dto/update-setting.dto";
 import { SendEmailDto, SendTestEmailDto } from "./dto/send-email.dto";
@@ -37,59 +32,16 @@ export type { GetLogsOptions, EnrichedEmailTemplate };
 
 @Injectable()
 export class EmailService {
-  private readonly dispatch: EmailDispatchService;
-  private readonly templates: EmailTemplatesService;
-  private readonly settings: EmailSettingsService;
-  private readonly system: EmailSystemService;
-
   constructor(
-    @Optional()
     @Inject(EmailDispatchService)
-    dispatchOrPrisma?: EmailDispatchService | PrismaService,
-    @Optional()
+    private readonly dispatch: EmailDispatchService,
     @Inject(EmailTemplatesService)
-    templatesOrActivities?: EmailTemplatesService | ActivitiesService,
-    @Optional()
+    private readonly templates: EmailTemplatesService,
     @Inject(EmailSettingsService)
-    settingsOrEncryption?: EmailSettingsService | EncryptionService,
-    @Optional()
+    private readonly settings: EmailSettingsService,
     @Inject(EmailSystemService)
-    systemServiceOrQueue?: EmailSystemService | Queue,
-    @Optional()
-    @Inject(PrismaService)
-    prisma?: PrismaService,
-    @Optional()
-    @Inject(ActivitiesService)
-    activities?: ActivitiesService,
-    @Optional()
-    @Inject(EncryptionService)
-    encryption?: EncryptionService,
-    @Optional()
-    @InjectQueue("email-queue")
-    emailQueue?: Queue,
-  ) {
-    if (dispatchOrPrisma instanceof EmailDispatchService) {
-      this.dispatch = dispatchOrPrisma;
-      this.templates = templatesOrActivities as EmailTemplatesService;
-      this.settings = settingsOrEncryption as EmailSettingsService;
-      this.system = systemServiceOrQueue as EmailSystemService;
-    } else {
-      // Legacy and direct test instantiation support:
-      // new EmailService(prisma, activities, encryption, queue)
-      const p = (prisma || dispatchOrPrisma) as PrismaService;
-      const a = (activities || templatesOrActivities) as ActivitiesService;
-      const e = (encryption || settingsOrEncryption) as EncryptionService;
-      const q = (emailQueue ||
-        (systemServiceOrQueue instanceof EmailSystemService
-          ? undefined
-          : systemServiceOrQueue)) as Queue | undefined;
-
-      this.settings = new EmailSettingsService(p, e);
-      this.templates = new EmailTemplatesService(p, this.settings);
-      this.system = new EmailSystemService(p, e, q);
-      this.dispatch = new EmailDispatchService(p, a, this.settings, q);
-    }
-  }
+    private readonly system: EmailSystemService,
+  ) {}
 
   resolveOrgId(
     userOrgId?: string | null,

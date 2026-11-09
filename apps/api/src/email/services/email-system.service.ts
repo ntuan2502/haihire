@@ -1,3 +1,4 @@
+import { queryEmailLogs } from "./email-log-query";
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
 import { InjectQueue } from "@nestjs/bullmq";
@@ -13,7 +14,7 @@ import {
   SendSystemTestEmailDto,
 } from "../dto/send-system-email.dto";
 import { EmailTransporterFactory } from "../transporters/transporter.factory";
-import { toTimestamp, toInstant } from "../../common/date.util";
+import { toInstant } from "../../common/date.util";
 import { env } from "../../config/env";
 
 export interface GetLogsOptions {
@@ -170,46 +171,10 @@ export class EmailSystemService {
   }
 
   async getSystemLogs(options?: GetLogsOptions) {
-    const opts = options || {};
-
-    const logs = await this.prisma.emailLog.findMany({
-      where: { scope: "SYSTEM" },
-    });
-    let mapped = logs
-      .map((l) => ({
-        ...l,
-        recipientName: l.recipientName || "Recipient",
-        recipientEmail: l.recipientEmail || "",
-      }))
-      .sort((a, b) => toTimestamp(b.sentAt) - toTimestamp(a.sentAt));
-
-    if (opts.status && opts.status !== "ALL") {
-      mapped = mapped.filter((l) => l.status === opts.status);
-    }
-
-    if (opts.search && opts.search.trim() !== "") {
-      const s = opts.search.trim().toLowerCase();
-      mapped = mapped.filter(
-        (l) =>
-          (l.recipientName || "").toLowerCase().includes(s) ||
-          (l.recipientEmail || "").toLowerCase().includes(s) ||
-          (l.subject || "").toLowerCase().includes(s),
-      );
-    }
-
-    const total = mapped.length;
-    const page = opts.page && opts.page > 0 ? opts.page : 1;
-    const limit = opts.limit && opts.limit > 0 ? opts.limit : 20;
-    const totalPages = Math.ceil(total / limit) || 1;
-
-    const data = mapped.slice((page - 1) * limit, page * limit);
-
+    const result = await queryEmailLogs(this.prisma, { scope: "SYSTEM" }, options);
     return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
+      ...result,
+      data: result.data.map((l) => ({ ...l, recipientName: l.recipientName || "Recipient", recipientEmail: l.recipientEmail || "" })),
     };
   }
 }

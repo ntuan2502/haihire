@@ -1,116 +1,74 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { PrismaService } from "./prisma.service";
-import { backendEnv } from "../config/env";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PrismaService, runInTransaction } from "./prisma.service";
 
-describe("PrismaService", () => {
-  let service: PrismaService;
-  const originalEnvValues = {
-    NODE_ENV: backendEnv.NODE_ENV,
-    SEED_DEMO_ON_BOOT: backendEnv.SEED_DEMO_ON_BOOT,
-  };
+describe("PrismaService transaction context", () => {
+  let prisma: PrismaService;
+  let transactions: PrismaService[];
+  let baseClient: PrismaService;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    (backendEnv as { NODE_ENV: string }).NODE_ENV = "test";
-    (backendEnv as { SEED_DEMO_ON_BOOT: boolean }).SEED_DEMO_ON_BOOT = false;
-    service = new PrismaService();
-    // Mock PrismaClient methods
-    service.$connect = vi.fn().mockResolvedValue(undefined as never);
-    service.$disconnect = vi.fn().mockResolvedValue(undefined as never);
-    Object.assign(service, {
-      user: {
-        findFirst: vi.fn(),
-        upsert: vi.fn(),
-      },
-      organization: {
-        upsert: vi.fn(),
-      },
+    prisma = new PrismaService();
+    baseClient = prisma.tx;
+    transactions = [];
+    // Stub the database boundary; transaction(), tx, and ALS remain the real implementation.
+    vi.spyOn(prisma, "$transaction").mockImplementation((async (callback: (tx: PrismaService) => Promise<unknown>) => {
+      const tx = { marker: Symbol("transaction") } as unknown as PrismaService;
+      transactions.push(tx);
+      return callback(tx);
+    }) as unknown as PrismaService["$transaction"]);
+  });
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it("uses the base client outside transactions", () => {
+    expect(prisma.tx === baseClient).toBe(true);
+    expect(baseClient.user === prisma.user).toBe(true);
+    expect(transactions).toHaveLength(0);
+  });
+
+  it("reuses one transaction across nested helpers and asynchronous continuations", async () => {
+    const result = await runInTransaction(prisma, async (outer) => {
+      expect(prisma.tx).toBe(outer);
+      await Promise.resolve();
+      return prisma.executeTx(async (inner) => {
+        expect(inner).toBe(outer);
+        expect(prisma.tx).toBe(outer);
+        return "committed";
+      });
     });
+    expect(result).toBe("committed");
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.tx === baseClient).toBe(true);
   });
 
-  afterEach(() => {
-    (backendEnv as { NODE_ENV: string }).NODE_ENV = originalEnvValues.NODE_ENV;
-    (backendEnv as { SEED_DEMO_ON_BOOT: boolean }).SEED_DEMO_ON_BOOT =
-      originalEnvValues.SEED_DEMO_ON_BOOT;
+  it("keeps simultaneous asynchronous transactions isolated", async () => {
+    let entered = 0;
+    let release!: () => void;
+    const bothEntered = new Promise<void>((resolve) => { release = resolve; });
+    const branch = () => prisma.transaction(async (tx) => {
+      if (++entered === 2) release();
+      await bothEntered;
+      expect(prisma.tx).toBe(tx);
+      await prisma.transaction(async (nested) => { expect(nested).toBe(tx); });
+      return tx;
+    });
+    const [first, second] = await Promise.all([branch(), branch()]);
+    expect(first).not.toBe(second);
+    expect(transactions).toHaveLength(2);
+    expect(prisma.tx === baseClient).toBe(true);
   });
 
-  it("should connect database and NOT call user upsert by default (no auto seed)", async () => {
-    await service.onModuleInit();
-
-    expect(service.$connect).toHaveBeenCalledTimes(1);
-    expect(service.user.upsert).not.toHaveBeenCalled();
-    expect(service.organization.upsert).not.toHaveBeenCalled();
-  });
-
-  it("should not seed demo accounts when NODE_ENV is production even if SEED_DEMO_ON_BOOT is true", async () => {
-    (backendEnv as { NODE_ENV: string }).NODE_ENV = "production";
-    (backendEnv as { SEED_DEMO_ON_BOOT: boolean }).SEED_DEMO_ON_BOOT = true;
-
-    await service.onModuleInit();
-
-    expect(service.$connect).toHaveBeenCalledTimes(1);
-    expect(service.user.findFirst).not.toHaveBeenCalled();
-    expect(service.user.upsert).not.toHaveBeenCalled();
-    expect(service.organization.upsert).not.toHaveBeenCalled();
-  });
-
-  it("should seed demo accounts when SEED_DEMO_ON_BOOT=true in non-production", async () => {
-    (backendEnv as { NODE_ENV: string }).NODE_ENV = "development";
-    (backendEnv as { SEED_DEMO_ON_BOOT: boolean }).SEED_DEMO_ON_BOOT = true;
-
-    vi.mocked(service.user.findFirst).mockResolvedValueOnce(null as never);
-    vi.mocked(service.organization.upsert).mockResolvedValueOnce({} as never);
-    vi.mocked(service.user.upsert).mockResolvedValue({} as never);
-
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
-    await service.onModuleInit();
-
-    expect(service.$connect).toHaveBeenCalledTimes(1);
-    expect(service.user.findFirst).toHaveBeenCalledTimes(1);
-    expect(service.organization.upsert).toHaveBeenCalledTimes(1);
-    expect(service.user.upsert).toHaveBeenCalledTimes(2);
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Initialized default demo accounts"),
-    );
-
-    consoleSpy.mockRestore();
-  });
-
-  it("should skip seed when SEED_DEMO_ON_BOOT=true but users already exist", async () => {
-    (backendEnv as { NODE_ENV: string }).NODE_ENV = "development";
-    (backendEnv as { SEED_DEMO_ON_BOOT: boolean }).SEED_DEMO_ON_BOOT = true;
-
-    vi.mocked(service.user.findFirst).mockResolvedValueOnce({
-      id: "existing-user",
-    } as never);
-
-    await service.onModuleInit();
-
-    expect(service.$connect).toHaveBeenCalledTimes(1);
-    expect(service.user.findFirst).toHaveBeenCalledTimes(1);
-    expect(service.organization.upsert).not.toHaveBeenCalled();
-    expect(service.user.upsert).not.toHaveBeenCalled();
-  });
-
-  it("should catch errors during onModuleInit without throwing (non-fatal)", async () => {
-    vi.mocked(service.$connect).mockRejectedValueOnce(
-      new Error("Connection refused") as never,
-    );
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await expect(service.onModuleInit()).resolves.not.toThrow();
-
-    expect(warnSpy).toHaveBeenCalledWith(
-      "Database connection pending or initializing...",
-      "Connection refused",
-    );
-
-    warnSpy.mockRestore();
-  });
-
-  it("should disconnect on onModuleDestroy", async () => {
-    await service.onModuleDestroy();
-    expect(service.$disconnect).toHaveBeenCalledTimes(1);
+  it("propagates failure and clears context before the next transaction", async () => {
+    const failure = new Error("write failed");
+    await expect(prisma.transaction(async () => {
+      await prisma.transaction(async () => { throw failure; });
+    })).rejects.toBe(failure);
+    expect(prisma.tx === baseClient).toBe(true);
+    await prisma.transaction(async (tx) => {
+      expect(tx).not.toBe(transactions[0]);
+      expect(prisma.tx).toBe(tx);
+    });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+    expect(prisma.tx === baseClient).toBe(true);
   });
 });

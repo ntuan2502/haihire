@@ -1,11 +1,8 @@
 import {
   Inject,
   Injectable,
-  Optional,
   type OnModuleInit,
 } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { EventsService } from "../events/events.service";
 import { CreateOrgDto } from "./dto/create-org.dto";
 import { JoinOrgDto } from "./dto/join-org.dto";
 import { UpdateOrgDto } from "./dto/update-org.dto";
@@ -26,67 +23,21 @@ export type { InviteLinkRecord };
 
 @Injectable()
 export class OrganizationsService implements OnModuleInit {
-  private readonly core: OrganizationsCoreService;
-  private readonly members: OrganizationsMembersService;
-  private readonly invites: OrganizationsInvitesService;
-  private readonly roles: OrganizationsRolesService;
-  private readonly auditLog: OrganizationsAuditLogService;
-
   constructor(
-    @Optional()
     @Inject(OrganizationsCoreService)
-    coreOrPrisma?: OrganizationsCoreService | PrismaService,
-    @Optional()
+    private readonly core: OrganizationsCoreService,
     @Inject(OrganizationsMembersService)
-    membersOrEvents?: OrganizationsMembersService | EventsService,
-    @Optional()
+    private readonly members: OrganizationsMembersService,
     @Inject(OrganizationsInvitesService)
-    invitesService?: OrganizationsInvitesService,
-    @Optional()
+    private readonly invites: OrganizationsInvitesService,
     @Inject(OrganizationsRolesService)
-    rolesService?: OrganizationsRolesService,
-    @Optional()
-    @Inject(PrismaService)
-    prismaService?: PrismaService,
-    @Optional()
+    private readonly roles: OrganizationsRolesService,
     @Inject(OrganizationsAuditLogService)
-    auditLogService?: OrganizationsAuditLogService,
-  ) {
-    if (coreOrPrisma instanceof OrganizationsCoreService) {
-      this.core = coreOrPrisma;
-      this.members = membersOrEvents as OrganizationsMembersService;
-      this.invites = invitesService as OrganizationsInvitesService;
-      this.roles =
-        rolesService ||
-        new OrganizationsRolesService(
-          prismaService ||
-            (this.core as unknown as { prisma: PrismaService }).prisma,
-        );
-      this.auditLog =
-        auditLogService ||
-        new OrganizationsAuditLogService(
-          prismaService ||
-            (this.core as unknown as { prisma: PrismaService }).prisma,
-        );
-    } else if (coreOrPrisma) {
-      // Direct instantiation support for existing tests (e.g. new OrganizationsService(mockPrisma))
-      const prisma = coreOrPrisma as PrismaService;
-      const events =
-        membersOrEvents instanceof EventsService ? membersOrEvents : undefined;
-      this.core = new OrganizationsCoreService(prisma);
-      this.members = new OrganizationsMembersService(prisma, events);
-      this.invites = new OrganizationsInvitesService(prisma);
-      this.roles = new OrganizationsRolesService(prisma);
-      this.auditLog = new OrganizationsAuditLogService(prisma);
-    } else {
-      throw new Error(
-        "OrganizationsService requires dependencies to be injected",
-      );
-    }
-  }
+    private readonly auditLog: OrganizationsAuditLogService,
+  ) {}
 
   async onModuleInit() {
-    await this.members.onModuleInit();
+    await this.members.initializeMemberships();
   }
 
   // ==========================================

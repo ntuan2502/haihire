@@ -1,147 +1,87 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TenantGuard } from "../common/guards/tenant.guard";
 import { AppForbiddenException } from "../common/app-exception";
 import { CandidatesService } from "../candidates/candidates.service";
+import { createMockPrismaService } from "./helpers/prisma-composer-mock";
 import type { ExecutionContext } from "@nestjs/common";
+import type { PrismaService } from "../prisma/prisma.service";
 
 describe("Tenant Isolation & Cross-Tenant Security Verification", () => {
-  interface MockDbState {
-    orgs: Array<{ id: string; name: string }>;
-    orgMembers: Array<{ id: string; userId: string; organizationId: string; role: string }>;
-    jobs: Array<{ id: string; organizationId: string; title: string; status: string }>;
-    candidates: Array<{ id: string; organizationId: string; name: string; email: string }>;
-    applications: Array<{ id: string; jobId: string; candidateId: string; stage: string }>;
-  }
+  let prisma: ReturnType<typeof createMockPrismaService>;
+  let guard: TenantGuard;
+  let candidates: CandidatesService;
 
-  let dbState: MockDbState;
-  let tenantGuard: TenantGuard;
-  let candidatesService: CandidatesService;
+  const context = (organizationId: string): ExecutionContext => ({
+    switchToHttp: () => ({ getRequest: () => ({
+      user: { id: "usr-alpha", organizationId: "org-alpha" },
+      query: { organizationId }, body: {},
+    }) }),
+  }) as unknown as ExecutionContext;
 
   beforeEach(() => {
-    dbState = {
-      orgs: [
-        { id: "org-alpha", name: "Alpha Tech Corp" },
-        { id: "org-beta", name: "Beta Financials" },
+    prisma = createMockPrismaService({
+      organizationMember: [{ id: "m-alpha", userId: "usr-alpha", organizationId: "org-alpha" }],
+      candidate: [
+        { id: "cand-alpha", organizationId: "org-alpha", name: "Alpha", email: "alpha@test.com", deletedAt: null },
+        { id: "cand-beta", organizationId: "org-beta", name: "Beta", email: "beta@test.com", deletedAt: null },
       ],
-      orgMembers: [
-        { id: "m-1", userId: "usr-alpha", organizationId: "org-alpha", role: "ADMIN" },
-        { id: "m-2", userId: "usr-beta", organizationId: "org-beta", role: "ADMIN" },
-      ],
-      jobs: [
-        { id: "job-alpha-1", organizationId: "org-alpha", title: "Alpha Architect", status: "PUBLISHED" },
-        { id: "job-beta-1", organizationId: "org-beta", title: "Beta Trader", status: "PUBLISHED" },
-      ],
-      candidates: [
-        { id: "cand-alpha-1", organizationId: "org-alpha", name: "Nguyen Alpha", email: "alpha@test.com" },
-        { id: "cand-beta-1", organizationId: "org-beta", name: "Tran Beta", email: "beta@test.com" },
-      ],
-      applications: [],
-    };
-
-    const mockPrisma = {
-      db: {
-        orm: {
-          public: {
-            OrganizationMember: {
-              select: () => ({
-                where: (_predicate: unknown) => ({
-                  all: async () => {
-                    // Match by userId and organizationId if queried
-                    return dbState.orgMembers;
-                  },
-                }),
-              }),
-            },
-            Job: {
-              select: () => ({
-                where: (_predicate: (j: { organizationId: { eq: (id: string) => boolean }; id: { eq: (id: string) => boolean } }) => unknown) => ({
-                  all: async () => {
-                    return dbState.jobs;
-                  },
-                  first: async () => {
-                    return dbState.jobs[0];
-                  },
-                }),
-              }),
-            },
-            Candidate: {
-              select: () => ({
-                where: (_predicate: (c: { organizationId: { eq: (id: string) => boolean }; id: { eq: (id: string) => boolean } }) => unknown) => ({
-                  all: async () => {
-                    return dbState.candidates;
-                  },
-                  first: async () => {
-                    return dbState.candidates[0];
-                  },
-                }),
-              }),
-            },
-          },
-        },
-      },
-    };
-
-    tenantGuard = new TenantGuard(mockPrisma as never);
-    candidatesService = new CandidatesService(mockPrisma as never, {} as never);
+      application: [],
+    });
+    guard = new TenantGuard(prisma as unknown as PrismaService);
+    candidates = new CandidatesService(prisma as unknown as PrismaService, {} as never);
   });
 
-  describe("TenantGuard Cross-Tenant Request Rejection", () => {
-    it("permits requests when user accesses their own organization resources", async () => {
-      const mockContext = {
-        switchToHttp: () => ({
-          getRequest: () => ({
-            user: { id: "usr-alpha", organizationId: "org-alpha" },
-            query: { organizationId: "org-alpha" },
-            body: {},
-          }),
-        }),
-      } as unknown as ExecutionContext;
+  it("permits the active organization", async () => {
+    expect(await guard.canActivate(context("org-alpha"))).toBe(true);
+  });
 
-      const allowed = await tenantGuard.canActivate(mockContext);
-      expect(allowed).toBe(true);
-    });
-
-    it("rejects cross-tenant requests with AppForbiddenException when Org Alpha tries to access Org Beta", async () => {
-      // Mock prisma returning only org-alpha memberships for usr-alpha
-      const mockPrismaRestricted = {
-        db: {
-          orm: {
-            public: {
-              OrganizationMember: {
-                select: () => ({
-                  where: () => ({
-                    all: async () => [{ organizationId: "org-alpha" }],
-                  }),
-                }),
-              },
-            },
-          },
-        },
-      };
-
-      const restrictedGuard = new TenantGuard(mockPrismaRestricted as never);
-
-      const crossTenantContext = {
-        switchToHttp: () => ({
-          getRequest: () => ({
-            user: { id: "usr-alpha", organizationId: "org-alpha" },
-            query: { organizationId: "org-beta" }, // Malicious or cross-tenant query
-            body: {},
-          }),
-        }),
-      } as unknown as ExecutionContext;
-
-      await expect(restrictedGuard.canActivate(crossTenantContext)).rejects.toThrow(
-        AppForbiddenException
-      );
+  it("rejects a foreign organization after querying the authenticated user's memberships", async () => {
+    const memberships = vi.spyOn(prisma.organizationMember, "findMany");
+    await expect(guard.canActivate(context("org-beta"))).rejects.toThrow(AppForbiddenException);
+    expect(memberships).toHaveBeenCalledWith({
+      where: { userId: "usr-alpha" }, select: { organizationId: true },
     });
   });
 
-  describe("Service Layer Multi-Tenant Query Scoping", () => {
-    it("returns empty result set when organizationId is missing or invalid", async () => {
-      const result = await candidatesService.findAll(undefined);
-      expect(result.data).toEqual([]);
-      expect(result.total).toBe(0);
+  it("permits another organization only when a persistent membership exists", async () => {
+    vi.spyOn(prisma.organizationMember, "findMany").mockResolvedValueOnce([
+      { id: "m-alpha", userId: "usr-alpha", organizationId: "org-alpha", role: "ADMIN", createdAt: new Date(), updatedAt: new Date() },
+      { id: "m-beta", userId: "usr-alpha", organizationId: "org-beta", role: "ADMIN", createdAt: new Date(), updatedAt: new Date() },
+    ]);
+    expect(await guard.canActivate(context("org-beta"))).toBe(true);
+    expect(prisma.organizationMember.findMany).toHaveBeenCalledWith({
+      where: { userId: "usr-alpha" }, select: { organizationId: true },
     });
+  });
+
+  it("fails closed when the membership lookup fails", async () => {
+    vi.spyOn(prisma.organizationMember, "findMany").mockRejectedValueOnce(new Error("DB unavailable"));
+    await expect(guard.canActivate(context("org-beta"))).rejects.toThrow(AppForbiddenException);
+  });
+
+  it("returns no candidates and makes no candidate query without a tenant", async () => {
+    const query = vi.spyOn(prisma.candidate, "findMany");
+    const result = await candidates.findAll(undefined);
+    expect(result.data).toEqual([]);
+    expect(result.total).toBe(0);
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("returns only active-tenant candidates from mixed-tenant storage and scopes both queries", async () => {
+    const query = vi.spyOn(prisma.candidate, "findMany");
+    const count = vi.spyOn(prisma.candidate, "count");
+    const result = await candidates.findAll(undefined, undefined, "org-alpha");
+    expect(result.data.map((candidate) => candidate.id)).toEqual(["cand-alpha"]);
+    expect(result.total).toBe(1);
+    expect(query).toHaveBeenCalledWith(expect.objectContaining({
+      where: { organizationId: "org-alpha", deletedAt: null },
+    }));
+    expect(count).toHaveBeenCalledWith({ where: { organizationId: "org-alpha", deletedAt: null } });
+  });
+
+  it("rejects a foreign query tenant before reading any candidates", async () => {
+    const query = vi.spyOn(prisma.candidate, "findMany");
+    await expect(candidates.findAll("org-beta", undefined, "org-alpha")).rejects.toThrow(AppForbiddenException);
+    expect(query).not.toHaveBeenCalled();
   });
 });

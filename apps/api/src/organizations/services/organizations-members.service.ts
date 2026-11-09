@@ -1,11 +1,6 @@
-import {
-  Inject,
-  Injectable,
-  Optional,
-  type OnModuleInit,
-} from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { EventsService } from "../../events/events.service";
 import { toInstant, toTimestamp } from "../../common/date.util";
 import {
@@ -17,7 +12,7 @@ import { APP_ERROR_CODES, Role } from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
 
 @Injectable()
-export class OrganizationsMembersService implements OnModuleInit {
+export class OrganizationsMembersService {
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
@@ -29,7 +24,7 @@ export class OrganizationsMembersService implements OnModuleInit {
     private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
 
-  async onModuleInit() {
+  async initializeMemberships() {
     try {
       await this.backfillMemberships();
     } catch (e) {
@@ -69,7 +64,9 @@ export class OrganizationsMembersService implements OnModuleInit {
         if (!memberPairSet.has(pairKey)) {
           const id = crypto.randomUUID();
           await this.prisma.organizationMember.upsert({
-            where: { id },
+            where: {
+              organizationId_userId: { organizationId: org.id, userId: org.ownerId },
+            },
             create: {
               id,
               organizationId: org.id,
@@ -91,7 +88,9 @@ export class OrganizationsMembersService implements OnModuleInit {
         if (!memberPairSet.has(pairKey)) {
           const id = crypto.randomUUID();
           await this.prisma.organizationMember.upsert({
-            where: { id },
+            where: {
+              organizationId_userId: { organizationId: user.organizationId, userId: user.id },
+            },
             create: {
               id,
               organizationId: user.organizationId,
@@ -363,109 +362,129 @@ export class OrganizationsMembersService implements OnModuleInit {
   }
 
   async removeMember(callerId: string, targetMemberId: string) {
-    const caller = await this.prisma.user.findFirst({
-      where: { id: callerId },
-      select: {
-        id: true,
-        role: true,
-        organizationId: true,
-      },
-    });
-
-    if (!caller || !caller.organizationId) {
-      throw new AppNotFoundException(
-        APP_ERROR_CODES.ORG_USER_NO_ORG,
-        "User is not associated with an organization",
-      );
-    }
-
-    const targetOrgId = caller.organizationId as string;
-    const org = await this.prisma.organization.findFirst({
-      where: { id: targetOrgId },
-      select: {
-        id: true,
-        ownerId: true,
-      },
-    });
-
-    const isCallerOwner = Boolean(org && org.ownerId === caller.id);
-    const isCallerAdmin = caller.role === "ADMIN";
-
-    if (!isCallerAdmin && !isCallerOwner) {
-      throw new AppForbiddenException(
-        APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
-        "Only organization owners and administrators can remove members.",
-      );
-    }
-
-    if (callerId === targetMemberId) {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.ORG_CANNOT_REMOVE_SELF,
-        "You cannot remove yourself from the organization",
-      );
-    }
-
-    // Cannot remove Owner
-    if (org && org.ownerId === targetMemberId) {
-      throw new AppBadRequestException(
-        APP_ERROR_CODES.ORG_CANNOT_REMOVE_OWNER,
-        "Cannot remove the organization owner",
-      );
-    }
-
-    // Remove from OrganizationMember
-    await this.prisma.organizationMember.deleteMany({
-      where: {
-        organizationId: targetOrgId,
-        userId: targetMemberId,
-      },
-    });
-
-    const targetUser = await this.prisma.user.findFirst({
-      where: { id: targetMemberId },
-      select: {
-        id: true,
-        organizationId: true,
-      },
-    });
-
-    // If target user is currently viewing this organization, fallback to another org or null
-    if (targetUser && targetUser.organizationId === targetOrgId) {
-      const remainingMembership =
-        await this.prisma.organizationMember.findFirst({
-          where: { userId: targetMemberId },
-          select: {
-            organizationId: true,
-            role: true,
-          },
-        });
-
-      const fallbackOrgId = remainingMembership
-        ? remainingMembership.organizationId
-        : null;
-      const fallbackRole = remainingMembership
-        ? remainingMembership.role
-        : "MEMBER";
-
-      await this.prisma.user.update({
-        where: { id: targetMemberId },
-        data: {
-          organizationId: fallbackOrgId,
-          role: fallbackRole,
+    return runInTransaction(this.prisma, async (tx) => {
+      const caller = await tx.user.findFirst({
+        where: { id: callerId },
+        select: {
+          id: true,
+          role: true,
+          organizationId: true,
         },
       });
-    }
 
-    // Broadcast SSE event
-    this.eventsService?.emit({
-      type: "MEMBER_REMOVED",
-      targetUserId: targetMemberId,
-      organizationId: targetOrgId,
+      if (!caller || !caller.organizationId) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.ORG_USER_NO_ORG,
+          "User is not associated with an organization",
+        );
+      }
+
+      const targetOrgId = caller.organizationId as string;
+      const org = await tx.organization.findFirst({
+        where: { id: targetOrgId },
+        select: {
+          id: true,
+          ownerId: true,
+        },
+      });
+
+      if (!org) {
+        throw new AppNotFoundException(
+          APP_ERROR_CODES.ORG_NOT_FOUND,
+          "Organization not found",
+        );
+      }
+      // Serialize membership removal with ownership transfer on the organization row.
+      const locked = await tx.organization.updateMany({
+        where: { id: targetOrgId, ownerId: org.ownerId },
+        data: { ownerId: org.ownerId },
+      });
+      if (locked.count !== 1) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          "Organization ownership changed; retry the request.",
+        );
+      }
+
+      const isCallerOwner = Boolean(org && org.ownerId === caller.id);
+      const isCallerAdmin = caller.role === "ADMIN";
+
+      if (!isCallerAdmin && !isCallerOwner) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          "Only organization owners and administrators can remove members.",
+        );
+      }
+
+      if (callerId === targetMemberId) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.ORG_CANNOT_REMOVE_SELF,
+          "You cannot remove yourself from the organization",
+        );
+      }
+
+      // Cannot remove Owner
+      if (org && org.ownerId === targetMemberId) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.ORG_CANNOT_REMOVE_OWNER,
+          "Cannot remove the organization owner",
+        );
+      }
+
+      // Remove from OrganizationMember
+      await tx.organizationMember.deleteMany({
+        where: {
+          organizationId: targetOrgId,
+          userId: targetMemberId,
+        },
+      });
+
+      const targetUser = await tx.user.findFirst({
+        where: { id: targetMemberId },
+        select: {
+          id: true,
+          organizationId: true,
+        },
+      });
+
+      // If target user is currently viewing this organization, fallback to another org or null
+      if (targetUser && targetUser.organizationId === targetOrgId) {
+        const remainingMembership =
+          await tx.organizationMember.findFirst({
+            where: { userId: targetMemberId },
+            select: {
+              organizationId: true,
+              role: true,
+            },
+          });
+
+        const fallbackOrgId = remainingMembership
+          ? remainingMembership.organizationId
+          : null;
+        const fallbackRole = remainingMembership
+          ? remainingMembership.role
+          : "MEMBER";
+
+        await tx.user.update({
+          where: { id: targetMemberId },
+          data: {
+            organizationId: fallbackOrgId,
+            role: fallbackRole,
+          },
+        });
+      }
+
+      // Broadcast SSE event
+      this.eventsService?.emit({
+        type: "MEMBER_REMOVED",
+        targetUserId: targetMemberId,
+        organizationId: targetOrgId,
+      });
+
+      return {
+        success: true,
+        message: "Member successfully removed from organization",
+      };
     });
-
-    return {
-      success: true,
-      message: "Member successfully removed from organization",
-    };
   }
 }

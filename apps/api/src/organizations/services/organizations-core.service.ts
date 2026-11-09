@@ -41,19 +41,31 @@ export class OrganizationsCoreService {
     }
 
     const orgId = crypto.randomUUID();
-    await this.prisma.organization.upsert({
-      where: { slug: normalizedSlug },
-      create: {
-        id: orgId,
-        name: dto.name.trim(),
-        slug: normalizedSlug,
-        ownerId: userId,
-        updatedAt: toInstant(),
-      },
-      update: {
-        ownerId: userId,
-      },
-    });
+    try {
+      await this.prisma.organization.create({
+        data: {
+          id: orgId,
+          name: dto.name.trim(),
+          slug: normalizedSlug,
+          ownerId: userId,
+          updatedAt: toInstant(),
+        },
+      });
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "P2002"
+      ) {
+        throw new AppConflictException(
+          APP_ERROR_CODES.ORG_SLUG_ALREADY_EXISTS,
+          `Organization with slug '${normalizedSlug}' already exists. Please choose a different slug.`,
+          { slug: normalizedSlug },
+        );
+      }
+      throw error;
+    }
 
     const org = await this.prisma.organization.findFirst({
       where: { slug: normalizedSlug },
@@ -432,6 +444,16 @@ export class OrganizationsCoreService {
 
     // Execute atomic cleanup of users, memberships, and organization inside a single transaction
     await runInTransaction(this.prisma, async (tx) => {
+      const locked = await tx.organization.updateMany({
+        where: { id: orgId, ownerId: userId },
+        data: { ownerId: userId },
+      });
+      if (locked.count !== 1) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+          "Organization ownership changed; only the current owner can delete it.",
+        );
+      }
       // Unlink users from this org
       await tx.user.updateMany({
         where: { organizationId: orgId },

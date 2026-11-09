@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import { APP_ERROR_CODES, inferCandidateName } from "@haihire/shared";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -144,7 +144,13 @@ export class CandidatesCrudService {
     file?: Express.Multer.File,
     defaultOrgId?: string,
   ) {
-    const orgId = dto.organizationId || defaultOrgId;
+    if (defaultOrgId && dto.organizationId && dto.organizationId !== defaultOrgId) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN,
+        "Cross-tenant candidate creation is not permitted",
+      );
+    }
+    const orgId = defaultOrgId || dto.organizationId;
     if (!orgId) {
       throw new AppBadRequestException(
         APP_ERROR_CODES.CANDIDATE_ORG_REQUIRED,
@@ -203,17 +209,9 @@ export class CandidatesCrudService {
       }
     }
 
-    let firstName = dto.firstName?.trim() || null;
-    let lastName = dto.lastName?.trim() || null;
-    if (!firstName && !lastName && dto.name) {
-      const parts = dto.name.trim().split(/\s+/);
-      if (parts.length > 1) {
-        firstName = parts[parts.length - 1];
-        lastName = parts.slice(0, -1).join(" ");
-      } else {
-        firstName = parts[0] || null;
-      }
-    }
+    const inferredName = inferCandidateName(dto.name, dto.firstName, dto.lastName);
+    const firstName = inferredName.firstName || null;
+    const lastName = inferredName.lastName || null;
 
     const created = await this.prisma.candidate.create({
       data: {

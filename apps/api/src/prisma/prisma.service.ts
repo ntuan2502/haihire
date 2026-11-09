@@ -9,9 +9,7 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../auth/constants";
 import { toInstant } from "../common/date.util";
 import { backendEnv } from "../config/env";
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev";
+const connectionString = backendEnv.DATABASE_URL;
 
 @Injectable()
 export class PrismaService
@@ -19,17 +17,19 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   private readonly als = new AsyncLocalStorage<PrismaService>();
+  private readonly self: PrismaService;
 
   constructor() {
     const adapter = new PrismaPg({ connectionString });
     super({ adapter });
+    this.self = this;
   }
 
   /**
    * Alias for current transactional context or the base PrismaService instance.
    */
   get tx(): PrismaService {
-    return this.als.getStore() ?? this;
+    return this.als.getStore() ?? this.self;
   }
 
   /**

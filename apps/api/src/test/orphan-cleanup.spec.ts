@@ -1,5 +1,5 @@
+import { createTestApplicationsService } from "./helpers/service-factories";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApplicationsService } from "../applications/applications.service";
 import {
   OrphanCleanupProcessor,
   ORPHAN_CLEANUP_QUEUE,
@@ -109,7 +109,7 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
     });
 
     it("Test 1: When compensating delete succeeds, orphan queue remains empty", async () => {
-      const appService = new ApplicationsService(
+      const appService = createTestApplicationsService(
         mockPrisma,
         mockMinio,
         mockActivities,
@@ -143,7 +143,7 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
     });
 
     it("Test 2: When compensating delete fails (MinIO down), file is pushed to DLQ queue with 5 attempts", async () => {
-      const appService = new ApplicationsService(
+      const appService = createTestApplicationsService(
         mockPrisma,
         mockMinio,
         mockActivities,

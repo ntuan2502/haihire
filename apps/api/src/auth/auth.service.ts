@@ -350,7 +350,7 @@ export class AuthService {
       await this.prisma.user.update({
         where: { id: userId },
         data: {
-          tokenVersion: (user.tokenVersion ?? 0) + 1,
+          tokenVersion: { increment: 1 },
           updatedAt: toInstant(),
         },
       });
@@ -391,7 +391,7 @@ export class AuthService {
       where: { id: userId },
       data: {
         password: hashedPassword,
-        tokenVersion: (user.tokenVersion ?? 0) + 1,
+        tokenVersion: { increment: 1 },
         updatedAt: toInstant(),
       },
     });

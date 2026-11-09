@@ -65,6 +65,12 @@ export class SourcingMetricsService {
     const orgJobIds = new Set(jobs.map((j) => j.id));
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
+    if (jobId && !orgJobIds.has(jobId)) {
+      throw new AppForbiddenException(
+        APP_ERROR_CODES.FORBIDDEN_READ_ONLY,
+        "Access denied: job does not belong to the active organization.",
+      );
+    }
     const targetJobIds = jobId ? [jobId] : Array.from(orgJobIds);
     if (targetJobIds.length === 0) {
       return {

@@ -69,7 +69,7 @@ pnpm docker:prod:config
 ```bash
 # Verify backward-compatibility of schema before stopping application
 pnpm db:status
-pnpm db:update
+pnpm db:migrate
 ```
 
 ### Step 3: Progressive Rolling Deployment (Zero Local Build)

@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "db:migrate": "prisma migrate deploy --schema src/prisma/schema.prisma",
     "db:update": "prisma db push --schema src/prisma/schema.prisma",
     "db:seed": "node --import tsx src/prisma/seed.ts",
     "db:verify": "prisma validate --schema src/prisma/schema.prisma",

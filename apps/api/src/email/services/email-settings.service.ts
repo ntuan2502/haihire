@@ -11,6 +11,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { EncryptionService } from "../../common/encryption.service";
 import { UpdateEmailSettingDto } from "../dto/update-setting.dto";
 import { toInstant } from "../../common/date.util";
+import { validatePublicHost } from "../../common/network.util";
 import { env } from "../../config/env";
 
 @Injectable()
@@ -118,9 +119,22 @@ export class EmailSettingsService {
       );
     }
 
+    const hostError =
+      settings.provider === "SMTP" && settings.smtpHost
+        ? validatePublicHost(settings.smtpHost)
+        : null;
+
+    if (settings.provider === "SMTP" && hostError) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.EMAIL_SETTINGS_INVALID,
+        `Invalid SMTP host: ${hostError}`,
+      );
+    }
+
     const validSmtp =
       settings.provider === "SMTP" &&
       settings.smtpHost?.trim() &&
+      !hostError &&
       settings.smtpUser?.trim() &&
       settings.smtpPass?.trim() &&
       settings.smtpPort !== null &&
@@ -184,7 +198,18 @@ export class EmailSettingsService {
     if (dto.provider !== undefined) updateData.provider = dto.provider;
     if (dto.fromName !== undefined) updateData.fromName = dto.fromName;
     if (dto.fromEmail !== undefined) updateData.fromEmail = dto.fromEmail;
-    if (dto.smtpHost !== undefined) updateData.smtpHost = dto.smtpHost;
+    if (dto.smtpHost !== undefined) {
+      if (dto.smtpHost && dto.smtpHost.trim()) {
+        const hostError = validatePublicHost(dto.smtpHost);
+        if (hostError) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.EMAIL_SETTINGS_INVALID,
+            `Invalid SMTP host: ${hostError}`,
+          );
+        }
+      }
+      updateData.smtpHost = dto.smtpHost;
+    }
     if (dto.smtpPort !== undefined) updateData.smtpPort = dto.smtpPort;
     if (dto.smtpUser !== undefined) updateData.smtpUser = dto.smtpUser;
 

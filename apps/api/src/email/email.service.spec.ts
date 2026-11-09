@@ -423,6 +423,67 @@ describe("EmailService", () => {
     });
   });
 
+  describe("SMTP SSRF Protection and Host Validation (H-03)", () => {
+    it("should reject updating email settings with loopback host (127.0.0.1)", async () => {
+      await expect(
+        service.updateSettings("org-1", {
+          provider: "SMTP",
+          smtpHost: "127.0.0.1",
+        }),
+      ).rejects.toThrow("Invalid SMTP host");
+    });
+
+    it("should reject updating email settings with localhost", async () => {
+      await expect(
+        service.updateSettings("org-1", {
+          provider: "SMTP",
+          smtpHost: "localhost",
+        }),
+      ).rejects.toThrow("Invalid SMTP host");
+    });
+
+    it("should reject updating email settings with cloud metadata IP (169.254.169.254)", async () => {
+      await expect(
+        service.updateSettings("org-1", {
+          provider: "SMTP",
+          smtpHost: "169.254.169.254",
+        }),
+      ).rejects.toThrow("Invalid SMTP host");
+    });
+
+    it("should reject updating email settings with internal non-FQDN host", async () => {
+      await expect(
+        service.updateSettings("org-1", {
+          provider: "SMTP",
+          smtpHost: "backend.internal",
+        }),
+      ).rejects.toThrow("Invalid SMTP host");
+    });
+
+    it("should reject SmtpTransporter send() when host is private or loopback", async () => {
+      const transporter = EmailTransporterFactory.create({
+        provider: "SMTP",
+        fromName: "Test",
+        fromEmail: "test@example.com",
+        smtpHost: "127.0.0.1",
+        smtpPort: 587,
+        smtpUser: "user",
+        smtpPass: "pass",
+      });
+
+      const result = await transporter.send({
+        from: "Test <test@example.com>",
+        to: "candidate@example.com",
+        subject: "Test",
+        html: "<p>Hello</p>",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe("FAILED");
+      expect(result.error).toContain("SMTP destination rejected");
+    });
+  });
+
   describe("Anti-XSS Email Template Interpolation", () => {
     it("should strictly HTML-escape malicious script tags in interpolated variables", () => {
       const template = "Xin chào {{candidate_name}}, cảm ơn bạn!";

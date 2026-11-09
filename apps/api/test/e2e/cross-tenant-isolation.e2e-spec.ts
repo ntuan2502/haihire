@@ -1,3 +1,4 @@
+import { createTestApplicationsService } from "../../src/test/helpers/service-factories";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createMockPrismaService } from "../../src/test/helpers/prisma-composer-mock";
 import { CandidatesController } from "../../src/candidates/candidates.controller";
@@ -192,7 +193,7 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
     };
 
     candidatesService = new CandidatesService(mockPrisma as never, mockMinioService as never);
-    applicationsService = new ApplicationsService(
+    applicationsService = createTestApplicationsService(
       mockPrisma as never,
       mockMinioService as never,
       mockActivitiesService as never,

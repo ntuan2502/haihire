@@ -39,7 +39,7 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
       alphaCookies = await loginAsAdmin(request, "admin@tun.io.vn");
       authToken = alphaCookies.replace(/^haihire_token=/, "");
     } catch (err: unknown) {
-      setupError = err instanceof Error ? err.message : String(err);
+      throw new Error("Tenant security setup failed", { cause: err });
     }
   });
 
@@ -193,6 +193,54 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     expect(ownTenant.status()).toBe(200);
   });
 
+  test("candidate creation rejects a foreign organization in the body", async ({ request }) => {
+    const response = await request.post("/api/candidates", {
+      headers: { Authorization: `Bearer ${authToken}`, Cookie: alphaCookies },
+      data: {
+        organizationId: betaOrgId,
+        name: "Cross Tenant Attempt",
+        email: `foreign-candidate-${randomUUID()}@example.com`,
+      },
+    });
+    expect(response.status()).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: expect.stringMatching(/FORBIDDEN|ORG_FORBIDDEN_ACTION/),
+    });
+  });
+
+  test("document deletion cannot target another tenant's candidate or application", async ({ request }) => {
+    for (const path of [
+      `/api/candidates/${SEED_BETA_CANDIDATE_ID}/documents`,
+      `/api/applications/${betaAppId}/documents`,
+    ]) {
+      const response = await request.delete(`${path}?documentId=${randomUUID()}`, {
+        headers: { Authorization: `Bearer ${authToken}`, Cookie: alphaCookies },
+      });
+      expect(response.status(), path).toBe(403);
+    }
+  });
+
+  test("a public application response contains only its acknowledgement fields", async ({ playwright, baseURL }) => {
+    const anonymous = await playwright.request.newContext({ baseURL });
+    try {
+      const response = await anonymous.post("/api/applications/apply", {
+        data: {
+          jobId: betaJobId,
+          candidateName: "Public Applicant",
+          candidateEmail: `public-response-${randomUUID()}@example.com`,
+          candidatePhone: "+84900000000",
+          notes: "Private application note",
+        },
+      });
+      expect(response.status()).toBe(201);
+      const body = await response.json();
+      expect(Object.keys(body).sort()).toEqual(["createdAt", "id", "jobId", "stage"]);
+      expect(body).toMatchObject({ id: expect.any(String), jobId: betaJobId });
+    } finally {
+      await anonymous.dispose();
+    }
+  });
+
   // === EDGE CASES ===
 
   test("an organization owner cannot access system email routes", async ({
@@ -278,6 +326,9 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
       `/api/applications/job/${betaJobId}`,
       `/api/applications/${betaAppId}`,
       `/api/email/logs?organizationId=${betaOrgId}`,
+      "/api/interviews",
+      `/api/activities/candidate/${SEED_BETA_CANDIDATE_ID}`,
+      `/api/activities/application/${betaAppId}`,
     ]) {
       const response = await request.get(path, { headers });
       expect(response.status(), path).toBe(403);

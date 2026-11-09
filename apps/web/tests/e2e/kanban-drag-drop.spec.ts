@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 
 const DEMO_EMAIL = "admin@tun.io.vn";
 const DEMO_PASSWORD =
@@ -7,6 +8,18 @@ const DEMO_PASSWORD =
   "dev-seed-password-2026";
 
 test.describe("Kanban Drag and Drop E2E Flow", () => {
+  let fixtureJobId: string | undefined;
+  let fixtureCandidateId: string | undefined;
+  test.afterEach(async ({ page }) => {
+    if (fixtureJobId) {
+      expect((await page.request.delete(`/api/jobs/${fixtureJobId}`)).ok()).toBe(true);
+      fixtureJobId = undefined;
+    }
+    if (fixtureCandidateId) {
+      expect((await page.request.delete(`/api/candidates/${fixtureCandidateId}`)).ok()).toBe(true);
+      fixtureCandidateId = undefined;
+    }
+  });
   test("drag APPLIED -> SCREENING succeeds, drag SCREENING -> APPLIED triggers toast error and blocks API", async ({
     page,
   }) => {
@@ -20,26 +33,23 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
 
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 
-    // 2. Discover an active job pipeline with candidates in APPLIED stage
-    const pipelineLinks = page.locator('a[href*="/pipeline"]');
-    await expect(pipelineLinks.first()).toBeVisible({ timeout: 10000 });
-    const hrefs = await pipelineLinks.evaluateAll((links) =>
-      links.map((a) => (a as HTMLAnchorElement).pathname),
-    );
-
-    let candidateCardFound = false;
-    for (const href of hrefs) {
-      if (!href) continue;
-      await page.goto(`${href}?stage=APPLIED`);
-      await page.waitForLoadState("networkidle");
-
-      const candidateCard = page.locator('[data-testid^="candidate-card-"]').first();
-      if (await candidateCard.isVisible({ timeout: 4000 }).catch(() => false)) {
-        candidateCardFound = true;
-        break;
-      }
-    }
-    expect(candidateCardFound).toBe(true);
+    // Each attempt owns its fixture instead of consuming shared seed candidates.
+    const uniqueId = randomUUID();
+    const jobResponse = await page.request.post("/api/jobs", { data: {
+      title: `Kanban ${uniqueId}`, department: "Engineering", location: "Remote",
+      description: "Kanban regression fixture", status: "PUBLISHED",
+    } });
+    expect(jobResponse.ok()).toBe(true);
+    fixtureJobId = ((await jobResponse.json()) as { id: string }).id;
+    const email = `kanban-${uniqueId}@example.com`;
+    const candidateResponse = await page.request.post("/api/candidates", { data: { name: "Kanban Fixture", email } });
+    expect(candidateResponse.ok()).toBe(true);
+    fixtureCandidateId = ((await candidateResponse.json()) as { id: string }).id;
+    const applyResponse = await page.request.post("/api/applications/apply", { data: {
+      jobId: fixtureJobId, candidateEmail: email, candidateName: "Kanban Fixture",
+    } });
+    expect(applyResponse.ok()).toBe(true);
+    await page.goto(`/dashboard/jobs/${fixtureJobId}/pipeline?stage=APPLIED`);
 
     // Ensure stage pill for APPLIED and SCREENING are visible
     const appliedPill = page.locator('[data-testid="stage-pill-APPLIED"]');
@@ -90,12 +100,10 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     );
 
     // Wait for the mutation to settle (URL changes or API request recorded)
-    await page.waitForTimeout(1000);
-    expect(apiStageUpdates.length).toBeGreaterThanOrEqual(1);
+    await expect.poll(() => apiStageUpdates.length).toBeGreaterThanOrEqual(1);
 
     // 4. Switch to SCREENING stage tab and find the moved candidate
     await screeningPill.click();
-    await page.waitForTimeout(500);
 
     const candidateInScreening = page.locator(`[data-testid="candidate-card-${candidateId}"]`);
     await expect(candidateInScreening).toBeVisible({ timeout: 10000 });
@@ -134,7 +142,6 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     expect(toastText).toMatch(/Không thể chuyển|Cannot move|Cannot transition/i);
 
     // 7. Verify API NOT called for invalid transition
-    await page.waitForTimeout(500);
     expect(apiStageUpdates.length).toBe(countBeforeInvalid);
   });
 });

@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import { spawn, execSync, type ChildProcess } from "node:child_process";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -41,9 +42,9 @@ async function ensureServerRunning(): Promise<void> {
   }
 
   console.log("🚀 Starting NestJS backend server on port 13001...");
-  const backendDir = resolve(process.cwd(), "backend");
-  spawnedProcess = spawn("pnpm", ["exec", "tsx", "src/main.ts"], {
-    cwd: backendDir,
+  const apiDir = resolve(fileURLToPath(import.meta.url), "../..");
+  spawnedProcess = spawn("pnpm exec tsx src/main.ts", {
+    cwd: apiDir,
     shell: true,
     stdio: "inherit",
     env: { ...process.env, PORT: "13001" },

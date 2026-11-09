@@ -57,7 +57,7 @@ async function main() {
   await waitForBackend(backendHost, backendPort);
   console.log(`[web dev] Starting Next.js on port ${frontendPort}...`);
 
-  const child = spawn("pnpm", ["exec", "next", "dev"], {
+  const child = spawn("pnpm exec next dev", {
     stdio: "inherit",
     env: { ...process.env, PORT: String(frontendPort) },
     shell: true,

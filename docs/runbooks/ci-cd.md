@@ -99,20 +99,20 @@ HaiHire uses path filtering (`dorny/paths-filter@v3`) across workflows to elimin
 
 #### Frontend Critical Paths
 
-- `frontend/src/app/**`: Core App Router routes (e.g. `/auth/login`, `/careers/*`, `/dashboard/*`).
-- `frontend/src/components/**`: UI primitives, shared controls, forms, and layout shells.
-- `frontend/src/lib/api/**`: Client-side HTTP client, error handlers, and endpoint wrappers.
-- `frontend/src/i18n/**`: Translation dictionaries and locale selectors.
-- `frontend/tests/e2e/**`: Changes or additions to E2E test specifications.
+- `apps/web/src/app/**`: Core App Router routes (e.g. `/auth/login`, `/careers/*`, `/dashboard/*`).
+- `apps/web/src/components/**`: UI primitives, shared controls, forms, and layout shells.
+- `apps/web/src/lib/api/**`: Client-side HTTP client, error handlers, and endpoint wrappers.
+- `apps/web/src/i18n/**`: Translation dictionaries and locale selectors.
+- `apps/web/tests/e2e/**`: Changes or additions to E2E test specifications.
 
 #### Backend Critical Paths
 
-- `backend/src/auth/**`: Authentication controllers, JWT guards, password hashing, and login endpoints.
-- `backend/src/applications/**`: Job application processing, resume uploads, stage transitions.
-- `backend/src/candidates/**`: Candidate profile management and document storage.
-- `backend/src/jobs/**`: Job requisition CRUD, public careers endpoints, pipeline definitions.
-- `backend/src/common/**`: Magic bytes, MIME filters, DtoPipe, and upload utilities.
-- `backend/src/prisma/**`: Database schema, seed data, and migration scripts.
+- `apps/api/src/auth/**`: Authentication controllers, JWT guards, password hashing, and login endpoints.
+- `apps/api/src/applications/**`: Job application processing, resume uploads, stage transitions.
+- `apps/api/src/candidates/**`: Candidate profile management and document storage.
+- `apps/api/src/jobs/**`: Job requisition CRUD, public careers endpoints, pipeline definitions.
+- `apps/api/src/common/**`: Magic bytes, MIME filters, DtoPipe, and upload utilities.
+- `apps/api/src/prisma/**`: Database schema, seed data, and migration scripts.
 
 #### Monorepo & Configuration Critical Paths
 

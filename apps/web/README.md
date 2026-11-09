@@ -45,7 +45,7 @@ src/
 
 ## ⚡ Development & Scripts
 
-All scripts can be run from the root repository or inside `frontend/`:
+All scripts can be run from the root repository or inside `apps/web/`:
 
 ```bash
 # Start frontend dev server on port 13000
@@ -67,14 +67,14 @@ pnpm run typecheck
 pnpm run lint
 
 # Audit two-way key parity between vi.ts and en.ts
-pnpm run check:i18n
+pnpm run lint:i18n
 ```
 
 ---
 
 ## 🎨 Design & Coding Conventions
 
-1. **Zero Hardcoded Text:** All user-facing strings must use `useI18n()` / `t("key.path")` declared in `frontend/src/i18n/types.ts`.
+1. **Zero Hardcoded Text:** All user-facing strings must use `useI18n()` / `t("key.path")` declared in `apps/web/src/i18n/types.ts`.
 2. **Full-Width Dashboard Layouts:** Container layouts must utilize responsive full-width classes (`px-4 sm:px-6 lg:px-8 xl:px-10 w-full`), avoiding fixed-width max-w shells.
 3. **Defensive API Gatekeeper:** Axios request interceptors validate all request URLs and immediately abort if malformed tokens (like `[object Object]`) appear in path segments.
 4. **React SyntheticEvent Hygiene:** Never pass parameterized callbacks directly to `onClick`; wrap in arrow functions (`() => onAction(id)`).

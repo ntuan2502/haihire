@@ -178,7 +178,7 @@ export class GuardedService {
       patternMatchCount: 0,
       violations: [
         {
-          file: "backend/src/candidates/candidates.service.ts",
+          file: "apps/api/src/candidates/candidates.service.ts",
           line: 42,
           model: "Candidate",
           snippet: "Candidate.all()",

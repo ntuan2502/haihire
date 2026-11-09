@@ -34,7 +34,7 @@
 
 - [ ] Zero newly introduced `any` types (unless strictly justified via comment explaining technical limitation)
 - [ ] Zero newly introduced `@ts-ignore` / `@ts-expect-error` directives
-- [ ] `pnpm tsc --noEmit` passes cleanly across both `backend/` and `frontend/`
+- [ ] `pnpm tsc --noEmit` passes cleanly across both `apps/api/` and `apps/web/`
 - [ ] Public interfaces documented with JSDoc for critical functions/services
 - [ ] Explicit error types: throw `AppException` subclasses, never generic `new Error()`
 

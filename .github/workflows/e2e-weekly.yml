@@ -123,8 +123,8 @@ jobs:
 
       - name: Run Database Migrations & Seed
         run: |
-          pnpm --filter ./backend run db:update
-          pnpm --filter ./backend run db:seed
+          pnpm --filter api run db:update
+          pnpm --filter api run db:seed
         env:
           DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           DEMO_SEED_PASSWORD: dev-seed-password-2026

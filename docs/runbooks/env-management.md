@@ -7,14 +7,14 @@
 
 ## 1. Environment Files Architecture
 
-Following the Task #11 unification, HaiHire employs a unified **Single Source of Truth (SSOT)** environment architecture. All services (Backend, Frontend, Prisma CLI, and Docker Compose) read directly from a single root configuration. Package-level environment files (`backend/.env*` and `frontend/.env*`) have been eliminated.
+Following the Task #11 unification, HaiHire employs a unified **Single Source of Truth (SSOT)** environment architecture. All services (Backend, Frontend, Prisma CLI, and Docker Compose) read directly from a single root configuration. Package-level environment files (`apps/api/.env*` and `apps/web/.env*`) have been eliminated.
 
-| File Path                            | Target Scope & Responsibility                                                                                                                              | Loaded By                                                                                                           |       Committed to Git?        |
-| :----------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :----------------------------: |
-| **`.env`** (Root)                    | Local machine host ports, secrets, database, Redis, S3, mailers, and Next.js endpoints. **Single Source of Truth for local development and local Docker.** | Backend (`backend/src/config/env.ts`), Frontend (`next.config.ts`, `dev.ts`), Docker Compose (`docker-compose.yml`) |    ❌ **NO** (`.gitignore`)    |
-| **`.env.example`** (Root)            | Complete standardized 10-section template for local development and Docker Compose.                                                                        | Reference template (`cp .env.example .env`)                                                                         |           ✅ **YES**           |
-| **`.env.production.example`** (Root) | Standardized 10-section production template for secure deployments. Contains production metadata, domains, and security recommendations.                   | Reference template (`cp .env.production.example .env.production`)                                                   |           ✅ **YES**           |
-| **`.env.production`** (Root)         | Real production secrets and endpoints on secure production servers (chmod 600).                                                                            | `docker compose --env-file .env.production -f docker-compose.prod.yml`                                              | ❌ **NO** (Strictly forbidden) |
+| File Path                            | Target Scope & Responsibility                                                                                                                              | Loaded By                                                                                                                                      |       Committed to Git?        |
+| :----------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------: |
+| **`.env`** (Root)                    | Local machine host ports, secrets, database, Redis, S3, mailers, and Next.js endpoints. **Single Source of Truth for local development and local Docker.** | Backend (`apps/api/src/config/env.ts`), Frontend (`apps/web/next.config.ts`, `apps/web/scripts/dev.ts`), Docker Compose (`docker-compose.yml`) |    ❌ **NO** (`.gitignore`)    |
+| **`.env.example`** (Root)            | Complete standardized 10-section template for local development and Docker Compose.                                                                        | Reference template (`cp .env.example .env`)                                                                                                    |           ✅ **YES**           |
+| **`.env.production.example`** (Root) | Standardized 10-section production template for secure deployments. Contains production metadata, domains, and security recommendations.                   | Reference template (`cp .env.production.example .env.production`)                                                                              |           ✅ **YES**           |
+| **`.env.production`** (Root)         | Real production secrets and endpoints on secure production servers (chmod 600).                                                                            | `docker compose --env-file .env.production -f docker-compose.prod.yml`                                                                         | ❌ **NO** (Strictly forbidden) |
 
 ---
 
@@ -125,8 +125,8 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 Whenever introducing a new environment variable:
 
 1. Add the variable to the relevant Zod schema:
-   - Backend: `backend/src/config/env.ts`
-   - Frontend: `frontend/src/lib/env.ts`
+   - Backend: `apps/api/src/config/env.ts`
+   - Frontend: `apps/web/src/lib/env.ts`
 2. Add the variable to `.env.example` in the root directory under the appropriate section with documentation.
 3. If applicable for production, add it to `.env.production.example` and `docker-compose.prod.yml`.
 4. Update local `.env`.

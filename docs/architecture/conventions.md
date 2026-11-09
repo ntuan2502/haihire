@@ -51,7 +51,7 @@
 
 1. **Zero Hardcoded JSX Text:** Raw user-facing strings, labels, placeholders, and error toasts in JSX/TSX are strictly forbidden.
    - _Rationale:_ Guarantees full localization support and prevents language leaks in bilingual ATS deployments.
-2. **Two-Way Dictionary Symmetry:** All keys must exist symmetrically in both Vietnamese (`frontend/src/constants/translations/vi.ts`) and English (`frontend/src/constants/translations/en.ts`) and be typed in `TranslationSchema`.
+2. **Two-Way Dictionary Symmetry:** All keys must exist symmetrically in both Vietnamese (`apps/web/src/i18n/locales/vi.ts`) and English (`apps/web/src/i18n/locales/en.ts`) and be typed in `TranslationSchema`.
    - _Rationale:_ Prevents runtime translation key misses (`[missing key]`) when switching languages.
 3. **Enforcement:** Enforced by CI Gate 2 (`pnpm lint:i18n`) and Gate 6 (`pnpm lint:error-i18n`).
    - _Rationale:_ Traps unlocalized strings and dictionary drift before merge.

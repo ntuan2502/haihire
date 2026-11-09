@@ -1,7 +1,7 @@
 # HaiHire Data Model & Entity Architecture
 
 > **Single Source of Truth for Data Models, Relationships, and Cascade Invariants**  
-> Based on Prisma schema definition (`backend/src/prisma/schema.prisma`).
+> Based on Prisma schema definition (`apps/api/src/prisma/schema.prisma`).
 
 ---
 

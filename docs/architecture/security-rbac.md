@@ -35,7 +35,7 @@ sequenceDiagram
 
 1. **HttpOnly & Secure Session Cookies:** JWT tokens are stored exclusively in `HttpOnly`, `SameSite=Lax` cookies, preventing XSS-based credential theft.
 2. **Session Revocation via `tokenVersion`:** `User.tokenVersion` in PostgreSQL enables instant invalidation of all issued refresh/access tokens upon password reset or account lock.
-3. **Fail-Fast Edge Interception:** `frontend/src/proxy.ts` evaluates session presence at the edge, redirecting unauthorized traffic before rendering page components.
+3. **Fail-Fast Edge Interception:** `apps/web/src/proxy.ts` evaluates session presence at the edge, redirecting unauthorized traffic before rendering page components.
 
 ---
 

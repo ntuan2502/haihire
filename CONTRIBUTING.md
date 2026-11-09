@@ -211,10 +211,10 @@ pnpm check:all:e2e
    - No manually written `.js` or `.mjs` files (except tooling configs like `eslint.config.mjs`).
    - Zero `any` policy across application code. Define explicit interfaces or Zod schemas.
 2. **Environment Variable Hygiene:**
-   - Never call `process.env` directly in feature modules. Always import the validated `env` singleton (`backend/src/config/env.ts` or `frontend/src/lib/env.ts`).
+   - Never call `process.env` directly in feature modules. Always import the validated `env` singleton (`apps/api/src/config/env.ts` or `apps/web/src/lib/env.ts`).
    - Zero fallback policy: Never provide fallback defaults for credentials, database URLs, or ports.
 3. **Internationalization (i18n):**
-   - Zero hardcoded text in frontend components. All UI copy must use `useI18n()` / `t("key.path")` with keys defined in `frontend/src/i18n/types.ts`.
+   - Zero hardcoded text in frontend components. All UI copy must use `useI18n()` / `t("key.path")` with keys defined in `apps/web/src/i18n/types.ts`.
 4. **Security Baseline:**
    - Store JWT tokens exclusively in secure HttpOnly cookies (`SameSite=Lax`, `Path=/`, `Secure`).
    - Upload all CV files to isolated tenant paths: `tenants/{orgId}/candidates/{candId}/{uuid}-{fileName}`.

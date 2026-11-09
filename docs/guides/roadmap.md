@@ -239,24 +239,24 @@ _Planned for phased refactoring in Wave 5 (v0.3.0) and v0.4.0._
 
 | #   | File Path                                                             | Current LOC | Target Milestone | Focus Area                          |
 | --- | --------------------------------------------------------------------- | ----------- | ---------------- | ----------------------------------- |
-| 1   | `frontend/src/app/dashboard/settings/members/page.tsx`                | 783 LOC     | v0.3.0           | Member management & invite dialogs  |
-| 2   | `frontend/src/components/candidates/candidate-drawer.tsx`             | 748 LOC     | v0.3.0           | Candidate quick drawer              |
-| 3   | `backend/src/email/email.service.ts`                                  | 698 LOC     | v0.3.0           | Email dispatch sub-services         |
-| 4   | `frontend/src/components/landing/landing-ats-preview.tsx`             | 696 LOC     | v0.3.0           | Landing marketing preview           |
-| 5   | `backend/src/candidates/candidates.service.ts`                        | 694 LOC     | v0.3.0           | Candidate sub-services              |
-| 6   | `frontend/src/app/dashboard/interviews/page.tsx`                      | 690 LOC     | v0.3.0           | Interviews dashboard tab controller |
-| 7   | `frontend/src/app/dashboard/jobs/[id]/pipeline/page.tsx`              | 679 LOC     | v0.3.0           | Pipeline stage coordinator          |
-| 8   | `backend/src/interviews/interviews.service.ts`                        | 640 LOC     | v0.3.0           | Interviews facade & sub-services    |
-| 9   | `frontend/src/app/dashboard/settings/integrations/page.tsx`           | 638 LOC     | v0.4.0           | Integrations configuration          |
-| 10  | `frontend/src/components/careers/job-details-client.tsx`              | 578 LOC     | v0.4.0           | Public job client components        |
-| 11  | `frontend/src/components/jobs/wizard/wizard-step-details.tsx`         | 565 LOC     | v0.4.0           | Job wizard step breakdown           |
-| 12  | `backend/src/jobs/jobs.service.ts`                                    | 544 LOC     | v0.4.0           | Job service domain extraction       |
-| 13  | `frontend/src/components/interviews/schedule-interview-modal.tsx`     | 531 LOC     | v0.4.0           | Interview scheduling modal          |
-| 14  | `frontend/src/app/auth/onboarding/page.tsx`                           | 510 LOC     | v0.4.0           | Onboarding flow forms               |
-| 15  | `backend/src/webhook-settings/webhook-settings.service.ts`            | 508 LOC     | v0.4.0           | Webhook settings service            |
-| 16  | `frontend/src/components/jobs/pipeline/pipeline-candidate-detail.tsx` | 508 LOC     | v0.4.0           | Pipeline candidate drawer           |
-| 17  | `frontend/src/app/careers/page.tsx`                                   | 499 LOC     | v0.4.0           | Public careers page decomposition   |
-| 18  | `frontend/src/components/interviews/interviews-table-view.tsx`        | 444 LOC     | v0.4.0           | Interviews table view               |
+| 1   | `apps/web/src/app/dashboard/settings/members/page.tsx`                | 783 LOC     | v0.3.0           | Member management & invite dialogs  |
+| 2   | `apps/web/src/components/candidates/candidate-drawer.tsx`             | 748 LOC     | v0.3.0           | Candidate quick drawer              |
+| 3   | `apps/api/src/email/email.service.ts`                                 | 698 LOC     | v0.3.0           | Email dispatch sub-services         |
+| 4   | `apps/web/src/components/landing/landing-ats-preview.tsx`             | 696 LOC     | v0.3.0           | Landing marketing preview           |
+| 5   | `apps/api/src/candidates/candidates.service.ts`                       | 694 LOC     | v0.3.0           | Candidate sub-services              |
+| 6   | `apps/web/src/app/dashboard/interviews/page.tsx`                      | 690 LOC     | v0.3.0           | Interviews dashboard tab controller |
+| 7   | `apps/web/src/app/dashboard/jobs/[id]/pipeline/page.tsx`              | 679 LOC     | v0.3.0           | Pipeline stage coordinator          |
+| 8   | `apps/api/src/interviews/interviews.service.ts`                       | 640 LOC     | v0.3.0           | Interviews facade & sub-services    |
+| 9   | `apps/web/src/app/dashboard/settings/integrations/page.tsx`           | 638 LOC     | v0.4.0           | Integrations configuration          |
+| 10  | `apps/web/src/components/careers/job-details-client.tsx`              | 578 LOC     | v0.4.0           | Public job client components        |
+| 11  | `apps/web/src/components/jobs/wizard/wizard-step-details.tsx`         | 565 LOC     | v0.4.0           | Job wizard step breakdown           |
+| 12  | `apps/api/src/jobs/jobs.service.ts`                                   | 544 LOC     | v0.4.0           | Job service domain extraction       |
+| 13  | `apps/web/src/components/interviews/schedule-interview-modal.tsx`     | 531 LOC     | v0.4.0           | Interview scheduling modal          |
+| 14  | `apps/web/src/app/auth/onboarding/page.tsx`                           | 510 LOC     | v0.4.0           | Onboarding flow forms               |
+| 15  | `apps/api/src/webhook-settings/webhook-settings.service.ts`           | 508 LOC     | v0.4.0           | Webhook settings service            |
+| 16  | `apps/web/src/components/jobs/pipeline/pipeline-candidate-detail.tsx` | 508 LOC     | v0.4.0           | Pipeline candidate drawer           |
+| 17  | `apps/web/src/app/careers/page.tsx`                                   | 499 LOC     | v0.4.0           | Public careers page decomposition   |
+| 18  | `apps/web/src/components/interviews/interviews-table-view.tsx`        | 444 LOC     | v0.4.0           | Interviews table view               |
 
 ---
 

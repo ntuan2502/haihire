@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { proxy } from "./proxy";
 import { NextRequest } from "next/server";
 
-describe("Next.js 16 Edge Proxy (frontend/src/proxy.ts)", () => {
+describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
   const createMockRequest = (
     pathname: string,
     cookies: Record<string, string> = {},

@@ -20,10 +20,10 @@
 ## D-002: Next.js Proxy Rewrites without /api Prefix and v0.4.0 Standardization
 
 - **Date:** 2026-10-21
-- **Decision:** Retain legacy direct path rewrites (`/organizations/*`, `/jobs/*`, `/applications/*`, `/users/*`, `/events/*`, `/haihire-resumes/*`) alongside `/api/*` in `frontend/next.config.ts` for release `v0.3.0`. Standardize all API routes under unified `/api/v1/*` in release `v0.4.0`.
+- **Decision:** Retain legacy direct path rewrites (`/organizations/*`, `/jobs/*`, `/applications/*`, `/users/*`, `/events/*`, `/haihire-resumes/*`) alongside `/api/*` in `apps/web/next.config.ts` for release `v0.3.0`. Standardize all API routes under unified `/api/v1/*` in release `v0.4.0`.
 - **Rationale:** Multiple legacy frontend client modules make relative calls without `/api` prefixes (e.g. `axios.get('/jobs')`). Modifying all route prefixes right before the `v0.3.0` release risked introducing regressions across 963+ tests and 23 E2E specs. Retaining proxy rewrites stabilizes `v0.3.0` while scheduling full prefix alignment (`/api/v1`) for `v0.4.0`.
-- **Evidence:** Configuration in `frontend/next.config.ts` lines 14-24.
-- **Enforcement:** Verified via automated Next.js rewrites unit tests in `frontend/src/lib/api/client.spec.ts` and E2E Playwright specs.
+- **Evidence:** Configuration in `apps/web/next.config.ts` lines 14-24.
+- **Enforcement:** Verified via automated Next.js rewrites unit tests in `apps/web/src/lib/api/client.spec.ts` and E2E Playwright specs.
 - **History:** Formally documented in `ADR-002-frontend-rewrite-path.md` (superseded by this entry in Phase 4 IA refactor).
 
 ---
@@ -33,7 +33,7 @@
 - **Date:** 2026-10-21
 - **Decision:** Deprecated and completely removed the static `Role.OWNER` enum value across the database schema, Prisma contract, `@haihire/shared` RBAC permissions, and frontend types. Established `Organization.ownerId` (`String`, Foreign Key referencing `User(id)` with `onDelete: Restrict`) as the dynamic, single source of truth for organization ownership.
 - **Rationale:** A static `OWNER` role attached to a user violated multi-tenant relational integrity: a user can own Tenant A but be an interviewer or member in Tenant B. Furthermore, the dual source of truth caused defect F-003 where tenant creators assigned role `ADMIN` were blocked with HTTP 403 when trying to delete their own organization. Resolving ownership dynamically at runtime (`user.isOwner = (user.id === currentOrg.ownerId)`) eliminates dual-source state collisions.
-- **Evidence:** Prisma migration in `backend/migrations/app/`, permission definitions in `packages/shared/src/permissions.ts`, and guard implementation in `backend/src/auth/roles.guard.ts`.
+- **Evidence:** Prisma migration in `apps/api/migrations/app/`, permission definitions in `packages/shared/src/permissions.ts`, and guard implementation in `apps/api/src/auth/roles.guard.ts`.
 - **Enforcement:** Enforced at runtime by `JwtStrategy` (injecting `isOwner`), `RolesGuard` (granting dynamic owner super-admin bypass), and tenant ownership transfer endpoint `POST /organizations/my/transfer-ownership`.
 - **History:** Initially, Branch 1 temporarily band-aided `"org:delete"` by adding `Role.ADMIN` to permissions. Branch 2 superseded this with the root-cause fix via `ADR-003-dynamic-org-ownership.md` and removed `Role.OWNER` from the codebase.
 
@@ -42,10 +42,10 @@
 ## D-004: Next.js 16 Proxy Convention Adoption (proxy.ts Replaces middleware.ts)
 
 - **Date:** 2026-10-22
-- **Decision:** Use `frontend/src/proxy.ts` and `export function proxy(request: NextRequest)` for Edge route interception and authentication redirects, following the official Next.js 16 file convention. Deprecate and prohibit `middleware.ts`.
+- **Decision:** Use `apps/web/src/proxy.ts` and `export function proxy(request: NextRequest)` for Edge route interception and authentication redirects, following the official Next.js 16 file convention. Deprecate and prohibit `middleware.ts`.
 - **Rationale:** Next.js 16 formally deprecated the `middleware.ts` file convention and `middleware` function export, emitting build warnings (`⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.`). Adopting `proxy.ts` aligns with the modern Next.js 16 Turbopack compiler architecture and eliminates build-time deprecation warnings.
-- **Evidence:** Implementation in `frontend/src/proxy.ts` and automated audit gate `scripts/check-nextjs-conventions.ts`.
-- **Enforcement:** CI Gate 15 (`pnpm lint:nextjs-conventions`) prohibits any `middleware.ts` or `middleware.js` in `frontend/` and asserts the existence of `frontend/src/proxy.ts`.
+- **Evidence:** Implementation in `apps/web/src/proxy.ts` and automated audit gate `scripts/check-nextjs-conventions.ts`.
+- **Enforcement:** CI Gate 15 (`pnpm lint:nextjs-conventions`) prohibits any `middleware.ts` or `middleware.js` in `apps/web/` and asserts the existence of `apps/web/src/proxy.ts`.
 - **History:** In commit `6593328` (September 3, 2026), `proxy.ts` was originally authored. In Phase 1 audit finding F-004, an AI agent with outdated pre-Next.js 16 training incorrectly flagged `proxy.ts` as an inactive misconfiguration and renamed it to `middleware.ts` in commit `c6c805b`. Finding F-004-R1 identified the error; commit `be46651` restored `proxy.ts` and commit `9142e05` instituted CI Gate 15 to enforce the rule permanently.
 
 ---
@@ -66,8 +66,8 @@
 - **Date:** 2026-10-22
 - **Decision:** Retain `model ActivityLog` in Prisma strictly for candidate recruitment lifecycle events (`APPLIED`, `STAGE_CHANGED`, `EMAIL_SENT`, `INTERVIEW_SCHEDULED`, etc.). Administrative tenant operations (such as `OWNERSHIP_TRANSFERRED`, `ORG_DELETED`, `MEMBER_ROLE_CHANGED`) are logged via structured backend application logs in `v0.3.0`, and deferred to a dedicated `OrganizationAuditLog` database entity in `v0.4.0` (Finding F-017).
 - **Rationale:** In `contract.prisma`, `ActivityLog` has a non-nullable Foreign Key `candidateId String` referencing `Candidate`. Attempting to store tenant-level administrative events inside `ActivityLog` would break domain boundaries by conflating recruitment activity with tenant administration, or would require altering `candidateId` to nullable via an unnecessary breaking database migration right before `v0.3.0` release.
-- **Evidence:** Schema in `backend/src/prisma/contract.prisma` and architectural review finding F-017.
-- **Enforcement:** Code review gate; verified in `backend/src/organizations/organizations.service.ts` where ownership transfers emit structured application logs instead of touching `ActivityLog`.
+- **Evidence:** Schema in `apps/api/src/prisma/contract.prisma` and architectural review finding F-017.
+- **Enforcement:** Code review gate; verified in `apps/api/src/organizations/organizations.service.ts` where ownership transfers emit structured application logs instead of touching `ActivityLog`.
 - **History:** Raised during Phase 3 Branch 2 code review (Round 3) regarding ownership transfer auditing; formally resolved as architectural finding F-017 and scheduled for `v0.4.0` implementation.
 
 ---
@@ -115,7 +115,7 @@
 - **Date:** 2026-10-23
 - **Decision:** Mandate strict RFC 4122 UUID version 4 compliance (`00000000-0000-4000-8000-xxxxxxxxxxxx`) for all deterministic seed, demo, and test mock UUIDs across backend seed scripts, migrations, integration tests, and frontend mocks. Reject arbitrary non-RFC compliant UUID strings (such as pseudo-UUIDs `00000000-0000-0000-0000-000000000001` with version nibble `0` and variant nibble `0`). Revert any loose `@IsString()` validations on ID fields back to strict `@IsUUID()` (`@IsUUID("4")` or standard RFC 4122 validation).
 - **Rationale:** NestJS DTO validation pipes use class-validator's `@IsUUID()` which strictly verifies RFC 4122 variant and version bits. Non-compliant mock IDs caused runtime HTTP 400 Bad Request errors on `POST /organizations/my/transfer-ownership` when using demo data. Relaxing DTO validation to `@IsString()` was a dangerous workaround that weakened API contract integrity and allowed arbitrary invalid inputs. Standardizing seed IDs to conform to RFC 4122 UUID v4 preserves strong typing, prevents silent validation bypasses, and aligns deterministic mock data with production PostgreSQL UUID generation.
-- **Evidence:** Refactored seed IDs in `backend/prisma/seeds/`, DTO validation in `backend/src/organizations/dto/transfer-ownership.dto.ts`, and updated integration tests in `backend/test/organizations/transfer-ownership.spec.ts`.
+- **Evidence:** Refactored seed IDs in `apps/api/prisma/seeds/`, DTO validation in `apps/api/src/organizations/dto/transfer-ownership.dto.ts`, and updated integration tests in `apps/api/test/organizations/transfer-ownership.spec.ts`.
 - **Enforcement:** Enforced at runtime by `DtoPipe` with `@IsUUID()`, and in integration tests asserting rejection of non-RFC-compliant strings.
 - **History:** Triggered during transfer ownership debugging where seed member ID `00000000-0000-0000-0000-000000000003` caused DTO validation failures. Temporarily patched with `@IsString()` in commit `b02dd1b` (workaround); project lead mandated reverting `@IsString()` back to strict `@IsUUID()` and migrating all deterministic seeds to RFC 4122 v4 compliance in commit `5d46d48`.
 
@@ -155,16 +155,16 @@
 - **Date:** 2026-11-08
 - **Decision:** `GET /metrics` requires `Authorization: Bearer <METRICS_TOKEN>` whenever `METRICS_TOKEN` is configured. In production without a token, the endpoint returns 404. Development and test without a token remain open.
 - **Rationale:** Metrics expose queue depths, route latency, and failure rates, which reveal internal topology and activity to unauthenticated callers. A shared scrape token fits Prometheus `authorization` scrape configuration without adding user sessions to the metrics path.
-- **Enforcement:** `AppController` compares SHA-256 digests with `timingSafeEqual`. `METRICS_TOKEN` is validated in `backend/src/config/env.ts` (minimum 32 characters). `app.controller.spec.ts` covers the hidden, rejected, and accepted cases.
+- **Enforcement:** `AppController` compares SHA-256 digests with `timingSafeEqual`. `METRICS_TOKEN` is validated in `apps/api/src/config/env.ts` (minimum 32 characters). `app.controller.spec.ts` covers the hidden, rejected, and accepted cases.
 
 ---
 
 ## D-015: Downgrade from Prisma 8 RC to Prisma 7.10.1 Stable
 
 - **Date:** 2026-11-08
-- **Decision:** Replaced pre-release Prisma 8 RC (`@prisma/orm-postgres@8.0.0-rc.13`, `prisma@8.0.0-rc.19`, `effect@4.0.0-rc.118`) with Prisma 7.10.1 stable (`@prisma/client@7.10.1`, `prisma@7.10.1`, `@prisma/adapter-pg@7.10.1`). Standardized schema on `backend/src/prisma/schema.prisma` and implemented a fully typed adapter layer (`createPrisma7Adapter`) preserving backward compatibility for `db.orm.public.*` call sites and tenant scoping verification (CI Gate 9). Supersedes D-001.
+- **Decision:** Replaced pre-release Prisma 8 RC (`@prisma/orm-postgres@8.0.0-rc.13`, `prisma@8.0.0-rc.19`, `effect@4.0.0-rc.118`) with Prisma 7.10.1 stable (`@prisma/client@7.10.1`, `prisma@7.10.1`, `@prisma/adapter-pg@7.10.1`). Standardized schema on `apps/api/src/prisma/schema.prisma` and implemented a fully typed adapter layer (`createPrisma7Adapter`) preserving backward compatibility for `db.orm.public.*` call sites and tenant scoping verification (CI Gate 9). Supersedes D-001.
 - **Rationale:** Prisma 8 RC is a pre-release Composer framework that pulled 11 High transitive CVEs from Hono/Alchemy into the dependency tree and required experimental engine overrides (`effect: 4.0.0-rc.118`). Prisma 7.10.1 is the official stable GA release of Prisma ORM, providing robust PostgreSQL driver adapter support (`@prisma/adapter-pg`), zero pre-release transitive dependencies, and complete supply-chain stability.
-- **Evidence:** `backend/src/prisma/schema.prisma`, `backend/src/prisma/db.ts`, and 690 passed backend unit tests.
+- **Evidence:** `apps/api/src/prisma/schema.prisma`, `apps/api/src/prisma/db.ts`, and 690 passed backend unit tests.
 - **Enforcement:** Enforced via CI Gate 11 (`pnpm lint:doc-sync` Check 4) which now asserts 0 pre-release packages, and `pnpm lint:tenant-scope` which continues to verify 100% of Prisma queries are isolated by tenant.
 - **History:** D-001 initially accepted Prisma 8 RC and its transitive CVEs as a known limitation for `v0.3.0`. In Phase 3 refactoring, the user approved downgrading to Prisma 7.10.1 stable, fully eliminating the limitation and all 3 pre-release packages.
 

@@ -51,7 +51,7 @@ src/
 
 ## ⚡ Development & Scripts
 
-All scripts can be run from the root repository or inside `backend/`:
+All scripts can be run from the root repository or inside `apps/api/`:
 
 ```bash
 # Start backend in watch mode (Port 13001)
@@ -84,14 +84,14 @@ Following the migration to RFC 4122 UUID v4 (`00000000-0000-4000-8000-xxxxxxxxxx
 
 ```bash
 # Using PowerShell (Windows)
-./backend/scripts/reseed-local.ps1
+./apps/api/scripts/reseed-local.ps1
 
 # Using Bash (Linux/macOS)
-./backend/scripts/reseed-local.sh
+./apps/api/scripts/reseed-local.sh
 
 # Or manually:
-pnpm --filter ./backend run db:update
-pnpm --filter ./backend run db:seed
+pnpm --filter api run db:update
+pnpm --filter api run db:seed
 ```
 
 ---

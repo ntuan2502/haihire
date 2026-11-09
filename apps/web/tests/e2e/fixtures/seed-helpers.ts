@@ -1,7 +1,7 @@
 import type { APIRequestContext } from "@playwright/test";
 
 /**
- * Deterministic IDs matching backend/src/prisma/seed.ts
+ * Deterministic IDs matching apps/api/src/prisma/seed.ts
  */
 export const SEED_ALPHA_ORG_ID = "00000000-0000-4000-8000-000000000002";
 export const SEED_BETA_ORG_ID = "00000000-0000-4000-8000-0000000000b2";

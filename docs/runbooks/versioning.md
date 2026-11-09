@@ -161,7 +161,7 @@ Update [`CHANGELOG.md`](../../CHANGELOG.md) moving items from `[Unreleased]` int
 ### Step 4: Commit and Create Git Tag
 
 ```bash
-git add package.json backend/package.json frontend/package.json packages/shared/package.json CHANGELOG.md
+git add package.json apps/api/package.json apps/web/package.json packages/shared/package.json CHANGELOG.md
 git commit -m "chore(release): bump version to v1.0.1"
 
 # Create annotated Git tag

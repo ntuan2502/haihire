@@ -32,7 +32,12 @@ export class ApplicationsStageService {
     this.query = queryService || new ApplicationsQueryService(prisma, activitiesService);
   }
 
-  async updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) {
+  async updateStage(
+    id: string,
+    dto: UpdateStageDto,
+    tenantOrgId?: string | null,
+    currentUser?: { id?: string; name?: string; role?: string } | null,
+  ) {
     const existing = await this.query.findOne(id, tenantOrgId);
     const oldStage = existing.stage;
 
@@ -79,12 +84,15 @@ export class ApplicationsStageService {
         type: "STAGE_CHANGED",
         title: `Stage Changed: ${oldStage} → ${dto.stage}`,
         description: `Application moved from ${oldStage} to ${dto.stage} for position ${updated.job?.title || ""}`,
-        actorName: "HR Team",
-        actorRole: "ADMIN",
+        actorId: currentUser?.id,
+        actorName: currentUser?.name || "HR Team",
+        actorRole: currentUser?.role || "ADMIN",
         metadata: {
           fromStage: oldStage,
           toStage: dto.stage,
           jobTitle: updated.job?.title || "",
+          actorName: currentUser?.name || "HR Team",
+          actorRole: currentUser?.role || "ADMIN",
         },
       });
 

@@ -79,8 +79,13 @@ export class ApplicationsService {
   // ==========================================
   // 3. STATE MACHINE & STAGE TRANSITIONS
   // ==========================================
-  updateStage(id: string, dto: UpdateStageDto, tenantOrgId?: string | null) {
-    return this.stage.updateStage(id, dto, tenantOrgId);
+  updateStage(
+    id: string,
+    dto: UpdateStageDto,
+    tenantOrgId?: string | null,
+    currentUser?: { id?: string; name?: string; role?: string } | null,
+  ) {
+    return this.stage.updateStage(id, dto, tenantOrgId, currentUser);
   }
 
   // ==========================================

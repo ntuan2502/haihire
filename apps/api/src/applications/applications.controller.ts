@@ -118,12 +118,21 @@ export class ApplicationsController {
   updateStage(
     @Param("id") id: string,
     @Body(DtoPipe(UpdateStageDto)) dto: UpdateStageDto,
-    @Request() req?: { user?: { organizationId?: string | null } },
+    @Request()
+    req?: {
+      user?: {
+        id?: string;
+        name?: string;
+        role?: string;
+        organizationId?: string | null;
+      };
+    },
   ) {
     return this.applicationsService.updateStage(
       id,
       dto,
       req?.user?.organizationId,
+      req?.user,
     );
   }
 

@@ -22,6 +22,10 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     getObjectStream: ReturnType<typeof vi.fn>;
     extractObjectName: ReturnType<typeof vi.fn>;
   };
+  let mockActivitiesService: {
+    createActivity: ReturnType<typeof vi.fn>;
+    findByCandidate: ReturnType<typeof vi.fn>;
+  };
 
   interface MockJob {
     id: string;
@@ -234,7 +238,7 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       trackingLink: trackingLinkTable,
       organization: orgTable,
     });
-    const mockActivitiesService = {
+    mockActivitiesService = {
       createActivity: vi.fn().mockResolvedValue({}),
       findByCandidate: vi.fn().mockResolvedValue([]),
     };
@@ -344,12 +348,23 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
     it("should update application stage through valid lifecycle transitions", async () => {
       // APPLIED -> SCREENING
-      const s1 = await service.updateStage("app-1", {
-        stage: ApplicationStage.SCREENING,
-        orderIndex: 2,
-      });
+      const s1 = await service.updateStage(
+        "app-1",
+        {
+          stage: ApplicationStage.SCREENING,
+          orderIndex: 2,
+        },
+        undefined,
+        { id: "u-recruiter", name: "Recruiter Bob", role: "RECRUITER" },
+      );
       expect(s1?.stage).toBe(ApplicationStage.SCREENING);
       expect(s1?.orderIndex).toBe(2);
+      expect(mockActivitiesService.createActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorName: "Recruiter Bob",
+          actorRole: "RECRUITER",
+        }),
+      );
 
       // SCREENING -> INTERVIEW
       const s2 = await service.updateStage("app-1", {

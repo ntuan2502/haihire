@@ -93,7 +93,11 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
       }
     }
   } catch (err) {
-    console.warn("Could not query CandidateDocument references:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `MinIO Orphan Cleanup aborted: Failed to query CandidateDocument references: ${message}`,
+      { cause: err },
+    );
   }
 
   try {
@@ -109,7 +113,11 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
       }
     }
   } catch (err) {
-    console.warn("Could not query Application references:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `MinIO Orphan Cleanup aborted: Failed to query Application references: ${message}`,
+      { cause: err },
+    );
   }
 
   try {
@@ -125,7 +133,11 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
       }
     }
   } catch (err) {
-    console.warn("Could not query Candidate references:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `MinIO Orphan Cleanup aborted: Failed to query Candidate references: ${message}`,
+      { cause: err },
+    );
   }
 
   // 2. Stream all objects from the bucket

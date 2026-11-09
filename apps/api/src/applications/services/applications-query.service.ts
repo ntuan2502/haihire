@@ -171,28 +171,65 @@ export class ApplicationsQueryService {
       }
     }
 
-    let orgApps = await this.prisma.application.findMany({
-      where: { jobId: { in: jobIds } },
-    });
+    const appWhere: Record<string, unknown> = {
+      jobId: { in: jobIds },
+    };
 
     if (options?.stage) {
       const stages = options.stage
         .split(",")
         .map((s) => s.trim().toUpperCase());
-      orgApps = orgApps.filter((a) => stages.includes(a.stage));
+      appWhere.stage = { in: stages };
     }
 
-    if (orgApps.length === 0) {
+    if (options?.search && options.search.trim() !== "") {
+      const q = options.search.trim();
+      const matchedCandidates = await this.prisma.candidate.findMany({
+        where: {
+          organizationId: targetOrgId,
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { email: { contains: q, mode: "insensitive" } },
+            { phone: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      });
+      const matchingJobIds = jobs
+        .filter((j) => j.title.toLowerCase().includes(q.toLowerCase()))
+        .map((j) => j.id);
+
+      appWhere.OR = [
+        { candidateId: { in: matchedCandidates.map((c) => c.id) } },
+        { jobId: { in: matchingJobIds } },
+      ];
+    }
+
+    const total = await this.prisma.application.count({ where: appWhere });
+    const page = defaultPage;
+    const limit = defaultLimit;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    if (total === 0) {
       return {
         data: [],
         total: 0,
-        page: defaultPage,
-        limit: defaultLimit,
+        page,
+        limit,
         totalPages: 0,
       };
     }
 
-    const neededCandidateIds = [...new Set(orgApps.map((a) => a.candidateId))];
+    const pagedApps = await this.prisma.application.findMany({
+      where: appWhere,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const neededCandidateIds = [
+      ...new Set(pagedApps.map((a) => a.candidateId)),
+    ];
 
     const candidates =
       neededCandidateIds.length > 0
@@ -205,7 +242,7 @@ export class ApplicationsQueryService {
         : [];
     const candidateMap = new Map(candidates.map((c) => [c.id, c]));
 
-    const appIds = orgApps.map((a) => a.id);
+    const appIds = pagedApps.map((a) => a.id);
     const allInterviews =
       appIds.length > 0
         ? await this.prisma.interview.findMany({
@@ -219,7 +256,7 @@ export class ApplicationsQueryService {
       interviewsByApp.set(intv.applicationId, list);
     }
 
-    let populated = orgApps.map((app) => {
+    const data = pagedApps.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
       const job = jobMap.get(app.jobId);
       return {
@@ -238,24 +275,6 @@ export class ApplicationsQueryService {
         interviews: interviewsByApp.get(app.id) || [],
       };
     });
-
-    if (options?.search && options.search.trim() !== "") {
-      const q = options.search.trim().toLowerCase();
-      populated = populated.filter(
-        (app) =>
-          app.candidateName.toLowerCase().includes(q) ||
-          app.candidateEmail.toLowerCase().includes(q) ||
-          (app.candidatePhone &&
-            app.candidatePhone.toLowerCase().includes(q)) ||
-          (app.job?.title && app.job.title.toLowerCase().includes(q)),
-      );
-    }
-
-    const total = populated.length;
-    const page = defaultPage;
-    const limit = defaultLimit;
-    const totalPages = Math.ceil(total / limit) || 1;
-    const data = populated.slice((page - 1) * limit, page * limit);
 
     return {
       data,

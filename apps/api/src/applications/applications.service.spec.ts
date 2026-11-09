@@ -282,6 +282,37 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(results.data).toEqual([]);
       expect(results.total).toBe(0);
     });
+
+    it("should filter applications by stage using SQL-level filtering (M-01)", async () => {
+      const results = await service.findAll("org-1", { stage: "APPLIED" });
+      expect(results.total).toBe(1);
+      expect(results.data[0].candidateName).toBe("Alice Nguyen");
+    });
+
+    it("should filter applications by jobId (M-01)", async () => {
+      const results = await service.findAll("org-1", { jobId: "job-org1-b" });
+      expect(results.total).toBe(1);
+      expect(results.data[0].candidateName).toBe("Bob Tran");
+    });
+
+    it("should filter applications by search across candidate name (M-01)", async () => {
+      const results = await service.findAll("org-1", { search: "Alice" });
+      expect(results.total).toBe(1);
+      expect(results.data[0].candidateName).toBe("Alice Nguyen");
+    });
+
+    it("should paginate applications with page and limit pushed to database (M-01)", async () => {
+      const page1 = await service.findAll("org-1", { page: 1, limit: 1 });
+      expect(page1.total).toBe(2);
+      expect(page1.totalPages).toBe(2);
+      expect(page1.data.length).toBe(1);
+
+      const page2 = await service.findAll("org-1", { page: 2, limit: 1 });
+      expect(page2.total).toBe(2);
+      expect(page2.totalPages).toBe(2);
+      expect(page2.data.length).toBe(1);
+      expect(page2.data[0].id).not.toBe(page1.data[0].id);
+    });
   });
 
   describe("Job Applications & Stages", () => {

@@ -225,6 +225,7 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-ntuan2502}/haihire-api:${IMAGE_TAG:-v1.0.0}
     container_name: haihire-prod-orphan-cleanup
     restart: unless-stopped
+    user: root
     env_file:
       - path: ./.env.production
         required: false
@@ -232,7 +233,7 @@ services:
         required: false
     command: >
       /bin/sh -c "
-        echo '0 4 * * * cd /app && node --import tsx scripts/cleanup-orphan-minio.ts >> /var/log/orphan-cleanup.log 2>&1' > /etc/crontabs/root &&
+        echo '0 4 * * * cd /app && node --no-warnings --experimental-strip-types scripts/cleanup-orphan-minio.ts >> /var/log/orphan-cleanup.log 2>&1' > /etc/crontabs/root &&
         crond -f -l 2
       "
     environment:

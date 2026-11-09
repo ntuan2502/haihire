@@ -51,7 +51,7 @@ async function bootstrap() {
     },
   );
 
-  // Production HTTPS redirection
+  // Production HTTPS redirection (bypass for loopback and internal health/metrics probes)
   if (env.NODE_ENV === "production") {
     app.use(
       (
@@ -59,21 +59,35 @@ async function bootstrap() {
           secure?: boolean;
           headers: Record<string, string | string[] | undefined>;
           url?: string;
+          socket?: { remoteAddress?: string };
         },
         res: ServerResponse,
         next: () => void,
       ) => {
+        const url = req.url || "";
+        const isProbe =
+          url === "/health" ||
+          url === "/metrics" ||
+          url.startsWith("/api/health") ||
+          url.startsWith("/health");
+        const remoteIp = req.socket?.remoteAddress;
+        const isLoopback =
+          remoteIp === "127.0.0.1" ||
+          remoteIp === "::1" ||
+          remoteIp === "::ffff:127.0.0.1";
         const forwardedProto = req.headers["x-forwarded-proto"];
         const isHttps = req.secure || forwardedProto === "https";
-        if (!isHttps) {
-          const host = req.headers.host || "localhost";
-          res.writeHead(301, {
-            Location: `https://${host}${req.url || ""}`,
-          });
-          res.end();
+
+        if (isProbe || isLoopback || isHttps) {
+          next();
           return;
         }
-        next();
+
+        const host = req.headers.host || "localhost";
+        res.writeHead(301, {
+          Location: `https://${host}${url}`,
+        });
+        res.end();
       },
     );
   }

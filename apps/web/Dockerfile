@@ -26,13 +26,13 @@ COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
 
 # Set backend host for Next.js build-time rewrite route manifest
-ENV BACKEND_HOST=backend
+ENV BACKEND_HOST=api
 ENV MINIO_HOST=minio
 
 # Build-time public environment variables inlined into client bundle
 ARG NEXT_PUBLIC_API_URL=""
 ARG NEXT_PUBLIC_MINIO_URL="/haihire-resumes"
-ARG INTERNAL_API_URL="http://backend:3001"
+ARG INTERNAL_API_URL="http://api:3001"
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_MINIO_URL=$NEXT_PUBLIC_MINIO_URL
 ENV INTERNAL_API_URL=$INTERNAL_API_URL

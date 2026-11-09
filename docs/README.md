@@ -13,7 +13,7 @@
 | **Security & RBAC Architecture**                                           | [Security & RBAC](architecture/security-rbac.md)   | Cookie-based JWT auth, dynamic org ownership, 5 roles, 41 permissions   |
 | **Coding & Operational Conventions**                                       | [Conventions](architecture/conventions.md)         | Pure TypeScript, zero-any, fail-fast env, DtoPipe, i18n, tenant scoping |
 | │ └── DECISIONS.md # Consolidated architectural decisions (D-001 to D-009) |
-| **REST API Contracts**                                                     | [API Overview](api/overview.md)                    | 9 controllers, 86 endpoints, standard error envelope                    |
+| **REST API Contracts**                                                     | [API Overview](api/overview.md)                    | 9 controllers, 87 endpoints, standard error envelope                    |
 | **Site Reliability & Runbooks**                                            | [Runbooks Catalog](runbooks/alerts.md)             | Operations runbooks (alerts, backups, deployment, redis, queues)        |
 | **Release History & Changelog**                                            | [Changelog](../CHANGELOG.md)                       | Version history, release milestones, migration notes                    |
 | **Developer Onboarding**                                                   | [Onboarding](guides/onboarding.md)                 | Local environment setup, dependencies, quick start                      |
@@ -39,7 +39,7 @@ docs/
 ├── decisions/
 │   └── DECISIONS.md                    # Consolidated architectural decisions (D-001 to D-009)
 ├── api/
-│   └── overview.md                     # 9 controllers, 86 endpoints, auth, error envelope
+│   └── overview.md                     # 9 controllers, 87 endpoints, auth, error envelope
 ├── guides/                             # Developer workflows, checklists, and specifications
 │   ├── onboarding.md                   # Step-by-step developer onboarding & quick start
 │   ├── definition-of-done.md           # Production DoD Checklist

@@ -9,7 +9,7 @@
 | Metric                           | Value                  | Reference / Notes                                   |
 | :------------------------------- | :--------------------- | :-------------------------------------------------- |
 | **Release Target**               | `v0.3.0`               | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
-| **Commit Baseline**              | `f0cc819` (2026-11-08) | Author: ntuan2502                                   |
+| **Commit Baseline**              | `ba61af8` (2026-11-09) | Author: ntuan2502                                   |
 | **Workspace Unit Tests**         | `963 passed`           | Backend: 540, Frontend: 423                         |
 | **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle                    |
 | **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates                    |
@@ -53,7 +53,7 @@ All AI agents operating in this repository must strictly adhere to the following
 | **Engineering Conventions**   | [docs/architecture/conventions.md](docs/architecture/conventions.md)         | Coding standards, fail-fast env, DtoPipe, i18n, tenant scoping        |
 | **Architectural Decisions**   | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                   | Consolidated ADRs and architectural decisions log                     |
 | **Developer Guides**          | [docs/guides/onboarding.md](docs/guides/onboarding.md)                       | Workflows, DoD, testcases, roadmap, project context                   |
-| **REST API Contracts**        | [docs/api/overview.md](docs/api/overview.md)                                 | 9 controllers, 86 endpoints, standard error envelopes                 |
+| **REST API Contracts**        | [docs/api/overview.md](docs/api/overview.md)                                 | 9 controllers, 87 endpoints, standard error envelopes                 |
 | **Site Reliability Runbooks** | [docs/runbooks/alerts.md](docs/runbooks/alerts.md)                           | Operational SOPs (alerts, backups, deployment, queues)                |
 | **Releases & Changelog**      | [CHANGELOG.md](CHANGELOG.md)                                                 | Release milestones, migration logs, and version history               |
 | **Documentation Portal**      | [docs/README.md](docs/README.md)                                             | Central search and navigation directory for all project documentation |

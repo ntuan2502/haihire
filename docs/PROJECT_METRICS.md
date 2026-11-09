@@ -32,15 +32,15 @@
     - `sourcing-links.service.ts`: 97.97% lines
 - **Accessibility Compliance (WCAG 2.1 AA):** 92.4% (27 issues remediated: 5 critical, 11 high, 7 medium, 4 low)
 - **CI Architecture Gates:** 16 automated quality gates (`scripts/check-all.ts`)
-  1. `lint:env-sync` — Environment Variables Synchronization & Parity (55 keys dev / prod)
-  2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings (1,769 keys vi / en)
+  1. `lint:env-sync` — Environment Variables Synchronization & Parity (56 keys dev / prod)
+  2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings (1,840 keys vi / en)
   3. `lint` — ESLint Code Quality across Backend & Frontend
   4. `typecheck` — Strict TypeScript Typecheck (`tsc --noEmit`)
-  5. `lint:dtopipe` — DtoPipe Validation Coverage (31 properly piped controller endpoints)
-  6. `lint:error-i18n` — Error Code i18n Localization (57 domain error codes)
-  7. `lint:api-contract` — API Contract & Leaks Audit (86 REST endpoints)
+  5. `lint:dtopipe` — DtoPipe Validation Coverage (33 properly piped controller endpoints)
+  6. `lint:error-i18n` — Error Code i18n Localization (60 domain error codes)
+  7. `lint:api-contract` — API Contract & Leaks Audit (87 REST endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 PromQL alert rules)
-  9. `lint:tenant-scope` — Tenant Scoping Static Analysis (219 Prisma queries isolated)
+  9. `lint:tenant-scope` — Tenant Scoping Static Analysis (238 Prisma queries isolated)
   10. `lint:doc-links` — Documentation Markdown Link Integrity (42 markdown files)
   11. `lint:doc-sync` — Documentation Synchronization & Drift Gate
   12. `check:prod-email` — Production Email Provider Validation (prohibits simulated provider in prod)
@@ -60,7 +60,7 @@
 - **Backend Architecture:** Modular monolith on NestJS 12.1.2 with Express platform adapter
 - **Backend Modules:** 18
 - **Backend Controllers:** 12
-- **REST API Endpoints:** 86
+- **REST API Endpoints:** 87
 - **Roles & Permissions:** 5 active organization roles (`Role.OWNER` deprecated per D-003: `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), 41 granular permissions
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation)
 - **Database Models:** 16 Prisma models (`schema.prisma`)

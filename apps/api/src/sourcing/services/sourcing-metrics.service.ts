@@ -19,16 +19,33 @@ import {
 import { PrismaService } from "../../prisma/prisma.service";
 import { toTimestamp } from "../../common/date.util";
 import { SourcingLinksService } from "./sourcing-links.service";
+import { SourcingQueryService } from "./sourcing-query.service";
+
+const PIPELINE_STAGES = [
+  "APPLIED",
+  "SCREENING",
+  "INTERVIEW",
+  "OFFER",
+  "HIRED",
+  "REJECTED",
+] as const;
 
 @Injectable()
 export class SourcingMetricsService {
+  private readonly queryService: SourcingQueryService;
+
   constructor(
     @Inject(PrismaService)
     private readonly prisma: PrismaService,
     @Optional()
     @Inject(SourcingLinksService)
     private readonly linksService?: SourcingLinksService,
-  ) {}
+    @Optional()
+    @Inject(SourcingQueryService)
+    queryService?: SourcingQueryService,
+  ) {
+    this.queryService = queryService ?? new SourcingQueryService(this.prisma);
+  }
 
   async getStats(
     organizationId: string,
@@ -43,25 +60,9 @@ export class SourcingMetricsService {
     }
 
     const now = Date.now();
-    let minTimestamp: number | null = null;
-    if (timeRange === "7d") {
-      minTimestamp = now - 7 * 24 * 60 * 60 * 1000;
-    } else if (timeRange === "30d") {
-      minTimestamp = now - 30 * 24 * 60 * 60 * 1000;
-    } else if (timeRange === "90d") {
-      minTimestamp = now - 90 * 24 * 60 * 60 * 1000;
-    }
+    const minTimestamp = this.resolveMinTimestamp(now, timeRange);
 
-    // 1. Fetch organization's jobs
-    const jobs = await this.prisma.job.findMany({
-      where: { organizationId },
-      select: {
-        id: true,
-        title: true,
-        organizationId: true,
-      },
-    });
-
+    const jobs = await this.queryService.getOrganizationJobs(organizationId);
     const orgJobIds = new Set(jobs.map((j) => j.id));
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
@@ -73,91 +74,28 @@ export class SourcingMetricsService {
     }
     const targetJobIds = jobId ? [jobId] : Array.from(orgJobIds);
     if (targetJobIds.length === 0) {
-      return {
-        trackedCount: 0,
-        totalApplications: 0,
-        attributionRate: 0,
-        activeLinksCount: 0,
-        totalLinksCount: 0,
-        untrackedCount: 0,
-        channelBreakdown: [],
-        topLinks: [],
-        topReferrers: [],
-        recentAttributed: [],
-        conversionBySource: [],
-      };
+      return this.emptyStats();
     }
 
-    // 2. Fetch applications for target jobs (scoped to target jobs belonging to organization)
-    const rawApplications = await this.prisma.application.findMany({
-      where: { jobId: { in: targetJobIds } },
-      select: {
-        id: true,
-        jobId: true,
-        candidateId: true,
-        stage: true,
-        sourceChannel: true,
-        sourceDetails: true,
-        referrerDomain: true,
-        utmCampaign: true,
-        trackingLinkId: true,
-        createdAt: true,
-      },
-    });
-
+    const rawApplications = await this.queryService.getApplicationsForJobs(targetJobIds);
     const filteredApplications = rawApplications.filter((app) => {
-      if (minTimestamp !== null) {
-        const appTime = toTimestamp(app.createdAt);
-        if (appTime < minTimestamp) return false;
-      }
+      if (minTimestamp !== null && toTimestamp(app.createdAt) < minTimestamp) return false;
       return true;
     });
 
     const totalApplications = filteredApplications.length;
+    const candidateIds = Array.from(new Set(filteredApplications.map((a) => a.candidateId)));
+    const candidates = await this.queryService.getCandidatesByIds(organizationId, candidateIds);
+    const candidateMap = new Map(candidates.map((c) => [c.id, { name: c.name, email: c.email }]));
 
-    // 3. Fetch candidates info for recent attributed (scoped to organization and candidate IDs)
-    const candidateIds = Array.from(
-      new Set(filteredApplications.map((a) => a.candidateId)),
-    );
-    const candidates = candidateIds.length > 0
-      ? await this.prisma.candidate.findMany({
-          where: {
-            organizationId,
-            id: { in: candidateIds },
-          },
-          select: { id: true, name: true, email: true },
-        })
-      : [];
-    const candidateMap = new Map(
-      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
-    );
-
-    // 4. Fetch tracking links for organization
-    const trackingLinks = await this.prisma.trackingLink.findMany({
-      where: { organizationId },
-      select: {
-        id: true,
-        organizationId: true,
-        name: true,
-        token: true,
-        source: true,
-        jobId: true,
-        clicksCount: true,
-        isActive: true,
-        deletedAt: true,
-      },
-    });
-
+    const trackingLinks = await this.queryService.getTrackingLinks(organizationId);
     const nonDeletedLinks = trackingLinks.filter((l) => !l.deletedAt);
     const activeLinksCount = nonDeletedLinks.filter((l) => l.isActive).length;
     const totalLinksCount = nonDeletedLinks.length;
 
-    // 5. Tracked vs Untracked
-    // Tracked means application came through a tracking link OR a recognized external source (not pure direct without referrer)
     let trackedCount = 0;
     const channelCounts: Record<string, number> = {};
     const linkAppCountMap = new Map<string, number>();
-
     const stageFunnelBySource: Record<
       string,
       { new: number; screening: number; interview: number; offer: number; hired: number; rejected: number }
@@ -166,34 +104,16 @@ export class SourcingMetricsService {
     for (const app of filteredApplications) {
       const channel = (app.sourceChannel as SourcingChannel) || SourcingChannel.DIRECT;
       const isTracked = !!app.trackingLinkId || channel !== SourcingChannel.DIRECT || !!app.referrerDomain;
+      if (isTracked) trackedCount++;
 
-      if (isTracked) {
-        trackedCount++;
-      }
-
-      // Count by channel
       channelCounts[channel] = (channelCounts[channel] || 0) + 1;
-
-      // Count applications per tracking link
       if (app.trackingLinkId) {
-        linkAppCountMap.set(
-          app.trackingLinkId,
-          (linkAppCountMap.get(app.trackingLinkId) || 0) + 1,
-        );
+        linkAppCountMap.set(app.trackingLinkId, (linkAppCountMap.get(app.trackingLinkId) || 0) + 1);
       }
 
-      // Funnel matrix
       if (!stageFunnelBySource[channel]) {
-        stageFunnelBySource[channel] = {
-          new: 0,
-          screening: 0,
-          interview: 0,
-          offer: 0,
-          hired: 0,
-          rejected: 0,
-        };
+        stageFunnelBySource[channel] = { new: 0, screening: 0, interview: 0, offer: 0, hired: 0, rejected: 0 };
       }
-
       const funnel = stageFunnelBySource[channel];
       const stage = String(app.stage);
       if (stage === "APPLIED") funnel.new++;
@@ -205,11 +125,8 @@ export class SourcingMetricsService {
     }
 
     const untrackedCount = Math.max(0, totalApplications - trackedCount);
-    const attributionRate = totalApplications > 0
-      ? Math.round((trackedCount / totalApplications) * 100)
-      : 100;
+    const attributionRate = totalApplications > 0 ? Math.round((trackedCount / totalApplications) * 100) : 100;
 
-    // 6. Channel breakdown sorted by count desc
     const channelBreakdown = Object.entries(channelCounts)
       .map(([channel, count]) => ({
         channel: channel as SourcingChannel,
@@ -218,7 +135,6 @@ export class SourcingMetricsService {
       }))
       .sort((a, b) => b.count - a.count);
 
-    // 7. Top Links
     const topLinks = nonDeletedLinks
       .filter((l) => (jobId ? l.jobId === jobId : true))
       .map((l) => {
@@ -239,7 +155,6 @@ export class SourcingMetricsService {
       .sort((a, b) => b.clicks - a.clicks || b.apps - a.apps)
       .slice(0, 5);
 
-    // 8. Top Referrers
     const referrerCounts: Record<string, number> = {};
     for (const app of filteredApplications) {
       if (app.referrerDomain) {
@@ -247,19 +162,10 @@ export class SourcingMetricsService {
       }
     }
 
-    // Also include clicks referrers if available (scoped to organization tracking links)
     const targetLinkIds = nonDeletedLinks
       .filter((l) => (jobId ? l.jobId === jobId : true))
       .map((l) => l.id);
-    const clicks = targetLinkIds.length > 0
-      ? await this.prisma.trackingClick.findMany({
-          where: { trackingLinkId: { in: targetLinkIds } },
-          select: {
-            referrerDomain: true,
-            createdAt: true,
-          },
-        })
-      : [];
+    const clicks = await this.queryService.getClicksForLinks(targetLinkIds);
     for (const clk of clicks) {
       if (clk.referrerDomain) {
         if (minTimestamp !== null && toTimestamp(clk.createdAt) < minTimestamp) continue;
@@ -272,7 +178,6 @@ export class SourcingMetricsService {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // 9. Recent Attributed Candidates (last 5)
     const recentAttributed = [...filteredApplications]
       .filter((a) => !!a.trackingLinkId || a.sourceChannel !== SourcingChannel.DIRECT)
       .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt))
@@ -293,23 +198,20 @@ export class SourcingMetricsService {
         };
       });
 
-    // 10. Conversion By Source
-    const conversionBySource = Object.entries(stageFunnelBySource).map(
-      ([channel, stages]) => {
-        const total = stages.new + stages.screening + stages.interview + stages.offer + stages.hired + stages.rejected;
-        const hireRate = total > 0 ? Math.round((stages.hired / total) * 100) : 0;
-        return {
-          source: channel as SourcingChannel,
-          new: stages.new,
-          screening: stages.screening,
-          interview: stages.interview,
-          offer: stages.offer,
-          hired: stages.hired,
-          rejected: stages.rejected,
-          hireRate,
-        };
-      },
-    );
+    const conversionBySource = Object.entries(stageFunnelBySource).map(([channel, stages]) => {
+      const total = stages.new + stages.screening + stages.interview + stages.offer + stages.hired + stages.rejected;
+      const hireRate = total > 0 ? Math.round((stages.hired / total) * 100) : 0;
+      return {
+        source: channel as SourcingChannel,
+        new: stages.new,
+        screening: stages.screening,
+        interview: stages.interview,
+        offer: stages.offer,
+        hired: stages.hired,
+        rejected: stages.rejected,
+        hireRate,
+      };
+    });
 
     return {
       trackedCount,
@@ -338,31 +240,7 @@ export class SourcingMetricsService {
       );
     }
 
-    const link = await this.prisma.trackingLink.findFirst({
-      where: { id },
-      select: {
-        id: true,
-        organizationId: true,
-        name: true,
-        token: true,
-        source: true,
-        customSource: true,
-        jobId: true,
-        campaign: true,
-        medium: true,
-        utmSource: true,
-        utmMedium: true,
-        utmCampaign: true,
-        utmTerm: true,
-        utmContent: true,
-        clicksCount: true,
-        isActive: true,
-        deletedAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
+    const link = await this.queryService.getTrackingLinkById(id);
     if (!link || link.deletedAt) {
       throw new AppNotFoundException(
         APP_ERROR_CODES.TRACKING_LINK_NOT_FOUND,
@@ -377,179 +255,59 @@ export class SourcingMetricsService {
       );
     }
 
-    // 1. Job details
     let jobTitle: string | null = null;
     let jobType: string | null = null;
     if (link.jobId) {
-      const j = await this.prisma.job.findFirst({
-        where: { id: link.jobId as string },
-        select: { title: true, type: true },
-      });
+      const j = await this.queryService.getJobById(organizationId, link.jobId as string);
       jobTitle = j?.title || null;
       jobType = j?.type || null;
     }
 
-    // 2. Time range bounds
     const now = Date.now();
-    let minTimestamp: number | null = null;
-    if (timeRange === "7d") {
-      minTimestamp = now - 7 * 24 * 60 * 60 * 1000;
-    } else if (timeRange === "30d") {
-      minTimestamp = now - 30 * 24 * 60 * 60 * 1000;
-    } else if (timeRange === "90d") {
-      minTimestamp = now - 90 * 24 * 60 * 60 * 1000;
-    }
+    const minTimestamp = this.resolveMinTimestamp(now, timeRange);
 
-    // 3. Fetch clicks for this link
-    const allClicks = await this.prisma.trackingClick.findMany({
-      where: { trackingLinkId: link.id },
-      select: {
-        id: true,
-        referrerDomain: true,
-        createdAt: true,
-      },
-    });
-
+    const allClicks = await this.queryService.getClicksForLink(link.id);
     const filteredClicks = allClicks.filter((c) => {
-      if (minTimestamp !== null) {
-        return toTimestamp(c.createdAt) >= minTimestamp;
-      }
+      if (minTimestamp !== null) return toTimestamp(c.createdAt) >= minTimestamp;
       return true;
     });
 
-    const clicks =
-      timeRange === "all"
-        ? Math.max(link.clicksCount || 0, allClicks.length)
-        : filteredClicks.length;
+    const clicks = timeRange === "all" ? Math.max(link.clicksCount || 0, allClicks.length) : filteredClicks.length;
 
-    // 4. Fetch all applications attributed to this link
-    const allAttributedApps = await this.prisma.application.findMany({
-      where: { trackingLinkId: link.id },
-      select: {
-        id: true,
-        candidateId: true,
-        jobId: true,
-        stage: true,
-        referrerDomain: true,
-        sourceDetails: true,
-        utmSource: true,
-        utmMedium: true,
-        utmCampaign: true,
-        utmTerm: true,
-        utmContent: true,
-        createdAt: true,
-      },
-    });
-
+    const allAttributedApps = await this.queryService.getAttributedApplicationsForLink(link.id);
     const allTimeAttributed = allAttributedApps.length;
-
     const filteredApps = allAttributedApps.filter((a) => {
-      if (minTimestamp !== null) {
-        return toTimestamp(a.createdAt) >= minTimestamp;
-      }
+      if (minTimestamp !== null) return toTimestamp(a.createdAt) >= minTimestamp;
       return true;
     });
 
     const applications = filteredApps.length;
     const cvr = clicks > 0 ? Math.round((applications / clicks) * 100) : 0;
     const hiredCount = filteredApps.filter((a) => a.stage === "HIRED").length;
-    const hireRate =
-      applications > 0 ? Math.round((hiredCount / applications) * 100) : 0;
+    const hireRate = applications > 0 ? Math.round((hiredCount / applications) * 100) : 0;
 
-    // 5. Pipeline stage breakdown
-    const STAGES = [
-      "APPLIED",
-      "SCREENING",
-      "INTERVIEW",
-      "OFFER",
-      "HIRED",
-      "REJECTED",
-    ];
     const stageCounts = new Map<string, number>();
-    for (const s of STAGES) stageCounts.set(s, 0);
+    for (const s of PIPELINE_STAGES) stageCounts.set(s, 0);
     for (const app of filteredApps) {
       const s = String(app.stage);
       stageCounts.set(s, (stageCounts.get(s) || 0) + 1);
     }
 
-    const pipelineStages: PipelineStageBreakdown[] = STAGES.map((stg) => {
+    const pipelineStages: PipelineStageBreakdown[] = PIPELINE_STAGES.map((stg) => {
       const cnt = stageCounts.get(stg) || 0;
       const pct = applications > 0 ? Math.round((cnt / applications) * 100) : 0;
-      return {
-        stage: stg,
-        count: cnt,
-        percentage: pct,
-      };
+      return { stage: stg, count: cnt, percentage: pct };
     });
 
-    // 6. Applications Over Time (Timeline/Trend)
-    const dayMap = new Map<string, number>();
-    const daysToGen =
-      timeRange === "7d"
-        ? 7
-        : timeRange === "30d"
-          ? 30
-          : timeRange === "90d"
-            ? 90
-            : 14;
+    const applicationsOverTime = this.calculateApplicationsOverTime(now, timeRange, filteredApps);
 
-    for (let i = daysToGen - 1; i >= 0; i--) {
-      const d = new Date(now - i * 24 * 60 * 60 * 1000);
-      const dateStr = d.toISOString().split("T")[0];
-      dayMap.set(dateStr, 0);
-    }
-
-    for (const app of filteredApps) {
-      const dateStr = new Date(toTimestamp(app.createdAt))
-        .toISOString()
-        .split("T")[0];
-      if (dayMap.has(dateStr)) {
-        dayMap.set(dateStr, (dayMap.get(dateStr) || 0) + 1);
-      } else if (timeRange === "all") {
-        dayMap.set(dateStr, (dayMap.get(dateStr) || 0) + 1);
-      }
-    }
-
-    const applicationsOverTime: TimeSeriesPoint[] = Array.from(dayMap.entries())
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-
-    // 7. Attributed applications list with candidates and jobs (scoped to organization)
-    const candidateIds = Array.from(
-      new Set(filteredApps.map((a) => a.candidateId)),
-    );
-    const candidates =
-      candidateIds.length > 0
-        ? await this.prisma.candidate.findMany({
-            where: {
-              organizationId,
-              id: { in: candidateIds },
-            },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          })
-        : [];
-    const candMap = new Map(
-      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
-    );
+    const candidateIds = Array.from(new Set(filteredApps.map((a) => a.candidateId)));
+    const candidates = await this.queryService.getCandidatesByIds(organizationId, candidateIds);
+    const candMap = new Map(candidates.map((c) => [c.id, { name: c.name, email: c.email }]));
 
     const appJobIds = Array.from(new Set(filteredApps.map((a) => a.jobId)));
-    const jobs =
-      appJobIds.length > 0
-        ? await this.prisma.job.findMany({
-            where: {
-              organizationId,
-              id: { in: appJobIds },
-            },
-            select: { id: true, title: true, type: true },
-          })
-        : [];
-    const jobMap = new Map(
-      jobs.map((j) => [j.id, { title: j.title, type: j.type }]),
-    );
+    const jobs = await this.queryService.getJobsByIds(organizationId, appJobIds);
+    const jobMap = new Map(jobs.map((j) => [j.id, { title: j.title, type: j.type }]));
 
     const attributedApplications: AttributedApplicationDetailItem[] = filteredApps
       .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt))
@@ -576,22 +334,15 @@ export class SourcingMetricsService {
         };
       });
 
-    // 8. Referrer Domains breakdown
     const domainCounts = new Map<string, number>();
     for (const c of filteredClicks) {
       if (c.referrerDomain) {
-        domainCounts.set(
-          c.referrerDomain,
-          (domainCounts.get(c.referrerDomain) || 0) + 1,
-        );
+        domainCounts.set(c.referrerDomain, (domainCounts.get(c.referrerDomain) || 0) + 1);
       }
     }
     for (const a of filteredApps) {
       if (a.referrerDomain) {
-        domainCounts.set(
-          a.referrerDomain,
-          (domainCounts.get(a.referrerDomain) || 0) + 1,
-        );
+        domainCounts.set(a.referrerDomain, (domainCounts.get(a.referrerDomain) || 0) + 1);
       }
     }
     const referrerDomains: TopReferrerItem[] = Array.from(domainCounts.entries())
@@ -619,9 +370,7 @@ export class SourcingMetricsService {
         clicksCount: link.clicksCount || 0,
         applicationsCount: allTimeAttributed,
         conversionRate:
-          (link.clicksCount || 0) > 0
-            ? Math.round((allTimeAttributed / link.clicksCount) * 100)
-            : 0,
+          (link.clicksCount || 0) > 0 ? Math.round((allTimeAttributed / link.clicksCount) * 100) : 0,
         isActive: link.isActive,
         createdAt: new Date(toTimestamp(link.createdAt)).toISOString(),
         updatedAt: new Date(toTimestamp(link.updatedAt)).toISOString(),
@@ -656,11 +405,7 @@ export class SourcingMetricsService {
     const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
     const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
 
-    // Fetch jobs for organization
-    const jobs = await this.prisma.job.findMany({
-      where: { organizationId },
-      select: { id: true, title: true },
-    });
+    const jobs = await this.queryService.getOrganizationJobs(organizationId);
     const orgJobIds = new Set(jobs.map((j) => j.id));
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
@@ -675,42 +420,15 @@ export class SourcingMetricsService {
       };
     }
 
-    // Fetch applications scoped to target organization jobs
-    const allApps = await this.prisma.application.findMany({
-      where: { jobId: { in: targetJobIds } },
-      select: {
-        id: true,
-        jobId: true,
-        candidateId: true,
-        stage: true,
-        sourceChannel: true,
-        sourceDetails: true,
-        utmCampaign: true,
-        trackingLinkId: true,
-        createdAt: true,
-      },
-    });
-
+    const allApps = await this.queryService.getApplicationsForJobs(targetJobIds);
     let filtered = allApps;
-
     if (pagination.source) {
       filtered = filtered.filter((a) => a.sourceChannel === pagination.source);
     }
 
-    // Fetch candidates scoped to organization
     const candidateIds = Array.from(new Set(filtered.map((a) => a.candidateId)));
-    const candidates = candidateIds.length > 0
-      ? await this.prisma.candidate.findMany({
-          where: {
-            organizationId,
-            id: { in: candidateIds },
-          },
-          select: { id: true, name: true, email: true },
-        })
-      : [];
-    const candidateMap = new Map(
-      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
-    );
+    const candidates = await this.queryService.getCandidatesByIds(organizationId, candidateIds);
+    const candidateMap = new Map(candidates.map((c) => [c.id, { name: c.name, email: c.email }]));
 
     if (pagination.search) {
       const q = pagination.search.toLowerCase();
@@ -723,7 +441,6 @@ export class SourcingMetricsService {
       });
     }
 
-    // Sort by appliedAt desc
     filtered.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
 
     const total = filtered.length;
@@ -754,6 +471,57 @@ export class SourcingMetricsService {
       page,
       limit,
       totalPages,
+    };
+  }
+
+  private resolveMinTimestamp(now: number, timeRange: TimeRangeFilter): number | null {
+    if (timeRange === "7d") return now - 7 * 24 * 60 * 60 * 1000;
+    if (timeRange === "30d") return now - 30 * 24 * 60 * 60 * 1000;
+    if (timeRange === "90d") return now - 90 * 24 * 60 * 60 * 1000;
+    return null;
+  }
+
+  private calculateApplicationsOverTime(
+    now: number,
+    timeRange: TimeRangeFilter,
+    filteredApps: Array<{ createdAt: string | Date }>,
+  ): TimeSeriesPoint[] {
+    const dayMap = new Map<string, number>();
+    const daysToGen = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : 14;
+
+    for (let i = daysToGen - 1; i >= 0; i--) {
+      const d = new Date(now - i * 24 * 60 * 60 * 1000);
+      const dateStr = d.toISOString().split("T")[0];
+      dayMap.set(dateStr, 0);
+    }
+
+    for (const app of filteredApps) {
+      const dateStr = new Date(toTimestamp(app.createdAt)).toISOString().split("T")[0];
+      if (dayMap.has(dateStr)) {
+        dayMap.set(dateStr, (dayMap.get(dateStr) || 0) + 1);
+      } else if (timeRange === "all") {
+        dayMap.set(dateStr, (dayMap.get(dateStr) || 0) + 1);
+      }
+    }
+
+    return Array.from(dayMap.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  private emptyStats(): SourcingStats {
+    return {
+      trackedCount: 0,
+      totalApplications: 0,
+      attributionRate: 0,
+      activeLinksCount: 0,
+      totalLinksCount: 0,
+      untrackedCount: 0,
+      channelBreakdown: [],
+      topLinks: [],
+      topReferrers: [],
+      recentAttributed: [],
+      conversionBySource: [],
     };
   }
 }

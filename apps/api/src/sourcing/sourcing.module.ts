@@ -5,6 +5,7 @@ import {
   SourcingLinksService,
   SourcingLockService,
   SourcingMetricsService,
+  SourcingQueryService,
 } from "./services";
 import { PrismaModule } from "../prisma/prisma.module";
 import { ActivitiesModule } from "../activities/activities.module";
@@ -18,7 +19,8 @@ import { RedisModule } from "../redis/redis.module";
     SourcingLinksService,
     SourcingLockService,
     SourcingMetricsService,
+    SourcingQueryService,
   ],
-  exports: [SourcingService],
+  exports: [SourcingService, SourcingQueryService],
 })
 export class SourcingModule {}

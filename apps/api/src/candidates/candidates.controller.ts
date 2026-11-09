@@ -161,12 +161,12 @@ export class CandidatesController {
     @Param("id") id: string,
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
-    @Query("disposition") disposition: string,
     @Res() res: Response,
     @Request()
     req: {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
+    @Query("disposition") disposition?: string,
   ) {
     const { asciiFallback, encodedFileName, mimeType, stream } =
       await this.candidatesService.prepareDocumentDownload(

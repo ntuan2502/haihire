@@ -31,8 +31,12 @@ export class ApplicationsService {
   // ==========================================
   // 1. QUERY & LIFECYCLE OPERATIONS
   // ==========================================
-  findByJob(jobId: string, organizationId?: string) {
-    return this.query.findByJob(jobId, organizationId);
+  findByJob(
+    jobId: string,
+    organizationId?: string,
+    options?: { limit?: number; offset?: number },
+  ) {
+    return this.query.findByJob(jobId, organizationId, options);
   }
 
   findAll(

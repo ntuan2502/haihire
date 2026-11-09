@@ -14,8 +14,14 @@ export const applicationsApi = {
     return response.data;
   },
 
-  getByJob: async (jobId: string): Promise<Application[]> => {
-    const response = await api.get<Application[]>(`/applications/job/${jobId}`);
+  getByJob: async (
+    jobId: string,
+    params?: { limit?: number; offset?: number },
+  ): Promise<Application[]> => {
+    const response = await api.get<Application[]>(
+      `/applications/job/${jobId}`,
+      { params },
+    );
     return response.data;
   },
 

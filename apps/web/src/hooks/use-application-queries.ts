@@ -60,7 +60,7 @@ export function useAllApplications(organizationId?: string | null) {
     queryKey: queryKeys.allApplications(effectiveOrgId),
     queryFn: async () => {
       if (!effectiveOrgId) return [];
-      const res = await applicationsApi.getAll({ organizationId: effectiveOrgId, limit: 1000 });
+      const res = await applicationsApi.getAll({ organizationId: effectiveOrgId, limit: 100 });
       return res.data;
     },
     enabled: Boolean(effectiveOrgId),

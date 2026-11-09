@@ -314,6 +314,11 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       expect(page2.data.length).toBe(1);
       expect(page2.data[0].id).not.toBe(page1.data[0].id);
     });
+
+    it("should cap requested limit at 100 to prevent OOM spikes (F14)", async () => {
+      const result = await service.findAll("org-1", { page: 1, limit: 1000 });
+      expect(result.limit).toBe(100);
+    });
   });
 
   describe("Job Applications & Stages", () => {

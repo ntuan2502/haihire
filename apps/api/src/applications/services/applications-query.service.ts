@@ -19,7 +19,11 @@ export class ApplicationsQueryService {
     private readonly activitiesService?: ActivitiesService,
   ) {}
 
-  async findByJob(jobId: string, organizationId?: string) {
+  async findByJob(
+    jobId: string,
+    organizationId?: string,
+    options?: { limit?: number; offset?: number },
+  ) {
     const job = await this.prisma.job.findFirst({
       where: { id: jobId },
       select: {
@@ -48,8 +52,17 @@ export class ApplicationsQueryService {
       );
     }
 
+    const take =
+      options?.limit && options.limit > 0
+        ? Math.min(options.limit, 100)
+        : 100;
+    const skip =
+      options?.offset && options.offset > 0 ? options.offset : undefined;
+
     const applications = await this.prisma.application.findMany({
       where: { jobId },
+      take,
+      skip,
     });
 
     if (applications.length === 0) {
@@ -122,8 +135,9 @@ export class ApplicationsQueryService {
       );
     }
     const targetOrgId = tenantOrgId || organizationId || undefined;
-    const defaultLimit =
+    const rawLimit =
       options?.limit && options.limit > 0 ? options.limit : 20;
+    const defaultLimit = Math.min(rawLimit, 100);
     const defaultPage = options?.page && options.page > 0 ? options.page : 1;
 
     if (!targetOrgId) {

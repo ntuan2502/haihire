@@ -67,11 +67,19 @@ export class ApplicationsController {
   @RequirePermission("application:view")
   findByJob(
     @Param("jobId") jobId: string,
+    @Query("limit") limit?: string,
+    @Query("offset") offset?: string,
     @Request() req?: { user?: { id?: string; organizationId?: string | null } },
   ) {
+    const parsedLimit = limit ? Number.parseInt(limit, 10) : undefined;
+    const parsedOffset = offset ? Number.parseInt(offset, 10) : undefined;
     return this.applicationsService.findByJob(
       jobId,
       req?.user?.organizationId || undefined,
+      {
+        limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+        offset: Number.isFinite(parsedOffset) ? parsedOffset : undefined,
+      },
     );
   }
 
@@ -164,12 +172,12 @@ export class ApplicationsController {
     @Param("id") id: string,
     @Query("url") targetUrl: string,
     @Query("name") targetName: string,
-    @Query("disposition") disposition: string,
     @Res() res: Response,
     @Request()
     req: {
       user?: { id?: string; name?: string; organizationId?: string | null };
     },
+    @Query("disposition") disposition?: string,
   ) {
     const { asciiFallback, encodedFileName, mimeType, stream } =
       await this.applicationsService.prepareDocumentDownload(

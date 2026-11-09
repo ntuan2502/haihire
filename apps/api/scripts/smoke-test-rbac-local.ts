@@ -43,9 +43,9 @@ async function ensureServerRunning(): Promise<void> {
 
   console.log("🚀 Starting NestJS backend server on port 13001...");
   const apiDir = resolve(fileURLToPath(import.meta.url), "../..");
-  spawnedProcess = spawn("pnpm exec tsx src/main.ts", {
+  const tsxBin = resolve(apiDir, "../../node_modules/tsx/dist/cli.mjs");
+  spawnedProcess = spawn(process.execPath, [tsxBin, "src/main.ts"], {
     cwd: apiDir,
-    shell: true,
     stdio: "inherit",
     env: { ...process.env, PORT: "13001" },
   });

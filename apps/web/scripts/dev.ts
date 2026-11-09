@@ -3,7 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import net from "node:net";
+import { createRequire } from "node:module";
 
+const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load single source: root .env
@@ -57,10 +59,10 @@ async function main() {
   await waitForBackend(backendHost, backendPort);
   console.log(`[web dev] Starting Next.js on port ${frontendPort}...`);
 
-  const child = spawn("pnpm exec next dev", {
+  const nextBin = require.resolve("next/dist/bin/next");
+  const child = spawn(process.execPath, [nextBin, "dev"], {
     stdio: "inherit",
     env: { ...process.env, PORT: String(frontendPort) },
-    shell: true,
   });
 
   child.on("exit", (code) => {

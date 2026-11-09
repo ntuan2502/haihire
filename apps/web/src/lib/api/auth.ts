@@ -44,4 +44,11 @@ export const authApi = {
     }>("/auth/refresh", { refreshToken });
     return response.data;
   },
+
+  getMyPermissions: async (): Promise<{ permissions: string[] }> => {
+    const response = await api.get<{ permissions: string[] }>(
+      "/auth/me/permissions",
+    );
+    return response.data;
+  },
 };

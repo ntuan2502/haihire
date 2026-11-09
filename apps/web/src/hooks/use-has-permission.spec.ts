@@ -163,5 +163,26 @@ describe("useHasPermission hook", () => {
       );
       expect(result.current).toBe(true);
     });
+
+    it("resolves dynamic permission for non-admin via useMyPermissions without querying full matrix", () => {
+      mockUserRole(Role.MEMBER, false);
+      const matrixSpy = vi
+        .spyOn(OrgQueriesModule, "useRolePermissionsMatrix")
+        .mockReturnValue({
+          data: undefined,
+        } as ReturnType<typeof OrgQueriesModule.useRolePermissionsMatrix>);
+
+      vi.spyOn(OrgQueriesModule, "useMyPermissions").mockReturnValue({
+        data: {
+          permissions: ["candidate:create" as Permission],
+        },
+      } as ReturnType<typeof OrgQueriesModule.useMyPermissions>);
+
+      const { result } = renderHook(() => useHasPermission("candidate:create"));
+      expect(result.current).toBe(true);
+      expect(matrixSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false }),
+      );
+    });
   });
 });

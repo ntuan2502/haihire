@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { organizationsApi } from "@/lib/api";
+import { organizationsApi, authApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Organization, User, InviteLink } from "@/types";
 import type { Role, Permission } from "@haihire/shared";
@@ -181,7 +181,7 @@ export function useRemoveMemberMutation() {
   });
 }
 
-export function useRolePermissionsMatrix() {
+export function useRolePermissionsMatrix(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -190,6 +190,9 @@ export function useRolePermissionsMatrix() {
       if (customEvent.detail?.type === "PERMISSIONS_CHANGED") {
         queryClient.invalidateQueries({
           queryKey: queryKeys.rolePermissionsMatrix(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.myPermissions(),
         });
       }
     };
@@ -203,6 +206,17 @@ export function useRolePermissionsMatrix() {
   return useQuery<Record<Role, Record<Permission, boolean>>>({
     queryKey: queryKeys.rolePermissionsMatrix(),
     queryFn: () => organizationsApi.getRolePermissionsMatrix(),
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function useMyPermissions(options?: { enabled?: boolean }) {
+  return useQuery<{ permissions: Permission[] }>({
+    queryKey: queryKeys.myPermissions(),
+    queryFn: () =>
+      authApi.getMyPermissions() as Promise<{ permissions: Permission[] }>,
+    enabled: options?.enabled ?? true,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

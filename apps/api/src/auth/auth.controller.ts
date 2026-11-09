@@ -109,12 +109,15 @@ export class AuthController {
   async changePassword(
     @Request() req: { user: { id: string } },
     @Body(DtoPipe(ChangePasswordDto)) dto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.changePassword(
+    const result = await this.authService.changePassword(
       req.user.id,
       dto.currentPassword,
       dto.newPassword,
     );
+    this.setAuthCookie(res, result.accessToken);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)

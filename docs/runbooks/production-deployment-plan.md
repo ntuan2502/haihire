@@ -1,12 +1,13 @@
 # HaiHire Production Deployment & Rollback Plan
 
 ## 1. Overview & Maintenance Window
+
 This runbook provides the canonical deployment plan, pre-flight checklists, operational execution sequences, rollback strategies, and post-deployment monitoring guidelines for releasing the HaiHire ATS Enterprise Platform to production.
 
-* **Target Release:** Version 1.0.0 (Production General Availability)
-* **Designated Maintenance Window:** `02:00 - 04:00 UTC` (Period of lowest global candidate traffic)
-* **Estimated Downtime:** `0 minutes` (Zero-downtime rolling update via Docker Compose / Reverse Proxy) or maximum 2 minutes maintenance drain during database migration execution.
-* **On-Call SRE Leads:** Senior Backend Engineer + Infrastructure SRE Engineer
+- **Target Release:** Version 1.0.0 (Production General Availability)
+- **Designated Maintenance Window:** `02:00 - 04:00 UTC` (Period of lowest global candidate traffic)
+- **Estimated Downtime:** `0 minutes` (Zero-downtime rolling update via Docker Compose / Reverse Proxy) or maximum 2 minutes maintenance drain during database migration execution.
+- **On-Call SRE Leads:** Senior Backend Engineer + Infrastructure SRE Engineer
 
 ---
 
@@ -15,17 +16,17 @@ This runbook provides the canonical deployment plan, pre-flight checklists, oper
 Before commencing deployment operations, verify each item:
 
 - [ ] **Data Safety Snapshot:**
-  Execute pre-release full backup across PostgreSQL and MinIO:
+      Execute pre-release full backup across PostgreSQL and MinIO:
   ```bash
   node --no-warnings --experimental-strip-types scripts/backup-production.ts
   ```
   Verify output displays: `Backup & Restore Drill Completed Successfully!`.
 - [ ] **Clean Codebase Verification:**
-  - `pnpm test` reporting 563/563 tests passing (376 Backend + 187 Frontend) and `pnpm test:e2e` reporting 100% green.
-  - All 11 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
+  - `pnpm test` reporting 1,268/1,268 tests passing (794 Backend + 474 Frontend) and `pnpm test:e2e` reporting 100% green.
+  - All 16 CI Architecture Gates reporting 100% PASS (`pnpm check:all:fast`).
   - `pnpm lint:env-sync` reporting 100% key parity and complete compose variable coverage.
 - [ ] **Container Image Availability on GHCR:**
-  Verify immutable production images published by GitHub Actions workflow exist in GitHub Container Registry (GHCR):
+      Verify immutable production images published by GitHub Actions workflow exist in GitHub Container Registry (GHCR):
   ```bash
   export GITHUB_REPOSITORY_OWNER="ntuan2502"
   export IMAGE_TAG="v1.0.0" # Never use 'latest' in production
@@ -34,7 +35,7 @@ Before commencing deployment operations, verify each item:
   docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER}/haihire-frontend:${IMAGE_TAG}
   ```
 - [ ] **Stakeholder & Tenant Notification:**
-  Broadcast scheduled maintenance window notice via platform status dashboard at `status.haihire.com`.
+      Broadcast scheduled maintenance window notice via platform status dashboard at `status.haihire.com`.
 
 ---
 
@@ -43,6 +44,7 @@ Before commencing deployment operations, verify each item:
 Execute sequential deployment commands during the designated maintenance window:
 
 ### Step 1: Pre-Flight Verification & Traffic Isolation
+
 ```bash
 # 1.1 SSH into production server
 ssh sre-admin@prod-cluster.haihire.internal
@@ -63,13 +65,15 @@ pnpm docker:prod:config
 ```
 
 ### Step 2: Database Migration Check
+
 ```bash
 # Verify backward-compatibility of schema before stopping application
-pnpm run migration:status
-pnpm run migrate
+pnpm db:status
+pnpm db:update
 ```
 
 ### Step 3: Progressive Rolling Deployment (Zero Local Build)
+
 ```bash
 # 3.1 Pull verified immutable images from GHCR
 docker compose --env-file .env.production -f docker-compose.prod.yml pull backend frontend orphan-cleanup
@@ -92,11 +96,15 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-
 ```
 
 ### Step 4: Post-Deployment Smoke Test
+
 Run automated synthetic smoke test suite against live production instance:
+
 ```bash
 node --no-warnings --experimental-strip-types scripts/smoke-and-load-test.ts
 ```
+
 Verify:
+
 1. `GET /health` returns HTTP 200 with all 3 services (`postgres`, `redis`, `minio`) in `up` state.
 2. Authenticate recruiter user $\rightarrow$ HTTP 200 + valid JWT.
 3. Candidate application submission $\rightarrow$ HTTP 201 + MinIO CV storage.
@@ -109,11 +117,13 @@ Verify:
 If unrecoverable critical failures occur (P0/P1 bugs, database deadlock, or error rate > 1%), execute emergency rollback within 15 minutes of detection:
 
 ### 4.1. Rollback Trigger Criteria
-* Backend `/health` endpoint remains down > 60 seconds after startup.
-* HTTP error rate exceeds 1% of total requests on `/metrics`.
-* Latency p95 exceeds 500ms for more than 5 consecutive minutes.
+
+- Backend `/health` endpoint remains down > 60 seconds after startup.
+- HTTP error rate exceeds 1% of total requests on `/metrics`.
+- Latency p95 exceeds 500ms for more than 5 consecutive minutes.
 
 ### 4.2. Rollback Commands
+
 ```bash
 # Step 1: Revert container image to N-1 verified release tag (Immutable Tag Policy: NEVER use latest)
 export PREVIOUS_STABLE_TAG="v0.9.9"
@@ -139,12 +149,12 @@ curl -i http://localhost:3001/health
 
 Establish continuous SRE observation protocol across four operational milestones:
 
-| Time Window | Monitoring Focus | Verification Actions & Targets |
-| :--- | :--- | :--- |
-| **Hour 1** | Immediate Stability | Watch Prometheus Grafana dashboards: HTTP error rate $< 0.1\%$, Latency p95 $< 120\text{ms}$, Memory RSS steady. |
-| **Hour 6** | Queue & Concurrency | Inspect BullMQ Valkey/Redis queue depth ($< 10$ backlog), PostgreSQL connection pool saturation ($< 40\%$), MinIO upload success rate $100\%$. |
-| **Hour 24** | Daily Business Traffic | Review application error logs (`docker compose logs backend --since 24h \| grep ERROR`), audit trail integrity, email delivery success rate. |
-| **Hour 48** | Final Sign-Off Review | SRE and Engineering leadership review meeting: confirm zero regressions, close deployment ticket, declare production stable. |
+| Time Window | Monitoring Focus       | Verification Actions & Targets                                                                                                                 |
+| :---------- | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hour 1**  | Immediate Stability    | Watch Prometheus Grafana dashboards: HTTP error rate $< 0.1\%$, Latency p95 $< 120\text{ms}$, Memory RSS steady.                               |
+| **Hour 6**  | Queue & Concurrency    | Inspect BullMQ Valkey/Redis queue depth ($< 10$ backlog), PostgreSQL connection pool saturation ($< 40\%$), MinIO upload success rate $100\%$. |
+| **Hour 24** | Daily Business Traffic | Review application error logs (`docker compose logs backend --since 24h \| grep ERROR`), audit trail integrity, email delivery success rate.   |
+| **Hour 48** | Final Sign-Off Review  | SRE and Engineering leadership review meeting: confirm zero regressions, close deployment ticket, declare production stable.                   |
 
 ---
 

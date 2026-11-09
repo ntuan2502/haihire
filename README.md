@@ -1,22 +1,22 @@
 # HaiHire Enterprise ATS Platform
 
 > Modern, AI-powered Applicant Tracking System (ATS) engineered for enterprise recruitment workflows.  
-> Built with NestJS 12, Next.js 16 (App Router & Server Components), PostgreSQL 17, Prisma 8, Valkey 8, and MinIO S3 storage.
+> Built with NestJS 12, Next.js 16 (App Router & Server Components), PostgreSQL 17, Prisma 7, Valkey 8, and MinIO S3 storage.
 
 ---
 
 <!-- STATS:START -->
 
-| Metric                           | Value                  | Reference / Notes                                   |
-| :------------------------------- | :--------------------- | :-------------------------------------------------- |
-| **Release Target**               | `v0.3.0`               | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
-| **Commit Baseline**              | `8dd7724` (2026-11-09) | Author: ntuan2502                                   |
-| **Workspace Unit Tests**         | `963 passed`           | Backend: 540, Frontend: 423                         |
-| **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle                    |
-| **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates                    |
-| **Environment Configuration**    | `56 keys`              | 100% key parity & codebase sync                     |
-| **Pre-Release Dependencies**     | `0 (GA only)`          | Prisma 8 RC & effect override                       |
-| **Documentation Link Integrity** | `100% valid`           | Audited via `pnpm lint:doc-links`                   |
+| Metric                           | Value                  | Reference / Notes                 |
+| :------------------------------- | :--------------------- | :-------------------------------- |
+| **Release Target**               | `Unreleased`           | Fresh baseline (post-reset)       |
+| **Commit Baseline**              | `8e7b86a` (2026-11-09) | Author: ntuan2502                 |
+| **Workspace Unit Tests**         | `1268 passed`          | Backend: 794, Frontend: 474       |
+| **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle  |
+| **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates  |
+| **Environment Configuration**    | `56 keys`              | 100% key parity & codebase sync   |
+| **Pre-Release Dependencies**     | `0 (GA only)`          | Prisma 8 RC & effect override     |
+| **Documentation Link Integrity** | `100% valid`           | Audited via `pnpm lint:doc-links` |
 
 <!-- STATS:END -->
 
@@ -30,10 +30,10 @@ All AI coding agents, contributors, and automation workflows must comply with th
 
 ## 🚀 Key Architectural Highlights
 
-- **Backend Architecture:** NestJS 12.1.2 modular monolith with Saga transaction orchestration, compensations, AsyncLocalStorage request context tracking, and DLQ-backed BullMQ processing.
-- **Frontend Architecture:** Next.js 16.4.0 with React 19 Server Components (RSC), `@tanstack/react-query` v5 client caching, Base UI / Radix UI primitives, Tailwind CSS v4, and dual-language internationalization (vi / en).
-- **Data & Storage:** PostgreSQL 17.6 managed via Prisma 8 ORM, Valkey 8.0.2 for distributed caching / rate limiting, and MinIO S3 object storage for candidate resumes.
-- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 16 comprehensive CI gates, and 963 verified automated tests.
+- **Backend Architecture:** NestJS 12.4.0 modular monolith with Saga transaction orchestration, compensations, AsyncLocalStorage request context tracking, and DLQ-backed BullMQ processing.
+- **Frontend Architecture:** Next.js 16.4.5 with React 19 Server Components (RSC), `@tanstack/react-query` v5 client caching, Base UI / Radix UI primitives, Tailwind CSS v4, and dual-language internationalization (vi / en).
+- **Data & Storage:** PostgreSQL 17.6 managed via Prisma 7 ORM (7.10.1 stable GA), Valkey 8.0.2 for distributed caching / rate limiting, and MinIO S3 object storage for candidate resumes.
+- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 16 comprehensive CI gates, and 1,268 verified automated tests.
 
 ---
 

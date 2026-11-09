@@ -1,18 +1,18 @@
 # HaiHire Backend Service
 
-> Enterprise recruitment REST API engineered with NestJS 12, Prisma 8, PostgreSQL 17, Valkey 8, and MinIO S3 storage.
+> Enterprise recruitment REST API engineered with NestJS 12, Prisma 7, PostgreSQL 17, Valkey 8, and MinIO S3 storage.
 
 ---
 
 ## 🛠️ Technology Stack & Architecture
 
 - **Runtime Engine:** Node.js 26 (Active LTS) / pnpm 12.6.0
-- **Framework:** NestJS 12.1.2 (Express platform, TypeScript)
-- **Database & ORM:** PostgreSQL 17.6 managed via Prisma 8.0 (`@prisma/orm-postgres`)
-- **Cache & Async Queues:** Valkey 8.0.2 / BullMQ 6.3 (`@nestjs/bullmq`, `ioredis`)
+- **Framework:** NestJS 12.4.0 (Express platform, TypeScript)
+- **Database & ORM:** PostgreSQL 17.6 managed via Prisma 7.10.1 (`@prisma/client`, `@prisma/adapter-pg`)
+- **Cache & Async Queues:** Valkey 8.0.2 / BullMQ 6.7 (`@nestjs/bullmq`, `ioredis`)
 - **Object Storage:** MinIO S3 Client (`minio` 8.0.7) for encrypted resume storage
 - **Authentication:** Passport JWT via secure HttpOnly cookies (`SameSite=Lax`, `Path=/`)
-- **Validation & Serialization:** Class-Validator / Class-Transformer with mandatory `DtoPipe` validation
+- **Validation & Serialization:** Zod / Class-Validator with unified `DtoPipe` validation
 
 ---
 
@@ -39,7 +39,7 @@ src/
 ├── candidates/      # Candidate profile repository, CV upload, deduplication
 ├── applications/    # Application pipeline, stage transitions, screening reviews
 ├── interviews/      # Interview scheduling, feedback scorecards, time slots
-├── documents/       # MinIO S3 resume storage, upload validation, signed URLs
+├── minio/           # MinIO S3 resume storage, upload validation, signed URLs
 ├── activities/      # Enterprise audit log records and state change tracking
 ├── email/           # Email dispatch engine (SMTP / Resend / SendGrid) with BullMQ
 ├── prisma/          # Prisma database service, AsyncLocalStorage transaction context, seeds

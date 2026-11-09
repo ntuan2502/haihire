@@ -17,15 +17,15 @@ The package exports domain models and utilities organized under `src/`:
 | Module                   | Contents                                                                                                                   |
 | :----------------------- | :------------------------------------------------------------------------------------------------------------------------- |
 | **`brand.ts`**           | `BRAND_CONFIG` constants: product name (`HaiHire`), monogram (`H`), legal name, and default tenant slug                    |
-| **`errors.ts`**          | `APP_ERROR_CODES` enum (51 standardized codes), `AppErrorEnvelope`, and HTTP status mappings                               |
+| **`errors.ts`**          | `APP_ERROR_CODES` enum (60 standardized codes), `AppErrorEnvelope`, and HTTP status mappings                               |
 | **`common.ts`**          | Standardized pagination interfaces (`PaginationParams`, `PaginatedResult<T>`), sorting, and date helpers                   |
 | **`jobs.ts`**            | Job entity schemas, requisition statuses (`DRAFT`, `PUBLISHED`, `CLOSED`), requirements, and department enums              |
 | **`candidates.ts`**      | Candidate profiles, contact details, resume metadata, and deduplication types                                              |
 | **`applications.ts`**    | Recruitment pipeline stages (`APPLIED`, `SCREENING`, `INTERVIEW`, `OFFER`, `HIRED`, `REJECTED`), reviews, notes            |
 | **`interviews.ts`**      | Scheduled interview formats (`IN_PERSON`, `VIDEO`, `PHONE`), scorecards, ratings, and time slots                           |
-| **`organizations.ts`**   | Organization boundaries, membership roles (`OWNER`, `ADMIN`, `RECRUITER`, `INTERVIEWER`), invitations                      |
+| **`organizations.ts`**   | Organization boundaries, 5 membership roles (`ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), invitations |
 | **`email-templates.ts`** | System email template definitions and interpolation variable schemas                                                       |
-| **`sourcing.ts`**        | Tracking links, UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`), attribution clicks |
+| **`sourcing.ts`**        | Tracking links, UTM parameters, `resolveChannelFromDomain` helper, attribution clicks                                      |
 
 ---
 

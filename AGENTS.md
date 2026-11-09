@@ -6,16 +6,16 @@
 
 <!-- STATS:START -->
 
-| Metric                           | Value                  | Reference / Notes                                   |
-| :------------------------------- | :--------------------- | :-------------------------------------------------- |
-| **Release Target**               | `v0.3.0`               | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
-| **Commit Baseline**              | `8dd7724` (2026-11-09) | Author: ntuan2502                                   |
-| **Workspace Unit Tests**         | `963 passed`           | Backend: 540, Frontend: 423                         |
-| **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle                    |
-| **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates                    |
-| **Environment Configuration**    | `56 keys`              | 100% key parity & codebase sync                     |
-| **Pre-Release Dependencies**     | `0 (GA only)`          | Prisma 8 RC & effect override                       |
-| **Documentation Link Integrity** | `100% valid`           | Audited via `pnpm lint:doc-links`                   |
+| Metric                           | Value                  | Reference / Notes                 |
+| :------------------------------- | :--------------------- | :-------------------------------- |
+| **Release Target**               | `Unreleased`           | Fresh baseline (post-reset)       |
+| **Commit Baseline**              | `8e7b86a` (2026-11-09) | Author: ntuan2502                 |
+| **Workspace Unit Tests**         | `1268 passed`          | Backend: 794, Frontend: 474       |
+| **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle  |
+| **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates  |
+| **Environment Configuration**    | `56 keys`              | 100% key parity & codebase sync   |
+| **Pre-Release Dependencies**     | `0 (GA only)`          | Prisma 8 RC & effect override     |
+| **Documentation Link Integrity** | `100% valid`           | Audited via `pnpm lint:doc-links` |
 
 <!-- STATS:END -->
 
@@ -27,7 +27,7 @@ All AI agents operating in this repository must strictly adhere to the following
 
 1. **What to Read First (Mandatory):**
    - [**Conventions (SSOT)**](docs/architecture/conventions.md): Authoritative engineering rules covering pure TypeScript, zero-any typing, centralized fail-fast environment validation, DtoPipe coverage, 2-way i18n, and multi-tenant scoping.
-   - [**Decisions Log**](docs/decisions/DECISIONS.md): Unified record of all architectural decisions (D-001 through D-007) superseding legacy ADRs.
+   - [**Decisions Log**](docs/decisions/DECISIONS.md): Unified record of all architectural decisions (D-001 through D-016) superseding legacy ADRs.
 2. **What to Read for Specific Tasks:**
    - **Developer Guides & Workflows:** [docs/guides/onboarding.md](docs/guides/onboarding.md) (onboarding, definition of done, QA testcases, project context, roadmap).
    - **Releases & Versioning:** [CHANGELOG.md](CHANGELOG.md) and [docs/runbooks/versioning.md](docs/runbooks/versioning.md) (release policy, SemVer baseline, and changelog updates).
@@ -53,7 +53,7 @@ All AI agents operating in this repository must strictly adhere to the following
 | **Engineering Conventions**   | [docs/architecture/conventions.md](docs/architecture/conventions.md)         | Coding standards, fail-fast env, DtoPipe, i18n, tenant scoping        |
 | **Architectural Decisions**   | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                   | Consolidated ADRs and architectural decisions log                     |
 | **Developer Guides**          | [docs/guides/onboarding.md](docs/guides/onboarding.md)                       | Workflows, DoD, testcases, roadmap, project context                   |
-| **REST API Contracts**        | [docs/api/overview.md](docs/api/overview.md)                                 | 9 controllers, 87 endpoints, standard error envelopes                 |
+| **REST API Contracts**        | [docs/api/overview.md](docs/api/overview.md)                                 | 13 controllers, 87 endpoints, standard error envelopes                |
 | **Site Reliability Runbooks** | [docs/runbooks/alerts.md](docs/runbooks/alerts.md)                           | Operational SOPs (alerts, backups, deployment, queues)                |
 | **Releases & Changelog**      | [CHANGELOG.md](CHANGELOG.md)                                                 | Release milestones, migration logs, and version history               |
 | **Documentation Portal**      | [docs/README.md](docs/README.md)                                             | Central search and navigation directory for all project documentation |
@@ -75,7 +75,7 @@ All AI agents operating in this repository must strictly adhere to the following
 pnpm check:all           # Run all 16 CI architecture verification gates
 
 # Testing
-pnpm test                # Run complete unit & integration test suite (1,019 tests)
+pnpm test                # Run complete unit & integration test suite (1,268 tests)
 pnpm test:diff           # Verify test count delta against HEAD~1 (regression gate)
 
 # Linting & Static Analysis

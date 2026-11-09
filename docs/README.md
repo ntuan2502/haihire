@@ -9,18 +9,18 @@
 | I want to find...                    | Document to Read                                   | Brief Description                                                       |
 | :----------------------------------- | :------------------------------------------------- | :---------------------------------------------------------------------- |
 | **System Architecture Overview**     | [System Overview](architecture/system-overview.md) | Monorepo topology, core patterns, services, request flow                |
-| **Data Model & Schema**              | [Data Model](architecture/data-model.md)           | Prisma 8 models, relationships, cascading & soft-delete grace periods   |
+| **Data Model & Schema**              | [Data Model](architecture/data-model.md)           | Prisma 7 models, relationships, cascading & soft-delete grace periods   |
 | **Security & RBAC Architecture**     | [Security & RBAC](architecture/security-rbac.md)   | Cookie-based JWT auth, dynamic org ownership, 5 roles, 41 permissions   |
 | **Coding & Operational Conventions** | [Conventions](architecture/conventions.md)         | Pure TypeScript, zero-any, fail-fast env, DtoPipe, i18n, tenant scoping |
-| **Architectural Decisions Log**      | [Decisions Log](decisions/DECISIONS.md)            | Consolidated architectural decisions (D-001 to D-007)                   |
-| **REST API Contracts**               | [API Overview](api/overview.md)                    | 9 controllers, 87 endpoints, standard error envelope                    |
+| **Architectural Decisions Log**      | [Decisions Log](decisions/DECISIONS.md)            | Consolidated architectural decisions (D-001 to D-016)                   |
+| **REST API Contracts**               | [API Overview](api/overview.md)                    | 13 controllers, 87 endpoints, standard error envelope                   |
 | **Site Reliability & Runbooks**      | [Runbooks Catalog](runbooks/alerts.md)             | Operations runbooks (alerts, backups, deployment, redis, queues)        |
 | **Release History & Changelog**      | [Changelog](../CHANGELOG.md)                       | Version history, release milestones, migration notes                    |
 | **Developer Onboarding**             | [Onboarding](guides/onboarding.md)                 | Local environment setup, dependencies, quick start                      |
 | **Definition of Done**               | [Definition of Done](guides/definition-of-done.md) | Production readiness criteria, quality gates, PR standards              |
 | **QA Test Cases Matrix**             | [Test Cases](guides/testcases.md)                  | Verification test matrix across 10 platform domains                     |
 | **Deep System Context**              | [Project Context](guides/project-context.md)       | Technical stack, services, runtime architecture                         |
-| **Product Roadmap**                  | [Roadmap](guides/roadmap.md)                       | Strategic product roadmap across v0.1.0 to v0.4.0                       |
+| **Product Roadmap**                  | [Roadmap](guides/roadmap.md)                       | Strategic product roadmap and release horizons                          |
 | **Project Metrics Baseline**         | [Project Metrics](PROJECT_METRICS.md)              | Test suite stats, CI quality gates, coverage, stack baseline            |
 
 ---
@@ -37,15 +37,15 @@ docs/
 │   ├── security-rbac.md                # JWT auth, dynamic ownership, 5 roles, 41 permissions
 │   └── conventions.md                  # Single source of truth for engineering conventions
 ├── decisions/
-│   └── DECISIONS.md                    # Consolidated architectural decisions (D-001 to D-007)
+│   └── DECISIONS.md                    # Consolidated architectural decisions (D-001 to D-016)
 ├── api/
-│   └── overview.md                     # 9 controllers, 87 endpoints, auth, error envelope
+│   └── overview.md                     # 13 controllers, 87 endpoints, auth, error envelope
 ├── guides/                             # Developer workflows, checklists, and specifications
 │   ├── onboarding.md                   # Step-by-step developer onboarding & quick start
 │   ├── definition-of-done.md           # Production DoD Checklist
 │   ├── testcases.md                    # Verification test matrix across 10 domains
 │   ├── project-context.md              # Deep technical stack and component specifications
-│   └── roadmap.md                      # Strategic Horizon & v0.2.0 Release Status
+│   └── roadmap.md                      # Strategic Horizon & product roadmap
 └── runbooks/                           # Site reliability & operational SOPs (12 runbooks)
     ├── alerts.md                       # Prometheus alerts catalog & emergency SOPs
     ├── backup-and-restore.md           # PostgreSQL dumps, MinIO hot backup & restore drills

@@ -1,8 +1,8 @@
 # CI/CD Operations & Runbook
 
 > **Operational guide for HaiHire's Layered CI/CD pipeline, manual deployment protocols, and rollback procedures.**  
-> **Platform Version:** v0.1.2+  
-> **Last Updated:** 2026-10-16
+> **Platform Version:** Fresh Baseline  
+> **Last Updated:** 2026-11-09
 
 ---
 
@@ -40,8 +40,8 @@ All workflows are located in [`.github/workflows/`](../../.github/workflows/):
 | Workflow                                                             | Target Scope                                            | Key Operations                                                                                        |           Time Target           |
 | :------------------------------------------------------------------- | :------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- | :-----------------------------: |
 | [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)           | PRs targeting `dev` (`feat/*`, `fix/*`, etc.)           | Path filtering, lint, typecheck, unit tests                                                           |            2 - 3 min            |
-| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml)                   | PRs to `dev` & non-merge push to `dev` (skips merge PR) | Path filtering (code vs docs-only), 11 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min (code) / ~30s (docs)  |
-| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml)           | PRs to `staging` & non-merge push (skips merge PR)      | Path filtering (code vs docs-only), 11 CI gates, coverage, Playwright E2E suite, production build     | 8 - 10 min (code) / ~30s (docs) |
+| [`ci-dev.yml`](../../.github/workflows/ci-dev.yml)                   | PRs to `dev` & non-merge push to `dev` (skips merge PR) | Path filtering (code vs docs-only), 16 CI architecture gates (`check:all:fast`), anti-regression diff | 3 - 4 min (code) / ~30s (docs)  |
+| [`ci-staging.yml`](../../.github/workflows/ci-staging.yml)           | PRs to `staging` & non-merge push (skips merge PR)      | Path filtering (code vs docs-only), 16 CI gates, coverage, Playwright E2E suite, production build     | 8 - 10 min (code) / ~30s (docs) |
 | [`ci-main.yml`](../../.github/workflows/ci-main.yml)                 | PRs targeting `main` (production gatekeeper)            | Full checks (`check:all`), Playwright E2E, `pnpm audit`, Docker dry-run                               |           10 - 12 min           |
 | [`cd-release.yml`](../../.github/workflows/cd-release.yml)           | Annotated tags `v*.*.*`                                 | Docker Buildx, GHCR publish, Trivy container scan, GitHub release                                     |            5 - 7 min            |
 | [`e2e-weekly.yml`](../../.github/workflows/e2e-weekly.yml)           | Schedule: `0 3 * * 1` (03:00 UTC Mondays on `staging`)  | Complete Playwright test regression sweep on pre-production                                           |           8 - 10 min            |
@@ -56,7 +56,7 @@ HaiHire adopts a strictly stratified Testing Pyramid to ensure rapid developer f
 ```
           / \
          /   \       End-to-End (E2E) UI Tests
-        / E2E \      Playwright Chromium • 10 journeys (19 specs, 6 cross-tenant)
+        / E2E \      Playwright Chromium • 23 specs (6 cross-tenant)
        /───────\     Critical Paths Only • Staging & Weekly Sweep
       /         \
      /Integration\   Integration & Contract Tests
@@ -64,21 +64,21 @@ HaiHire adopts a strictly stratified Testing Pyramid to ensure rapid developer f
    /───────────────\ DtoPipe Protection • i18n Dictionary Parity
   /                 \
  /    Unit Tests     \ Unit Test Matrix
-/  (Backend+Frontend) \ Vitest • 656 tests • 75 suites • <25s
+/  (Backend+Frontend) \ Vitest • 1,268 tests • 139 suites • <35s
 /─────────────────────\ 100% PR execution • Fast fail
 ```
 
 ### 2.1 Layer Rationale
 
-1. **Unit & Integration Tests (Vitest - 656 tests):** Fast execution (<25 seconds), zero external service dependencies (pure mock/in-memory), execute on **100% of pull requests and commits**.
-2. **Static Architecture Gates (11 Gates):** Env sync, i18n parity, ESLint, typecheck, DtoPipe, error code i18n, API contracts, Prometheus rules, tenant scoping, doc links, test count diff. Total runtime ~25s.
-3. **End-to-End (E2E) Tests (Playwright - 19 specs across 10 critical user journeys):** Real browser journeys (including 6 cross-tenant security tests, Careers SEO & themes, candidate applications, multi-step ATS login, Kanban drag-and-drop). Heavyweight requirement with PostgreSQL, Valkey, and MinIO services. Triggered on staging push, PR to main, and weekly schedule.
+1. **Unit & Integration Tests (Vitest - 1,268 tests):** Fast execution (<35 seconds), zero external service dependencies (pure mock/in-memory), execute on **100% of pull requests and commits**.
+2. **Static Architecture Gates (16 Gates):** Env sync, i18n parity, ESLint, typecheck, DtoPipe, error code i18n, API contracts, Prometheus rules, tenant scoping, doc links, doc sync, prod email, test count diff, Next.js conventions, GitHub action versions, and unit tests.
+3. **End-to-End (E2E) Tests (Playwright - 23 specs across end-to-end user journeys):** Real browser journeys (including 6 cross-tenant security tests, Careers SEO & themes, candidate applications, multi-step ATS login, Kanban drag-and-drop). Heavyweight requirement with PostgreSQL, Valkey, and MinIO services. Triggered on staging push, PR to main, and weekly schedule.
 
 ### 2.2 Execution Matrix
 
 | Test Layer                   | Local Dev (`check:all:fast`) | Pull Request (`ci-feature.yml`) | Push to `dev` (`ci-dev.yml`) | Push to `staging` (`ci-staging.yml`) | PR to `main` (`ci-main.yml`) | Weekly (`e2e-weekly.yml`) | Tagged Release (`cd-release.yml`) |
 | :--------------------------- | :--------------------------: | :-----------------------------: | :--------------------------: | :----------------------------------: | :--------------------------: | :-----------------------: | :-------------------------------: |
-| **Static Gates (1-11)**      |           ✅ Runs            |             ✅ Runs             |  ✅ Runs (code) / ~30s docs  |      ✅ Runs (code) / ~30s docs      |           ✅ Runs            |             —             |              ✅ Runs              |
+| **Static Gates (1-16)**      |           ✅ Runs            |             ✅ Runs             |  ✅ Runs (code) / ~30s docs  |      ✅ Runs (code) / ~30s docs      |           ✅ Runs            |             —             |              ✅ Runs              |
 | **Unit Tests (`pnpm test`)** |           ✅ Runs            |             ✅ Runs             |           ✅ Runs            |               ✅ Runs                |           ✅ Runs            |             —             |              ✅ Runs              |
 | **Next.js Package Build**    |           Optional           |           ⏭️ Skipped            |          ⏭️ Skipped          |               ✅ Runs                |           ✅ Runs            |             —             |              ✅ Runs              |
 | **Playwright E2E Tests**     |    Optional (`test:e2e`)     |           ⏭️ Skipped            |          ⏭️ Skipped          |               🟢 Runs                |           🟢 Runs            |     🟢 Runs (staging)     |           🟢 Mandatory            |
@@ -93,7 +93,7 @@ HaiHire uses path filtering (`dorny/paths-filter@v3`) across workflows to elimin
 ### 3.1 Two-Tier Path Filtering (Task #32)
 
 - **Code Changes:** Any changes to backend, frontend, packages, scripts, or workflows trigger full architecture gates, unit tests, and compilation.
-- **Documentation-Only Changes:** Changes strictly isolated to `docs/**` and `*.md` bypass the 11 CI gates, test containers, E2E suites, and builds, executing only `docs-verify` (`lint:doc-links` + `lint:i18n`) in **~30 seconds**.
+- **Documentation-Only Changes:** Changes strictly isolated to `docs/**` and `*.md` bypass the 16 CI gates, test containers, E2E suites, and builds, executing only `docs-verify` (`lint:doc-links` + `lint:i18n`) in **~30 seconds**.
 
 ### 3.2 Critical Path Definitions
 
@@ -136,7 +136,7 @@ The `staging` branch is HaiHire's pre-production validation gate where integrate
    - > **Note (Branch Protection Workaround):** PRs from `dev` to `staging` will not automatically trigger required checks because Task #32 removed the `pull_request` trigger from `ci-staging.yml`. Follow the [Staging Promotion Workaround](branch-protection.md#known-workaround-staging-promotion) to temporarily bypass admin enforcement for merging.
 2. **Automated Verification:**
    - Once merged to `staging`, `ci-staging.yml` executes:
-     - 11 Architecture Quality Gates (`pnpm check:all:fast`).
+     - 16 Architecture Quality Gates (`pnpm check:all:fast`).
      - Unit & Integration Tests with Coverage (`vitest --coverage`).
      - Playwright End-to-End Suite against local test containers (Postgres, Valkey, MinIO).
      - Full Monorepo Production Build (`pnpm build`).

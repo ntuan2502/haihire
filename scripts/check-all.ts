@@ -164,7 +164,7 @@ if (!fastOnly) {
     name: "Unit & Integration Test Suite",
     command: "pnpm test",
     category: "test",
-    description: "Run all 1,156 unit and integration tests across api and web",
+    description: "Run all 1,268 unit and integration tests across api and web",
   });
 }
 

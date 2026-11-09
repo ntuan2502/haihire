@@ -40,7 +40,7 @@
 
 ## 4. 100% DtoPipe Validation Coverage
 
-1. **Mandatory DtoPipe Guard:** Every NestJS controller parameter decorated with `@Body()` must be protected by `@Body(DtoPipe)`.
+1. **Mandatory DtoPipe Guard:** Every NestJS controller parameter decorated with `@Body()` must be protected by `@Body(DtoPipe)` or `@Body(DtoPipe(SchemaOrDto))`. `DtoPipe` uniformly supports both Zod validation schemas and class-validator DTOs without requiring legacy shim classes.
    - _Rationale:_ Sanitizes incoming HTTP payloads and prevents prototype pollution or malformed input injection.
 2. **Enforcement:** Enforced in CI by Gate 5 (`pnpm lint:dtopipe`), asserting 100% endpoint coverage.
    - _Rationale:_ Automated gate prevents security regression during development.
@@ -108,6 +108,8 @@
    - _Rationale:_ Reuses the active database transaction across nested services without manual parameter passing, while gracefully falling back to mock or direct Prisma clients in unit tests.
 5. **Distributed Saga Pattern:** Operations crossing MinIO object storage and PostgreSQL must use Saga compensation with BullMQ dead-letter queue (DLQ) retry fallbacks.
    - _Rationale:_ Ensures storage and database consistency even during network or service crashes.
+6. **Explicit PostgreSQL Connection Pool:** `PrismaService` explicitly configures `pg.Pool` with bounded concurrency and retry timeouts (`PRISMA_CONNECTION_LIMIT`, `PRISMA_POOL_TIMEOUT`, `PRISMA_MAX_RETRIES`, `PRISMA_RETRY_DELAY_MS`).
+   - _Rationale:_ Prevents connection pool starvation and socket hangs during high-traffic recruitment bursts.
 
 ---
 

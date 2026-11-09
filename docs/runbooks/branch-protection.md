@@ -1,8 +1,8 @@
 # Branch Protection & Repository Administration
 
 > **Canonical operational runbook for GitHub branch protection rules, required CI/CD status checks, deployment environments, and repository security settings.**  
-> **Platform Version:** v0.1.2+  
-> **Last Updated:** 2026-10-16
+> **Platform Version:** Fresh Baseline  
+> **Last Updated:** 2026-11-09
 
 ---
 
@@ -48,7 +48,7 @@ The `staging` branch validates end-to-end integration with live test containers 
 - **Require status checks to pass before merging:** Enabled
   - **Require branches to be up to date before merging:** Enabled
   - **Required status checks:**
-    1. `11 CI Architecture Gates` (from `ci-staging.yml`)
+    1. `16 CI Architecture Gates` (from `ci-staging.yml`)
     2. `Unit & Integration Tests (Coverage)` (from `ci-staging.yml`)
     3. `Playwright End-to-End Suite` (from `ci-staging.yml`)
     4. `Production Build Verification` (from `ci-staging.yml`)

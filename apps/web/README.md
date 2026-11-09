@@ -6,10 +6,10 @@
 
 ## 🛠️ Technology Stack & Architecture
 
-- **Framework:** Next.js 16.3.8 / React 19.3.0 (App Router architecture)
+- **Framework:** Next.js 16.4.5 / React 19.3.1 (App Router architecture)
 - **Styling & Design System:** Tailwind CSS v4 (`@tailwindcss/postcss`), Radix UI / Base UI primitives, Lucide React icons
 - **State & Data Fetching:** `@tanstack/react-query` v5 with centralized query key factories
-- **Drag & Drop Pipeline:** `@dnd-kit/core` and `@dnd-kit/sortable` for interactive candidate Kanban boards
+- **Drag & Drop Pipeline:** `@dnd-kit/core` and `@dnd-kit/sortable` for interactive candidate Kanban boards (powered by `usePipelineKanban`)
 - **Internationalization (i18n):** Dual-language support (Vietnamese `vi` and English `en`) with strict zero-hardcoded-text enforcement
 - **Theme & Anti-FOUC:** `next-themes` with synchronous `<Script id="theme-init" strategy="beforeInteractive">` header execution
 

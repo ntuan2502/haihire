@@ -3,15 +3,15 @@
 > Canonical metrics for the HaiHire Enterprise ATS platform.  
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
-**Last Updated:** 2026-10-24  
-**Platform Version:** v0.3.0 (Pre-release)
+**Last Updated:** 2026-11-09  
+**Platform Version:** Unreleased (Fresh Baseline)
 
 ---
 
 ## Release Stage
 
-- **Current:** Pre-release (`v0.3.0`)
-- **Target:** Feature branch `feat/v0.3.0-rbac-agents-ci` -> Release Tag `v0.3.0`
+- **Current:** Unreleased (Fresh Baseline)
+- **Target:** Production Readiness & General Availability
 - **Branch strategy:** `feat/*` -> `dev` -> `staging` -> `main`
 - **Hotfix flow:** `hotfix/*` from `main` -> `main` + `dev`
 
@@ -19,9 +19,9 @@
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 1,123 total (+252 tests added since v0.2.0: 871 → 1,123)
-  - Backend: 668 passing (Vitest, 63 test suites)
-  - Frontend: 455 passing (Vitest + JSDOM, 60 test suites)
+- **Automated Tests:** 1,268 total
+  - Backend: 794 passing (Vitest, 75 test suites)
+  - Frontend: 474 passing (Vitest + JSDOM, 64 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
   - Backend Coverage: 79.54% Statements (80.92% Lines, 62.35% Branch, 80.38% Funcs)
@@ -47,7 +47,7 @@
   13. `test:diff` — Test Count Delta & Anti-Regression Gate
   14. `lint:nextjs-conventions` — Next.js 16 File Conventions Audit (`proxy.ts` enforced)
   15. `lint:github-action-versions` — GitHub Actions Minimum Versions Audit (Node 24 action runtime)
-  16. `test` — Unit & Integration Test Suite (1,123 tests)
+  16. `test` — Unit & Integration Test Suite (1,268 tests)
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:** 23 specs across end-to-end recruitment lifecycle journeys
 - **Test Pass Rate:** 100% (Zero skipped, zero flaky, zero commented-out tests)
@@ -57,9 +57,9 @@
 ## Architecture & Codebase Metrics
 
 - **Monorepo Packages:** 3 (`backend`, `frontend`, `packages/shared`)
-- **Backend Architecture:** Modular monolith on NestJS 12.1.2 with Express platform adapter
+- **Backend Architecture:** Modular monolith on NestJS 12.4.0 with Express platform adapter
 - **Backend Modules:** 18
-- **Backend Controllers:** 12
+- **Backend Controllers:** 13
 - **REST API Endpoints:** 87
 - **Roles & Permissions:** 5 active organization roles (`Role.OWNER` deprecated per D-003: `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), 41 granular permissions
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation)
@@ -107,6 +107,6 @@
 ## Environment Architecture
 
 - **Single Source of Truth:** Root `.env` file (gitignored).
-- **Template:** `.env.example` (tracked, 55 keys).
+- **Template:** `.env.example` (tracked, 56 keys).
 - **Production Template:** `.env.production.example` (tracked).
 - **Zero Drift:** Enforced by Gate 1 (`pnpm lint:env-sync`).

@@ -1,8 +1,8 @@
 # PROJECT CONTEXT REPORT: HAIHIRE ENTERPRISE ATS
 
-> **Single Source of Truth (SSOT) for Antigravity, DeepSeek & Project Owner**  
-> **Version:** v0.2.0 (Pre-release)  
-> **Updated:** 2026-10-19  
+> **Single Source of Truth (SSOT) for Engineering Team & Project Owner**  
+> **Version:** Unreleased (Fresh Baseline)  
+> **Updated:** 2026-11-09  
 > **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)
 
 ---
@@ -15,7 +15,7 @@
   - `backend`: REST API Server powered by NestJS 12.
   - `frontend`: Web Application built with Next.js 16 App Router.
   - `packages/shared`: Shared domain contract library (`@haihire/shared` containing types, enums, `APP_ERROR_CODES`, brand config).
-- **Status:** **Version v0.2.0** — Pre-release (Wave 4 Technical Debt Milestone complete, 10/10 God Files refactored across Waves 1–4, 871 tests passing, 11 CI architecture gates, 3-tier Husky git hooks).
+- **Status:** **Fresh Baseline (Unreleased)** — Clean architecture baseline, 1,268 tests passing, 16 CI architecture gates, 3-tier Husky git hooks, canonical Prisma 7 Client.
 - **Target End Users:**
   1. _Recruiter / HR / Hiring Manager / Tenant Admin_: Authenticate into internal dashboard (`/dashboard`) to manage jobs, candidate pipelines, interview schedules, email templates, and sourcing attribution links.
   2. _Candidate_: Access public career portal (`/careers/[orgSlug]/[jobSlug]`) to view job specifications and submit applications online.
@@ -26,7 +26,7 @@
 
 - **Language + Version:** TypeScript `6.0.3` (100% Pure TypeScript mandate; pure `.js` files and `any` types are strictly prohibited — reference `docs/architecture/conventions.md`).
 - **Primary Frameworks:**
-  - **Backend:** NestJS `12.1.2` (running on Express platform adapter, reference `apps/api/package.json`).
+  - **Backend:** NestJS `12.4.0` (running on Express platform adapter, reference `apps/api/package.json`).
   - **Frontend:** Next.js `16.4.5` (App Router, React Server Components combined with Client Components) + React `19.3.1` (reference `apps/web/package.json`).
 - **Runtime:**
   - Node.js: `26.x` Active LTS baseline (Docker image `node:26-alpine`).
@@ -36,10 +36,10 @@
   - _Client State & Cache:_ `@tanstack/react-query` `^5.107.1` (server state management with centralized query key factories).
   - _ORM & Data Access:_ Prisma 7.10.1 stable (`@prisma/client`, `prisma`, `@prisma/adapter-pg` PostgreSQL driver adapter).
   - _Authentication:_ Passport.js `^0.7.0`, `passport-jwt` `^4.0.1`, `bcryptjs` `^3.0.3`, HttpOnly JWT Cookies (`haihire_token`).
-  - _Async Queues:_ BullMQ `^6.3.15` + `@nestjs/bullmq` `^12.0.0` (email jobs and orphan file cleanup compensation).
+  - _Async Queues:_ BullMQ `^6.7.2` + `@nestjs/bullmq` `^12.0.1` (email jobs and orphan file cleanup compensation).
   - _Object Storage SDK:_ MinIO Node SDK `^8.0.7` (S3-compatible API).
-  - _Validation:_ Zod `^4.6.7` (centralized schemas), `class-validator` `^0.15.1` + `class-transformer` `^0.5.1` wrapped via custom `DtoPipe`.
-  - _Testing:_ Vitest `5.0.4` (unit/integration test, 871 tests passing), Playwright `^1.64.0` (browser E2E), `@testing-library/react` `16.3.3`, `jsdom` `30.1.2`.
+  - _Validation:_ Zod `^4.6.7` (centralized schemas), custom `DtoPipe` supporting both Zod schemas and class-validator DTOs.
+  - _Testing:_ Vitest `5.1.0` (unit/integration test, 1,268 tests passing), Playwright `^1.64.0` (browser E2E), `@testing-library/react` `16.3.3`, `jsdom` `31.0.0`.
 - **Database / Storage / Cache / Queue:**
   - _Database:_ PostgreSQL `17.6-alpine` (Host dev port: `15432`, container: `5432`).
   - _Cache & Queue:_ Valkey `8.0.2-alpine` (open-source Redis replacement complying with RSALv2/SSPLv1 license constraints; host dev port: `16379`, container: `6379`).
@@ -255,8 +255,8 @@ haihire/
 
 ## 8. OPEN ARCHITECTURAL QUESTIONS
 
-1. **[CONFIRMATION REQUIRED] Refactoring the 5 Large Files:** Modules such as `applications-data-table.tsx` and `applications.service.ts` exceed modular thresholds. Should these be refactored now or maintained as-is to preserve stability for v1.0.0?
-2. **[CONFIRMATION REQUIRED] Database Table Name Migration:** 9 tables currently use camelCase `@@map` names in `contract.prisma`. Should these be migrated to PostgreSQL `snake_case` now or post-release?
+1. **[RESOLVED] Refactoring Large Files:** Monolithic files like `applications-data-table.tsx`, `pipeline/page.tsx` (`usePipelineKanban`), and `sourcing.service.ts` have been decomposed into focused sub-services and custom hooks.
+2. **[RESOLVED] Database Table Name Migration:** Normalized to canonical PostgreSQL `snake_case` in `schema.prisma` and enforced via D-006.
 3. **[CONFIRMATION REQUIRED] Full-Width Canvas Alignment:** Several components retain container constraints (`max-w-7xl mx-auto`). Should all pages be standardized to full-width layouts?
 4. **[CONFIRMATION REQUIRED] Production Email Provider:** Current environment defaults to `SYSTEM_EMAIL_PROVIDER="SIMULATED"`. Which provider (`SMTP`, `RESEND`, or `SENDGRID`) will be designated for production release?
 

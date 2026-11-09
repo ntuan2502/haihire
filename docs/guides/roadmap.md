@@ -1,9 +1,9 @@
 # 🗺️ HaiHire - Product Roadmap & Architectural Horizon
 
 > **Comprehensive strategic roadmap for the HaiHire Enterprise Applicant Tracking System (ATS).**  
-> **Current Version:** `v0.3.0` (Pre-release, Staged 2026-10-22)  
-> **Updated:** 2026-10-22  
-> **Status:** Pre-release (Phase 3 Complete, Dynamic RBAC, SSOT Information Architecture, 1,020 tests, 16 CI gates)
+> **Current Version:** `Unreleased` (Fresh Baseline, 2026-11-09)  
+> **Updated:** 2026-11-09  
+> **Status:** Clean Architecture Baseline (Dynamic RBAC, SSOT Information Architecture, 1,268 tests, 16 CI gates)
 
 ---
 
@@ -12,8 +12,8 @@
 - **Monorepo Topology**: Managed via `pnpm workspaces` with `@haihire/shared` distributing cross-cutting contracts, error codes, and validation types.
 - **Backend Architecture**:
   - Runtime: **Node.js 26** LTS
-  - Framework: **NestJS 12** (`@nestjs/core` 12.1.2) + Express platform adapter
-  - Database: **PostgreSQL 17** via **Prisma 8** (Contract-First schema)
+  - Framework: **NestJS 12** (`@nestjs/core` 12.4.0) + Express platform adapter
+  - Database: **PostgreSQL 17** via **Prisma 7** (7.10.1 Stable GA)
   - Cache & Async Queue: **Valkey 8** (100% Redis 7 protocol and BullMQ compatible)
   - Object Storage: **MinIO S3** for resume and document retention with tenant path scoping (`tenants/<safeTenant>/...`)
   - Real-Time Layer: **Server-Sent Events (SSE)** via RxJS Subject providing tenant-isolated event streams scoped by `organizationId`
@@ -25,7 +25,7 @@
     - Concurrency Control: **Optimistic Locking** guarding candidate pipeline stage transitions (HTTP 409 Conflict)
   - Notification Engine: Multi-provider email dispatch (Simulated In-App, SMTP Server, Resend API, SendGrid API) + Multi-channel Webhook Notifier (Telegram, Discord, Generic HMAC)
 - **Frontend Architecture**:
-  - Framework: **Next.js 16** (App Router, Server & Client Components) + **React 19**
+  - Framework: **Next.js 16** (16.4.5 App Router, Server & Client Components) + **React 19** (19.3.1)
   - Styling Engine: **Tailwind CSS v4**, Lucide React icons, responsive layout
   - Data Fetching & Caching: **TanStack Query v5** with `keepPreviousData` patterns
   - Localization (i18n): Zero hardcoded text, synchronized English & Vietnamese dictionaries
@@ -117,91 +117,30 @@
 
 ---
 
-## 📦 Release Trajectory & Milestones
+## 📦 Strategic Milestones & Release Horizon
 
-### v0.1.0 (Released 2026-10-14) — Pre-release Baseline
+### Baseline (Current) — Clean Monorepo Architecture
 
-- First pre-release.
-- 20+ hardening tasks completed.
-- 11 CI gates, 606 tests, 14 Prometheus alerts.
-- Feedback collection begins.
-- Not API-stable yet.
+- Enterprise RBAC with dynamic ownership (`Organization.ownerId`) and zero static `Role.OWNER`.
+- 16 automated CI architecture verification gates passing 100%.
+- Canonical Prisma 7.10.1 Stable GA ORM with explicit PostgreSQL connection pooling.
+- 1,268 unit and integration tests across backend and frontend (100% pass rate).
+- Decomposed Sourcing services (`SourcingQueryService`, `SourcingMetricsService`, `SourcingLockService`).
+- Extracted Kanban state management (`usePipelineKanban`) and declarative domain attribution (`resolveChannelFromDomain`).
+- Modernized DtoPipe validation supporting both Zod schemas and class-validator DTOs.
 
-### v0.1.1 (Released 2026-10-14) — Hotfix & CI Stability
+### Milestone 1 — Core Hardening & Integrations
 
-- Enterprise 3-tier promotion verification.
-- Dependabot configuration refinement.
-- Weekly E2E verification workflow scheduling.
+- OpenAPI / Swagger contract documentation generation.
+- Enterprise account lockout security controls.
+- Correlation ID propagation for asynchronous BullMQ jobs.
+- Direct candidate self-scheduling links and calendar synchronization (Google & Outlook).
 
-### v0.1.2 (Released 2026-10-16) — Technical Debt Reduction & CI/CD Optimization
-
-- 5 God Files refactored to modular architecture (Tasks #26–#30).
-- 5,696 LOC eliminated across facades, shims, and sub-services.
-- 50 new characterization tests added (606 → 656 passing tests).
-- Zero breaking changes; 11 CI gates passing.
-
-### v0.1.3 (Released 2026-10-16) — CI/CD Optimization & Documentation Reorganization
-
-- CI/CD optimization & Husky 3-tier restructure (Task #32).
-- Eliminated duplicate PR and push workflow triggers on `dev` and `staging`.
-- Added documentation path filters to bypass heavy CI gates for docs-only changes.
-- Staggered Dependabot and Security Weekly schedules.
-- Documentation reorganization & canonical runbook unification (Task #33).
-
-### v0.1.4 (Released 2026-10-17) — Accessibility & Coverage Augmentation (Task #41)
-
-- **Accessibility Campaign (Tasks #37-#40)**:
-  - WCAG 2.1 AA compliance: 0% → 92.4%.
-  - Fixed 27 accessibility issues (5 Critical, 11 High, 7 Medium, 4 Low).
-  - Skip to Main Content landmark, dynamic HTML lang hydration parity.
-  - Full W3C ARIA listbox pattern for CustomSelect, keyboard table navigation, aria-sort.
-  - Zero visual regression, zero breaking changes.
-- **Coverage Augmentation (Task #36 Phase 2)**:
-  - `applications-saga.service.ts`: 66.66% → 97.61% (+30.95%).
-  - `sourcing-metrics.service.ts`: 38.36% → 98.27% (+59.91%).
-  - `organizations-core.service.ts`: 63.55% → 94.91% (+31.36%).
-  - `sourcing-links.service.ts`: 58.58% → 97.97% (+39.39%).
-  - New reusable `prisma-composer-mock` test helper.
-- **Automated Tests**: 656 → 764 (+108 tests; 485 backend + 279 frontend across 88 test suites).
-- **Quality Gates**: 11/11 CI architecture gates verified.
-
-### v0.2.0 (Released 2026-10-19) — Wave 4 Technical Debt Milestone (Task #45)
-
-- **Wave 4 God Files Refactoring (Tasks #43–#44)**:
-  - `job-wizard-editor.tsx`: 838 → 2 LOC shim (6 sub-files).
-  - `candidates/page.tsx`: 1,050 → 14 LOC wrapper (8 sub-files).
-  - `candidates/[id]/page.tsx`: 941 → 10 LOC wrapper (9 sub-files).
-  - `applications/[id]/page.tsx`: 857 → 10 LOC wrapper (10 sub-files).
-  - `interviews-calendar-view.tsx`: 942 → 7 LOC shim (12 sub-files, 2-phase extraction).
-- **Cumulative God Files Refactored (Waves 1–4)**:
-  - 10/10 major files refactored.
-  - ~12,500 LOC eliminated from monoliths.
-  - Max file size: 1,706 → 280 LOC.
-  - 85+ modular sub-files created.
-- **Automated Tests**: 764 → 871 (+107 tests across Wave 4 characterization suites).
-- **Quality Gates**: 11/11 CI architecture gates verified.
-- **Accessibility**: WCAG 2.1 AA 92.4% compliance.
-
-### v0.3.0 (Planned) — Enterprise Features & Core Refactoring
-
-- Refactor remaining backend services (`email.service.ts`, `candidates.service.ts`, `interviews.service.ts`).
-- OpenAPI/Swagger automated documentation.
-- Business performance metrics dashboard.
-- Account lockout security controls.
-- Correlation ID propagation for async background jobs.
-
-### v0.4.0 (Planned) — Final Debt Elimination & Integrations
-
-- Eliminate final batch of files >400 LOC.
-- Calendar synchronization (Google & Outlook).
-- Direct candidate self-scheduling links.
-
-### v1.0.0 (Future) — General Availability (GA)
+### Milestone 2 — General Availability (GA)
 
 - Stable, frozen API contract.
 - Production hardened and independently verified.
-- Enterprise-ready security and compliance.
-- Released when all criteria are fully validated.
+- Enterprise-ready security and compliance (SOC 2, ISO 27001).
 
 ---
 

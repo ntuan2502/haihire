@@ -286,6 +286,44 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         BadRequestException,
       );
     });
+
+    it("12a. Should atomically reject joinByToken when invite link maxUses is saturated concurrently (H-08)", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+        maxUses: "1",
+      });
+
+      const updateManySpy = vi
+        .spyOn(
+          (mockPrismaService as unknown as { inviteLink: { updateMany: (...args: unknown[]) => Promise<{ count: number }> } }).inviteLink,
+          "updateMany",
+        )
+        .mockResolvedValueOnce({ count: 0 });
+
+      await expect(service.joinByToken("usr-1", link.token)).rejects.toThrow(
+        BadRequestException,
+      );
+      updateManySpy.mockRestore();
+    });
+
+    it("12b. Should atomically reject join when invite link maxUses is saturated concurrently (H-08)", async () => {
+      const link = await service.createInviteLink("usr-2", {
+        role: "Member",
+        maxUses: "1",
+      });
+
+      const updateManySpy = vi
+        .spyOn(
+          (mockPrismaService as unknown as { inviteLink: { updateMany: (...args: unknown[]) => Promise<{ count: number }> } }).inviteLink,
+          "updateMany",
+        )
+        .mockResolvedValueOnce({ count: 0 });
+
+      await expect(
+        service.join("usr-1", { inviteCodeOrSlug: link.token }),
+      ).rejects.toThrow(BadRequestException);
+      updateManySpy.mockRestore();
+    });
   });
 
   describe("Member Role & Removal Management", () => {
@@ -419,7 +457,7 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
         token: "token-for-org-2",
         organizationId: "org-2",
         role: "MEMBER",
-        status: "active",
+        status: "ACTIVE",
         expiresAt: null,
         maxUses: null,
         usesCount: 0,

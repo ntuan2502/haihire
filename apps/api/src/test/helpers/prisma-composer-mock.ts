@@ -441,6 +441,25 @@ export function projectPrismaSelect<T>(item: T, select?: unknown): T {
   return res as unknown as T;
 }
 
+export function applyPrismaPatch<T extends object>(target: T, patch?: unknown): void {
+  if (!patch || typeof patch !== "object") return;
+  const targetObj = target as Record<string, unknown>;
+  for (const [k, v] of Object.entries(patch as Record<string, unknown>)) {
+    if (v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
+      const obj = v as Record<string, unknown>;
+      if ("increment" in obj && typeof obj.increment === "number") {
+        targetObj[k] = (Number(targetObj[k]) || 0) + obj.increment;
+        continue;
+      }
+      if ("decrement" in obj && typeof obj.decrement === "number") {
+        targetObj[k] = (Number(targetObj[k]) || 0) - obj.decrement;
+        continue;
+      }
+    }
+    targetObj[k] = v;
+  }
+}
+
 export function createMockTable<T = MockRecord>(
   initialItems: T[] = [],
 ): MockTable<T> {
@@ -474,7 +493,7 @@ export function createMockTable<T = MockRecord>(
         );
       }
       if (match) {
-        Object.assign(match, args.update);
+        applyPrismaPatch(match as object, args.update);
         return { ...match };
       } else {
         const record = { ...args.create } as T;
@@ -535,7 +554,7 @@ export function createMockTable<T = MockRecord>(
       const data = isWrapped ? (args as { data: Partial<T> }).data : (args as Partial<T>);
       const target = where ? store.find((item) => matchPrismaWhere(item as MockRecord, where)) : store[0];
       if (target) {
-        Object.assign(target, data);
+        applyPrismaPatch(target as object, data);
         return { ...target };
       }
       return { ...data } as T;
@@ -544,7 +563,7 @@ export function createMockTable<T = MockRecord>(
       let count = 0;
       for (const item of store) {
         if (matchPrismaWhere(item as MockRecord, args?.where)) {
-          Object.assign(item as object, args?.data);
+          applyPrismaPatch(item as object, args?.data);
           count++;
         }
       }

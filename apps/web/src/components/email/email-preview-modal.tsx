@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "cn";
+import { EmailHtmlPreview } from "./email-html-preview";
 import { useI18n } from "@/i18n";
 import type { EmailDeliveryStatus } from "@/lib/email-templates";
 import {
@@ -178,9 +179,10 @@ export function EmailPreviewModal({
               )}
 
               <div className="flex-1 p-4 overflow-y-auto">
-                <div
+                <EmailHtmlPreview
+                  title={subject}
+                  body={body}
                   className="text-xs leading-relaxed text-slate-800 dark:text-slate-200 space-y-3"
-                  dangerouslySetInnerHTML={{ __html: body }}
                 />
               </div>
             </div>
@@ -250,12 +252,13 @@ export function EmailPreviewModal({
               )}
 
               <div className={cn("flex-1 p-6 sm:p-10 w-full", previewDevice === "tablet" ? "max-w-3xl mx-auto" : "")}>
-                <div
+                <EmailHtmlPreview
+                  title={subject}
+                  body={body}
                   className={cn(
                     "text-[13px] leading-relaxed text-slate-800 dark:text-slate-200 space-y-4 font-sans",
                     previewDevice === "desktop" && "[&>div]:!max-w-none [&>div]:!w-full"
                   )}
-                  dangerouslySetInnerHTML={{ __html: body }}
                 />
               </div>
             </div>

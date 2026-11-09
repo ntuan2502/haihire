@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Job } from "@/types";
 import type { StepId } from "../types";
 import type { JobWizardFormState } from "./use-job-wizard-form-state";
@@ -23,10 +23,13 @@ export function useJobWizardDraft({
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
+  const restorationAttempted = useRef(false);
 
   // Restore draft on mount if in create mode
   useEffect(() => {
     if (mode === "create" && !initialJob && typeof window !== "undefined") {
+      if (restorationAttempted.current) return;
+      restorationAttempted.current = true;
       try {
         const savedRaw = localStorage.getItem(DRAFT_STORAGE_KEY);
         if (savedRaw) {

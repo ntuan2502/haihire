@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { CustomSelect, CustomModal } from "@/components/shared";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { EmailHtmlPreview } from "./email-html-preview";
 
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
 
@@ -326,9 +327,10 @@ export function SendEmailModal({
                   {candidate.name} &lt;{candidate.email}&gt;
                 </div>
               </div>
-              <div
+              <EmailHtmlPreview
+                title={subject}
+                body={body}
                 className="prose prose-xs dark:prose-invert max-w-none text-xs text-slate-800 dark:text-slate-200 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: body }}
               />
             </div>
           )}

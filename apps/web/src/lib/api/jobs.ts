@@ -2,6 +2,10 @@ import { api } from "./client";
 import type { Job, CreateJobInput, PaginatedResult } from "@/types";
 
 export const jobsApi = {
+  getPublic: async (params?: { limit?: number }): Promise<PaginatedResult<Job>> => {
+    const response = await api.get<PaginatedResult<Job>>("/jobs/public", { params });
+    return response.data;
+  },
   getAll: async (params?: {
     status?: string;
     department?: string;

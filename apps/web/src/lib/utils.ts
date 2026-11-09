@@ -1,4 +1,5 @@
 import type { Application, Candidate, CandidateDocument, Gender } from "@/types";
+import { inferCandidateName } from "@haihire/shared";
 export { cn } from "cn";
 
 /**
@@ -126,17 +127,11 @@ export function parseCandidateNotes(
   const parsedGender = structured?.gender?.trim() || "";
 
   // If first/last are not in structured, infer from candidateName
-  let inferredFirst = parsedFirst;
-  let inferredLast = parsedLast;
-  if (!inferredFirst && !inferredLast && candidateName) {
-    const parts = candidateName.trim().split(/\s+/);
-    if (parts.length > 1) {
-      inferredFirst = parts[0];
-      inferredLast = parts.slice(1).join(" ");
-    } else {
-      inferredFirst = parts[0] || "";
-    }
-  }
+  const { firstName: inferredFirst, lastName: inferredLast } = inferCandidateName(
+    candidateName,
+    parsedFirst,
+    parsedLast,
+  );
 
   const effectiveName =
     [inferredFirst, inferredLast].filter(Boolean).join(" ") ||

@@ -133,7 +133,7 @@ export function useAllPublicJobs() {
   return useQuery<Job[]>({
     queryKey: ["jobs", "public-all-published"],
     queryFn: async () => {
-      const res = await jobsApi.getAll({ status: "PUBLISHED", limit: 1000 });
+      const res = await jobsApi.getPublic({ limit: 1000 });
       return res.data;
     },
     staleTime: 120_000,

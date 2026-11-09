@@ -259,4 +259,32 @@ describe("MetricsService", () => {
     const metrics = await service.getMetrics();
     expect(metrics).toContain('bullmq_dlq_size{queue_name="orphan-cleanup-dlq"} -1');
   });
+
+  describe("HTTP Metrics and Cardinality Protection (H-07)", () => {
+    it("Case 13: records request metrics accurately for standard routes", async () => {
+      service.recordRequest("/api/jobs", 200, 150);
+      service.recordRequest("/api/jobs", 200, 250);
+      service.recordRequest("NOT_FOUND", 404, 50);
+
+      const metrics = await service.getMetrics();
+      expect(metrics).toContain('http_requests_total{route="/api/jobs",status="200"} 2');
+      expect(metrics).toContain('http_requests_total{route="NOT_FOUND",status="404"} 1');
+      expect(metrics).toContain('http_request_duration_seconds_count{route="/api/jobs"} 2');
+      expect(metrics).toContain('http_request_duration_seconds_count{route="NOT_FOUND"} 1');
+    });
+
+    it("Case 14: caps cardinality at MAX_CARDINALITY (500) and routes excess keys to OTHER", async () => {
+      // Fill up to 500 distinct route combinations
+      for (let i = 0; i < 500; i++) {
+        service.recordRequest(`/route/${i}`, 200, 10);
+      }
+
+      // 501st route should be recorded under 'OTHER'
+      service.recordRequest("/overflow/attacker-path", 200, 20);
+
+      const metrics = await service.getMetrics();
+      expect(metrics).toContain('http_requests_total{route="OTHER",status="200"} 1');
+      expect(metrics).toContain('http_request_duration_seconds_count{route="OTHER"} 1');
+    });
+  });
 });

@@ -55,11 +55,23 @@ export class MetricsService {
     private readonly emailDlqQueue?: Queue,
   ) {}
 
+  private static readonly MAX_CARDINALITY = 500;
+
   recordRequest(route: string, status: number, durationMs: number) {
-    const key = `route="${route}",status="${status}"`;
+    let normalizedRoute = route || "UNKNOWN_ROUTE";
+    const statusKey = `route="${normalizedRoute}",status="${status}"`;
+
+    if (
+      this.requestCounts.size >= MetricsService.MAX_CARDINALITY &&
+      !this.requestCounts.has(statusKey)
+    ) {
+      normalizedRoute = "OTHER";
+    }
+
+    const key = `route="${normalizedRoute}",status="${status}"`;
     this.requestCounts.set(key, (this.requestCounts.get(key) || 0) + 1);
 
-    const durKey = `route="${route}"`;
+    const durKey = `route="${normalizedRoute}"`;
     const cur = this.requestDurations.get(durKey) || { count: 0, sumSec: 0 };
     cur.count++;
     cur.sumSec += durationMs / 1000;

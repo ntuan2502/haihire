@@ -9,6 +9,17 @@ import { CorrelationLogger } from "./common/logger/correlation-logger.service";
 import { correlationStorage } from "./common/middleware/correlation-id.middleware";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+function sanitizeLogPath(path: string): string {
+  if (!path) return "/";
+  return path
+    .replace(/\/invites\/join\/[^/?#]+/i, "/invites/join/[REDACTED]")
+    .replace(
+      /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      "/:id",
+    )
+    .replace(/\/\d+(?=\/|$)/g, "/:id");
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new CorrelationLogger(),
@@ -98,6 +109,8 @@ async function bootstrap() {
       req: IncomingMessage & {
         originalUrl?: string;
         url?: string;
+        baseUrl?: string;
+        route?: { path?: string };
         user?: { id?: string; organizationId?: string };
       },
       res: ServerResponse,
@@ -111,9 +124,19 @@ async function bootstrap() {
         const durationMs = Date.now() - start;
         const status = res.statusCode;
 
+        // 1. Resolve normalized route template for metrics (prevents high cardinality & token leak)
+        let metricRoute = "NOT_FOUND";
+        if (status === 404) {
+          metricRoute = "NOT_FOUND";
+        } else if (req.route && typeof req.route.path === "string") {
+          metricRoute = `${req.baseUrl || ""}${req.route.path}`;
+        } else {
+          metricRoute = sanitizeLogPath(cleanPath);
+        }
+
         // 1. Record Prometheus metrics
         if (metricsService) {
-          metricsService.recordRequest(cleanPath, status, durationMs);
+          metricsService.recordRequest(metricRoute, status, durationMs);
         }
 
         // 2. Structured JSON logging (skip polling noise on /health and /metrics unless error)
@@ -133,7 +156,7 @@ async function bootstrap() {
             (res.getHeader("X-Request-ID") as string) ||
             "-",
           method: req.method,
-          path: cleanPath,
+          path: sanitizeLogPath(cleanPath),
           status,
           latencyMs: durationMs,
           userId: req.user?.id || "-",

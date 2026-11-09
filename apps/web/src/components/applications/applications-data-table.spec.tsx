@@ -431,6 +431,51 @@ describe("ApplicationsDataTable Component", () => {
       fireEvent.click(resetBtn);
       expect(screen.getByText("Tran Thi Binh")).toBeInTheDocument();
     });
+
+    it("distinguishes unscored applications from 0 and does not match BELOW_60 when unscored (M-06)", () => {
+      const appsWithUnscored = [
+        ...mockApplications,
+        {
+          id: "app-4",
+          jobId: "job-1",
+          candidateName: "Unscored Candidate",
+          candidateEmail: "unscored@example.com",
+          candidatePhone: "+84933333333",
+          stage: "APPLIED" as const,
+          matchScore: null,
+          orderIndex: 3,
+          createdAt: "2026-01-16T09:00:00.000Z",
+          updatedAt: "2026-01-16T09:00:00.000Z",
+        },
+        {
+          id: "app-5",
+          jobId: "job-1",
+          candidateName: "Zero Score Candidate",
+          candidateEmail: "zero@example.com",
+          candidatePhone: "+84944444444",
+          stage: "APPLIED" as const,
+          matchScore: 0,
+          orderIndex: 4,
+          createdAt: "2026-01-16T10:00:00.000Z",
+          updatedAt: "2026-01-16T10:00:00.000Z",
+        },
+      ];
+
+      renderTable({ applications: appsWithUnscored });
+      const filterBtn = screen.getByRole("button", { name: /filter/i });
+      fireEvent.click(filterBtn);
+
+      const below60Btn = screen.getByRole("button", {
+        name: /< 60% \(Needs Review\)/i,
+      });
+      fireEvent.click(below60Btn);
+
+      const doneBtn = screen.getByRole("button", { name: "Done" });
+      fireEvent.click(doneBtn);
+
+      expect(screen.getByText("Zero Score Candidate")).toBeInTheDocument();
+      expect(screen.queryByText("Unscored Candidate")).not.toBeInTheDocument();
+    });
   });
 
   // B.3.5: Drawer (3 tests)

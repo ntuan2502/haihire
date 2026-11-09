@@ -52,7 +52,8 @@ export function useApplicationsFilterSort({
     }
     if (scoreFilter !== "ALL") {
       list = list.filter((app) => {
-        const score = typeof app.matchScore === "number" ? app.matchScore : 0;
+        if (typeof app.matchScore !== "number") return false;
+        const score = app.matchScore;
         if (scoreFilter === "80" && score < 80) return false;
         if (scoreFilter === "60" && (score < 60 || score >= 80)) return false;
         if (scoreFilter === "BELOW_60" && score >= 60) return false;
@@ -89,9 +90,15 @@ export function useApplicationsFilterSort({
         case "status":
           diff = a.stage.localeCompare(b.stage);
           break;
-        case "score":
-          diff = (a.matchScore || 0) - (b.matchScore || 0);
+        case "score": {
+          const aHas = typeof a.matchScore === "number";
+          const bHas = typeof b.matchScore === "number";
+          if (!aHas && !bHas) diff = 0;
+          else if (!aHas) diff = -1;
+          else if (!bHas) diff = 1;
+          else diff = (a.matchScore as number) - (b.matchScore as number);
           break;
+        }
         case "applied":
         default:
           diff =

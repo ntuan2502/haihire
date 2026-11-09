@@ -3,10 +3,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AccountSettingsPage from "./page";
 import { authApi } from "@/lib/api/auth";
 
+const mockSetSession = vi.fn();
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
     user: { id: "user-1", name: "Recruiter Alice", email: "alice@example.com" },
     logout: vi.fn(),
+    setSession: mockSetSession,
   }),
 }));
 
@@ -39,6 +41,7 @@ vi.mock("@/i18n", () => ({
         "settings.passwordMismatchError": "Mật khẩu xác nhận không khớp.",
         "settings.passwordTooShortError": "Mật khẩu mới phải có ít nhất 6 ký tự.",
         "settings.currentPasswordRequiredError": "Vui lòng nhập mật khẩu hiện tại.",
+        "errors.INVALID_CURRENT_PASSWORD": "Mật khẩu hiện tại không chính xác.",
       };
       return dict[key] || key;
     },
@@ -127,7 +130,11 @@ describe("AccountSettingsPage Component", () => {
   });
 
   it("submits change password successfully and clears form", async () => {
-    vi.mocked(authApi.changePassword).mockResolvedValueOnce({ success: true });
+    vi.mocked(authApi.changePassword).mockResolvedValueOnce({
+      success: true,
+      accessToken: "new-access-token",
+      refreshToken: "new-refresh-token",
+    });
     render(<AccountSettingsPage />);
 
     const currentInput = screen.getByPlaceholderText("Nhập mật khẩu hiện tại");
@@ -155,5 +162,43 @@ describe("AccountSettingsPage Component", () => {
     expect((currentInput as HTMLInputElement).value).toBe("");
     expect((newInput as HTMLInputElement).value).toBe("");
     expect((confirmInput as HTMLInputElement).value).toBe("");
+    expect(mockSetSession).toHaveBeenCalledWith(
+      "new-access-token",
+      "new-refresh-token",
+      undefined,
+    );
+  });
+
+  it("displays error message when current password does not match", async () => {
+    vi.mocked(authApi.changePassword).mockRejectedValueOnce({
+      response: {
+        status: 400,
+        data: {
+          statusCode: 400,
+          code: "INVALID_CURRENT_PASSWORD",
+          message: "Current password does not match",
+        },
+      },
+    });
+    render(<AccountSettingsPage />);
+
+    const currentInput = screen.getByPlaceholderText("Nhập mật khẩu hiện tại");
+    const newInput = screen.getByPlaceholderText(
+      "Nhập mật khẩu mới (tối thiểu 6 ký tự)",
+    );
+    const confirmInput = screen.getByPlaceholderText("Nhập lại mật khẩu mới");
+
+    fireEvent.change(currentInput, { target: { value: "wrongPass123" } });
+    fireEvent.change(newInput, { target: { value: "newSecret456" } });
+    fireEvent.change(confirmInput, { target: { value: "newSecret456" } });
+
+    const submitBtn = screen.getByText("Cập nhật mật khẩu").closest("button");
+    if (submitBtn) fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Mật khẩu hiện tại không chính xác."),
+      ).toBeInTheDocument();
+    });
   });
 });

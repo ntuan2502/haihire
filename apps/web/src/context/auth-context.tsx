@@ -21,6 +21,11 @@ interface AuthContextType {
   logout: () => void;
   updateUserOrg: (org: Organization, updatedRole?: string) => void;
   refreshUser: () => Promise<User | null>;
+  setSession: (
+    accessToken: string,
+    refreshToken?: string,
+    user?: User,
+  ) => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isMember: boolean;
@@ -36,6 +41,10 @@ const USER_KEY = "haihire_recruiter_user";
 
 function setAuthCookies(token: string | null | undefined, hasOrg: boolean) {
   if (typeof document === "undefined") return;
+  if (!token || token === "null" || token === "undefined") {
+    clearAuthCookies();
+    return;
+  }
   const maxAge = 60 * 60 * 24 * 7; // 7 days
   const secure =
     typeof window !== "undefined" && window.location.protocol === "https:"
@@ -67,6 +76,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const setSession = useCallback(
+    (newAccessToken: string, newRefreshToken?: string, newUserData?: User) => {
+      setToken(newAccessToken);
+      localStorage.setItem(TOKEN_KEY, newAccessToken);
+      if (newRefreshToken) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
+      }
+      if (newUserData) {
+        setUser(newUserData);
+        localStorage.setItem(USER_KEY, JSON.stringify(newUserData));
+        setAuthCookies(newAccessToken, Boolean(newUserData.organizationId));
+      } else if (user) {
+        setAuthCookies(newAccessToken, Boolean(user.organizationId));
+      } else {
+        setAuthCookies(newAccessToken, false);
+      }
+      api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+    },
+    [user],
+  );
 
   const logout = useCallback(() => {
     setToken(null);
@@ -333,6 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateUserOrg,
         refreshUser,
+        setSession,
         isAuthenticated: !!user,
         isAdmin,
         isMember,

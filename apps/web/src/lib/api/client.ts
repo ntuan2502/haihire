@@ -53,6 +53,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function clearClientAuthCookies() {
+  if (typeof document === "undefined") return;
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:"
+      ? "; Secure"
+      : "";
+  document.cookie = `haihire_token=; path=/; max-age=0; SameSite=Lax${secure}`;
+  document.cookie = `haihire_has_org=; path=/; max-age=0; SameSite=Lax${secure}`;
+}
+
 // Silent Token Refresh Queue & Handling
 interface QueueItem {
   resolve: (token: string) => void;
@@ -90,7 +100,8 @@ api.interceptors.response.use(
       if (
         url.includes("/auth/login") ||
         url.includes("/auth/register") ||
-        url.includes("/auth/refresh")
+        url.includes("/auth/refresh") ||
+        url.includes("/auth/change-password")
       ) {
         return Promise.reject(error);
       }
@@ -103,6 +114,7 @@ api.interceptors.response.use(
         "haihire_recruiter_refresh_token",
       );
       if (!refreshToken) {
+        clearClientAuthCookies();
         return Promise.reject(error);
       }
 
@@ -161,7 +173,7 @@ api.interceptors.response.use(
         localStorage.removeItem("haihire_recruiter_token");
         localStorage.removeItem("haihire_recruiter_refresh_token");
         localStorage.removeItem("haihire_recruiter_user");
-        document.cookie = `haihire_token=; path=/; max-age=0; SameSite=Lax`;
+        clearClientAuthCookies();
         delete api.defaults.headers.common.Authorization;
         return Promise.reject(refreshErr);
       } finally {

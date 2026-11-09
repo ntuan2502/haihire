@@ -3,7 +3,14 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const token = request.cookies.get("haihire_token")?.value;
+  const rawToken = request.cookies.get("haihire_token")?.value;
+  const token =
+    rawToken &&
+    rawToken !== "null" &&
+    rawToken !== "undefined" &&
+    rawToken.trim().length > 0
+      ? rawToken
+      : undefined;
   const hasOrg = request.cookies.get("haihire_has_org")?.value === "true";
 
   const isAuthPage =

@@ -116,6 +116,7 @@ export interface TranslationSchema {
     EMAIL_SETTINGS_INVALID: string;
     EMAIL_ORG_REQUIRED: string;
     INVALID_CREDENTIALS: string;
+    INVALID_CURRENT_PASSWORD: string;
     USER_EMAIL_EXISTS: string;
     USER_SESSION_EXPIRED: string;
     UNAUTHORIZED: string;

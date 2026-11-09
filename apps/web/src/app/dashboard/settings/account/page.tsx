@@ -10,7 +10,7 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { Lock, KeyRound, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 export default function AccountSettingsPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, setSession } = useAuth();
   const { t } = useI18n();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -42,10 +42,13 @@ export default function AccountSettingsPage() {
 
     try {
       setIsSubmitting(true);
-      await authApi.changePassword({
+      const res = await authApi.changePassword({
         currentPassword: currentPassword.trim(),
         newPassword: newPassword.trim(),
       });
+      if (res.accessToken) {
+        setSession(res.accessToken, res.refreshToken, res.user);
+      }
       setSuccessMsg(t("settings.passwordChangedSuccess"));
       setCurrentPassword("");
       setNewPassword("");

@@ -124,4 +124,20 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toBe("http://localhost:3000/dashboard");
   });
+
+  it("treats 'null' or 'undefined' string cookies as unauthenticated and redirects to /auth/login", () => {
+    const reqNull = createMockRequest("/dashboard", { haihire_token: "null" });
+    const resNull = proxy(reqNull);
+    expect(resNull.status).toBe(307);
+    expect(resNull.headers.get("location")).toBe(
+      "http://localhost:3000/auth/login?redirect=%2Fdashboard",
+    );
+
+    const reqUndef = createMockRequest("/dashboard", { haihire_token: "undefined" });
+    const resUndef = proxy(reqUndef);
+    expect(resUndef.status).toBe(307);
+    expect(resUndef.headers.get("location")).toBe(
+      "http://localhost:3000/auth/login?redirect=%2Fdashboard",
+    );
+  });
 });

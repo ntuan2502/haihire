@@ -9,6 +9,7 @@ import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import {
   AppUnauthorizedException,
   AppConflictException,
+  AppBadRequestException,
 } from "../common/app-exception";
 import { APP_ERROR_CODES } from "@haihire/shared";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
@@ -361,11 +362,30 @@ export class AuthService {
     userId: string,
     currentPass: string,
     newPass: string,
-  ): Promise<{ success: boolean }> {
+  ): Promise<{
+    success: boolean;
+    accessToken: string;
+    refreshToken: string;
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      avatarUrl: string | null;
+      organizationId: string | null;
+      createdAt: Date | string;
+    };
+  }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
+        email: true,
+        name: true,
+        role: true,
+        avatarUrl: true,
+        organizationId: true,
+        createdAt: true,
         password: true,
         tokenVersion: true,
       },
@@ -380,23 +400,60 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(currentPass, user.password);
     if (!isMatch) {
-      throw new AppUnauthorizedException(
-        APP_ERROR_CODES.UNAUTHORIZED,
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.INVALID_CURRENT_PASSWORD,
         "Current password does not match",
       );
     }
 
     const hashedPassword = bcrypt.hashSync(newPass, 10);
-    await this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
         password: hashedPassword,
         tokenVersion: { increment: 1 },
         updatedAt: toInstant(),
       },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        avatarUrl: true,
+        organizationId: true,
+        createdAt: true,
+        tokenVersion: true,
+      },
     });
 
-    return { success: true };
+    const tokenVersion = updatedUser.tokenVersion ?? 0;
+    const payload = {
+      sub: updatedUser.id,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      tokenVersion,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(
+      { sub: updatedUser.id, type: "refresh", tokenVersion },
+      { expiresIn: "7d" },
+    );
+
+    return {
+      success: true,
+      accessToken,
+      refreshToken,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        avatarUrl: updatedUser.avatarUrl,
+        organizationId: updatedUser.organizationId,
+        createdAt: updatedUser.createdAt,
+      },
+    };
   }
 
   async getProfile(userId: string) {

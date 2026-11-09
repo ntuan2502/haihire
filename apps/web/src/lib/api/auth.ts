@@ -15,8 +15,20 @@ export const authApi = {
   changePassword: async (data: {
     currentPassword: string;
     newPassword: string;
-  }): Promise<{ success: boolean; message?: string }> => {
-    const response = await api.post<{ success: boolean; message?: string }>(
+  }): Promise<{
+    success: boolean;
+    accessToken?: string;
+    refreshToken?: string;
+    user?: User;
+    message?: string;
+  }> => {
+    const response = await api.post<{
+      success: boolean;
+      accessToken?: string;
+      refreshToken?: string;
+      user?: User;
+      message?: string;
+    }>(
       "/auth/change-password",
       data,
     );

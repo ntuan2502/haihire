@@ -142,6 +142,7 @@ export const en: TranslationSchema = {
       "Check your organization's sender address and email provider credentials before sending.",
     EMAIL_ORG_REQUIRED: "Organization ID is required for email settings.",
     INVALID_CREDENTIALS: "Invalid email or password.",
+    INVALID_CURRENT_PASSWORD: "The current password is incorrect.",
     USER_EMAIL_EXISTS: "An account with this email already exists.",
     USER_SESSION_EXPIRED:
       "Your session has expired or is invalid. Please sign in again.",

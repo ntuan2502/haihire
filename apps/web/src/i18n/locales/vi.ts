@@ -142,6 +142,7 @@ export const vi: TranslationSchema = {
       "Cấu hình gửi email của công ty chưa hợp lệ. Hãy kiểm tra địa chỉ người gửi và thông tin kết nối.",
     EMAIL_ORG_REQUIRED: "Yêu cầu mã tổ chức để quản lý cấu hình email.",
     INVALID_CREDENTIALS: "Email hoặc mật khẩu không chính xác.",
+    INVALID_CURRENT_PASSWORD: "Mật khẩu hiện tại không chính xác.",
     USER_EMAIL_EXISTS: "Địa chỉ email này đã được sử dụng.",
     USER_SESSION_EXPIRED:
       "Phiên làm việc đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.",

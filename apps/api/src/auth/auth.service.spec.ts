@@ -349,6 +349,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       );
 
       expect(result.success).toBe(true);
+      expect(result.accessToken).toBeDefined();
+      expect(result.refreshToken).toBeDefined();
       expect(mockUsers[0].tokenVersion).toBe(1);
       expect(
         bcrypt.compareSync("new-secure-pass-123", mockUsers[0].password),

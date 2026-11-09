@@ -2,7 +2,13 @@ import { Inject, Injectable, Optional } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES, SourcingChannel, inferCandidateName } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  SourcingChannel,
+  inferCandidateName,
+  resolveChannelFromDomain,
+} from "@haihire/shared";
+import { parseDomain } from "../../sourcing/services";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -317,40 +323,9 @@ export class ApplicationsSagaService {
         }
 
         if (!trackingLinkId && dto.referrer) {
-          try {
-            let norm = dto.referrer.trim();
-            if (!norm.startsWith("http://") && !norm.startsWith("https://")) {
-              norm = `https://${norm}`;
-            }
-            const parsed = new URL(norm);
-            referrerDomain = parsed.hostname
-              .replace(/^www\./, "")
-              .toLowerCase();
-
-            if (referrerDomain.includes("linkedin.com"))
-              sourceChannel = SourcingChannel.LINKEDIN;
-            else if (referrerDomain.includes("indeed.com"))
-              sourceChannel = SourcingChannel.INDEED;
-            else if (referrerDomain.includes("google.com"))
-              sourceChannel = SourcingChannel.GOOGLE_JOBS;
-            else if (referrerDomain.includes("glassdoor.com"))
-              sourceChannel = SourcingChannel.GLASSDOOR;
-            else if (referrerDomain.includes("facebook.com"))
-              sourceChannel = SourcingChannel.FACEBOOK;
-            else if (
-              referrerDomain.includes("twitter.com") ||
-              referrerDomain.includes("x.com")
-            )
-              sourceChannel = SourcingChannel.TWITTER_X;
-            else if (referrerDomain.includes("reddit.com"))
-              sourceChannel = SourcingChannel.REDDIT;
-            else if (referrerDomain.includes("stackoverflow.com"))
-              sourceChannel = SourcingChannel.STACK_OVERFLOW;
-            else if (referrerDomain.includes("handshake.com"))
-              sourceChannel = SourcingChannel.HANDSHAKE;
-            else if (referrerDomain) sourceChannel = SourcingChannel.OTHER;
-          } catch {
-            // Ignore URL parse error
+          referrerDomain = parseDomain(dto.referrer);
+          if (referrerDomain) {
+            sourceChannel = resolveChannelFromDomain(referrerDomain);
           }
         }
 

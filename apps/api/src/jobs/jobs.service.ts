@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
+import { ExperienceLevel, JobStatus, JobType, WorkplaceType, type Prisma } from "@prisma/client";
 import {
   AppNotFoundException,
   AppForbiddenException,
@@ -9,7 +10,7 @@ import { PrismaService, runInTransaction } from "../prisma/prisma.service";
 import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import crypto from "node:crypto";
-import { toTimestamp, toInstant } from "../common/date.util";
+import { toInstant } from "../common/date.util";
 
 @Injectable()
 export class JobsService {
@@ -77,11 +78,33 @@ export class JobsService {
       Boolean(filter?.organizationSlug);
     const effectiveStatus = isPublic ? "PUBLISHED" : filter?.status;
 
-    let jobs = await this.prisma.job.findMany({
-      where: {
-        ...(targetOrgId ? { organizationId: targetOrgId } : {}),
-        deletedAt: null,
-      },
+    const parseValues = (value: string) => value.split(",").map((item) => item.trim().toUpperCase());
+    const statuses = effectiveStatus ? parseValues(effectiveStatus) : undefined;
+    if (statuses?.includes("CLOSED")) statuses.push("ARCHIVED");
+    const where: Prisma.JobWhereInput = {
+      ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+      deletedAt: null,
+      ...(statuses ? { status: { in: Object.values(JobStatus).filter((value) => statuses.includes(value)) } } : {}),
+      ...(filter?.department ? { department: { equals: filter.department, mode: "insensitive" } } : {}),
+      ...(filter?.type ? { type: { in: Object.values(JobType).filter((value) => parseValues(filter.type!).includes(value)) } } : {}),
+      ...(filter?.experienceLevel ? { experienceLevel: { in: Object.values(ExperienceLevel).filter((value) => parseValues(filter.experienceLevel!).includes(value)) } } : {}),
+      ...(filter?.workplace ? { workplace: { in: Object.values(WorkplaceType).filter((value) => parseValues(filter.workplace!).includes(value)) } } : {}),
+      ...(filter?.search ? { OR: ["title", "department", "location"].map((field) => ({
+        [field]: { contains: filter.search, mode: "insensitive" },
+      })) } : {}),
+    };
+    const sortOrder = filter?.sortOrder === "asc" ? "asc" : "desc";
+    const orderBy: Prisma.JobOrderByWithRelationInput[] = [
+      filter?.sortBy === "title" ? { title: sortOrder } : { createdAt: sortOrder },
+      { id: "asc" },
+    ];
+    const total = await this.prisma.job.count({ where });
+    const totalPages = Math.ceil(total / limit);
+    const pagedJobs = await this.prisma.job.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
       select: {
         id: true,
         title: true,
@@ -103,77 +126,9 @@ export class JobsService {
       },
     });
 
-    jobs = jobs.filter((j) => !j.deletedAt);
-
-    if (effectiveStatus) {
-      const statuses = effectiveStatus
-        .split(",")
-        .map((s) => s.trim().toUpperCase());
-      jobs = jobs.filter((j) => {
-        if (statuses.includes("CLOSED") && j.status === "ARCHIVED") return true;
-        return statuses.includes(j.status);
-      });
+    if (pagedJobs.length === 0) {
+      return { data: [], total, page, limit, totalPages };
     }
-    if (filter?.department) {
-      jobs = jobs.filter(
-        (j) => j.department.toLowerCase() === filter.department?.toLowerCase(),
-      );
-    }
-    if (filter?.type) {
-      const types = filter.type.split(",").map((t) => t.trim().toUpperCase());
-      jobs = jobs.filter((j) => j.type && types.includes(j.type.toUpperCase()));
-    }
-    if (filter?.experienceLevel) {
-      const levels = filter.experienceLevel
-        .split(",")
-        .map((l) => l.trim().toUpperCase());
-      jobs = jobs.filter(
-        (j) =>
-          j.experienceLevel && levels.includes(j.experienceLevel.toUpperCase()),
-      );
-    }
-    if (filter?.workplace) {
-      const places = filter.workplace
-        .split(",")
-        .map((w) => w.trim().toUpperCase());
-      jobs = jobs.filter(
-        (j) => j.workplace && places.includes(j.workplace.toUpperCase()),
-      );
-    }
-    if (filter?.search) {
-      const s = filter.search.toLowerCase();
-      jobs = jobs.filter(
-        (j) =>
-          j.title.toLowerCase().includes(s) ||
-          j.department.toLowerCase().includes(s) ||
-          j.location.toLowerCase().includes(s),
-      );
-    }
-
-    const sortBy = filter?.sortBy || "created";
-    const sortOrder = filter?.sortOrder || "desc";
-
-    if (sortBy === "title") {
-      jobs.sort((a, b) =>
-        sortOrder === "asc"
-          ? a.title.localeCompare(b.title)
-          : b.title.localeCompare(a.title),
-      );
-    } else {
-      jobs.sort((a, b) => {
-        const aDate = toTimestamp(a.createdAt);
-        const bDate = toTimestamp(b.createdAt);
-        return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-      });
-    }
-
-    if (jobs.length === 0) {
-      return { data: [], total: 0, page, limit, totalPages: 0 };
-    }
-
-    const total = jobs.length;
-    const totalPages = Math.ceil(total / limit);
-    const pagedJobs = jobs.slice((page - 1) * limit, page * limit);
 
     const jobIds = [...new Set(pagedJobs.map((j) => j.id))];
     const jobIdSet = new Set(jobIds);
@@ -213,6 +168,7 @@ export class JobsService {
       orgMap.set(targetOrg.id, targetOrg);
     } else {
       const allOrgs = await this.prisma.organization.findMany({
+        where: { id: { in: [...new Set(pagedJobs.flatMap((job) => job.organizationId ? [job.organizationId] : []))] } },
         select: {
           id: true,
           name: true,

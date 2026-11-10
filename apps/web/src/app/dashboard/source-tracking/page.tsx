@@ -32,15 +32,21 @@ import {
 } from "@/components/shared/segmented-tabs";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { SearchInput } from "@/components/shared/search-input";
-import { Plus } from "lucide-react";
+import { Plus, Radio } from "lucide-react";
 import type { TimeRangeFilter } from "@haihire/shared";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 type TabKey = "overview" | "links" | "attribution";
 
 function SourceTrackingContent() {
   const router = useRouter();
-  const { user, canEdit } = useAuth();
+  const { user, canEdit: _canEdit } = useAuth();
   const { t } = useI18n();
+
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canCreateLink = useHasPermission("sourcing:create");
+  const canUpdateLink = useHasPermission("sourcing:update");
+  const canDeleteLink = useHasPermission("sourcing:delete");
 
   // URL synchronized state
   const {
@@ -135,6 +141,31 @@ function SourceTrackingContent() {
     [t, linksCount, attributionCount],
   );
 
+  if (!canViewSourcing) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
+        <Navbar activeTab="dashboard" />
+        <main className="flex-1 px-4 py-16 sm:px-6 lg:px-8 max-w-xl mx-auto flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-xs">
+            <Radio className="w-7 h-7" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+            {t("common.accessDenied")}
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-md">
+            {t("errors.FORBIDDEN_READ_ONLY")}
+          </p>
+          <Button
+            onClick={() => router.push("/dashboard")}
+            className="mt-6 h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+          >
+            {t("common.dashboard")}
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       <Navbar
@@ -157,7 +188,7 @@ function SourceTrackingContent() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            {canEdit && (
+            {canCreateLink && (
               <Button
                 size="sm"
                 onClick={() => setIsCreateModalOpen(true)}
@@ -273,9 +304,11 @@ function SourceTrackingContent() {
               onPageChange={(p) => setCurrentPage(p)}
               onPageSizeChange={(newSize) => setRowsPerPage(newSize)}
               orgSlug={orgSlug}
-              onToggleStatus={handleToggleStatus}
-              onDeleteLink={handleDeleteLink}
-              onEditLink={(link) => setEditingLink(link)}
+              onToggleStatus={canUpdateLink ? handleToggleStatus : undefined}
+              onDeleteLink={canDeleteLink ? handleDeleteLink : undefined}
+              onEditLink={
+                canUpdateLink ? (link) => setEditingLink(link) : undefined
+              }
             />
           </div>
         )}

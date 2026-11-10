@@ -1,10 +1,11 @@
 "use client";
 
-import type { ElementType, ReactNode } from "react";
+import { useMemo, type ElementType, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   ArrowLeft,
   Settings as SettingsIcon,
@@ -147,6 +148,34 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { t } = useI18n();
 
+  const canViewGeneral = useHasPermission("org:view");
+  const canViewEmailTemplates = useHasPermission("email:view");
+  const canManageMembers = useHasPermission("org:manage_members");
+  const canManageRoles = useHasPermission("org:manage_roles");
+  const canViewAuditLog = useHasPermission("org:view_audit_log");
+  const canManageIntegrations = useHasPermission(
+    "settings:manage_integrations",
+  );
+
+  const visibleNavItems = useMemo(() => {
+    return SETTINGS_NAV_ITEMS.filter((item) => {
+      if (item.id === "general") return canViewGeneral;
+      if (item.id === "email-templates") return canViewEmailTemplates;
+      if (item.id === "members") return canManageMembers;
+      if (item.id === "roles") return canManageRoles;
+      if (item.id === "audit-log") return canViewAuditLog;
+      if (item.id === "integrations") return canManageIntegrations;
+      return true;
+    });
+  }, [
+    canViewGeneral,
+    canViewEmailTemplates,
+    canManageMembers,
+    canManageRoles,
+    canViewAuditLog,
+    canManageIntegrations,
+  ]);
+
   const tabTranslations: Record<string, { label: string; sub: string }> = {
     general: {
       label: t("settings.tabs.general"),
@@ -237,7 +266,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                 aria-label={t("nav.settings")}
                 className="flex md:hidden items-center gap-1.5 overflow-x-auto scrollbar-none pb-2 w-full min-w-0"
               >
-                {SETTINGS_NAV_ITEMS.map((item) => {
+                {visibleNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive =
                     item.href === "/dashboard/settings"
@@ -296,7 +325,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                 aria-label={t("nav.settings")}
                 className="hidden md:block space-y-1"
               >
-                {SETTINGS_NAV_ITEMS.map((item) => {
+                {visibleNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive =
                     item.href === "/dashboard/settings"

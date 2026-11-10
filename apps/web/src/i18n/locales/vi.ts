@@ -66,6 +66,7 @@ export const vi: TranslationSchema = {
     cancelConfirmWord: "HỦY",
     revokeConfirmWord: "THU HỒI",
     skipToContent: "Bỏ qua đến nội dung chính",
+    accessDenied: "Từ chối truy cập",
   },
   errors: {
     generic: "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.",

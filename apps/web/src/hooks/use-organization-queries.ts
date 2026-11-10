@@ -113,10 +113,11 @@ export function useOrgMembers() {
   });
 }
 
-export function useInviteLinks() {
+export function useInviteLinks(options?: { enabled?: boolean }) {
   return useQuery<InviteLink[]>({
     queryKey: queryKeys.inviteLinks(),
     queryFn: () => organizationsApi.getInviteLinks(),
+    enabled: options?.enabled ?? true,
   });
 }
 

@@ -12,7 +12,12 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
-    user: { id: "user-1", email: "admin@example.com", organizationId: "org-1" },
+    user: {
+      id: "user-1",
+      email: "admin@example.com",
+      organizationId: "org-1",
+      role: "ADMIN",
+    },
     canEdit: true,
   }),
 }));

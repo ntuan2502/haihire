@@ -1,6 +1,7 @@
 import { Mail, Phone, ArrowRight, Clock, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StageBadge } from "@/components/shared/stage-badge";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import type { ApplicationStage } from "@/types";
 
@@ -26,6 +27,7 @@ export function ApplicationDetailHeader({
   onOpenSendEmail,
 }: ApplicationDetailHeaderProps) {
   const { t } = useI18n();
+  const canSendEmail = useHasPermission("email:send");
 
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -77,15 +79,17 @@ export function ApplicationDetailHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          onClick={onOpenSendEmail}
-          className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-        >
-          <Mail className="h-3.5 w-3.5" />
-          <span>{t("email.sendEmailAction")}</span>
-        </Button>
+        {canSendEmail && (
+          <Button
+            type="button"
+            size="sm"
+            onClick={onOpenSendEmail}
+            className="h-8 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            <span>{t("email.sendEmailAction")}</span>
+          </Button>
+        )}
         <button
           type="button"
           className="h-8 w-8 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center shadow-xs cursor-pointer"

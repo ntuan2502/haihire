@@ -19,14 +19,16 @@ import {
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { Plus } from "lucide-react";
 
 function JobsPageContent() {
   const router = useRouter();
-  const { user, canEdit } = useAuth();
+  const { user, canEdit: _canEdit } = useAuth();
   const { t } = useI18n();
+  const canCreateJob = useHasPermission("job:create");
 
   // Synchronized URL Query State for Pagination, Search & Filters
   const {
@@ -183,7 +185,7 @@ function JobsPageContent() {
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-auto">
-                {canEdit && (
+                {canCreateJob && (
                   <Button
                     onClick={() => router.push("/dashboard/jobs/new")}
                     className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"

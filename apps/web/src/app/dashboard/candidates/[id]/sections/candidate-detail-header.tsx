@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, Phone, Edit2, Trash2 } from "lucide-react";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 
@@ -27,6 +28,14 @@ export function CandidateDetailHeader({
 }: CandidateDetailHeaderProps) {
   const router = useRouter();
   const { t } = useI18n();
+
+  const hasSendEmailPermission = useHasPermission("email:send");
+  const hasUpdatePermission = useHasPermission("candidate:update");
+  const hasDeletePermission = useHasPermission("candidate:delete");
+
+  const canSendEmail = canEdit && hasSendEmailPermission;
+  const canUpdateCandidate = canEdit && hasUpdatePermission;
+  const canDeleteCandidate = canEdit && hasDeletePermission;
 
   return (
     <div className="space-y-4">
@@ -69,9 +78,9 @@ export function CandidateDetailHeader({
           </div>
         </div>
 
-        {/* Action Buttons (Admins only) */}
-        {canEdit && (
-          <div className="flex items-center gap-2">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {canSendEmail && (
             <Button
               type="button"
               size="sm"
@@ -81,6 +90,8 @@ export function CandidateDetailHeader({
               <Mail className="h-3.5 w-3.5" />
               <span>{t("email.sendEmailAction")}</span>
             </Button>
+          )}
+          {canUpdateCandidate && (
             <button
               type="button"
               onClick={() =>
@@ -91,6 +102,8 @@ export function CandidateDetailHeader({
               <Edit2 className="h-3 w-3 text-slate-400" />
               <span>{t("common.edit")}</span>
             </button>
+          )}
+          {canDeleteCandidate && (
             <button
               type="button"
               disabled={isDeleting}
@@ -100,8 +113,8 @@ export function CandidateDetailHeader({
               <Trash2 className="h-3 w-3" />
               <span>{t("common.delete")}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

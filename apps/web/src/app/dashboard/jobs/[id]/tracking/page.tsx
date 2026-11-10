@@ -3,6 +3,7 @@
 import { useState, useMemo, Suspense } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 import { useMyOrg } from "@/hooks/use-organization-queries";
 import { useJob, useAllJobs } from "@/hooks/use-queries";
@@ -28,8 +29,13 @@ function JobTrackingPageContent() {
   const rawJobId = params?.id;
   const jobId = Array.isArray(rawJobId) ? rawJobId[0] : (rawJobId as string);
 
-  const { user, canEdit } = useAuth();
+  const { user } = useAuth();
   const { t } = useI18n();
+
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canCreateLink = useHasPermission("sourcing:create");
+  const canUpdateLink = useHasPermission("sourcing:update");
+  const canDeleteLink = useHasPermission("sourcing:delete");
 
   const {
     page: currentPage,
@@ -77,6 +83,19 @@ function JobTrackingPageContent() {
     deleteLinkMutation.mutate(id);
   };
 
+  if (!canViewSourcing) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+        <h2 className="text-base font-bold text-slate-900 dark:text-white">
+          {t("common.accessDenied")}
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+          {t("errors.FORBIDDEN_READ_ONLY")}
+        </p>
+      </div>
+    );
+  }
+
   if (jobLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-12">
@@ -103,7 +122,7 @@ function JobTrackingPageContent() {
           />
         </div>
 
-        {canEdit && (
+        {canCreateLink && (
           <Button
             size="sm"
             onClick={() => setIsCreateModalOpen(true)}
@@ -124,9 +143,9 @@ function JobTrackingPageContent() {
         onPageChange={(p) => setCurrentPage(p)}
         onPageSizeChange={(newSize) => setRowsPerPage(newSize)}
         orgSlug={orgSlug}
-        onToggleStatus={handleToggleStatus}
-        onDeleteLink={handleDeleteLink}
-        onEditLink={canEdit ? (link) => setEditingLink(link) : undefined}
+        onToggleStatus={canUpdateLink ? handleToggleStatus : undefined}
+        onDeleteLink={canDeleteLink ? handleDeleteLink : undefined}
+        onEditLink={canUpdateLink ? (link) => setEditingLink(link) : undefined}
       />
 
       {/* Create Link Modal */}

@@ -36,6 +36,7 @@ import type { StageConfig } from "@/lib/stages";
 import { StageSelector } from "./stage-selector";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { formatDate, getCandidateDisplayName, getInitials } from "@/lib/utils";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 interface PipelineCandidateDetailProps {
@@ -106,6 +107,9 @@ export function PipelineCandidateDetail({
   onDeleteApplication,
 }: PipelineCandidateDetailProps) {
   const { t } = useI18n();
+  const canUpdateStage = useHasPermission("application:update_stage");
+  const canDeleteApplication = useHasPermission("application:delete");
+  const canCreateInterview = useHasPermission("interview:create");
 
   return (
     <section
@@ -127,8 +131,8 @@ export function PipelineCandidateDetail({
             </button>
           </div>
 
-          {/* Quick Stage Transition Buttons (Admins only) with State Machine Prevention */}
-          {canEdit && (
+          {/* Quick Stage Transition Buttons with State Machine Prevention */}
+          {canUpdateStage && (
             <div className="flex items-center justify-end gap-2 flex-wrap">
               <StageSelector
                 currentStage={selectedCandidate.stage}
@@ -222,7 +226,7 @@ export function PipelineCandidateDetail({
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
 
-                {canEdit && (
+                {canDeleteApplication && (
                   <button
                     type="button"
                     onClick={onDeleteApplication}
@@ -373,7 +377,7 @@ export function PipelineCandidateDetail({
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         {t("applications.tabs.interviews")}
                       </h3>
-                      {canEdit && (
+                      {canCreateInterview && (
                         <Button
                           type="button"
                           size="sm"
@@ -388,7 +392,7 @@ export function PipelineCandidateDetail({
                       application={selectedCandidate}
                       interviews={candidateInterviews}
                       onSchedule={onScheduleInterview}
-                      canEdit={canEdit}
+                      canEdit={canCreateInterview}
                       showSectionHeader={false}
                     />
                   </div>

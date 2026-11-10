@@ -17,6 +17,7 @@ import {
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
 import type { Application, Job } from "@/types";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useI18n } from "@/i18n";
 
 export interface CandidateDrawerApplicationsTabProps {
@@ -41,7 +42,7 @@ export interface CandidateDrawerApplicationsTabProps {
 export function CandidateDrawerApplicationsTab({
   candidate,
   jobs,
-  canEdit,
+  canEdit: _canEdit,
   stageFilter,
   onStageFilterChange,
   applications,
@@ -51,6 +52,8 @@ export function CandidateDrawerApplicationsTab({
   onCancelInterview,
 }: CandidateDrawerApplicationsTabProps) {
   const { t } = useI18n();
+  const canCreateApplication = useHasPermission("application:create");
+  const canCreateInterview = useHasPermission("interview:create");
 
   return (
     <div className="space-y-3">
@@ -71,7 +74,7 @@ export function CandidateDrawerApplicationsTab({
           triggerClassName="h-7 w-28 text-[11px] font-normal bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
         />
 
-        {canEdit && (
+        {canCreateApplication && (
           <button
             type="button"
             onClick={() => onApplyToJob(candidate)}
@@ -126,7 +129,7 @@ export function CandidateDrawerApplicationsTab({
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
-                    {canEdit && allInterviews.length === 0 && (
+                    {canCreateInterview && allInterviews.length === 0 && (
                       <button
                         type="button"
                         onClick={() => onScheduleInterview(app)}
@@ -144,7 +147,7 @@ export function CandidateDrawerApplicationsTab({
                   notes={app.notes}
                   onSchedule={(intv) => onScheduleInterview(app, intv)}
                   onCancelInterview={(intv) => onCancelInterview(app, intv)}
-                  canEdit={canEdit}
+                  canEdit={canCreateInterview}
                   showSectionHeader={false}
                   hideIfEmpty={allInterviews.length === 0}
                 />

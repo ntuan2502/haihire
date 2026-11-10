@@ -66,6 +66,7 @@ export const en: TranslationSchema = {
     cancelConfirmWord: "CANCEL",
     revokeConfirmWord: "REVOKE",
     skipToContent: "Skip to main content",
+    accessDenied: "Access Denied",
   },
   errors: {
     generic: "An unexpected error occurred. Please try again later.",

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useAllJobs,
   useCandidate,
@@ -27,14 +28,15 @@ import { getApiErrorMessage } from "@/lib/api-error";
 function EditCandidatePageContent() {
   const params = useParams();
   const router = useRouter();
-  const { user, canEdit, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t } = useI18n();
+  const canUpdateCandidate = useHasPermission("candidate:update");
 
   useEffect(() => {
-    if (!authLoading && !canEdit) {
+    if (!authLoading && !canUpdateCandidate) {
       router.replace("/dashboard/candidates");
     }
-  }, [authLoading, canEdit, router]);
+  }, [authLoading, canUpdateCandidate, router]);
 
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 

@@ -22,10 +22,11 @@ import {
 } from "@/components/sourcing";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { buildPublicTrackingUrl, type TimeRangeFilter } from "@haihire/shared";
 import { slugify } from "@/lib/utils";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 function TrackingLinkDetailContent() {
   const params = useParams();
@@ -33,6 +34,9 @@ function TrackingLinkDetailContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { t } = useI18n();
+
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canUpdateLink = useHasPermission("sourcing:update");
 
   const rawId = params?.id;
   const linkId = Array.isArray(rawId) ? rawId[0] : (rawId as string);
@@ -103,6 +107,31 @@ function TrackingLinkDetailContent() {
     }
   };
 
+  if (!canViewSourcing) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
+        <Navbar activeTab="dashboard" />
+        <main className="flex-1 px-4 py-16 sm:px-6 lg:px-8 max-w-xl mx-auto flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-xs">
+            <Radio className="w-7 h-7" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+            {t("common.accessDenied")}
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-md">
+            {t("errors.FORBIDDEN_READ_ONLY")}
+          </p>
+          <Button
+            onClick={() => router.push("/dashboard")}
+            className="mt-6 h-9 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+          >
+            {t("common.dashboard")}
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
       <Navbar
@@ -148,7 +177,9 @@ function TrackingLinkDetailContent() {
               link={detail.link}
               timeRange={timeRange}
               onTimeRangeChange={setTimeRange}
-              onOpenEdit={() => setIsEditModalOpen(true)}
+              onOpenEdit={
+                canUpdateLink ? () => setIsEditModalOpen(true) : undefined
+              }
               onCopyUrl={handleCopy}
               isCopied={isCopied}
             />

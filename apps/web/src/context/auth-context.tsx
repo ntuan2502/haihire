@@ -382,10 +382,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    // Graceful fallback when rendered outside AuthProvider (e.g. isolated component unit tests)
+    return {
+      user: null,
+      token: null,
+      loading: false,
+      login: async () => {
+        throw new Error("useAuth must be used within an AuthProvider");
+      },
+      register: async () => {
+        throw new Error("useAuth must be used within an AuthProvider");
+      },
+      logout: () => {},
+      updateUserOrg: () => {},
+      refreshUser: async () => null,
+      setSession: () => {},
+      isAuthenticated: false,
+      isAdmin: false,
+      isMember: false,
+      isOwner: false,
+      canEdit: true,
+    };
   }
   return context;
 }

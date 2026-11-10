@@ -31,12 +31,16 @@ import {
   type SortOption,
 } from "@/components/interviews/dashboard";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import type { Application } from "@/types";
 
 function InterviewsPageContent() {
   const router = useRouter();
-  const { user, canEdit } = useAuth();
+  const { user, canEdit: _canEdit } = useAuth();
   const { t } = useI18n();
+
+  const canCreateInterview = useHasPermission("interview:create");
+  const canDeleteInterview = useHasPermission("interview:delete");
 
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedAppForSchedule, setSelectedAppForSchedule] = useState<
@@ -233,7 +237,7 @@ function InterviewsPageContent() {
         {/* Standard Header Row */}
         <InterviewsHeader
           totalCount={totalCandidateCount}
-          canEdit={canEdit}
+          canEdit={canCreateInterview}
           onOpenScheduleModal={() => handleOpenScheduleModal()}
         />
 
@@ -274,7 +278,7 @@ function InterviewsPageContent() {
                 handleOpenScheduleModal(app, intv.date, intv)
               }
               onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
-              canEdit={canEdit}
+              canEdit={canCreateInterview}
             />
           )
         ) : (jobsLoading || appsLoading) && !interviewsData ? (
@@ -283,7 +287,7 @@ function InterviewsPageContent() {
           </div>
         ) : filteredAndSortedList.length === 0 ? (
           <InterviewsEmptyState
-            canEdit={canEdit}
+            canEdit={canCreateInterview}
             onOpenScheduleModal={() => handleOpenScheduleModal()}
           />
         ) : (
@@ -293,8 +297,11 @@ function InterviewsPageContent() {
             visibleColumns={visibleColumns}
             onOpenScheduleModal={handleOpenScheduleModal}
             onOpenScorecard={handleOpenScorecard}
-            onCancelInterview={(app, interview) =>
-              setCancelInterviewState({ app, interview })
+            onCancelInterview={
+              canDeleteInterview
+                ? (app, interview) =>
+                    setCancelInterviewState({ app, interview })
+                : undefined
             }
             onNavigateToPipeline={(jobId, applicationId, stage) => {
               const query = new URLSearchParams();
@@ -310,7 +317,7 @@ function InterviewsPageContent() {
                 `/dashboard/jobs/${jobId}/pipeline?${query.toString()}`,
               );
             }}
-            canEdit={canEdit}
+            canEdit={canCreateInterview}
           />
         )}
 

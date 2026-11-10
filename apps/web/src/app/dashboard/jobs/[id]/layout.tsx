@@ -6,6 +6,7 @@ import { useParams, useRouter, usePathname } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   useJob,
   useAllJobs,
@@ -53,6 +54,9 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
 
   const { user } = useAuth();
   const { t } = useI18n();
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canUpdateJob = useHasPermission("job:update");
+
   const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const { data: job, isLoading: jobLoading } = useJob(jobId);
   const { data: candidatesData } = useCandidates(user?.organizationId);
@@ -190,81 +194,83 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
               <span className="hidden sm:inline">{t("jobs.careerPage")}</span>
             </a>
 
-            {/* 3-Status Switcher Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border whitespace-nowrap ${
-                  job.status === "PUBLISHED"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
-                    : job.status === "CLOSED"
-                      ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                      : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
-                }`}
-                title={t("jobs.changeJobStatus")}
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
+            {/* 3-Status Switcher Dropdown (Only for users who can update jobs) */}
+            {canUpdateJob && (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className={`h-7 px-2.5 text-xs font-bold rounded-lg shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5 border whitespace-nowrap ${
                     job.status === "PUBLISHED"
-                      ? "bg-emerald-500"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900/60"
                       : job.status === "CLOSED"
-                        ? "bg-slate-400"
-                        : "bg-amber-500"
+                        ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                        : "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/60"
                   }`}
-                />
-                <span>
-                  {job.status === "PUBLISHED"
-                    ? t("jobs.openStatus")
-                    : job.status === "CLOSED"
-                      ? t("jobs.closed")
-                      : t("jobs.draftStatus")}
-                </span>
-                <ChevronDown className="h-3 w-3 opacity-60" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => handleUpdateJobStatus("PUBLISHED")}
-                  className="text-xs flex items-center justify-between cursor-pointer py-2"
+                  title={t("jobs.changeJobStatus")}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="font-semibold text-emerald-700 dark:text-emerald-300">
-                      {t("jobs.openStatus")}
-                    </span>
-                  </div>
-                  {job.status === "PUBLISHED" && (
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleUpdateJobStatus("DRAFT")}
-                  className="text-xs flex items-center justify-between cursor-pointer py-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-amber-500" />
-                    <span className="font-semibold text-amber-700 dark:text-amber-300">
-                      {t("jobs.draftStatus")}
-                    </span>
-                  </div>
-                  {job.status === "DRAFT" && (
-                    <Check className="h-3.5 w-3.5 text-amber-600" />
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleUpdateJobStatus("CLOSED")}
-                  className="text-xs flex items-center justify-between cursor-pointer py-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-slate-400" />
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      {t("jobs.closed")}
-                    </span>
-                  </div>
-                  {job.status === "CLOSED" && (
-                    <Check className="h-3.5 w-3.5 text-slate-600" />
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      job.status === "PUBLISHED"
+                        ? "bg-emerald-500"
+                        : job.status === "CLOSED"
+                          ? "bg-slate-400"
+                          : "bg-amber-500"
+                    }`}
+                  />
+                  <span>
+                    {job.status === "PUBLISHED"
+                      ? t("jobs.openStatus")
+                      : job.status === "CLOSED"
+                        ? t("jobs.closed")
+                        : t("jobs.draftStatus")}
+                  </span>
+                  <ChevronDown className="h-3 w-3 opacity-60" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => handleUpdateJobStatus("PUBLISHED")}
+                    className="text-xs flex items-center justify-between cursor-pointer py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                        {t("jobs.openStatus")}
+                      </span>
+                    </div>
+                    {job.status === "PUBLISHED" && (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleUpdateJobStatus("DRAFT")}
+                    className="text-xs flex items-center justify-between cursor-pointer py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+                      <span className="font-semibold text-amber-700 dark:text-amber-300">
+                        {t("jobs.draftStatus")}
+                      </span>
+                    </div>
+                    {job.status === "DRAFT" && (
+                      <Check className="h-3.5 w-3.5 text-amber-600" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleUpdateJobStatus("CLOSED")}
+                    className="text-xs flex items-center justify-between cursor-pointer py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-slate-400" />
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                        {t("jobs.closed")}
+                      </span>
+                    </div>
+                    {job.status === "CLOSED" && (
+                      <Check className="h-3.5 w-3.5 text-slate-600" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             <button
               type="button"
@@ -324,24 +330,32 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
               icon: Zap,
               implemented: false,
             },
-            {
-              id: "tracking",
-              label: t("jobs.tabs.sourceTracking"),
-              icon: BarChart2,
-              implemented: true,
-            },
+            ...(canViewSourcing
+              ? [
+                  {
+                    id: "tracking",
+                    label: t("jobs.tabs.sourceTracking"),
+                    icon: BarChart2,
+                    implemented: true,
+                  },
+                ]
+              : []),
             {
               id: "ai",
               label: t("jobs.tabs.aiAnalysis"),
               icon: Sparkles,
               implemented: false,
             },
-            {
-              id: "settings",
-              label: t("jobs.tabs.settings"),
-              icon: Settings,
-              implemented: true,
-            },
+            ...(canUpdateJob
+              ? [
+                  {
+                    id: "settings",
+                    label: t("jobs.tabs.settings"),
+                    icon: Settings,
+                    implemented: true,
+                  },
+                ]
+              : []),
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeNavTab === tab.id;

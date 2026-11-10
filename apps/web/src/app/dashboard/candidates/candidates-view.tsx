@@ -10,6 +10,7 @@ import { ApplyToJobModal } from "@/components/candidates/apply-to-job-modal";
 import { ScheduleInterviewModal } from "@/components/interviews/schedule-interview-modal";
 import { DeleteCandidateModal } from "@/components/candidates/delete-candidate-modal";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useAllJobs } from "@/hooks/use-queries";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useI18n } from "@/i18n";
@@ -24,6 +25,7 @@ export function CandidatesView() {
   const router = useRouter();
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
+  const canCreateCandidate = useHasPermission("candidate:create");
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
@@ -74,7 +76,7 @@ export function CandidatesView() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            {canEdit && (
+            {canCreateCandidate && (
               <Button
                 size="sm"
                 onClick={() => router.push("/dashboard/candidates/new")}
@@ -120,7 +122,7 @@ export function CandidatesView() {
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
               {t("candidates.noCandidatesYetDesc")}
             </p>
-            {canEdit && (
+            {canCreateCandidate && (
               <Button
                 onClick={() => router.push("/dashboard/candidates/new")}
                 className="h-9 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 rounded-xl shadow-xs gap-1.5 cursor-pointer"

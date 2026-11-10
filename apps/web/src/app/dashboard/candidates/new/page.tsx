@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useAllJobs, useCreateCandidateMutation } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,14 +31,15 @@ import { getApiErrorMessage } from "@/lib/api-error";
 
 function AddCandidatePageContent() {
   const router = useRouter();
-  const { user, canEdit, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t } = useI18n();
+  const canCreateCandidate = useHasPermission("candidate:create");
 
   useEffect(() => {
-    if (!authLoading && !canEdit) {
+    if (!authLoading && !canCreateCandidate) {
       router.replace("/dashboard/candidates");
     }
-  }, [authLoading, canEdit, router]);
+  }, [authLoading, canCreateCandidate, router]);
 
   const { data: jobs = [] } = useAllJobs(user?.organizationId);
   const createCandidateMutation = useCreateCandidateMutation();

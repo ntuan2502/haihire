@@ -26,8 +26,8 @@ interface TrackingLinksTabProps {
   onPageChange: (newPage: number) => void;
   onPageSizeChange?: (newPageSize: number) => void;
   orgSlug: string;
-  onToggleStatus: (id: string, currentActive: boolean) => void;
-  onDeleteLink: (id: string) => void;
+  onToggleStatus?: (id: string, currentActive: boolean) => void;
+  onDeleteLink?: (id: string) => void;
   onEditLink?: (link: TrackingLinkItem) => void;
 }
 
@@ -169,26 +169,53 @@ export function TrackingLinksTab({
 
                       {/* Status */}
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => onToggleStatus(link.id, link.isActive)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
-                            link.isActive
-                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              link.isActive ? "bg-emerald-500" : "bg-slate-400"
+                        {onToggleStatus ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onToggleStatus(link.id, link.isActive)
+                            }
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
+                              link.isActive
+                                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
                             }`}
-                          />
-                          <span>
-                            {link.isActive
-                              ? t("sourcing.links.active")
-                              : t("sourcing.links.inactive")}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                link.isActive
+                                  ? "bg-emerald-500"
+                                  : "bg-slate-400"
+                              }`}
+                            />
+                            <span>
+                              {link.isActive
+                                ? t("sourcing.links.active")
+                                : t("sourcing.links.inactive")}
+                            </span>
+                          </button>
+                        ) : (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                              link.isActive
+                                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/80"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                link.isActive
+                                  ? "bg-emerald-500"
+                                  : "bg-slate-400"
+                              }`}
+                            />
+                            <span>
+                              {link.isActive
+                                ? t("sourcing.links.active")
+                                : t("sourcing.links.inactive")}
+                            </span>
                           </span>
-                        </button>
+                        )}
                       </td>
 
                       {/* Actions */}
@@ -248,31 +275,37 @@ export function TrackingLinksTab({
                           )}
 
                           {/* Toggle Power */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              onToggleStatus(link.id, link.isActive)
-                            }
-                            className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
-                            title={t("sourcing.links.toggleStatus")}
-                          >
-                            <Power className="h-3.5 w-3.5" />
-                          </Button>
+                          {onToggleStatus && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                onToggleStatus(link.id, link.isActive)
+                              }
+                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                              title={t("sourcing.links.toggleStatus")}
+                            >
+                              <Power className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
 
                           {/* Delete Link */}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              if (confirm(t("sourcing.links.deleteConfirm"))) {
-                                onDeleteLink(link.id);
-                              }
-                            }}
-                            className="h-8 w-8 p-0 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 cursor-pointer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          {onDeleteLink && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                if (
+                                  confirm(t("sourcing.links.deleteConfirm"))
+                                ) {
+                                  onDeleteLink(link.id);
+                                }
+                              }}
+                              className="h-8 w-8 p-0 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

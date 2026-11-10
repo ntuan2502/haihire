@@ -65,7 +65,7 @@ export default function MembersSettingsPage() {
 
   const { data: members = [], refetch: refetchMembers } = useOrgMembers();
   const { data: serverInviteLinks = [], refetch: refetchLinks } =
-    useInviteLinks();
+    useInviteLinks({ enabled: canManageMembers });
   const revokeInviteMutation = useRevokeInviteLinkMutation();
   const updateMemberRoleMutation = useUpdateMemberRoleMutation();
   const removeMemberMutation = useRemoveMemberMutation();
@@ -249,14 +249,14 @@ export default function MembersSettingsPage() {
 
       {/* Top Action + Invite team member card */}
       <InviteMemberCard
-        canEdit={canEdit}
+        canEdit={canManageMembers}
         onInviteSuccess={handleInviteSuccess}
         onInviteError={handleInviteError}
       />
 
       {/* Invite links card */}
       <InviteLinksCard
-        canEdit={canEdit}
+        canEdit={canManageMembers}
         serverInviteLinks={serverInviteLinks}
         refetchLinks={refetchLinks}
         onRevokeClick={(linkId) => setLinkToRevoke(linkId)}

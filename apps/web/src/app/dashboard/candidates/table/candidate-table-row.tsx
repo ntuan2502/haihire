@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Mail, Phone, Eye, Pencil, Trash2 } from "lucide-react";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, type CandidateItem } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import type { CandidateVisibleColumns } from "../toolbar/candidates-column-picker";
@@ -17,12 +18,14 @@ export interface CandidateTableRowProps {
 export function CandidateTableRow({
   candidate,
   visibleColumns,
-  canEdit,
+  canEdit: _canEdit,
   onSelect,
   onDelete,
 }: CandidateTableRowProps) {
   const router = useRouter();
   const { t } = useI18n();
+  const canUpdateCandidate = useHasPermission("candidate:update");
+  const canDeleteCandidate = useHasPermission("candidate:delete");
 
   return (
     <tr
@@ -118,21 +121,23 @@ export function CandidateTableRow({
           </button>
 
           {/* Quick Edit (Dedicated Edit Page) */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/dashboard/candidates/${candidate.id}/edit`);
-            }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
-            title={t("common.edit")}
-            aria-label={t("common.edit")}
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          {canUpdateCandidate && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/dashboard/candidates/${candidate.id}/edit`);
+              }}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer inline-flex items-center"
+              title={t("common.edit")}
+              aria-label={t("common.edit")}
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
 
           {/* Quick Delete */}
-          {canEdit && (
+          {canDeleteCandidate && (
             <button
               type="button"
               onClick={(e) => {

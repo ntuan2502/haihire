@@ -37,6 +37,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { BRAND_CONFIG } from "@haihire/shared";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 export type NavTab =
   | "dashboard"
@@ -66,9 +67,18 @@ export function Navbar({
 }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, canEdit } = useAuth();
+  const { user, isAuthenticated, canEdit: _canEdit } = useAuth();
   const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const canViewJobs = useHasPermission("job:view");
+  const canViewCandidatesBasic = useHasPermission("candidate:view_basic");
+  const canViewCandidatesFull = useHasPermission("candidate:view");
+  const canViewCandidates = canViewCandidatesBasic || canViewCandidatesFull;
+  const canViewApplications = useHasPermission("application:view");
+  const canViewInterviews = useHasPermission("interview:view");
+  const canViewSourcing = useHasPermission("sourcing:view");
+  const canCreateJob = useHasPermission("job:create");
 
   const handleCreateJobClick = () => {
     if (onOpenCreateJob) {
@@ -98,11 +108,39 @@ export function Navbar({
     icon: ElementType;
   }[] = [
     { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
-    { id: "jobs", label: t("nav.jobs"), icon: Briefcase },
-    { id: "candidates", label: t("nav.candidates"), icon: Users },
-    { id: "applications", label: t("nav.applications"), icon: FileText },
-    { id: "interviews", label: t("nav.interviews"), icon: Calendar },
-    { id: "sourcing", label: t("nav.features.sourceTracking"), icon: Radio },
+    ...(canViewJobs
+      ? [{ id: "jobs" as const, label: t("nav.jobs"), icon: Briefcase }]
+      : []),
+    ...(canViewCandidates
+      ? [{ id: "candidates" as const, label: t("nav.candidates"), icon: Users }]
+      : []),
+    ...(canViewApplications
+      ? [
+          {
+            id: "applications" as const,
+            label: t("nav.applications"),
+            icon: FileText,
+          },
+        ]
+      : []),
+    ...(canViewInterviews
+      ? [
+          {
+            id: "interviews" as const,
+            label: t("nav.interviews"),
+            icon: Calendar,
+          },
+        ]
+      : []),
+    ...(canViewSourcing
+      ? [
+          {
+            id: "sourcing" as const,
+            label: t("nav.features.sourceTracking"),
+            icon: Radio,
+          },
+        ]
+      : []),
     { id: "settings", label: t("nav.settings"), icon: Settings },
   ];
 
@@ -232,8 +270,8 @@ export function Navbar({
 
           {/* Right: + New Job, UserMenu / Sign In, Mobile Hamburger */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* + New Job Button (Desktop Only, Admins only) */}
-            {canEdit && (
+            {/* + New Job Button (Desktop Only, users with job:create only) */}
+            {canCreateJob && (
               <Button
                 size="sm"
                 onClick={handleCreateJobClick}
@@ -288,7 +326,7 @@ export function Navbar({
         onClose={() => setMobileMenuOpen(false)}
         breakpoint="lg"
         footer={
-          canEdit ? (
+          canCreateJob ? (
             <Button
               onClick={() => {
                 handleCreateJobClick();

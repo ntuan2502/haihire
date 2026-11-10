@@ -64,6 +64,7 @@ export interface TranslationSchema {
     cancelConfirmWord: string;
     revokeConfirmWord: string;
     skipToContent: string;
+    accessDenied: string;
   };
   errors: {
     generic: string;

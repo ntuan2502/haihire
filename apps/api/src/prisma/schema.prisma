@@ -161,6 +161,7 @@ model Organization {
   rolePermissions OrganizationRolePermission[]
   auditLogs       OrganizationAuditLog[]
   applicationNotes ApplicationNote[]
+  candidateNotes   CandidateNote[]
   createdAt       DateTime                    @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -287,6 +288,7 @@ model Candidate {
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
   documents      CandidateDocument[]
+  candidateNotes CandidateNote[]
   deletedAt      DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime @updatedAt
@@ -577,4 +579,23 @@ model ApplicationNote {
   @@index([organizationId, createdAt])
   @@index([applicationId, createdAt])
   @@map("application_note")
+}
+
+model CandidateNote {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidateId    String
+  candidate      Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  authorId       String
+  authorName     String
+  authorRole     String
+  content        String       @db.Text
+  isEdited       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([candidateId, createdAt])
+  @@map("candidate_note")
 }

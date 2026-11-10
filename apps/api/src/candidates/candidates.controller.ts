@@ -22,6 +22,8 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { CandidatesService } from "./candidates.service";
 import { CreateCandidateDto } from "./dto/create-candidate.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
+import { CreateCandidateNoteDto } from "./dto/create-candidate-note.dto";
+import { UpdateCandidateNoteDto } from "./dto/update-candidate-note.dto";
 import { resumeFileFilter } from "../common/upload-utils";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
@@ -196,5 +198,74 @@ export class CandidatesController {
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.candidatesService.remove(id, req?.user?.organizationId);
+  }
+
+  @Get(":id/notes")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  findNotes(
+    @Param("id") id: string,
+    @Request()
+    req?: { user?: { id?: string; organizationId?: string | null } },
+  ) {
+    return this.candidatesService.findNotes(id, req?.user?.organizationId);
+  }
+
+  @Post(":id/notes")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  createNote(
+    @Param("id") id: string,
+    @Body(DtoPipe(CreateCandidateNoteDto)) dto: CreateCandidateNoteDto,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        name?: string;
+        role?: string;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.candidatesService.createNote(id, dto, req.user);
+  }
+
+  @Patch(":id/notes/:noteId")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  updateNote(
+    @Param("id") id: string,
+    @Param("noteId") noteId: string,
+    @Body(DtoPipe(UpdateCandidateNoteDto)) dto: UpdateCandidateNoteDto,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.candidatesService.updateNote(id, noteId, dto, req.user);
+  }
+
+  @Delete(":id/notes/:noteId")
+  @UseGuards(RolesGuard)
+  @RequirePermission("candidate:view")
+  deleteNote(
+    @Param("id") id: string,
+    @Param("noteId") noteId: string,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.candidatesService.deleteNote(id, noteId, req.user);
   }
 }

@@ -10,6 +10,8 @@ export const queryKeys = {
     ["applications", "paginated", params] as const,
   candidates: (orgId?: string | null) => ["candidates", { orgId }] as const,
   candidate: (id?: string | null) => ["candidates", id] as const,
+  candidateNotes: (candidateId?: string | null) =>
+    ["candidates", "notes", candidateId] as const,
   interviews: (params?: Record<string, unknown>) =>
     ["interviews", params] as const,
   interview: (id?: string | null) => ["interviews", "detail", id] as const,

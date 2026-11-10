@@ -8,6 +8,7 @@ import {
   CandidatesCrudService,
   CandidatesDocumentsService,
   CandidatesProfileService,
+  CandidatesNotesService,
 } from "./services";
 
 @Module({
@@ -18,12 +19,14 @@ import {
     CandidatesCrudService,
     CandidatesDocumentsService,
     CandidatesProfileService,
+    CandidatesNotesService,
   ],
   exports: [
     CandidatesService,
     CandidatesCrudService,
     CandidatesDocumentsService,
     CandidatesProfileService,
+    CandidatesNotesService,
   ],
 })
 export class CandidatesModule {}

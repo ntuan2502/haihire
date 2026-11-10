@@ -22,6 +22,7 @@ import { CandidateProfileCard } from "./sections/candidate-profile-card";
 import { CandidateApplicationsTab } from "./sections/candidate-applications-tab";
 import { CandidateDocumentsTab } from "./sections/candidate-documents-tab";
 import { CandidateDocumentPreview } from "./sections/candidate-document-preview";
+import { CandidateNotesStream } from "@/components/candidates/candidate-notes-stream";
 import { CandidateDetailModals } from "./modals/candidate-detail-modals";
 
 export function CandidateDetailView() {
@@ -215,6 +216,17 @@ export function CandidateDetailView() {
                 {t("candidates.documentsTab")} (
                 {state.candidateDocuments.length})
               </button>
+              <button
+                type="button"
+                onClick={() => state.setActiveTab("notes")}
+                className={`pb-3 pt-0.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  state.activeTab === "notes"
+                    ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400 font-bold"
+                    : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-transparent font-medium"
+                }`}
+              >
+                {t("candidates.notes")}
+              </button>
             </div>
           </div>
 
@@ -263,6 +275,15 @@ export function CandidateDetailView() {
                 />
               )}
             </>
+          )}
+
+          {state.activeTab === "notes" && (
+            <div className="pt-2">
+              <CandidateNotesStream
+                candidateId={state.candidate?.id || state.candidateIdStr || ""}
+                showHeader={false}
+              />
+            </div>
           )}
         </div>
 

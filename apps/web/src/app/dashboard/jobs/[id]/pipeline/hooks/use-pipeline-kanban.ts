@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   useJob,
   useJobApplications,
-  useUpdateCandidateMutation,
   useUpdateStageMutation,
   useDeleteApplicationMutation,
 } from "@/hooks/use-queries";
@@ -26,11 +25,7 @@ import {
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
-import {
-  parseCandidateDocuments,
-  parseCandidateNotes,
-  fixUtf8String,
-} from "@/lib/utils";
+import { parseCandidateDocuments, fixUtf8String } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 
 export function usePipelineKanban(jobId: string) {
@@ -47,7 +42,6 @@ export function usePipelineKanban(jobId: string) {
 
   const updateStageMutation = useUpdateStageMutation();
   const deleteAppMutation = useDeleteApplicationMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
 
   const initialStageParam = searchParams.get(
     "stage",
@@ -99,10 +93,6 @@ export function usePipelineKanban(jobId: string) {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editingInterview, setEditingInterview] =
     useState<ScheduledInterviewInfo | null>(null);
-
-  const [candidateNotesList, setCandidateNotesList] = useState<string[]>([]);
-  const [candidateNoteInput, setCandidateNoteInput] = useState("");
-  const [isUpdatingNote, setIsUpdatingNote] = useState(false);
 
   useEffect(() => {
     const targetId =
@@ -362,45 +352,6 @@ export function usePipelineKanban(jobId: string) {
     return allDocs;
   }, [selectedCandidate, jobApplications]);
 
-  useEffect(() => {
-    if (selectedCandidate) {
-      const parsed = parseCandidateNotes(
-        selectedCandidate.candidate?.notes,
-        selectedCandidate.candidateName,
-      );
-      const noteText =
-        parsed.customNotes || selectedCandidate.candidate?.notes || "";
-      const items = noteText
-        ? noteText.split(/\s*\|\s*|\n+/).filter(Boolean)
-        : [];
-      setCandidateNotesList(items);
-      setCandidateNoteInput("");
-    } else {
-      setCandidateNotesList([]);
-    }
-  }, [selectedCandidate]);
-
-  const handleAddNote = async () => {
-    if (!candidateNoteInput.trim() || !selectedCandidate) return;
-    const trimmed = candidateNoteInput.trim();
-    const updated = [...candidateNotesList, trimmed];
-    setCandidateNotesList(updated);
-    setCandidateNoteInput("");
-    try {
-      setIsUpdatingNote(true);
-      await updateCandidateMutation.mutateAsync({
-        id: selectedCandidate.id,
-        data: {
-          notes: updated.join(" | "),
-        },
-      });
-    } catch (err) {
-      console.error("Failed to save pipeline candidate note:", err);
-    } finally {
-      setIsUpdatingNote(false);
-    }
-  };
-
   const handleMoveCandidateStage = async (
     newStage: ApplicationStage,
     overrideCandidateId?: string,
@@ -529,11 +480,6 @@ export function usePipelineKanban(jobId: string) {
     previewDoc,
     setPreviewDoc,
     handleDownloadDoc,
-    candidateNotesList,
-    candidateNoteInput,
-    setCandidateNoteInput,
-    isUpdatingNote,
-    handleAddNote,
     isMovingStage: updateStageMutation.isPending,
     handleMoveCandidateStage,
     handleDropCandidate,

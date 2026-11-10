@@ -22,9 +22,9 @@ export function useCandidateDetailState() {
     user?.organizationId,
   );
 
-  const [activeTab, setActiveTab] = useState<"applications" | "documents">(
-    "applications",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "applications" | "documents" | "notes"
+  >("applications");
   const [stageFilter, setStageFilter] = useState("ALL");
   const [documentFilter, setDocumentFilter] = useState("Resume");
 

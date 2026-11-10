@@ -126,16 +126,18 @@ export function CandidateProfileCard({
           </span>
         </div>
 
-        {/* Notes */}
-        <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
-            <MessageSquare className="h-3 w-3" />
-            {t("candidates.notes")}
-          </span>
-          <p className="text-xs text-slate-700 dark:text-slate-300 mt-1.5 bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
-            {parsedNotes.customNotes || candidateNotes || "—"}
-          </p>
-        </div>
+        {/* Notes (only shown if legacy notes text is present) */}
+        {Boolean(parsedNotes.customNotes || candidateNotes) && (
+          <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <span className="text-slate-400 text-[11px] flex items-center gap-1.5">
+              <MessageSquare className="h-3 w-3" />
+              {t("candidates.notes")}
+            </span>
+            <p className="text-xs text-slate-700 dark:text-slate-300 mt-1.5 bg-slate-50/80 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-wrap leading-relaxed">
+              {parsedNotes.customNotes || candidateNotes}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

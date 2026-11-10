@@ -101,11 +101,6 @@ function JobPipelinePageContent() {
             pipeline.setEditingInterview(intv || null);
             pipeline.setScheduleModalOpen(true);
           }}
-          candidateNotesList={pipeline.candidateNotesList}
-          candidateNoteInput={pipeline.candidateNoteInput}
-          onChangeNoteInput={pipeline.setCandidateNoteInput}
-          onAddNote={pipeline.handleAddNote}
-          isUpdatingNote={pipeline.isUpdatingNote}
           onDeleteApplication={() => pipeline.setDeleteAppModalOpen(true)}
         />
       </main>

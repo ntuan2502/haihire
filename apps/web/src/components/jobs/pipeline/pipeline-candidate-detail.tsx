@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
+import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
 import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
@@ -65,11 +66,11 @@ interface PipelineCandidateDetailProps {
   onDownloadDoc: (url: string, filename?: string) => void;
   candidateInterviews: Interview[];
   onScheduleInterview: (interview?: ScheduledInterviewInfo) => void;
-  candidateNotesList: string[];
-  candidateNoteInput: string;
-  onChangeNoteInput: (val: string) => void;
-  onAddNote: () => void;
-  isUpdatingNote: boolean;
+  candidateNotesList?: string[];
+  candidateNoteInput?: string;
+  onChangeNoteInput?: (val: string) => void;
+  onAddNote?: () => void;
+  isUpdatingNote?: boolean;
   onDeleteApplication: () => void;
 }
 
@@ -307,7 +308,7 @@ export function PipelineCandidateDetail({
               {
                 id: "notes",
                 label: t("applications.tabs.notes"),
-                count: candidateNotesList.length,
+                count: candidateNotesList?.length,
               },
               { id: "timeline", label: t("applications.tabs.timeline") },
               {
@@ -440,40 +441,60 @@ export function PipelineCandidateDetail({
 
             {/* Notes Tab */}
             {candidateTab === "notes" && (
-              <div className="space-y-4">
-                {canEdit && (
-                  <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-                    <textarea
-                      rows={3}
-                      value={candidateNoteInput}
-                      onChange={(e) => onChangeNoteInput(e.target.value)}
-                      placeholder={t("pipeline.writePrivateNotePlaceholder")}
-                      className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={onAddNote}
-                        disabled={!candidateNoteInput.trim() || isUpdatingNote}
-                        className="h-7 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                      >
-                        {t("pipeline.saveNote")}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {candidateNotesList.length > 0 && (
-                  <div className="space-y-2">
-                    {candidateNotesList.map((n, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300"
-                      >
-                        {n}
+              <div className="pt-1">
+                {selectedCandidate?.id && !candidateNotesList ? (
+                  <ApplicationNotesStream
+                    applicationId={selectedCandidate.id}
+                    compact={false}
+                    showHeader={false}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {canEdit && onChangeNoteInput && onAddNote && (
+                      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
+                        <textarea
+                          rows={3}
+                          value={candidateNoteInput || ""}
+                          onChange={(e) => onChangeNoteInput(e.target.value)}
+                          placeholder={t(
+                            "pipeline.writePrivateNotePlaceholder",
+                          )}
+                          className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={onAddNote}
+                            disabled={
+                              !candidateNoteInput?.trim() || isUpdatingNote
+                            }
+                            className="h-7 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                          >
+                            {t("pipeline.saveNote")}
+                          </Button>
+                        </div>
                       </div>
-                    ))}
+                    )}
+
+                    {candidateNotesList && candidateNotesList.length > 0 ? (
+                      <div className="space-y-2">
+                        {candidateNotesList.map((n, idx) => (
+                          <div
+                            key={idx}
+                            className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300"
+                          >
+                            {n}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      !selectedCandidate?.id && (
+                        <div className="text-xs text-slate-400 p-4 text-center">
+                          {t("applications.notesStream.empty")}
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
               </div>

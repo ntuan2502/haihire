@@ -55,6 +55,20 @@ export interface Candidate {
   applicationsCount?: number;
   applications?: Application[];
   allDocuments?: CandidateDocument[];
+  candidateNotes?: CandidateNote[];
+}
+
+export interface CandidateNote {
+  id: string;
+  organizationId: string;
+  candidateId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  content: string;
+  isEdited: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateCandidateInput {

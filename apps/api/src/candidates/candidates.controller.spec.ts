@@ -30,6 +30,10 @@ describe("CandidatesController", () => {
     findOne: vi.fn(),
     uploadDocument: vi.fn(),
     prepareDocumentDownload: vi.fn(),
+    findNotes: vi.fn(),
+    createNote: vi.fn(),
+    updateNote: vi.fn(),
+    deleteNote: vi.fn(),
   };
 
   const recruiterReq = {
@@ -232,6 +236,68 @@ describe("CandidatesController", () => {
         recruiterReq.user,
       );
       expect(result).toEqual({ id: "cand-1", name: "Test Candidate" });
+    });
+  });
+
+  describe("Candidate Notes Endpoints", () => {
+    it("delegates findNotes to candidatesService.findNotes", async () => {
+      mockService.findNotes.mockResolvedValue([{ id: "n-1", content: "test" }]);
+      const res = await controller.findNotes("cand-1", recruiterReq);
+      expect(mockService.findNotes).toHaveBeenCalledWith("cand-1", "org-1");
+      expect(res).toEqual([{ id: "n-1", content: "test" }]);
+    });
+
+    it("delegates createNote to candidatesService.createNote", async () => {
+      mockService.createNote.mockResolvedValue({
+        id: "n-2",
+        content: "new note",
+      });
+      const res = await controller.createNote(
+        "cand-1",
+        { content: "new note" },
+        recruiterReq as never,
+      );
+      expect(mockService.createNote).toHaveBeenCalledWith(
+        "cand-1",
+        { content: "new note" },
+        recruiterReq.user,
+      );
+      expect(res).toEqual({ id: "n-2", content: "new note" });
+    });
+
+    it("delegates updateNote to candidatesService.updateNote", async () => {
+      mockService.updateNote.mockResolvedValue({
+        id: "n-2",
+        content: "updated",
+      });
+      const res = await controller.updateNote(
+        "cand-1",
+        "n-2",
+        { content: "updated" },
+        recruiterReq as never,
+      );
+      expect(mockService.updateNote).toHaveBeenCalledWith(
+        "cand-1",
+        "n-2",
+        { content: "updated" },
+        recruiterReq.user,
+      );
+      expect(res).toEqual({ id: "n-2", content: "updated" });
+    });
+
+    it("delegates deleteNote to candidatesService.deleteNote", async () => {
+      mockService.deleteNote.mockResolvedValue({ success: true });
+      const res = await controller.deleteNote(
+        "cand-1",
+        "n-2",
+        recruiterReq as never,
+      );
+      expect(mockService.deleteNote).toHaveBeenCalledWith(
+        "cand-1",
+        "n-2",
+        recruiterReq.user,
+      );
+      expect(res).toEqual({ success: true });
     });
   });
 });

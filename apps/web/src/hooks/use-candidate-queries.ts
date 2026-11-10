@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { candidatesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Candidate, PaginatedResult } from "@/types";
+import type { Candidate, CandidateNote, PaginatedResult } from "@/types";
 import { queryKeys } from "./query-keys";
 
 export function useCandidates(
@@ -174,6 +174,80 @@ export function useDeleteCandidateDocumentMutation() {
     onError: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.candidate(variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+export function useCandidateNotes(candidateId: string | null | undefined) {
+  return useQuery<CandidateNote[]>({
+    queryKey: queryKeys.candidateNotes(candidateId),
+    queryFn: () => {
+      if (!candidateId) return [];
+      return candidatesApi.getNotes(candidateId);
+    },
+    enabled: Boolean(candidateId),
+  });
+}
+
+export function useAddCandidateNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      candidateId,
+      content,
+    }: {
+      candidateId: string;
+      content: string;
+    }) => candidatesApi.addNote(candidateId, content),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidateNotes(variables.candidateId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+  });
+}
+
+export function useUpdateCandidateNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      candidateId,
+      noteId,
+      content,
+    }: {
+      candidateId: string;
+      noteId: string;
+      content: string;
+    }) => candidatesApi.updateNote(candidateId, noteId, content),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidateNotes(variables.candidateId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+export function useDeleteCandidateNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      candidateId,
+      noteId,
+    }: {
+      candidateId: string;
+      noteId: string;
+    }) => candidatesApi.deleteNote(candidateId, noteId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidateNotes(variables.candidateId),
       });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },

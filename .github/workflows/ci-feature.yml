@@ -87,6 +87,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup CI Environment & Generate Prisma Client
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: |
+          cp .env.example .env
+          pnpm db:generate
+
       - name: Docs-only Link Validation (Fast Exit)
         if: needs.path-filter.outputs.docs-only == 'true'
         run: pnpm lint:doc-links
@@ -150,8 +156,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup minimal CI environment
-        run: cp .env.example .env
+      - name: Setup CI Environment & Generate Prisma Client
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: |
+          cp .env.example .env
+          pnpm db:generate
 
       - name: Run API Unit & Integration Tests
         if: needs.path-filter.outputs.api == 'true' || needs.path-filter.outputs.ci == 'true'

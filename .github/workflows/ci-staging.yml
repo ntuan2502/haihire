@@ -126,6 +126,7 @@ jobs:
           sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
           sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Run 11 Architecture Quality Gates (Fast)
         run: pnpm check:all:fast
@@ -207,6 +208,7 @@ jobs:
           sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
           sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Audit Test Differences
         run: node --experimental-strip-types scripts/check-test-count.ts HEAD~1 HEAD || true
@@ -303,6 +305,7 @@ jobs:
           sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
           sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |

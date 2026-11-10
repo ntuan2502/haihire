@@ -97,7 +97,9 @@ export function PipelineCandidateCard({
 
         <div className="flex items-center gap-2 pt-1 text-[10px] text-slate-400">
           <span>{formatRelativeTime(candidate.createdAt)}</span>
-          {candidate.notes && (
+          {((candidate.applicationNotes &&
+            candidate.applicationNotes.length > 0) ||
+            Boolean(candidate.candidate?.notes)) && (
             <>
               <span>•</span>
               <span className="flex items-center gap-0.5">

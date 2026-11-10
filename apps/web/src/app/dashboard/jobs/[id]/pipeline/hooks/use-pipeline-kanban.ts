@@ -344,7 +344,7 @@ export function usePipelineKanban(jobId: string) {
       relatedApps.length > 0 ? relatedApps : [selectedCandidate];
 
     for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.notes, {
+      const docs = parseCandidateDocuments(a.candidate?.notes, {
         id: a.id,
         resumeUrl: a.resumeUrl,
         resumeFileName: a.resumeFileName,
@@ -365,10 +365,11 @@ export function usePipelineKanban(jobId: string) {
   useEffect(() => {
     if (selectedCandidate) {
       const parsed = parseCandidateNotes(
-        selectedCandidate.notes,
+        selectedCandidate.candidate?.notes,
         selectedCandidate.candidateName,
       );
-      const noteText = parsed.customNotes || selectedCandidate.notes || "";
+      const noteText =
+        parsed.customNotes || selectedCandidate.candidate?.notes || "";
       const items = noteText
         ? noteText.split(/\s*\|\s*|\n+/).filter(Boolean)
         : [];

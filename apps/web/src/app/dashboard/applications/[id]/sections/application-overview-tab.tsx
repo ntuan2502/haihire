@@ -55,7 +55,6 @@ export function ApplicationOverviewTab({
       {overviewSections.interviews && (
         <CandidateInterviewsList
           application={app}
-          notes={app?.notes}
           onSchedule={onScheduleInterview}
           onCancelInterview={onCancelInterview}
           canEdit={canEdit}

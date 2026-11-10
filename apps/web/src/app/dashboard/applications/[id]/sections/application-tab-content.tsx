@@ -81,7 +81,6 @@ export function ApplicationTabContent({
       {activeTab === "interviews" && (
         <CandidateInterviewsList
           application={app}
-          notes={app?.notes}
           onSchedule={onScheduleInterview}
           onCancelInterview={onCancelInterview}
           canEdit={canEdit}

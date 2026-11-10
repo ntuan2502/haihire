@@ -374,7 +374,7 @@ export function aggregateCandidates(
         applicationsCount: hasJob ? 1 : 0,
         createdAt: app.createdAt,
         updatedAt: app.updatedAt,
-        notes: app.notes || "",
+        notes: app.candidate?.notes || "",
         rawApp: app,
       });
     } else {
@@ -388,8 +388,8 @@ export function aggregateCandidates(
       if (!existing.phone && app.candidatePhone) {
         existing.phone = app.candidatePhone;
       }
-      if (app.notes) {
-        existing.notes = app.notes;
+      if (app.candidate?.notes) {
+        existing.notes = app.candidate.notes;
         existing.name = effectiveName;
       }
     }

@@ -57,7 +57,6 @@ export interface Application {
   resumeFileName: string;
   resumeFileSize?: number | null;
   resumeMimeType?: string | null;
-  notes?: string | null;
   applicationNotes?: ApplicationNote[];
   orderIndex: number;
   matchScore?: number | null;

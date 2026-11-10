@@ -102,10 +102,6 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
         drawerOverviewBtnRef={drawer.drawerOverviewBtnRef}
         allScheduledInterviews={drawer.allScheduledInterviews}
         drawerCandidateDocuments={drawer.drawerCandidateDocuments}
-        drawerNotesList={drawer.drawerNotesList}
-        drawerNoteInput={drawer.drawerNoteInput}
-        onDrawerNoteInputChange={drawer.setDrawerNoteInput}
-        onAddDrawerNote={drawer.handleAddDrawerNote}
         onScheduleInterview={(intv) => {
           table.setEditingInterview(intv || null);
           table.setIsScheduleModalOpen(true);

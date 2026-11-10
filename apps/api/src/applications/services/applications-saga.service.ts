@@ -164,8 +164,17 @@ export class ApplicationsSagaService {
 
     try {
       created = await runInTransaction(this.prisma, async (tx) => {
+        const orgId = job.organizationId;
+        if (!orgId) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
+            "Target job does not belong to a valid organization.",
+          );
+        }
+
         // 2. Resolve or create Candidate
         let candidateId = dto.candidateId;
+        let applicantName = dto.candidateName?.trim() || "";
 
         if (!candidateId) {
           if (!dto.candidateEmail || !dto.candidateName) {
@@ -176,13 +185,6 @@ export class ApplicationsSagaService {
           }
 
           const email = dto.candidateEmail.trim().toLowerCase();
-          const orgId = job.organizationId;
-          if (!orgId) {
-            throw new AppBadRequestException(
-              APP_ERROR_CODES.JOB_INVALID_ORGANIZATION,
-              "Target job does not belong to a valid organization.",
-            );
-          }
 
           const existingCandidate = await tx.candidate.findFirst({
             where: {
@@ -228,6 +230,7 @@ export class ApplicationsSagaService {
             where: { id: candidateId as string },
             select: {
               id: true,
+              name: true,
               organizationId: true,
               resumeUrl: true,
               resumeFileName: true,
@@ -241,6 +244,9 @@ export class ApplicationsSagaService {
               APP_ERROR_CODES.CANDIDATE_NOT_FOUND,
               `Candidate with ID ${candidateId} not found`,
             );
+          }
+          if (!applicantName && existingCandidate.name) {
+            applicantName = existingCandidate.name;
           }
           if (
             job.organizationId &&
@@ -349,7 +355,7 @@ export class ApplicationsSagaService {
         }
 
         // 6. Save Application record
-        return await tx.application.create({
+        const savedApp = await tx.application.create({
           data: {
             id: crypto.randomUUID(),
             candidateId: candidateId as string,
@@ -359,7 +365,6 @@ export class ApplicationsSagaService {
             resumeFileName: uploadResult.originalName || null,
             resumeFileSize: uploadResult.size || null,
             resumeMimeType: uploadResult.mimeType || "application/pdf",
-            notes: dto.notes || null,
             orderIndex: maxOrder + 1,
             trackingLinkId,
             sourceChannel,
@@ -369,6 +374,21 @@ export class ApplicationsSagaService {
             updatedAt: toInstant(),
           },
         });
+
+        if (dto.notes && dto.notes.trim()) {
+          await tx.applicationNote.create({
+            data: {
+              organizationId: orgId,
+              applicationId: savedApp.id,
+              authorId: candidateId as string,
+              authorName: applicantName || "Applicant",
+              authorRole: "APPLICANT",
+              content: dto.notes.trim(),
+            },
+          });
+        }
+
+        return savedApp;
       });
     } catch (dbError) {
       // Step 3: Compensating action — rollback MinIO uploaded file

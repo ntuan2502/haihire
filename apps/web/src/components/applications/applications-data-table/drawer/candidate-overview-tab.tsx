@@ -13,10 +13,6 @@ interface CandidateOverviewTabProps {
   currentApp: Application;
   drawerOverviewSections: OverviewSectionsState;
   drawerCandidateDocuments: CandidateDocument[];
-  drawerNotesList: string[];
-  drawerNoteInput: string;
-  onDrawerNoteInputChange: (val: string) => void;
-  onAddDrawerNote: () => void;
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
   onCancelInterview: (interviewOrId?: ScheduledInterviewInfo | string) => void;
   onPreviewDoc: (doc: CandidateDocument) => void;
@@ -32,10 +28,6 @@ export function CandidateOverviewTab({
   currentApp,
   drawerOverviewSections,
   drawerCandidateDocuments,
-  drawerNotesList: _drawerNotesList,
-  drawerNoteInput: _drawerNoteInput,
-  onDrawerNoteInputChange: _onDrawerNoteInputChange,
-  onAddDrawerNote: _onAddDrawerNote,
   onScheduleInterview,
   onCancelInterview,
   onPreviewDoc,
@@ -71,7 +63,6 @@ export function CandidateOverviewTab({
       {drawerOverviewSections.interviews && (
         <CandidateInterviewsList
           application={currentApp}
-          notes={currentApp.notes}
           onSchedule={onScheduleInterview}
           onCancelInterview={onCancelInterview}
           canEdit={canEdit}

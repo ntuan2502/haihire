@@ -309,7 +309,6 @@ model Application {
   resumeFileName String?
   resumeFileSize Int?
   resumeMimeType String?          @default("application/pdf")
-  notes          String?
   orderIndex     Int              @default(0)
   trackingLinkId String?
   trackingLink   TrackingLink?    @relation(fields: [trackingLinkId], references: [id], onDelete: SetNull)

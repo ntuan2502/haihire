@@ -4,7 +4,6 @@ import {
   useState,
   useMemo,
   useRef,
-  useEffect,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -16,14 +15,9 @@ import { canTransition, getTransitionDisabledReason } from "@/lib/stages";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import {
   useUpdateStageMutation,
-  useUpdateCandidateMutation,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
-import {
-  parseCandidateNotes,
-  parseCandidateDocuments,
-  fixUtf8String,
-} from "@/lib/utils";
+import { parseCandidateDocuments, fixUtf8String } from "@/lib/utils";
 import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
@@ -56,12 +50,9 @@ export function useCandidateDrawer({
   const queryClient = useQueryClient();
 
   const updateStageMutation = useUpdateStageMutation();
-  const updateCandidateMutation = useUpdateCandidateMutation();
   const deleteInterviewMutation = useDeleteInterviewMutation();
 
   const [drawerTab, setDrawerTab] = useState<string>("overview");
-  const [drawerNoteInput, setDrawerNoteInput] = useState("");
-  const [drawerNotesList, setDrawerNotesList] = useState<string[]>([]);
 
   // Drawer Overview sections visibility state
   const [drawerOverviewSections, setDrawerOverviewSections] =
@@ -83,42 +74,6 @@ export function useCandidateDrawer({
   const allScheduledInterviews = useMemo(() => {
     return getInterviewsFromApplication(currentApp);
   }, [currentApp]);
-
-  useEffect(() => {
-    setDrawerNoteInput("");
-    if (currentApp?.notes) {
-      const { customNotes } = parseCandidateNotes(
-        currentApp.notes,
-        currentApp.candidateName,
-      );
-      const noteText = customNotes || currentApp.notes;
-      const items = noteText.split(/\s*\|\s*|\n+/).filter(Boolean);
-      setDrawerNotesList(items);
-    } else {
-      setDrawerNotesList([]);
-    }
-  }, [currentApp?.id, currentApp?.notes, currentApp?.candidateName]);
-
-  const handleAddDrawerNote = async () => {
-    if (!drawerNoteInput.trim() || !currentApp) return;
-    const trimmed = drawerNoteInput.trim();
-    const updated = [trimmed, ...drawerNotesList];
-    setDrawerNotesList(updated);
-    setDrawerNoteInput("");
-    try {
-      await updateCandidateMutation.mutateAsync({
-        id: currentApp.id,
-        data: {
-          notes: updated.join(" | "),
-        },
-      });
-      setSelectedApp((prev) =>
-        prev ? { ...prev, notes: updated.join(" | ") } : null,
-      );
-    } catch (err) {
-      console.error("Failed to save drawer application note:", err);
-    }
-  };
 
   const handleCancelInterview = async (
     interviewOrId?: ScheduledInterviewInfo | string,
@@ -210,7 +165,7 @@ export function useCandidateDrawer({
     const appsToScan = relatedApps.length > 0 ? relatedApps : [currentApp];
 
     for (const a of appsToScan) {
-      const docs = parseCandidateDocuments(a.notes, {
+      const docs = parseCandidateDocuments(a.candidate?.notes, {
         id: a.id,
         resumeUrl: a.resumeUrl,
         resumeFileName: a.resumeFileName,
@@ -245,10 +200,6 @@ export function useCandidateDrawer({
     currentApp,
     drawerTab,
     setDrawerTab,
-    drawerNoteInput,
-    setDrawerNoteInput,
-    drawerNotesList,
-    handleAddDrawerNote,
     handleCancelInterview,
     handleStageChange,
     handleDownloadDoc,

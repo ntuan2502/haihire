@@ -54,7 +54,7 @@ export function useCandidateDetailState() {
     const seenUrls = new Set(allDocs.map((d) => d.url).filter(Boolean));
 
     for (const app of candidateApps) {
-      const appDocs = parseCandidateDocuments(app.notes, {
+      const appDocs = parseCandidateDocuments(app.candidate?.notes, {
         id: app.id,
         resumeUrl: app.resumeUrl || "",
         resumeFileName: app.resumeFileName || "Application_Resume.pdf",

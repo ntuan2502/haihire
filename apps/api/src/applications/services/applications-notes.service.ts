@@ -76,34 +76,6 @@ export class ApplicationsNotesService {
       orderBy: { createdAt: "desc" },
     });
 
-    // Auto-migrate legacy delimited notes string if no notes exist yet
-    if (notes.length === 0 && app.notes && app.notes.trim()) {
-      const items = app.notes.split(/\s*\|\s*|\n+/).filter(Boolean);
-      if (items.length > 0 && targetOrgId) {
-        const migrated = await Promise.all(
-          items.map((item, index) =>
-            this.prisma.applicationNote.create({
-              data: {
-                organizationId: targetOrgId,
-                applicationId,
-                authorId: app.candidateId,
-                authorName: "System Note",
-                authorRole: "SYSTEM",
-                content: item.trim(),
-                isEdited: false,
-                createdAt: new Date(
-                  Date.now() - (items.length - index) * 60000,
-                ),
-              },
-            }),
-          ),
-        );
-        return migrated.sort(
-          (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-        );
-      }
-    }
-
     return notes;
   }
 
@@ -158,16 +130,6 @@ export class ApplicationsNotesService {
         isEdited: false,
       },
     });
-
-    // Also update application.notes & candidate.notes with latest note content for backward compatibility
-    try {
-      await this.prisma.application.update({
-        where: { id: applicationId },
-        data: { notes: dto.content.trim() },
-      });
-    } catch {
-      // Ignore background sync errors
-    }
 
     // Record ActivityLog entry for timeline integration
     if (this.activitiesService && targetOrgId) {

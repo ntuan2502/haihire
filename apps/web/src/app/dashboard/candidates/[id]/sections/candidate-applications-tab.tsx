@@ -120,7 +120,6 @@ export function CandidateApplicationsTab({
 
                 <CandidateInterviewsList
                   application={app}
-                  notes={app.notes}
                   onSchedule={(intv) => onScheduleInterview(app, intv || null)}
                   onCancelInterview={(intv) => onCancelInterview(app, intv)}
                   canEdit={canEdit}
@@ -128,10 +127,12 @@ export function CandidateApplicationsTab({
                   hideIfEmpty={allInterviews.length === 0}
                 />
 
-                {app.notes && (
+                {app.applicationNotes && app.applicationNotes.length > 0 && (
                   <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 p-2.5 rounded-xl flex items-start gap-2">
                     <MessageSquare className="h-3 w-3 text-slate-400 shrink-0 mt-0.5" />
-                    <span className="line-clamp-2">{app.notes}</span>
+                    <span className="line-clamp-2">
+                      {app.applicationNotes[0]?.content}
+                    </span>
                   </div>
                 )}
               </div>

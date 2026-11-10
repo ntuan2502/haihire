@@ -39,10 +39,6 @@ interface CandidateQuickDrawerProps {
   drawerOverviewBtnRef: RefObject<HTMLButtonElement | null>;
   allScheduledInterviews: ScheduledInterviewInfo[];
   drawerCandidateDocuments: CandidateDocument[];
-  drawerNotesList: string[];
-  drawerNoteInput: string;
-  onDrawerNoteInputChange: (val: string) => void;
-  onAddDrawerNote: () => void;
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
   onCancelInterview: (interviewOrId?: ScheduledInterviewInfo | string) => void;
   onPreviewDoc: (doc: CandidateDocument) => void;
@@ -75,10 +71,6 @@ export function CandidateQuickDrawer({
   drawerOverviewBtnRef,
   allScheduledInterviews,
   drawerCandidateDocuments,
-  drawerNotesList,
-  drawerNoteInput,
-  onDrawerNoteInputChange,
-  onAddDrawerNote,
   onScheduleInterview,
   onCancelInterview,
   onPreviewDoc,
@@ -210,10 +202,6 @@ export function CandidateQuickDrawer({
               currentApp={currentApp}
               drawerOverviewSections={drawerOverviewSections}
               drawerCandidateDocuments={drawerCandidateDocuments}
-              drawerNotesList={drawerNotesList}
-              drawerNoteInput={drawerNoteInput}
-              onDrawerNoteInputChange={onDrawerNoteInputChange}
-              onAddDrawerNote={onAddDrawerNote}
               onScheduleInterview={onScheduleInterview}
               onCancelInterview={onCancelInterview}
               onPreviewDoc={onPreviewDoc}
@@ -234,7 +222,6 @@ export function CandidateQuickDrawer({
           {drawerTab === "interviews" && (
             <CandidateInterviewsTab
               application={currentApp}
-              notes={currentApp.notes}
               onSchedule={onScheduleInterview}
               onCancelInterview={onCancelInterview}
               canEdit={canEdit}
@@ -248,13 +235,7 @@ export function CandidateQuickDrawer({
           )}
 
           {drawerTab === "notes" && (
-            <CandidateNotesTab
-              applicationId={currentApp.id}
-              notesList={drawerNotesList}
-              noteInput={drawerNoteInput}
-              onNoteInputChange={onDrawerNoteInputChange}
-              onAddNote={onAddDrawerNote}
-            />
+            <CandidateNotesTab applicationId={currentApp.id} />
           )}
 
           {drawerTab === "inbox" && <CandidateInboxTab />}

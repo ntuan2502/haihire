@@ -12,15 +12,39 @@ vi.mock("@/i18n", () => ({
 describe("PipelineCandidateCard Component", () => {
   const mockCandidate: Application = {
     id: "app-101",
+    candidateId: "cand-1",
     jobId: "job-1",
     candidateName: "Le Van Test",
     candidateEmail: "test@haihire.vn",
     candidatePhone: "0901234567",
     stage: "SCREENING",
     orderIndex: 0,
+    resumeUrl: "/resumes/test.pdf",
+    resumeFileName: "test.pdf",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    notes: "Top candidate with strong React skills",
+    candidate: {
+      id: "cand-1",
+      name: "Le Van Test",
+      email: "test@haihire.vn",
+      notes: "Top candidate with strong React skills",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    applicationNotes: [
+      {
+        id: "note-1",
+        organizationId: "org-1",
+        applicationId: "app-101",
+        authorId: "user-1",
+        authorName: "Recruiter",
+        authorRole: "RECRUITER",
+        content: "Top candidate with strong React skills",
+        isEdited: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
   };
 
   it("renders candidate name, email, and notes icon correctly", () => {

@@ -1728,7 +1728,6 @@ export async function runSeed(): Promise<void> {
     resumeFileName: string;
     resumeFileSize: number;
     resumeMimeType: string;
-    notes: string;
     orderIndex: number;
     trackingLinkId: string | null;
     sourceChannel: SourcingChannel;
@@ -1739,6 +1738,19 @@ export async function runSeed(): Promise<void> {
     utmCampaign: string | null;
     utmTerm: string | null;
     utmContent: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
+
+  const applicationNotesToInsert: Array<{
+    id: string;
+    organizationId: string;
+    applicationId: string;
+    authorId: string;
+    authorName: string;
+    authorRole: string;
+    content: string;
+    isEdited: boolean;
     createdAt: Date;
     updatedAt: Date;
   }> = [];
@@ -2065,7 +2077,6 @@ export async function runSeed(): Promise<void> {
           resumeFileName: fileName,
           resumeFileSize,
           resumeMimeType: "application/pdf",
-          notes,
           orderIndex,
           trackingLinkId,
           sourceChannel,
@@ -2079,6 +2090,21 @@ export async function runSeed(): Promise<void> {
           createdAt: toInstant(appCreatedAt),
           updatedAt: toInstant(appCreatedAt),
         });
+
+        if (notes) {
+          applicationNotesToInsert.push({
+            id: crypto.randomUUID(),
+            organizationId: adminOrgId,
+            applicationId: appId,
+            authorId: adminUserId,
+            authorName: DEMO_ACCOUNTS.ADMIN.name,
+            authorRole: "ADMIN",
+            content: notes,
+            isEdited: false,
+            createdAt: toInstant(appCreatedAt),
+            updatedAt: toInstant(appCreatedAt),
+          });
+        }
       }
     }
   }
@@ -2128,8 +2154,9 @@ export async function runSeed(): Promise<void> {
   });
 
   // Guarantee Candidate 2 (Kanban) is in APPLIED stage for Job 1 (Senior Backend Engineer)
+  const kanbanAppId = "00000000-0000-4000-8000-000000000301";
   applicationsToInsert.push({
-    id: "00000000-0000-4000-8000-000000000301",
+    id: kanbanAppId,
     candidateId: kanbanCandidateId,
     jobId: createdJobIds[1], // Senior Backend Engineer (NestJS / PostgreSQL)
     stage: "APPLIED",
@@ -2138,7 +2165,6 @@ export async function runSeed(): Promise<void> {
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
     resumeMimeType: "application/pdf",
-    notes: "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test.",
     orderIndex: 0,
     trackingLinkId: null,
     sourceChannel: SourcingChannel.DIRECT,
@@ -2152,11 +2178,24 @@ export async function runSeed(): Promise<void> {
     createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
   });
+  applicationNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000401",
+    organizationId: adminOrgId,
+    applicationId: kanbanAppId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Đơn ứng tuyển phục vụ Kanban drag & drop E2E test.",
+    isEdited: false,
+    createdAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 5 * 86400000)),
+  });
   stageStats.APPLIED++;
 
   // Guarantee Candidate 1 is in SCREENING stage for Job 1 so that both stages are available
+  const testAppId = "00000000-0000-4000-8000-000000000302";
   applicationsToInsert.push({
-    id: "00000000-0000-4000-8000-000000000302",
+    id: testAppId,
     candidateId: testCandidateId,
     jobId: createdJobIds[1],
     stage: "SCREENING",
@@ -2165,7 +2204,6 @@ export async function runSeed(): Promise<void> {
     resumeFileName: "sample-resume.pdf",
     resumeFileSize: 102400,
     resumeMimeType: "application/pdf",
-    notes: "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test.",
     orderIndex: 1,
     trackingLinkId: null,
     sourceChannel: SourcingChannel.DIRECT,
@@ -2176,6 +2214,18 @@ export async function runSeed(): Promise<void> {
     utmCampaign: null,
     utmTerm: null,
     utmContent: null,
+    createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+    updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
+  });
+  applicationNotesToInsert.push({
+    id: "00000000-0000-4000-8000-000000000402",
+    organizationId: adminOrgId,
+    applicationId: testAppId,
+    authorId: adminUserId,
+    authorName: DEMO_ACCOUNTS.ADMIN.name,
+    authorRole: "ADMIN",
+    content: "Đơn ứng tuyển giai đoạn SCREENING phục vụ E2E test.",
+    isEdited: false,
     createdAt: toInstant(new Date(Date.now() - 6 * 86400000)),
     updatedAt: toInstant(new Date(Date.now() - 6 * 86400000)),
   });
@@ -2214,6 +2264,22 @@ export async function runSeed(): Promise<void> {
     );
     process.stdout.write(
       `\r   Progress: ${Math.min(b + BATCH_SIZE, applicationsToInsert.length)}/${applicationsToInsert.length} records`,
+    );
+  }
+
+  console.log(
+    `\n⏳ Saving ${applicationNotesToInsert.length} application notes to database (batched)...`,
+  );
+  for (let b = 0; b < applicationNotesToInsert.length; b += BATCH_SIZE) {
+    const chunk = applicationNotesToInsert.slice(b, b + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((note) =>
+        prisma.applicationNote.upsert({
+          create: note,
+          update: {},
+          where: { id: note.id },
+        }),
+      ),
     );
   }
 

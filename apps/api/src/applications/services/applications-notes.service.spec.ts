@@ -56,14 +56,12 @@ describe("ApplicationsNotesService", () => {
         organizationId: "org-1",
         candidateId: "cand-1",
         jobId: "job-1",
-        notes: "Legacy Note 1 | Legacy Note 2",
       },
       {
         id: "app-2",
         organizationId: "org-2",
         candidateId: "cand-2",
         jobId: "job-2",
-        notes: null,
       },
     ]);
 
@@ -110,21 +108,10 @@ describe("ApplicationsNotesService", () => {
         AppForbiddenException,
       );
     });
-
-    it("automatically migrates legacy delimited notes if no applicationNote exists", async () => {
-      // Clear notes table for app-1
-      applicationNoteTable.findMany = vi.fn().mockResolvedValueOnce([]);
-
-      const notes = await service.findNotes("app-1", mockUser);
-      expect(notes).toHaveLength(2);
-      expect(notes.map((n) => n.content)).toEqual(
-        expect.arrayContaining(["Legacy Note 1", "Legacy Note 2"]),
-      );
-    });
   });
 
   describe("createNote", () => {
-    it("creates a new note, logs activity, and updates application notes string", async () => {
+    it("creates a new note and logs activity", async () => {
       const created = await service.createNote(
         "app-1",
         { content: "Candidate demonstrated strong architecture skills" },

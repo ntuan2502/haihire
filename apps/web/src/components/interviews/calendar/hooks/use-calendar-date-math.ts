@@ -178,6 +178,23 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     [t],
   );
 
+  const visibleRange = useMemo(() => {
+    if (calendarMode === "week") {
+      const start = weekDays[0]?.dateStr;
+      const end = weekDays[weekDays.length - 1]?.dateStr;
+      return {
+        startDate: start ? `${start}T00:00:00.000Z` : undefined,
+        endDate: end ? `${end}T23:59:59.999Z` : undefined,
+      };
+    }
+    const start = monthDays[0]?.dateStr;
+    const end = monthDays[monthDays.length - 1]?.dateStr;
+    return {
+      startDate: start ? `${start}T00:00:00.000Z` : undefined,
+      endDate: end ? `${end}T23:59:59.999Z` : undefined,
+    };
+  }, [calendarMode, monthDays, weekDays]);
+
   return {
     calendarMode,
     setCalendarMode,
@@ -186,6 +203,7 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
     currentDate,
     setCurrentDate,
     todayStr,
+    visibleRange,
     handlePrevMonth,
     handleNextMonth,
     handlePrev: handlePrevMonth,

@@ -5,13 +5,14 @@ import {
   AppNotFoundException,
 } from "../../common/app-exception";
 import { PrismaService } from "../../prisma/prisma.service";
-import { toTimestamp } from "../../common/date.util";
 import { formatInterviewRecord } from "../constants";
 
 export interface FindAllInterviewsOptions {
   organizationId?: string;
   jobId?: string;
   applicationId?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -66,7 +67,6 @@ export class InterviewsQueryService {
       jobId: string;
       stage?: string | null;
       matchScore?: number | null;
-      notes?: string | null;
       createdAt?: Date | string | null;
       updatedAt?: Date | string | null;
       [key: string]: unknown;
@@ -93,26 +93,18 @@ export class InterviewsQueryService {
       options?.limit && options.limit > 0 ? options.limit : 20;
     const defaultPage = options?.page && options.page > 0 ? options.page : 1;
 
-    let interviews: InterviewRecord[] = [];
-    const appsMap = new Map<string, AppRecord>();
+    // 1. Resolve tenant Application IDs
+    let targetAppIds: string[] | null = null;
 
     if (options?.applicationId) {
-      interviews = await this.prisma.interview.findMany({
-        where: { applicationId: options.applicationId! },
-      });
+      targetAppIds = [options.applicationId];
     } else if (options?.jobId) {
       const targetApps = await this.prisma.application.findMany({
-        where: { jobId: options.jobId! },
-        select: {
-          id: true,
-          candidateId: true,
-          jobId: true,
-          stage: true,
-          matchScore: true,
-        },
+        where: { jobId: options.jobId },
+        select: { id: true },
       });
-
-      if (targetApps.length === 0) {
+      targetAppIds = targetApps.map((a) => a.id);
+      if (targetAppIds.length === 0) {
         return {
           data: [],
           total: 0,
@@ -121,20 +113,45 @@ export class InterviewsQueryService {
           totalPages: 0,
         };
       }
-      for (const a of targetApps) {
-        appsMap.set(a.id, a as unknown as AppRecord);
-      }
-      const appIds = targetApps.map((a) => a.id);
-      interviews = await this.prisma.interview.findMany({
-        where: { applicationId: { in: appIds } },
-      });
     } else if (targetOrgId) {
-      const orgCandidates = await this.prisma.candidate.findMany({
-        where: { organizationId: targetOrgId },
+      const [orgCandidates, orgJobs] = await Promise.all([
+        this.prisma.candidate.findMany({
+          where: { organizationId: targetOrgId },
+          select: { id: true },
+        }),
+        this.prisma.job.findMany({
+          where: { organizationId: targetOrgId },
+          select: { id: true },
+        }),
+      ]);
+
+      const candidateIds = orgCandidates.map((c) => c.id);
+      const jobIds = orgJobs.map((j) => j.id);
+
+      if (candidateIds.length === 0 && jobIds.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page: defaultPage,
+          limit: defaultLimit,
+          totalPages: 0,
+        };
+      }
+
+      const targetApps = await this.prisma.application.findMany({
+        where: {
+          OR: [
+            ...(candidateIds.length > 0
+              ? [{ candidateId: { in: candidateIds } }]
+              : []),
+            ...(jobIds.length > 0 ? [{ jobId: { in: jobIds } }] : []),
+          ],
+        },
         select: { id: true },
       });
 
-      if (orgCandidates.length === 0) {
+      targetAppIds = targetApps.map((a) => a.id);
+      if (targetAppIds.length === 0) {
         return {
           data: [],
           total: 0,
@@ -143,43 +160,122 @@ export class InterviewsQueryService {
           totalPages: 0,
         };
       }
-      const candidateIds = orgCandidates.map((c) => c.id);
-
-      const targetApps = await this.prisma.application.findMany({
-        where: { candidateId: { in: candidateIds } },
-        select: {
-          id: true,
-          candidateId: true,
-          jobId: true,
-          stage: true,
-          matchScore: true,
-          notes: true,
-        },
-      });
-
-      if (targetApps.length === 0) {
-        return {
-          data: [],
-          total: 0,
-          page: defaultPage,
-          limit: defaultLimit,
-          totalPages: 0,
-        };
-      }
-      for (const a of targetApps) {
-        appsMap.set(a.id, a as unknown as AppRecord);
-      }
-      const appIds = targetApps.map((a) => a.id);
-      interviews = await this.prisma.interview.findMany({
-        where: { applicationId: { in: appIds } },
-      });
-    } else {
-      interviews = await this.prisma.interview.findMany();
     }
 
-    const neededAppIds = [
-      ...new Set(interviews.map((i) => i.applicationId)),
-    ].filter((id) => !appsMap.has(id));
+    // 2. Resolve Search Filters
+    let searchAppIds: string[] = [];
+    let isSearchActive = false;
+    if (options?.search && options.search.trim()) {
+      isSearchActive = true;
+      const q = options.search.trim().toLowerCase();
+      const [matchingCandidates, matchingJobs] = await Promise.all([
+        this.prisma.candidate.findMany({
+          where: {
+            ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { email: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          select: { id: true },
+        }),
+        this.prisma.job.findMany({
+          where: {
+            ...(targetOrgId ? { organizationId: targetOrgId } : {}),
+            title: { contains: q, mode: "insensitive" },
+          },
+          select: { id: true },
+        }),
+      ]);
+
+      const searchCandidateIds = matchingCandidates.map((c) => c.id);
+      const searchJobIds = matchingJobs.map((j) => j.id);
+
+      if (searchCandidateIds.length > 0 || searchJobIds.length > 0) {
+        const searchApps = await this.prisma.application.findMany({
+          where: {
+            OR: [
+              ...(searchCandidateIds.length > 0
+                ? [{ candidateId: { in: searchCandidateIds } }]
+                : []),
+              ...(searchJobIds.length > 0
+                ? [{ jobId: { in: searchJobIds } }]
+                : []),
+            ],
+            ...(targetAppIds ? { id: { in: targetAppIds } } : {}),
+          },
+          select: { id: true },
+        });
+        searchAppIds = searchApps.map((a) => a.id);
+      }
+    }
+
+    // 3. Construct direct Interview query
+    const interviewWhere: Record<string, unknown> = {};
+
+    if (targetAppIds) {
+      interviewWhere.applicationId = { in: targetAppIds };
+    }
+
+    // Date range filter (Calendar mode)
+    if (options?.startDate && options?.endDate) {
+      interviewWhere.scheduledAt = {
+        gte: new Date(options.startDate),
+        lte: new Date(options.endDate),
+      };
+    } else if (options?.tab === "UPCOMING") {
+      const now = new Date();
+      const startOfToday = new Date(
+        Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0),
+      );
+      interviewWhere.scheduledAt = {
+        gte: startOfToday,
+      };
+    } else if (options?.tab === "AWAITING") {
+      const now = new Date();
+      interviewWhere.scheduledAt = {
+        lt: now,
+      };
+      interviewWhere.scorecard = null;
+    }
+
+    if (isSearchActive) {
+      const q = options?.search?.trim() || "";
+      interviewWhere.OR = [
+        ...(searchAppIds.length > 0
+          ? [{ applicationId: { in: searchAppIds } }]
+          : []),
+        { interviewer: { contains: q, mode: "insensitive" } },
+        { linkOrLocation: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const isCalendarMode = Boolean(options?.startDate && options?.endDate);
+    const limit = isCalendarMode ? 250 : defaultLimit;
+    const page = isCalendarMode ? 1 : defaultPage;
+    const skip = (page - 1) * limit;
+
+    const [rawInterviews, total] = await Promise.all([
+      this.prisma.interview.findMany({
+        where: interviewWhere,
+        orderBy:
+          options?.sortBy === "newest"
+            ? { createdAt: "desc" }
+            : { scheduledAt: "asc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.interview.count({
+        where: interviewWhere,
+      }),
+    ]);
+
+    const interviews = rawInterviews as unknown as InterviewRecord[];
+
+    // 4. Enrich ONLY the fetched page slice (at most 20 records)
+    const neededAppIds = [...new Set(interviews.map((i) => i.applicationId))];
+    const appsMap = new Map<string, AppRecord>();
+
     if (neededAppIds.length > 0) {
       const fetchedApps = await this.prisma.application.findMany({
         where: { id: { in: neededAppIds } },
@@ -189,6 +285,8 @@ export class InterviewsQueryService {
           jobId: true,
           stage: true,
           matchScore: true,
+          createdAt: true,
+          updatedAt: true,
         },
       });
       for (const a of fetchedApps) {
@@ -196,16 +294,13 @@ export class InterviewsQueryService {
       }
     }
 
-    const candidateIds = [
+    const neededCandidateIds = [
       ...new Set(Array.from(appsMap.values()).map((a) => a.candidateId)),
     ];
     const candidatesMap = new Map<string, CandidateRecord>();
-    if (candidateIds.length > 0) {
+    if (neededCandidateIds.length > 0) {
       const candidates = await this.prisma.candidate.findMany({
-        where: {
-          id: { in: candidateIds },
-          ...(targetOrgId ? { organizationId: targetOrgId } : {}),
-        },
+        where: { id: { in: neededCandidateIds } },
         select: {
           id: true,
           name: true,
@@ -221,16 +316,13 @@ export class InterviewsQueryService {
       }
     }
 
-    const jobIds = [
+    const neededJobIds = [
       ...new Set(Array.from(appsMap.values()).map((a) => a.jobId)),
     ];
     const jobsMap = new Map<string, JobRecord>();
-    if (jobIds.length > 0) {
+    if (neededJobIds.length > 0) {
       const jobs = await this.prisma.job.findMany({
-        where: {
-          id: { in: jobIds },
-          ...(targetOrgId ? { organizationId: targetOrgId } : {}),
-        },
+        where: { id: { in: neededJobIds } },
         select: {
           id: true,
           title: true,
@@ -243,169 +335,38 @@ export class InterviewsQueryService {
       }
     }
 
-    // Group interviews by applicationId so each candidate appears once with all interview rounds
-    const interviewsByApp = new Map<string, typeof interviews>();
-    for (const intv of interviews) {
-      const list = interviewsByApp.get(intv.applicationId) || [];
-      list.push(intv);
-      interviewsByApp.set(intv.applicationId, list);
-    }
+    const data = interviews.map((intv) => {
+      const formatted = formatInterviewRecord(intv);
+      const app = appsMap.get(intv.applicationId);
+      const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
+      const job = app ? jobsMap.get(app.jobId) : undefined;
 
-    const scheduledItems = Array.from(interviewsByApp.entries()).map(
-      ([appId, appInterviews]) => {
-        const app = appsMap.get(appId);
-        const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
-        const job = app ? jobsMap.get(app.jobId) : undefined;
+      return {
+        ...formatted,
+        candidateName: candidate ? candidate.name : "Candidate",
+        candidateEmail: candidate?.email || "",
+        candidatePhone: candidate?.phone || null,
+        jobTitle: job ? job.title : undefined,
+        jobId: app?.jobId,
+        organizationId:
+          candidate?.organizationId || job?.organizationId || targetOrgId,
+        application: app
+          ? {
+              ...app,
+              candidate: candidate
+                ? { ...candidate, name: candidate.name }
+                : undefined,
+              job: job ? { ...job, title: job.title } : undefined,
+              candidateName: candidate ? candidate.name : "Candidate",
+              candidateEmail: candidate?.email || "",
+              candidatePhone: candidate?.phone || null,
+              interviews: [formatted],
+            }
+          : undefined,
+      };
+    });
 
-        const formattedInterviews = appInterviews.map((intv) =>
-          formatInterviewRecord(intv),
-        );
-
-        // Sort rounds descending (most recent first)
-        formattedInterviews.sort((a, b) => {
-          const dtA = `${a.date} ${a.time || "00:00"}`;
-          const dtB = `${b.date} ${b.time || "00:00"}`;
-          return dtB.localeCompare(dtA);
-        });
-
-        const today = new Date().toISOString().split("T")[0];
-        const upcoming = formattedInterviews
-          .filter((i) => i.date >= today)
-          .sort((a, b) => {
-            const dtA = `${a.date} ${a.time || "00:00"}`;
-            const dtB = `${b.date} ${b.time || "00:00"}`;
-            return dtA.localeCompare(dtB);
-          })[0];
-        const primary = upcoming || formattedInterviews[0];
-
-        return {
-          id: primary.id,
-          applicationId: appId,
-          date: primary.date,
-          time: primary.time,
-          type: primary.type,
-          format: primary.format,
-          linkOrLocation: primary.linkOrLocation,
-          interviewer: primary.interviewer,
-          round: primary.round,
-          scorecard: primary.scorecard,
-          notes: primary.notes,
-          createdAt: primary.createdAt,
-          updatedAt: primary.updatedAt,
-          application: app
-            ? {
-                ...app,
-                candidate: candidate
-                  ? { ...candidate, name: candidate.name }
-                  : undefined,
-                job: job ? { ...job, title: job.title } : undefined,
-                candidateName: candidate ? candidate.name : "Candidate",
-                candidateEmail: candidate?.email || "",
-                candidatePhone: candidate?.phone || null,
-                interviews: formattedInterviews,
-              }
-            : undefined,
-          candidateName: candidate ? candidate.name : "Candidate",
-          candidateEmail: candidate?.email,
-          jobTitle: job ? job.title : undefined,
-          jobId: app?.jobId,
-          organizationId: candidate?.organizationId || job?.organizationId,
-        };
-      },
-    );
-
-    const scheduledAppIds = new Set(interviewsByApp.keys());
-    const awaitingApps = Array.from(appsMap.values()).filter(
-      (a) => a.stage === "INTERVIEW" && !scheduledAppIds.has(a.id),
-    );
-
-    const awaitingItems = (options?.tab !== "UPCOMING" ? awaitingApps : []).map(
-      (app) => {
-        const candidate = candidatesMap.get(app.candidateId);
-        const job = jobsMap.get(app.jobId);
-        return {
-          id: `awaiting-${app.id}`,
-          applicationId: app.id,
-          date: "",
-          time: "",
-          type: "HR_SCREENING",
-          format: "MEET" as const,
-          linkOrLocation: "",
-          interviewer: "",
-          round: 1,
-          scorecard: null,
-          notes: null,
-          createdAt: app.createdAt || new Date().toISOString(),
-          updatedAt: app.updatedAt || new Date().toISOString(),
-          application: {
-            ...app,
-            candidate: candidate
-              ? { ...candidate, name: candidate.name }
-              : undefined,
-            job: job ? { ...job, title: job.title } : undefined,
-            candidateName: candidate ? candidate.name : "Candidate",
-            candidateEmail: candidate?.email || "",
-            candidatePhone: candidate?.phone || null,
-            interviews: [],
-          },
-          candidateName: candidate ? candidate.name : "Candidate",
-          candidateEmail: candidate?.email,
-          jobTitle: job ? job.title : undefined,
-          jobId: app.jobId,
-          organizationId: candidate?.organizationId || job?.organizationId,
-        };
-      },
-    );
-
-    const allItems = [...scheduledItems, ...awaitingItems]
-      .filter((item) => {
-        if (targetOrgId && item.organizationId !== targetOrgId) {
-          return false;
-        }
-        if (options?.jobId && item.jobId !== options.jobId) {
-          return false;
-        }
-        if (options?.search && options.search.trim() !== "") {
-          const q = options.search.trim().toLowerCase();
-          const matches =
-            item.candidateName.toLowerCase().includes(q) ||
-            (item.candidateEmail &&
-              item.candidateEmail.toLowerCase().includes(q)) ||
-            (item.jobTitle && item.jobTitle.toLowerCase().includes(q)) ||
-            item.interviewer.toLowerCase().includes(q) ||
-            item.linkOrLocation.toLowerCase().includes(q);
-          if (!matches) return false;
-        }
-        if (options?.tab === "UPCOMING") {
-          if (!item.date) return false;
-        }
-        if (options?.tab === "AWAITING") {
-          if (item.date) return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        if (options?.sortBy === "name") {
-          return a.candidateName.localeCompare(b.candidateName);
-        }
-        if (options?.sortBy === "newest") {
-          return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
-        }
-        if (a.date && !b.date) return -1;
-        if (!a.date && b.date) return 1;
-        if (a.date && b.date) {
-          const dateA = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
-          const dateB = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
-          return dateA - dateB;
-        }
-        return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
-      });
-
-    const total = allItems.length;
-    const page = defaultPage;
-    const limit = defaultLimit;
     const totalPages = Math.ceil(total / limit) || 1;
-    const data = allItems.slice((page - 1) * limit, page * limit);
 
     return {
       data,

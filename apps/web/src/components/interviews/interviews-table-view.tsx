@@ -122,6 +122,30 @@ export function InterviewsTableView({
     );
   };
 
+  const getRelativeDateBadge = (dateStr?: string) => {
+    if (!dateStr) return null;
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const tomorrowDt = new Date(now.getTime() + 86400000);
+    const tomorrow = tomorrowDt.toISOString().split("T")[0];
+
+    if (dateStr === today) {
+      return (
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
+          {t("dashboard.today")}
+        </span>
+      );
+    }
+    if (dateStr === tomorrow) {
+      return (
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-300/80 dark:border-blue-800">
+          {t("dashboard.tomorrow")}
+        </span>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs overflow-hidden transition-all">
       <div className="overflow-x-auto">
@@ -231,6 +255,7 @@ export function InterviewsTableView({
                                   {currentInterview.date} •{" "}
                                   {currentInterview.time}
                                 </span>
+                                {getRelativeDateBadge(currentInterview.date)}
                               </div>
                               <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
                                 <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">

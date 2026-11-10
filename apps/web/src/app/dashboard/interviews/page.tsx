@@ -11,7 +11,7 @@ import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useTableParams } from "@/hooks/use-table-params";
 import {
   useAllJobs,
-  useAllApplications,
+  useApplications,
   useInterviews,
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
@@ -95,6 +95,12 @@ function InterviewsPageContent() {
   // Filter Drawer State
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // Calendar Visible Range State for dynamic date-window queries
+  const [calendarRange, setCalendarRange] = useState<{
+    startDate?: string;
+    endDate?: string;
+  }>({});
+
   const { columns: visibleColumns, toggleColumn } = usePersistedColumns(
     "haihire_interviews_columns_v1",
     {
@@ -115,9 +121,24 @@ function InterviewsPageContent() {
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
-  const { data: allApplications = [] } = useAllApplications(
-    user?.organizationId,
-  );
+
+  // Lazy-load applications only when the schedule modal is open (preventing full tenant scan)
+  const { data: modalApplicationsData } = useApplications({
+    organizationId: user?.organizationId,
+    limit: 100,
+    enabled: scheduleModalOpen,
+  });
+
+  const modalApplications = useMemo(() => {
+    const list = modalApplicationsData?.data ?? [];
+    if (
+      selectedAppForSchedule &&
+      !list.some((a) => a.id === selectedAppForSchedule.id)
+    ) {
+      return [selectedAppForSchedule, ...list];
+    }
+    return list;
+  }, [modalApplicationsData?.data, selectedAppForSchedule]);
 
   // Paginated interviews query from server API (for Table view & Total KPIs)
   const { data: interviewsData, isLoading: appsLoading } = useInterviews({
@@ -130,11 +151,12 @@ function InterviewsPageContent() {
     sortBy,
   });
 
-  // Full interviews query for Calendar view (all scheduled events, up to 1000 items)
+  // Range-scoped interviews query for Calendar view (only visible month/week window)
   const { data: calendarInterviewsData, isLoading: calendarLoading } =
     useInterviews({
       organizationId: user?.organizationId,
-      limit: 1000,
+      startDate: calendarRange.startDate,
+      endDate: calendarRange.endDate,
       search: searchQuery.trim() || undefined,
       jobId: selectedJobFilter !== "ALL" ? selectedJobFilter : undefined,
       tab: activeTab,
@@ -226,7 +248,7 @@ function InterviewsPageContent() {
         activeTab="interviews"
         onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
         jobsCount={jobs.length}
-        candidatesCount={allApplications.length}
+        candidatesCount={totalCandidateCount}
       />
 
       {/* Main Content */}
@@ -278,6 +300,7 @@ function InterviewsPageContent() {
                 handleOpenScheduleModal(app, intv.date, intv)
               }
               onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
+              onVisibleRangeChange={setCalendarRange}
               canEdit={canCreateInterview}
             />
           )
@@ -348,7 +371,7 @@ function InterviewsPageContent() {
           setSelectedInterviewForEdit(undefined);
         }}
         jobs={jobs}
-        applications={allApplications}
+        applications={modalApplications}
         selectedJobId={selectedAppForSchedule?.jobId || undefined}
         selectedApplicationId={selectedAppForSchedule?.id || undefined}
         initialDate={scheduleDate}

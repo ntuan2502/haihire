@@ -23,6 +23,7 @@ export function useApplications(params?: {
   search?: string;
   jobId?: string;
   stage?: string;
+  enabled?: boolean;
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
@@ -58,7 +59,7 @@ export function useApplications(params?: {
         stage: params?.stage,
       });
     },
-    enabled: Boolean(effectiveOrgId),
+    enabled: (params?.enabled ?? true) && Boolean(effectiveOrgId),
     placeholderData: keepPreviousData,
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCalendarDateMath } from "./hooks/use-calendar-date-math";
 import { useCalendarEvents } from "./hooks/use-calendar-events";
 import { CalendarHeader } from "./components/calendar-header";
@@ -20,6 +20,7 @@ export function InterviewsCalendarView({
   onScheduleDate,
   onEditSchedule,
   onOpenScorecard,
+  onVisibleRangeChange,
   canEdit = true,
 }: InterviewsCalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(
@@ -40,7 +41,12 @@ export function InterviewsCalendarView({
     monthTitle,
     weekTitle,
     dayHeaders,
+    visibleRange,
   } = useCalendarDateMath();
+
+  useEffect(() => {
+    onVisibleRangeChange?.(visibleRange);
+  }, [visibleRange, onVisibleRangeChange]);
 
   const { eventsByDate } = useCalendarEvents({
     applications,

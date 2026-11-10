@@ -46,5 +46,9 @@ export interface InterviewsCalendarViewProps {
     app: Application,
     interview: ScheduledInterviewInfo,
   ) => void;
+  onVisibleRangeChange?: (range: {
+    startDate?: string;
+    endDate?: string;
+  }) => void;
   canEdit?: boolean;
 }

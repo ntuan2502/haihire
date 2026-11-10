@@ -12,6 +12,8 @@ export const interviewsApi = {
     organizationId?: string;
     jobId?: string;
     applicationId?: string;
+    startDate?: string;
+    endDate?: string;
     page?: number;
     limit?: number;
     search?: string;

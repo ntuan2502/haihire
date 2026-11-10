@@ -21,6 +21,8 @@ export function useInterviews(params?: {
   organizationId?: string | null;
   jobId?: string | null;
   applicationId?: string | null;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
   search?: string;
@@ -39,6 +41,8 @@ export function useInterviews(params?: {
       orgId: effectiveOrgId,
       jobId: params?.jobId,
       applicationId: params?.applicationId,
+      startDate: params?.startDate,
+      endDate: params?.endDate,
       page: params?.page,
       limit: params?.limit,
       search: params?.search,
@@ -59,6 +63,8 @@ export function useInterviews(params?: {
         organizationId: effectiveOrgId || undefined,
         jobId: params?.jobId || undefined,
         applicationId: params?.applicationId || undefined,
+        startDate: params?.startDate,
+        endDate: params?.endDate,
         page: params?.page,
         limit: params?.limit,
         search: params?.search,

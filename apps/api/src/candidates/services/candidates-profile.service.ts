@@ -80,7 +80,6 @@ export class CandidatesProfileService {
         resumeFileName: true,
         resumeFileSize: true,
         resumeMimeType: true,
-        notes: true,
         orderIndex: true,
         createdAt: true,
         updatedAt: true,

@@ -46,7 +46,6 @@ describe("JobsController public directory and detail privacy", () => {
             jobId: "job-a",
             candidateId: "candidate-1",
             stage: "APPLIED",
-            notes: "Private notes",
             resumeUrl: "private-cv",
           },
         ]),

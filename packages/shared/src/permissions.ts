@@ -145,9 +145,9 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
     Role.INTERVIEWER,
     Role.MEMBER,
   ],
-  "interview:create": [Role.ADMIN, Role.RECRUITER],
-  "interview:update": [Role.ADMIN, Role.RECRUITER],
-  "interview:delete": [Role.ADMIN, Role.RECRUITER],
+  "interview:create": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
+  "interview:update": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
+  "interview:delete": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
   "interview:scorecard_submit": [
     Role.ADMIN,
     Role.RECRUITER,
@@ -156,12 +156,7 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
   ],
 
   // Sourcing
-  "sourcing:view": [
-    Role.ADMIN,
-    Role.RECRUITER,
-    Role.HIRING_MANAGER,
-    Role.MEMBER,
-  ],
+  "sourcing:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
   "sourcing:create": [Role.ADMIN, Role.RECRUITER],
   "sourcing:update": [Role.ADMIN, Role.RECRUITER],
   "sourcing:delete": [Role.ADMIN, Role.RECRUITER],

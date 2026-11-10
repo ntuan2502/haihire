@@ -63,7 +63,7 @@ export class InterviewsScheduleService {
     if (app.stage === "REJECTED") {
       throw new AppBadRequestException(
         APP_ERROR_CODES.VALIDATION_ERROR,
-        "Cannot schedule an interview for a rejected application. Reopen the application before scheduling.",
+        "Cannot schedule an interview for a rejected application.",
       );
     }
 
@@ -131,12 +131,31 @@ export class InterviewsScheduleService {
       app.stage !== "OFFER" &&
       app.stage !== "HIRED"
     ) {
+      const previousStage = app.stage;
       await this.prisma.application.update({
         where: { id: app.id },
         data: {
           stage: "INTERVIEW",
         },
       });
+
+      if (candidate && orgId) {
+        await this.activitiesService.createActivity({
+          organizationId: orgId,
+          candidateId: candidate.id,
+          applicationId: app.id,
+          type: "STAGE_CHANGED",
+          title: "Stage Changed",
+          description: `Stage updated from ${previousStage} to INTERVIEW automatically upon scheduling interview round ${dto.round || 1}.`,
+          actorName: dto.interviewer || "System",
+          actorRole: "SYSTEM",
+          metadata: {
+            fromStage: previousStage,
+            toStage: "INTERVIEW",
+            interviewId: id,
+          },
+        });
+      }
     }
 
     const createdInterview = await this.queryService.findOne(id);

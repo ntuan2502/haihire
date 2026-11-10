@@ -211,7 +211,8 @@ export class OrganizationsController {
     return this.orgsService.createInviteLink(req.user.id, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermission("org:manage_members")
   @Get("my/invite-links")
   getInviteLinks(@Request() req: { user: { id: string } }) {
     return this.orgsService.getInviteLinks(req.user.id);

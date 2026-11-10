@@ -458,4 +458,19 @@ describe("OrganizationsController", () => {
       );
     });
   });
+
+  describe("GET /organizations/my/invite-links", () => {
+    it("allows ADMIN access to invite links via RolesGuard", async () => {
+      const context = createMockContext(ownerReq, controller.getInviteLinks);
+      const allowed = await rolesGuard.canActivate(context);
+      expect(allowed).toBe(true);
+    });
+
+    it("rejects regular MEMBER without org:manage_members -> 403 Forbidden", () => {
+      const context = createMockContext(memberReq, controller.getInviteLinks);
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+  });
 });

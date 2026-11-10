@@ -34,7 +34,8 @@ export class SourcingController {
   ) {}
 
   @Get("stats")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("sourcing:view")
   async getStats(
     @Request() req: { user?: { organizationId?: string | null } },
     @Query() filter: SourcingFilterDto,
@@ -50,7 +51,8 @@ export class SourcingController {
   }
 
   @Get("links")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("sourcing:view")
   async getLinks(
     @Request() req: { user?: { organizationId?: string | null } },
     @Query() filter: SourcingFilterDto,
@@ -78,7 +80,8 @@ export class SourcingController {
   }
 
   @Get("links/:id")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("sourcing:view")
   async getLinkDetails(
     @Request() req: { user?: { organizationId?: string | null } },
     @Param("id") id: string,
@@ -150,7 +153,8 @@ export class SourcingController {
   }
 
   @Get("attribution-log")
-  @UseGuards(AuthGuard("jwt"))
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("sourcing:view")
   async getAttributionLog(
     @Request() req: { user?: { organizationId?: string | null } },
     @Query() filter: SourcingFilterDto,

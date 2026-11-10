@@ -166,6 +166,13 @@ describe("RequirePermissionGuard (RolesGuard RBAC 5-Role Matrix)", () => {
       setRequiredPermission("interview:scorecard_submit");
       expect(guard.canActivate(hmContext)).toBe(true);
 
+      setRequiredPermission("interview:create");
+      expect(guard.canActivate(hmContext)).toBe(true);
+      setRequiredPermission("interview:update");
+      expect(guard.canActivate(hmContext)).toBe(true);
+      setRequiredPermission("interview:delete");
+      expect(guard.canActivate(hmContext)).toBe(true);
+
       // Boundary: Cannot delete jobs or applications
       setRequiredPermission("job:delete");
       expect(() => guard.canActivate(hmContext)).toThrow(AppForbiddenException);
@@ -246,6 +253,11 @@ describe("RequirePermissionGuard (RolesGuard RBAC 5-Role Matrix)", () => {
       );
 
       setRequiredPermission("sourcing:create");
+      expect(() => guard.canActivate(memberContext)).toThrow(
+        AppForbiddenException,
+      );
+
+      setRequiredPermission("sourcing:view");
       expect(() => guard.canActivate(memberContext)).toThrow(
         AppForbiddenException,
       );

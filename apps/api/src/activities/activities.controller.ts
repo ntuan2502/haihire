@@ -66,6 +66,7 @@ export class ActivitiesController {
   }
 
   @Post()
+  @RequirePermission("candidate:update")
   create(
     @Body(DtoPipe(CreateActivityRecordDto)) dto: CreateActivityRecordDto,
     @Request()

@@ -58,6 +58,7 @@ export interface Application {
   resumeFileSize?: number | null;
   resumeMimeType?: string | null;
   notes?: string | null;
+  applicationNotes?: ApplicationNote[];
   orderIndex: number;
   matchScore?: number | null;
   interviews?: Interview[];
@@ -79,4 +80,17 @@ export interface CreateApplicationInput {
   resumeUrl?: string;
   resumeFileName?: string;
   resumeFile?: unknown;
+}
+
+export interface ApplicationNote {
+  id: string;
+  organizationId: string;
+  applicationId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  content: string;
+  isEdited: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

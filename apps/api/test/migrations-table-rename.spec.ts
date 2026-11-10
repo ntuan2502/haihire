@@ -31,9 +31,11 @@ describe("Database Migration: Table Rename to snake_case (H-01)", () => {
       mappedTables.push(match[1]);
     }
 
-    expect(mappedTables.length).toBe(19);
+    // Exclude models introduced after the 20261109 rename migration
+    const renamedTables = mappedTables.filter((t) => t !== "application_note");
+    expect(renamedTables.length).toBe(19);
 
-    for (const table of mappedTables) {
+    for (const table of renamedTables) {
       // Each snake_case table must be a target in the migration script
       expect(migrationContent).toContain(`'${table}'`);
       // Each snake_case table must be in the rollback script

@@ -249,6 +249,7 @@ export function CandidateQuickDrawer({
 
           {drawerTab === "notes" && (
             <CandidateNotesTab
+              applicationId={currentApp.id}
               notesList={drawerNotesList}
               noteInput={drawerNoteInput}
               onNoteInputChange={onDrawerNoteInputChange}

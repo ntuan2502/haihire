@@ -2,22 +2,33 @@
 
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ApplicationNotesStream } from "@/components/applications/application-notes-stream";
 import { useI18n } from "@/i18n";
 
 interface CandidateNotesTabProps {
-  notesList: string[];
-  noteInput: string;
-  onNoteInputChange: (val: string) => void;
-  onAddNote: () => void;
+  applicationId?: string;
+  notesList?: string[];
+  noteInput?: string;
+  onNoteInputChange?: (val: string) => void;
+  onAddNote?: () => void;
 }
 
 export function CandidateNotesTab({
-  notesList,
-  noteInput,
+  applicationId,
+  notesList = [],
+  noteInput = "",
   onNoteInputChange,
   onAddNote,
 }: CandidateNotesTabProps) {
   const { t } = useI18n();
+
+  if (applicationId) {
+    return (
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <ApplicationNotesStream applicationId={applicationId} />
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
@@ -45,10 +56,10 @@ export function CandidateNotesTab({
           type="text"
           placeholder={t("applications.notePlaceholder")}
           value={noteInput}
-          onChange={(e) => onNoteInputChange(e.target.value)}
+          onChange={(e) => onNoteInputChange?.(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              onAddNote();
+              onAddNote?.();
             }
           }}
           className="flex-1 h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:ring-1 focus:ring-blue-500"

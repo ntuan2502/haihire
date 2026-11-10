@@ -917,6 +917,23 @@ export interface TranslationSchema {
     notes: string;
     addNote: string;
     notePlaceholder: string;
+    notesStream: {
+      title: string;
+      subtitle: string;
+      placeholder: string;
+      addNote: string;
+      editNote: string;
+      deleteNote: string;
+      deleteConfirm: string;
+      edited: string;
+      empty: string;
+      emptyCompact: string;
+      cancel: string;
+      save: string;
+      keyboardHint: string;
+      saving: string;
+      deleting: string;
+    };
     toggleSections: string;
     views: string;
     columnsToggle: string;

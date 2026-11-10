@@ -79,9 +79,37 @@ let currentApp: typeof defaultApplicationData | null = {
 const mockUpdateStageMutateAsync = vi.fn();
 const mockDeleteAppMutateAsync = vi.fn();
 const mockUpdateCandidateMutateAsync = vi.fn();
+const mockAddApplicationNoteMutateAsync = vi.fn();
 const mockDeleteInterviewMutateAsync = vi.fn();
 const mockSendEmailMutateAsync = vi.fn();
 const mockDownloadAuthenticatedFile = vi.fn();
+
+const mockNotesList = [
+  {
+    id: "note-1",
+    applicationId: VALID_APP_ID,
+    organizationId: "org-1",
+    authorId: "user-1",
+    authorName: "Recruiter Admin",
+    authorRole: "ADMIN",
+    content: "Experienced backend engineer",
+    isEdited: false,
+    createdAt: "2026-03-01T10:00:00.000Z",
+    updatedAt: "2026-03-01T10:00:00.000Z",
+  },
+  {
+    id: "note-2",
+    applicationId: VALID_APP_ID,
+    organizationId: "org-1",
+    authorId: "user-1",
+    authorName: "Recruiter Admin",
+    authorRole: "ADMIN",
+    content: "Strong TypeScript",
+    isEdited: false,
+    createdAt: "2026-03-01T11:00:00.000Z",
+    updatedAt: "2026-03-01T11:00:00.000Z",
+  },
+];
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -141,6 +169,22 @@ vi.mock("@/hooks/use-queries", async (importOriginal) => {
       isPending: false,
     }),
     useUpdateInterviewMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+    useApplicationNotes: (appId?: string | null) => ({
+      data: appId === VALID_APP_ID ? mockNotesList : [],
+      isLoading: false,
+    }),
+    useAddApplicationNoteMutation: () => ({
+      mutateAsync: mockAddApplicationNoteMutateAsync,
+      isPending: false,
+    }),
+    useUpdateApplicationNoteMutation: () => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    }),
+    useDeleteApplicationNoteMutation: () => ({
       mutateAsync: vi.fn(),
       isPending: false,
     }),
@@ -413,8 +457,10 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       expect(screen.getByText("Strong TypeScript")).toBeInTheDocument();
     });
 
-    it("dispatches update mutation with delimited string when note is added", async () => {
-      mockUpdateCandidateMutateAsync.mockResolvedValueOnce({ success: true });
+    it("dispatches add note mutation when note is added", async () => {
+      mockAddApplicationNoteMutateAsync.mockResolvedValueOnce({
+        id: "note-new",
+      });
 
       renderWithClient(<ApplicationDetailPage />);
 
@@ -423,15 +469,13 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
         target: { value: "Great system design skills" },
       });
 
-      const saveBtn = screen.getByRole("button", { name: "Lưu thay đổi" });
-      fireEvent.click(saveBtn);
+      const addBtn = screen.getByRole("button", { name: "Thêm ghi chú" });
+      fireEvent.click(addBtn);
 
       await waitFor(() => {
-        expect(mockUpdateCandidateMutateAsync).toHaveBeenCalledWith({
-          id: VALID_APP_ID,
-          data: {
-            notes: expect.stringContaining("Great system design skills"),
-          },
+        expect(mockAddApplicationNoteMutateAsync).toHaveBeenCalledWith({
+          applicationId: VALID_APP_ID,
+          content: "Great system design skills",
         });
       });
     });
@@ -440,7 +484,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       renderWithClient(<ApplicationDetailPage />);
 
       expect(
-        screen.queryByRole("button", { name: "Lưu thay đổi" }),
+        screen.queryByRole("button", { name: "Thêm ghi chú" }),
       ).not.toBeInTheDocument();
     });
   });

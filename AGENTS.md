@@ -48,7 +48,7 @@ All AI agents operating in this repository must strictly adhere to the following
 | Area                          | Authoritative Document                                                       | Scope & Focus                                                         |
 | :---------------------------- | :--------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
 | **System Overview**           | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Topology diagram, modular NestJS backend, Next.js 16 frontend         |
-| **Data Model & Schema**       | [docs/architecture/data-model.md](docs/architecture/data-model.md)           | 16 Prisma models, relations, cascading rules, soft-delete periods     |
+| **Data Model & Schema**       | [docs/architecture/data-model.md](docs/architecture/data-model.md)           | 17 Prisma models, relations, cascading rules, soft-delete periods     |
 | **Security & RBAC**           | [docs/architecture/security-rbac.md](docs/architecture/security-rbac.md)     | Cookie JWT auth, dynamic `ownerId`, 5 roles, 41 permissions matrix    |
 | **Engineering Conventions**   | [docs/architecture/conventions.md](docs/architecture/conventions.md)         | Coding standards, fail-fast env, DtoPipe, i18n, tenant scoping        |
 | **Architectural Decisions**   | [docs/decisions/DECISIONS.md](docs/decisions/DECISIONS.md)                   | Consolidated ADRs and architectural decisions log                     |

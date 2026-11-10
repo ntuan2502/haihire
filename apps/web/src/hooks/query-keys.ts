@@ -2,6 +2,8 @@ export const queryKeys = {
   jobs: (orgId?: string | null) => ["jobs", { orgId }] as const,
   applications: (jobId?: string | null) => ["applications", { jobId }] as const,
   application: (id?: string | null) => ["applications", "detail", id] as const,
+  applicationNotes: (applicationId?: string | null) =>
+    ["applications", "notes", applicationId] as const,
   allApplications: (orgId?: string | null) =>
     ["applications", "all", { orgId }] as const,
   paginatedApplications: (params?: Record<string, unknown>) =>

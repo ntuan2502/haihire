@@ -160,6 +160,7 @@ model Organization {
   webhookSettings OrganizationWebhookSetting[]
   rolePermissions OrganizationRolePermission[]
   auditLogs       OrganizationAuditLog[]
+  applicationNotes ApplicationNote[]
   createdAt       DateTime                    @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -323,6 +324,7 @@ model Application {
   interviews     Interview[]
   emailLogs      EmailLog[]
   activityLogs   ActivityLog[]
+  applicationNotes ApplicationNote[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -558,3 +560,22 @@ model PlatformAuditLog {
 }
 
 
+
+model ApplicationNote {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applicationId  String
+  application    Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  authorId       String
+  authorName     String
+  authorRole     String
+  content        String       @db.Text
+  isEdited       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([applicationId, createdAt])
+  @@map("application_note")
+}

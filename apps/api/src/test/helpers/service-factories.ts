@@ -26,6 +26,7 @@ import {
   ApplicationsSagaService,
   ApplicationsStageService,
   ApplicationsDocumentsService,
+  ApplicationsNotesService,
 } from "../../applications/services";
 
 export function createTestApplicationsService(
@@ -41,6 +42,7 @@ export function createTestApplicationsService(
     new ApplicationsSagaService(prisma, minio, activities, email, queue, query),
     new ApplicationsStageService(prisma, activities, email, query),
     new ApplicationsDocumentsService(prisma, minio, activities, query),
+    new ApplicationsNotesService(prisma, activities),
   );
 }
 

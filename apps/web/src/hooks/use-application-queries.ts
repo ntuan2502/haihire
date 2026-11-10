@@ -8,7 +8,12 @@ import {
 } from "@tanstack/react-query";
 import { applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { Application, ApplicationStage, PaginatedResult } from "@/types";
+import type {
+  Application,
+  ApplicationNote,
+  ApplicationStage,
+  PaginatedResult,
+} from "@/types";
 import { queryKeys } from "./query-keys";
 
 export function useApplications(params?: {
@@ -217,6 +222,81 @@ export function useDeleteDocumentMutation() {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    },
+  });
+}
+
+export function useApplicationNotes(applicationId: string | null | undefined) {
+  return useQuery<ApplicationNote[]>({
+    queryKey: queryKeys.applicationNotes(applicationId),
+    queryFn: () => {
+      if (!applicationId) return [];
+      return applicationsApi.getNotes(applicationId);
+    },
+    enabled: Boolean(applicationId),
+  });
+}
+
+export function useAddApplicationNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      content,
+    }: {
+      applicationId: string;
+      content: string;
+    }) => applicationsApi.addNote(applicationId, content),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applicationNotes(variables.applicationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
+    },
+  });
+}
+
+export function useUpdateApplicationNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      noteId,
+      content,
+    }: {
+      applicationId: string;
+      noteId: string;
+      content: string;
+    }) => applicationsApi.updateNote(applicationId, noteId, content),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applicationNotes(variables.applicationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useDeleteApplicationNoteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      noteId,
+    }: {
+      applicationId: string;
+      noteId: string;
+    }) => applicationsApi.deleteNote(applicationId, noteId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.applicationNotes(variables.applicationId),
+      });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 }

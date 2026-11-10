@@ -24,6 +24,8 @@ import { ApplicationsService } from "./applications.service";
 import { CreateApplicationDto } from "./dto/create-application.dto";
 import { UpdateStageDto } from "./dto/update-stage.dto";
 import { UpdateCandidateDto } from "./dto/update-candidate.dto";
+import { CreateApplicationNoteDto } from "./dto/create-application-note.dto";
+import { UpdateApplicationNoteDto } from "./dto/update-application-note.dto";
 import { resumeFileFilter } from "../common/upload-utils";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
@@ -233,5 +235,76 @@ export class ApplicationsController {
     @Request() req?: { user?: { organizationId?: string | null } },
   ) {
     return this.applicationsService.remove(id, req?.user?.organizationId);
+  }
+
+  // ==========================================
+  // NOTE ENDPOINTS (Trello-style Comments)
+  // ==========================================
+  @Get(":id/notes")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
+  findNotes(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.applicationsService.findNotes(id, req?.user?.organizationId);
+  }
+
+  @Post(":id/notes")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
+  createNote(
+    @Param("id") id: string,
+    @Body(DtoPipe(CreateApplicationNoteDto)) dto: CreateApplicationNoteDto,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        name?: string;
+        role?: string;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.applicationsService.createNote(id, dto, req.user);
+  }
+
+  @Patch(":id/notes/:noteId")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
+  updateNote(
+    @Param("id") id: string,
+    @Param("noteId") noteId: string,
+    @Body(DtoPipe(UpdateApplicationNoteDto)) dto: UpdateApplicationNoteDto,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.applicationsService.updateNote(id, noteId, dto, req.user);
+  }
+
+  @Delete(":id/notes/:noteId")
+  @UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+  @RequirePermission("application:view")
+  deleteNote(
+    @Param("id") id: string,
+    @Param("noteId") noteId: string,
+    @Request()
+    req: {
+      user: {
+        id: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
+  ) {
+    return this.applicationsService.deleteNote(id, noteId, req.user);
   }
 }

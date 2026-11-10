@@ -9,6 +9,7 @@ import {
   ApplicationsSagaService,
   ApplicationsStageService,
   ApplicationsDocumentsService,
+  ApplicationsNotesService,
 } from "./applications.service";
 import {
   OrphanCleanupProcessor,
@@ -38,6 +39,7 @@ import { CommonModule } from "../common/common.module";
     ApplicationsSagaService,
     ApplicationsStageService,
     ApplicationsDocumentsService,
+    ApplicationsNotesService,
 
     OrphanCleanupProcessor,
   ],

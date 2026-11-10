@@ -7,7 +7,7 @@
 
 ## 1. Entity Relationship Overview
 
-The HaiHire ATS data tier comprises 16 core entities organized around the tenant root (`Organization`):
+The HaiHire ATS data tier comprises 17 core entities organized around the tenant root (`Organization`):
 
 ```mermaid
 erDiagram
@@ -23,6 +23,7 @@ erDiagram
   Organization ||--o{ CandidateDocument : "resumes (Cascade)"
   Organization ||--o{ TrackingLink : "sourcing_links (Cascade)"
   Organization ||--o{ OrganizationWebhookSetting : "webhooks (Cascade)"
+  Organization ||--o{ ApplicationNote : "application_notes (Cascade)"
 
   User ||--o{ Organization : "owns (Restrict)"
   Job ||--o{ Application : "applications (Cascade)"
@@ -32,6 +33,7 @@ erDiagram
   Candidate ||--o{ ActivityLog : "history (Cascade)"
   Application ||--o{ Interview : "interviews (Cascade)"
   Application ||--o{ EmailLog : "messages (Cascade)"
+  Application ||--o{ ApplicationNote : "notes (Cascade)"
   TrackingLink ||--o{ TrackingClick : "clicks (Cascade)"
 ```
 
@@ -147,33 +149,48 @@ Resume and document attachment pointers to MinIO object storage.
 - `fileName` (`String`), `fileSize` (`Int`), `mimeType` (`String`)
 - `isEncrypted` (`Boolean` default false)
 
+#### 10. `ApplicationNote`
+
+Trello-style collaboration note / comment stream attached to an Application.
+
+- `id` (`String` UUID, Primary Key)
+- `organizationId` (`String`, `onDelete: Cascade`)
+- `applicationId` (`String`, `onDelete: Cascade`)
+- `authorId` (`String`, ID of the user or system creating the note)
+- `authorName` (`String`, cached display name of the note author)
+- `authorRole` (`String`, cached role of the author at creation time)
+- `content` (`String`, note body up to 5,000 characters)
+- `isEdited` (`Boolean`, default false)
+- `createdAt`, `updatedAt` (`DateTime`)
+- **Key Indices:** `@@index([organizationId, createdAt])`, `@@index([applicationId, createdAt])`
+
 ---
 
 ### 2.3 Communications, Auditing & Integrations
 
-#### 10. `EmailTemplate`
+#### 11. `EmailTemplate`
 
 Reusable organization email templates (`[organizationId, type]` unique).
 
-#### 11. `EmailSetting`
+#### 12. `EmailSetting`
 
 Tenant email provider credentials (encrypted SMTP, SendGrid, or Resend API keys).
 
-#### 12. `EmailLog`
+#### 13. `EmailLog`
 
 Transactional email audit log with delivery status.
 
-#### 13. `ActivityLog`
+#### 14. `ActivityLog`
 
 Recruitment audit trail tracking candidate funnel events (`APPLIED`, `STAGE_CHANGED`, `NOTE_ADDED`).
 
 - Foreign keys: `candidateId` (non-nullable), `organizationId`, `applicationId?`.
 
-#### 14. `TrackingLink` & 15. `TrackingClick`
+#### 15. `TrackingLink` & 16. `TrackingClick`
 
 Attribution links with 5-parameter UTM tagging and click analytics.
 
-#### 16. `OrganizationWebhookSetting`
+#### 17. `OrganizationWebhookSetting`
 
 Tenant notification webhook targets (Discord, Telegram, Generic HTTP).
 
@@ -181,11 +198,12 @@ Tenant notification webhook targets (Discord, Telegram, Generic HTTP).
 
 ## 3. Database Cascade & Deletion Policies
 
-| Parent Entity  | Dependent Entity                                  | Relation FK      | `onDelete` Policy       | Behavioral Rationale                                                                                     |
-| :------------- | :------------------------------------------------ | :--------------- | :---------------------- | :------------------------------------------------------------------------------------------------------- |
-| `Organization` | `Job`, `Candidate`, `CandidateDocument`           | `organizationId` | `Cascade`               | Deleting tenant purges all operational recruitment data.                                                 |
-| `Organization` | `User`                                            | `organizationId` | `NoAction` / `Restrict` | Prevents deleting a tenant from silently deleting user accounts. `deleteMyOrg` explicitly unlinks users. |
-| `User` (Owner) | `Organization`                                    | `ownerId`        | `Restrict`              | A user cannot be deleted while registered as an organization owner. Ownership must be transferred first. |
-| `Job`          | `Application`                                     | `jobId`          | `Cascade`               | Deleting a job purges its active applications and interview rounds.                                      |
-| `Candidate`    | `Application`, `CandidateDocument`, `ActivityLog` | `candidateId`    | `Cascade`               | Purging candidate purges all submissions, documents, and logs.                                           |
-| `TrackingLink` | `Application`                                     | `trackingLinkId` | `SetNull`               | Deleting a tracking link preserves the candidate's application while unlinking attribution source.       |
+| Parent Entity  | Dependent Entity                                           | Relation FK      | `onDelete` Policy       | Behavioral Rationale                                                                                     |
+| :------------- | :--------------------------------------------------------- | :--------------- | :---------------------- | :------------------------------------------------------------------------------------------------------- |
+| `Organization` | `Job`, `Candidate`, `CandidateDocument`, `ApplicationNote` | `organizationId` | `Cascade`               | Deleting tenant purges all operational recruitment data and notes streams.                               |
+| `Organization` | `User`                                                     | `organizationId` | `NoAction` / `Restrict` | Prevents deleting a tenant from silently deleting user accounts. `deleteMyOrg` explicitly unlinks users. |
+| `User` (Owner) | `Organization`                                             | `ownerId`        | `Restrict`              | A user cannot be deleted while registered as an organization owner. Ownership must be transferred first. |
+| `Job`          | `Application`                                              | `jobId`          | `Cascade`               | Deleting a job purges its active applications and interview rounds.                                      |
+| `Candidate`    | `Application`, `CandidateDocument`, `ActivityLog`          | `candidateId`    | `Cascade`               | Purging candidate purges all submissions, documents, and logs.                                           |
+| `Application`  | `Interview`, `EmailLog`, `ApplicationNote`                 | `applicationId`  | `Cascade`               | Purging application purges interview rounds, message logs, and comment notes.                            |
+| `TrackingLink` | `Application`                                              | `trackingLinkId` | `SetNull`               | Deleting a tracking link preserves the candidate's application while unlinking attribution source.       |

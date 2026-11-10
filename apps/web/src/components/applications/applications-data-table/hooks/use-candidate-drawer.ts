@@ -85,6 +85,7 @@ export function useCandidateDrawer({
   }, [currentApp]);
 
   useEffect(() => {
+    setDrawerNoteInput("");
     if (currentApp?.notes) {
       const { customNotes } = parseCandidateNotes(
         currentApp.notes,
@@ -96,7 +97,7 @@ export function useCandidateDrawer({
     } else {
       setDrawerNotesList([]);
     }
-  }, [currentApp?.notes, currentApp?.candidateName]);
+  }, [currentApp?.id, currentApp?.notes, currentApp?.candidateName]);
 
   const handleAddDrawerNote = async () => {
     if (!drawerNoteInput.trim() || !currentApp) return;

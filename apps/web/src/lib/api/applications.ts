@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Application, PaginatedResult } from "@/types";
+import type { Application, ApplicationNote, PaginatedResult } from "@/types";
 
 export const applicationsApi = {
   getAll: async (params?: {
@@ -108,6 +108,46 @@ export const applicationsApi = {
     id: string,
   ): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/applications/${id}`);
+    return response.data;
+  },
+
+  getNotes: async (applicationId: string): Promise<ApplicationNote[]> => {
+    const response = await api.get<ApplicationNote[]>(
+      `/applications/${applicationId}/notes`,
+    );
+    return response.data;
+  },
+
+  addNote: async (
+    applicationId: string,
+    content: string,
+  ): Promise<ApplicationNote> => {
+    const response = await api.post<ApplicationNote>(
+      `/applications/${applicationId}/notes`,
+      { content },
+    );
+    return response.data;
+  },
+
+  updateNote: async (
+    applicationId: string,
+    noteId: string,
+    content: string,
+  ): Promise<ApplicationNote> => {
+    const response = await api.patch<ApplicationNote>(
+      `/applications/${applicationId}/notes/${noteId}`,
+      { content },
+    );
+    return response.data;
+  },
+
+  deleteNote: async (
+    applicationId: string,
+    noteId: string,
+  ): Promise<{ success: boolean; id: string }> => {
+    const response = await api.delete<{ success: boolean; id: string }>(
+      `/applications/${applicationId}/notes/${noteId}`,
+    );
     return response.data;
   },
 };

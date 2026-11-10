@@ -27,6 +27,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -57,6 +58,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -81,6 +83,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12

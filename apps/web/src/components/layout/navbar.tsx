@@ -72,9 +72,7 @@ export function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const canViewJobs = useHasPermission("job:view");
-  const canViewCandidatesBasic = useHasPermission("candidate:view_basic");
-  const canViewCandidatesFull = useHasPermission("candidate:view");
-  const canViewCandidates = canViewCandidatesBasic || canViewCandidatesFull;
+  const canViewCandidates = useHasPermission("candidate:view");
   const canViewApplications = useHasPermission("application:view");
   const canViewInterviews = useHasPermission("interview:view");
   const canViewSourcing = useHasPermission("sourcing:view");

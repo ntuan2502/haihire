@@ -9,7 +9,10 @@ import type { CandidateItem } from "@/lib/utils";
 export type SortField = "name" | "email" | "phone" | "applications" | "added";
 export type SortDirection = "asc" | "desc";
 
-export function useCandidatesFilterSort(organizationId?: string | null) {
+export function useCandidatesFilterSort(
+  organizationId?: string | null,
+  options?: { enabled?: boolean },
+) {
   const { t } = useI18n();
 
   // URL Query State for Pagination & Search
@@ -29,6 +32,7 @@ export function useCandidatesFilterSort(organizationId?: string | null) {
       page: currentPage,
       limit: rowsPerPage,
       search: search.trim() || undefined,
+      enabled: options?.enabled,
     },
   );
 

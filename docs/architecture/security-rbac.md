@@ -87,10 +87,9 @@ Declared in `@haihire/shared` (`packages/shared/src/permissions.ts`):
 - `job:update`: Edit job details, stages, and requirements.
 - `job:delete`: Archive or delete job requisitions.
 
-### 4.3 Candidate Management (8 Permissions)
+### 4.3 Candidate Management (7 Permissions)
 
-- `candidate:view`: Access complete candidate profiles.
-- `candidate:view_basic`: Access non-sensitive candidate contact details.
+- `candidate:view`: Access candidate profiles and details.
 - `candidate:create`: Manually add or import candidate profiles.
 - `candidate:update`: Edit candidate information and tags.
 - `candidate:delete`: Delete or soft-delete candidates.
@@ -177,7 +176,7 @@ HaiHire implements a lightweight, single-source-of-truth permission resolution m
    - Resetting a role (`POST /organizations/my/roles/:role/reset`) deletes all override records for that role in the organization.
    - Upon deletion, the role instantly falls back 100% to the system defaults in `permissions.ts`.
 5. **ADMIN Immutability Hardening:**
-   - All 42 permissions for the `ADMIN` role are strictly locked and immutable. Neither UI edits nor API calls can alter `ADMIN` permissions, preventing administrative lockouts and guaranteeing a recovery path.
+   - All 41 permissions for the `ADMIN` role are strictly locked and immutable. Neither UI edits nor API calls can alter `ADMIN` permissions, preventing administrative lockouts and guaranteeing a recovery path.
 
 ---
 

@@ -62,37 +62,59 @@ describe("CandidatesController", () => {
     rolesGuard = new RolesGuard(reflector);
   });
 
-  it("allows MEMBER basic list access without exposing CVs or private notes", async () => {
-    const context = {
-      getHandler: () => controller.findAll,
-      getClass: () => CandidatesController,
-      switchToHttp: () => ({ getRequest: () => memberReq }),
-    } as unknown as ExecutionContext;
-    expect(rolesGuard.canActivate(context)).toBe(true);
-    mockService.findAll.mockResolvedValue({
-      total: 1,
-      data: [
+  describe("GET /candidates (candidate:view permission)", () => {
+    it("rejects Role.MEMBER with 403 AppForbiddenException", () => {
+      const context = {
+        getHandler: () => controller.findAll,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({ getRequest: () => memberReq }),
+      } as unknown as ExecutionContext;
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+
+    it("allows Role.RECRUITER and delegates to service.findAll", async () => {
+      const context = {
+        getHandler: () => controller.findAll,
+        getClass: () => CandidatesController,
+        switchToHttp: () => ({ getRequest: () => recruiterReq }),
+      } as unknown as ExecutionContext;
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      const mockResult = {
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        data: [
+          {
+            id: "candidate-1",
+            name: "Alice",
+            email: "alice@example.com",
+            phone: "123",
+            notes: "internal notes",
+            resumeUrl: "https://storage.haihire.local/resume.pdf",
+            documents: [{ id: "doc-1" }],
+            applications: [],
+            applicationsCount: 0,
+          },
+        ],
+      };
+      mockService.findAll.mockResolvedValue(mockResult);
+
+      const result = await controller.findAll(recruiterReq);
+      expect(result).toEqual(mockResult);
+      expect(mockService.findAll).toHaveBeenCalledWith(
+        undefined,
         {
-          id: "candidate-1",
-          name: "Alice",
-          email: "alice@example.com",
-          phone: "123",
-          notes: "private",
-          resumeUrl: "private-url",
-          documents: [{ id: "secret" }],
-          applications: [],
-          applicationsCount: 0,
+          page: undefined,
+          limit: undefined,
+          search: undefined,
         },
-      ],
+        "org-1",
+      );
     });
-    const result = await controller.findAll(memberReq);
-    expect(result.data[0]).toMatchObject({
-      name: "Alice",
-      email: "alice@example.com",
-    });
-    expect(result.data[0]).not.toHaveProperty("notes");
-    expect(result.data[0]).not.toHaveProperty("resumeUrl");
-    expect(result.data[0]).not.toHaveProperty("documents");
   });
 
   const createMockContext = (req: { user?: unknown }): ExecutionContext =>

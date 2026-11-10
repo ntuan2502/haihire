@@ -31,7 +31,6 @@ export type Permission =
   | "job:delete"
   // Candidate Profile Management
   | "candidate:view"
-  | "candidate:view_basic"
   | "candidate:create"
   | "candidate:update"
   | "candidate:delete"
@@ -97,13 +96,6 @@ export const PERMISSIONS: Record<Permission, Role[]> = {
 
   // Candidates
   "candidate:view": [Role.ADMIN, Role.RECRUITER, Role.HIRING_MANAGER],
-  "candidate:view_basic": [
-    Role.ADMIN,
-    Role.RECRUITER,
-    Role.HIRING_MANAGER,
-    Role.INTERVIEWER,
-    Role.MEMBER,
-  ],
   "candidate:create": [Role.ADMIN, Role.RECRUITER],
   "candidate:update": [Role.ADMIN, Role.RECRUITER],
   "candidate:delete": [Role.ADMIN, Role.RECRUITER],

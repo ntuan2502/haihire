@@ -25,13 +25,16 @@ export function CandidatesView() {
   const router = useRouter();
   const { user, canEdit } = useAuth();
   const { t } = useI18n();
+  const canViewCandidates = useHasPermission("candidate:view");
   const canCreateCandidate = useHasPermission("candidate:create");
 
   const { data: jobs = [], isLoading: jobsLoading } = useAllJobs(
     user?.organizationId,
   );
 
-  const filterSort = useCandidatesFilterSort(user?.organizationId);
+  const filterSort = useCandidatesFilterSort(user?.organizationId, {
+    enabled: canViewCandidates,
+  });
   const drawerState = useCandidatesDrawerState();
 
   const { columns: visibleColumns, toggleColumn } =
@@ -48,6 +51,23 @@ export function CandidatesView() {
     );
 
   const loading = jobsLoading || filterSort.candidatesLoading;
+
+  if (!canViewCandidates) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
+        <Navbar
+          activeTab="dashboard"
+          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
+          jobsCount={jobs.length}
+        />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
+            {t("common.accessDenied")}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">

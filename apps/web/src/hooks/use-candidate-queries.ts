@@ -13,7 +13,12 @@ import { queryKeys } from "./query-keys";
 
 export function useCandidates(
   organizationId?: string | null,
-  options?: { page?: number; limit?: number; search?: string },
+  options?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    enabled?: boolean;
+  },
 ) {
   const { user } = useAuth();
   const effectiveOrgId =
@@ -43,7 +48,7 @@ export function useCandidates(
         search: options?.search,
       });
     },
-    enabled: Boolean(effectiveOrgId),
+    enabled: Boolean(effectiveOrgId) && (options?.enabled ?? true),
     placeholderData: keepPreviousData,
   });
 }

@@ -74,7 +74,6 @@ const CATEGORIES: PermissionCategory[] = [
     categoryKey: "categoryCandidate",
     permissions: [
       "candidate:view",
-      "candidate:view_basic",
       "candidate:create",
       "candidate:update",
       "candidate:delete",

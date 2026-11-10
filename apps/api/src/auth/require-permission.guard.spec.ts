@@ -195,13 +195,10 @@ describe("RequirePermissionGuard (RolesGuard RBAC 5-Role Matrix)", () => {
       setRequiredPermission("interview:scorecard_submit");
       expect(guard.canActivate(interviewerContext)).toBe(true);
 
-      setRequiredPermission("candidate:view_basic");
-      expect(guard.canActivate(interviewerContext)).toBe(true);
-
       setRequiredPermission("interview:view");
       expect(guard.canActivate(interviewerContext)).toBe(true);
 
-      // Boundary: Cannot delete jobs, cannot update stage, cannot view full candidate PII
+      // Boundary: Cannot delete jobs, cannot update stage, cannot view candidates
       setRequiredPermission("job:delete");
       expect(() => guard.canActivate(interviewerContext)).toThrow(
         AppForbiddenException,
@@ -233,10 +230,12 @@ describe("RequirePermissionGuard (RolesGuard RBAC 5-Role Matrix)", () => {
       setRequiredPermission("application:view");
       expect(guard.canActivate(memberContext)).toBe(true);
 
-      setRequiredPermission("candidate:view_basic");
-      expect(guard.canActivate(memberContext)).toBe(true);
+      // Restricted / write operations forbidden
+      setRequiredPermission("candidate:view");
+      expect(() => guard.canActivate(memberContext)).toThrow(
+        AppForbiddenException,
+      );
 
-      // Write operations forbidden
       setRequiredPermission("job:create");
       expect(() => guard.canActivate(memberContext)).toThrow(
         AppForbiddenException,

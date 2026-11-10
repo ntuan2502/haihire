@@ -6,6 +6,7 @@ import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
 import { useI18n } from "@/i18n";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
   useDeleteCandidateMutation,
@@ -26,6 +27,7 @@ import { CandidateDetailModals } from "./modals/candidate-detail-modals";
 export function CandidateDetailView() {
   const router = useRouter();
   const { t } = useI18n();
+  const canViewCandidates = useHasPermission("candidate:view");
 
   const state = useCandidateDetailState();
   const docActions = useCandidateDocumentActions({
@@ -87,6 +89,23 @@ export function CandidateDetailView() {
       toast.error(getApiErrorMessage(err, t));
     }
   };
+
+  if (!canViewCandidates) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
+        <Navbar
+          activeTab="dashboard"
+          onOpenCreateJob={() => router.push("/dashboard/jobs/new")}
+          jobsCount={state.jobs.length}
+        />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
+            {t("common.accessDenied")}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (state.loading) {
     return (

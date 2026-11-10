@@ -1,0 +1,114 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Request,
+  UseGuards,
+} from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
+import { RolesGuard } from "../auth/roles.guard";
+import { RequirePermission } from "../auth/require-permission.decorator";
+import { InterviewsService } from "./interviews.service";
+import { CreateInterviewDto } from "./dto/create-interview.dto";
+import { UpdateInterviewDto } from "./dto/update-interview.dto";
+import { DtoPipe } from "../common/dto-validation.pipe";
+import { ActiveTenantGuard } from "../common/guards/active-tenant.guard";
+import { SubmitScorecardDto } from "./dto/submit-scorecard.dto";
+
+@Controller("interviews")
+@UseGuards(AuthGuard("jwt"), ActiveTenantGuard, RolesGuard)
+export class InterviewsController {
+  constructor(
+    @Inject(InterviewsService)
+    private readonly interviewsService: InterviewsService,
+  ) {}
+
+  @Get()
+  @RequirePermission("interview:view")
+  findAll(
+    @Request() req: { user?: { organizationId?: string | null } },
+    @Query("organizationId") organizationId?: string,
+    @Query("jobId") jobId?: string,
+    @Query("applicationId") applicationId?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("tab") tab?: string,
+    @Query("sortBy") sortBy?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.interviewsService.findAll({
+      organizationId,
+      jobId,
+      applicationId,
+      page: pageNum,
+      limit: limitNum,
+      search,
+      tab,
+      sortBy,
+      tenantOrgId: req?.user?.organizationId,
+    });
+  }
+
+  @Get(":id")
+  @RequirePermission("interview:view")
+  findOne(
+    @Param("id") id: string,
+    @Request() req: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.findOne(id, req?.user?.organizationId);
+  }
+
+  @Post()
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("interview:create")
+  create(
+    @Body(DtoPipe(CreateInterviewDto)) dto: CreateInterviewDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.create(dto, req?.user?.organizationId);
+  }
+
+  @Patch(":id/scorecard")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("interview:scorecard_submit")
+  submitScorecard(
+    @Param("id") id: string,
+    @Body(DtoPipe(SubmitScorecardDto)) dto: SubmitScorecardDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.update(
+      id,
+      { scorecard: dto.scorecard },
+      req?.user?.organizationId,
+    );
+  }
+
+  @Patch(":id")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("interview:update")
+  update(
+    @Param("id") id: string,
+    @Body(DtoPipe(UpdateInterviewDto)) dto: UpdateInterviewDto,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.update(id, dto, req?.user?.organizationId);
+  }
+
+  @Delete(":id")
+  @UseGuards(AuthGuard("jwt"), RolesGuard)
+  @RequirePermission("interview:delete")
+  remove(
+    @Param("id") id: string,
+    @Request() req?: { user?: { organizationId?: string | null } },
+  ) {
+    return this.interviewsService.remove(id, req?.user?.organizationId);
+  }
+}

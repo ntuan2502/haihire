@@ -3,15 +3,15 @@
 > Canonical metrics for the HaiHire Enterprise ATS platform.  
 > All documentation MUST reference this file. DO NOT duplicate numbers across other files.
 
-**Last Updated:** 2026-10-22  
-**Platform Version:** v0.3.0 (Pre-release)
+**Last Updated:** 2026-11-09  
+**Platform Version:** Unreleased (Fresh Baseline)
 
 ---
 
 ## Release Stage
 
-- **Current:** Pre-release (`v0.3.0`)
-- **Target:** Feature branch `feat/v0.3.0-rbac-agents-ci` -> Release Tag `v0.3.0`
+- **Current:** Unreleased (Fresh Baseline)
+- **Target:** Production Readiness & General Availability
 - **Branch strategy:** `feat/*` -> `dev` -> `staging` -> `main`
 - **Hotfix flow:** `hotfix/*` from `main` -> `main` + `dev`
 
@@ -19,9 +19,9 @@
 
 ## Quality & Verification Metrics
 
-- **Automated Tests:** 1,020 total (+149 tests added since v0.2.0: 871 → 1,020)
-  - Backend: 590 passing (Vitest, 57 test suites)
-  - Frontend: 430 passing (Vitest + JSDOM, 58 test suites)
+- **Automated Tests:** 1,268 total
+  - Backend: 794 passing (Vitest, 75 test suites)
+  - Frontend: 474 passing (Vitest + JSDOM, 64 test suites)
 - **Test Code Coverage:**
   - Frontend Coverage: 51.45% Statements (53.35% Lines, 47.92% Branch, 46.85% Funcs)
   - Backend Coverage: 79.54% Statements (80.92% Lines, 62.35% Branch, 80.38% Funcs)
@@ -32,22 +32,22 @@
     - `sourcing-links.service.ts`: 97.97% lines
 - **Accessibility Compliance (WCAG 2.1 AA):** 92.4% (27 issues remediated: 5 critical, 11 high, 7 medium, 4 low)
 - **CI Architecture Gates:** 16 automated quality gates (`scripts/check-all.ts`)
-  1. `lint:env-sync` — Environment Variables Synchronization & Parity (55 keys dev / prod)
-  2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings (1,769 keys vi / en)
+  1. `lint:env-sync` — Environment Variables Synchronization & Parity (56 keys dev / prod)
+  2. `lint:i18n` — Two-Way i18n & Zero Hardcoded Strings (1,840 keys vi / en)
   3. `lint` — ESLint Code Quality across Backend & Frontend
   4. `typecheck` — Strict TypeScript Typecheck (`tsc --noEmit`)
-  5. `lint:dtopipe` — DtoPipe Validation Coverage (31 properly piped controller endpoints)
-  6. `lint:error-i18n` — Error Code i18n Localization (57 domain error codes)
-  7. `lint:api-contract` — API Contract & Leaks Audit (86 REST endpoints)
+  5. `lint:dtopipe` — DtoPipe Validation Coverage (33 properly piped controller endpoints)
+  6. `lint:error-i18n` — Error Code i18n Localization (60 domain error codes)
+  7. `lint:api-contract` — API Contract & Leaks Audit (87 REST endpoints)
   8. `lint:prometheus-rules` — Prometheus Alert Rules Audit (14 PromQL alert rules)
-  9. `lint:tenant-scope` — Tenant Scoping Static Analysis (219 Prisma queries isolated)
-  10. `lint:doc-links` — Documentation Markdown Link Integrity (42 markdown files)
+  9. `lint:tenant-scope` — Tenant Scoping Static Analysis (238 Prisma queries isolated)
+  10. `lint:doc-links` — Documentation Markdown Link Integrity (31 markdown files)
   11. `lint:doc-sync` — Documentation Synchronization & Drift Gate
   12. `check:prod-email` — Production Email Provider Validation (prohibits simulated provider in prod)
   13. `test:diff` — Test Count Delta & Anti-Regression Gate
   14. `lint:nextjs-conventions` — Next.js 16 File Conventions Audit (`proxy.ts` enforced)
   15. `lint:github-action-versions` — GitHub Actions Minimum Versions Audit (Node 24 action runtime)
-  16. `test` — Unit & Integration Test Suite (1,020 tests)
+  16. `test` — Unit & Integration Test Suite (1,268 tests)
 - **Prometheus Alert Rules:** 14 active rules (`monitoring/prometheus/alert-rules.yml`)
 - **E2E Browser Tests:** 23 specs across end-to-end recruitment lifecycle journeys
 - **Test Pass Rate:** 100% (Zero skipped, zero flaky, zero commented-out tests)
@@ -57,15 +57,15 @@
 ## Architecture & Codebase Metrics
 
 - **Monorepo Packages:** 3 (`backend`, `frontend`, `packages/shared`)
-- **Backend Architecture:** Modular monolith on NestJS 12.1.2 with Express platform adapter
+- **Backend Architecture:** Modular monolith on NestJS 12.4.0 with Express platform adapter
 - **Backend Modules:** 18
-- **Backend Controllers:** 12
-- **REST API Endpoints:** 86
+- **Backend Controllers:** 13
+- **REST API Endpoints:** 87
 - **Roles & Permissions:** 5 active organization roles (`Role.OWNER` deprecated per D-003: `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`), 41 granular permissions
 - **Frontend Mutation Hooks:** 35 (30 standardized with `onError` cache invalidation)
-- **Database Models:** 16 Prisma models (`contract.prisma`)
+- **Database Models:** 16 Prisma models (`schema.prisma`)
 - **God Files (>400 LOC):** 23 remaining logic/UI/service files >400 LOC (excluding exempt i18n dictionaries and seed scripts); 10/10 identified God Files refactored across Waves 1–4
-  - Max refactored file size: 280 LOC (`frontend/src/components/interviews/calendar/components/calendar-month-view.tsx`)
+  - Max refactored file size: 280 LOC (`apps/web/src/components/interviews/calendar/components/calendar-month-view.tsx`)
   - Detailed inventory tracked in [`docs/guides/roadmap.md`](guides/roadmap.md)
 
 ---
@@ -107,6 +107,6 @@
 ## Environment Architecture
 
 - **Single Source of Truth:** Root `.env` file (gitignored).
-- **Template:** `.env.example` (tracked, 55 keys).
+- **Template:** `.env.example` (tracked, 56 keys).
 - **Production Template:** `.env.production.example` (tracked).
 - **Zero Drift:** Enforced by Gate 1 (`pnpm lint:env-sync`).

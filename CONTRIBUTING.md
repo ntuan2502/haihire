@@ -25,7 +25,7 @@ HaiHire uses an enterprise 3-branch environment promotion flow:
 | Branch        | Purpose                                  | PR from               | Merge to  | CI Time        | Protection Requirements                                    |
 | ------------- | ---------------------------------------- | --------------------- | --------- | -------------- | ---------------------------------------------------------- |
 | **`dev`**     | Active development & integration         | `feature/*`, `fix/*`  | `staging` | **~2 - 3 min** | 0 approvals (solo dev), Fast Static & Fast Unit Tests pass |
-| **`staging`** | Pre-production QA & container validation | `dev`                 | `main`    | **~9 min**     | 1 approval, 11 Gates + E2E + Build pass                    |
+| **`staging`** | Pre-production QA & container validation | `dev`                 | `main`    | **~9 min**     | 1 approval, 16 Gates + E2E + Build pass                    |
 | **`main`**    | Production release & release gatekeeping | `staging`, `hotfix/*` | `(tag)`   | **~10 min**    | 2 approvals, Full CI + E2E + Security Audit + Docker pass  |
 
 ### Feature Development Flow (`feature -> dev -> staging -> main`)
@@ -53,7 +53,7 @@ HaiHire uses an enterprise 3-branch environment promotion flow:
 
 4. **Promote `dev -> staging` (Pre-production QA):**
    - Open PR: `dev` -> `staging`.
-   - Triggers `ci-staging.yml` on PR (~9 min: 11 architecture gates, unit tests with coverage, Playwright E2E suite, production build).
+   - Triggers `ci-staging.yml` on PR (~9 min: 16 architecture gates, unit tests with coverage, Playwright E2E suite, production build).
    - Once all 4 required status checks pass and PR is merged, duplicate post-merge run is automatically skipped.
    - QA team validates against local/staging Docker environment.
 
@@ -96,7 +96,7 @@ For critical production bugs:
 
 - **Pre-commit:** `lint-staged` (staged files only, <5s).
 - **Pre-push:** `pnpm lint` + `pnpm typecheck` (~30s).
-- **Full CI:** 11 architecture gates.
+- **Full CI:** 16 architecture gates.
 
 ## 🚀 CI Triggers
 
@@ -113,8 +113,8 @@ For critical production bugs:
 | Branch / Ref          | Workflow File                      | Focus & Scope                                                               |            Time Target            | Required Status Checks                                                                                                            |
 | :-------------------- | :--------------------------------- | :-------------------------------------------------------------------------- | :-------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------- |
 | **`feat/*`, `fix/*`** | `.github/workflows/ci-feature.yml` | Path filter, fast lint, typecheck, unit tests                               |           **2 - 3 min**           | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests`                                                                   |
-| **`dev`**             | `.github/workflows/ci-dev.yml`     | Path filter (code vs docs-only), 11 CI gates (`check:all:fast`), unit tests | **3 - 4 min** (or **~30s** docs)  | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests` (via PR)                                                          |
-| **`staging`**         | `.github/workflows/ci-staging.yml` | Path filter, 11 CI gates, coverage, Playwright E2E, build                   | **8 - 10 min** (or **~30s** docs) | `11 CI Architecture Gates`, `Unit & Integration Tests (Coverage)`, `Playwright End-to-End Suite`, `Production Build Verification` |
+| **`dev`**             | `.github/workflows/ci-dev.yml`     | Path filter (code vs docs-only), 16 CI gates (`check:all:fast`), unit tests | **3 - 4 min** (or **~30s** docs)  | `Fast Static & Quality Checks`, `Fast Unit & Integration Tests` (via PR)                                                          |
+| **`staging`**         | `.github/workflows/ci-staging.yml` | Path filter, 16 CI gates, coverage, Playwright E2E, build                   | **8 - 10 min** (or **~30s** docs) | `16 CI Architecture Gates`, `Unit & Integration Tests (Coverage)`, `Playwright End-to-End Suite`, `Production Build Verification` |
 | **`main`**            | `.github/workflows/ci-main.yml`    | Full checks (`check:all`), Playwright E2E, pnpm audit, Docker verify        |          **10 - 12 min**          | `Full CI Quality Pipeline`, `Playwright End-to-End Suite`, `Dependency Security Audit`, `Docker Build Dry-Run Verification`       |
 | **`v*.*.*` (Tags)**   | `.github/workflows/cd-release.yml` | Docker Buildx, GHCR publish, Trivy scan, GitHub Release                     |           **5 - 7 min**           | `Build & Publish Container Images`, `Container Vulnerability Scan`                                                                |
 
@@ -171,9 +171,9 @@ _(Never chain `git add . && git commit` in Windows PowerShell; run commands indi
 
 ---
 
-## 🛡️ The 11 CI Architecture Gates
+## 🛡️ The 16 CI Architecture Gates
 
-Before submitting any Pull Request or merging code, all 11 automated CI verification gates must pass:
+Before submitting any Pull Request or merging code, all 16 automated CI verification gates must pass:
 
 ```bash
 # Execute the complete quality pipeline:
@@ -186,21 +186,26 @@ pnpm check:all:fast
 pnpm check:all:e2e
 ```
 
-|    Gate     | Command                      | Description                                                                   |
-| :---------: | :--------------------------- | :---------------------------------------------------------------------------- |
-| **Gate 1**  | `pnpm lint:env-sync`         | Audits key parity across all 5 `.env` files and Docker Compose                |
-| **Gate 2**  | `pnpm lint:i18n`             | Asserts two-way i18n dictionary completeness & zero hardcoded strings         |
-| **Gate 3**  | `pnpm lint`                  | ESLint rules & static checks across backend and frontend                      |
-| **Gate 4**  | `pnpm typecheck`             | Strict TypeScript compiler check (`tsc --noEmit`)                             |
-| **Gate 5**  | `pnpm lint:dtopipe`          | Verifies 100% `@Body()` controller parameters use `DtoPipe` validation        |
-| **Gate 6**  | `pnpm lint:error-i18n`       | Verifies 100% `APP_ERROR_CODES` (51 codes) are localized in `vi.ts` & `en.ts` |
-| **Gate 7**  | `pnpm lint:api-contract`     | Audits 83 endpoints, zero `JSON.stringify(err)` leaks, zero `alert()` calls   |
-| **Gate 8**  | `pnpm lint:prometheus-rules` | Verifies 14 Prometheus alert rules syntax, fields, and SRE labels             |
-| **Gate 9**  | `pnpm lint:tenant-scope`     | AST static analysis enforcing query isolation across tenant-scoped modules    |
-| **Gate 10** | `pnpm lint:doc-links`        | Verifies zero broken markdown links across all documentation                  |
-| **Gate 11** | `pnpm test:diff`             | Audits test count changes against git history to detect test regression       |
+|    Gate     | Command                            | Description                                                                   |
+| :---------: | :--------------------------------- | :---------------------------------------------------------------------------- |
+| **Gate 1**  | `pnpm lint:env-sync`               | Audits key parity across `.env` templates and Docker Compose (56 keys)        |
+| **Gate 2**  | `pnpm lint:i18n`                   | Asserts two-way i18n dictionary completeness & zero hardcoded strings         |
+| **Gate 3**  | `pnpm lint`                        | ESLint rules & static checks across backend and frontend                      |
+| **Gate 4**  | `pnpm typecheck`                   | Strict TypeScript compiler check (`tsc --noEmit`)                             |
+| **Gate 5**  | `pnpm lint:dtopipe`                | Verifies 100% `@Body()` controller parameters use `DtoPipe` validation        |
+| **Gate 6**  | `pnpm lint:error-i18n`             | Verifies 100% `APP_ERROR_CODES` (60 codes) are localized in `vi.ts` & `en.ts` |
+| **Gate 7**  | `pnpm lint:api-contract`           | Audits 87 endpoints, zero `JSON.stringify(err)` leaks, zero `alert()` calls   |
+| **Gate 8**  | `pnpm lint:prometheus-rules`       | Verifies 14 Prometheus alert rules syntax, fields, and SRE labels             |
+| **Gate 9**  | `pnpm lint:tenant-scope`           | AST static analysis enforcing query isolation across tenant-scoped modules    |
+| **Gate 10** | `pnpm lint:doc-links`              | Verifies zero broken markdown links across all documentation                  |
+| **Gate 11** | `pnpm lint:doc-sync`               | Verifies path existence, env parity, doc stats, and ADR coverage              |
+| **Gate 12** | `pnpm check:prod-email-provider`   | Validates production email provider configuration                             |
+| **Gate 13** | `pnpm test:diff`                   | Audits test count changes against git history to detect test regression       |
+| **Gate 14** | `pnpm lint:nextjs-conventions`     | Enforces Next.js 16 `proxy.ts` convention and prohibits `middleware.ts`       |
+| **Gate 15** | `pnpm lint:github-action-versions` | Enforces Node 24 action runtime baseline across workflows                     |
+| **Gate 16** | `pnpm test`                        | Runs unit & integration test suite (1,268 tests)                              |
 
-> **Unit & Integration Test Suite:** All 11 architecture gates are followed by the automated test suite (`pnpm test`), executing all 871 tests across backend and frontend packages.  
+> **Unit & Integration Test Suite:** All architecture gates are verified alongside the automated test suite (`pnpm test`), executing all 1,268 tests across backend and frontend packages.  
 > Refer to [Project Metrics (Single Source of Truth)](docs/PROJECT_METRICS.md) for live metrics.
 
 ---
@@ -211,10 +216,10 @@ pnpm check:all:e2e
    - No manually written `.js` or `.mjs` files (except tooling configs like `eslint.config.mjs`).
    - Zero `any` policy across application code. Define explicit interfaces or Zod schemas.
 2. **Environment Variable Hygiene:**
-   - Never call `process.env` directly in feature modules. Always import the validated `env` singleton (`backend/src/config/env.ts` or `frontend/src/lib/env.ts`).
+   - Never call `process.env` directly in feature modules. Always import the validated `env` singleton (`apps/api/src/config/env.ts` or `apps/web/src/lib/env.ts`).
    - Zero fallback policy: Never provide fallback defaults for credentials, database URLs, or ports.
 3. **Internationalization (i18n):**
-   - Zero hardcoded text in frontend components. All UI copy must use `useI18n()` / `t("key.path")` with keys defined in `frontend/src/i18n/types.ts`.
+   - Zero hardcoded text in frontend components. All UI copy must use `useI18n()` / `t("key.path")` with keys defined in `apps/web/src/i18n/types.ts`.
 4. **Security Baseline:**
    - Store JWT tokens exclusively in secure HttpOnly cookies (`SameSite=Lax`, `Path=/`, `Secure`).
    - Upload all CV files to isolated tenant paths: `tenants/{orgId}/candidates/{candId}/{uuid}-{fileName}`.
@@ -294,7 +299,7 @@ For comprehensive details, refer to [`docs/runbooks/versioning.md`](docs/runbook
 When opening a Pull Request:
 
 - [ ] Created dedicated feature branch (`feature/*`, `fix/*`).
-- [ ] Ran `pnpm check:all` locally and verified all 11 gates passed.
+- [ ] Ran `pnpm check:all` locally and verified all 16 gates passed.
 - [ ] All new features include unit/integration tests (`pnpm test`).
 - [ ] No broken markdown links or outdated documentation.
 - [ ] Verified non-leakage of secrets or `.env` files.

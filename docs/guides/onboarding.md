@@ -95,14 +95,14 @@ Once running, access your local services:
 
 | Directory                      | Scope & Purpose                                                                                                                     |
 | :----------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **`backend/src/`**             | NestJS backend source code organized into domain modules (`auth`, `jobs`, `candidates`, `applications`, `interviews`, `documents`). |
-| **`backend/src/prisma/`**      | Prisma contract definition (`contract.prisma`), AsyncLocalStorage transaction manager, and seed scripts.                            |
-| **`frontend/src/app/`**        | Next.js App Router routes: `(auth)`, `(dashboard)`, and public `careers/` (React Server Components).                                |
-| **`frontend/src/components/`** | Component library: `ui/` (Shadcn primitives), `components/shared/` (ATS controls), `layout/` (App shell).                           |
-| **`frontend/src/i18n/`**       | Localization files: `vi.ts` and `en.ts` dictionaries. Zero hardcoded text mandate.                                                  |
+| **`apps/api/src/`**            | NestJS backend source code organized into domain modules (`auth`, `jobs`, `candidates`, `applications`, `interviews`, `documents`). |
+| **`apps/api/src/prisma/`**     | Prisma schema definition (`schema.prisma`), AsyncLocalStorage transaction manager, and seed scripts.                                |
+| **`apps/web/src/app/`**        | Next.js App Router routes: `(auth)`, `(dashboard)`, and public `careers/` (React Server Components).                                |
+| **`apps/web/src/components/`** | Component library: `ui/` (Shadcn primitives), `components/shared/` (ATS controls), `layout/` (App shell).                           |
+| **`apps/web/src/i18n/`**       | Localization files: `vi.ts` and `en.ts` dictionaries. Zero hardcoded text mandate.                                                  |
 | **`packages/shared/`**         | Monorepo shared package: Canonical types, `APP_ERROR_CODES`, and brand constants.                                                   |
 | **`scripts/`**                 | Monorepo automation scripts: `check-all.ts`, `backup-production.ts`, `check-env-sync.ts`.                                           |
-| **`docs/`**                    | Central documentation repository: Architecture blueprints, API overview, runbooks, and audit history.                               |
+| **`docs/`**                    | Central documentation repository: Architecture blueprints, API overview, and operational runbooks.                                  |
 | **`.agents/`**                 | AI agent runtime configuration, skills, and operational rules managed by AG Kit.                                                    |
 
 ---
@@ -110,7 +110,7 @@ Once running, access your local services:
 ## 💻 4. Common Developer Commands
 
 ```bash
-# Run full 11-gate CI verification pipeline
+# Run full 16-gate CI verification pipeline
 pnpm check:all
 
 # Run quick static checks before committing
@@ -122,14 +122,14 @@ pnpm pre-commit
 # Run pre-push verification (~25s lint + typecheck)
 pnpm pre-push
 
-# Run all unit & integration tests (871 tests)
+# Run all unit & integration tests (1,268 tests)
 pnpm test
 
-# Run frontend tests only
-pnpm test:frontend
+# Run web tests only
+pnpm test:web
 
-# Run backend tests only
-pnpm test:backend
+# Run api tests only
+pnpm test:api
 
 # Run Playwright E2E browser tests
 pnpm test:e2e
@@ -170,10 +170,10 @@ Ensure that root `.env` has been populated from `.env.example`.
 
 ### Issue: "Prisma client or contract types are out of sync"
 
-**Solution:** Re-emit the Prisma contract bindings:
+**Solution:** Re-generate the Prisma client:
 
 ```bash
-pnpm contract:emit
+pnpm db:generate
 ```
 
 ---

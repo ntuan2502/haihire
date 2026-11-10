@@ -58,6 +58,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -84,6 +85,7 @@ jobs:
           sed -i 's/POSTGRES_DB=haihire_db/POSTGRES_DB=haihire_test_db/g' .env
           sed -i 's/postgresql:\/\/haihire_user:haihire_password@localhost:5432\/haihire_db/postgresql:\/\/haihire_test:haihire_test_password@localhost:5432\/haihire_test_db/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Run Full CI Architecture Checks & Tests
         run: pnpm check:all
@@ -103,38 +105,13 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
 
-      - name: Audit Direct Production Dependencies
-        run: |
-          node -e "
-            const cp = require('child_process');
-            let output = '';
-            try {
-              output = cp.execSync('pnpm audit --audit-level=high --json', { encoding: 'utf8' });
-            } catch (err) {
-              output = err.stdout?.toString() || '';
-            }
-            if (!output) process.exit(0);
-            try {
-              const data = JSON.parse(output);
-              const advisories = Object.values(data.advisories || {});
-              const directIssues = advisories.filter(a =>
-                (a.severity === 'high' || a.severity === 'critical') &&
-                (a.findings || []).some(f => (f.paths || []).some(p => !p.includes('>')))
-              );
-              if (directIssues.length > 0) {
-                console.error('❌ Direct dependency security violation:', directIssues);
-                process.exit(1);
-              }
-              console.log('✅ Direct dependencies security audit PASSED. Zero Critical/High direct vulnerabilities.');
-              console.log('ℹ️ Transitive High vulnerabilities from Prisma 8 RC composer accepted per docs/decisions/DECISIONS.md#d-001');
-            } catch (e) {
-              console.log('Audit output parse error, skipping', e);
-            }
-          "
+      - name: Audit Production Dependencies
+        run: pnpm audit --audit-level=high --prod
 
   # ============================================================================
   # 3. PLAYWRIGHT END-TO-END GATE
@@ -182,6 +159,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -217,6 +195,7 @@ jobs:
           sed -i 's/INTERNAL_API_URL=.*/INTERNAL_API_URL="http:\/\/localhost:13001"/g' .env
           sed -i 's/FRONTEND_URL=.*/FRONTEND_URL="http:\/\/localhost:13000"/g' .env
           sed -i 's/NODE_ENV=development/NODE_ENV=test/g' .env
+          pnpm db:generate
 
       - name: Start MinIO Object Storage & Wait for Readiness
         run: |
@@ -248,8 +227,8 @@ jobs:
 
       - name: Run Database Migrations & Seed
         run: |
-          pnpm --filter ./backend run db:update
-          pnpm --filter ./backend run db:seed
+          pnpm --filter api run db:update
+          pnpm --filter api run db:seed
         env:
           DATABASE_URL: postgresql://haihire_test:haihire_test_password@localhost:15432/haihire_test_db?schema=public
           DEMO_SEED_PASSWORD: dev-seed-password-2026
@@ -307,7 +286,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: backend/Dockerfile
+          file: apps/api/Dockerfile
           push: false
           tags: test-backend:latest
           cache-from: type=gha
@@ -316,7 +295,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: frontend/Dockerfile
+          file: apps/web/Dockerfile
           push: false
           tags: test-frontend:latest
           cache-from: type=gha

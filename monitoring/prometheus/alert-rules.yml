@@ -49,7 +49,7 @@ groups:
           team: sre
         annotations:
           summary: "High HTTP 5xx error rate (>5%)"
-          description: "HTTP 5xx error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes. See runbook: docs/runbooks/alerts.md"
+          description: 'HTTP 5xx error rate is {{ $value | printf "%.2f" }}% over the last 5 minutes. See runbook: docs/runbooks/alerts.md'
 
       - alert: HaiHireHighHttpLatencyP95
         expr: http_request_duration_ms{quantile="0.95"} > 1000

@@ -1,0 +1,188 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook } from "@testing-library/react";
+import { useHasPermission } from "./use-has-permission";
+import * as AuthContextModule from "@/context/auth-context";
+import * as OrgQueriesModule from "./use-organization-queries";
+import { Role, type User, type Permission } from "@haihire/shared";
+
+describe("useHasPermission hook", () => {
+  const mockUserRole = (role: Role | null, isOwner = false) => {
+    const mockUser: User | null = role
+      ? {
+          id: "u-1",
+          email: "user@example.com",
+          name: "Test User",
+          role,
+          isOwner,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        }
+      : null;
+
+    vi.spyOn(AuthContextModule, "useAuth").mockReturnValue({
+      user: mockUser,
+      token: "tok",
+      loading: false,
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+      updateUserOrg: vi.fn(),
+      refreshUser: vi.fn(),
+      isAuthenticated: Boolean(role),
+      isAdmin: role === Role.ADMIN,
+      isMember: role === Role.MEMBER,
+      isOwner,
+      canEdit: role === Role.ADMIN || isOwner,
+    });
+  };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns false if user is not authenticated", () => {
+    mockUserRole(null);
+    const { result } = renderHook(() => useHasPermission("job:create"));
+    expect(result.current).toBe(false);
+  });
+
+  it("returns true for owner on any permission (including billing and sensitive actions)", () => {
+    mockUserRole(Role.ADMIN, true);
+    const { result: billing } = renderHook(() =>
+      useHasPermission("org:manage_billing"),
+    );
+    expect(billing.current).toBe(true);
+
+    const { result: orgDelete } = renderHook(() =>
+      useHasPermission("org:delete"),
+    );
+    expect(orgDelete.current).toBe(true);
+
+    const { result: jobDelete } = renderHook(() =>
+      useHasPermission("job:delete"),
+    );
+    expect(jobDelete.current).toBe(true);
+  });
+
+  it("returns true for non-owner ADMIN on org:manage_members & org:update, but false on org:manage_billing", () => {
+    mockUserRole(Role.ADMIN, false);
+    const { result: members } = renderHook(() =>
+      useHasPermission("org:manage_members"),
+    );
+    expect(members.current).toBe(true);
+
+    const { result: update } = renderHook(() => useHasPermission("org:update"));
+    expect(update.current).toBe(true);
+
+    const { result: billing } = renderHook(() =>
+      useHasPermission("org:manage_billing"),
+    );
+    expect(billing.current).toBe(false);
+  });
+
+  it("returns true for RECRUITER on job:create, but false on org:manage_billing", () => {
+    mockUserRole(Role.RECRUITER, false);
+    const { result: allowed } = renderHook(() =>
+      useHasPermission("job:create"),
+    );
+    expect(allowed.current).toBe(true);
+
+    const { result: forbidden } = renderHook(() =>
+      useHasPermission("org:manage_billing"),
+    );
+    expect(forbidden.current).toBe(false);
+  });
+
+  it("returns true for HIRING_MANAGER on application:update_stage, but false on job:delete", () => {
+    mockUserRole(Role.HIRING_MANAGER, false);
+    const { result: allowed } = renderHook(() =>
+      useHasPermission("application:update_stage"),
+    );
+    expect(allowed.current).toBe(true);
+
+    const { result: forbidden } = renderHook(() =>
+      useHasPermission("job:delete"),
+    );
+    expect(forbidden.current).toBe(false);
+  });
+
+  it("returns true for INTERVIEWER on interview:scorecard_submit, but false on job:delete", () => {
+    mockUserRole(Role.INTERVIEWER, false);
+    const { result: allowed } = renderHook(() =>
+      useHasPermission("interview:scorecard_submit"),
+    );
+    expect(allowed.current).toBe(true);
+
+    const { result: forbidden } = renderHook(() =>
+      useHasPermission("job:delete"),
+    );
+    expect(forbidden.current).toBe(false);
+  });
+
+  it("returns false for MEMBER on write operations, but true on job:view", () => {
+    mockUserRole(Role.MEMBER, false);
+    const { result: viewAllowed } = renderHook(() =>
+      useHasPermission("job:view"),
+    );
+    expect(viewAllowed.current).toBe(true);
+
+    const { result: writeForbidden } = renderHook(() =>
+      useHasPermission("job:create"),
+    );
+    expect(writeForbidden.current).toBe(false);
+  });
+
+  describe("Dynamic RBAC Overrides (organizationRolePermission)", () => {
+    it("respects dynamic override when admin turns OFF interview:scorecard_submit for INTERVIEWER", () => {
+      mockUserRole(Role.INTERVIEWER, false);
+      vi.spyOn(OrgQueriesModule, "useRolePermissionsMatrix").mockReturnValue({
+        data: {
+          [Role.INTERVIEWER]: {
+            "interview:scorecard_submit": false,
+          } as Record<Permission, boolean>,
+        } as Record<Role, Record<Permission, boolean>>,
+      } as ReturnType<typeof OrgQueriesModule.useRolePermissionsMatrix>);
+
+      const { result } = renderHook(() =>
+        useHasPermission("interview:scorecard_submit"),
+      );
+      expect(result.current).toBe(false);
+    });
+
+    it("respects dynamic override when admin turns ON interview:scorecard_submit for MEMBER", () => {
+      mockUserRole(Role.MEMBER, false);
+      vi.spyOn(OrgQueriesModule, "useRolePermissionsMatrix").mockReturnValue({
+        data: {
+          [Role.MEMBER]: {
+            "interview:scorecard_submit": true,
+          } as Record<Permission, boolean>,
+        } as Record<Role, Record<Permission, boolean>>,
+      } as ReturnType<typeof OrgQueriesModule.useRolePermissionsMatrix>);
+
+      const { result } = renderHook(() =>
+        useHasPermission("interview:scorecard_submit"),
+      );
+      expect(result.current).toBe(true);
+    });
+
+    it("resolves dynamic permission for non-admin via useMyPermissions without querying full matrix", () => {
+      mockUserRole(Role.MEMBER, false);
+      const matrixSpy = vi
+        .spyOn(OrgQueriesModule, "useRolePermissionsMatrix")
+        .mockReturnValue({
+          data: undefined,
+        } as ReturnType<typeof OrgQueriesModule.useRolePermissionsMatrix>);
+
+      vi.spyOn(OrgQueriesModule, "useMyPermissions").mockReturnValue({
+        data: {
+          permissions: ["candidate:create" as Permission],
+        },
+      } as ReturnType<typeof OrgQueriesModule.useMyPermissions>);
+
+      const { result } = renderHook(() => useHasPermission("candidate:create"));
+      expect(result.current).toBe(true);
+      expect(matrixSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false }),
+      );
+    });
+  });
+});

@@ -21,10 +21,10 @@ jobs:
     name: Detect Changed Paths
     runs-on: ubuntu-latest
     outputs:
-      docs-only: ${{ steps.filter.outputs.docs == 'true' && steps.filter.outputs.backend == 'false' && steps.filter.outputs.frontend == 'false' && steps.filter.outputs.ci == 'false' }}
+      docs-only: ${{ steps.filter.outputs.docs == 'true' && steps.filter.outputs.api == 'false' && steps.filter.outputs.web == 'false' && steps.filter.outputs.ci == 'false' }}
       docs: ${{ steps.filter.outputs.docs }}
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
       ci: ${{ steps.filter.outputs.ci }}
     steps:
       - name: Checkout repository
@@ -39,12 +39,12 @@ jobs:
               - 'docs/**'
               - '*.md'
               - 'LICENSE'
-            backend:
-              - 'backend/**'
+            api:
+              - 'apps/api/**'
               - 'packages/shared/**'
               - 'pnpm-lock.yaml'
-            frontend:
-              - 'frontend/**'
+            web:
+              - 'apps/web/**'
               - 'packages/shared/**'
               - 'pnpm-lock.yaml'
             ci:
@@ -68,6 +68,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -85,6 +86,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Setup CI Environment & Generate Prisma Client
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: |
+          cp .env.example .env
+          pnpm db:generate
 
       - name: Docs-only Link Validation (Fast Exit)
         if: needs.path-filter.outputs.docs-only == 'true'
@@ -110,38 +117,12 @@ jobs:
         if: needs.path-filter.outputs.docs-only != 'true'
         run: pnpm lint:doc-links
 
-      - name: Audit Direct Production Dependencies
-        if: needs.path-filter.outputs.docs-only != 'true' && (needs.path-filter.outputs.backend == 'true' || needs.path-filter.outputs.frontend == 'true' || needs.path-filter.outputs.ci == 'true')
-        run: |
-          node -e "
-            const cp = require('child_process');
-            let output = '';
-            try {
-              output = cp.execSync('pnpm audit --audit-level=high --prod --json', { encoding: 'utf8' });
-            } catch (err) {
-              output = err.stdout?.toString() || '';
-            }
-            if (!output) process.exit(0);
-            try {
-              const data = JSON.parse(output);
-              const advisories = Object.values(data.advisories || {});
-              const directIssues = advisories.filter(a =>
-                (a.severity === 'high' || a.severity === 'critical') &&
-                (a.findings || []).some(f => (f.paths || []).some(p => !p.includes('>')))
-              );
-              if (directIssues.length > 0) {
-                console.error('❌ Direct dependency security violation:', directIssues);
-                process.exit(1);
-              }
-              console.log('✅ Direct dependencies security audit PASSED. Zero Critical/High direct vulnerabilities.');
-              console.log('ℹ️ Transitive High vulnerabilities from Prisma 8 RC composer accepted per docs/decisions/DECISIONS.md#d-001');
-            } catch (e) {
-              console.log('Audit output parse error, skipping', e);
-            }
-          "
+      - name: Audit Production Dependencies
+        if: needs.path-filter.outputs.docs-only != 'true' && (needs.path-filter.outputs.api == 'true' || needs.path-filter.outputs.web == 'true' || needs.path-filter.outputs.ci == 'true')
+        run: pnpm audit --audit-level=high --prod
 
   # ============================================================================
-  # 3. UNIT TESTS: BACKEND & FRONTEND TEST SUITES
+  # 3. UNIT TESTS: API & WEB TEST SUITES
   # ============================================================================
   unit-tests:
     name: Fast Unit & Integration Tests
@@ -156,6 +137,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 26
+          package-manager-cache: false
 
       - name: Install pnpm
         run: npm install -g pnpm@12
@@ -174,13 +156,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup minimal CI environment
-        run: cp .env.example .env
+      - name: Setup CI Environment & Generate Prisma Client
+        if: needs.path-filter.outputs.docs-only != 'true'
+        run: |
+          cp .env.example .env
+          pnpm db:generate
 
-      - name: Run Backend Unit & Integration Tests
-        if: needs.path-filter.outputs.backend == 'true' || needs.path-filter.outputs.ci == 'true'
-        run: pnpm --filter backend test
+      - name: Run API Unit & Integration Tests
+        if: needs.path-filter.outputs.api == 'true' || needs.path-filter.outputs.ci == 'true'
+        run: pnpm --filter api test
 
-      - name: Run Frontend Unit & Component Tests
-        if: needs.path-filter.outputs.frontend == 'true' || needs.path-filter.outputs.ci == 'true'
-        run: pnpm --filter frontend test
+      - name: Run Web Unit & Component Tests
+        if: needs.path-filter.outputs.web == 'true' || needs.path-filter.outputs.ci == 'true'
+        run: pnpm --filter web test

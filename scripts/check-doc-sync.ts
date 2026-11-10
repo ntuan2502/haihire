@@ -57,10 +57,10 @@ export function checkPathExistence(): CheckResult {
 
   const brokenPaths: string[] = [];
 
-  // Match relative paths like backend/..., frontend/..., packages/..., scripts/..., docs/...
+  // Match relative paths like apps/api/..., apps/web/..., packages/..., scripts/..., docs/...
   // Exclude URLs (http/https), globs (*), ellipses (...), placeholders (<...>, {...}), and template tokens
   const pathRegex =
-    /(?:[`"'\s(]|^)((?:backend|frontend|packages|scripts|docs)\/[a-zA-Z0-9._/-]+)(?:[`"'\s)]|$)/g;
+    /(?:[`"'\s(]|^)((?:apps\/api|apps\/web|packages|scripts|docs)\/[a-zA-Z0-9._/-]+)(?:[`"'\s)]|$)/g;
 
   for (const filePath of mdFiles) {
     const content = readFileSync(filePath, "utf-8");

@@ -22,10 +22,10 @@ export function checkNextJsConventions(
 
   const errors: string[] = [];
 
-  // Check 1: middleware.ts must NOT exist in frontend or frontend/src
+  // Check 1: middleware.ts must NOT exist in apps/web or apps/web/src
   const forbiddenMiddlewarePaths = [
-    path.join(rootDir, "frontend/src/middleware.ts"),
-    path.join(rootDir, "frontend/middleware.ts"),
+    path.join(rootDir, "apps/web/src/middleware.ts"),
+    path.join(rootDir, "apps/web/middleware.ts"),
   ];
 
   for (const forbiddenPath of forbiddenMiddlewarePaths) {
@@ -38,10 +38,10 @@ export function checkNextJsConventions(
   }
 
   // Check 2: proxy.ts MUST exist and export function proxy
-  const proxyPath = path.join(rootDir, "frontend/src/proxy.ts");
+  const proxyPath = path.join(rootDir, "apps/web/src/proxy.ts");
   if (!fileExists(proxyPath)) {
     errors.push(
-      "Required Next.js 16 edge proxy file is missing: frontend/src/proxy.ts",
+      "Required Next.js 16 edge proxy file is missing: apps/web/src/proxy.ts",
     );
   } else {
     try {
@@ -53,21 +53,21 @@ export function checkNextJsConventions(
 
       if (!hasProxyExport) {
         errors.push(
-          "frontend/src/proxy.ts must export a function named 'proxy' (e.g., export function proxy(request: NextRequest)).",
+          "apps/web/src/proxy.ts must export a function named 'proxy' (e.g., export function proxy(request: NextRequest)).",
         );
       }
     } catch (err) {
       errors.push(
-        `Failed to read frontend/src/proxy.ts: ${(err as Error).message}`,
+        `Failed to read apps/web/src/proxy.ts: ${(err as Error).message}`,
       );
     }
   }
 
   // Check 3: proxy.spec.ts MUST exist (test coverage)
-  const proxySpecPath = path.join(rootDir, "frontend/src/proxy.spec.ts");
+  const proxySpecPath = path.join(rootDir, "apps/web/src/proxy.spec.ts");
   if (!fileExists(proxySpecPath)) {
     errors.push(
-      "Required unit test file is missing: frontend/src/proxy.spec.ts",
+      "Required unit test file is missing: apps/web/src/proxy.spec.ts",
     );
   }
 
@@ -106,8 +106,8 @@ if (
     "✅ CI Gate 'lint:nextjs-conventions' PASSED! All Next.js 16 conventions enforced.",
   );
   console.log("   • Zero deprecated middleware.ts files found");
-  console.log("   • frontend/src/proxy.ts verified with export function proxy");
-  console.log("   • frontend/src/proxy.spec.ts test coverage verified");
+  console.log("   • apps/web/src/proxy.ts verified with export function proxy");
+  console.log("   • apps/web/src/proxy.spec.ts test coverage verified");
   console.log(
     "==================================================================",
   );

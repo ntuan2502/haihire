@@ -35,7 +35,7 @@ sequenceDiagram
 
 1. **HttpOnly & Secure Session Cookies:** JWT tokens are stored exclusively in `HttpOnly`, `SameSite=Lax` cookies, preventing XSS-based credential theft.
 2. **Session Revocation via `tokenVersion`:** `User.tokenVersion` in PostgreSQL enables instant invalidation of all issued refresh/access tokens upon password reset or account lock.
-3. **Fail-Fast Edge Interception:** `frontend/src/proxy.ts` evaluates session presence at the edge, redirecting unauthorized traffic before rendering page components.
+3. **Fail-Fast Edge Interception:** `apps/web/src/proxy.ts` evaluates session presence at the edge, redirecting unauthorized traffic before rendering page components.
 
 ---
 
@@ -67,7 +67,7 @@ Following the removal of the static `Role.OWNER` enum value in [D-003](../decisi
 
 ---
 
-## 4. The 41 Granular Permissions Matrix
+## 4. Tenant Permission Matrix
 
 Declared in `@haihire/shared` (`packages/shared/src/permissions.ts`):
 
@@ -130,7 +130,6 @@ Declared in `@haihire/shared` (`packages/shared/src/permissions.ts`):
 - `email:send`: Send recruitment emails to candidates.
 - `email:manage_templates`: Author and edit organization email templates.
 - `email:manage_settings`: Configure SMTP, SendGrid, or Resend credentials.
-- `email:manage_system`: Manage system-level email dispatches.
 - `settings:manage_integrations`: Configure outbound webhooks (Discord, Telegram, Generic).
 
 ---
@@ -158,5 +157,57 @@ Controllers declare access requirements via `@RequirePermission(PERMISSIONS.<KEY
        ▼
 [Controller Route Handler]
 ```
+
+---
+
+## 6. Permission Override Model
+
+HaiHire implements a lightweight, single-source-of-truth permission resolution model:
+
+1. **Default Fallback Matrix:**
+   - Static default permissions defined in `@haihire/shared` (`packages/shared/src/permissions.ts`) serve as the universal fallback for all organizations and roles.
+   - Newly registered organizations do NOT receive duplicate database records for default permissions (`OrganizationRolePermission` table remains completely clean with 0 records).
+2. **Delta-Only Overrides:**
+   - Customizations made through the Permissions Matrix UI are stored strictly as delta/override records.
+   - If an organization customizes a role's permissions, only the explicitly toggled entries are saved in `OrganizationRolePermission`.
+3. **Automatic Upstream Sync:**
+   - When new features or permissions are introduced in code (`permissions.ts`), organizations without explicit overrides automatically inherit the new defaults with zero database migrations or synchronization scripts.
+   - Organizations with overrides preserve their explicit choices while inheriting unchanged defaults.
+4. **Role Reset Semantics:**
+   - Resetting a role (`POST /organizations/my/roles/:role/reset`) deletes all override records for that role in the organization.
+   - Upon deletion, the role instantly falls back 100% to the system defaults in `permissions.ts`.
+5. **ADMIN Immutability Hardening:**
+   - All 42 permissions for the `ADMIN` role are strictly locked and immutable. Neither UI edits nor API calls can alter `ADMIN` permissions, preventing administrative lockouts and guaranteeing a recovery path.
+
+---
+
+## 7. Ownership Transfer Flow
+
+Ownership transfer is an atomic lifecycle transition executed within an isolated database transaction:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Owner as Current Owner
+    participant API as OrganizationsController
+    participant Core as OrganizationsCoreService
+    participant DB as PostgreSQL Transaction
+
+    Owner->>API: POST /organizations/my/transfer-ownership { newOwnerUserId }
+    API->>API: DtoPipe validates UUID v4 (RFC 4122)
+    API->>Core: transferOwnership(currentOwnerId, newOwnerUserId)
+    Core->>DB: Begin Transaction (executeTx)
+    DB->>DB: Verify current owner and target membership
+    DB->>DB: Update ownerId only if it still matches the caller
+    DB->>DB: Promote target membership in the transferred organization
+    DB->>DB: Promote User.role only if active in the transferred organization
+    DB->>DB: Record the ownership transfer audit entry
+    DB-->>Core: Commit Transaction
+    Core-->>API: 200 OK { success: true, newOwnerId }
+```
+
+The recipient must have a membership in the organization or a matching `User.organizationId` from older data. The transfer creates a missing membership only while the recipient still has that organization active. When requests compete, the first successful owner update invalidates the other request's owner check. Role changes and the audit entry commit together. The former owner's `ADMIN` access follows [D-011](../decisions/DECISIONS.md#d-011-retention-of-admin-role-for-former-organization-owners-post-transfer).
+
+---
 
 _For coding rules and guard implementation standards, refer to [`docs/architecture/conventions.md`](conventions.md)._

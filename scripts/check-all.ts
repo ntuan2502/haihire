@@ -56,7 +56,7 @@ const steps: Step[] = [
   },
   {
     id: "lint",
-    name: "ESLint Code Quality (Backend + Frontend)",
+    name: "ESLint Code Quality (API + Web)",
     command: "pnpm lint",
     category: "lint",
     description: "Run ESLint and static checks across all workspace projects",
@@ -66,7 +66,7 @@ const steps: Step[] = [
     name: "TypeScript Type Safety",
     command: "pnpm typecheck",
     category: "typecheck",
-    description: "Run tsc --noEmit across backend and frontend packages",
+    description: "Run tsc --noEmit across api and web packages",
   },
   {
     id: "lint:dtopipe",
@@ -81,7 +81,7 @@ const steps: Step[] = [
     name: "CI Gate 4: Error Code i18n Localization",
     command: "pnpm lint:error-i18n",
     category: "gate",
-    description: "Assert all 51 domain error codes exist in vi.ts and en.ts",
+    description: "Assert all 60 domain error codes exist in vi.ts and en.ts",
   },
   {
     id: "lint:api-contract",
@@ -164,8 +164,7 @@ if (!fastOnly) {
     name: "Unit & Integration Test Suite",
     command: "pnpm test",
     category: "test",
-    description:
-      "Run all 563 unit and integration tests across backend and frontend",
+    description: "Run all 1,268 unit and integration tests across api and web",
   });
 }
 
@@ -176,7 +175,7 @@ if (withBuild) {
     name: "Production Build Verification",
     command: "pnpm build",
     category: "build",
-    description: "Compile and bundle shared, backend, and frontend packages",
+    description: "Compile and bundle shared, api, and web packages",
   });
 }
 

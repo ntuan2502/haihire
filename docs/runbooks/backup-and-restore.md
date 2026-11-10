@@ -1,9 +1,11 @@
 # HaiHire Production Backup & Disaster Recovery Runbook
 
 ## 1. Overview
+
 This runbook provides technical procedures for automated backups, data integrity verification, object storage replication, and disaster recovery drills for HaiHire production systems.
 
 Target Services:
+
 - **Relational Database:** PostgreSQL 17 (`haihire-postgres` / `haihire_db`)
 - **Object Storage:** MinIO S3-compatible storage (`haihire-minio` / `haihire-resumes`)
 
@@ -15,6 +17,7 @@ The production backup automation is maintained at:
 [`scripts/backup-production.ts`](../../scripts/backup-production.ts)
 
 ### Execution Command:
+
 ```bash
 # Run standalone with Node native strip-types:
 node --no-warnings --experimental-strip-types scripts/backup-production.ts
@@ -27,6 +30,7 @@ node --no-warnings --experimental-strip-types scripts/backup-production.ts
 ```
 
 ### Architectural Pipeline Steps:
+
 1. **Pre-Flight Container Health Verification:**
    Verifies that both `haihire-postgres` and `haihire-minio` containers are actively running before attempting snapshot operations.
 2. **PostgreSQL Dual Format Dump (No TTY, No PowerShell Redirection Corruption):**
@@ -58,18 +62,21 @@ node --no-warnings --experimental-strip-types scripts/backup-production.ts
 In the event of hardware failure, catastrophic data corruption, or regional failover, execute the following disaster recovery procedure:
 
 ### 3.1. Stop Inbound Traffic
+
 ```bash
 docker compose -f docker-compose.prod.yml stop backend frontend
 ```
 
 > **Note on Container Names:**
+>
 > - In Production (`docker-compose.prod.yml`): containers are named `haihire-prod-postgres`, `haihire-prod-minio`, and `haihire-prod-redis`.
 > - In Local Development (`docker-compose.yml`): containers are named `haihire-postgres`, `haihire-minio`, and `haihire-valkey`.
-> The examples below use the production container naming convention (`haihire-prod-*`).
+>   The examples below use the production container naming convention (`haihire-prod-*`).
 
 ### 3.2. Database Restoration (PostgreSQL)
 
 #### Method A: Custom Archive Restoration (Recommended)
+
 ```bash
 # Locate latest verified snapshot:
 SNAPSHOT="./backups/haihire-db-haihire_db-YYYY-MM-DDTHH-mm-ss-sssZ.dump"
@@ -89,6 +96,7 @@ docker exec -i haihire-prod-postgres rm -f /tmp/restore.dump
 ```
 
 #### Method B: Plain SQL Restoration
+
 ```bash
 SNAPSHOT_SQL="./backups/haihire-db-haihire_db-YYYY-MM-DDTHH-mm-ss-sssZ.sql"
 docker cp "$SNAPSHOT_SQL" haihire-prod-postgres:/tmp/restore.sql
@@ -99,6 +107,7 @@ docker exec -i haihire-prod-postgres rm -f /tmp/restore.sql
 ```
 
 ### 3.3. MinIO Object Storage Restoration
+
 ```bash
 MINIO_ARCHIVE="./backups/haihire-minio-YYYY-MM-DDTHH-mm-ss-sssZ.tar.gz"
 
@@ -112,6 +121,7 @@ docker restart haihire-prod-minio
 ```
 
 ### 3.4. Service Resumption & Verification
+
 ```bash
 # Restart application stack:
 docker compose -f docker-compose.prod.yml start backend frontend
@@ -126,7 +136,6 @@ curl -s http://localhost:3001/metrics | grep http_requests_total
 ---
 
 ## 4. Complementary Maintenance Tasks
+
 - **Orphan Object Cleanup:** Daily cron purging unreferenced resume files after a 30-day grace period. See [orphan-cleanup.md](orphan-cleanup.md).
 - **Incident Response Runbook:** Prometheus alerts and SOPs for database/storage downtime. See [alerts.md](alerts.md).
-
-

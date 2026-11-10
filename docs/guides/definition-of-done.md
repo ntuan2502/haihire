@@ -34,7 +34,7 @@
 
 - [ ] Zero newly introduced `any` types (unless strictly justified via comment explaining technical limitation)
 - [ ] Zero newly introduced `@ts-ignore` / `@ts-expect-error` directives
-- [ ] `pnpm tsc --noEmit` passes cleanly across both `backend/` and `frontend/`
+- [ ] `pnpm tsc --noEmit` passes cleanly across both `apps/api/` and `apps/web/`
 - [ ] Public interfaces documented with JSDoc for critical functions/services
 - [ ] Explicit error types: throw `AppException` subclasses, never generic `new Error()`
 
@@ -46,7 +46,7 @@
 - [ ] Zero PII logged — payloads must scrub email/phone/name before logging
 - [ ] Zero internal error exposure — return `AppException`, never leak raw stack traces to clients
 - [ ] Tenant scoping: database queries in tenant-scoped modules must include `organizationId` filter
-- [ ] Input validation: all newly added `@Body()` parameters guarded by `DtoPipe(<Dto>)`
+- [ ] Input validation: all newly added `@Body()` parameters guarded by `DtoPipe(<DtoOrSchema>)` (supporting both Zod schemas and class DTOs)
 
 ---
 
@@ -81,7 +81,7 @@
 ## 8. CI GATES — Automated Quality Verification
 
 - [ ] `pnpm check:all:fast` passes (all static architecture gates)
-- [ ] `pnpm test` passes (871+ automated tests passing baseline)
+- [ ] `pnpm test` passes (1,268+ automated tests passing baseline)
 - [ ] `pnpm lint:env-sync` passes (when modifying environment variables)
 - [ ] `pnpm lint:dtopipe` passes (when adding/modifying controllers)
 - [ ] `pnpm lint:error-i18n` passes (when registering error codes)
@@ -97,7 +97,7 @@
 
 ---
 
-## 10. REPORT — Submission Format for DeepSeek & Project Owner
+## 10. REPORT — Submission Format for Project Owner
 
 Upon completion, provide the final technical report using the following standard template:
 

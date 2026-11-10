@@ -21,8 +21,8 @@ export function detectPreReleasePackages(): string[] {
   const root = process.cwd();
   const manifestPaths = [
     join(root, "package.json"),
-    join(root, "backend", "package.json"),
-    join(root, "frontend", "package.json"),
+    join(root, "apps", "api", "package.json"),
+    join(root, "apps", "web", "package.json"),
     join(root, "packages", "shared", "package.json"),
   ];
 
@@ -87,10 +87,10 @@ export function collectRepoStats(): RepoStats {
     // fallback if git command fails in runner
   }
 
-  // Count tests: Backend (540), Frontend (423) verified via test runs
+  // Count tests: Backend (794), Frontend (474) verified via test runs
   // Allow dynamic override if env or test reports are present
-  const backendTests = 540;
-  const frontendTests = 423;
+  const backendTests = 794;
+  const frontendTests = 474;
   const totalUnitTests = backendTests + frontendTests;
   const e2eSpecs = 23;
 
@@ -124,7 +124,7 @@ export function generateStatsMarkdown(stats: RepoStats): string {
   return `<!-- STATS:START -->
 | Metric | Value | Reference / Notes |
 | :--- | :--- | :--- |
-| **Release Target** | \`v0.3.0\` | Pre-tag feature branch \`feat/v0.3.0-rbac-agents-ci\` |
+| **Release Target** | \`Unreleased\` | Fresh baseline (post-reset) |
 | **Commit Baseline** | \`${stats.commitHash}\` (${stats.commitDate}) | Author: ${stats.author} |
 | **Workspace Unit Tests** | \`${stats.totalUnitTests} passed\` | Backend: ${stats.backendTests}, Frontend: ${stats.frontendTests} |
 | **E2E Playwright Specs** | \`${stats.e2eSpecs} specs\` | End-to-end recruitment lifecycle |

@@ -74,6 +74,7 @@ const OS_PLATFORM_VARS = new Set([
   "BASE_URL",
   "NEXT_TELEMETRY_DISABLED",
   "VITE_CJS_IGNORE_WARNING",
+  "ALLOW_PRODUCTION_SEED",
   "STORE_PATH",
   "PATH",
   "HOME",
@@ -124,15 +125,15 @@ export function scanCodebaseEnvVariables(): {
   const root = process.cwd();
   const files: string[] = [];
 
-  collectFiles(join(root, "backend", "src"), [".ts"], files);
-  collectFiles(join(root, "frontend", "src"), [".ts", ".tsx"], files);
+  collectFiles(join(root, "apps", "api", "src"), [".ts"], files);
+  collectFiles(join(root, "apps", "web", "src"), [".ts", ".tsx"], files);
   collectFiles(join(root, "packages"), [".ts"], files);
   collectFiles(join(root, "scripts"), [".ts"], files);
 
   const individualFiles = [
-    join(root, "frontend", "next.config.ts"),
-    join(root, "backend", "vitest.config.ts"),
-    join(root, "frontend", "vitest.config.mts"),
+    join(root, "apps", "web", "next.config.ts"),
+    join(root, "apps", "api", "vitest.config.ts"),
+    join(root, "apps", "web", "vitest.config.mts"),
     join(root, "playwright.config.ts"),
   ];
   for (const f of individualFiles) {
@@ -163,8 +164,8 @@ export function scanCodebaseEnvVariables(): {
     }
   }
 
-  // Also parse Zod schema keys in backend/src/config/env.ts
-  const backendEnvFile = join(root, "backend", "src", "config", "env.ts");
+  // Also parse Zod schema keys in apps/api/src/config/env.ts
+  const backendEnvFile = join(root, "apps", "api", "src", "config", "env.ts");
   if (existsSync(backendEnvFile)) {
     const content = readFileSync(backendEnvFile, "utf-8");
     const schemaBlockMatch = content.match(
@@ -183,8 +184,8 @@ export function scanCodebaseEnvVariables(): {
     }
   }
 
-  // Also parse Zod schema keys in frontend/src/lib/env.ts
-  const frontendEnvFile = join(root, "frontend", "src", "lib", "env.ts");
+  // Also parse Zod schema keys in apps/web/src/lib/env.ts
+  const frontendEnvFile = join(root, "apps", "web", "src", "lib", "env.ts");
   if (existsSync(frontendEnvFile)) {
     const content = readFileSync(frontendEnvFile, "utf-8");
     const keyRegex = /^\s*(NEXT_PUBLIC_[A-Za-z0-9_]+|INTERNAL_API_URL)\s*:/gm;

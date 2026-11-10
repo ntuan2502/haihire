@@ -1,8 +1,8 @@
 # PROJECT CONTEXT REPORT: HAIHIRE ENTERPRISE ATS
 
-> **Single Source of Truth (SSOT) for Antigravity, DeepSeek & Project Owner**  
-> **Version:** v0.2.0 (Pre-release)  
-> **Updated:** 2026-10-19  
+> **Single Source of Truth (SSOT) for Engineering Team & Project Owner**  
+> **Version:** Unreleased (Fresh Baseline)  
+> **Updated:** 2026-11-09  
 > **Author:** Antigravity (Senior Software Engineer / Lead Maintainer)
 
 ---
@@ -15,7 +15,7 @@
   - `backend`: REST API Server powered by NestJS 12.
   - `frontend`: Web Application built with Next.js 16 App Router.
   - `packages/shared`: Shared domain contract library (`@haihire/shared` containing types, enums, `APP_ERROR_CODES`, brand config).
-- **Status:** **Version v0.2.0** — Pre-release (Wave 4 Technical Debt Milestone complete, 10/10 God Files refactored across Waves 1–4, 871 tests passing, 11 CI architecture gates, 3-tier Husky git hooks).
+- **Status:** **Fresh Baseline (Unreleased)** — Clean architecture baseline, 1,268 tests passing, 16 CI architecture gates, 3-tier Husky git hooks, canonical Prisma 7 Client.
 - **Target End Users:**
   1. _Recruiter / HR / Hiring Manager / Tenant Admin_: Authenticate into internal dashboard (`/dashboard`) to manage jobs, candidate pipelines, interview schedules, email templates, and sourcing attribution links.
   2. _Candidate_: Access public career portal (`/careers/[orgSlug]/[jobSlug]`) to view job specifications and submit applications online.
@@ -26,20 +26,20 @@
 
 - **Language + Version:** TypeScript `6.0.3` (100% Pure TypeScript mandate; pure `.js` files and `any` types are strictly prohibited — reference `docs/architecture/conventions.md`).
 - **Primary Frameworks:**
-  - **Backend:** NestJS `12.1.2` (running on Express platform adapter, reference `backend/package.json:L33-38`).
-  - **Frontend:** Next.js `16.4.0` (App Router, React Server Components combined with Client Components) + React `19.3.0` (reference `frontend/package.json:L30-33`).
+  - **Backend:** NestJS `12.4.0` (running on Express platform adapter, reference `apps/api/package.json`).
+  - **Frontend:** Next.js `16.4.5` (App Router, React Server Components combined with Client Components) + React `19.3.1` (reference `apps/web/package.json`).
 - **Runtime:**
   - Node.js: `26.x` Active LTS baseline (Docker image `node:26-alpine`).
   - Package Engine: `pnpm@12.6.0` (Node 26 removed Corepack; pnpm installed directly via npm).
 - **Core Libraries:**
-  - _UI & Styling:_ Tailwind CSS `v4`, Base UI (`@base-ui/react ^1.9.0`), Radix UI Primitives (Dialog, Dropdown, Select, Slot), Lucide React (`^1.56.0`), `sonner` (toast notifications), `@dnd-kit` (`^6.3.1` core & sortable for Kanban board).
-  - _Client State & Cache:_ `@tanstack/react-query` `^5.104.2` (server state management with centralized query key factories).
-  - _ORM & Data Access:_ Prisma 8 RC (`@prisma/orm-postgres` `8.0.0-rc.13`, `prisma` `8.0.0-rc.19` Contract-first architecture).
+  - _UI & Styling:_ Tailwind CSS `v4`, Base UI (`@base-ui/react ^1.9.0`), Radix UI Primitives (Dialog, Dropdown, Select, Slot), Lucide React (`^1.70.0`), `sonner` (toast notifications), `@dnd-kit` (`^6.3.1` core & sortable for Kanban board).
+  - _Client State & Cache:_ `@tanstack/react-query` `^5.107.1` (server state management with centralized query key factories).
+  - _ORM & Data Access:_ Prisma 7.10.1 stable (`@prisma/client`, `prisma`, `@prisma/adapter-pg` PostgreSQL driver adapter).
   - _Authentication:_ Passport.js `^0.7.0`, `passport-jwt` `^4.0.1`, `bcryptjs` `^3.0.3`, HttpOnly JWT Cookies (`haihire_token`).
-  - _Async Queues:_ BullMQ `^6.3.15` + `@nestjs/bullmq` `^12.0.0` (email jobs and orphan file cleanup compensation).
+  - _Async Queues:_ BullMQ `^6.7.2` + `@nestjs/bullmq` `^12.0.1` (email jobs and orphan file cleanup compensation).
   - _Object Storage SDK:_ MinIO Node SDK `^8.0.7` (S3-compatible API).
-  - _Validation:_ Zod `^4.6.7` (centralized schemas), `class-validator` `^0.15.1` + `class-transformer` `^0.5.1` wrapped via custom `DtoPipe`.
-  - _Testing:_ Vitest `5.0.4` (unit/integration test, 871 tests passing), Playwright `^1.64.0` (browser E2E), `@testing-library/react` `16.3.3`, `jsdom` `30.1.2`.
+  - _Validation:_ Zod `^4.6.7` (centralized schemas), custom `DtoPipe` supporting both Zod schemas and class-validator DTOs.
+  - _Testing:_ Vitest `5.1.0` (unit/integration test, 1,268 tests passing), Playwright `^1.64.0` (browser E2E), `@testing-library/react` `16.3.3`, `jsdom` `31.0.0`.
 - **Database / Storage / Cache / Queue:**
   - _Database:_ PostgreSQL `17.6-alpine` (Host dev port: `15432`, container: `5432`).
   - _Cache & Queue:_ Valkey `8.0.2-alpine` (open-source Redis replacement complying with RSALv2/SSPLv1 license constraints; host dev port: `16379`, container: `6379`).
@@ -58,9 +58,9 @@
 - **Architectural Patterns:**
   - **Modular Monolith** on Backend (NestJS divided into independent domain modules communicating internally).
   - **Distributed Saga Pattern** coordinating dual writes between MinIO (Object Storage) and PostgreSQL (Relational Database) with BullMQ Dead-Letter Queue (DLQ).
-  - **AsyncLocalStorage Transaction Propagation:** Manages nested service transactions without manual parameter threading (`backend/src/prisma/prisma.service.ts:L13-34`).
+  - **AsyncLocalStorage Transaction Propagation:** Manages nested service transactions without manual parameter threading (`apps/api/src/prisma/prisma.service.ts`).
   - **Multi-Channel Webhook Alert Module:**
-    - Location: `backend/src/common/webhook/`
+    - Location: `apps/api/src/common/webhook/`
     - Pattern: Factory + Interface (`WebhookProvider`, `WebhookProviderFactory` similar to `EmailTransporter`).
     - Available Providers: `TELEGRAM`, `DISCORD`, `GENERIC` (POST JSON with HMAC-SHA256 signature, `eventId`, `eventType`).
     - Fallback: Global environment variables with per-organization configuration support.
@@ -72,34 +72,34 @@
 haihire/
 ├── .agents/                 # AG Kit AI agent rules, memory persistence (MEMORY.md), workflows
 ├── .github/workflows/       # GitHub Actions workflows: CI/CD gates, GHCR publish, nightly E2E
-├── backend/                 # NestJS 12 REST API Server
-│   ├── migrations/          # Prisma database migrations
-│   ├── src/
-│   │   ├── activities/      # Audit trail logging (async, PII-scrubbed)
-│   │   ├── applications/    # Candidate application management, CV upload, Kanban stage transitions
-│   │   ├── auth/            # JWT authentication, HttpOnly cookies, RBAC RolesGuard
-│   │   ├── candidates/      # Talent pool, candidate profiles, attachments
-│   │   ├── common/          # Custom exceptions, DtoPipe, date utils, AES-256 encryption
-│   │   ├── config/          # Centralized fail-fast Zod schema (env.ts)
-│   │   ├── email/           # Email worker (BullMQ), template interpolation, anti-XSS
-│   │   ├── events/          # Internal event emitters & SSE notifications
-│   │   ├── interviews/      # Interview scheduling, Google/Outlook meet links, scorecards
-│   │   ├── jobs/            # Job requisition CRUD, public career listings
-│   │   ├── metrics/         # Prometheus latency & request metrics collector
-│   │   ├── minio/           # S3 client wrapper, magic-byte inspection, presigned URLs
-│   │   ├── organizations/   # Multi-tenant management, memberships, invite links
-│   │   ├── prisma/          # Prisma 8 contract-first ORM, ALS transaction engine, seed.ts
-│   │   ├── sourcing/        # 5-parameter UTM tracking links, deduplicated click analytics
-│   │   └── main.ts          # Backend bootstrap entry point
-├── frontend/                # Next.js 16 Web Application
-│   ├── src/
-│   │   ├── app/             # App Router: /auth, /careers (RSC), /dashboard (Kanban, Tables)
-│   │   ├── components/      # 5-layer modular architecture: ui, shared, layout, providers, features
-│   │   ├── context/         # AuthContext (session management, organization switching)
-│   │   ├── hooks/           # Domain TanStack Query hooks (use-*-queries.ts) + query-keys.ts
-│   │   ├── i18n/            # Dual-language engine (vi/en), I18nProvider, translation keys
-│   │   ├── lib/             # Axios client with URL gatekeeper, api-error parser, domain API clients
-│   │   └── types/           # Frontend TypeScript view model definitions
+├── apps/
+│   ├── api/                 # NestJS 12 REST API Server
+│   │   ├── prisma/          # Prisma 7 schema, prisma.config.ts, seed.ts
+│   │   └── src/
+│   │       ├── activities/  # Audit trail logging (async, PII-scrubbed)
+│   │       ├── applications/# Candidate application management, CV upload, Kanban stage transitions
+│   │       ├── auth/        # JWT authentication, HttpOnly cookies, RBAC RolesGuard
+│   │       ├── candidates/  # Talent pool, candidate profiles, attachments
+│   │       ├── common/      # Custom exceptions, DtoPipe, date utils, AES-256 encryption
+│   │       ├── config/      # Centralized fail-fast Zod schema (env.ts)
+│   │       ├── email/       # Email worker (BullMQ), template interpolation, anti-XSS
+│   │       ├── events/      # Internal event emitters & SSE notifications
+│   │       ├── interviews/  # Interview scheduling, Google/Outlook meet links, scorecards
+│   │       ├── jobs/        # Job requisition CRUD, public career listings
+│   │       ├── metrics/     # Prometheus latency & request metrics collector
+│   │       ├── minio/       # S3 client wrapper, magic-byte inspection, presigned URLs
+│   │       ├── organizations/# Multi-tenant management, memberships, invite links
+│   │       ├── sourcing/    # 5-parameter UTM tracking links, deduplicated click analytics
+│   │       └── main.ts      # Backend bootstrap entry point
+│   └── web/                 # Next.js 16 Web Application
+│       └── src/
+│           ├── app/         # App Router: /auth, /careers (RSC), /dashboard (Kanban, Tables)
+│           ├── components/  # 5-layer modular architecture: ui, shared, layout, providers, features
+│           ├── context/     # AuthContext (session management, organization switching)
+│           ├── hooks/       # Domain TanStack Query hooks (use-*-queries.ts) + query-keys.ts
+│           ├── i18n/        # Dual-language engine (vi/en), I18nProvider, translation keys
+│           ├── lib/         # Axios client with URL gatekeeper, api-error parser, domain API clients
+│           └── types/       # Frontend TypeScript view model definitions
 ├── packages/
 │   └── shared/              # @haihire/shared: APP_ERROR_CODES, enums, DTO contracts, BRAND_CONFIG
 ├── docs/                    # Architecture blueprints, API specs, runbooks, audit history
@@ -125,8 +125,8 @@ haihire/
   - `Sourcing`: Generates `TrackingLink` (with 5 UTM parameters) attached to `Application` for channel attribution analytics.
   - `Activities`: Asynchronous audit trail logging all mutations on Candidates and Applications.
 - **Entry Points:**
-  - Backend: `backend/src/main.ts` (bootstraps NestJS, CORS, Helmet headers, Global Pipes, Filters, listening on `PORT=3001`).
-  - Frontend: `frontend/src/app/layout.tsx` (RootLayout, injecting anti-FOUC theme script `beforeInteractive`, wrapping `I18nProvider`, `QueryClientProvider`, `AuthProvider`).
+  - Backend: `apps/api/src/main.ts` (bootstraps NestJS, CORS, Helmet headers, Global Pipes, Filters, listening on `PORT=3001`).
+  - Frontend: `apps/web/src/app/layout.tsx` (RootLayout, injecting anti-FOUC theme script `beforeInteractive`, wrapping `I18nProvider`, `QueryClientProvider`, `AuthProvider`).
 
 ---
 
@@ -137,7 +137,7 @@ haihire/
   - _Variables & Functions:_ `camelCase` (`executeTx`, `getApiErrorMessage`, `downloadAuthenticatedFile`).
   - _React Components:_ `PascalCase` (`WizardHeader`, `MetricCard`, `CustomSelect`).
   - _Classes & DTOs:_ `PascalCase` (`CreateJobDto`, `PrismaService`, `GlobalExceptionFilter`).
-  - _Database Schema:_ PostgreSQL tables mapped via `snake_case` in `backend/src/prisma/contract.prisma` (e.g. `@@map("job")`, `@@map("candidate")`).
+  - _Database Schema:_ PostgreSQL tables mapped via `snake_case` in `apps/api/src/prisma/schema.prisma` (e.g. `@@map("job")`, `@@map("candidate")`).
 - **File Structure Blueprint:**
   - _Frontend Component:_
     ```typescript
@@ -176,19 +176,19 @@ haihire/
     }
     ```
 - **State Management:**
-  - _Server State:_ 100% managed by `@tanstack/react-query` v5. Centralized query keys defined in `frontend/src/hooks/query-keys.ts`. Mutations must invoke `queryClient.invalidateQueries({ queryKey: queryKeys.<domain>(...) })`.
+  - _Server State:_ 100% managed by `@tanstack/react-query` v5. Centralized query keys defined in `apps/web/src/hooks/query-keys.ts`. Mutations must invoke `queryClient.invalidateQueries({ queryKey: queryKeys.<domain>(...) })`.
   - _Global Client State:_ Dedicated React Context: `AuthContext` (session & tenant), `I18nContext` (language).
   - _Local UI State:_ Standard React hooks (`useState`, `useReducer`, `useMemo`).
 - **API Invocation:**
-  - Singleton Axios client in `frontend/src/lib/api/client.ts` (`api = axios.create({ baseURL: getApiBaseUrl(), withCredentials: true })`).
+  - Singleton Axios client in `apps/web/src/lib/api/client.ts` (`api = axios.create({ baseURL: getApiBaseUrl(), withCredentials: true })`).
   - **Client-Side Gatekeeper:** Active interceptor blocking malformed URLs containing `[object Object]` or `%5Bobject` before network transmission.
-  - Domain-separated API files in `frontend/src/lib/api/<domain>.ts`.
+  - Domain-separated API files in `apps/web/src/lib/api/<domain>.ts`.
 - **Error Handling & Logging:**
   - _Backend:_ Throw exceptions inheriting `AppException` with codes defined in `APP_ERROR_CODES` (`packages/shared/src/errors.ts`). `GlobalExceptionFilter` standardizes error envelope: `{ statusCode, code, message, params, timestamp, path }`. HTTP logging is structured JSON with PII scrubbing.
-  - _Frontend:_ Process errors via `getApiErrorMessage(err, t)` (`frontend/src/lib/api-error.ts`), translating machine codes to user messages (`errors.<CODE>`). Zero `alert()` calls or raw `JSON.stringify(err)` displays permitted.
+  - _Frontend:_ Process errors via `getApiErrorMessage(err, t)` (`apps/web/src/lib/api-error.ts`), translating machine codes to user messages (`errors.<CODE>`). Zero `alert()` calls or raw `JSON.stringify(err)` displays permitted.
 - **Validation:**
   - _Backend Request Payload:_ `class-validator` + `class-transformer` wrapped with `DtoPipe(<DtoClass>)` on `@Body()` parameters.
-  - _Environment Variables:_ Strict Zod schemas in `backend/src/config/env.ts` and `frontend/src/lib/env.ts`. Fail-fast zero-fallback philosophy.
+  - _Environment Variables:_ Strict Zod schemas in `apps/api/src/config/env.ts` and `apps/web/src/lib/env.ts`. Fail-fast zero-fallback philosophy.
 - **Testing Standards:**
   - _Frameworks:_ Vitest across monorepo packages; Playwright for E2E browser tests.
   - _Pattern:_ AAA (Arrange - Act - Assert). HTML5 constraint forms in JSDOM must be submitted via `fireEvent.submit(form)`.
@@ -200,41 +200,41 @@ haihire/
 
 ## 5. COMMON DEVELOPER COMMANDS
 
-| Operation                      | Command                                                  | Notes                                                                      |
-| :----------------------------- | :------------------------------------------------------- | :------------------------------------------------------------------------- |
-| **Install dependencies**       | `pnpm install`                                           | Requires Node >= 26 and pnpm 12. Do not use `corepack enable`.             |
-| **Start Docker infra**         | `pnpm docker:infra:up`                                   | Boots PostgreSQL (`15432`), Valkey (`16379`), MinIO (`19000/19001`).       |
-| **Initialize DB & Seed**       | `pnpm db:setup`                                          | Executes `prisma db update` and populates demo seed data.                  |
-| **Launch Development**         | `pnpm dev`                                               | Starts Backend (`13001`) and Frontend (`13000`) concurrently.              |
-| **Build all packages**         | `pnpm build`                                             | Builds `@haihire/shared` $\rightarrow$ `backend` $\rightarrow$ `frontend`. |
-| **Run Unit & Int tests**       | `pnpm test`                                              | Runs all Vitest test suites.                                               |
-| **Run E2E Browser tests**      | `pnpm test:e2e`                                          | Runs Playwright E2E browser journeys.                                      |
-| **Full CI verification**       | `pnpm check:all`                                         | Executes full CI quality gates suite.                                      |
-| **Fast CI check (pre-commit)** | `pnpm check:all:fast`                                    | Runs static gates + test diff (~38s).                                      |
-| **Verify Environment sync**    | `pnpm lint:env-sync`                                     | Asserts 100% key parity across `.env` templates and Docker Compose.        |
-| **Verify i18n parity**         | `pnpm lint:i18n`                                         | Asserts zero hardcoded strings in JSX and complete dictionary keys.        |
-| **Verify DtoPipe coverage**    | `pnpm lint:dtopipe`                                      | Verifies 100% of `@Body()` parameters guarded by `DtoPipe`.                |
-| **Verify Error code i18n**     | `pnpm lint:error-i18n`                                   | Asserts all `APP_ERROR_CODES` exist in `vi.ts` and `en.ts`.                |
-| **Version synchronization**    | `pnpm version:sync` / `pnpm version:bump [patch\|minor]` | Synchronizes lockstep version across monorepo `package.json` manifests.    |
-| **Start Production Docker**    | `pnpm docker:prod:up`                                    | Starts production container cluster with `.env.production`.                |
+| Operation                      | Command                                                  | Notes                                                                   |
+| :----------------------------- | :------------------------------------------------------- | :---------------------------------------------------------------------- |
+| **Install dependencies**       | `pnpm install`                                           | Requires Node >= 26 and pnpm 12. Do not use `corepack enable`.          |
+| **Start Docker infra**         | `pnpm docker:infra:up`                                   | Boots PostgreSQL (`15432`), Valkey (`16379`), MinIO (`19000/19001`).    |
+| **Initialize DB & Seed**       | `pnpm db:setup`                                          | Executes `prisma db update` and populates demo seed data.               |
+| **Launch Development**         | `pnpm dev`                                               | Starts Backend (`13001`) and Frontend (`13000`) concurrently.           |
+| **Build all packages**         | `pnpm build`                                             | Builds `@haihire/shared` $\rightarrow$ `api` $\rightarrow$ `web`.       |
+| **Run Unit & Int tests**       | `pnpm test`                                              | Runs all Vitest test suites.                                            |
+| **Run E2E Browser tests**      | `pnpm test:e2e`                                          | Runs Playwright E2E browser journeys.                                   |
+| **Full CI verification**       | `pnpm check:all`                                         | Executes full CI quality gates suite.                                   |
+| **Fast CI check (pre-commit)** | `pnpm check:all:fast`                                    | Runs static gates + test diff (~38s).                                   |
+| **Verify Environment sync**    | `pnpm lint:env-sync`                                     | Asserts 100% key parity across `.env` templates and Docker Compose.     |
+| **Verify i18n parity**         | `pnpm lint:i18n`                                         | Asserts zero hardcoded strings in JSX and complete dictionary keys.     |
+| **Verify DtoPipe coverage**    | `pnpm lint:dtopipe`                                      | Verifies 100% of `@Body()` parameters guarded by `DtoPipe`.             |
+| **Verify Error code i18n**     | `pnpm lint:error-i18n`                                   | Asserts all `APP_ERROR_CODES` exist in `vi.ts` and `en.ts`.             |
+| **Version synchronization**    | `pnpm version:sync` / `pnpm version:bump [patch\|minor]` | Synchronizes lockstep version across monorepo `package.json` manifests. |
+| **Start Production Docker**    | `pnpm docker:prod:up`                                    | Starts production container cluster with `.env.production`.             |
 
 ---
 
 ## 6. CRITICAL ARCHITECTURAL CONSTRAINTS
 
 - **Sensitive Files (Do Not Modify Without Caution):**
-  1. `backend/src/prisma/contract.prisma` & `contract.json`: Prisma 8 RC ORM schema contract. Schema changes require `pnpm contract:emit` and `pnpm db:update`.
-  2. `backend/src/common/dto-validation.pipe.ts`: Bridge protecting validation metatypes from bundler tree-shaking.
-  3. `frontend/src/app/layout.tsx`: Anti-FOUC theme script `<Script id="theme-init" strategy="beforeInteractive">`. Do not replace with raw `<script>` tags.
-  4. `backend/src/applications/applications.service.ts`: Core Saga resume upload logic. Houses MinIO compensating deletions and BullMQ DLQ triggers.
+  1. `apps/api/src/prisma/schema.prisma`: Prisma 7 ORM schema. Schema changes require `pnpm db:update`.
+  2. `apps/api/src/common/dto-validation.pipe.ts`: Bridge protecting validation metatypes from bundler tree-shaking.
+  3. `apps/web/src/app/layout.tsx`: Anti-FOUC theme script `<Script id="theme-init" strategy="beforeInteractive">`. Do not replace with raw `<script>` tags.
+  4. `apps/api/src/applications/applications.service.ts`: Core Saga resume upload logic. Houses MinIO compensating deletions and BullMQ DLQ triggers.
 - **Known Technical Debt:**
-  1. _Large Files Exceeding 400 Lines:_
-     - `frontend/src/components/applications/applications-data-table.tsx` (~1.6k lines).
-     - `backend/src/applications/applications.service.ts` (~1.1k lines).
-     - `backend/src/organizations/organizations.service.ts` (~1.1k lines).
-     - `backend/src/sourcing/sourcing.service.ts` (~988 lines).
-     - `frontend/src/components/jobs/job-list.tsx` (~900 lines).
-  2. _Legacy Table Mappings:_ 9 tables in `contract.prisma` retain legacy camelCase `@@map` directives (`organizationMember`, `trackingLink`...) pending future migration.
+  1. _Large Files Exceeding 400 Lines (Refactored across Waves 1–4):_
+     - `apps/web/src/components/applications/applications-data-table.tsx` (Refactored to modular components).
+     - `apps/api/src/applications/applications.service.ts` (Refactored to sub-services).
+     - `apps/api/src/organizations/organizations.service.ts` (Refactored to sub-services).
+     - `apps/api/src/sourcing/sourcing.service.ts` (Refactored to sub-services).
+     - `apps/web/src/components/jobs/job-list.tsx` (Refactored to modular components).
+  2. _Table Mappings:_ Normalized to canonical PostgreSQL `snake_case` in `schema.prisma` (`organization_member`, `tracking_link`, etc.).
 - **Common Pitfalls to Avoid:**
   - _React SyntheticEvent Leakage:_ When passing callbacks to `onClick`, if the target function accepts optional arguments (`onDelete(id?: string)`), do **not** bind directly `onClick={onDelete}`. React will pass the `MouseEvent` as the first argument, resulting in `"[object Object]"` URL parameters. Always bind via arrow function: `onClick={() => onDelete(id)}`.
   - _Cross-Platform File Path Sanitization:_ Never use `path.basename()` to clean uploaded filenames; it does not strip Windows `\` separators on Linux CI hosts. Always use universal regex: `.replace(/^.*[/\\]/, "")`.
@@ -246,17 +246,17 @@ haihire/
 1. **Never chain shell commands with `&&` on Windows PowerShell:** The host OS uses PowerShell. Chaining with `&&` can cause syntax errors. Execute commands sequentially or separate with `;`.
 2. **Never execute `pnpm run seed` or `pnpm db:setup` without user confirmation:** Seeding wipes the existing database and restores default demo state. Always confirm with the user.
 3. **No hardcoded user-facing strings in Frontend:** All text, labels, and placeholders must resolve via `useI18n()` and `t("key.path")`. New strings must be added simultaneously to `types.ts`, `vi.ts`, and `en.ts`.
-4. **No duplicate proxy files when modularizing:** In directories such as `frontend/src/lib/api/`, `index.ts` is the single export source. Never create an adjacent `frontend/src/lib/api.ts` file.
+4. **No duplicate proxy files when modularizing:** In directories such as `apps/web/src/lib/api/`, `index.ts` is the single export source. Never create an adjacent `apps/web/src/lib/api.ts` file.
 5. **No `corepack enable`:** Node.js 26 has removed Corepack. Use explicit npm package installation: `npm install -g pnpm@12.6.0`.
-6. **Environment architecture is Single Source of Truth:** All local development and Docker services use root `.env` (derived from `.env.example`). Production deployments use `.env.production` (derived from `.env.production.example`). Per-package `.env` files (`backend/.env*`, `frontend/.env*`) have been removed (Task #11).
+6. **Environment architecture is Single Source of Truth:** All local development and Docker services use root `.env` (derived from `.env.example`). Production deployments use `.env.production` (derived from `.env.production.example`). Per-package `.env` files (`apps/api/.env*`, `apps/web/.env*`) have been removed (Task #11).
 7. **Do not import `clsx` or `tailwind-merge` directly:** Always import the unified helper from `cn`: `import { cn } from "cn";`.
 
 ---
 
 ## 8. OPEN ARCHITECTURAL QUESTIONS
 
-1. **[CONFIRMATION REQUIRED] Refactoring the 5 Large Files:** Modules such as `applications-data-table.tsx` and `applications.service.ts` exceed modular thresholds. Should these be refactored now or maintained as-is to preserve stability for v1.0.0?
-2. **[CONFIRMATION REQUIRED] Database Table Name Migration:** 9 tables currently use camelCase `@@map` names in `contract.prisma`. Should these be migrated to PostgreSQL `snake_case` now or post-release?
+1. **[RESOLVED] Refactoring Large Files:** Monolithic files like `applications-data-table.tsx`, `pipeline/page.tsx` (`usePipelineKanban`), and `sourcing.service.ts` have been decomposed into focused sub-services and custom hooks.
+2. **[RESOLVED] Database Table Name Migration:** Normalized to canonical PostgreSQL `snake_case` in `schema.prisma` and enforced via D-006.
 3. **[CONFIRMATION REQUIRED] Full-Width Canvas Alignment:** Several components retain container constraints (`max-w-7xl mx-auto`). Should all pages be standardized to full-width layouts?
 4. **[CONFIRMATION REQUIRED] Production Email Provider:** Current environment defaults to `SYSTEM_EMAIL_PROVIDER="SIMULATED"`. Which provider (`SMTP`, `RESEND`, or `SENDGRID`) will be designated for production release?
 
@@ -279,7 +279,7 @@ All documentation, code comments, commit messages, alert descriptions, and log m
 
 Vietnamese is ONLY allowed in:
 
-- `frontend/src/i18n/locales/vi.ts` — UI text for Vietnamese users
+- `apps/web/src/i18n/locales/vi.ts` — UI text for Vietnamese users
 - Mock data and seed data (realistic Vietnamese names, sample email templates)
 
 ### Exceptions

@@ -1,5 +1,20 @@
 import type { Application } from "./applications";
 
+export function inferCandidateName(
+  name?: string | null,
+  firstName?: string | null,
+  lastName?: string | null,
+): { firstName: string; lastName: string } {
+  const first = firstName?.trim() || "";
+  const last = lastName?.trim() || "";
+  if (first || last) return { firstName: first, lastName: last };
+  const parts = name?.trim().split(/\s+/) || [];
+  return {
+    firstName: parts[0] || "",
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
 export const Gender = {
   MALE: "MALE",
   FEMALE: "FEMALE",

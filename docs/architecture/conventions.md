@@ -7,7 +7,7 @@
 
 ## 1. Pure TypeScript Mandate
 
-1. **100% TypeScript Files:** Every file across `backend/`, `frontend/`, `packages/shared/`, and `scripts/` must use TypeScript extensions (`.ts`, `.tsx`, `.mts`, `.cts`). Zero plain JavaScript (`.js`, `.cjs`, `.mjs`) files are permitted anywhere in application code.
+1. **100% TypeScript Files:** Every file across `apps/api/`, `apps/web/`, `packages/shared/`, and `scripts/` must use TypeScript extensions (`.ts`, `.tsx`, `.mts`, `.cts`). Zero plain JavaScript (`.js`, `.cjs`, `.mjs`) files are permitted anywhere in application code.
    - _Rationale:_ Eliminates runtime type divergence and guarantees end-to-end type safety across the monorepo.
 2. **Tooling Exception:** Standard tooling configuration files required by ESM runners (e.g. `vitest.config.mts`, `eslint.config.mjs`) are permitted as build-time configurations.
    - _Rationale:_ Necessary for external Node.js tooling compatibility.
@@ -26,8 +26,8 @@
 ## 3. Centralized Fail-Fast Environment Validation (Zod)
 
 1. **Centralized Schemas:** All environment variables must be declared and validated via centralized Zod schemas:
-   - Backend: `backend/src/config/env.ts` (`backendEnv`)
-   - Frontend: `frontend/src/lib/env.ts` (`env`)
+   - API: `apps/api/src/config/env.ts` (`backendEnv`)
+   - Web: `apps/web/src/lib/env.ts` (`env`)
    - _Rationale:_ Eliminates scattered `process.env` lookups and ensures configuration integrity.
 2. **Zero Fallbacks for Secrets:** Never provide fallback defaults for security secrets (`JWT_SECRET`, `ENCRYPTION_SECRET`, `DATABASE_URL`).
    - _Rationale:_ Prevents deploying insecure default credentials to production environments.
@@ -40,7 +40,7 @@
 
 ## 4. 100% DtoPipe Validation Coverage
 
-1. **Mandatory DtoPipe Guard:** Every NestJS controller parameter decorated with `@Body()` must be protected by `@Body(DtoPipe)`.
+1. **Mandatory DtoPipe Guard:** Every NestJS controller parameter decorated with `@Body()` must be protected by `@Body(DtoPipe)` or `@Body(DtoPipe(SchemaOrDto))`. `DtoPipe` uniformly supports both Zod validation schemas and class-validator DTOs without requiring legacy shim classes.
    - _Rationale:_ Sanitizes incoming HTTP payloads and prevents prototype pollution or malformed input injection.
 2. **Enforcement:** Enforced in CI by Gate 5 (`pnpm lint:dtopipe`), asserting 100% endpoint coverage.
    - _Rationale:_ Automated gate prevents security regression during development.
@@ -51,7 +51,7 @@
 
 1. **Zero Hardcoded JSX Text:** Raw user-facing strings, labels, placeholders, and error toasts in JSX/TSX are strictly forbidden.
    - _Rationale:_ Guarantees full localization support and prevents language leaks in bilingual ATS deployments.
-2. **Two-Way Dictionary Symmetry:** All keys must exist symmetrically in both Vietnamese (`frontend/src/constants/translations/vi.ts`) and English (`frontend/src/constants/translations/en.ts`) and be typed in `TranslationSchema`.
+2. **Two-Way Dictionary Symmetry:** All keys must exist symmetrically in both Vietnamese (`apps/web/src/i18n/locales/vi.ts`) and English (`apps/web/src/i18n/locales/en.ts`) and be typed in `TranslationSchema`.
    - _Rationale:_ Prevents runtime translation key misses (`[missing key]`) when switching languages.
 3. **Enforcement:** Enforced by CI Gate 2 (`pnpm lint:i18n`) and Gate 6 (`pnpm lint:error-i18n`).
    - _Rationale:_ Traps unlocalized strings and dictionary drift before merge.
@@ -69,7 +69,7 @@
 
 ## 7. Component Architecture & Frontend Conventions
 
-1. **5-Layer Modular Structure (`frontend/src/components/`):**
+1. **5-Layer Modular Structure (`apps/web/src/components/`):**
    - `ui/`: Pristine Shadcn UI primitives added via official CLI (`pnpx shadcn add`).
    - `shared/`: Reusable ATS UI controls, custom selects, badges, and guards.
    - `layout/`: Global navigation and layout shells.
@@ -98,14 +98,18 @@
 
 ## 9. Database, ORM & Transaction Architecture
 
-1. **Prisma 8 Contract-First Schema:** All database models live in `backend/src/prisma/contract.prisma`.
-   - _Rationale:_ Generates compiled, deterministic runtime codecs and contracts.
-2. **Cascade Deletion Integrity:** Child entities (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must declare `onDelete: Cascade` targeting their parent root.
+1. **Canonical Prisma Client API:** All database access must use canonical native Prisma Client methods directly on `PrismaService` (`this.prisma.<model>.<action>`). Custom query composer adapters, fake `.raw` accessors, and legacy wrappers are strictly prohibited.
+   - _Rationale:_ Eliminates indirection, aligns 100% with official NestJS and Prisma documentation, unlocks complete TypeScript IDE autocompletion, and enables high-performance native PostgreSQL batch operations (such as `deleteMany`).
+2. **Prisma Schema Architecture:** All database models live in `apps/api/src/prisma/schema.prisma`.
+   - _Rationale:_ Uses standard PostgreSQL driver adapters (`@prisma/adapter-pg`) with full type safety and zero pre-release dependencies.
+3. **Cascade Deletion Integrity:** Child entities (`Application`, `Interview`, `CandidateDocument`, `ActivityLog`) must declare `onDelete: Cascade` targeting their parent root.
    - _Rationale:_ Guarantees database-level atomic cascade deletion and eliminates orphan child records.
-3. **AsyncLocalStorage Transaction Propagation:** Use `PrismaService.executeTx()` for transactional business operations.
-   - _Rationale:_ Reuses the active database transaction across nested services without manual parameter passing.
-4. **Distributed Saga Pattern:** Operations crossing MinIO object storage and PostgreSQL must use Saga compensation with BullMQ dead-letter queue (DLQ) retry fallbacks.
+4. **AsyncLocalStorage Transaction Propagation:** Use `runInTransaction(this.prisma, async (tx) => ...)` or `PrismaService.transaction()` / `executeTx()` for transactional business operations.
+   - _Rationale:_ Reuses the active database transaction across nested services without manual parameter passing, while gracefully falling back to mock or direct Prisma clients in unit tests.
+5. **Distributed Saga Pattern:** Operations crossing MinIO object storage and PostgreSQL must use Saga compensation with BullMQ dead-letter queue (DLQ) retry fallbacks.
    - _Rationale:_ Ensures storage and database consistency even during network or service crashes.
+6. **Explicit PostgreSQL Connection Pool:** `PrismaService` explicitly configures `pg.Pool` with bounded concurrency and retry timeouts (`PRISMA_CONNECTION_LIMIT`, `PRISMA_POOL_TIMEOUT`, `PRISMA_MAX_RETRIES`, `PRISMA_RETRY_DELAY_MS`).
+   - _Rationale:_ Prevents connection pool starvation and socket hangs during high-traffic recruitment bursts.
 
 ---
 

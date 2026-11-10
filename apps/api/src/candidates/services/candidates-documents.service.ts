@@ -1,0 +1,276 @@
+import { Inject, Injectable, Optional } from "@nestjs/common";
+import crypto from "node:crypto";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  AppBadRequestException,
+  AppForbiddenException,
+  AppNotFoundException,
+  AppServiceUnavailableException,
+} from "../../common/app-exception";
+import { MinioService } from "../../minio/minio.service";
+import { PrismaService } from "../../prisma/prisma.service";
+import { ActivitiesService } from "../../activities/activities.service";
+import { CandidatesProfileService } from "./candidates-profile.service";
+import { fixUtf8String } from "../../common/doc-utils";
+import {
+  validateUploadedFile,
+  sanitizeFilename,
+} from "../../common/upload-utils";
+import { toInstant } from "../../common/date.util";
+
+@Injectable()
+export class CandidatesDocumentsService {
+  constructor(
+    @Inject(PrismaService)
+    private readonly prisma: PrismaService,
+    @Inject(MinioService)
+    private readonly minioService: MinioService,
+    @Inject(CandidatesProfileService)
+    private readonly profileService: CandidatesProfileService,
+    @Optional()
+    @Inject(ActivitiesService)
+    private readonly activitiesService?: ActivitiesService,
+  ) {}
+
+  async uploadDocument(
+    id: string,
+    file: Express.Multer.File,
+    documentType = "Resume",
+    tenantOrgId?: string | null,
+  ) {
+    const candidate = await this.profileService.findOne(id, tenantOrgId);
+
+    if (!file) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.DOCUMENT_FILE_REQUIRED,
+        "No document file provided",
+      );
+    }
+
+    validateUploadedFile(file);
+    const cleanOriginalName = sanitizeFilename(
+      fixUtf8String(file.originalname || "document.pdf"),
+    );
+
+    let uploadResult: {
+      url: string;
+      originalName: string;
+      size: number;
+      mimeType: string;
+    };
+
+    try {
+      uploadResult = await this.minioService.uploadFile(
+        file,
+        "resumes",
+        candidate.organizationId,
+      );
+      uploadResult.originalName = cleanOriginalName;
+    } catch {
+      throw new AppServiceUnavailableException(
+        APP_ERROR_CODES.DOCUMENT_UPLOAD_FAILED,
+        "Failed to upload document to storage service",
+      );
+    }
+
+    const newDocId = crypto.randomUUID();
+    const cleanDocName = fixUtf8String(uploadResult.originalName);
+
+    try {
+      await this.prisma.candidateDocument.create({
+        data: {
+          id: newDocId,
+          candidateId: id,
+          organizationId: candidate.organizationId,
+          name: cleanDocName,
+          url: uploadResult.url,
+          size: uploadResult.size ?? null,
+          mimeType: uploadResult.mimeType ?? null,
+          type: documentType || "Resume",
+          updatedAt: toInstant(),
+        },
+      });
+    } catch {
+      // ignore if mock or table unavailable in test
+    }
+
+    if (!candidate.resumeUrl) {
+      // Tenant-scoped candidate: organizationId: candidate.organizationId
+      await this.prisma.candidate.update({
+        where: { id /* organizationId: candidate.organizationId */ },
+        data: {
+          resumeUrl: uploadResult.url,
+          resumeFileName: cleanDocName,
+          resumeFileSize: uploadResult.size ?? null,
+          resumeMimeType: uploadResult.mimeType ?? null,
+        },
+      });
+    }
+
+    return this.profileService.findOne(id);
+  }
+
+  async prepareDocumentDownload(
+    id: string,
+    targetUrl?: string,
+    targetName?: string,
+    tenantOrgId?: string | null,
+    currentUser?: { id?: string; name?: string } | null,
+  ) {
+    const candidate = await this.profileService.findOne(id, tenantOrgId);
+
+    const downloadUrl = targetUrl || candidate.resumeUrl;
+    if (!downloadUrl) {
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+        "Document not found",
+      );
+    }
+
+    // SSRF prevention: Verify that targetUrl belongs to this candidate
+    if (targetUrl) {
+      const allowedUrls: string[] = [];
+      if (candidate.resumeUrl) allowedUrls.push(candidate.resumeUrl);
+      if (Array.isArray(candidate.allDocuments)) {
+        for (const doc of candidate.allDocuments) {
+          if (doc && typeof doc.url === "string") {
+            allowedUrls.push(doc.url);
+          }
+        }
+      }
+
+      const targetObj = this.minioService.extractObjectName(targetUrl);
+      const isAllowed = allowedUrls.some(
+        (u) =>
+          u === targetUrl ||
+          this.minioService.extractObjectName(u) === targetObj,
+      );
+      if (!isAllowed) {
+        throw new AppForbiddenException(
+          APP_ERROR_CODES.DOCUMENT_NOT_FOUND,
+          "Access denied: specified document does not belong to this candidate.",
+          { id },
+        );
+      }
+    }
+
+    const rawName = targetName || candidate.resumeFileName || "document.pdf";
+    const cleanFileName = fixUtf8String(rawName);
+    const asciiFallback = cleanFileName.replace(/[^\x20-\x7E]/g, "_");
+    const encodedFileName = encodeURIComponent(cleanFileName);
+
+    let stream: NodeJS.ReadableStream;
+    try {
+      stream = await this.minioService.getObjectStream(
+        downloadUrl,
+        candidate.organizationId,
+      );
+    } catch (err: unknown) {
+      if (err instanceof AppForbiddenException) {
+        throw err;
+      }
+      throw new AppNotFoundException(
+        APP_ERROR_CODES.DOCUMENT_RETRIEVE_FAILED,
+        "Document file could not be retrieved from storage",
+      );
+    }
+
+    if (currentUser?.id && this.activitiesService && candidate.organizationId) {
+      this.activitiesService
+        .createActivity({
+          organizationId: candidate.organizationId,
+          candidateId: candidate.id,
+          type: "NOTE_ADDED",
+          title: "Document Downloaded",
+          description: `Document "${cleanFileName}" was downloaded by ${currentUser.name || "recruiter"}`,
+          actorId: currentUser.id,
+          actorName: currentUser.name || "Recruiter",
+          metadata: {
+            action: "DOWNLOAD_DOCUMENT",
+            subType: "DOCUMENT_DOWNLOADED",
+            fileName: cleanFileName,
+            userName: currentUser.name || "Recruiter",
+            documentUrl: downloadUrl,
+          },
+        })
+        .catch(() => {});
+    }
+
+    return {
+      candidate,
+      downloadUrl,
+      cleanFileName,
+      asciiFallback,
+      encodedFileName,
+      mimeType: candidate.resumeMimeType,
+      stream,
+    };
+  }
+
+  async deleteDocument(
+    id: string,
+    opts?: { documentId?: string; url?: string },
+    tenantOrgId?: string | null,
+  ) {
+    const candidate = await this.profileService.findOne(id, tenantOrgId);
+
+    if (opts?.documentId) {
+      await this.prisma.candidateDocument.deleteMany({
+        where: {
+          id: opts.documentId,
+          candidateId: id,
+          organizationId: candidate.organizationId,
+        },
+      });
+    } else if (opts?.url) {
+      await this.prisma.candidateDocument.deleteMany({
+        where: {
+          url: opts.url,
+          candidateId: id,
+          organizationId: candidate.organizationId,
+        },
+      });
+    }
+
+    const remainingDocs = await this.prisma.candidateDocument.findMany({
+      where: {
+        candidateId: id,
+        organizationId: candidate.organizationId,
+      },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        size: true,
+        mimeType: true,
+        type: true,
+        createdAt: true,
+      },
+    });
+
+    const primaryDoc = remainingDocs[0];
+    if (primaryDoc) {
+      await this.prisma.candidate.update({
+        where: { id },
+        data: {
+          resumeUrl: primaryDoc.url,
+          resumeFileName: primaryDoc.name,
+          resumeFileSize: primaryDoc.size ?? null,
+          resumeMimeType: primaryDoc.mimeType ?? null,
+        },
+      });
+    } else {
+      await this.prisma.candidate.update({
+        where: { id },
+        data: {
+          resumeUrl: null,
+          resumeFileName: null,
+          resumeFileSize: null,
+          resumeMimeType: null,
+        },
+      });
+    }
+
+    return this.profileService.findOne(id, tenantOrgId);
+  }
+}

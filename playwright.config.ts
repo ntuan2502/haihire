@@ -1,10 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./frontend/tests/e2e",
+  testDir: "./apps/web/tests/e2e",
   timeout: process.env.CI ? 300000 : 60000,
   fullyParallel: true,
-  forbidOnly: !process.env.CI,
+  forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html", { open: "never" }], ["list"]],
@@ -24,7 +24,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     url: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:13000",
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: process.env.CI ? 300000 : 120000,
     stdout: "pipe",
     stderr: "pipe",

@@ -7,10 +7,10 @@
 * @ntuan2502
 
 # Core Backend Services & Data Model
-/backend/ @ntuan2502
+/apps/api/ @ntuan2502
 
 # Frontend Client & Public Career Portal
-/frontend/ @ntuan2502
+/apps/web/ @ntuan2502
 
 # Shared Packages
 /packages/ @ntuan2502
@@ -25,6 +25,6 @@
 /*.md @ntuan2502
 
 # Security-Critical Paths
-/backend/src/auth/ @ntuan2502
-/backend/src/common/guards/ @ntuan2502
-/backend/src/prisma/ @ntuan2502
+/apps/api/src/auth/ @ntuan2502
+/apps/api/src/common/guards/ @ntuan2502
+/apps/api/src/prisma/ @ntuan2502

@@ -1,22 +1,22 @@
 # HaiHire Enterprise ATS Platform
 
 > Modern, AI-powered Applicant Tracking System (ATS) engineered for enterprise recruitment workflows.  
-> Built with NestJS 12, Next.js 16 (App Router & Server Components), PostgreSQL 17, Prisma 8, Valkey 8, and MinIO S3 storage.
+> Built with NestJS 12, Next.js 16 (App Router & Server Components), PostgreSQL 17, Prisma 7, Valkey 8, and MinIO S3 storage.
 
 ---
 
 <!-- STATS:START -->
 
-| Metric                           | Value                             | Reference / Notes                                   |
-| :------------------------------- | :-------------------------------- | :-------------------------------------------------- |
-| **Release Target**               | `v0.3.0`                          | Pre-tag feature branch `feat/v0.3.0-rbac-agents-ci` |
-| **Commit Baseline**              | `a12ffa8` (2026-10-21)            | Author: Tún                                         |
-| **Workspace Unit Tests**         | `963 passed`                      | Backend: 540, Frontend: 423                         |
-| **E2E Playwright Specs**         | `23 specs`                        | End-to-end recruitment lifecycle                    |
-| **CI Architecture Gates**        | `16/16 gates`                     | `pnpm check:all` mandatory gates                    |
-| **Environment Configuration**    | `55 keys`                         | 100% key parity & codebase sync                     |
-| **Pre-Release Dependencies**     | `3 packages (covered by ADR-001)` | Prisma 8 RC & effect override                       |
-| **Documentation Link Integrity** | `100% valid`                      | Audited via `pnpm lint:doc-links`                   |
+| Metric                           | Value                  | Reference / Notes                 |
+| :------------------------------- | :--------------------- | :-------------------------------- |
+| **Release Target**               | `Unreleased`           | Fresh baseline (post-reset)       |
+| **Commit Baseline**              | `bcce022` (2026-11-10) | Author: ntuan2502                 |
+| **Workspace Unit Tests**         | `1268 passed`          | Backend: 794, Frontend: 474       |
+| **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle  |
+| **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates  |
+| **Environment Configuration**    | `56 keys`              | 100% key parity & codebase sync   |
+| **Pre-Release Dependencies**     | `0 (GA only)`          | Prisma 8 RC & effect override     |
+| **Documentation Link Integrity** | `100% valid`           | Audited via `pnpm lint:doc-links` |
 
 <!-- STATS:END -->
 
@@ -30,10 +30,10 @@ All AI coding agents, contributors, and automation workflows must comply with th
 
 ## 🚀 Key Architectural Highlights
 
-- **Backend Architecture:** NestJS 12.1.2 modular monolith with Saga transaction orchestration, compensations, AsyncLocalStorage request context tracking, and DLQ-backed BullMQ processing.
-- **Frontend Architecture:** Next.js 16.4.0 with React 19 Server Components (RSC), `@tanstack/react-query` v5 client caching, Base UI / Radix UI primitives, Tailwind CSS v4, and dual-language internationalization (vi / en).
-- **Data & Storage:** PostgreSQL 17.6 managed via Prisma 8 ORM, Valkey 8.0.2 for distributed caching / rate limiting, and MinIO S3 object storage for candidate resumes.
-- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 16 comprehensive CI gates, and 963 verified automated tests.
+- **Backend Architecture:** NestJS 12.4.0 modular monolith with Saga transaction orchestration, compensations, AsyncLocalStorage request context tracking, and DLQ-backed BullMQ processing.
+- **Frontend Architecture:** Next.js 16.4.5 with React 19 Server Components (RSC), `@tanstack/react-query` v5 client caching, Base UI / Radix UI primitives, Tailwind CSS v4, and dual-language internationalization (vi / en).
+- **Data & Storage:** PostgreSQL 17.6 managed via Prisma 7 ORM (7.10.1 stable GA), Valkey 8.0.2 for distributed caching / rate limiting, and MinIO S3 object storage for candidate resumes.
+- **Security & Reliability:** Strict HttpOnly JWT cookies, CSRF protection, AES-256 data encryption at rest, 16 comprehensive CI gates, and 1,268 verified automated tests.
 
 ---
 
@@ -167,7 +167,7 @@ Critical architectural choices, trade-offs, and pre-release package rationales a
 
 ---
 
-## ⚠️ Known Limitations (v0.3.0 Release)
+## ⚠️ Known Limitations (v0.1.0 Release)
 
 1. **Transitive High CVEs in Build Tooling:** 11 High CVEs exist in transitive Hono dependencies via `@prisma/composer-prisma-cloud` (see [D-001](docs/decisions/DECISIONS.md#d-001)). Mitigated via production network isolation and container security policies. Scheduled for exit upon Prisma 8 GA.
 2. **Next.js Direct Path Rewrites:** Direct proxy rewrites (`/jobs/*`, `/organizations/*`) are retained in Next.js config without `/api` prefix (see [D-002](docs/decisions/DECISIONS.md#d-002)) to prevent breaking changes. Scheduled for `/api/v1` migration in v0.4.0.

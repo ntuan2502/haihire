@@ -1,0 +1,73 @@
+# Multi-stage production build for HaiHire Frontend
+FROM node:26-alpine AS builder
+
+RUN apk add --no-cache libc6-compat
+
+# Install latest pnpm and clean npm cache
+RUN npm install -g pnpm && npm cache clean --force
+
+# Disable Next.js telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
+
+WORKDIR /app
+
+# Copy root workspace manifests
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/web/package.json apps/web/tsconfig.json ./apps/web/
+
+# Install build dependencies using BuildKit pnpm store cache
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --filter @haihire/shared --filter web... --frozen-lockfile || \
+    pnpm install --filter @haihire/shared --filter web...
+
+# Copy source code
+COPY packages/shared ./packages/shared
+COPY apps/web ./apps/web
+
+# Set backend host for Next.js build-time rewrite route manifest
+ENV BACKEND_HOST=api
+ENV MINIO_HOST=minio
+
+# Build-time public environment variables inlined into client bundle
+ARG NEXT_PUBLIC_API_URL=""
+ARG NEXT_PUBLIC_MINIO_URL="/haihire-resumes"
+ARG INTERNAL_API_URL="http://api:3001"
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_MINIO_URL=$NEXT_PUBLIC_MINIO_URL
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
+
+# Build shared and Next.js frontend with output: "standalone"
+RUN pnpm --filter @haihire/shared run build && pnpm --filter web run build
+
+# Stage 2: Production ultra-lean runtime (standalone mode)
+FROM node:26-alpine AS runner
+
+# OCI Image Spec Labels
+LABEL org.opencontainers.image.title="HaiHire Frontend Service" \
+      org.opencontainers.image.description="Next.js 16 Enterprise ATS Frontend Portal" \
+      org.opencontainers.image.vendor="HaiHire Platform" \
+      org.opencontainers.image.licenses="Proprietary"
+
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy Next.js standalone build artifacts and static assets (zero package install needed)
+COPY --from=builder --chown=node:node /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=node:node /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
+
+USER node
+
+WORKDIR /app/apps/web
+
+EXPOSE 3000
+
+# Start Next.js standalone production server directly via Node 26
+CMD ["node", "server.js"]

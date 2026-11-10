@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const backendDir = path.resolve(__dirname, "../backend/src");
-const frontendDir = path.resolve(__dirname, "../frontend/src");
+const backendDir = path.resolve(__dirname, "../apps/api/src");
+const frontendDir = path.resolve(__dirname, "../apps/web/src");
 
 interface EndpointDef {
   controller: string;
@@ -103,15 +103,23 @@ const frontendContent = frontendFiles
   .map((f) => fs.readFileSync(f, "utf8"))
   .join("\n");
 
-console.log("==================================================================");
-console.log("       CI ARCHITECTURE GATE: API CONTRACT COVERAGE AUDIT          ");
-console.log("==================================================================");
+console.log(
+  "==================================================================",
+);
+console.log(
+  "       CI ARCHITECTURE GATE: API CONTRACT COVERAGE AUDIT          ",
+);
+console.log(
+  "==================================================================",
+);
 console.log(`Backend Controllers Scanned: ${controllerFiles.length}`);
 console.log(`Total Endpoints Discovered: ${endpoints.length}`);
 
 const bodyEndpoints = endpoints.filter((e) => e.hasBody);
 console.log(`Endpoints with @Body(): ${bodyEndpoints.length}`);
-console.log("------------------------------------------------------------------");
+console.log(
+  "------------------------------------------------------------------",
+);
 
 // Verify every backend resource controller has frontend coverage
 const expectedControllers = [
@@ -153,7 +161,10 @@ let alertGenericErrors = 0;
 
 for (const file of frontendFiles) {
   const content = fs.readFileSync(file, "utf8");
-  if (content.includes("JSON.stringify(err") || content.includes("JSON.stringify(error")) {
+  if (
+    content.includes("JSON.stringify(err") ||
+    content.includes("JSON.stringify(error")
+  ) {
     rawStringifyErrors++;
   }
   if (content.includes("alert(") && !file.includes(".spec.")) {
@@ -183,6 +194,10 @@ if (alertGenericErrors > 0) {
   );
 }
 
-console.log("==================================================================");
+console.log(
+  "==================================================================",
+);
 console.log("[CI GATE PASSED] API Contract and Frontend Coverage Validated.");
-console.log("==================================================================");
+console.log(
+  "==================================================================",
+);

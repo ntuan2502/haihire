@@ -216,3 +216,29 @@ export function buildPublicTrackingUrl(
   return `${origin}/careers/${orgSlug}${jobSegment}?${params.toString()}`;
 }
 
+const KNOWN_SOURCING_DOMAINS: Array<{
+  substring: string;
+  channel: SourcingChannel;
+}> = [
+  { substring: "linkedin.com", channel: SourcingChannel.LINKEDIN },
+  { substring: "indeed.com", channel: SourcingChannel.INDEED },
+  { substring: "google.com", channel: SourcingChannel.GOOGLE_JOBS },
+  { substring: "glassdoor.com", channel: SourcingChannel.GLASSDOOR },
+  { substring: "facebook.com", channel: SourcingChannel.FACEBOOK },
+  { substring: "twitter.com", channel: SourcingChannel.TWITTER_X },
+  { substring: "x.com", channel: SourcingChannel.TWITTER_X },
+  { substring: "reddit.com", channel: SourcingChannel.REDDIT },
+  { substring: "stackoverflow.com", channel: SourcingChannel.STACK_OVERFLOW },
+  { substring: "handshake.com", channel: SourcingChannel.HANDSHAKE },
+];
+
+export function resolveChannelFromDomain(
+  domain?: string | null,
+): SourcingChannel {
+  if (!domain) return SourcingChannel.DIRECT;
+  const d = domain.toLowerCase();
+  const match = KNOWN_SOURCING_DOMAINS.find((entry) =>
+    d.includes(entry.substring),
+  );
+  return match ? match.channel : SourcingChannel.OTHER;
+}

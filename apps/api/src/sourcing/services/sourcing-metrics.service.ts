@@ -77,18 +77,28 @@ export class SourcingMetricsService {
       return this.emptyStats();
     }
 
-    const rawApplications = await this.queryService.getApplicationsForJobs(targetJobIds);
+    const rawApplications =
+      await this.queryService.getApplicationsForJobs(targetJobIds);
     const filteredApplications = rawApplications.filter((app) => {
-      if (minTimestamp !== null && toTimestamp(app.createdAt) < minTimestamp) return false;
+      if (minTimestamp !== null && toTimestamp(app.createdAt) < minTimestamp)
+        return false;
       return true;
     });
 
     const totalApplications = filteredApplications.length;
-    const candidateIds = Array.from(new Set(filteredApplications.map((a) => a.candidateId)));
-    const candidates = await this.queryService.getCandidatesByIds(organizationId, candidateIds);
-    const candidateMap = new Map(candidates.map((c) => [c.id, { name: c.name, email: c.email }]));
+    const candidateIds = Array.from(
+      new Set(filteredApplications.map((a) => a.candidateId)),
+    );
+    const candidates = await this.queryService.getCandidatesByIds(
+      organizationId,
+      candidateIds,
+    );
+    const candidateMap = new Map(
+      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
+    );
 
-    const trackingLinks = await this.queryService.getTrackingLinks(organizationId);
+    const trackingLinks =
+      await this.queryService.getTrackingLinks(organizationId);
     const nonDeletedLinks = trackingLinks.filter((l) => !l.deletedAt);
     const activeLinksCount = nonDeletedLinks.filter((l) => l.isActive).length;
     const totalLinksCount = nonDeletedLinks.length;
@@ -98,21 +108,42 @@ export class SourcingMetricsService {
     const linkAppCountMap = new Map<string, number>();
     const stageFunnelBySource: Record<
       string,
-      { new: number; screening: number; interview: number; offer: number; hired: number; rejected: number }
+      {
+        new: number;
+        screening: number;
+        interview: number;
+        offer: number;
+        hired: number;
+        rejected: number;
+      }
     > = {};
 
     for (const app of filteredApplications) {
-      const channel = (app.sourceChannel as SourcingChannel) || SourcingChannel.DIRECT;
-      const isTracked = !!app.trackingLinkId || channel !== SourcingChannel.DIRECT || !!app.referrerDomain;
+      const channel =
+        (app.sourceChannel as SourcingChannel) || SourcingChannel.DIRECT;
+      const isTracked =
+        !!app.trackingLinkId ||
+        channel !== SourcingChannel.DIRECT ||
+        !!app.referrerDomain;
       if (isTracked) trackedCount++;
 
       channelCounts[channel] = (channelCounts[channel] || 0) + 1;
       if (app.trackingLinkId) {
-        linkAppCountMap.set(app.trackingLinkId, (linkAppCountMap.get(app.trackingLinkId) || 0) + 1);
+        linkAppCountMap.set(
+          app.trackingLinkId,
+          (linkAppCountMap.get(app.trackingLinkId) || 0) + 1,
+        );
       }
 
       if (!stageFunnelBySource[channel]) {
-        stageFunnelBySource[channel] = { new: 0, screening: 0, interview: 0, offer: 0, hired: 0, rejected: 0 };
+        stageFunnelBySource[channel] = {
+          new: 0,
+          screening: 0,
+          interview: 0,
+          offer: 0,
+          hired: 0,
+          rejected: 0,
+        };
       }
       const funnel = stageFunnelBySource[channel];
       const stage = String(app.stage);
@@ -125,13 +156,19 @@ export class SourcingMetricsService {
     }
 
     const untrackedCount = Math.max(0, totalApplications - trackedCount);
-    const attributionRate = totalApplications > 0 ? Math.round((trackedCount / totalApplications) * 100) : 100;
+    const attributionRate =
+      totalApplications > 0
+        ? Math.round((trackedCount / totalApplications) * 100)
+        : 100;
 
     const channelBreakdown = Object.entries(channelCounts)
       .map(([channel, count]) => ({
         channel: channel as SourcingChannel,
         count,
-        percentage: totalApplications > 0 ? Math.round((count / totalApplications) * 100) : 0,
+        percentage:
+          totalApplications > 0
+            ? Math.round((count / totalApplications) * 100)
+            : 0,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -146,7 +183,7 @@ export class SourcingMetricsService {
           name: l.name,
           token: l.token,
           source: l.source as SourcingChannel,
-          jobTitle: l.jobId ? jobTitleMap.get(l.jobId) ?? null : null,
+          jobTitle: l.jobId ? (jobTitleMap.get(l.jobId) ?? null) : null,
           clicks,
           apps,
           cvr,
@@ -158,7 +195,8 @@ export class SourcingMetricsService {
     const referrerCounts: Record<string, number> = {};
     for (const app of filteredApplications) {
       if (app.referrerDomain) {
-        referrerCounts[app.referrerDomain] = (referrerCounts[app.referrerDomain] || 0) + 1;
+        referrerCounts[app.referrerDomain] =
+          (referrerCounts[app.referrerDomain] || 0) + 1;
       }
     }
 
@@ -168,8 +206,10 @@ export class SourcingMetricsService {
     const clicks = await this.queryService.getClicksForLinks(targetLinkIds);
     for (const clk of clicks) {
       if (clk.referrerDomain) {
-        if (minTimestamp !== null && toTimestamp(clk.createdAt) < minTimestamp) continue;
-        referrerCounts[clk.referrerDomain] = (referrerCounts[clk.referrerDomain] || 0) + 1;
+        if (minTimestamp !== null && toTimestamp(clk.createdAt) < minTimestamp)
+          continue;
+        referrerCounts[clk.referrerDomain] =
+          (referrerCounts[clk.referrerDomain] || 0) + 1;
       }
     }
 
@@ -179,7 +219,9 @@ export class SourcingMetricsService {
       .slice(0, 10);
 
     const recentAttributed = [...filteredApplications]
-      .filter((a) => !!a.trackingLinkId || a.sourceChannel !== SourcingChannel.DIRECT)
+      .filter(
+        (a) => !!a.trackingLinkId || a.sourceChannel !== SourcingChannel.DIRECT,
+      )
       .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt))
       .slice(0, 5)
       .map((app) => {
@@ -190,7 +232,8 @@ export class SourcingMetricsService {
           candidateName: candidateInfo?.name || "Unknown Candidate",
           candidateEmail: candidateInfo?.email || "",
           jobTitle: jobTitleMap.get(app.jobId) || "Job",
-          source: (app.sourceChannel as SourcingChannel) || SourcingChannel.DIRECT,
+          source:
+            (app.sourceChannel as SourcingChannel) || SourcingChannel.DIRECT,
           sourceDetails: app.sourceDetails,
           campaign: app.utmCampaign,
           stage: String(app.stage),
@@ -198,20 +241,29 @@ export class SourcingMetricsService {
         };
       });
 
-    const conversionBySource = Object.entries(stageFunnelBySource).map(([channel, stages]) => {
-      const total = stages.new + stages.screening + stages.interview + stages.offer + stages.hired + stages.rejected;
-      const hireRate = total > 0 ? Math.round((stages.hired / total) * 100) : 0;
-      return {
-        source: channel as SourcingChannel,
-        new: stages.new,
-        screening: stages.screening,
-        interview: stages.interview,
-        offer: stages.offer,
-        hired: stages.hired,
-        rejected: stages.rejected,
-        hireRate,
-      };
-    });
+    const conversionBySource = Object.entries(stageFunnelBySource).map(
+      ([channel, stages]) => {
+        const total =
+          stages.new +
+          stages.screening +
+          stages.interview +
+          stages.offer +
+          stages.hired +
+          stages.rejected;
+        const hireRate =
+          total > 0 ? Math.round((stages.hired / total) * 100) : 0;
+        return {
+          source: channel as SourcingChannel,
+          new: stages.new,
+          screening: stages.screening,
+          interview: stages.interview,
+          offer: stages.offer,
+          hired: stages.hired,
+          rejected: stages.rejected,
+          hireRate,
+        };
+      },
+    );
 
     return {
       trackedCount,
@@ -258,7 +310,10 @@ export class SourcingMetricsService {
     let jobTitle: string | null = null;
     let jobType: string | null = null;
     if (link.jobId) {
-      const j = await this.queryService.getJobById(organizationId, link.jobId as string);
+      const j = await this.queryService.getJobById(
+        organizationId,
+        link.jobId as string,
+      );
       jobTitle = j?.title || null;
       jobType = j?.type || null;
     }
@@ -268,23 +323,30 @@ export class SourcingMetricsService {
 
     const allClicks = await this.queryService.getClicksForLink(link.id);
     const filteredClicks = allClicks.filter((c) => {
-      if (minTimestamp !== null) return toTimestamp(c.createdAt) >= minTimestamp;
+      if (minTimestamp !== null)
+        return toTimestamp(c.createdAt) >= minTimestamp;
       return true;
     });
 
-    const clicks = timeRange === "all" ? Math.max(link.clicksCount || 0, allClicks.length) : filteredClicks.length;
+    const clicks =
+      timeRange === "all"
+        ? Math.max(link.clicksCount || 0, allClicks.length)
+        : filteredClicks.length;
 
-    const allAttributedApps = await this.queryService.getAttributedApplicationsForLink(link.id);
+    const allAttributedApps =
+      await this.queryService.getAttributedApplicationsForLink(link.id);
     const allTimeAttributed = allAttributedApps.length;
     const filteredApps = allAttributedApps.filter((a) => {
-      if (minTimestamp !== null) return toTimestamp(a.createdAt) >= minTimestamp;
+      if (minTimestamp !== null)
+        return toTimestamp(a.createdAt) >= minTimestamp;
       return true;
     });
 
     const applications = filteredApps.length;
     const cvr = clicks > 0 ? Math.round((applications / clicks) * 100) : 0;
     const hiredCount = filteredApps.filter((a) => a.stage === "HIRED").length;
-    const hireRate = applications > 0 ? Math.round((hiredCount / applications) * 100) : 0;
+    const hireRate =
+      applications > 0 ? Math.round((hiredCount / applications) * 100) : 0;
 
     const stageCounts = new Map<string, number>();
     for (const s of PIPELINE_STAGES) stageCounts.set(s, 0);
@@ -293,59 +355,89 @@ export class SourcingMetricsService {
       stageCounts.set(s, (stageCounts.get(s) || 0) + 1);
     }
 
-    const pipelineStages: PipelineStageBreakdown[] = PIPELINE_STAGES.map((stg) => {
-      const cnt = stageCounts.get(stg) || 0;
-      const pct = applications > 0 ? Math.round((cnt / applications) * 100) : 0;
-      return { stage: stg, count: cnt, percentage: pct };
-    });
+    const pipelineStages: PipelineStageBreakdown[] = PIPELINE_STAGES.map(
+      (stg) => {
+        const cnt = stageCounts.get(stg) || 0;
+        const pct =
+          applications > 0 ? Math.round((cnt / applications) * 100) : 0;
+        return { stage: stg, count: cnt, percentage: pct };
+      },
+    );
 
-    const applicationsOverTime = this.calculateApplicationsOverTime(now, timeRange, filteredApps);
+    const applicationsOverTime = this.calculateApplicationsOverTime(
+      now,
+      timeRange,
+      filteredApps,
+    );
 
-    const candidateIds = Array.from(new Set(filteredApps.map((a) => a.candidateId)));
-    const candidates = await this.queryService.getCandidatesByIds(organizationId, candidateIds);
-    const candMap = new Map(candidates.map((c) => [c.id, { name: c.name, email: c.email }]));
+    const candidateIds = Array.from(
+      new Set(filteredApps.map((a) => a.candidateId)),
+    );
+    const candidates = await this.queryService.getCandidatesByIds(
+      organizationId,
+      candidateIds,
+    );
+    const candMap = new Map(
+      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
+    );
 
     const appJobIds = Array.from(new Set(filteredApps.map((a) => a.jobId)));
-    const jobs = await this.queryService.getJobsByIds(organizationId, appJobIds);
-    const jobMap = new Map(jobs.map((j) => [j.id, { title: j.title, type: j.type }]));
+    const jobs = await this.queryService.getJobsByIds(
+      organizationId,
+      appJobIds,
+    );
+    const jobMap = new Map(
+      jobs.map((j) => [j.id, { title: j.title, type: j.type }]),
+    );
 
-    const attributedApplications: AttributedApplicationDetailItem[] = filteredApps
-      .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt))
-      .map((a) => {
-        const cand = candMap.get(a.candidateId);
-        const jobInfo = jobMap.get(a.jobId);
-        return {
-          applicationId: a.id,
-          candidateId: a.candidateId,
-          candidateName: cand?.name || "Unknown Candidate",
-          candidateEmail: cand?.email || "",
-          jobId: a.jobId,
-          jobTitle: jobInfo?.title || jobTitle || "Role",
-          jobType: jobInfo?.type || jobType || null,
-          referrer: a.referrerDomain || a.sourceDetails || null,
-          campaign: a.utmCampaign || link.utmCampaign || link.campaign || null,
-          utmSource: a.utmSource || null,
-          utmMedium: a.utmMedium || null,
-          utmCampaign: a.utmCampaign || link.utmCampaign || link.campaign || null,
-          utmTerm: a.utmTerm || link.utmTerm || null,
-          utmContent: a.utmContent || link.utmContent || null,
-          stage: String(a.stage),
-          appliedAt: new Date(toTimestamp(a.createdAt)).toISOString(),
-        };
-      });
+    const attributedApplications: AttributedApplicationDetailItem[] =
+      filteredApps
+        .sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt))
+        .map((a) => {
+          const cand = candMap.get(a.candidateId);
+          const jobInfo = jobMap.get(a.jobId);
+          return {
+            applicationId: a.id,
+            candidateId: a.candidateId,
+            candidateName: cand?.name || "Unknown Candidate",
+            candidateEmail: cand?.email || "",
+            jobId: a.jobId,
+            jobTitle: jobInfo?.title || jobTitle || "Role",
+            jobType: jobInfo?.type || jobType || null,
+            referrer: a.referrerDomain || a.sourceDetails || null,
+            campaign:
+              a.utmCampaign || link.utmCampaign || link.campaign || null,
+            utmSource: a.utmSource || null,
+            utmMedium: a.utmMedium || null,
+            utmCampaign:
+              a.utmCampaign || link.utmCampaign || link.campaign || null,
+            utmTerm: a.utmTerm || link.utmTerm || null,
+            utmContent: a.utmContent || link.utmContent || null,
+            stage: String(a.stage),
+            appliedAt: new Date(toTimestamp(a.createdAt)).toISOString(),
+          };
+        });
 
     const domainCounts = new Map<string, number>();
     for (const c of filteredClicks) {
       if (c.referrerDomain) {
-        domainCounts.set(c.referrerDomain, (domainCounts.get(c.referrerDomain) || 0) + 1);
+        domainCounts.set(
+          c.referrerDomain,
+          (domainCounts.get(c.referrerDomain) || 0) + 1,
+        );
       }
     }
     for (const a of filteredApps) {
       if (a.referrerDomain) {
-        domainCounts.set(a.referrerDomain, (domainCounts.get(a.referrerDomain) || 0) + 1);
+        domainCounts.set(
+          a.referrerDomain,
+          (domainCounts.get(a.referrerDomain) || 0) + 1,
+        );
       }
     }
-    const referrerDomains: TopReferrerItem[] = Array.from(domainCounts.entries())
+    const referrerDomains: TopReferrerItem[] = Array.from(
+      domainCounts.entries(),
+    )
       .map(([domain, count]) => ({ domain, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
@@ -362,7 +454,9 @@ export class SourcingMetricsService {
         jobTitle,
         campaign: link.campaign,
         medium: link.medium,
-        utmSource: link.utmSource ?? (link.source ? String(link.source).toLowerCase() : null),
+        utmSource:
+          link.utmSource ??
+          (link.source ? String(link.source).toLowerCase() : null),
         utmMedium: link.utmMedium ?? link.medium ?? null,
         utmCampaign: link.utmCampaign ?? link.campaign ?? null,
         utmTerm: link.utmTerm ?? null,
@@ -370,7 +464,9 @@ export class SourcingMetricsService {
         clicksCount: link.clicksCount || 0,
         applicationsCount: allTimeAttributed,
         conversionRate:
-          (link.clicksCount || 0) > 0 ? Math.round((allTimeAttributed / link.clicksCount) * 100) : 0,
+          (link.clicksCount || 0) > 0
+            ? Math.round((allTimeAttributed / link.clicksCount) * 100)
+            : 0,
         isActive: link.isActive,
         createdAt: new Date(toTimestamp(link.createdAt)).toISOString(),
         updatedAt: new Date(toTimestamp(link.updatedAt)).toISOString(),
@@ -403,13 +499,16 @@ export class SourcingMetricsService {
     },
   ): Promise<PaginatedResult<AttributionLogItem>> {
     const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
-    const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
+    const limit =
+      pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
 
     const jobs = await this.queryService.getOrganizationJobs(organizationId);
     const orgJobIds = new Set(jobs.map((j) => j.id));
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
-    const targetJobIds = pagination.jobId ? [pagination.jobId] : Array.from(orgJobIds);
+    const targetJobIds = pagination.jobId
+      ? [pagination.jobId]
+      : Array.from(orgJobIds);
     if (targetJobIds.length === 0) {
       return {
         data: [],
@@ -420,15 +519,23 @@ export class SourcingMetricsService {
       };
     }
 
-    const allApps = await this.queryService.getApplicationsForJobs(targetJobIds);
+    const allApps =
+      await this.queryService.getApplicationsForJobs(targetJobIds);
     let filtered = allApps;
     if (pagination.source) {
       filtered = filtered.filter((a) => a.sourceChannel === pagination.source);
     }
 
-    const candidateIds = Array.from(new Set(filtered.map((a) => a.candidateId)));
-    const candidates = await this.queryService.getCandidatesByIds(organizationId, candidateIds);
-    const candidateMap = new Map(candidates.map((c) => [c.id, { name: c.name, email: c.email }]));
+    const candidateIds = Array.from(
+      new Set(filtered.map((a) => a.candidateId)),
+    );
+    const candidates = await this.queryService.getCandidatesByIds(
+      organizationId,
+      candidateIds,
+    );
+    const candidateMap = new Map(
+      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
+    );
 
     if (pagination.search) {
       const q = pagination.search.toLowerCase();
@@ -441,7 +548,9 @@ export class SourcingMetricsService {
       });
     }
 
-    filtered.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+    filtered.sort(
+      (a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt),
+    );
 
     const total = filtered.length;
     const totalPages = Math.ceil(total / limit) || 1;
@@ -474,7 +583,10 @@ export class SourcingMetricsService {
     };
   }
 
-  private resolveMinTimestamp(now: number, timeRange: TimeRangeFilter): number | null {
+  private resolveMinTimestamp(
+    now: number,
+    timeRange: TimeRangeFilter,
+  ): number | null {
     if (timeRange === "7d") return now - 7 * 24 * 60 * 60 * 1000;
     if (timeRange === "30d") return now - 30 * 24 * 60 * 60 * 1000;
     if (timeRange === "90d") return now - 90 * 24 * 60 * 60 * 1000;
@@ -487,7 +599,14 @@ export class SourcingMetricsService {
     filteredApps: Array<{ createdAt: string | Date }>,
   ): TimeSeriesPoint[] {
     const dayMap = new Map<string, number>();
-    const daysToGen = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : timeRange === "90d" ? 90 : 14;
+    const daysToGen =
+      timeRange === "7d"
+        ? 7
+        : timeRange === "30d"
+          ? 30
+          : timeRange === "90d"
+            ? 90
+            : 14;
 
     for (let i = daysToGen - 1; i >= 0; i--) {
       const d = new Date(now - i * 24 * 60 * 60 * 1000);
@@ -496,7 +615,9 @@ export class SourcingMetricsService {
     }
 
     for (const app of filteredApps) {
-      const dateStr = new Date(toTimestamp(app.createdAt)).toISOString().split("T")[0];
+      const dateStr = new Date(toTimestamp(app.createdAt))
+        .toISOString()
+        .split("T")[0];
       if (dayMap.has(dateStr)) {
         dayMap.set(dateStr, (dayMap.get(dateStr) || 0) + 1);
       } else if (timeRange === "all") {

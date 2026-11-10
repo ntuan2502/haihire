@@ -37,7 +37,9 @@ export function getApiErrorMessage(
       const status = (axiosErr.response as { status?: number })?.status;
 
       if (data && typeof data === "object") {
-        const payload = data as ApiErrorPayload & { message?: string | string[] };
+        const payload = data as ApiErrorPayload & {
+          message?: string | string[];
+        };
         if (payload.code && typeof payload.code === "string") {
           const errorKey = `errors.${payload.code}` as TranslationKey;
           try {

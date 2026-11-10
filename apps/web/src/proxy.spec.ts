@@ -133,7 +133,9 @@ describe("Next.js 16 Edge Proxy (apps/web/src/proxy.ts)", () => {
       "http://localhost:3000/auth/login?redirect=%2Fdashboard",
     );
 
-    const reqUndef = createMockRequest("/dashboard", { haihire_token: "undefined" });
+    const reqUndef = createMockRequest("/dashboard", {
+      haihire_token: "undefined",
+    });
     const resUndef = proxy(reqUndef);
     expect(resUndef.status).toBe(307);
     expect(resUndef.headers.get("location")).toBe(

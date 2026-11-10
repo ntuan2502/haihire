@@ -1,6 +1,11 @@
 import { Injectable, Inject, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import { hasPermission, type Permission, Role, PERMISSIONS } from "@haihire/shared";
+import {
+  hasPermission,
+  type Permission,
+  Role,
+  PERMISSIONS,
+} from "@haihire/shared";
 
 interface CacheEntry {
   overrides: Map<string, boolean>;

@@ -6,7 +6,10 @@ export function useJobStageCounts(jobs: Job[]) {
   const getJobStageCounts = useCallback(
     (jobId: string): JobStageCounts => {
       const job = jobs.find((j) => j.id === jobId);
-      const byStage = (job?.applicationsByStage || {}) as Record<string, number>;
+      const byStage = (job?.applicationsByStage || {}) as Record<
+        string,
+        number
+      >;
       return {
         new: byStage.APPLIED || 0,
         screening: byStage.SCREENING || 0,

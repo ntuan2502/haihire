@@ -39,8 +39,13 @@ export function useUpdateWebhookSettingMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateWebhookSettingInput }) =>
-      webhookSettingsApi.updateWebhookSetting(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateWebhookSettingInput;
+    }) => webhookSettingsApi.updateWebhookSetting(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["webhook-settings"] });
     },

@@ -22,7 +22,9 @@ describe("toTimestamp", () => {
     const mockInstant = {
       epochMilliseconds: 1789948800000,
       valueOf() {
-        throw new TypeError("Do not use Temporal.Instant.prototype.valueOf; use Temporal.Instant.prototype.compare for comparison.");
+        throw new TypeError(
+          "Do not use Temporal.Instant.prototype.valueOf; use Temporal.Instant.prototype.compare for comparison.",
+        );
       },
     };
     expect(toTimestamp(mockInstant)).toBe(1789948800000);

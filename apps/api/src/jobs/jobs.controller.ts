@@ -29,7 +29,8 @@ export class JobsController {
   constructor(
     @Inject(JobsService)
     private readonly jobsService: JobsService,
-    @Optional() @Inject(PermissionResolverService)
+    @Optional()
+    @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
   ) {}
 
@@ -90,14 +91,32 @@ export class JobsController {
   @UseGuards(OptionalJwtAuthGuard)
   async findOne(
     @Param("id") id: string,
-    @Request() req?: { user?: { role?: string; isOwner?: boolean; organizationId?: string | null } },
+    @Request()
+    req?: {
+      user?: {
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
   ) {
     const tenantOrgId = req?.user?.organizationId;
     const user = req?.user;
-    const fullAccess = user?.isOwner || (this.permissionResolver
-      ? await this.permissionResolver.resolvePermission(tenantOrgId, user?.role as Role, "candidate:view")
-      : hasPermission(user?.role || "", "candidate:view"));
-    return this.jobsService.findOne(id, tenantOrgId, !tenantOrgId, Boolean(fullAccess));
+    const fullAccess =
+      user?.isOwner ||
+      (this.permissionResolver
+        ? await this.permissionResolver.resolvePermission(
+            tenantOrgId,
+            user?.role as Role,
+            "candidate:view",
+          )
+        : hasPermission(user?.role || "", "candidate:view"));
+    return this.jobsService.findOne(
+      id,
+      tenantOrgId,
+      !tenantOrgId,
+      Boolean(fullAccess),
+    );
   }
 
   @Post()

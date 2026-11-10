@@ -44,9 +44,15 @@ interface ApplicationResponse {
 }
 
 async function runSmokeTest(): Promise<void> {
-  console.log("==================================================================");
-  console.log("             PHASE 9: PRODUCTION SMOKE & FLOW TEST               ");
-  console.log("==================================================================\n");
+  console.log(
+    "==================================================================",
+  );
+  console.log(
+    "             PHASE 9: PRODUCTION SMOKE & FLOW TEST               ",
+  );
+  console.log(
+    "==================================================================\n",
+  );
 
   const ts = Date.now();
   const email = `smoke_${ts}@prod.test`;
@@ -67,7 +73,9 @@ async function runSmokeTest(): Promise<void> {
   console.log("\n2. Checking /metrics endpoint...");
   const metricsRes = await fetch(`${BASE_URL}/metrics`);
   const metricsText = await metricsRes.text();
-  console.log(`   /metrics status: HTTP ${metricsRes.status}, lines: ${metricsText.split("\n").length}`);
+  console.log(
+    `   /metrics status: HTTP ${metricsRes.status}, lines: ${metricsText.split("\n").length}`,
+  );
   if (!metricsText.includes("http_requests_total")) {
     throw new Error("Metrics endpoint failed to return Prometheus headers");
   }
@@ -81,13 +89,18 @@ async function runSmokeTest(): Promise<void> {
   });
   const regData = (await regRes.json()) as AuthRegisterResponse;
   const initToken = regData.accessToken;
-  console.log(`   Register: HTTP ${regRes.status}, User ID: ${regData.user?.id}`);
+  console.log(
+    `   Register: HTTP ${regRes.status}, User ID: ${regData.user?.id}`,
+  );
 
   // 4. Create Org
   console.log("\n4. Creating Organization...");
   const orgRes = await fetch(`${BASE_URL}/organizations`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${initToken}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${initToken}`,
+    },
     body: JSON.stringify({ name: orgName, slug: orgSlug }),
   });
   const orgData = (await orgRes.json()) as OrgResponse;
@@ -109,7 +122,10 @@ async function runSmokeTest(): Promise<void> {
   console.log("\n6. Creating & Publishing Job...");
   const jobRes = await fetch(`${BASE_URL}/jobs`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({
       title: "Senior SRE / DevOps Engineer",
       department: "Infrastructure",
@@ -140,15 +156,22 @@ async function runSmokeTest(): Promise<void> {
     body: formData,
   });
   const app = (await applyRes.json()) as ApplicationResponse;
-  console.log(`   Application applied: HTTP ${applyRes.status}, App ID: ${app.id}, Stage: ${app.stage}`);
+  console.log(
+    `   Application applied: HTTP ${applyRes.status}, App ID: ${app.id}, Stage: ${app.stage}`,
+  );
 
   // 8. List Applications
   console.log("\n8. Listing Applications & verifying Kanban stage...");
   const listRes = await fetch(`${BASE_URL}/applications?jobId=${job.id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const listData = (await listRes.json()) as { data?: unknown[]; length?: number };
-  const count = Array.isArray(listData) ? listData.length : listData.data?.length || 0;
+  const listData = (await listRes.json()) as {
+    data?: unknown[];
+    length?: number;
+  };
+  const count = Array.isArray(listData)
+    ? listData.length
+    : listData.data?.length || 0;
   console.log(`   List Applications: HTTP ${listRes.status}, Found: ${count}`);
 
   console.log("\n✅ SMOKE TEST PASSED COMPLETELY!\n");
@@ -170,10 +193,19 @@ interface BenchmarkResult {
   avg: number;
 }
 
-async function runLoadTest(totalRequests = 500, concurrency = 50): Promise<BenchmarkResult> {
-  console.log("==================================================================");
-  console.log(`       PHASE 9: LOAD & STRESS BENCHMARK (${totalRequests} REQ, CONCURRENCY ${concurrency})   `);
-  console.log("==================================================================\n");
+async function runLoadTest(
+  totalRequests = 500,
+  concurrency = 50,
+): Promise<BenchmarkResult> {
+  console.log(
+    "==================================================================",
+  );
+  console.log(
+    `       PHASE 9: LOAD & STRESS BENCHMARK (${totalRequests} REQ, CONCURRENCY ${concurrency})   `,
+  );
+  console.log(
+    "==================================================================\n",
+  );
 
   const latencies: number[] = [];
   let successCount = 0;
@@ -227,7 +259,9 @@ async function runLoadTest(totalRequests = 500, concurrency = 50): Promise<Bench
   const p99 = latencies[Math.floor(latencies.length * 0.99)] || 0;
   const min = latencies[0] || 0;
   const max = latencies[latencies.length - 1] || 0;
-  const avg = Math.round(latencies.reduce((sum, v) => sum + v, 0) / (latencies.length || 1));
+  const avg = Math.round(
+    latencies.reduce((sum, v) => sum + v, 0) / (latencies.length || 1),
+  );
   const rps = Math.round((totalRequests / (totalTime / 1000)) * 10) / 10;
 
   console.log("=================================================");
@@ -248,7 +282,9 @@ async function runLoadTest(totalRequests = 500, concurrency = 50): Promise<Bench
   console.log(`Latency Max:            ${max} ms`);
   console.log("Status Code Distribution:");
   for (const [code, count] of Object.entries(statusCodes)) {
-    console.log(`  HTTP ${code === "0" ? "Network Error" : code}: ${count} responses`);
+    console.log(
+      `  HTTP ${code === "0" ? "Network Error" : code}: ${count} responses`,
+    );
   }
   console.log("=================================================\n");
 
@@ -259,7 +295,21 @@ async function runLoadTest(totalRequests = 500, concurrency = 50): Promise<Bench
     console.log("⚠️ LOAD TEST FAILED THRESHOLD OR HAD ERRORS.\n");
   }
 
-  return { totalRequests, concurrency, totalTime, rps, successCount, failCount, p50, p90, p95, p99, min, max, avg };
+  return {
+    totalRequests,
+    concurrency,
+    totalTime,
+    rps,
+    successCount,
+    failCount,
+    p50,
+    p90,
+    p95,
+    p99,
+    min,
+    max,
+    avg,
+  };
 }
 
 async function main(): Promise<void> {

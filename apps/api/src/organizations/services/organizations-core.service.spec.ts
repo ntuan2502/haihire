@@ -110,18 +110,24 @@ describe("OrganizationsCoreService", () => {
   });
 
   it("rejects a concurrent slug insert without overwriting its owner", async () => {
-    vi.spyOn(mockPrisma.organization, "create").mockRejectedValueOnce({ code: "P2002" });
-    await expect(service.create("user-owner", { name: "New Org", slug: "new-org" }))
-      .rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_SLUG_ALREADY_EXISTS });
+    vi.spyOn(mockPrisma.organization, "create").mockRejectedValueOnce({
+      code: "P2002",
+    });
+    await expect(
+      service.create("user-owner", { name: "New Org", slug: "new-org" }),
+    ).rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_SLUG_ALREADY_EXISTS });
     expect(organizationMemberTable.store).toHaveLength(3);
     expect(organizationTable.store[0].ownerId).toBe("user-owner");
   });
 
   it("aborts deletion if ownership changes after authorization", async () => {
-    vi.spyOn(mockPrisma.organization, "updateMany").mockResolvedValueOnce({ count: 0 });
+    vi.spyOn(mockPrisma.organization, "updateMany").mockResolvedValueOnce({
+      count: 0,
+    });
     const deleteOrg = vi.spyOn(mockPrisma.organization, "delete");
-    await expect(service.deleteMyOrg("user-owner"))
-      .rejects.toMatchObject({ code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION });
+    await expect(service.deleteMyOrg("user-owner")).rejects.toMatchObject({
+      code: APP_ERROR_CODES.ORG_FORBIDDEN_ACTION,
+    });
     expect(deleteOrg).not.toHaveBeenCalled();
     expect(organizationMemberTable.store).toHaveLength(3);
     expect(userTable.store[0].organizationId).toBe("org-1");

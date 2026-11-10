@@ -48,7 +48,7 @@ export function DevicePreviewFrame({
             isMaximized
               ? "w-[880px] max-w-full h-[84vh]"
               : "w-[720px] sm:w-[760px] max-w-full h-[640px] max-h-[74vh]",
-            className
+            className,
           )}
         >
           {/* Subtle front camera sensor embedded in uniform top bezel */}
@@ -70,7 +70,7 @@ export function DevicePreviewFrame({
             isMaximized
               ? "w-[390px] h-[84vh]"
               : "w-[360px] sm:w-[375px] h-[660px] max-h-[74vh]",
-            className
+            className,
           )}
         >
           {/* iPhone Screen Container with integrated Dynamic Island & Home Bar */}

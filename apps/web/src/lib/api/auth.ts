@@ -28,10 +28,7 @@ export const authApi = {
       refreshToken?: string;
       user?: User;
       message?: string;
-    }>(
-      "/auth/change-password",
-      data,
-    );
+    }>("/auth/change-password", data);
     return response.data;
   },
 

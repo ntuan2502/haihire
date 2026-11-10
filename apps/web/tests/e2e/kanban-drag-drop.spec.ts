@@ -12,11 +12,17 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
   let fixtureCandidateId: string | undefined;
   test.afterEach(async ({ page }) => {
     if (fixtureJobId) {
-      expect((await page.request.delete(`/api/jobs/${fixtureJobId}`)).ok()).toBe(true);
+      expect(
+        (await page.request.delete(`/api/jobs/${fixtureJobId}`)).ok(),
+      ).toBe(true);
       fixtureJobId = undefined;
     }
     if (fixtureCandidateId) {
-      expect((await page.request.delete(`/api/candidates/${fixtureCandidateId}`)).ok()).toBe(true);
+      expect(
+        (
+          await page.request.delete(`/api/candidates/${fixtureCandidateId}`)
+        ).ok(),
+      ).toBe(true);
       fixtureCandidateId = undefined;
     }
   });
@@ -35,19 +41,31 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
 
     // Each attempt owns its fixture instead of consuming shared seed candidates.
     const uniqueId = randomUUID();
-    const jobResponse = await page.request.post("/api/jobs", { data: {
-      title: `Kanban ${uniqueId}`, department: "Engineering", location: "Remote",
-      description: "Kanban regression fixture", status: "PUBLISHED",
-    } });
+    const jobResponse = await page.request.post("/api/jobs", {
+      data: {
+        title: `Kanban ${uniqueId}`,
+        department: "Engineering",
+        location: "Remote",
+        description: "Kanban regression fixture",
+        status: "PUBLISHED",
+      },
+    });
     expect(jobResponse.ok()).toBe(true);
     fixtureJobId = ((await jobResponse.json()) as { id: string }).id;
     const email = `kanban-${uniqueId}@example.com`;
-    const candidateResponse = await page.request.post("/api/candidates", { data: { name: "Kanban Fixture", email } });
+    const candidateResponse = await page.request.post("/api/candidates", {
+      data: { name: "Kanban Fixture", email },
+    });
     expect(candidateResponse.ok()).toBe(true);
-    fixtureCandidateId = ((await candidateResponse.json()) as { id: string }).id;
-    const applyResponse = await page.request.post("/api/applications/apply", { data: {
-      jobId: fixtureJobId, candidateEmail: email, candidateName: "Kanban Fixture",
-    } });
+    fixtureCandidateId = ((await candidateResponse.json()) as { id: string })
+      .id;
+    const applyResponse = await page.request.post("/api/applications/apply", {
+      data: {
+        jobId: fixtureJobId,
+        candidateEmail: email,
+        candidateName: "Kanban Fixture",
+      },
+    });
     expect(applyResponse.ok()).toBe(true);
     await page.goto(`/dashboard/jobs/${fixtureJobId}/pipeline?stage=APPLIED`);
 
@@ -58,7 +76,9 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     await expect(screeningPill).toBeVisible({ timeout: 10000 });
 
     // Find candidate card in APPLIED stage
-    const candidateCard = page.locator('[data-testid^="candidate-card-"]').first();
+    const candidateCard = page
+      .locator('[data-testid^="candidate-card-"]')
+      .first();
     await expect(candidateCard).toBeVisible({ timeout: 10000 });
 
     const cardTestId = await candidateCard.getAttribute("data-testid");
@@ -70,7 +90,10 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     page.on("request", (req) => {
       const url = req.url();
       const method = req.method();
-      if ((method === "PATCH" || method === "PUT" || method === "POST") && url.includes("/stage")) {
+      if (
+        (method === "PATCH" || method === "PUT" || method === "POST") &&
+        url.includes("/stage")
+      ) {
         apiStageUpdates.push(`${method} ${url}`);
       }
     });
@@ -78,8 +101,12 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     // 3. Test VALID transition: APPLIED -> SCREENING via HTML5 drag-and-drop
     await page.evaluate(
       ({ cardId, fromStage, toStage }) => {
-        const source = document.querySelector(`[data-testid="candidate-card-${cardId}"]`);
-        const target = document.querySelector(`[data-testid="stage-pill-${toStage}"]`);
+        const source = document.querySelector(
+          `[data-testid="candidate-card-${cardId}"]`,
+        );
+        const target = document.querySelector(
+          `[data-testid="stage-pill-${toStage}"]`,
+        );
         if (!source || !target) {
           throw new Error(`Drag source or target not found: ${cardId}`);
         }
@@ -91,10 +118,34 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
         );
         dt.setData("text/plain", cardId);
 
-        source.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: dt }));
-        target.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: dt }));
-        target.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dt }));
-        source.dispatchEvent(new DragEvent("dragend", { bubbles: true, cancelable: true, dataTransfer: dt }));
+        source.dispatchEvent(
+          new DragEvent("dragstart", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
+        target.dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
+        target.dispatchEvent(
+          new DragEvent("drop", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
+        source.dispatchEvent(
+          new DragEvent("dragend", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
       },
       { cardId: candidateId, fromStage: "APPLIED", toStage: "SCREENING" },
     );
@@ -105,7 +156,9 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     // 4. Switch to SCREENING stage tab and find the moved candidate
     await screeningPill.click();
 
-    const candidateInScreening = page.locator(`[data-testid="candidate-card-${candidateId}"]`);
+    const candidateInScreening = page.locator(
+      `[data-testid="candidate-card-${candidateId}"]`,
+    );
     await expect(candidateInScreening).toBeVisible({ timeout: 10000 });
 
     // Clear recorded API stage updates before testing invalid transition
@@ -114,10 +167,16 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     // 5. Test INVALID transition: SCREENING -> APPLIED (prohibited by state machine)
     await page.evaluate(
       ({ cardId, fromStage, toStage }) => {
-        const source = document.querySelector(`[data-testid="candidate-card-${cardId}"]`);
-        const target = document.querySelector(`[data-testid="stage-pill-${toStage}"]`);
+        const source = document.querySelector(
+          `[data-testid="candidate-card-${cardId}"]`,
+        );
+        const target = document.querySelector(
+          `[data-testid="stage-pill-${toStage}"]`,
+        );
         if (!source || !target) {
-          throw new Error(`Drag source or target not found for invalid transition`);
+          throw new Error(
+            `Drag source or target not found for invalid transition`,
+          );
         }
 
         const dt = new DataTransfer();
@@ -127,19 +186,47 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
         );
         dt.setData("text/plain", cardId);
 
-        source.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true, dataTransfer: dt }));
-        target.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: dt }));
-        target.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dt }));
-        source.dispatchEvent(new DragEvent("dragend", { bubbles: true, cancelable: true, dataTransfer: dt }));
+        source.dispatchEvent(
+          new DragEvent("dragstart", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
+        target.dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
+        target.dispatchEvent(
+          new DragEvent("drop", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
+        source.dispatchEvent(
+          new DragEvent("dragend", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+          }),
+        );
       },
       { cardId: candidateId, fromStage: "SCREENING", toStage: "APPLIED" },
     );
 
     // 6. Verify toast error appears
-    const toastLocator = page.locator("[data-sonner-toast], [role='status'], .toaster");
+    const toastLocator = page.locator(
+      "[data-sonner-toast], [role='status'], .toaster",
+    );
     await expect(toastLocator.first()).toBeVisible({ timeout: 5000 });
     const toastText = await toastLocator.first().textContent();
-    expect(toastText).toMatch(/Không thể chuyển|Cannot move|Cannot transition/i);
+    expect(toastText).toMatch(
+      /Không thể chuyển|Cannot move|Cannot transition/i,
+    );
 
     // 7. Verify API NOT called for invalid transition
     expect(apiStageUpdates.length).toBe(countBeforeInvalid);

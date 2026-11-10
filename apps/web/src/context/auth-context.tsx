@@ -22,11 +22,7 @@ interface AuthContextType {
   logout: () => void;
   updateUserOrg: (org: Organization, updatedRole?: string) => void;
   refreshUser: () => Promise<User | null>;
-  setSession: (
-    accessToken: string,
-    refreshToken?: string,
-    user?: User,
-  ) => void;
+  setSession: (accessToken: string, refreshToken?: string, user?: User) => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isMember: boolean;
@@ -67,8 +63,7 @@ function clearAuthCookies() {
 
 function isSessionRequiredRoute(pathname: string): boolean {
   return (
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/auth/onboarding")
+    pathname.startsWith("/dashboard") || pathname.startsWith("/auth/onboarding")
   );
 }
 

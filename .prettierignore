@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Production builds
+dist/
+build/
+.next/
+out/
+apps/api/dist/
+apps/web/.next/
+apps/web/out/
+
+# Caches & Tooling
+.turbo/
+.eslintcache
+*.tsbuildinfo
+
+# Testing & Coverage
+coverage/
+**/coverage/
+.vitest/
+test-results/
+playwright-report/
+
+# Package locks & metadata
+pnpm-lock.yaml
+
+# Database & Storage
+postgres_data/
+minio_data/
+redis_data/
+backups/
+*.sql
+apps/api/migrations/
+
+
+# Agents cache & artifacts
+.agents/

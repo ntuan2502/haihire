@@ -13,7 +13,14 @@ export class ZodValidationPipe<T = unknown> implements PipeTransform {
   transform(value: unknown, _metadata?: ArgumentMetadata): T {
     const result = this.schema.safeParse(value);
     if (!result.success) {
-      const issues = result.error.issues || (result.error as { errors?: Array<{ path: (string | number)[]; message: string }> }).errors || [];
+      const issues =
+        result.error.issues ||
+        (
+          result.error as {
+            errors?: Array<{ path: (string | number)[]; message: string }>;
+          }
+        ).errors ||
+        [];
       const messages = issues.map((err) => {
         const path = err.path.join(".");
         return path ? `${path}: ${err.message}` : err.message;

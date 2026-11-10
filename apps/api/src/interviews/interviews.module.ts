@@ -18,7 +18,6 @@ import { EmailModule } from "../email/email.module";
     InterviewsQueryService,
     InterviewsScheduleService,
     InterviewsScorecardService,
-
   ],
   exports: [
     InterviewsService,

@@ -23,27 +23,37 @@ describe("SourcingService", () => {
     const store = new Map<string, { value: string; expiresAt: number }>();
 
     return {
-      set: vi.fn(async (key: string, value: string, _px?: string, ttl?: number, nx?: string) => {
-        const now = Date.now();
-        const existing = store.get(key);
-        if (existing && existing.expiresAt > now) {
-          if (nx === "NX") {
-            return null;
+      set: vi.fn(
+        async (
+          key: string,
+          value: string,
+          _px?: string,
+          ttl?: number,
+          nx?: string,
+        ) => {
+          const now = Date.now();
+          const existing = store.get(key);
+          if (existing && existing.expiresAt > now) {
+            if (nx === "NX") {
+              return null;
+            }
           }
-        }
-        const expiresAt = ttl ? now + ttl : Infinity;
-        store.set(key, { value, expiresAt });
-        return "OK";
-      }),
-      eval: vi.fn(async (_script: string, _numkeys: number, key: string, arg: string) => {
-        const now = Date.now();
-        const existing = store.get(key);
-        if (existing && existing.expiresAt > now && existing.value === arg) {
-          store.delete(key);
-          return 1;
-        }
-        return 0;
-      }),
+          const expiresAt = ttl ? now + ttl : Infinity;
+          store.set(key, { value, expiresAt });
+          return "OK";
+        },
+      ),
+      eval: vi.fn(
+        async (_script: string, _numkeys: number, key: string, arg: string) => {
+          const now = Date.now();
+          const existing = store.get(key);
+          if (existing && existing.expiresAt > now && existing.value === arg) {
+            store.delete(key);
+            return 1;
+          }
+          return 0;
+        },
+      ),
       store,
     };
   }
@@ -65,13 +75,22 @@ describe("SourcingService", () => {
       trackingLink: inMemoryLinks,
       user: [{ id: "user-1", name: "Recruiter Bob" }],
     });
-    executeTxSpy = (mockPrisma as unknown as { executeTx: unknown }).executeTx as ReturnType<typeof vi.fn>;
+    executeTxSpy = (mockPrisma as unknown as { executeTx: unknown })
+      .executeTx as ReturnType<typeof vi.fn>;
 
-    service = new SourcingService(mockPrisma as never, mockActivitiesService as never, mockRedis);
+    service = new SourcingService(
+      mockPrisma as never,
+      mockActivitiesService as never,
+      mockRedis,
+    );
   });
 
   it("should create a new tracking link with unique token", async () => {
-    inMemoryJobs.push({ id: "job-1", title: "Senior Developer", organizationId: "org-1" });
+    inMemoryJobs.push({
+      id: "job-1",
+      title: "Senior Developer",
+      organizationId: "org-1",
+    });
 
     const link = await service.createLink("org-1", "user-1", {
       name: "LinkedIn Hiring Campaign",
@@ -112,7 +131,11 @@ describe("SourcingService", () => {
   });
 
   it("should return paginated links with conversion rate", async () => {
-    inMemoryJobs.push({ id: "job-1", title: "Lead Architect", organizationId: "org-1" });
+    inMemoryJobs.push({
+      id: "job-1",
+      title: "Lead Architect",
+      organizationId: "org-1",
+    });
     inMemoryLinks.push({
       id: "link-1",
       organizationId: "org-1",
@@ -140,7 +163,11 @@ describe("SourcingService", () => {
   });
 
   it("should calculate correct sourcing overview stats and funnel", async () => {
-    inMemoryJobs.push({ id: "job-1", title: "Product Designer", organizationId: "org-1" });
+    inMemoryJobs.push({
+      id: "job-1",
+      title: "Product Designer",
+      organizationId: "org-1",
+    });
     inMemoryLinks.push({
       id: "link-1",
       organizationId: "org-1",
@@ -205,8 +232,17 @@ describe("SourcingService", () => {
 
   it("should strictly scope getStats to current organization and never leak other tenant data", async () => {
     // Org-1 resources
-    inMemoryJobs.push({ id: "job-org1", title: "Dev Org 1", organizationId: "org-1" });
-    inMemoryCandidates.push({ id: "cand-org1", name: "Alice", email: "alice@org1.com", organizationId: "org-1" });
+    inMemoryJobs.push({
+      id: "job-org1",
+      title: "Dev Org 1",
+      organizationId: "org-1",
+    });
+    inMemoryCandidates.push({
+      id: "cand-org1",
+      name: "Alice",
+      email: "alice@org1.com",
+      organizationId: "org-1",
+    });
     inMemoryApps.push({
       id: "app-org1",
       jobId: "job-org1",
@@ -217,8 +253,17 @@ describe("SourcingService", () => {
     });
 
     // Org-2 resources (other tenant)
-    inMemoryJobs.push({ id: "job-org2", title: "Dev Org 2", organizationId: "org-2" });
-    inMemoryCandidates.push({ id: "cand-org2", name: "Bob", email: "bob@org2.com", organizationId: "org-2" });
+    inMemoryJobs.push({
+      id: "job-org2",
+      title: "Dev Org 2",
+      organizationId: "org-2",
+    });
+    inMemoryCandidates.push({
+      id: "cand-org2",
+      name: "Bob",
+      email: "bob@org2.com",
+      organizationId: "org-2",
+    });
     inMemoryApps.push({
       id: "app-org2",
       jobId: "job-org2",
@@ -233,10 +278,14 @@ describe("SourcingService", () => {
     // Only org-1's applications should be included
     expect(statsOrg1.totalApplications).toBe(1);
     expect(statsOrg1.channelBreakdown).toHaveLength(1);
-    expect(statsOrg1.channelBreakdown[0].channel).toBe(SourcingChannel.LINKEDIN);
+    expect(statsOrg1.channelBreakdown[0].channel).toBe(
+      SourcingChannel.LINKEDIN,
+    );
 
     // Org-2 data must not appear
-    const org2Source = statsOrg1.channelBreakdown.find((c) => c.channel === SourcingChannel.INDEED);
+    const org2Source = statsOrg1.channelBreakdown.find(
+      (c) => c.channel === SourcingChannel.INDEED,
+    );
     expect(org2Source).toBeUndefined();
   });
 
@@ -251,14 +300,21 @@ describe("SourcingService", () => {
     });
 
     // Simulate async I/O delay in transaction to test concurrent race condition resilience
-    executeTxSpy.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      await new Promise((resolve) => setTimeout(resolve, 2));
-      return fn(mockPrisma);
-    });
+    executeTxSpy.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) => {
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        return fn(mockPrisma);
+      },
+    );
 
     // Fire 10 concurrent click events with the same token
     const clickPromises = Array.from({ length: 10 }, (_, i) =>
-      service.recordClick("lnk-conc1", "https://linkedin.com", `10.0.0.${i + 1}`, `TestAgent-${i}`),
+      service.recordClick(
+        "lnk-conc1",
+        "https://linkedin.com",
+        `10.0.0.${i + 1}`,
+        `TestAgent-${i}`,
+      ),
     );
 
     const results = await Promise.all(clickPromises);
@@ -279,7 +335,12 @@ describe("SourcingService", () => {
       deletedAt: null,
     });
 
-    const result = await service.recordClick("lnk-single", "https://google.com", "127.0.0.1", "Browser");
+    const result = await service.recordClick(
+      "lnk-single",
+      "https://google.com",
+      "127.0.0.1",
+      "Browser",
+    );
 
     expect(result.success).toBe(true);
     expect(mockRedis.set).toHaveBeenCalledWith(
@@ -290,7 +351,7 @@ describe("SourcingService", () => {
       "NX",
     );
     expect(mockRedis.eval).toHaveBeenCalledWith(
-      expect.stringContaining("redis.call(\"get\", KEYS[1]) == ARGV[1]"),
+      expect.stringContaining('redis.call("get", KEYS[1]) == ARGV[1]'),
       1,
       "click:lock:lnk-single",
       expect.any(String),
@@ -370,12 +431,17 @@ describe("SourcingService", () => {
     });
 
     await expect(
-      service.recordClick("lnk-fail", "https://linkedin.com", "127.0.0.1", "TestAgent"),
+      service.recordClick(
+        "lnk-fail",
+        "https://linkedin.com",
+        "127.0.0.1",
+        "TestAgent",
+      ),
     ).rejects.toThrow("DB Connection Error during transaction");
 
     // Lock must be cleanly released despite exception
     expect(mockRedis.eval).toHaveBeenCalledWith(
-      expect.stringContaining("redis.call(\"get\", KEYS[1]) == ARGV[1]"),
+      expect.stringContaining('redis.call("get", KEYS[1]) == ARGV[1]'),
       1,
       "click:lock:lnk-fail",
       expect.any(String),
@@ -396,28 +462,50 @@ describe("SourcingService", () => {
     });
 
     const sharedRedis = createMockRedis();
-    const instance1 = new SourcingService(mockPrisma as never, mockActivitiesService as never, sharedRedis);
-    const instance2 = new SourcingService(mockPrisma as never, mockActivitiesService as never, sharedRedis);
+    const instance1 = new SourcingService(
+      mockPrisma as never,
+      mockActivitiesService as never,
+      sharedRedis,
+    );
+    const instance2 = new SourcingService(
+      mockPrisma as never,
+      mockActivitiesService as never,
+      sharedRedis,
+    );
 
     // Simulate async transaction I/O delay
-    executeTxSpy.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      await new Promise((resolve) => setTimeout(resolve, 2));
-      return fn(mockPrisma);
-    });
+    executeTxSpy.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) => {
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        return fn(mockPrisma);
+      },
+    );
 
     // 50 calls from instance 1 + 50 calls from instance 2 concurrently (100 total)
     const promises = [
       ...Array.from({ length: 50 }, (_, i) =>
-        instance1.recordClick("lnk-multi", "https://linkedin.com", `10.0.1.${i + 1}`, `Node1-Agent-${i}`, {
-          maxWaitMs: 15000,
-          retryIntervalMs: 10,
-        }),
+        instance1.recordClick(
+          "lnk-multi",
+          "https://linkedin.com",
+          `10.0.1.${i + 1}`,
+          `Node1-Agent-${i}`,
+          {
+            maxWaitMs: 15000,
+            retryIntervalMs: 10,
+          },
+        ),
       ),
       ...Array.from({ length: 50 }, (_, i) =>
-        instance2.recordClick("lnk-multi", "https://linkedin.com", `10.0.2.${i + 1}`, `Node2-Agent-${i}`, {
-          maxWaitMs: 15000,
-          retryIntervalMs: 10,
-        }),
+        instance2.recordClick(
+          "lnk-multi",
+          "https://linkedin.com",
+          `10.0.2.${i + 1}`,
+          `Node2-Agent-${i}`,
+          {
+            maxWaitMs: 15000,
+            retryIntervalMs: 10,
+          },
+        ),
       ),
     ];
 

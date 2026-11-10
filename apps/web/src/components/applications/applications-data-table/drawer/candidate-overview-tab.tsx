@@ -19,7 +19,11 @@ interface CandidateOverviewTabProps {
   onScheduleInterview: (intv?: ScheduledInterviewInfo) => void;
   onCancelInterview: (interviewOrId?: ScheduledInterviewInfo | string) => void;
   onPreviewDoc: (doc: CandidateDocument) => void;
-  onDownloadDoc: (url: string, filename?: string, targetAppId?: string) => Promise<void>;
+  onDownloadDoc: (
+    url: string,
+    filename?: string,
+    targetAppId?: string,
+  ) => Promise<void>;
   canEdit?: boolean;
 }
 

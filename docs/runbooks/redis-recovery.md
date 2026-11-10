@@ -21,6 +21,7 @@
 ## Step 1: Verify Incident
 
 1. **Verify Valkey / Redis Container Status:**
+
    ```bash
    # Production
    docker compose -f docker-compose.prod.yml ps redis
@@ -30,6 +31,7 @@
    ```
 
 2. **Test Direct Ping via redis-cli / valkey-cli:**
+
    ```bash
    # Development (port 16379)
    docker exec -it haihire-redis redis-cli ping
@@ -57,7 +59,7 @@
    free -m
    docker stats --no-stream haihire-prod-redis
    ```
-   *Note:* Valkey/Redis crashes are commonly caused by the Linux OOMKiller when memory exceeds `deploy.resources.limits.memory` (default: 512MB).
+   _Note:_ Valkey/Redis crashes are commonly caused by the Linux OOMKiller when memory exceeds `deploy.resources.limits.memory` (default: 512MB).
 3. **Inspect AOF / RDB Disk Persistence Space:**
    ```bash
    df -h /var/lib/docker/volumes/haihire_redis_data

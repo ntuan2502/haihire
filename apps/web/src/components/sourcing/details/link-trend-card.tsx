@@ -20,10 +20,7 @@ export function LinkTrendCard({ data }: LinkTrendCardProps) {
   const paddingTop = 16;
   const paddingBottom = 24;
 
-  const maxVal = Math.max(
-    1,
-    ...data.map((d) => d.count),
-  );
+  const maxVal = Math.max(1, ...data.map((d) => d.count));
 
   const points = data.map((d, index) => {
     const x =

@@ -29,17 +29,20 @@ vi.mock("@/i18n", () => ({
     t: (key: string) => {
       const dict: Record<string, string> = {
         "interviews.scorecardTitle": "Đánh giá phỏng vấn",
-        "interviews.scorecardSubtitle": "Ghi nhận nhận xét và điểm số của ứng viên",
+        "interviews.scorecardSubtitle":
+          "Ghi nhận nhận xét và điểm số của ứng viên",
         "interviews.hiringRecommendation": "Khuyến nghị tuyển dụng",
         "interviews.recommendations.strongYes": "Tuyển ngay (Strong Yes)",
         "interviews.recommendations.yes": "Tuyển (Yes)",
         "interviews.recommendations.neutral": "Cân nhắc (Neutral)",
         "interviews.recommendations.no": "Từ chối (No)",
         "interviews.detailedFeedback": "Nhận xét chi tiết",
-        "interviews.feedbackPlaceholder": "Ghi chú về kỹ năng chuyên môn, thái độ...",
+        "interviews.feedbackPlaceholder":
+          "Ghi chú về kỹ năng chuyên môn, thái độ...",
         "interviews.saveScorecard": "Lưu đánh giá",
         "interviews.savingScorecard": "Đang lưu...",
-        "interviews.scorecardNoPermission": "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
+        "interviews.scorecardNoPermission":
+          "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
         "common.close": "Đóng",
       };
       return dict[key] || key;
@@ -112,7 +115,9 @@ describe("InterviewScorecardModal Component", () => {
     );
 
     expect(screen.getByText("Đánh giá phỏng vấn")).toBeInTheDocument();
-    expect(screen.getAllByText("Tran Van Candidate").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Tran Van Candidate").length,
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Tuyển ngay (Strong Yes)")).toBeInTheDocument();
     expect(screen.getByText("Tuyển (Yes)")).toBeInTheDocument();
   });
@@ -134,7 +139,9 @@ describe("InterviewScorecardModal Component", () => {
     );
 
     // Select Strong Yes
-    const strongYesBtn = screen.getByText("Tuyển ngay (Strong Yes)").closest("button");
+    const strongYesBtn = screen
+      .getByText("Tuyển ngay (Strong Yes)")
+      .closest("button");
     if (strongYesBtn) {
       fireEvent.click(strongYesBtn);
     }
@@ -144,7 +151,9 @@ describe("InterviewScorecardModal Component", () => {
       "Ghi chú về kỹ năng chuyên môn, thái độ...",
     );
     fireEvent.change(feedbackInput, {
-      target: { value: "Excellent knowledge of TypeScript and distributed systems." },
+      target: {
+        value: "Excellent knowledge of TypeScript and distributed systems.",
+      },
     });
 
     // Click Save
@@ -158,7 +167,8 @@ describe("InterviewScorecardModal Component", () => {
         id: "int-100",
         scorecard: expect.objectContaining({
           recommendation: "STRONG_YES",
-          feedback: "Excellent knowledge of TypeScript and distributed systems.",
+          feedback:
+            "Excellent knowledge of TypeScript and distributed systems.",
           evaluatedBy: "Recruiter Alice",
         }),
       });
@@ -181,7 +191,9 @@ describe("InterviewScorecardModal Component", () => {
     );
 
     expect(
-      screen.getByText("Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn."),
+      screen.getByText(
+        "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
+      ),
     ).toBeInTheDocument();
 
     const saveBtn = screen.getByText("Lưu đánh giá").closest("button");

@@ -10,7 +10,10 @@ export const applicationsApi = {
     jobId?: string;
     stage?: string;
   }): Promise<PaginatedResult<Application>> => {
-    const response = await api.get<PaginatedResult<Application>>("/applications", { params });
+    const response = await api.get<PaginatedResult<Application>>(
+      "/applications",
+      { params },
+    );
     return response.data;
   },
 
@@ -48,10 +51,10 @@ export const applicationsApi = {
     stage: string,
     orderIndex = 0,
   ): Promise<Application> => {
-    const response = await api.patch<Application>(
-      `/applications/${id}/stage`,
-      { stage, orderIndex },
-    );
+    const response = await api.patch<Application>(`/applications/${id}/stage`, {
+      stage,
+      orderIndex,
+    });
     return response.data;
   },
 
@@ -101,7 +104,9 @@ export const applicationsApi = {
     return response.data;
   },
 
-  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+  delete: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/applications/${id}`);
     return response.data;
   },

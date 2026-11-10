@@ -51,7 +51,9 @@ function EditCandidatePageContent() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState<Gender | "NOT_SPECIFIED">("NOT_SPECIFIED");
+  const [gender, setGender] = useState<Gender | "NOT_SPECIFIED">(
+    "NOT_SPECIFIED",
+  );
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -235,7 +237,8 @@ function EditCandidatePageContent() {
           {/* First Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.firstName")} <span className="text-rose-500">*</span>
+              {t("candidates.firstName")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -249,7 +252,8 @@ function EditCandidatePageContent() {
           {/* Last Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.lastName")} <span className="text-rose-500">*</span>
+              {t("candidates.lastName")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -316,7 +320,10 @@ function EditCandidatePageContent() {
                 value={gender}
                 onChange={(val) => setGender(val as Gender | "NOT_SPECIFIED")}
                 options={[
-                  { value: "NOT_SPECIFIED", label: t("candidates.notSpecified") },
+                  {
+                    value: "NOT_SPECIFIED",
+                    label: t("candidates.notSpecified"),
+                  },
                   { value: "MALE", label: t("candidates.male") },
                   { value: "FEMALE", label: t("candidates.female") },
                   { value: "OTHER", label: t("candidates.otherGender") },
@@ -348,7 +355,9 @@ function EditCandidatePageContent() {
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-5 rounded-xl shadow-xs text-xs cursor-pointer gap-2"
             >
               {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              <span>{isSubmitting ? t("common.saving") : t("common.save")}</span>
+              <span>
+                {isSubmitting ? t("common.saving") : t("common.save")}
+              </span>
             </Button>
             <Button
               type="button"

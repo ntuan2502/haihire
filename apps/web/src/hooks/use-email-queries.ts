@@ -3,7 +3,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { emailApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
-import type { EmailTemplate, EmailSettings, EmailLog } from "@/lib/email-templates";
+import type {
+  EmailTemplate,
+  EmailSettings,
+  EmailLog,
+} from "@/lib/email-templates";
 import { queryKeys } from "./query-keys";
 
 export function useEmailTemplates(organizationId?: string | null) {
@@ -77,7 +81,8 @@ export function useSendTestEmailMutation() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: (to: string) => emailApi.sendTestEmail(to, user?.organizationId),
+    mutationFn: (to: string) =>
+      emailApi.sendTestEmail(to, user?.organizationId),
   });
 }
 
@@ -99,7 +104,9 @@ export function useEmailLogs(params?: {
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
-    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+    params?.organizationId !== undefined
+      ? params.organizationId
+      : user?.organizationId;
 
   return useQuery<PaginatedLogsResult>({
     queryKey: queryKeys.emailLogs({

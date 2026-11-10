@@ -152,12 +152,23 @@ describe("EventsService - SSE Streaming", () => {
 
   describe("Live session authorization", () => {
     const setup = () => {
-      const verify = vi.fn().mockReturnValue({ sub: "user-1", tokenVersion: 1, organizationId: "org-stale" });
-      const findUnique = vi.fn().mockResolvedValue({ id: "user-1", tokenVersion: 1 });
-      const findMany = vi.fn().mockResolvedValue([{ organizationId: "org-current" }]);
+      const verify = vi.fn().mockReturnValue({
+        sub: "user-1",
+        tokenVersion: 1,
+        organizationId: "org-stale",
+      });
+      const findUnique = vi
+        .fn()
+        .mockResolvedValue({ id: "user-1", tokenVersion: 1 });
+      const findMany = vi
+        .fn()
+        .mockResolvedValue([{ organizationId: "org-current" }]);
       const events = new EventsService(
         { verify } as unknown as JwtService,
-        { user: { findUnique }, organizationMember: { findMany } } as unknown as PrismaService,
+        {
+          user: { findUnique },
+          organizationMember: { findMany },
+        } as unknown as PrismaService,
       );
       return { events, verify, findUnique, findMany };
     };
@@ -171,25 +182,35 @@ describe("EventsService - SSE Streaming", () => {
     it("uses current membership instead of the token's stale organization", async () => {
       const { events } = setup();
       const received: unknown[] = [];
-      const subscription = events.subscribeWithToken("access").subscribe((message) => received.push(message.data));
+      const subscription = events
+        .subscribeWithToken("access")
+        .subscribe((message) => received.push(message.data));
       await vi.waitFor(() => expect(received).toHaveLength(1));
       events.emit({ type: "ORG_UPDATED", organizationId: "org-stale" });
       events.emit({ type: "ORG_UPDATED", organizationId: "org-current" });
       await vi.waitFor(() => expect(received).toHaveLength(2));
-      expect(received[1]).toEqual({ type: "ORG_UPDATED", organizationId: "org-current" });
+      expect(received[1]).toEqual({
+        type: "ORG_UPDATED",
+        organizationId: "org-current",
+      });
       subscription.unsubscribe();
     });
 
     it("rechecks memberships before forwarding the next event", async () => {
       const { events, findMany } = setup();
       const received: unknown[] = [];
-      const subscription = events.subscribeWithToken("access").subscribe((message) => received.push(message.data));
+      const subscription = events
+        .subscribeWithToken("access")
+        .subscribe((message) => received.push(message.data));
       await vi.waitFor(() => expect(received).toHaveLength(1));
       findMany.mockResolvedValue([]);
       events.emit({ type: "ORG_UPDATED", organizationId: "org-current" });
       events.emit({ type: "PERMISSIONS_CHANGED", targetUserId: "user-1" });
       await vi.waitFor(() => expect(received).toHaveLength(2));
-      expect(received[1]).toEqual({ type: "PERMISSIONS_CHANGED", targetUserId: "user-1" });
+      expect(received[1]).toEqual({
+        type: "PERMISSIONS_CHANGED",
+        targetUserId: "user-1",
+      });
       subscription.unsubscribe();
     });
 
@@ -200,13 +221,19 @@ describe("EventsService - SSE Streaming", () => {
         const received: unknown[] = [];
         const onError = vi.fn();
         const subscription = events.subscribeWithToken("access").subscribe({
-          next: (message) => received.push(message.data), error: onError,
+          next: (message) => received.push(message.data),
+          error: onError,
         });
         await vi.waitFor(() => expect(received).toHaveLength(1));
-        if (condition === "revoked") findUnique.mockResolvedValue({ id: "user-1", tokenVersion: 2 });
+        if (condition === "revoked")
+          findUnique.mockResolvedValue({ id: "user-1", tokenVersion: 2 });
         if (condition === "deleted") findUnique.mockResolvedValue(null);
-        if (condition === "database failure") findMany.mockRejectedValue(new Error("offline"));
-        if (condition === "expired") verify.mockImplementation(() => { throw new Error("expired"); });
+        if (condition === "database failure")
+          findMany.mockRejectedValue(new Error("offline"));
+        if (condition === "expired")
+          verify.mockImplementation(() => {
+            throw new Error("expired");
+          });
         events.emit({ type: "ORG_UPDATED", organizationId: "org-current" });
         await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
         expect(received).toHaveLength(1);
@@ -219,7 +246,9 @@ describe("EventsService - SSE Streaming", () => {
       try {
         const { events, findUnique } = setup();
         const onError = vi.fn();
-        const subscription = events.subscribeWithToken("access").subscribe({ error: onError });
+        const subscription = events
+          .subscribeWithToken("access")
+          .subscribe({ error: onError });
         await vi.advanceTimersByTimeAsync(0);
         findUnique.mockResolvedValue({ id: "user-1", tokenVersion: 2 });
         await vi.advanceTimersByTimeAsync(15000);

@@ -1,11 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { X, MapPin, DollarSign, Calendar, ExternalLink, Pencil } from "lucide-react";
+import {
+  X,
+  MapPin,
+  DollarSign,
+  Calendar,
+  ExternalLink,
+  Pencil,
+} from "lucide-react";
 import { SlideOver } from "@/components/shared/slide-over";
 import { JobStatusBadge } from "@/components/shared/job-status-badge";
 import { useI18n } from "@/i18n";
-import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
+import {
+  getJobTypeLabel,
+  getWorkplaceLabel,
+  getExperienceLevelLabel,
+} from "@/lib/jobs";
 import type { Job } from "@/types";
 
 export interface JobQuickDetailDrawerProps {

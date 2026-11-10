@@ -16,7 +16,10 @@ test.describe("E2E Flow 2: Authentication & Login Flow Verification", () => {
 
     await expect(emailInput).toBeVisible();
     await emailInput.fill("admin@tun.io.vn");
-    const demoPassword = process.env.DEMO_SEED_PASSWORD || process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD || "dev-seed-password-2026";
+    const demoPassword =
+      process.env.DEMO_SEED_PASSWORD ||
+      process.env.NEXT_PUBLIC_DEMO_SEED_PASSWORD ||
+      "dev-seed-password-2026";
     await passwordInput.fill(demoPassword);
 
     // 3. Submit form

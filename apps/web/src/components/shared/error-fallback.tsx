@@ -77,11 +77,21 @@ export function ErrorFallback({
 
   // Resolve localized text
   const title = titleKey
-    ? i18n?.t(titleKey) || (titleKey.includes("dashboard") ? dict.dashboardTitle : titleKey.includes("careers") ? dict.careersTitle : dict.title)
+    ? i18n?.t(titleKey) ||
+      (titleKey.includes("dashboard")
+        ? dict.dashboardTitle
+        : titleKey.includes("careers")
+          ? dict.careersTitle
+          : dict.title)
     : i18n?.t("errors.boundary.title") || dict.title;
 
   const description = descriptionKey
-    ? i18n?.t(descriptionKey) || (descriptionKey.includes("dashboard") ? dict.dashboardDescription : descriptionKey.includes("careers") ? dict.careersDescription : dict.description)
+    ? i18n?.t(descriptionKey) ||
+      (descriptionKey.includes("dashboard")
+        ? dict.dashboardDescription
+        : descriptionKey.includes("careers")
+          ? dict.careersDescription
+          : dict.description)
     : i18n?.t("errors.boundary.description") || dict.description;
 
   const tryAgainText = i18n?.t("errors.boundary.tryAgain") || dict.tryAgain;
@@ -91,7 +101,10 @@ export function ErrorFallback({
 
   if (variant === "compact") {
     return (
-      <div className="w-full p-4 sm:p-6 flex justify-center" data-testid="error-fallback-compact">
+      <div
+        className="w-full p-4 sm:p-6 flex justify-center"
+        data-testid="error-fallback-compact"
+      >
         <div className="w-full max-w-xl p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
           <div className="h-11 w-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
             <AlertTriangle className="h-5 w-5" />

@@ -2,8 +2,12 @@ import { api } from "./client";
 import type { Job, CreateJobInput, PaginatedResult } from "@/types";
 
 export const jobsApi = {
-  getPublic: async (params?: { limit?: number }): Promise<PaginatedResult<Job>> => {
-    const response = await api.get<PaginatedResult<Job>>("/jobs/public", { params });
+  getPublic: async (params?: {
+    limit?: number;
+  }): Promise<PaginatedResult<Job>> => {
+    const response = await api.get<PaginatedResult<Job>>("/jobs/public", {
+      params,
+    });
     return response.data;
   },
   getAll: async (params?: {
@@ -44,7 +48,9 @@ export const jobsApi = {
     return response.data;
   },
 
-  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+  delete: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/jobs/${id}`);
     return response.data;
   },

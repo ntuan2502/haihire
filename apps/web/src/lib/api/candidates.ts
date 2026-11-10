@@ -28,13 +28,20 @@ export const candidatesApi = {
     return response.data;
   },
 
-  update: async (id: string, data: UpdateCandidateInput): Promise<Candidate> => {
+  update: async (
+    id: string,
+    data: UpdateCandidateInput,
+  ): Promise<Candidate> => {
     const response = await api.patch<Candidate>(`/candidates/${id}`, data);
     return response.data;
   },
 
-  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete<{ success: boolean; message: string }>(`/candidates/${id}`);
+  delete: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete<{ success: boolean; message: string }>(
+      `/candidates/${id}`,
+    );
     return response.data;
   },
 

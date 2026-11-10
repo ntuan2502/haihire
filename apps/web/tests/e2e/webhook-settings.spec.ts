@@ -31,12 +31,15 @@ test.describe("Webhook Settings E2E Flow", () => {
     page,
   }) => {
     // 1. Mock auth/me for admin
-    await page.addInitScript(({ token, user }) => {
-      localStorage.setItem("haihire_recruiter_token", token);
-      localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
-      document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
-      document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
-    }, { token: "mock-jwt-token-admin-12345", user: adminUser });
+    await page.addInitScript(
+      ({ token, user }) => {
+        localStorage.setItem("haihire_recruiter_token", token);
+        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
+        document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
+        document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
+      },
+      { token: "mock-jwt-token-admin-12345", user: adminUser },
+    );
 
     await page.route("**/api/auth/me", async (route) => {
       await route.fulfill({
@@ -112,30 +115,41 @@ test.describe("Webhook Settings E2E Flow", () => {
     // 6. Fill form
     const urlInput = page.locator("input[placeholder*='telegram.org']");
     await expect(urlInput).toBeVisible({ timeout: 5000 });
-    await urlInput.fill("https://api.telegram.org/bot123456:ABC-DEF/sendMessage");
+    await urlInput.fill(
+      "https://api.telegram.org/bot123456:ABC-DEF/sendMessage",
+    );
 
     const chatIdInput = page.locator("input[placeholder='-100123456789']");
     await expect(chatIdInput).toBeVisible();
     await chatIdInput.fill("-100123456789");
 
     // 7. Click Save button in modal
-    const saveBtn = page.locator("button:has-text('Save'), button:has-text('Lưu')").last();
+    const saveBtn = page
+      .locator("button:has-text('Save'), button:has-text('Lưu')")
+      .last();
     await saveBtn.click();
 
     // 8. Verify new Telegram webhook appears in list
-    await expect(page.locator("text=Telegram").first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("text=https://api.telegram.org/bot***/sendMessage").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("text=Telegram").first()).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(
+      page.locator("text=https://api.telegram.org/bot***/sendMessage").first(),
+    ).toBeVisible({ timeout: 5000 });
   });
 
   test("Case 2: Admin tests webhook connection and receives toast notification", async ({
     page,
   }) => {
-    await page.addInitScript(({ token, user }) => {
-      localStorage.setItem("haihire_recruiter_token", token);
-      localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
-      document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
-      document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
-    }, { token: "mock-jwt-token-admin-12345", user: adminUser });
+    await page.addInitScript(
+      ({ token, user }) => {
+        localStorage.setItem("haihire_recruiter_token", token);
+        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
+        document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
+        document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
+      },
+      { token: "mock-jwt-token-admin-12345", user: adminUser },
+    );
 
     await page.route("**/api/auth/me", async (route) => {
       await route.fulfill({
@@ -194,12 +208,15 @@ test.describe("Webhook Settings E2E Flow", () => {
     page,
   }) => {
     // Mock member user
-    await page.addInitScript(({ token, user }) => {
-      localStorage.setItem("haihire_recruiter_token", token);
-      localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
-      document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
-      document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
-    }, { token: "mock-jwt-token-member-12345", user: memberUser });
+    await page.addInitScript(
+      ({ token, user }) => {
+        localStorage.setItem("haihire_recruiter_token", token);
+        localStorage.setItem("haihire_recruiter_user", JSON.stringify(user));
+        document.cookie = `haihire_token=${token}; path=/; max-age=86400`;
+        document.cookie = `haihire_has_org=true; path=/; max-age=86400`;
+      },
+      { token: "mock-jwt-token-member-12345", user: memberUser },
+    );
 
     await page.route("**/api/auth/me", async (route) => {
       await route.fulfill({

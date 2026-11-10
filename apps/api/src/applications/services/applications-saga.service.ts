@@ -127,9 +127,14 @@ export class ApplicationsSagaService {
       uploadedFileInMinio = true;
     } else if (dto.resumeUrl) {
       if (job.organizationId) {
-        const safeTenant = job.organizationId.trim().replace(/[^a-zA-Z0-9_-]/g, "");
+        const safeTenant = job.organizationId
+          .trim()
+          .replace(/[^a-zA-Z0-9_-]/g, "");
         const objName = this.minioService.extractObjectName(dto.resumeUrl);
-        if (objName.startsWith("tenants/") && !objName.startsWith(`tenants/${safeTenant}/`)) {
+        if (
+          objName.startsWith("tenants/") &&
+          !objName.startsWith(`tenants/${safeTenant}/`)
+        ) {
           throw new AppForbiddenException(
             APP_ERROR_CODES.FORBIDDEN,
             "Cross-tenant resume reference is not permitted",
@@ -190,7 +195,11 @@ export class ApplicationsSagaService {
           if (existingCandidate) {
             candidateId = existingCandidate.id;
           } else {
-            const inferredName = inferCandidateName(dto.candidateName, dto.firstName, dto.lastName);
+            const inferredName = inferCandidateName(
+              dto.candidateName,
+              dto.firstName,
+              dto.lastName,
+            );
             const firstName = inferredName.firstName || null;
             const lastName = inferredName.lastName || null;
 
@@ -244,11 +253,15 @@ export class ApplicationsSagaService {
           }
 
           if (!uploadedFileInMinio && dto.resumeUrl) {
-            const matchesPrimary = existingCandidate.resumeUrl === dto.resumeUrl;
+            const matchesPrimary =
+              existingCandidate.resumeUrl === dto.resumeUrl;
             let matchesDoc = false;
             if (!matchesPrimary) {
               const doc = await tx.candidateDocument.findFirst({
-                where: { candidateId: existingCandidate.id, url: dto.resumeUrl },
+                where: {
+                  candidateId: existingCandidate.id,
+                  url: dto.resumeUrl,
+                },
                 select: { id: true },
               });
               matchesDoc = Boolean(doc);
@@ -261,7 +274,8 @@ export class ApplicationsSagaService {
             }
             if (matchesPrimary) {
               uploadResult.size = existingCandidate.resumeFileSize || 0;
-              uploadResult.mimeType = existingCandidate.resumeMimeType || "application/pdf";
+              uploadResult.mimeType =
+                existingCandidate.resumeMimeType || "application/pdf";
             }
           }
         }
@@ -287,7 +301,8 @@ export class ApplicationsSagaService {
         });
 
         const maxOrder = existingInStage.reduce(
-          (max: number, item: { orderIndex: number }) => Math.max(max, item.orderIndex),
+          (max: number, item: { orderIndex: number }) =>
+            Math.max(max, item.orderIndex),
           -1,
         );
 

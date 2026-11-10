@@ -68,7 +68,15 @@ export class ActivitiesController {
   @Post()
   create(
     @Body(DtoPipe(CreateActivityRecordDto)) dto: CreateActivityRecordDto,
-    @Request() req: { user: { id: string; name: string; role?: string; organizationId?: string | null } },
+    @Request()
+    req: {
+      user: {
+        id: string;
+        name: string;
+        role?: string;
+        organizationId?: string | null;
+      };
+    },
   ) {
     return this.activitiesService.createActivity({
       ...dto,

@@ -7,7 +7,11 @@ interface CandidateDocumentsTabProps {
   documents: CandidateDocument[];
   appId: string;
   onPreview: (doc: CandidateDocument) => void;
-  onDownload: (url: string, filename?: string, targetAppId?: string) => Promise<void>;
+  onDownload: (
+    url: string,
+    filename?: string,
+    targetAppId?: string,
+  ) => Promise<void>;
 }
 
 export function CandidateDocumentsTab({

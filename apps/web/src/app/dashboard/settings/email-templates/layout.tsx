@@ -15,8 +15,12 @@ export default function EmailTemplatesLayout({
   const { t } = useI18n();
 
   const isTemplates = pathname === "/dashboard/settings/email-templates";
-  const isSettings = pathname.startsWith("/dashboard/settings/email-templates/settings");
-  const isLogs = pathname.startsWith("/dashboard/settings/email-templates/logs");
+  const isSettings = pathname.startsWith(
+    "/dashboard/settings/email-templates/settings",
+  );
+  const isLogs = pathname.startsWith(
+    "/dashboard/settings/email-templates/logs",
+  );
 
   const tabs = [
     {

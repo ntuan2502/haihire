@@ -43,7 +43,9 @@ export class EmailProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<SendEmailJobData | SendSystemEmailJobData>): Promise<unknown> {
+  async process(
+    job: Job<SendEmailJobData | SendSystemEmailJobData>,
+  ): Promise<unknown> {
     this.logger.log(`Processing email job '${job.name}' (ID: ${job.id})`);
     try {
       if (job.name === "send-system-email") {
@@ -93,8 +95,11 @@ export class EmailProcessor extends WorkerHost {
             `[EmailProcessor] Enqueued job '${job.id}' to Dead-Letter Queue '${EMAIL_DLQ_NAME}'`,
           );
         } catch (dlqErr: unknown) {
-          const dlqMsg = dlqErr instanceof Error ? dlqErr.message : String(dlqErr);
-          this.logger.error(`[EmailProcessor] Failed to enqueue to DLQ: ${dlqMsg}`);
+          const dlqMsg =
+            dlqErr instanceof Error ? dlqErr.message : String(dlqErr);
+          this.logger.error(
+            `[EmailProcessor] Failed to enqueue to DLQ: ${dlqMsg}`,
+          );
         }
       }
 

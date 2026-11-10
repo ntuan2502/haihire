@@ -37,7 +37,9 @@ export function BrandLogo({
   }[size];
 
   return (
-    <div className={cn("inline-flex items-center gap-2.5 select-none", className)}>
+    <div
+      className={cn("inline-flex items-center gap-2.5 select-none", className)}
+    >
       {/* Monogram Badge */}
       <div
         className={cn(
@@ -56,12 +58,23 @@ export function BrandLogo({
       {/* Brand Text */}
       {variant === "full" && (
         <div className="flex flex-col">
-          <div className={cn("flex items-center font-black tracking-tight", sizeStyles.text, textClassName)}>
+          <div
+            className={cn(
+              "flex items-center font-black tracking-tight",
+              sizeStyles.text,
+              textClassName,
+            )}
+          >
             <span className="text-slate-900 dark:text-white">Hai</span>
             <span className="text-blue-600 dark:text-cyan-400">Hire</span>
           </div>
           {showTagline && (
-            <span className={cn("font-medium text-slate-500 dark:text-slate-400 -mt-0.5", sizeStyles.tagline)}>
+            <span
+              className={cn(
+                "font-medium text-slate-500 dark:text-slate-400 -mt-0.5",
+                sizeStyles.tagline,
+              )}
+            >
               {BRAND_CONFIG.tagline}
             </span>
           )}

@@ -31,7 +31,8 @@ export const ExperienceLevel = {
   LEAD: "LEAD",
   EXECUTIVE: "EXECUTIVE",
 } as const;
-export type ExperienceLevel = (typeof ExperienceLevel)[keyof typeof ExperienceLevel];
+export type ExperienceLevel =
+  (typeof ExperienceLevel)[keyof typeof ExperienceLevel];
 
 export interface Job {
   id: string;

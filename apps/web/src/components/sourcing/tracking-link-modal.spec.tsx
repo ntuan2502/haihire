@@ -52,7 +52,7 @@ describe("TrackingLinkModal (Unified Component)", () => {
         onClose={vi.fn()}
         jobs={mockJobs}
         orgSlug="acme-corp"
-      />
+      />,
     );
 
     // Modal title & submit button
@@ -76,7 +76,7 @@ describe("TrackingLinkModal (Unified Component)", () => {
         link={mockEditLink}
         jobs={mockJobs}
         orgSlug="acme-corp"
-      />
+      />,
     );
 
     // Modal title & submit button
@@ -85,7 +85,9 @@ describe("TrackingLinkModal (Unified Component)", () => {
     expect(screen.getByRole("button", { name: "Hủy bỏ" })).toBeDefined();
 
     // Name field and UTM fields should be prefilled
-    expect(screen.getByDisplayValue("Google Jobs Summer Campaign")).toBeDefined();
+    expect(
+      screen.getByDisplayValue("Google Jobs Summer Campaign"),
+    ).toBeDefined();
     expect(screen.getByDisplayValue("summer-campaign")).toBeDefined();
     expect(screen.getByDisplayValue("frontend")).toBeDefined();
     expect(screen.getByDisplayValue("banner-ad")).toBeDefined();
@@ -100,14 +102,16 @@ describe("TrackingLinkModal (Unified Component)", () => {
         orgSlug="acme-corp"
         defaultJobId="job-1"
         lockJob={true}
-      />
+      />,
     );
 
     // Job lock hint is visible
     expect(screen.getByText("Cố định cho vị trí này")).toBeDefined();
 
     // The job dropdown trigger button is disabled
-    const jobButton = screen.getByText("Senior Frontend Engineer").closest("button");
+    const jobButton = screen
+      .getByText("Senior Frontend Engineer")
+      .closest("button");
     expect(jobButton).toBeDefined();
     expect(jobButton?.hasAttribute("disabled")).toBe(true);
   });

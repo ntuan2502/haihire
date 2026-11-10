@@ -26,12 +26,7 @@ import {
   getWorkplaceLabel,
   getExperienceLevelLabel,
 } from "@/lib/jobs";
-import type {
-  Job,
-  JobType,
-  WorkplaceType,
-  ExperienceLevel,
-} from "@/types";
+import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
 import type { ScreeningQuestion } from "./types";
 
 interface WizardPreviewModalProps {
@@ -160,9 +155,7 @@ export function WizardPreviewModal({
                 {experienceLevel && (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
                     <Briefcase className="h-3.5 w-3.5 text-purple-500" />
-                    <span>
-                      {getExperienceLevelLabel(experienceLevel, t)}
-                    </span>
+                    <span>{getExperienceLevelLabel(experienceLevel, t)}</span>
                   </div>
                 )}
 
@@ -372,9 +365,7 @@ export function WizardPreviewModal({
                             ) : (
                               <Input
                                 type="text"
-                                placeholder={t(
-                                  "jobs.wizard.answerPlaceholder",
-                                )}
+                                placeholder={t("jobs.wizard.answerPlaceholder")}
                                 disabled
                                 className="h-8 text-xs cursor-not-allowed opacity-80"
                               />

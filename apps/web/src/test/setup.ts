@@ -7,12 +7,18 @@ import { BRAND_CONFIG } from "@haihire/shared";
  * Standard test translation helper that resolves against the actual Vietnamese locale dictionary
  * and handles parameter interpolation including brand tokens.
  */
-export function createTestTranslate(localeDict: Record<string, unknown> = viLocale as Record<string, unknown>) {
+export function createTestTranslate(
+  localeDict: Record<string, unknown> = viLocale as Record<string, unknown>,
+) {
   return (key: string, params?: Record<string, string | number>): string => {
     const keys = key.split(".");
     let val: unknown = localeDict;
     for (const k of keys) {
-      if (val && typeof val === "object" && k in (val as Record<string, unknown>)) {
+      if (
+        val &&
+        typeof val === "object" &&
+        k in (val as Record<string, unknown>)
+      ) {
         val = (val as Record<string, unknown>)[k];
       } else {
         val = key;
@@ -24,7 +30,12 @@ export function createTestTranslate(localeDict: Record<string, unknown> = viLoca
       return key;
     }
 
-    const resolvedId = params?.id || params?.applicationId || params?.candidateId || params?.jobId || params?.interviewId;
+    const resolvedId =
+      params?.id ||
+      params?.applicationId ||
+      params?.candidateId ||
+      params?.jobId ||
+      params?.interviewId;
     const merged: Record<string, string | number> = {
       brand: BRAND_CONFIG.name,
       brandLegal: BRAND_CONFIG.legalName,

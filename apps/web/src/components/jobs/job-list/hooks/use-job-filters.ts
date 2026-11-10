@@ -38,7 +38,8 @@ export function useJobFilters({
 
   // Search state (controlled or local fallback)
   const [localSearch, setLocalSearch] = useState("");
-  const search = onSearchChange && propSearch !== undefined ? propSearch : localSearch;
+  const search =
+    onSearchChange && propSearch !== undefined ? propSearch : localSearch;
   const setSearch = useCallback(
     (val: string) => {
       if (onSearchChange) {
@@ -53,29 +54,53 @@ export function useJobFilters({
   // Filter criteria state - synchronized with URL via props or local fallback
   const [localStatusFilters, setLocalStatusFilters] = useState<string[]>([]);
   const statusFilters = useMemo(
-    () => (statusFilter !== undefined ? (statusFilter ? statusFilter.split(",") : []) : localStatusFilters),
+    () =>
+      statusFilter !== undefined
+        ? statusFilter
+          ? statusFilter.split(",")
+          : []
+        : localStatusFilters,
     [statusFilter, localStatusFilters],
   );
 
   const [localTypeFilters, setLocalTypeFilters] = useState<string[]>([]);
   const typeFilters = useMemo(
-    () => (typeFilter !== undefined ? (typeFilter ? typeFilter.split(",") : []) : localTypeFilters),
+    () =>
+      typeFilter !== undefined
+        ? typeFilter
+          ? typeFilter.split(",")
+          : []
+        : localTypeFilters,
     [typeFilter, localTypeFilters],
   );
 
   const [localExpFilters, setLocalExpFilters] = useState<string[]>([]);
   const expFilters = useMemo(
-    () => (expFilter !== undefined ? (expFilter ? expFilter.split(",") : []) : localExpFilters),
+    () =>
+      expFilter !== undefined
+        ? expFilter
+          ? expFilter.split(",")
+          : []
+        : localExpFilters,
     [expFilter, localExpFilters],
   );
 
-  const [localWorkplaceFilters, setLocalWorkplaceFilters] = useState<string[]>([]);
+  const [localWorkplaceFilters, setLocalWorkplaceFilters] = useState<string[]>(
+    [],
+  );
   const workplaceFilters = useMemo(
-    () => (workplaceFilter !== undefined ? (workplaceFilter ? workplaceFilter.split(",") : []) : localWorkplaceFilters),
+    () =>
+      workplaceFilter !== undefined
+        ? workplaceFilter
+          ? workplaceFilter.split(",")
+          : []
+        : localWorkplaceFilters,
     [workplaceFilter, localWorkplaceFilters],
   );
 
-  const [localSortBy, setLocalSortBy] = useState<"created" | "title" | "applicants">("created");
+  const [localSortBy, setLocalSortBy] = useState<
+    "created" | "title" | "applicants"
+  >("created");
   const sortBy = propSortBy || localSortBy;
 
   const [localSortOrder, setLocalSortOrder] = useState<"desc" | "asc">("desc");
@@ -83,19 +108,23 @@ export function useJobFilters({
 
   const handleFilterUpdate = useCallback(
     (updates: JobFilterCriteria) => {
-      const nextStatus = updates.status !== undefined ? updates.status : statusFilters;
+      const nextStatus =
+        updates.status !== undefined ? updates.status : statusFilters;
       const nextType = updates.type !== undefined ? updates.type : typeFilters;
       const nextExp = updates.exp !== undefined ? updates.exp : expFilters;
-      const nextWorkplace = updates.workplace !== undefined ? updates.workplace : workplaceFilters;
+      const nextWorkplace =
+        updates.workplace !== undefined ? updates.workplace : workplaceFilters;
       const nextSortBy = updates.sortBy !== undefined ? updates.sortBy : sortBy;
-      const nextSortOrder = updates.sortOrder !== undefined ? updates.sortOrder : sortOrder;
+      const nextSortOrder =
+        updates.sortOrder !== undefined ? updates.sortOrder : sortOrder;
 
       if (onFilterChange) {
         onFilterChange({
           status: nextStatus.length > 0 ? nextStatus.join(",") : undefined,
           type: nextType.length > 0 ? nextType.join(",") : undefined,
           experience: nextExp.length > 0 ? nextExp.join(",") : undefined,
-          workplace: nextWorkplace.length > 0 ? nextWorkplace.join(",") : undefined,
+          workplace:
+            nextWorkplace.length > 0 ? nextWorkplace.join(",") : undefined,
           sortBy: nextSortBy,
           sortOrder: nextSortOrder,
         });
@@ -108,11 +137,23 @@ export function useJobFilters({
         setLocalSortOrder(nextSortOrder);
       }
     },
-    [statusFilters, typeFilters, expFilters, workplaceFilters, sortBy, sortOrder, onFilterChange],
+    [
+      statusFilters,
+      typeFilters,
+      expFilters,
+      workplaceFilters,
+      sortBy,
+      sortOrder,
+      onFilterChange,
+    ],
   );
 
   const toggleFilter = useCallback(
-    (key: "status" | "type" | "exp" | "workplace", currentList: string[], val: string) => {
+    (
+      key: "status" | "type" | "exp" | "workplace",
+      currentList: string[],
+      val: string,
+    ) => {
       const next = currentList.includes(val)
         ? currentList.filter((x) => x !== val)
         : [...currentList, val];
@@ -148,7 +189,9 @@ export function useJobFilters({
     (sortBy !== "created" || sortOrder !== "desc" ? 1 : 0);
 
   const hasSecondaryFilters =
-    typeFilters.length > 0 || expFilters.length > 0 || workplaceFilters.length > 0;
+    typeFilters.length > 0 ||
+    expFilters.length > 0 ||
+    workplaceFilters.length > 0;
 
   const statusTabs = useMemo(
     () => [
@@ -196,7 +239,8 @@ export function useJobFilters({
           (statusFilters.includes("CLOSED") && job.status === "ARCHIVED");
 
         const matchType =
-          typeFilters.length === 0 || (job.type && typeFilters.includes(job.type));
+          typeFilters.length === 0 ||
+          (job.type && typeFilters.includes(job.type));
 
         const matchExp =
           expFilters.length === 0 ||
@@ -206,7 +250,9 @@ export function useJobFilters({
           workplaceFilters.length === 0 ||
           (job.workplace && workplaceFilters.includes(job.workplace));
 
-        return matchSearch && matchStatus && matchType && matchExp && matchWorkplace;
+        return (
+          matchSearch && matchStatus && matchType && matchExp && matchWorkplace
+        );
       })
       .sort((a, b) => {
         if (sortBy === "title") {
@@ -223,7 +269,17 @@ export function useJobFilters({
         const bDate = new Date(b.createdAt).getTime();
         return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
       });
-  }, [jobs, onPageChange, search, statusFilters, typeFilters, expFilters, workplaceFilters, sortBy, sortOrder]);
+  }, [
+    jobs,
+    onPageChange,
+    search,
+    statusFilters,
+    typeFilters,
+    expFilters,
+    workplaceFilters,
+    sortBy,
+    sortOrder,
+  ]);
 
   return {
     search,

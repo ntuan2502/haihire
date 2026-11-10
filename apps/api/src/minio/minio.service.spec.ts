@@ -6,7 +6,8 @@ describe("MinioService Security", () => {
 
   describe("extractObjectName", () => {
     it("should extract object name from full HTTP URL", () => {
-      const url = "http://localhost:9000/haihire-resumes/resumes/123-candidate.pdf";
+      const url =
+        "http://localhost:9000/haihire-resumes/resumes/123-candidate.pdf";
       const name = service.extractObjectName(url);
       expect(name).toBe("resumes/123-candidate.pdf");
     });
@@ -48,46 +49,56 @@ describe("MinioService Security", () => {
     } as Express.Multer.File;
 
     it("should throw AppBadRequestException when tenantOrgId is null", async () => {
-      await expect(service.uploadFile(dummyFile, "resumes", null)).rejects.toThrow(
-        "Tenant organization ID is required",
-      );
+      await expect(
+        service.uploadFile(dummyFile, "resumes", null),
+      ).rejects.toThrow("Tenant organization ID is required");
     });
 
     it("should throw AppBadRequestException when tenantOrgId is undefined", async () => {
-      await expect(service.uploadFile(dummyFile, "resumes", undefined)).rejects.toThrow(
-        "Tenant organization ID is required",
-      );
+      await expect(
+        service.uploadFile(dummyFile, "resumes", undefined),
+      ).rejects.toThrow("Tenant organization ID is required");
     });
 
     it("should throw AppBadRequestException when tenantOrgId is empty string", async () => {
-      await expect(service.uploadFile(dummyFile, "resumes", "   ")).rejects.toThrow(
-        "Tenant organization ID is required",
-      );
+      await expect(
+        service.uploadFile(dummyFile, "resumes", "   "),
+      ).rejects.toThrow("Tenant organization ID is required");
     });
 
     it("should sanitize traversal tenantOrgId '../../../etc/passwd' to 'etcpasswd'", async () => {
-      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
-      const res = await service.uploadFile(dummyFile, "resumes", "../../../etc/passwd");
+      const putSpy = vi
+        .spyOn(service["client"], "putObject")
+        .mockResolvedValue({ etag: "mock", versionId: null });
+      const res = await service.uploadFile(
+        dummyFile,
+        "resumes",
+        "../../../etc/passwd",
+      );
       expect(res.fileName).toContain("tenants/etcpasswd/resumes/");
       expect(res.fileName).not.toContain("..");
       putSpy.mockRestore();
     });
 
     it("should preserve valid tenantOrgId 'org-abc_123'", async () => {
-      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const putSpy = vi
+        .spyOn(service["client"], "putObject")
+        .mockResolvedValue({ etag: "mock", versionId: null });
       const res = await service.uploadFile(dummyFile, "resumes", "org-abc_123");
       expect(res.fileName).toContain("tenants/org-abc_123/resumes/");
       putSpy.mockRestore();
     });
 
     it("should throw AppBadRequestException when tenantOrgId contains only special characters '!!!@@@###'", async () => {
-      await expect(service.uploadFile(dummyFile, "resumes", "!!!@@@###")).rejects.toThrow(
-        "Tenant organization ID is required",
-      );
+      await expect(
+        service.uploadFile(dummyFile, "resumes", "!!!@@@###"),
+      ).rejects.toThrow("Tenant organization ID is required");
     });
 
     it("should trim whitespace in tenantOrgId '  abc  ' to 'abc'", async () => {
-      const putSpy = vi.spyOn(service["client"], "putObject").mockResolvedValue({ etag: "mock", versionId: null });
+      const putSpy = vi
+        .spyOn(service["client"], "putObject")
+        .mockResolvedValue({ etag: "mock", versionId: null });
       const res = await service.uploadFile(dummyFile, "resumes", "  abc  ");
       expect(res.fileName).toContain("tenants/abc/resumes/");
       putSpy.mockRestore();
@@ -96,31 +107,53 @@ describe("MinioService Security", () => {
 
   describe("getObjectStream and getPresignedUrl Tenant Boundary (C-01)", () => {
     it("should allow getObjectStream when tenantOrgId matches prefix", async () => {
-      const getSpy = vi.spyOn(service["client"], "getObject").mockResolvedValue({} as never);
+      const getSpy = vi
+        .spyOn(service["client"], "getObject")
+        .mockResolvedValue({} as never);
       await expect(
         service.getObjectStream("tenants/org-123/resumes/doc.pdf", "org-123"),
       ).resolves.toBeDefined();
-      expect(getSpy).toHaveBeenCalledWith("haihire-resumes", "tenants/org-123/resumes/doc.pdf");
+      expect(getSpy).toHaveBeenCalledWith(
+        "haihire-resumes",
+        "tenants/org-123/resumes/doc.pdf",
+      );
       getSpy.mockRestore();
     });
 
     it("should throw AppForbiddenException when tenantOrgId does not match key prefix", async () => {
       await expect(
-        service.getObjectStream("tenants/other-org/resumes/secret.pdf", "org-123"),
-      ).rejects.toThrow("Access denied: file does not belong to this organization");
+        service.getObjectStream(
+          "tenants/other-org/resumes/secret.pdf",
+          "org-123",
+        ),
+      ).rejects.toThrow(
+        "Access denied: file does not belong to this organization",
+      );
     });
 
     it("should allow getPresignedUrl when tenantOrgId matches prefix", async () => {
-      const presignedSpy = vi.spyOn(service["client"], "presignedGetObject").mockResolvedValue("https://minio.test/presigned");
-      const url = await service.getPresignedUrl("tenants/org-abc/resumes/doc.pdf", 3600, "org-abc");
+      const presignedSpy = vi
+        .spyOn(service["client"], "presignedGetObject")
+        .mockResolvedValue("https://minio.test/presigned");
+      const url = await service.getPresignedUrl(
+        "tenants/org-abc/resumes/doc.pdf",
+        3600,
+        "org-abc",
+      );
       expect(url).toBe("https://minio.test/presigned");
       presignedSpy.mockRestore();
     });
 
     it("should throw AppForbiddenException in getPresignedUrl when tenantOrgId mismatches", async () => {
       await expect(
-        service.getPresignedUrl("tenants/victim-org/resumes/cv.pdf", 3600, "attacker-org"),
-      ).rejects.toThrow("Access denied: file does not belong to this organization");
+        service.getPresignedUrl(
+          "tenants/victim-org/resumes/cv.pdf",
+          3600,
+          "attacker-org",
+        ),
+      ).rejects.toThrow(
+        "Access denied: file does not belong to this organization",
+      );
     });
   });
 });

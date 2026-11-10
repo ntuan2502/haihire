@@ -57,7 +57,7 @@ describe("PipelineStageSelector Component", () => {
         onToggleFullscreen={vi.fn()}
         isListCollapsed={false}
         onToggleCollapse={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Ứng tuyển")).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe("PipelineStageSelector Component", () => {
         onToggleFullscreen={vi.fn()}
         isListCollapsed={false}
         onToggleCollapse={vi.fn()}
-      />
+      />,
     );
 
     const interviewPill = screen.getByText("Phỏng vấn").closest("button");
@@ -105,7 +105,7 @@ describe("PipelineStageSelector Component", () => {
         onToggleFullscreen={handleToggleFullscreen}
         isListCollapsed={false}
         onToggleCollapse={handleToggleCollapse}
-      />
+      />,
     );
 
     const collapseBtn = screen.getByTitle("common.collapse");

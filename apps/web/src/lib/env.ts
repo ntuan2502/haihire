@@ -12,7 +12,10 @@ const clientEnvSchema = z.object({
 const serverEnvSchema = z.object({
   INTERNAL_API_URL: z
     .string()
-    .min(1, "INTERNAL_API_URL is required in .env for Server-Side API communication"),
+    .min(
+      1,
+      "INTERNAL_API_URL is required in .env for Server-Side API communication",
+    ),
 });
 
 export interface FrontendEnv {
@@ -40,12 +43,22 @@ if (isServer) {
   });
 
   if (!parsedServer.success) {
-    console.error("\n===========================================================");
-    console.error("❌ CRITICAL CONFIGURATION ERROR: Missing Server-Side Environment!");
-    console.error("===========================================================");
+    console.error(
+      "\n===========================================================",
+    );
+    console.error(
+      "❌ CRITICAL CONFIGURATION ERROR: Missing Server-Side Environment!",
+    );
+    console.error(
+      "===========================================================",
+    );
     console.error(parsedServer.error.format());
-    console.error("===========================================================\n");
-    throw new Error("Missing INTERNAL_API_URL in .env for server-side communication.");
+    console.error(
+      "===========================================================\n",
+    );
+    throw new Error(
+      "Missing INTERNAL_API_URL in .env for server-side communication.",
+    );
   }
   internalApiUrl = parsedServer.data.INTERNAL_API_URL;
 }

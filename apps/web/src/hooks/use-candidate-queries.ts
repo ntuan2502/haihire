@@ -1,6 +1,11 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { candidatesApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Candidate, PaginatedResult } from "@/types";
@@ -81,12 +86,16 @@ export function useUpdateCandidateDetailsMutation() {
     }) => candidatesApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
     onError: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
   });
@@ -114,14 +123,25 @@ export function useUploadCandidateDocumentMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, file, type }: { id: string; file: File; type?: string }) =>
-      candidatesApi.uploadDocument(id, file, type),
+    mutationFn: ({
+      id,
+      file,
+      type,
+    }: {
+      id: string;
+      file: File;
+      type?: string;
+    }) => candidatesApi.uploadDocument(id, file, type),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
     onError: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
@@ -131,14 +151,25 @@ export function useDeleteCandidateDocumentMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, documentId, url }: { id: string; documentId?: string; url?: string }) =>
-      candidatesApi.deleteDocument(id, { documentId, url }),
+    mutationFn: ({
+      id,
+      documentId,
+      url,
+    }: {
+      id: string;
+      documentId?: string;
+      url?: string;
+    }) => candidatesApi.deleteDocument(id, { documentId, url }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
     onError: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.candidate(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.candidate(variables.id),
+      });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });

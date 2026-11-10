@@ -6,7 +6,9 @@ import { I18nProvider } from "@/i18n";
 
 describe("ErrorFallback Component Tests", () => {
   const mockReset = vi.fn();
-  const mockError = new Error("Something broke in rendering") as Error & { digest?: string };
+  const mockError = new Error("Something broke in rendering") as Error & {
+    digest?: string;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -21,8 +23,12 @@ describe("ErrorFallback Component Tests", () => {
 
     expect(screen.getByTestId("error-fallback-default")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /try again|thử lại/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /go home|về trang chủ/i })).toHaveAttribute("href", "/");
+    expect(
+      screen.getByRole("button", { name: /try again|thử lại/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /go home|về trang chủ/i }),
+    ).toHaveAttribute("href", "/");
   });
 
   it("2. Calls reset callback when 'Try again' button is clicked", () => {
@@ -32,7 +38,9 @@ describe("ErrorFallback Component Tests", () => {
       </I18nProvider>,
     );
 
-    const tryAgainBtn = screen.getByRole("button", { name: /try again|thử lại/i });
+    const tryAgainBtn = screen.getByRole("button", {
+      name: /try again|thử lại/i,
+    });
     fireEvent.click(tryAgainBtn);
     expect(mockReset).toHaveBeenCalledTimes(1);
   });
@@ -54,13 +62,19 @@ describe("ErrorFallback Component Tests", () => {
 
     expect(screen.getByTestId("error-fallback-compact")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /dashboard|tổng quan/i })).toHaveAttribute("href", "/dashboard");
+    expect(
+      screen.getByRole("link", { name: /dashboard|tổng quan/i }),
+    ).toHaveAttribute("href", "/dashboard");
   });
 
   it("4. Renders fullscreen variant with full-screen container classes", () => {
     render(
       <I18nProvider>
-        <ErrorFallback error={mockError} reset={mockReset} variant="fullscreen" />
+        <ErrorFallback
+          error={mockError}
+          reset={mockReset}
+          variant="fullscreen"
+        />
       </I18nProvider>,
     );
 
@@ -69,7 +83,9 @@ describe("ErrorFallback Component Tests", () => {
   });
 
   it("5. Displays error digest when digest property is present on error", () => {
-    const errorWithDigest = new Error("Failed chunk load") as Error & { digest?: string };
+    const errorWithDigest = new Error("Failed chunk load") as Error & {
+      digest?: string;
+    };
     errorWithDigest.digest = "NEXT_CHUNK_LOAD_12345";
 
     render(
@@ -78,15 +94,27 @@ describe("ErrorFallback Component Tests", () => {
       </I18nProvider>,
     );
 
-    expect(screen.getByText(/Digest: NEXT_CHUNK_LOAD_12345/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Digest: NEXT_CHUNK_LOAD_12345/),
+    ).toBeInTheDocument();
   });
 
   it("6. Operates gracefully without I18nProvider (standalone / global-error mode)", () => {
     // Render without I18nProvider wrapping
-    render(<ErrorFallback error={mockError} reset={mockReset} variant="fullscreen" />);
+    render(
+      <ErrorFallback
+        error={mockError}
+        reset={mockReset}
+        variant="fullscreen"
+      />,
+    );
 
     expect(screen.getByTestId("error-fallback-fullscreen")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /try again|thử lại/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /go home|về trang chủ/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /try again|thử lại/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /go home|về trang chủ/i }),
+    ).toBeInTheDocument();
   });
 });

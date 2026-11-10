@@ -81,8 +81,14 @@ describe("JobTrackingPage", () => {
   it("renders search input, new link button, and tracking links table", () => {
     render(<JobTrackingPage />);
 
-    expect(screen.getByPlaceholderText("Tìm kiếm theo tên liên kết, token, chiến dịch...")).toBeDefined();
-    expect(screen.getByRole("button", { name: "Tạo liên kết mới" })).toBeDefined();
+    expect(
+      screen.getByPlaceholderText(
+        "Tìm kiếm theo tên liên kết, token, chiến dịch...",
+      ),
+    ).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: "Tạo liên kết mới" }),
+    ).toBeDefined();
     expect(screen.getByText("LinkedIn Hiring Campaign")).toBeDefined();
     expect(screen.getByText("?ref=lnk-linkedin-1")).toBeDefined();
     expect(screen.getByText("11.11%")).toBeDefined();
@@ -100,7 +106,9 @@ describe("JobTrackingPage", () => {
     // Job selector is locked
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Cố định cho vị trí này")).toBeDefined();
-    const jobButton = within(dialog).getByText("Senior Frontend Engineer").closest("button");
+    const jobButton = within(dialog)
+      .getByText("Senior Frontend Engineer")
+      .closest("button");
     expect(jobButton).toBeDefined();
     expect(jobButton?.hasAttribute("disabled")).toBe(true);
   });

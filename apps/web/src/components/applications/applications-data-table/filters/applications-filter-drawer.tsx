@@ -80,7 +80,10 @@ export function ApplicationsFilterDrawer({
                 { id: "ALL", label: t("applications.scoreFilters.all") },
                 { id: "80", label: t("applications.scoreFilters.excellent") },
                 { id: "60", label: t("applications.scoreFilters.good") },
-                { id: "BELOW_60", label: t("applications.scoreFilters.review") },
+                {
+                  id: "BELOW_60",
+                  label: t("applications.scoreFilters.review"),
+                },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -108,8 +111,14 @@ export function ApplicationsFilterDrawer({
                 value={sortField}
                 onChange={(val) => onSortFieldChange(val as SortField)}
                 options={[
-                  { value: "applied", label: t("applications.columns.applied") },
-                  { value: "candidate", label: t("applications.columns.candidate") },
+                  {
+                    value: "applied",
+                    label: t("applications.columns.applied"),
+                  },
+                  {
+                    value: "candidate",
+                    label: t("applications.columns.candidate"),
+                  },
                   { value: "job", label: t("applications.columns.job") },
                   { value: "score", label: t("applications.columns.score") },
                 ]}

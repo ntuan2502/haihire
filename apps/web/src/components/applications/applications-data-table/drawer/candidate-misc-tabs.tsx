@@ -1,6 +1,12 @@
 "use client";
 
-import { Sparkles, FileCheck, Mail, Clock, SlidersHorizontal } from "lucide-react";
+import {
+  Sparkles,
+  FileCheck,
+  Mail,
+  Clock,
+  SlidersHorizontal,
+} from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { Application } from "@/types";
 import { useI18n } from "@/i18n";
@@ -24,7 +30,11 @@ export function CandidateAiTab() {
   );
 }
 
-export function CandidateResponsesTab({ currentApp }: { currentApp: Application }) {
+export function CandidateResponsesTab({
+  currentApp,
+}: {
+  currentApp: Application;
+}) {
   const { t } = useI18n();
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
@@ -34,7 +44,9 @@ export function CandidateResponsesTab({ currentApp }: { currentApp: Application 
       </h3>
       <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs space-y-2 text-slate-600 dark:text-slate-300">
         <div>
-          <p className="text-[11px] text-slate-400">{t("candidates.displayName")}</p>
+          <p className="text-[11px] text-slate-400">
+            {t("candidates.displayName")}
+          </p>
           <p className="font-semibold text-slate-900 dark:text-white">
             {currentApp.candidateName}
           </p>
@@ -47,7 +59,9 @@ export function CandidateResponsesTab({ currentApp }: { currentApp: Application 
         </div>
         {currentApp.candidatePhone && (
           <div>
-            <p className="text-[11px] text-slate-400">{t("candidates.phone")}</p>
+            <p className="text-[11px] text-slate-400">
+              {t("candidates.phone")}
+            </p>
             <p className="font-semibold text-slate-900 dark:text-white">
               {currentApp.candidatePhone}
             </p>
@@ -73,7 +87,11 @@ export function CandidateInboxTab() {
   );
 }
 
-export function CandidateTimelineTab({ currentApp }: { currentApp: Application }) {
+export function CandidateTimelineTab({
+  currentApp,
+}: {
+  currentApp: Application;
+}) {
   const { t } = useI18n();
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">

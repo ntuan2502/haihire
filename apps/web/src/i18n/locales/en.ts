@@ -1189,7 +1189,8 @@ export const en: TranslationSchema = {
       "Record strengths, areas of improvement, or justification for your hiring recommendation...",
     saveScorecard: "Save Scorecard",
     savingScorecard: "Saving...",
-    scorecardNoPermission: "You do not have permission to submit or edit interview scorecards.",
+    scorecardNoPermission:
+      "You do not have permission to submit or edit interview scorecards.",
     recommendations: {
       strongYes: "Strong Yes",
       strongYesDesc: "Outstanding, meets all criteria fully",

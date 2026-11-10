@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { getInterviewsFromApplication, normalizeInterviewType } from "./interviews";
+import {
+  getInterviewsFromApplication,
+  normalizeInterviewType,
+} from "./interviews";
 
 describe("Frontend interview helpers", () => {
   describe("normalizeInterviewType", () => {

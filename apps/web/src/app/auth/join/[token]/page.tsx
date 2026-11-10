@@ -48,14 +48,14 @@ export default function JoinOrganizationPage() {
 
   const isAlreadyMember = Boolean(
     isAuthenticated &&
-      user &&
-      inviteData?.organization?.id &&
-      (user.organizationId === inviteData.organization.id ||
-        user.organization?.id === inviteData.organization.id ||
-        (user.organization?.slug &&
-          inviteData.organization.slug &&
-          user.organization.slug.toLowerCase() ===
-            inviteData.organization.slug.toLowerCase())),
+    user &&
+    inviteData?.organization?.id &&
+    (user.organizationId === inviteData.organization.id ||
+      user.organization?.id === inviteData.organization.id ||
+      (user.organization?.slug &&
+        inviteData.organization.slug &&
+        user.organization.slug.toLowerCase() ===
+          inviteData.organization.slug.toLowerCase())),
   );
 
   // Fetch invite link details
@@ -83,7 +83,9 @@ export default function JoinOrganizationPage() {
   const handleJoin = async () => {
     if (!token) return;
     if (isAlreadyMember) {
-      setError(t("join.alreadyMember", { org: inviteData?.organization?.name || "" }));
+      setError(
+        t("join.alreadyMember", { org: inviteData?.organization?.name || "" }),
+      );
       return;
     }
     try {
@@ -138,7 +140,9 @@ export default function JoinOrganizationPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push(isAuthenticated ? "/dashboard" : "/auth/login")}
+              onClick={() =>
+                router.push(isAuthenticated ? "/dashboard" : "/auth/login")
+              }
               className="text-xs font-semibold"
             >
               {isAuthenticated ? t("join.goToDashboard") : t("common.back")}
@@ -183,11 +187,17 @@ export default function JoinOrganizationPage() {
             <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/80">
               <div className="flex items-center gap-1.5">
                 <Shield className="h-3.5 w-3.5 text-slate-400" />
-                <span>{t("join.joinAs")} <strong>{inviteData.role || "Member"}</strong></span>
+                <span>
+                  {t("join.joinAs")}{" "}
+                  <strong>{inviteData.role || "Member"}</strong>
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <UserIcon className="h-3.5 w-3.5 text-slate-400" />
-                <span>{t("join.invitedBy")} <strong>{inviteData.createdByName || "Team"}</strong></span>
+                <span>
+                  {t("join.invitedBy")}{" "}
+                  <strong>{inviteData.createdByName || "Team"}</strong>
+                </span>
               </div>
             </div>
           </div>
@@ -202,7 +212,9 @@ export default function JoinOrganizationPage() {
                 <Button
                   type="button"
                   onClick={() =>
-                    router.push(`/auth/login?redirect=${encodeURIComponent(`/auth/join/${token}`)}`)
+                    router.push(
+                      `/auth/login?redirect=${encodeURIComponent(`/auth/join/${token}`)}`,
+                    )
                   }
                   className="h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
@@ -212,7 +224,9 @@ export default function JoinOrganizationPage() {
                   type="button"
                   variant="outline"
                   onClick={() =>
-                    router.push(`/auth/register?redirect=${encodeURIComponent(`/auth/join/${token}`)}`)
+                    router.push(
+                      `/auth/register?redirect=${encodeURIComponent(`/auth/join/${token}`)}`,
+                    )
                   }
                   className="h-10 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
@@ -226,7 +240,9 @@ export default function JoinOrganizationPage() {
               <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-medium flex items-center justify-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 <span>
-                  {t("join.alreadyMember", { org: inviteData.organization?.name || "" })}
+                  {t("join.alreadyMember", {
+                    org: inviteData.organization?.name || "",
+                  })}
                 </span>
               </div>
               <Button
@@ -254,7 +270,11 @@ export default function JoinOrganizationPage() {
                 ) : (
                   <>
                     <UserPlus className="h-4 w-4" />
-                    <span>{t("join.joinOrgButton", { org: inviteData.organization?.name || "" })}</span>
+                    <span>
+                      {t("join.joinOrgButton", {
+                        org: inviteData.organization?.name || "",
+                      })}
+                    </span>
                   </>
                 )}
               </Button>

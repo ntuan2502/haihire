@@ -13,26 +13,32 @@ export const LandingWorkflow: React.FC = () => {
       title: t("landing.step1Title"),
       desc: t("landing.step1Desc"),
       icon: PlusCircle,
-      accent: "text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-950/40",
+      accent:
+        "text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-950/40",
     },
     {
       num: t("landing.step2Num"),
       title: t("landing.step2Title"),
       desc: t("landing.step2Desc"),
       icon: Sparkles,
-      accent: "text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-950/40",
+      accent:
+        "text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-cyan-950/40",
     },
     {
       num: t("landing.step3Num"),
       title: t("landing.step3Title"),
       desc: t("landing.step3Desc"),
       icon: Send,
-      accent: "text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40",
+      accent:
+        "text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40",
     },
   ];
 
   return (
-    <section id="workflow" className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+    <section
+      id="workflow"
+      className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20"
+    >
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-16">
         <p className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-cyan-400 mb-2">

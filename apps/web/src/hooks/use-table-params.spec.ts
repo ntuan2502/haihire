@@ -17,7 +17,9 @@ describe("useTableParams hook", () => {
   beforeEach(() => {
     mockReplace.mockClear();
     mockSearchParams = new URLSearchParams();
-    replaceStateSpy = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+    replaceStateSpy = vi
+      .spyOn(window.history, "replaceState")
+      .mockImplementation(() => {});
   });
 
   it("initializes with default page 1 and default limit 20", () => {
@@ -36,7 +38,11 @@ describe("useTableParams hook", () => {
 
     expect(result.current.limit).toBe(50);
     expect(result.current.page).toBe(1);
-    expect(replaceStateSpy).toHaveBeenCalledWith(null, "", "/dashboard/candidates?limit=50");
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      null,
+      "",
+      "/dashboard/candidates?limit=50",
+    );
   });
 
   it("does not overwrite limit when setLimit and setPage are called sequentially", () => {
@@ -49,7 +55,11 @@ describe("useTableParams hook", () => {
 
     expect(result.current.limit).toBe(10);
     expect(result.current.page).toBe(1);
-    expect(replaceStateSpy).toHaveBeenLastCalledWith(null, "", "/dashboard/candidates?limit=10");
+    expect(replaceStateSpy).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/dashboard/candidates?limit=10",
+    );
   });
 
   it("updates search debounced and resets page", () => {
@@ -93,7 +103,11 @@ describe("useTableParams hook", () => {
 
     // The query and URL should receive the trimmed search term
     expect(result.current.search).toBe("Đức");
-    expect(replaceStateSpy).toHaveBeenCalledWith(null, "", "/dashboard/candidates?search=%C4%90%E1%BB%A9c");
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      null,
+      "",
+      "/dashboard/candidates?search=%C4%90%E1%BB%A9c",
+    );
 
     // CRITICAL: The search input draft MUST still retain the trailing space for smooth typing!
     expect(result.current.searchInput).toBe("Đức ");

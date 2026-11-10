@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { AVAILABLE_VARIABLES, buildDynamicEmailContext } from "./variable-registry";
+import {
+  AVAILABLE_VARIABLES,
+  buildDynamicEmailContext,
+} from "./variable-registry";
 
 describe("VariableRegistry", () => {
   it("should contain standard available variable descriptors", () => {
     expect(AVAILABLE_VARIABLES.length).toBeGreaterThanOrEqual(10);
-    const candidateNameVar = AVAILABLE_VARIABLES.find((v) => v.key === "candidate_name");
+    const candidateNameVar = AVAILABLE_VARIABLES.find(
+      (v) => v.key === "candidate_name",
+    );
     expect(candidateNameVar).toBeDefined();
     expect(candidateNameVar?.category).toBe("candidate");
   });

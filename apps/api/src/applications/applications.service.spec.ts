@@ -1,5 +1,8 @@
 import { createTestApplicationsService } from "../test/helpers/service-factories";
-import { createMockTable, createMockPrismaService } from "../test/helpers/prisma-composer-mock";
+import {
+  createMockTable,
+  createMockPrismaService,
+} from "../test/helpers/prisma-composer-mock";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ApplicationsService } from "./applications.service";
 import { NotFoundException } from "@nestjs/common";
@@ -75,19 +78,19 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
   let mockCandidateDocs: Array<Record<string, unknown>> = [];
 
   beforeEach(() => {
-      mockCandidateDocs = [
-        {
-          id: "doc-1",
-          candidateId: "cand-1",
-          organizationId: "org-1",
-          name: "alice.pdf",
-          url: "https://s3.local/resumes/alice.pdf",
-          size: 1024,
-          mimeType: "application/pdf",
-          type: "Resume",
-          createdAt: new Date(),
-        },
-      ];
+    mockCandidateDocs = [
+      {
+        id: "doc-1",
+        candidateId: "cand-1",
+        organizationId: "org-1",
+        name: "alice.pdf",
+        url: "https://s3.local/resumes/alice.pdf",
+        size: 1024,
+        mimeType: "application/pdf",
+        type: "Resume",
+        createdAt: new Date(),
+      },
+    ];
     mockJobs = [
       {
         id: "job-org1-a",
@@ -262,10 +265,18 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
       expect(results.total).toBe(2);
       expect(results.data.length).toBe(2);
-      expect(results.data.some((a) => a.candidateName === "Alice Nguyen")).toBe(true);
-      expect(results.data.some((a) => a.candidateName === "Bob Tran")).toBe(true);
+      expect(results.data.some((a) => a.candidateName === "Alice Nguyen")).toBe(
+        true,
+      );
+      expect(results.data.some((a) => a.candidateName === "Bob Tran")).toBe(
+        true,
+      );
       // Strictly verify org-2 candidate is NEVER present
-      expect(results.data.some((a) => a.candidateName === "Charlie Competitor Candidate")).toBe(false);
+      expect(
+        results.data.some(
+          (a) => a.candidateName === "Charlie Competitor Candidate",
+        ),
+      ).toBe(false);
     });
 
     it("should return ONLY applications belonging to org-2", async () => {
@@ -273,7 +284,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
       expect(results.total).toBe(1);
       expect(results.data.length).toBe(1);
-      expect(results.data[0].candidateName).toBe("Charlie Competitor Candidate");
+      expect(results.data[0].candidateName).toBe(
+        "Charlie Competitor Candidate",
+      );
     });
 
     it("should return empty array if organizationId is not provided", async () => {
@@ -333,11 +346,15 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     });
 
     it("should throw NotFoundException when finding by non-existent job", async () => {
-      await expect(service.findByJob("invalid-job")).rejects.toThrow(NotFoundException);
+      await expect(service.findByJob("invalid-job")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw AppForbiddenException when accessing job applications from another organization", async () => {
-      await expect(service.findByJob("job-1", "foreign-org-id")).rejects.toThrow();
+      await expect(
+        service.findByJob("job-1", "foreign-org-id"),
+      ).rejects.toThrow();
     });
 
     it("should find a specific application by id", async () => {
@@ -418,17 +435,25 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
     it("should allow sequential valid updates to next stages", async () => {
       // app-1 starts at APPLIED
-      const step1 = await service.updateStage("app-1", { stage: ApplicationStage.SCREENING });
+      const step1 = await service.updateStage("app-1", {
+        stage: ApplicationStage.SCREENING,
+      });
       expect(step1.stage).toBe(ApplicationStage.SCREENING);
 
-      const step2 = await service.updateStage("app-1", { stage: ApplicationStage.INTERVIEW });
+      const step2 = await service.updateStage("app-1", {
+        stage: ApplicationStage.INTERVIEW,
+      });
       expect(step2.stage).toBe(ApplicationStage.INTERVIEW);
     });
 
     it("should enforce optimistic locking during concurrent race updates: 1 succeeds, 1 receives 409 conflict", async () => {
       // app-1 starts at APPLIED. Both see APPLIED.
-      const p1 = service.updateStage("app-1", { stage: ApplicationStage.SCREENING });
-      const p2 = service.updateStage("app-1", { stage: ApplicationStage.REJECTED });
+      const p1 = service.updateStage("app-1", {
+        stage: ApplicationStage.SCREENING,
+      });
+      const p2 = service.updateStage("app-1", {
+        stage: ApplicationStage.REJECTED,
+      });
 
       const results = await Promise.allSettled([p1, p2]);
       const fulfilled = results.filter((r) => r.status === "fulfilled");
@@ -444,7 +469,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
     it("should throw NotFoundException when updating non-existent application", async () => {
       await expect(
-        service.updateStage("non-existent-app-id", { stage: ApplicationStage.SCREENING }),
+        service.updateStage("non-existent-app-id", {
+          stage: ApplicationStage.SCREENING,
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -533,7 +560,11 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         buffer: Buffer.from("%PDF-1.4\ntest pdf content\n%%EOF"),
       } as Express.Multer.File;
 
-      const updated = await service.uploadDocument("app-2", mockFile, "Portfolio");
+      const updated = await service.uploadDocument(
+        "app-2",
+        mockFile,
+        "Portfolio",
+      );
       expect(updated).toBeDefined();
       expect(mockMinioService.uploadFile).toHaveBeenCalled();
     });
@@ -546,7 +577,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         buffer: Buffer.from("%PDF-1.4\ntest pdf content\n%%EOF"),
       } as Express.Multer.File;
 
-      mockMinioService.uploadFile = vi.fn().mockRejectedValue(new Error("MinIO storage unavailable"));
+      mockMinioService.uploadFile = vi
+        .fn()
+        .mockRejectedValue(new Error("MinIO storage unavailable"));
 
       await expect(
         service.uploadDocument("app-2", mockFile, "Portfolio"),
@@ -585,10 +618,13 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it.each([
       { documentId: "doc-1" },
       { url: "https://s3.local/resumes/alice.pdf" },
-    ])("preserves another candidate's document when deleting through an application: %j", async (selector) => {
-      await service.deleteDocument("app-2", selector, "org-1");
-      expect(mockCandidateDocs.some((doc) => doc.id === "doc-1")).toBe(true);
-    });
+    ])(
+      "preserves another candidate's document when deleting through an application: %j",
+      async (selector) => {
+        await service.deleteDocument("app-2", selector, "org-1");
+        expect(mockCandidateDocs.some((doc) => doc.id === "doc-1")).toBe(true);
+      },
+    );
 
     it.each([
       { documentId: "foreign-doc" },
@@ -601,11 +637,15 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
         url: "https://s3.local/resumes/foreign.pdf",
       });
       await service.deleteDocument("app-2", selector, "org-1");
-      expect(mockCandidateDocs.some((doc) => doc.id === "foreign-doc")).toBe(true);
+      expect(mockCandidateDocs.some((doc) => doc.id === "foreign-doc")).toBe(
+        true,
+      );
     });
 
     it("should delete document and clear resume fields from application", async () => {
-      const result = await service.deleteDocument("app-2", { url: "https://s3.local/resumes/bob.pdf" });
+      const result = await service.deleteDocument("app-2", {
+        url: "https://s3.local/resumes/bob.pdf",
+      });
       expect(result).toBeDefined();
       expect(result.id).toBe("app-2");
     });

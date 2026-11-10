@@ -87,13 +87,18 @@ export function SourcingHeader({
             <span className="truncate">{selectedJobTitle}</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 p-1 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <DropdownMenuContent
+            align="end"
+            className="w-56 p-1 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+          >
             <DropdownMenuItem
               onClick={() => onJobSelect(undefined)}
               className="flex items-center justify-between text-xs px-2.5 py-2 rounded-lg cursor-pointer"
             >
               <span>{t("sourcing.allJobs")}</span>
-              {!selectedJobId && <Check className="h-3.5 w-3.5 text-blue-600" />}
+              {!selectedJobId && (
+                <Check className="h-3.5 w-3.5 text-blue-600" />
+              )}
             </DropdownMenuItem>
             {jobs.map((job) => (
               <DropdownMenuItem
@@ -102,7 +107,9 @@ export function SourcingHeader({
                 className="flex items-center justify-between text-xs px-2.5 py-2 rounded-lg cursor-pointer"
               >
                 <span className="truncate">{job.title}</span>
-                {selectedJobId === job.id && <Check className="h-3.5 w-3.5 text-blue-600 shrink-0" />}
+                {selectedJobId === job.id && (
+                  <Check className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                )}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

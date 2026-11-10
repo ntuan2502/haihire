@@ -5,7 +5,9 @@ import { SearchInput } from "./search-input";
 describe("SearchInput component", () => {
   it("renders with placeholder and initial value", () => {
     render(<SearchInput placeholder="Search test..." value="initial query" />);
-    const input = screen.getByPlaceholderText("Search test...") as HTMLInputElement;
+    const input = screen.getByPlaceholderText(
+      "Search test...",
+    ) as HTMLInputElement;
     expect(input.value).toBe("initial query");
   });
 
@@ -32,7 +34,13 @@ describe("SearchInput component", () => {
   it("debounces onChange callback", () => {
     vi.useFakeTimers();
     const handleChange = vi.fn();
-    render(<SearchInput placeholder="Search..." onChange={handleChange} debounceMs={200} />);
+    render(
+      <SearchInput
+        placeholder="Search..."
+        onChange={handleChange}
+        debounceMs={200}
+      />,
+    );
     const input = screen.getByPlaceholderText("Search...") as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: "frontend engineer" } });
@@ -59,7 +67,13 @@ describe("SearchInput component", () => {
 
   it("clears immediately when user clicks the X button", () => {
     const handleChange = vi.fn();
-    render(<SearchInput placeholder="Search..." value="to be cleared" onChange={handleChange} />);
+    render(
+      <SearchInput
+        placeholder="Search..."
+        value="to be cleared"
+        onChange={handleChange}
+      />,
+    );
     const input = screen.getByPlaceholderText("Search...") as HTMLInputElement;
     expect(input.value).toBe("to be cleared");
 
@@ -72,7 +86,13 @@ describe("SearchInput component", () => {
 
   it("clears when user presses Escape", () => {
     const handleChange = vi.fn();
-    render(<SearchInput placeholder="Search..." value="escape me" onChange={handleChange} />);
+    render(
+      <SearchInput
+        placeholder="Search..."
+        value="escape me"
+        onChange={handleChange}
+      />,
+    );
     const input = screen.getByPlaceholderText("Search...") as HTMLInputElement;
 
     fireEvent.keyDown(input, { key: "Escape" });

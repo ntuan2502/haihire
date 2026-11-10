@@ -4,13 +4,17 @@ import type { TranslationKey } from "@/i18n";
 
 describe("getApiErrorMessage", () => {
   const mockTranslations: Record<string, string> = {
-    "errors.ORG_SLUG_ALREADY_EXISTS": "Tổ chức với đường dẫn '{slug}' đã tồn tại.",
+    "errors.ORG_SLUG_ALREADY_EXISTS":
+      "Tổ chức với đường dẫn '{slug}' đã tồn tại.",
     "errors.ORG_NAME_REQUIRED": "Vui lòng nhập tên tổ chức.",
     "errors.generic": "Đã có lỗi xảy ra.",
     "errors.networkError": "Lỗi kết nối mạng.",
   };
 
-  const mockT = (key: TranslationKey, params?: Record<string, string | number>): string => {
+  const mockT = (
+    key: TranslationKey,
+    params?: Record<string, string | number>,
+  ): string => {
     let text = mockTranslations[key] || key;
     if (params) {
       for (const [k, v] of Object.entries(params)) {
@@ -82,9 +86,15 @@ describe("getApiErrorMessage", () => {
   });
 
   it("handles standard Error instances and network errors", () => {
-    expect(getApiErrorMessage(new Error("Network Error"), mockT)).toBe("Lỗi kết nối mạng.");
-    expect(getApiErrorMessage(new Error("Random crash"), mockT)).toBe("Random crash");
-    expect(getApiErrorMessage("Plain string error", mockT)).toBe("Plain string error");
+    expect(getApiErrorMessage(new Error("Network Error"), mockT)).toBe(
+      "Lỗi kết nối mạng.",
+    );
+    expect(getApiErrorMessage(new Error("Random crash"), mockT)).toBe(
+      "Random crash",
+    );
+    expect(getApiErrorMessage("Plain string error", mockT)).toBe(
+      "Plain string error",
+    );
   });
 
   it("translates APPLICATION_STAGE_CONFLICT (HTTP 409) with Vietnamese message", async () => {
@@ -104,7 +114,8 @@ describe("getApiErrorMessage", () => {
         data: {
           statusCode: 409,
           code: "APPLICATION_STAGE_CONFLICT",
-          message: "Application stage conflict: the application has been modified by another request.",
+          message:
+            "Application stage conflict: the application has been modified by another request.",
         },
       },
     };
@@ -132,7 +143,8 @@ describe("getApiErrorMessage", () => {
         data: {
           statusCode: 400,
           code: "APPLICATION_INVALID_STAGE_TRANSITION",
-          message: "Cannot transition application stage from 'APPLIED' to 'OFFER'.",
+          message:
+            "Cannot transition application stage from 'APPLIED' to 'OFFER'.",
         },
       },
     };
@@ -160,7 +172,8 @@ describe("getApiErrorMessage", () => {
         status: 400,
         data: {
           code: "APPLICATION_INVALID_STAGE_TRANSITION",
-          message: "Cannot transition application stage from 'SCREENING' to 'APPLIED'",
+          message:
+            "Cannot transition application stage from 'SCREENING' to 'APPLIED'",
         },
       },
     };
@@ -198,7 +211,8 @@ describe("getApiErrorMessage", () => {
         data: JSON.stringify({
           statusCode: 400,
           code: "APPLICATION_INVALID_STAGE_TRANSITION",
-          message: "Cannot transition application stage from 'SCREENING' to 'APPLIED'",
+          message:
+            "Cannot transition application stage from 'SCREENING' to 'APPLIED'",
           params: { currentStage: "SCREENING", targetStage: "APPLIED" },
         }),
       },
@@ -211,7 +225,6 @@ describe("getApiErrorMessage", () => {
     expect(message).not.toContain("{");
     expect(message).not.toContain("APPLICATION_INVALID_STAGE_TRANSITION");
   });
-
 
   it("gatekeeper rejects malformed URLs with [object Object]", async () => {
     const { api } = await import("./api/client");
@@ -236,20 +249,32 @@ describe("getApiErrorMessage", () => {
     const truncatedErr = {
       response: { data: { code: "UPLOAD_TRUNCATED_FILE" } },
     };
-    expect(getApiErrorMessage(truncatedErr, tVi)).toBe(vi.errors.UPLOAD_TRUNCATED_FILE);
-    expect(getApiErrorMessage(truncatedErr, tEn)).toBe(en.errors.UPLOAD_TRUNCATED_FILE);
+    expect(getApiErrorMessage(truncatedErr, tVi)).toBe(
+      vi.errors.UPLOAD_TRUNCATED_FILE,
+    );
+    expect(getApiErrorMessage(truncatedErr, tEn)).toBe(
+      en.errors.UPLOAD_TRUNCATED_FILE,
+    );
 
     const tenantReqErr = {
       response: { data: { code: "TENANT_ID_REQUIRED_FOR_UPLOAD" } },
     };
-    expect(getApiErrorMessage(tenantReqErr, tVi)).toBe(vi.errors.TENANT_ID_REQUIRED_FOR_UPLOAD);
-    expect(getApiErrorMessage(tenantReqErr, tEn)).toBe(en.errors.TENANT_ID_REQUIRED_FOR_UPLOAD);
+    expect(getApiErrorMessage(tenantReqErr, tVi)).toBe(
+      vi.errors.TENANT_ID_REQUIRED_FOR_UPLOAD,
+    );
+    expect(getApiErrorMessage(tenantReqErr, tEn)).toBe(
+      en.errors.TENANT_ID_REQUIRED_FOR_UPLOAD,
+    );
 
     const trackingLinkErr = {
       response: { data: { code: "TRACKING_LINK_NOT_FOUND" } },
     };
-    expect(getApiErrorMessage(trackingLinkErr, tVi)).toBe(vi.errors.TRACKING_LINK_NOT_FOUND);
-    expect(getApiErrorMessage(trackingLinkErr, tEn)).toBe(en.errors.TRACKING_LINK_NOT_FOUND);
+    expect(getApiErrorMessage(trackingLinkErr, tVi)).toBe(
+      vi.errors.TRACKING_LINK_NOT_FOUND,
+    );
+    expect(getApiErrorMessage(trackingLinkErr, tEn)).toBe(
+      en.errors.TRACKING_LINK_NOT_FOUND,
+    );
   });
 
   it("handles 429 TOO_MANY_REQUESTS status code and code string properly", async () => {
@@ -270,7 +295,9 @@ describe("getApiErrorMessage", () => {
         },
       },
     };
-    expect(getApiErrorMessage(throttlerErr, tVi)).toBe(vi.errors.TOO_MANY_REQUESTS);
+    expect(getApiErrorMessage(throttlerErr, tVi)).toBe(
+      vi.errors.TOO_MANY_REQUESTS,
+    );
 
     // Case B: status 429 with no code in body
     const rawStatus429Err = {
@@ -278,7 +305,9 @@ describe("getApiErrorMessage", () => {
         status: 429,
       },
     };
-    expect(getApiErrorMessage(rawStatus429Err, tVi)).toBe(vi.errors.TOO_MANY_REQUESTS);
+    expect(getApiErrorMessage(rawStatus429Err, tVi)).toBe(
+      vi.errors.TOO_MANY_REQUESTS,
+    );
   });
 
   it("handles NestJS ValidationPipe array messages gracefully", () => {
@@ -288,7 +317,10 @@ describe("getApiErrorMessage", () => {
         data: {
           statusCode: 400,
           error: "Bad Request",
-          message: ["email must be an email", "password must be longer than 8 characters"],
+          message: [
+            "email must be an email",
+            "password must be longer than 8 characters",
+          ],
         },
       },
     };
@@ -306,10 +338,18 @@ describe("getApiErrorMessage", () => {
       return (vi.errors as Record<string, string>)[code] || k;
     };
 
-    expect(getApiErrorMessage({ response: { status: 401 } }, tVi)).toBe(vi.errors.UNAUTHORIZED);
-    expect(getApiErrorMessage({ response: { status: 403 } }, tVi)).toBe(vi.errors.FORBIDDEN);
-    expect(getApiErrorMessage({ response: { status: 404 } }, tVi)).toBe(vi.errors.RESOURCE_NOT_FOUND);
-    expect(getApiErrorMessage({ response: { status: 500 } }, tVi)).toBe(vi.errors.GENERIC_ERROR);
+    expect(getApiErrorMessage({ response: { status: 401 } }, tVi)).toBe(
+      vi.errors.UNAUTHORIZED,
+    );
+    expect(getApiErrorMessage({ response: { status: 403 } }, tVi)).toBe(
+      vi.errors.FORBIDDEN,
+    );
+    expect(getApiErrorMessage({ response: { status: 404 } }, tVi)).toBe(
+      vi.errors.RESOURCE_NOT_FOUND,
+    );
+    expect(getApiErrorMessage({ response: { status: 500 } }, tVi)).toBe(
+      vi.errors.GENERIC_ERROR,
+    );
   });
 
   it("ensures axios client is configured with withCredentials for cookie auth", async () => {

@@ -30,7 +30,11 @@ describe("EncryptionService", () => {
 
   it("should decrypt legacy 3-part ciphertext format (iv:authTag:ciphertext)", () => {
     // Generate legacy 3-part ciphertext using the legacy static salt
-    const legacyKey = crypto.scryptSync(env.ENCRYPTION_SECRET, "haihire-salt-vector", 32);
+    const legacyKey = crypto.scryptSync(
+      env.ENCRYPTION_SECRET,
+      "haihire-salt-vector",
+      32,
+    );
     const iv = Buffer.alloc(12, 1);
     const cipher = crypto.createCipheriv("aes-256-gcm", legacyKey, iv);
     let encrypted = cipher.update("legacy-secret-value", "utf8", "hex");

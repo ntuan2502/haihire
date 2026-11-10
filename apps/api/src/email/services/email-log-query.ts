@@ -13,16 +13,39 @@ export async function queryEmailLogs(
   const where: Prisma.EmailLogWhereInput = {
     ...scope,
     ...(opts.candidateId ? { candidateId: opts.candidateId } : {}),
-    ...(opts.status && opts.status !== "ALL" ? { status: { in: Object.values(EmailDeliveryStatus).filter((status) => status === opts.status) } } : {}),
-    ...(search ? { OR: [
-      { recipientName: { contains: search, mode: "insensitive" } },
-      { recipientEmail: { contains: search, mode: "insensitive" } },
-      { subject: { contains: search, mode: "insensitive" } },
-    ] } : {}),
+    ...(opts.status && opts.status !== "ALL"
+      ? {
+          status: {
+            in: Object.values(EmailDeliveryStatus).filter(
+              (status) => status === opts.status,
+            ),
+          },
+        }
+      : {}),
+    ...(search
+      ? {
+          OR: [
+            { recipientName: { contains: search, mode: "insensitive" } },
+            { recipientEmail: { contains: search, mode: "insensitive" } },
+            { subject: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
   };
   const [data, total] = await Promise.all([
-    prisma.emailLog.findMany({ where, orderBy: [{ sentAt: "desc" }, { id: "desc" }], skip: (page - 1) * limit, take: limit }),
+    prisma.emailLog.findMany({
+      where,
+      orderBy: [{ sentAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
     prisma.emailLog.count({ where }),
   ]);
-  return { data, total, page, limit, totalPages: Math.ceil(total / limit) || 1 };
+  return {
+    data,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit) || 1,
+  };
 }

@@ -83,10 +83,15 @@ function walkSourceFiles(dir: string): string[] {
     const stat = fs.statSync(fullPath);
 
     if (stat.isDirectory()) {
-      if (item === "node_modules" || item === ".next" || item === "ui") continue;
+      if (item === "node_modules" || item === ".next" || item === "ui")
+        continue;
       files = files.concat(walkSourceFiles(fullPath));
     } else if (item.endsWith(".tsx") || item.endsWith(".ts")) {
-      if (!item.endsWith(".d.ts") && !item.endsWith(".spec.tsx") && !item.endsWith(".spec.ts")) {
+      if (
+        !item.endsWith(".d.ts") &&
+        !item.endsWith(".spec.tsx") &&
+        !item.endsWith(".spec.ts")
+      ) {
         files.push(fullPath);
       }
     }
@@ -130,7 +135,13 @@ function scanHardcodedJsx(srcFiles: string[]): HardcodedHit[] {
     if (file.includes(path.join("src", "i18n"))) continue;
 
     const content = fs.readFileSync(file, "utf8");
-    const sf = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const sf = ts.createSourceFile(
+      file,
+      content,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TSX,
+    );
 
     function visit(node: ts.Node) {
       if (ts.isJsxText(node)) {
@@ -138,11 +149,25 @@ function scanHardcodedJsx(srcFiles: string[]): HardcodedHit[] {
         // Ignore empty, symbols, single characters or allowed brand tokens
         if (text && /[a-zA-Z]{2,}/.test(text) && !ALLOWED_LITERALS.has(text)) {
           // Check if it's more than just technical characters or paths
-          if (!text.startsWith("/") && !text.startsWith("http") && !text.startsWith("{") && !text.startsWith("•")) {
+          if (
+            !text.startsWith("/") &&
+            !text.startsWith("http") &&
+            !text.startsWith("{") &&
+            !text.startsWith("•")
+          ) {
             // Words check: contains real words (e.g. 2 or more letters)
-            if (/[a-zA-Z]{3,}\s+[a-zA-Z]{2,}/.test(text) || (text.length > 8 && !/^[A-Z0-9_.-]+$/.test(text))) {
-              const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
-              hits.push({ file: path.relative(ROOT_DIR, file), line: line + 1, text });
+            if (
+              /[a-zA-Z]{3,}\s+[a-zA-Z]{2,}/.test(text) ||
+              (text.length > 8 && !/^[A-Z0-9_.-]+$/.test(text))
+            ) {
+              const { line } = sf.getLineAndCharacterOfPosition(
+                node.getStart(sf),
+              );
+              hits.push({
+                file: path.relative(ROOT_DIR, file),
+                line: line + 1,
+                text,
+              });
             }
           }
         }
@@ -180,13 +205,17 @@ function main(): void {
   }
 
   if (missingInViFromSchema.length > 0) {
-    console.error(`❌ Missing in Vietnamese (vi.ts) but present in types.ts (${missingInViFromSchema.length}):`);
+    console.error(
+      `❌ Missing in Vietnamese (vi.ts) but present in types.ts (${missingInViFromSchema.length}):`,
+    );
     missingInViFromSchema.forEach((k) => console.error(`   - ${k}`));
     errors += missingInViFromSchema.length;
   }
 
   if (missingInEnFromSchema.length > 0) {
-    console.error(`❌ Missing in English (en.ts) but present in types.ts (${missingInEnFromSchema.length}):`);
+    console.error(
+      `❌ Missing in English (en.ts) but present in types.ts (${missingInEnFromSchema.length}):`,
+    );
     missingInEnFromSchema.forEach((k) => console.error(`   - ${k}`));
     errors += missingInEnFromSchema.length;
   }
@@ -209,7 +238,12 @@ function main(): void {
       const key = match[1];
 
       // Ignore dynamic keys or URLs/symbols that aren't translation keys
-      if (key.includes("${") || key.includes("+") || key.startsWith("http") || key.length === 1) {
+      if (
+        key.includes("${") ||
+        key.includes("+") ||
+        key.startsWith("http") ||
+        key.length === 1
+      ) {
         continue;
       }
 
@@ -231,7 +265,9 @@ function main(): void {
   }
 
   if (missingInCode.size > 0) {
-    console.error(`❌ Found ${missingInCode.size} translation key(s) called in code that are missing in dictionary:`);
+    console.error(
+      `❌ Found ${missingInCode.size} translation key(s) called in code that are missing in dictionary:`,
+    );
     for (const [key, details] of missingInCode.entries()) {
       const missingWhere = [
         details.notInSchema ? "types.ts" : null,
@@ -249,7 +285,9 @@ function main(): void {
   // 3. Direction 2: Scan for untranslated raw JSX text
   const hardcodedHits = scanHardcodedJsx(srcFiles);
   if (hardcodedHits.length > 0) {
-    console.error(`❌ Found ${hardcodedHits.length} hardcoded text string(s) bypassing i18n in JSX:`);
+    console.error(
+      `❌ Found ${hardcodedHits.length} hardcoded text string(s) bypassing i18n in JSX:`,
+    );
     for (const h of hardcodedHits) {
       console.error(`   - "${h.text}" at ${h.file}:${h.line}`);
     }
@@ -257,11 +295,15 @@ function main(): void {
   }
 
   if (errors > 0) {
-    console.error(`\n❌ Two-Way i18n Check FAILED with ${errors} total issue(s).\n`);
+    console.error(
+      `\n❌ Two-Way i18n Check FAILED with ${errors} total issue(s).\n`,
+    );
     process.exit(1);
   }
 
-  console.log("✅ Direction 1: All dictionary keys and t() calls are 100% consistent!");
+  console.log(
+    "✅ Direction 1: All dictionary keys and t() calls are 100% consistent!",
+  );
   console.log("✅ Direction 2: Zero hardcoded text found in JSX components!");
   console.log("🎉 Two-Way i18n Verification PASSED 100%!\n");
   process.exit(0);

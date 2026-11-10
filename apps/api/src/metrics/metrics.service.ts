@@ -22,7 +22,11 @@ export type BullMqTrackedState = (typeof BULLMQ_TRACKED_STATES)[number];
 
 export const QUEUE_FETCH_TIMEOUT_MS = 2500;
 
-function withTimeout<T>(promise: Promise<T>, ms: number, errorMessage: string): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  errorMessage: string,
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(errorMessage));
@@ -43,7 +47,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number, errorMessage: string): 
 export class MetricsService {
   private readonly logger = new Logger(MetricsService.name);
   private requestCounts = new Map<string, number>();
-  private requestDurations = new Map<string, { count: number; sumSec: number }>();
+  private requestDurations = new Map<
+    string,
+    { count: number; sumSec: number }
+  >();
   private activeDbPoolConnections = 1;
 
   constructor(
@@ -78,7 +85,10 @@ export class MetricsService {
     this.requestDurations.set(durKey, cur);
   }
 
-  async updateBullMqMetrics(): Promise<{ depthLines: string[]; dlqLines: string[] }> {
+  async updateBullMqMetrics(): Promise<{
+    depthLines: string[];
+    dlqLines: string[];
+  }> {
     const queueDefs = [
       { name: ORPHAN_CLEANUP_QUEUE, queue: this.orphanQueue, isDlq: false },
       { name: ORPHAN_CLEANUP_DLQ, queue: this.dlqQueue, isDlq: true },
@@ -86,7 +96,11 @@ export class MetricsService {
     ];
 
     if (this.emailDlqQueue) {
-      queueDefs.push({ name: EMAIL_DLQ_NAME, queue: this.emailDlqQueue, isDlq: true });
+      queueDefs.push({
+        name: EMAIL_DLQ_NAME,
+        queue: this.emailDlqQueue,
+        isDlq: true,
+      });
     }
 
     const depthLines: string[] = [];
@@ -113,7 +127,9 @@ export class MetricsService {
 
         for (const state of BULLMQ_TRACKED_STATES) {
           const count = counts[state] ?? 0;
-          depthLines.push(`bullmq_queue_depth{queue="${name}",state="${state}"} ${count}`);
+          depthLines.push(
+            `bullmq_queue_depth{queue="${name}",state="${state}"} ${count}`,
+          );
         }
 
         if (isDlq) {
@@ -122,9 +138,13 @@ export class MetricsService {
         }
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Failed to collect BullMQ metrics for queue "${name}": ${errMsg}`);
+        this.logger.error(
+          `Failed to collect BullMQ metrics for queue "${name}": ${errMsg}`,
+        );
         for (const state of BULLMQ_TRACKED_STATES) {
-          depthLines.push(`bullmq_queue_depth{queue="${name}",state="${state}"} -1`);
+          depthLines.push(
+            `bullmq_queue_depth{queue="${name}",state="${state}"} -1`,
+          );
         }
         if (isDlq) {
           dlqLines.push(`bullmq_dlq_size{queue_name="${name}"} -1`);
@@ -158,8 +178,12 @@ export class MetricsService {
       lines.push('http_request_duration_seconds_count{route="/health"} 0');
     } else {
       for (const [labels, data] of this.requestDurations.entries()) {
-        lines.push(`http_request_duration_seconds_sum{${labels}} ${data.sumSec.toFixed(4)}`);
-        lines.push(`http_request_duration_seconds_count{${labels}} ${data.count}`);
+        lines.push(
+          `http_request_duration_seconds_sum{${labels}} ${data.sumSec.toFixed(4)}`,
+        );
+        lines.push(
+          `http_request_duration_seconds_count{${labels}} ${data.count}`,
+        );
       }
     }
 

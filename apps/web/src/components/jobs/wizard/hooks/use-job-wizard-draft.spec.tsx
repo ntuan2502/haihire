@@ -16,7 +16,10 @@ describe("useJobWizardDraft", () => {
   });
 
   it("restores once and preserves subsequent edits and step changes", () => {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ jobTitle: "Saved title", currentStep: 1 }));
+    localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({ jobTitle: "Saved title", currentStep: 1 }),
+    );
     const { result } = renderHook(() => {
       const form = useJobWizardFormState();
       const [currentStep, setCurrentStep] = useState<StepId>(1);
@@ -32,6 +35,9 @@ describe("useJobWizardDraft", () => {
     expect(result.current.form.jobTitle).toBe("Edited title");
     expect(result.current.currentStep).toBe(4);
     act(() => vi.advanceTimersByTime(800));
-    expect(JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!)).toMatchObject({ jobTitle: "Edited title", currentStep: 4 });
+    expect(JSON.parse(localStorage.getItem(DRAFT_STORAGE_KEY)!)).toMatchObject({
+      jobTitle: "Edited title",
+      currentStep: 4,
+    });
   });
 });

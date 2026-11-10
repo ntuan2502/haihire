@@ -113,5 +113,11 @@ export function parseSalaryRange(salaryRange?: string | null) {
   else if (lower.includes("hour") || lower.includes("giờ")) parsedPer = "Hour";
   else if (lower.includes("year") || lower.includes("năm")) parsedPer = "Year";
 
-  return { min, max, currency: parsedCurrency, per: parsedPer, negotiable: false };
+  return {
+    min,
+    max,
+    currency: parsedCurrency,
+    per: parsedPer,
+    negotiable: false,
+  };
 }

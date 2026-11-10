@@ -45,7 +45,9 @@ describe("JobClosed Component", () => {
     expect(screen.getByText("Hanoi, Vietnam")).toBeInTheDocument();
 
     // Links back to all jobs (header hero button and sidebar CTA)
-    const ctaLinks = screen.getAllByRole("link", { name: /xem các vị trí khác/i });
+    const ctaLinks = screen.getAllByRole("link", {
+      name: /xem các vị trí khác/i,
+    });
     expect(ctaLinks.length).toBeGreaterThanOrEqual(1);
     ctaLinks.forEach((link) => {
       expect(link).toHaveAttribute("href", "/careers/admin");

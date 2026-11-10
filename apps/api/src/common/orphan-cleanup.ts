@@ -21,7 +21,10 @@ export interface CleanupReport {
   preservedFiles: string[];
 }
 
-export function extractObjectNameFromUrl(urlOrPath: string, bucket = "haihire-resumes"): string {
+export function extractObjectNameFromUrl(
+  urlOrPath: string,
+  bucket = "haihire-resumes",
+): string {
   if (!urlOrPath) return "";
   let clean = urlOrPath.trim();
   try {
@@ -40,10 +43,13 @@ export function extractObjectNameFromUrl(urlOrPath: string, bucket = "haihire-re
   return clean;
 }
 
-export async function cleanupOrphans(options: CleanupOptions = {}): Promise<CleanupReport> {
+export async function cleanupOrphans(
+  options: CleanupOptions = {},
+): Promise<CleanupReport> {
   const dryRun = options.dryRun ?? false;
   const thresholdDays = options.thresholdDays ?? 30;
-  const bucketName = options.bucketName || process.env.MINIO_BUCKET_NAME || "haihire-resumes";
+  const bucketName =
+    options.bucketName || process.env.MINIO_BUCKET_NAME || "haihire-resumes";
 
   const minioClient =
     options.minioClient ||
@@ -56,14 +62,32 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
     });
 
   interface DbQueryable {
-    candidateDocument?: { findMany(args?: unknown): Promise<Array<{ url?: string | null }>> };
-    application?: { findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>> };
-    candidate?: { findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>> };
+    candidateDocument?: {
+      findMany(args?: unknown): Promise<Array<{ url?: string | null }>>;
+    };
+    application?: {
+      findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>>;
+    };
+    candidate?: {
+      findMany(args?: unknown): Promise<Array<{ resumeUrl?: string | null }>>;
+    };
     orm?: {
       public: {
-        CandidateDocument: { select(field: string): { all(): Promise<Array<{ url?: string | null }>> } };
-        Application: { select(field: string): { all(): Promise<Array<{ resumeUrl?: string | null }>> } };
-        Candidate: { select(field: string): { all(): Promise<Array<{ resumeUrl?: string | null }>> } };
+        CandidateDocument: {
+          select(field: string): {
+            all(): Promise<Array<{ url?: string | null }>>;
+          };
+        };
+        Application: {
+          select(field: string): {
+            all(): Promise<Array<{ resumeUrl?: string | null }>>;
+          };
+        };
+        Candidate: {
+          select(field: string): {
+            all(): Promise<Array<{ resumeUrl?: string | null }>>;
+          };
+        };
       };
     };
   }
@@ -141,7 +165,11 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
   }
 
   // 2. Stream all objects from the bucket
-  const scannedObjects: Array<{ name: string; size: number; lastModified: Date }> = [];
+  const scannedObjects: Array<{
+    name: string;
+    size: number;
+    lastModified: Date;
+  }> = [];
 
   await new Promise<void>((resolve, reject) => {
     try {
@@ -151,7 +179,9 @@ export async function cleanupOrphans(options: CleanupOptions = {}): Promise<Clea
           scannedObjects.push({
             name: obj.name,
             size: obj.size || 0,
-            lastModified: obj.lastModified ? new Date(obj.lastModified) : new Date(),
+            lastModified: obj.lastModified
+              ? new Date(obj.lastModified)
+              : new Date(),
           });
         }
       });

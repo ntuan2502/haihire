@@ -13,12 +13,19 @@ describe("SourcingMetricsService", () => {
   it("rejects a supplied job outside the active organization", async () => {
     const prisma = createMockPrismaService({
       job: createMockTable([
-        { id: "foreign-job", organizationId: "org-other", title: "Private job" },
+        {
+          id: "foreign-job",
+          organizationId: "org-other",
+          title: "Private job",
+        },
       ]),
     });
-    const metrics = new SourcingMetricsService(prisma as unknown as PrismaService);
-    await expect(metrics.getStats("org-1", "30d", "foreign-job"))
-      .rejects.toBeInstanceOf(AppForbiddenException);
+    const metrics = new SourcingMetricsService(
+      prisma as unknown as PrismaService,
+    );
+    await expect(
+      metrics.getStats("org-1", "30d", "foreign-job"),
+    ).rejects.toBeInstanceOf(AppForbiddenException);
   });
 
   let service: SourcingMetricsService;

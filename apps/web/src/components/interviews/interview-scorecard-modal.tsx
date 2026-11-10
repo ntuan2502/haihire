@@ -115,7 +115,9 @@ export function InterviewScorecardModal({
       onClose();
     } catch (err: unknown) {
       console.error("Failed to save interview scorecard:", err);
-      setErrorMsg(getApiErrorMessage(err, t, "interviews.errors.saveScorecardFailed"));
+      setErrorMsg(
+        getApiErrorMessage(err, t, "interviews.errors.saveScorecardFailed"),
+      );
     }
   };
 
@@ -190,7 +192,9 @@ export function InterviewScorecardModal({
             {candidateName.charAt(0)}
           </div>
           <div>
-            <span className="font-bold text-slate-900 dark:text-white">{candidateName}</span>
+            <span className="font-bold text-slate-900 dark:text-white">
+              {candidateName}
+            </span>
             <span className="text-[11px] text-slate-400 block truncate max-w-[180px]">
               {application.candidateEmail}
             </span>
@@ -200,7 +204,9 @@ export function InterviewScorecardModal({
         <div className="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
           <div className="flex items-center gap-1 font-medium">
             <Briefcase className="h-3.5 w-3.5 text-blue-500" />
-            <span className="truncate max-w-[140px]">{job?.title || t("interviews.defaultJob")}</span>
+            <span className="truncate max-w-[140px]">
+              {job?.title || t("interviews.defaultJob")}
+            </span>
           </div>
 
           <div className="flex items-center gap-1 font-medium">
@@ -358,7 +364,8 @@ export function InterviewScorecardModal({
                   <ThumbsDown className="h-3.5 w-3.5" />
                   {t("interviews.recommendations.no")}
                 </span>
-                {(recommendation === "NO" || recommendation === "STRONG_NO") && (
+                {(recommendation === "NO" ||
+                  recommendation === "STRONG_NO") && (
                   <Check className="h-3.5 w-3.5 text-rose-600" />
                 )}
               </div>
@@ -381,7 +388,9 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.technicalCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">{t("interviews.technicalDesc")}</p>
+                <p className="text-[10px] text-slate-400">
+                  {t("interviews.technicalDesc")}
+                </p>
               </div>
               {renderStarRating(technicalScore, setTechnicalScore)}
             </div>
@@ -392,7 +401,9 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.communicationCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">{t("interviews.communicationDesc")}</p>
+                <p className="text-[10px] text-slate-400">
+                  {t("interviews.communicationDesc")}
+                </p>
               </div>
               {renderStarRating(communicationScore, setCommunicationScore)}
             </div>
@@ -403,7 +414,9 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.cultureFitCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">{t("interviews.cultureFitDesc")}</p>
+                <p className="text-[10px] text-slate-400">
+                  {t("interviews.cultureFitDesc")}
+                </p>
               </div>
               {renderStarRating(cultureScore, setCultureScore)}
             </div>
@@ -414,7 +427,9 @@ export function InterviewScorecardModal({
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {t("interviews.problemSolvingCriteria")}
                 </p>
-                <p className="text-[10px] text-slate-400">{t("interviews.problemSolvingDesc")}</p>
+                <p className="text-[10px] text-slate-400">
+                  {t("interviews.problemSolvingDesc")}
+                </p>
               </div>
               {renderStarRating(problemSolvingScore, setProblemSolvingScore)}
             </div>

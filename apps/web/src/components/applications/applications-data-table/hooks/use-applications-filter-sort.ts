@@ -48,7 +48,9 @@ export function useApplicationsFilterSort({
       list = list.filter((app) => stageFilters.includes(app.stage));
     }
     if (!fixedJobId && currentJobFilter !== "ALL") {
-      list = list.filter((app) => String(app.jobId) === String(currentJobFilter));
+      list = list.filter(
+        (app) => String(app.jobId) === String(currentJobFilter),
+      );
     }
     if (scoreFilter !== "ALL") {
       list = list.filter((app) => {
@@ -67,7 +69,8 @@ export function useApplicationsFilterSort({
         return (
           app.candidateName.toLowerCase().includes(q) ||
           app.candidateEmail.toLowerCase().includes(q) ||
-          (app.candidatePhone && app.candidatePhone.toLowerCase().includes(q)) ||
+          (app.candidatePhone &&
+            app.candidatePhone.toLowerCase().includes(q)) ||
           (job && job.title.toLowerCase().includes(q))
         );
       });

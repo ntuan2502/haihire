@@ -29,7 +29,9 @@ export function ApplicationsBySource({
           </h2>
         </div>
         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-          {t("sourcing.overview.totalApplications", { total: totalApplications })}
+          {t("sourcing.overview.totalApplications", {
+            total: totalApplications,
+          })}
         </span>
       </div>
 
@@ -43,8 +45,9 @@ export function ApplicationsBySource({
           {data.map((item) => {
             const channelKey = item.channel;
             const channelName =
-              (t as (key: string) => string)(`sourcing.channels.${channelKey}`) ||
-              channelKey;
+              (t as (key: string) => string)(
+                `sourcing.channels.${channelKey}`,
+              ) || channelKey;
             const dotColor = getChannelColor(channelKey);
 
             return (

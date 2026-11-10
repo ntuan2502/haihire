@@ -166,7 +166,9 @@ export function JobFilterDrawer({
               <button
                 key={w.id}
                 type="button"
-                onClick={() => onToggleFilter("workplace", workplaceFilters, w.id)}
+                onClick={() =>
+                  onToggleFilter("workplace", workplaceFilters, w.id)
+                }
                 className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                   workplaceFilters.includes(w.id)
                     ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xs"
@@ -188,7 +190,9 @@ export function JobFilterDrawer({
             <CustomSelect
               value={sortBy}
               onChange={(val) =>
-                onFilterUpdate({ sortBy: val as "created" | "title" | "applicants" })
+                onFilterUpdate({
+                  sortBy: val as "created" | "title" | "applicants",
+                })
               }
               options={[
                 { value: "created", label: t("jobs.dateCreated") },
@@ -201,7 +205,9 @@ export function JobFilterDrawer({
 
             <CustomSelect
               value={sortOrder}
-              onChange={(val) => onFilterUpdate({ sortOrder: val as "desc" | "asc" })}
+              onChange={(val) =>
+                onFilterUpdate({ sortOrder: val as "desc" | "asc" })
+              }
               options={[
                 { value: "desc", label: t("jobs.descending") },
                 { value: "asc", label: t("jobs.ascending") },

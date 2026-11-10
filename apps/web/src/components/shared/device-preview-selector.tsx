@@ -44,7 +44,7 @@ export function DevicePreviewSelector({
     <div
       className={cn(
         "flex items-center bg-black/5 dark:bg-white/10 p-0.5 rounded-lg border border-black/5 dark:border-white/5 select-none",
-        className
+        className,
       )}
       role="group"
       aria-label="Device Preview Controls"
@@ -62,7 +62,7 @@ export function DevicePreviewSelector({
               "flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer",
               isActive
                 ? "bg-white dark:bg-[#3a3a3c] text-slate-900 dark:text-white shadow-2xs font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />

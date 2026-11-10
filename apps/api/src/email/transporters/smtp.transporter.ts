@@ -56,7 +56,9 @@ export class SmtpTransporter implements IEmailTransporter {
           socket.destroy();
           callback(error, undefined);
         };
-        socket.setTimeout(5000, () => socket.destroy(new Error("SMTP connection timed out")));
+        socket.setTimeout(5000, () =>
+          socket.destroy(new Error("SMTP connection timed out")),
+        );
         socket.once("error", onError);
         socket.once("connect", () => {
           socket.setTimeout(0);

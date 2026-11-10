@@ -28,9 +28,7 @@ function PipelineStageRow({ item }: { item: PipelineStageBreakdown }) {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-slate-400 font-medium">
-            {item.percentage}%
-          </span>
+          <span className="text-slate-400 font-medium">{item.percentage}%</span>
           <span className="font-bold text-slate-900 dark:text-white w-6 text-right">
             {item.count}
           </span>

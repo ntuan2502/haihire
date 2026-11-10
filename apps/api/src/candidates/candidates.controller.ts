@@ -35,7 +35,8 @@ export class CandidatesController {
   constructor(
     @Inject(CandidatesService)
     private readonly candidatesService: CandidatesService,
-    @Optional() @Inject(PermissionResolverService)
+    @Optional()
+    @Inject(PermissionResolverService)
     private readonly permissionResolver?: PermissionResolverService,
   ) {}
 
@@ -43,7 +44,15 @@ export class CandidatesController {
   @UseGuards(RolesGuard)
   @RequirePermission("candidate:view_basic")
   async findAll(
-    @Request() req: { user?: { id?: string; role?: string; isOwner?: boolean; organizationId?: string | null } },
+    @Request()
+    req: {
+      user?: {
+        id?: string;
+        role?: string;
+        isOwner?: boolean;
+        organizationId?: string | null;
+      };
+    },
     @Query("organizationId") organizationId?: string,
     @Query("page") page?: string,
     @Query("limit") limit?: string,
@@ -61,9 +70,15 @@ export class CandidatesController {
       req?.user?.organizationId,
     );
     const user = req.user;
-    const fullAccess = user?.isOwner || (this.permissionResolver
-      ? await this.permissionResolver.resolvePermission(user?.organizationId, user?.role as Role, "candidate:view")
-      : hasPermission(user?.role || "", "candidate:view"));
+    const fullAccess =
+      user?.isOwner ||
+      (this.permissionResolver
+        ? await this.permissionResolver.resolvePermission(
+            user?.organizationId,
+            user?.role as Role,
+            "candidate:view",
+          )
+        : hasPermission(user?.role || "", "candidate:view"));
     if (fullAccess) return result;
     return {
       ...result,

@@ -144,7 +144,11 @@ export class CandidatesCrudService {
     file?: Express.Multer.File,
     defaultOrgId?: string,
   ) {
-    if (defaultOrgId && dto.organizationId && dto.organizationId !== defaultOrgId) {
+    if (
+      defaultOrgId &&
+      dto.organizationId &&
+      dto.organizationId !== defaultOrgId
+    ) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.FORBIDDEN,
         "Cross-tenant candidate creation is not permitted",
@@ -209,7 +213,11 @@ export class CandidatesCrudService {
       }
     }
 
-    const inferredName = inferCandidateName(dto.name, dto.firstName, dto.lastName);
+    const inferredName = inferCandidateName(
+      dto.name,
+      dto.firstName,
+      dto.lastName,
+    );
     const firstName = inferredName.firstName || null;
     const lastName = inferredName.lastName || null;
 
@@ -259,9 +267,7 @@ export class CandidatesCrudService {
         dto.dateOfBirth !== "—"
       ) {
         const parsed = new Date(dto.dateOfBirth.trim());
-        updatePayload.dateOfBirth = !isNaN(parsed.getTime())
-          ? parsed
-          : null;
+        updatePayload.dateOfBirth = !isNaN(parsed.getTime()) ? parsed : null;
       } else {
         updatePayload.dateOfBirth = null;
       }

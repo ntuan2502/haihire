@@ -32,20 +32,35 @@ export function ConversionBySource({ data }: ConversionBySourceProps) {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                <th className="pb-3 pr-4 font-bold">{t("sourcing.links.source")}</th>
-                <th className="pb-3 px-3 text-center">{t("pipeline.stages.applied")}</th>
-                <th className="pb-3 px-3 text-center">{t("pipeline.stages.screening")}</th>
-                <th className="pb-3 px-3 text-center">{t("pipeline.stages.interview")}</th>
-                <th className="pb-3 px-3 text-center">{t("pipeline.stages.offer")}</th>
-                <th className="pb-3 px-3 text-center">{t("pipeline.stages.hired")}</th>
-                <th className="pb-3 pl-3 text-right">{t("sourcing.overview.hireRate")}</th>
+                <th className="pb-3 pr-4 font-bold">
+                  {t("sourcing.links.source")}
+                </th>
+                <th className="pb-3 px-3 text-center">
+                  {t("pipeline.stages.applied")}
+                </th>
+                <th className="pb-3 px-3 text-center">
+                  {t("pipeline.stages.screening")}
+                </th>
+                <th className="pb-3 px-3 text-center">
+                  {t("pipeline.stages.interview")}
+                </th>
+                <th className="pb-3 px-3 text-center">
+                  {t("pipeline.stages.offer")}
+                </th>
+                <th className="pb-3 px-3 text-center">
+                  {t("pipeline.stages.hired")}
+                </th>
+                <th className="pb-3 pl-3 text-right">
+                  {t("sourcing.overview.hireRate")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
               {data.map((item) => {
                 const channelName =
-                  (t as (key: string) => string)(`sourcing.channels.${item.source}`) ||
-                  item.source;
+                  (t as (key: string) => string)(
+                    `sourcing.channels.${item.source}`,
+                  ) || item.source;
                 const dotColor = getChannelColor(item.source);
 
                 return (
@@ -54,7 +69,9 @@ export function ConversionBySource({ data }: ConversionBySourceProps) {
                     className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
                   >
                     <td className="py-3 pr-4 flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full shrink-0 ${dotColor}`} />
+                      <span
+                        className={`h-2 w-2 rounded-full shrink-0 ${dotColor}`}
+                      />
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {channelName}
                       </span>

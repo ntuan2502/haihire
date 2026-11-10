@@ -27,7 +27,10 @@ export const emailApi = {
     return response.data;
   },
 
-  updateSettings: async (data: Partial<EmailSettings>, organizationId?: string | null) => {
+  updateSettings: async (
+    data: Partial<EmailSettings>,
+    organizationId?: string | null,
+  ) => {
     const response = await api.put("/email/settings", data, {
       params: { organizationId: organizationId || undefined },
     });
@@ -54,9 +57,13 @@ export const emailApi = {
   },
 
   sendTestEmail: async (to: string, organizationId?: string | null) => {
-    const response = await api.post("/email/test", { to }, {
-      params: { organizationId: organizationId || undefined },
-    });
+    const response = await api.post(
+      "/email/test",
+      { to },
+      {
+        params: { organizationId: organizationId || undefined },
+      },
+    );
     return response.data;
   },
 
@@ -89,7 +96,12 @@ export const emailApi = {
 
   getVariables: async () => {
     const response = await api.get<
-      Array<{ key: string; label: string; category: string; exampleValue: string }>
+      Array<{
+        key: string;
+        label: string;
+        category: string;
+        exampleValue: string;
+      }>
     >("/email/variables");
     return response.data;
   },

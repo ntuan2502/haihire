@@ -90,7 +90,9 @@ export function DashboardUpcomingInterviews({
           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
             {t("dashboard.noUpcomingInterviews")}
           </h4>
-          <p className="text-[11px] text-slate-400">{t("dashboard.next7Days")}</p>
+          <p className="text-[11px] text-slate-400">
+            {t("dashboard.next7Days")}
+          </p>
           <Link
             href="/dashboard/interviews"
             className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
@@ -108,8 +110,8 @@ export function DashboardUpcomingInterviews({
               dateMeta.type === "today"
                 ? `${t("dashboard.today")}${dateMeta.timeSuffix}`
                 : dateMeta.type === "tomorrow"
-                ? `${t("dashboard.tomorrow")}${dateMeta.timeSuffix}`
-                : dateMeta.label;
+                  ? `${t("dashboard.tomorrow")}${dateMeta.timeSuffix}`
+                  : dateMeta.label;
 
             return (
               <div
@@ -148,8 +150,8 @@ export function DashboardUpcomingInterviews({
                       dateMeta.isToday
                         ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60"
                         : dateMeta.isTomorrow
-                        ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80"
+                          ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80"
                     }`}
                   >
                     {dateBadgeText}

@@ -32,7 +32,9 @@ export interface TestWebhookSettingInput {
   chatId?: string;
 }
 
-export const getWebhookSettings = async (): Promise<WebhookSettingResponse[]> => {
+export const getWebhookSettings = async (): Promise<
+  WebhookSettingResponse[]
+> => {
   const response = await api.get<WebhookSettingResponse[]>("/webhook-settings");
   return response.data;
 };
@@ -40,14 +42,19 @@ export const getWebhookSettings = async (): Promise<WebhookSettingResponse[]> =>
 export const getWebhookSetting = async (
   id: string,
 ): Promise<WebhookSettingResponse> => {
-  const response = await api.get<WebhookSettingResponse>(`/webhook-settings/${id}`);
+  const response = await api.get<WebhookSettingResponse>(
+    `/webhook-settings/${id}`,
+  );
   return response.data;
 };
 
 export const createWebhookSetting = async (
   data: CreateWebhookSettingInput,
 ): Promise<WebhookSettingResponse> => {
-  const response = await api.post<WebhookSettingResponse>("/webhook-settings", data);
+  const response = await api.post<WebhookSettingResponse>(
+    "/webhook-settings",
+    data,
+  );
   return response.data;
 };
 
@@ -65,7 +72,9 @@ export const updateWebhookSetting = async (
 export const deleteWebhookSetting = async (
   id: string,
 ): Promise<{ success: boolean }> => {
-  const response = await api.delete<{ success: boolean }>(`/webhook-settings/${id}`);
+  const response = await api.delete<{ success: boolean }>(
+    `/webhook-settings/${id}`,
+  );
   return response.data;
 };
 

@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  CheckCircle2,
-  AlertCircle,
-  Send,
-  Save,
-} from "lucide-react";
+import { CheckCircle2, AlertCircle, Send, Save } from "lucide-react";
 import {
   type EmailSettings,
   type EmailProviderType,
@@ -29,11 +24,18 @@ export default function EmailSettingsPage() {
   const updateSettingsMutation = useUpdateEmailSettingsMutation();
   const sendTestMutation = useSendTestEmailMutation();
 
-  const [emailSettings, setEmailSettings] =
-    useState<EmailSettings>(DEFAULT_EMAIL_SETTINGS);
+  const [emailSettings, setEmailSettings] = useState<EmailSettings>(
+    DEFAULT_EMAIL_SETTINGS,
+  );
   const [testEmailAddress, setTestEmailAddress] = useState("");
-  const [testToast, setTestToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [settingsToast, setSettingsToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [testToast, setTestToast] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [settingsToast, setSettingsToast] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Sync remote settings when fetched with null-safety
   useEffect(() => {
@@ -58,16 +60,29 @@ export default function EmailSettingsPage() {
         provider: emailSettings.provider,
         fromName: (emailSettings.fromName || "").trim(),
         fromEmail: (emailSettings.fromEmail || "").trim(),
-        smtpHost: emailSettings.smtpHost ? emailSettings.smtpHost.trim() : undefined,
-        smtpPort: emailSettings.smtpPort ? Number(emailSettings.smtpPort) : undefined,
-        smtpUser: emailSettings.smtpUser ? emailSettings.smtpUser.trim() : undefined,
+        smtpHost: emailSettings.smtpHost
+          ? emailSettings.smtpHost.trim()
+          : undefined,
+        smtpPort: emailSettings.smtpPort
+          ? Number(emailSettings.smtpPort)
+          : undefined,
+        smtpUser: emailSettings.smtpUser
+          ? emailSettings.smtpUser.trim()
+          : undefined,
         smtpPass: emailSettings.smtpPass ? emailSettings.smtpPass : undefined,
-        resendApiKey: emailSettings.resendApiKey ? emailSettings.resendApiKey.trim() : undefined,
-        sendgridApiKey: emailSettings.sendgridApiKey ? emailSettings.sendgridApiKey.trim() : undefined,
+        resendApiKey: emailSettings.resendApiKey
+          ? emailSettings.resendApiKey.trim()
+          : undefined,
+        sendgridApiKey: emailSettings.sendgridApiKey
+          ? emailSettings.sendgridApiKey.trim()
+          : undefined,
       };
 
       await updateSettingsMutation.mutateAsync(payload);
-      setSettingsToast({ type: "success", text: t("email.settingsSavedSuccess") });
+      setSettingsToast({
+        type: "success",
+        text: t("email.settingsSavedSuccess"),
+      });
       setTimeout(() => setSettingsToast(null), 3000);
     } catch (err: unknown) {
       const msg = getApiErrorMessage(err, t, "email.settingsSaveError");
@@ -401,7 +416,9 @@ export default function EmailSettingsPage() {
             className="w-full sm:w-auto h-9 px-4 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 rounded-xl shadow-xs cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0"
           >
             <Send className="h-3.5 w-3.5" />
-            <span>{isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}</span>
+            <span>
+              {isSendingTest ? t("email.sendingBtn") : t("email.sendTestBtn")}
+            </span>
           </Button>
         </div>
       </div>

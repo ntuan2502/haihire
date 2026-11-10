@@ -82,12 +82,14 @@ export class OrganizationsAuditLogService {
     const limit = Math.min(Math.max(filter.limit ?? 50, 1), 100);
     const offset = Math.max(filter.offset ?? 0, 0);
 
-        const where: Record<string, unknown> = { organizationId };
+    const where: Record<string, unknown> = { organizationId };
     if (filter.action) where.action = filter.action;
     if (filter.resource) where.resource = filter.resource;
 
     const [total, pagedLogs] = await Promise.all([
-      this.prisma.organizationAuditLog.count({ where: { ...where, organizationId } }),
+      this.prisma.organizationAuditLog.count({
+        where: { ...where, organizationId },
+      }),
       this.prisma.organizationAuditLog.findMany({
         where: { ...where, organizationId },
         orderBy: { createdAt: "desc" },
@@ -141,7 +143,7 @@ export class OrganizationsAuditLogService {
     const limit = Math.min(Math.max(filter.limit ?? 50, 1), 100);
     const offset = Math.max(filter.offset ?? 0, 0);
 
-        const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = {};
     if (filter.organizationId) where.organizationId = filter.organizationId;
     if (filter.action) where.action = filter.action;
     if (filter.resource) where.resource = filter.resource;

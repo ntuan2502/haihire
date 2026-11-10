@@ -1,6 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { APP_ERROR_CODES } from "@haihire/shared";
-import { ExperienceLevel, JobStatus, JobType, WorkplaceType, type Prisma } from "@prisma/client";
+import {
+  ExperienceLevel,
+  JobStatus,
+  JobType,
+  WorkplaceType,
+  type Prisma,
+} from "@prisma/client";
 import {
   AppNotFoundException,
   AppForbiddenException,
@@ -78,24 +84,65 @@ export class JobsService {
       Boolean(filter?.organizationSlug);
     const effectiveStatus = isPublic ? "PUBLISHED" : filter?.status;
 
-    const parseValues = (value: string) => value.split(",").map((item) => item.trim().toUpperCase());
+    const parseValues = (value: string) =>
+      value.split(",").map((item) => item.trim().toUpperCase());
     const statuses = effectiveStatus ? parseValues(effectiveStatus) : undefined;
     if (statuses?.includes("CLOSED")) statuses.push("ARCHIVED");
     const where: Prisma.JobWhereInput = {
       ...(targetOrgId ? { organizationId: targetOrgId } : {}),
       deletedAt: null,
-      ...(statuses ? { status: { in: Object.values(JobStatus).filter((value) => statuses.includes(value)) } } : {}),
-      ...(filter?.department ? { department: { equals: filter.department, mode: "insensitive" } } : {}),
-      ...(filter?.type ? { type: { in: Object.values(JobType).filter((value) => parseValues(filter.type!).includes(value)) } } : {}),
-      ...(filter?.experienceLevel ? { experienceLevel: { in: Object.values(ExperienceLevel).filter((value) => parseValues(filter.experienceLevel!).includes(value)) } } : {}),
-      ...(filter?.workplace ? { workplace: { in: Object.values(WorkplaceType).filter((value) => parseValues(filter.workplace!).includes(value)) } } : {}),
-      ...(filter?.search ? { OR: ["title", "department", "location"].map((field) => ({
-        [field]: { contains: filter.search, mode: "insensitive" },
-      })) } : {}),
+      ...(statuses
+        ? {
+            status: {
+              in: Object.values(JobStatus).filter((value) =>
+                statuses.includes(value),
+              ),
+            },
+          }
+        : {}),
+      ...(filter?.department
+        ? { department: { equals: filter.department, mode: "insensitive" } }
+        : {}),
+      ...(filter?.type
+        ? {
+            type: {
+              in: Object.values(JobType).filter((value) =>
+                parseValues(filter.type!).includes(value),
+              ),
+            },
+          }
+        : {}),
+      ...(filter?.experienceLevel
+        ? {
+            experienceLevel: {
+              in: Object.values(ExperienceLevel).filter((value) =>
+                parseValues(filter.experienceLevel!).includes(value),
+              ),
+            },
+          }
+        : {}),
+      ...(filter?.workplace
+        ? {
+            workplace: {
+              in: Object.values(WorkplaceType).filter((value) =>
+                parseValues(filter.workplace!).includes(value),
+              ),
+            },
+          }
+        : {}),
+      ...(filter?.search
+        ? {
+            OR: ["title", "department", "location"].map((field) => ({
+              [field]: { contains: filter.search, mode: "insensitive" },
+            })),
+          }
+        : {}),
     };
     const sortOrder = filter?.sortOrder === "asc" ? "asc" : "desc";
     const orderBy: Prisma.JobOrderByWithRelationInput[] = [
-      filter?.sortBy === "title" ? { title: sortOrder } : { createdAt: sortOrder },
+      filter?.sortBy === "title"
+        ? { title: sortOrder }
+        : { createdAt: sortOrder },
       { id: "asc" },
     ];
     const total = await this.prisma.job.count({ where });
@@ -168,7 +215,17 @@ export class JobsService {
       orgMap.set(targetOrg.id, targetOrg);
     } else {
       const allOrgs = await this.prisma.organization.findMany({
-        where: { id: { in: [...new Set(pagedJobs.flatMap((job) => job.organizationId ? [job.organizationId] : []))] } },
+        where: {
+          id: {
+            in: [
+              ...new Set(
+                pagedJobs.flatMap((job) =>
+                  job.organizationId ? [job.organizationId] : [],
+                ),
+              ),
+            ],
+          },
+        },
         select: {
           id: true,
           name: true,
@@ -196,7 +253,12 @@ export class JobsService {
     };
   }
 
-  async findOne(id: string, tenantOrgId?: string | null, isPublic = false, fullCandidateAccess = true) {
+  async findOne(
+    id: string,
+    tenantOrgId?: string | null,
+    isPublic = false,
+    fullCandidateAccess = true,
+  ) {
     const job = await this.prisma.job.findFirst({
       where: { id },
       select: {
@@ -351,9 +413,14 @@ export class JobsService {
           orderIndex: a.orderIndex,
           createdAt: a.createdAt,
           updatedAt: a.updatedAt,
-          candidate: candidate ? {
-            id: candidate.id, name: candidate.name, email: candidate.email, phone: candidate.phone,
-          } : undefined,
+          candidate: candidate
+            ? {
+                id: candidate.id,
+                name: candidate.name,
+                email: candidate.email,
+                phone: candidate.phone,
+              }
+            : undefined,
           candidateName: candidate?.name || "Unknown",
           candidateEmail: candidate?.email || "",
           candidatePhone: candidate?.phone || null,
@@ -524,27 +591,27 @@ export class JobsService {
     const updated = await this.prisma.job.update({
       where: { id },
       data: {
-      ...(dto.title !== undefined ? { title: dto.title } : {}),
-      ...(dto.department !== undefined ? { department: dto.department } : {}),
-      ...(dto.location !== undefined ? { location: dto.location } : {}),
-      ...(dto.postalCode !== undefined ? { postalCode: dto.postalCode } : {}),
-      ...(dto.experienceLevel !== undefined
-        ? { experienceLevel: dto.experienceLevel }
-        : {}),
-      ...(dto.workplace !== undefined ? { workplace: dto.workplace } : {}),
-      ...(dto.type !== undefined ? { type: dto.type } : {}),
-      ...(dto.description !== undefined
-        ? { description: dto.description }
-        : {}),
-      ...(dto.requirements !== undefined
-        ? { requirements: dto.requirements }
-        : {}),
-      ...(dto.salaryRange !== undefined
-        ? { salaryRange: dto.salaryRange }
-        : {}),
-      ...(dto.status !== undefined ? { status: dto.status } : {}),
-    },
-  });
+        ...(dto.title !== undefined ? { title: dto.title } : {}),
+        ...(dto.department !== undefined ? { department: dto.department } : {}),
+        ...(dto.location !== undefined ? { location: dto.location } : {}),
+        ...(dto.postalCode !== undefined ? { postalCode: dto.postalCode } : {}),
+        ...(dto.experienceLevel !== undefined
+          ? { experienceLevel: dto.experienceLevel }
+          : {}),
+        ...(dto.workplace !== undefined ? { workplace: dto.workplace } : {}),
+        ...(dto.type !== undefined ? { type: dto.type } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
+        ...(dto.requirements !== undefined
+          ? { requirements: dto.requirements }
+          : {}),
+        ...(dto.salaryRange !== undefined
+          ? { salaryRange: dto.salaryRange }
+          : {}),
+        ...(dto.status !== undefined ? { status: dto.status } : {}),
+      },
+    });
 
     return updated;
   }

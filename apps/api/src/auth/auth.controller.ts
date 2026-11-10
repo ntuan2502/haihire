@@ -21,9 +21,7 @@ import { JwtAuthGuard } from "./jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "./optional-jwt-auth.guard";
 import { DtoPipe } from "../common/dto-validation.pipe";
 import { env } from "../config/env";
-import {
-  AppUnauthorizedException,
-} from "../common/app-exception";
+import { AppUnauthorizedException } from "../common/app-exception";
 import { APP_ERROR_CODES, Role } from "@haihire/shared";
 
 @Controller("auth")

@@ -47,7 +47,18 @@ export class EmailDispatchService {
         const appKey = dto.applicationId || "general";
         const templateKey = dto.templateType || "custom";
         const timeBucket = Math.floor(Date.now() / (5 * 60 * 1000));
-        const deterministicJobId = `email-${crypto.createHash("sha256").update(JSON.stringify([targetOrgId, templateKey, candidateKey, appKey, timeBucket])).digest("hex")}`;
+        const deterministicJobId = `email-${crypto
+          .createHash("sha256")
+          .update(
+            JSON.stringify([
+              targetOrgId,
+              templateKey,
+              candidateKey,
+              appKey,
+              timeBucket,
+            ]),
+          )
+          .digest("hex")}`;
 
         const job = await this.emailQueue.add(
           "send-email",
@@ -214,10 +225,18 @@ export class EmailDispatchService {
       return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
     }
 
-    const result = await queryEmailLogs(this.prisma, { organizationId: targetOrgId, scope: "ORGANIZATION" }, options);
+    const result = await queryEmailLogs(
+      this.prisma,
+      { organizationId: targetOrgId, scope: "ORGANIZATION" },
+      options,
+    );
     return {
       ...result,
-      data: result.data.map((l) => ({ ...l, candidateName: l.recipientName || "Ứng viên", candidateEmail: l.recipientEmail || "" })),
+      data: result.data.map((l) => ({
+        ...l,
+        candidateName: l.recipientName || "Ứng viên",
+        candidateEmail: l.recipientEmail || "",
+      })),
     };
   }
 }

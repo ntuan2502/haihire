@@ -47,11 +47,19 @@ function validateExprSyntax(expr: string): { valid: boolean; reason?: string } {
   for (let i = 0; i < trimmed.length; i++) {
     const char = trimmed[i];
 
-    if (char === '"' && !inSingleQuote && (i === 0 || trimmed[i - 1] !== "\\")) {
+    if (
+      char === '"' &&
+      !inSingleQuote &&
+      (i === 0 || trimmed[i - 1] !== "\\")
+    ) {
       inDoubleQuote = !inDoubleQuote;
       continue;
     }
-    if (char === "'" && !inDoubleQuote && (i === 0 || trimmed[i - 1] !== "\\")) {
+    if (
+      char === "'" &&
+      !inDoubleQuote &&
+      (i === 0 || trimmed[i - 1] !== "\\")
+    ) {
       inSingleQuote = !inSingleQuote;
       continue;
     }
@@ -71,26 +79,43 @@ function validateExprSyntax(expr: string): { valid: boolean; reason?: string } {
   }
 
   if (stack.length > 0) {
-    return { valid: false, reason: `Unclosed bracket '${stack[stack.length - 1]}'` };
+    return {
+      valid: false,
+      reason: `Unclosed bracket '${stack[stack.length - 1]}'`,
+    };
   }
 
   // Check that expression contains an identifier or function
   if (!/[a-zA-Z_][a-zA-Z0-9_]*/.test(trimmed)) {
-    return { valid: false, reason: "Expression missing metric name or PromQL identifier" };
+    return {
+      valid: false,
+      reason: "Expression missing metric name or PromQL identifier",
+    };
   }
 
   return { valid: true };
 }
 
 function runPrometheusRulesAudit(): void {
-  console.log(`${colors.cyan}==================================================================${colors.reset}`);
-  console.log(`${colors.bold}      CI ARCHITECTURE GATE: PROMETHEUS ALERT RULES AUDIT         ${colors.reset}`);
-  console.log(`${colors.cyan}==================================================================${colors.reset}`);
+  console.log(
+    `${colors.cyan}==================================================================${colors.reset}`,
+  );
+  console.log(
+    `${colors.bold}      CI ARCHITECTURE GATE: PROMETHEUS ALERT RULES AUDIT         ${colors.reset}`,
+  );
+  console.log(
+    `${colors.cyan}==================================================================${colors.reset}`,
+  );
 
-  const filePath = path.resolve(process.cwd(), "monitoring/prometheus/alert-rules.yml");
+  const filePath = path.resolve(
+    process.cwd(),
+    "monitoring/prometheus/alert-rules.yml",
+  );
 
   if (!fs.existsSync(filePath)) {
-    console.error(`${colors.red}[FAIL] Alert rules file not found at: ${filePath}${colors.reset}`);
+    console.error(
+      `${colors.red}[FAIL] Alert rules file not found at: ${filePath}${colors.reset}`,
+    );
     process.exit(1);
   }
 
@@ -101,12 +126,16 @@ function runPrometheusRulesAudit(): void {
     parsed = parse(fileContent) as PrometheusAlertFile;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`${colors.red}[FAIL] Failed to parse YAML: ${message}${colors.reset}`);
+    console.error(
+      `${colors.red}[FAIL] Failed to parse YAML: ${message}${colors.reset}`,
+    );
     process.exit(1);
   }
 
   if (!parsed || !Array.isArray(parsed.groups) || parsed.groups.length === 0) {
-    console.error(`${colors.red}[FAIL] No rule groups found in alert-rules.yml${colors.reset}`);
+    console.error(
+      `${colors.red}[FAIL] No rule groups found in alert-rules.yml${colors.reset}`,
+    );
     process.exit(1);
   }
 
@@ -128,8 +157,14 @@ function runPrometheusRulesAudit(): void {
       const rule = group.rules[rIdx];
       const alertName = rule.alert;
 
-      if (!alertName || typeof alertName !== "string" || alertName.trim() === "") {
-        errors.push(`Rule #${rIdx + 1} in group "${groupName}" is missing 'alert' name.`);
+      if (
+        !alertName ||
+        typeof alertName !== "string" ||
+        alertName.trim() === ""
+      ) {
+        errors.push(
+          `Rule #${rIdx + 1} in group "${groupName}" is missing 'alert' name.`,
+        );
         continue;
       }
 
@@ -146,13 +181,21 @@ function runPrometheusRulesAudit(): void {
       } else {
         const syntaxResult = validateExprSyntax(rule.expr);
         if (!syntaxResult.valid) {
-          errors.push(`Rule "${alertName}" has invalid 'expr' syntax: ${syntaxResult.reason}.`);
+          errors.push(
+            `Rule "${alertName}" has invalid 'expr' syntax: ${syntaxResult.reason}.`,
+          );
         }
       }
 
       // 3. For duration check
-      if (!rule.for || typeof rule.for !== "string" || !/^\d+[smhd]$/.test(rule.for.trim())) {
-        errors.push(`Rule "${alertName}" is missing or has invalid 'for' duration (e.g. 1m, 30s).`);
+      if (
+        !rule.for ||
+        typeof rule.for !== "string" ||
+        !/^\d+[smhd]$/.test(rule.for.trim())
+      ) {
+        errors.push(
+          `Rule "${alertName}" is missing or has invalid 'for' duration (e.g. 1m, 30s).`,
+        );
       }
 
       // 4. Labels check (severity + team)
@@ -160,13 +203,20 @@ function runPrometheusRulesAudit(): void {
         errors.push(`Rule "${alertName}" is missing 'labels' block.`);
       } else {
         const severity = rule.labels.severity;
-        if (!severity || !["critical", "high", "warning", "info"].includes(severity)) {
-          errors.push(`Rule "${alertName}" missing or has invalid 'labels.severity' (found "${severity}").`);
+        if (
+          !severity ||
+          !["critical", "high", "warning", "info"].includes(severity)
+        ) {
+          errors.push(
+            `Rule "${alertName}" missing or has invalid 'labels.severity' (found "${severity}").`,
+          );
         }
 
         const team = rule.labels.team;
         if (!team || team !== "sre") {
-          errors.push(`Rule "${alertName}" missing required 'labels.team: sre' (found "${team}").`);
+          errors.push(
+            `Rule "${alertName}" missing required 'labels.team: sre' (found "${team}").`,
+          );
         }
       }
 
@@ -180,8 +230,14 @@ function runPrometheusRulesAudit(): void {
         }
 
         const description = rule.annotations.description;
-        if (!description || typeof description !== "string" || description.trim() === "") {
-          errors.push(`Rule "${alertName}" is missing 'annotations.description'.`);
+        if (
+          !description ||
+          typeof description !== "string" ||
+          description.trim() === ""
+        ) {
+          errors.push(
+            `Rule "${alertName}" is missing 'annotations.description'.`,
+          );
         }
       }
     }
@@ -189,21 +245,33 @@ function runPrometheusRulesAudit(): void {
 
   console.log(`Groups verified: ${parsed.groups.length}`);
   console.log(`Total alert rules inspected: ${totalRules}`);
-  console.log("------------------------------------------------------------------");
+  console.log(
+    "------------------------------------------------------------------",
+  );
 
   if (errors.length > 0) {
-    console.error(`${colors.red}[CI GATE FAILED] Found ${errors.length} validation error(s):${colors.reset}`);
+    console.error(
+      `${colors.red}[CI GATE FAILED] Found ${errors.length} validation error(s):${colors.reset}`,
+    );
     for (const error of errors) {
       console.error(`  ❌ ${error}`);
     }
     process.exit(1);
   }
 
-  console.log(`${colors.green}[CI GATE PASSED] All ${totalRules} Prometheus alert rules are 100% compliant!${colors.reset}`);
+  console.log(
+    `${colors.green}[CI GATE PASSED] All ${totalRules} Prometheus alert rules are 100% compliant!${colors.reset}`,
+  );
   console.log(`  • Valid PromQL expr syntax verified on all rules`);
-  console.log(`  • Required labels present: severity (critical/high/warning) and team: sre`);
-  console.log(`  • Required annotations present: summary and actionable description`);
-  console.log(`${colors.cyan}==================================================================${colors.reset}`);
+  console.log(
+    `  • Required labels present: severity (critical/high/warning) and team: sre`,
+  );
+  console.log(
+    `  • Required annotations present: summary and actionable description`,
+  );
+  console.log(
+    `${colors.cyan}==================================================================${colors.reset}`,
+  );
 }
 
 runPrometheusRulesAudit();

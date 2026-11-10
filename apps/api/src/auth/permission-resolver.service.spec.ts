@@ -16,16 +16,20 @@ describe("PermissionResolverService (Dynamic DB Overrides & Fallback Matrix)", (
   beforeEach(() => {
     mockRecords = [];
 
-    findManyFn = vi.fn().mockImplementation(async ({ where }: { where?: { organizationId?: string } } = {}) => {
-      const orgId = where?.organizationId;
-      return mockRecords
-        .filter((r) => !orgId || r.organizationId === orgId)
-        .map((r) => ({
-          role: r.role,
-          permission: r.permission,
-          granted: r.granted,
-        }));
-    });
+    findManyFn = vi
+      .fn()
+      .mockImplementation(
+        async ({ where }: { where?: { organizationId?: string } } = {}) => {
+          const orgId = where?.organizationId;
+          return mockRecords
+            .filter((r) => !orgId || r.organizationId === orgId)
+            .map((r) => ({
+              role: r.role,
+              permission: r.permission,
+              granted: r.granted,
+            }));
+        },
+      );
 
     const mockPrismaService = {
       organizationRolePermission: {

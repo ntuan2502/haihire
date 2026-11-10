@@ -636,9 +636,7 @@ describe("EmailService", () => {
         "send-email",
         expect.any(Object),
         expect.objectContaining({
-          jobId: expect.stringMatching(
-            /^email-[a-f0-9]{64}$/,
-          ),
+          jobId: expect.stringMatching(/^email-[a-f0-9]{64}$/),
           attempts: 3,
           backoff: {
             type: "exponential",

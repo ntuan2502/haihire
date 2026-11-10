@@ -106,7 +106,11 @@ export function ConfirmDestructiveModal({
                     : "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40"
                 }`}
               >
-                {isDanger ? <Trash2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                {isDanger ? (
+                  <Trash2 className="h-5 w-5" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5" />
+                )}
               </div>
               <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
                 {title}
@@ -128,8 +132,14 @@ export function ConfirmDestructiveModal({
           {isMatchRequired && (
             <div className="space-y-2 pt-1">
               <div className="flex items-center justify-between text-xs">
-                <label htmlFor="confirm-destructive-input" className="text-slate-700 dark:text-slate-300 font-medium">
-                  {confirmMatchLabel || t("common.confirmInputInstruction", { matchText: targetText })}
+                <label
+                  htmlFor="confirm-destructive-input"
+                  className="text-slate-700 dark:text-slate-300 font-medium"
+                >
+                  {confirmMatchLabel ||
+                    t("common.confirmInputInstruction", {
+                      matchText: targetText,
+                    })}
                 </label>
                 <button
                   type="button"
@@ -140,7 +150,9 @@ export function ConfirmDestructiveModal({
                   {hasCopied ? (
                     <>
                       <Check className="h-3 w-3 text-emerald-500" />
-                      <span className="text-emerald-500 font-medium">{t("common.copied")}</span>
+                      <span className="text-emerald-500 font-medium">
+                        {t("common.copied")}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -155,15 +167,18 @@ export function ConfirmDestructiveModal({
                 id="confirm-destructive-input"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={confirmPlaceholder || t("common.confirmInputPlaceholder", { matchText: targetText })}
+                placeholder={
+                  confirmPlaceholder ||
+                  t("common.confirmInputPlaceholder", { matchText: targetText })
+                }
                 disabled={isLoading}
                 autoComplete="off"
                 className={`h-9 text-xs transition-all ${
                   inputText.length > 0 && !isMatchValid
                     ? "border-rose-400 focus-visible:ring-rose-500/30"
                     : isMatchValid && inputText.length > 0
-                    ? "border-emerald-500 focus-visible:ring-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20"
-                    : ""
+                      ? "border-emerald-500 focus-visible:ring-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/20"
+                      : ""
                 }`}
               />
             </div>
@@ -194,7 +209,8 @@ export function ConfirmDestructiveModal({
               <span>
                 {isLoading
                   ? t("common.loading")
-                  : confirmButtonLabel || (isDanger ? t("common.delete") : t("common.confirm"))}
+                  : confirmButtonLabel ||
+                    (isDanger ? t("common.delete") : t("common.confirm"))}
               </span>
             </Button>
           </DialogFooter>

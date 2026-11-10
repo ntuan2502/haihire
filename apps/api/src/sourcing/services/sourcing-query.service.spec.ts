@@ -8,21 +8,52 @@ import type { PrismaService } from "../../prisma/prisma.service";
 
 describe("SourcingQueryService", () => {
   const jobTable = createMockTable([
-    { id: "job-1", title: "Software Engineer", organizationId: "org-1", type: "FULL_TIME" },
-    { id: "job-2", title: "DevOps Engineer", organizationId: "org-1", type: "CONTRACT" },
-    { id: "job-3", title: "Foreign Job", organizationId: "org-2", type: "FULL_TIME" },
+    {
+      id: "job-1",
+      title: "Software Engineer",
+      organizationId: "org-1",
+      type: "FULL_TIME",
+    },
+    {
+      id: "job-2",
+      title: "DevOps Engineer",
+      organizationId: "org-1",
+      type: "CONTRACT",
+    },
+    {
+      id: "job-3",
+      title: "Foreign Job",
+      organizationId: "org-2",
+      type: "FULL_TIME",
+    },
   ]);
 
   const applicationTable = createMockTable([
-    { id: "app-1", jobId: "job-1", candidateId: "cand-1", trackingLinkId: "link-1" },
+    {
+      id: "app-1",
+      jobId: "job-1",
+      candidateId: "cand-1",
+      trackingLinkId: "link-1",
+    },
   ]);
 
   const candidateTable = createMockTable([
-    { id: "cand-1", name: "Alice", email: "alice@example.com", organizationId: "org-1" },
+    {
+      id: "cand-1",
+      name: "Alice",
+      email: "alice@example.com",
+      organizationId: "org-1",
+    },
   ]);
 
   const trackingLinkTable = createMockTable([
-    { id: "link-1", organizationId: "org-1", name: "LinkedIn Link", token: "tok-1", clicksCount: 10 },
+    {
+      id: "link-1",
+      organizationId: "org-1",
+      name: "LinkedIn Link",
+      token: "tok-1",
+      clicksCount: 10,
+    },
   ]);
 
   const trackingClickTable = createMockTable([

@@ -14,7 +14,13 @@ import {
   AppConflictException,
   AppBadRequestException,
 } from "../common/app-exception";
-import { APP_ERROR_CODES, Role, type Permission, PERMISSIONS, hasPermission } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  Role,
+  type Permission,
+  PERMISSIONS,
+  hasPermission,
+} from "@haihire/shared";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
@@ -271,7 +277,12 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
-      { sub: user.id, type: "refresh", tokenVersion: 0, jti: crypto.randomUUID() },
+      {
+        sub: user.id,
+        type: "refresh",
+        tokenVersion: 0,
+        jti: crypto.randomUUID(),
+      },
       { expiresIn: "7d" },
     );
 
@@ -489,7 +500,12 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
-      { sub: updatedUser.id, type: "refresh", tokenVersion, jti: crypto.randomUUID() },
+      {
+        sub: updatedUser.id,
+        type: "refresh",
+        tokenVersion,
+        jti: crypto.randomUUID(),
+      },
       { expiresIn: "7d" },
     );
 

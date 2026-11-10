@@ -14,11 +14,13 @@ Triggered by: `HaiHireOrphanCleanupSpikeWarning` / `HaiHireOrphanCleanupSpikeCri
 ### Verify
 
 Run:
+
 ```bash
 curl -s http://pushgateway:9091/metrics | grep minio_orphan_cleanup
 ```
 
 Check:
+
 - `orphans_found_total`: Number of orphan files detected
 - `preserved_total`: Number of files in grace period
 - `last_run_timestamp_seconds`: Last run timestamp
@@ -98,6 +100,7 @@ docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "Orp
 ## Step 2: Diagnose Root Cause
 
 1. **Check MinIO Object Storage Health:**
+
    ```bash
    # Check if MinIO container is running
    docker ps --filter "name=minio"
@@ -107,6 +110,7 @@ docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "Orp
    ```
 
 2. **Verify MinIO Connectivity and Target Bucket:**
+
    ```bash
    # Check haihire-resumes bucket reachability
    docker exec -it haihire-prod-backend node -e "
@@ -136,11 +140,13 @@ docker compose -f docker-compose.prod.yml logs backend --tail=100 | grep -E "Orp
 ## Step 3: Mitigate (Short-Term Action)
 
 1. **Restart MinIO Container if Unresponsive:**
+
    ```bash
    docker compose -f docker-compose.prod.yml restart minio
    ```
 
 2. **Restart Backend Container to Reconnect Workers:**
+
    ```bash
    docker compose -f docker-compose.prod.yml restart backend
    ```

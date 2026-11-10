@@ -1,18 +1,15 @@
 export type WebhookProviderType = "TELEGRAM" | "DISCORD" | "GENERIC";
 
 export type WebhookEventType =
-  | "DLQ_ALERT"
-  | "ORPHAN_SPIKE"
-  | "JOB_POSTED"
-  | (string & {});
+  "DLQ_ALERT" | "ORPHAN_SPIKE" | "JOB_POSTED" | (string & {});
 
 export interface WebhookProviderConfig {
   type: WebhookProviderType;
-  url: string;           // Telegram: https://api.telegram.org/bot<TOKEN>/sendMessage
-                         // Discord: https://discord.com/api/webhooks/...
-                         // Generic: any valid URL
-  secretToken?: string;  // For Generic HMAC-SHA256 signing (optional)
-  chatId?: string;       // For Telegram (target chat_id)
+  url: string; // Telegram: https://api.telegram.org/bot<TOKEN>/sendMessage
+  // Discord: https://discord.com/api/webhooks/...
+  // Generic: any valid URL
+  secretToken?: string; // For Generic HMAC-SHA256 signing (optional)
+  chatId?: string; // For Telegram (target chat_id)
 }
 
 export interface WebhookMessage {

@@ -24,6 +24,7 @@
 ## 2. Manual Execution Runbook
 
 ### Step 1: Safe Simulation (Dry-Run Mode)
+
 Before initiating any real deletion in production, **always** execute the dry-run mode to audit candidate objects and verify deletion counts without modifying object storage:
 
 ```bash
@@ -35,9 +36,10 @@ pnpm exec tsx scripts/cleanup-orphan-minio.ts --dry-run --threshold-days=60
 ```
 
 **Expected Sample Output:**
+
 ```text
 ==================================================================
-       HAIHIRE ENTERPRISE ATS: MINIO ORPHAN CLEANUP CRON          
+       HAIHIRE ENTERPRISE ATS: MINIO ORPHAN CLEANUP CRON
 ==================================================================
 Execution Mode:       DRY-RUN (Safe Simulation - No Deletions)
 Age Threshold:        30 days
@@ -53,6 +55,7 @@ Storage Space Freed:       4.12 MB (4320140 bytes)
 ```
 
 ### Step 2: Live Deletion Execution
+
 Once the dry-run summary has been reviewed and verified:
 
 ```bash
@@ -64,6 +67,7 @@ pnpm exec tsx scripts/cleanup-orphan-minio.ts --threshold-days=30
 ## 3. Production Automated Cron Configuration
 
 The automated cleanup container `orphan-cleanup` is defined in [docker-compose.prod.yml](../../docker-compose.prod.yml):
+
 - **Cron Schedule:** `0 4 * * *` (04:00 AM UTC daily).
 - **Log Target:** `/var/log/orphan-cleanup.log`
 - **Inspect Service Logs:**

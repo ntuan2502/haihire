@@ -14,7 +14,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     // 1. Check for rate limit / throttler exception (including ESM/CJS hazard)
-    const errObj = (exception && typeof exception === "object" ? exception : null) as Record<string, unknown> | null;
+    const errObj = (
+      exception && typeof exception === "object" ? exception : null
+    ) as Record<string, unknown> | null;
     const isThrottler =
       errObj?.name === "ThrottlerException" ||
       exception?.constructor?.name === "ThrottlerException" ||
@@ -29,18 +31,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     // 2. Check for standard HttpException or duck-typed HttpException
-    const duckException = errObj as { getStatus?: () => number; getResponse?: () => unknown } | null;
+    const duckException = errObj as {
+      getStatus?: () => number;
+      getResponse?: () => unknown;
+    } | null;
     if (
       exception instanceof HttpException ||
       (typeof duckException?.getStatus === "function" &&
         typeof duckException?.getResponse === "function")
     ) {
-      const status = duckException?.getStatus ? duckException.getStatus() : (exception as HttpException).getStatus();
-      const res = duckException?.getResponse ? duckException.getResponse() : (exception as HttpException).getResponse();
+      const status = duckException?.getStatus
+        ? duckException.getStatus()
+        : (exception as HttpException).getStatus();
+      const res = duckException?.getResponse
+        ? duckException.getResponse()
+        : (exception as HttpException).getResponse();
       const body =
-        typeof res === "string"
-          ? { statusCode: status, message: res }
-          : res;
+        typeof res === "string" ? { statusCode: status, message: res } : res;
       return response.status(status).json(body);
     }
 

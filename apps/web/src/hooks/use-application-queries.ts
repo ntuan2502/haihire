@@ -1,6 +1,11 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { applicationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Application, ApplicationStage, PaginatedResult } from "@/types";
@@ -16,7 +21,9 @@ export function useApplications(params?: {
 }) {
   const { user } = useAuth();
   const effectiveOrgId =
-    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+    params?.organizationId !== undefined
+      ? params.organizationId
+      : user?.organizationId;
 
   return useQuery<PaginatedResult<Application>>({
     queryKey: queryKeys.paginatedApplications({
@@ -60,7 +67,10 @@ export function useAllApplications(organizationId?: string | null) {
     queryKey: queryKeys.allApplications(effectiveOrgId),
     queryFn: async () => {
       if (!effectiveOrgId) return [];
-      const res = await applicationsApi.getAll({ organizationId: effectiveOrgId, limit: 100 });
+      const res = await applicationsApi.getAll({
+        organizationId: effectiveOrgId,
+        limit: 100,
+      });
       return res.data;
     },
     enabled: Boolean(effectiveOrgId),
@@ -149,8 +159,15 @@ export function useUploadDocumentMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, file, type }: { id: string; file: File; type?: string }) =>
-      applicationsApi.uploadDocument(id, file, type),
+    mutationFn: ({
+      id,
+      file,
+      type,
+    }: {
+      id: string;
+      file: File;
+      type?: string;
+    }) => applicationsApi.uploadDocument(id, file, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });

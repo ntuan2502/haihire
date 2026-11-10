@@ -25,8 +25,12 @@ describe("EmailProcessor", () => {
 
   beforeEach(() => {
     mockEmailService = {
-      executeSendEmail: vi.fn().mockResolvedValue({ id: "log-1", status: "SENT" }),
-      executeSendSystemEmail: vi.fn().mockResolvedValue({ success: true, status: "SENT" }),
+      executeSendEmail: vi
+        .fn()
+        .mockResolvedValue({ id: "log-1", status: "SENT" }),
+      executeSendSystemEmail: vi
+        .fn()
+        .mockResolvedValue({ success: true, status: "SENT" }),
     };
 
     mockDlqQueue = {
@@ -52,13 +56,29 @@ describe("EmailProcessor", () => {
   });
 
   describe("process", () => {
-    it.each(["send-email", "send-system-email"])("rejects resolved FAILED delivery for %s so BullMQ retries", async (name) => {
-      mockEmailService.executeSendEmail.mockResolvedValueOnce({ status: "FAILED", errorMessage: "SMTP unavailable" });
-      mockEmailService.executeSendSystemEmail.mockResolvedValueOnce({ status: "FAILED", success: false, error: "SMTP unavailable" });
-      const job = { id: "failed", name, data: { dto: {}, organizationId: "org-1" } } as unknown as Job<SendEmailJobData | SendSystemEmailJobData>;
+    it.each(["send-email", "send-system-email"])(
+      "rejects resolved FAILED delivery for %s so BullMQ retries",
+      async (name) => {
+        mockEmailService.executeSendEmail.mockResolvedValueOnce({
+          status: "FAILED",
+          errorMessage: "SMTP unavailable",
+        });
+        mockEmailService.executeSendSystemEmail.mockResolvedValueOnce({
+          status: "FAILED",
+          success: false,
+          error: "SMTP unavailable",
+        });
+        const job = {
+          id: "failed",
+          name,
+          data: { dto: {}, organizationId: "org-1" },
+        } as unknown as Job<SendEmailJobData | SendSystemEmailJobData>;
 
-      await expect(processor.process(job)).rejects.toThrow("SMTP unavailable");
-    });
+        await expect(processor.process(job)).rejects.toThrow(
+          "SMTP unavailable",
+        );
+      },
+    );
     it("processes regular send-email job via EmailService.executeSendEmail", async () => {
       const job = {
         id: "job-send-email-1",
@@ -102,7 +122,9 @@ describe("EmailProcessor", () => {
       const result = await processor.process(job);
 
       expect(mockEmailService.executeSendSystemEmail).toHaveBeenCalledTimes(1);
-      expect(mockEmailService.executeSendSystemEmail).toHaveBeenCalledWith(job.data.dto);
+      expect(mockEmailService.executeSendSystemEmail).toHaveBeenCalledWith(
+        job.data.dto,
+      );
       expect(result).toEqual({ success: true, status: "SENT" });
     });
 
@@ -124,7 +146,9 @@ describe("EmailProcessor", () => {
         },
       } as unknown as Job<SendEmailJobData>;
 
-      await expect(processor.process(job)).rejects.toThrow("SMTP Connection refused");
+      await expect(processor.process(job)).rejects.toThrow(
+        "SMTP Connection refused",
+      );
     });
   });
 
@@ -213,7 +237,10 @@ describe("EmailProcessor", () => {
         opts: { attempts: 3 },
       } as unknown as Job<SendEmailJobData>;
 
-      await processor.onFailed(terminalJob, new Error("SMTP Authentication Failed"));
+      await processor.onFailed(
+        terminalJob,
+        new Error("SMTP Authentication Failed"),
+      );
 
       expect(mockWebhookNotifier.notifyDlq).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -226,7 +253,9 @@ describe("EmailProcessor", () => {
 
     it("gracefully catches exceptions from DLQ queue or webhook notifier without crashing", async () => {
       mockDlqQueue.add.mockRejectedValueOnce(new Error("Redis Out of Memory"));
-      mockWebhookNotifier.notifyDlq.mockRejectedValueOnce(new Error("Webhook DNS failure"));
+      mockWebhookNotifier.notifyDlq.mockRejectedValueOnce(
+        new Error("Webhook DNS failure"),
+      );
 
       const terminalJob = {
         id: "job-resilient-1",
@@ -271,7 +300,10 @@ describe("EmailProcessor", () => {
       } as unknown as Job<SendEmailJobData>;
 
       await expect(
-        isolatedProcessor.onFailed(terminalJob, new Error("Fatal send failure")),
+        isolatedProcessor.onFailed(
+          terminalJob,
+          new Error("Fatal send failure"),
+        ),
       ).resolves.toBeUndefined();
     });
   });

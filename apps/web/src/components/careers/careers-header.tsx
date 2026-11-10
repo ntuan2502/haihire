@@ -5,7 +5,11 @@ import Link from "next/link";
 import { LanguageDropdown } from "@/components/shared/language-dropdown";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { BrandLogo } from "@/components/shared/brand-logo";
-import { UserMenu, MobileDrawer, EnterDashboardButton } from "@/components/layout";
+import {
+  UserMenu,
+  MobileDrawer,
+  EnterDashboardButton,
+} from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
 import { useI18n } from "@/i18n";
 import {
@@ -93,12 +97,16 @@ export function CareersHeader({
                   {copiedLink ? (
                     <>
                       <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t("careers.copied")}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                        {t("careers.copied")}
+                      </span>
                     </>
                   ) : (
                     <>
                       <Share2 className="h-3.5 w-3.5 text-slate-400" />
-                      <span className="hidden sm:inline">{activeShareLabel}</span>
+                      <span className="hidden sm:inline">
+                        {activeShareLabel}
+                      </span>
                     </>
                   )}
                 </button>

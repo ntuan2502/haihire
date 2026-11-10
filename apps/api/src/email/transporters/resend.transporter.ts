@@ -1,5 +1,10 @@
 import { Logger } from "@nestjs/common";
-import type { EmailSendPayload, EmailSendResult, IEmailTransporter, TransporterConfig } from "./transporter.interface";
+import type {
+  EmailSendPayload,
+  EmailSendResult,
+  IEmailTransporter,
+  TransporterConfig,
+} from "./transporter.interface";
 
 export class ResendTransporter implements IEmailTransporter {
   private readonly logger = new Logger(ResendTransporter.name);
@@ -25,10 +30,15 @@ export class ResendTransporter implements IEmailTransporter {
         }),
       });
 
-      const data = (await response.json()) as { id?: string; message?: string; name?: string };
+      const data = (await response.json()) as {
+        id?: string;
+        message?: string;
+        name?: string;
+      };
 
       if (!response.ok) {
-        const errorMsg = data.message || `Resend API returned status ${response.status}`;
+        const errorMsg =
+          data.message || `Resend API returned status ${response.status}`;
         this.logger.error(`[RESEND EMAIL FAILED] ${errorMsg}`);
         return {
           success: false,

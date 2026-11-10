@@ -26,7 +26,9 @@ export function DeleteCandidateModal({
       onClose={onClose}
       onConfirm={onConfirm}
       title={t("applications.deleteCandidateHeading")}
-      description={t("applications.deleteCandidateDescription", { name: candidateName })}
+      description={t("applications.deleteCandidateDescription", {
+        name: candidateName,
+      })}
       notice={t("applications.deleteCandidateWarning")}
       confirmMatchText={candidateName}
       confirmButtonLabel={t("candidates.deleteCandidate")}

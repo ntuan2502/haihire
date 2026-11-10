@@ -10,7 +10,10 @@ export const createApplicationSchema = z
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     email: z.string().email("Invalid email address").optional(),
-    candidateEmail: z.string().email("Invalid candidate email address").optional(),
+    candidateEmail: z
+      .string()
+      .email("Invalid candidate email address")
+      .optional(),
     phone: z.string().optional(),
     candidatePhone: z.string().optional(),
     stage: z.nativeEnum(ApplicationStage).optional(),

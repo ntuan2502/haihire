@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL || "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev" });
+const adapter = new PrismaPg({
+  connectionString:
+    process.env.DATABASE_URL ||
+    "postgresql://haihire:haihire_secret@localhost:5432/haihire_dev",
+});
 const prisma = new PrismaClient({ adapter });
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../src/auth/constants";
 import { APP_ERROR_CODES, Role, PERMISSION_LIST } from "@haihire/shared";

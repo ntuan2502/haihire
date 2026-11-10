@@ -16,7 +16,9 @@ export class WebhookProviderFactory {
       case "GENERIC":
         return new GenericWebhookProvider(config);
       default:
-        throw new Error(`Unknown webhook provider: ${(config as { type: string }).type}`);
+        throw new Error(
+          `Unknown webhook provider: ${(config as { type: string }).type}`,
+        );
     }
   }
 }

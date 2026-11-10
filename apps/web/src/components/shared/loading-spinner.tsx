@@ -1,6 +1,5 @@
 "use client";
 
-
 export interface LoadingSpinnerProps {
   text?: string;
   fullScreen?: boolean;

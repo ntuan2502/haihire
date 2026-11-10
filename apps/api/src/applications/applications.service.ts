@@ -22,10 +22,14 @@ export {
 @Injectable()
 export class ApplicationsService {
   constructor(
-    @Inject(ApplicationsQueryService) private readonly query: ApplicationsQueryService,
-    @Inject(ApplicationsSagaService) private readonly saga: ApplicationsSagaService,
-    @Inject(ApplicationsStageService) private readonly stage: ApplicationsStageService,
-    @Inject(ApplicationsDocumentsService) private readonly documents: ApplicationsDocumentsService,
+    @Inject(ApplicationsQueryService)
+    private readonly query: ApplicationsQueryService,
+    @Inject(ApplicationsSagaService)
+    private readonly saga: ApplicationsSagaService,
+    @Inject(ApplicationsStageService)
+    private readonly stage: ApplicationsStageService,
+    @Inject(ApplicationsDocumentsService)
+    private readonly documents: ApplicationsDocumentsService,
   ) {}
 
   // ==========================================
@@ -57,7 +61,11 @@ export class ApplicationsService {
     return this.query.findOne(id, tenantOrgId);
   }
 
-  updateCandidate(id: string, dto: UpdateCandidateDto, tenantOrgId?: string | null) {
+  updateCandidate(
+    id: string,
+    dto: UpdateCandidateDto,
+    tenantOrgId?: string | null,
+  ) {
     return this.query.updateCandidate(id, dto, tenantOrgId);
   }
 

@@ -41,8 +41,12 @@ export function CandidateTimeline({
 
   const { data: remoteActivities } = useCandidateActivities(candidateId);
 
-  const [filter, setFilter] = useState<"ALL" | "EMAIL" | "INTERVIEW" | "STAGE">("ALL");
-  const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<"ALL" | "EMAIL" | "INTERVIEW" | "STAGE">(
+    "ALL",
+  );
+  const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Use real backend activities, or initial events
   const events = useMemo(() => {
@@ -82,18 +86,30 @@ export function CandidateTimeline({
   const getEventIcon = (type: ActivityEvent["type"]) => {
     switch (type) {
       case "APPLIED":
-        return <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return (
+          <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        );
       case "STAGE_CHANGED":
-        return <ArrowRightCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+        return (
+          <ArrowRightCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        );
       case "EMAIL_SENT":
-        return <Mail className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
+        return (
+          <Mail className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        );
       case "INTERVIEW_SCHEDULED":
       case "INTERVIEW_UPDATED":
-        return <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
+        return (
+          <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        );
       case "SCORECARD_SUBMITTED":
-        return <Star className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />;
+        return (
+          <Star className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+        );
       case "NOTE_ADDED":
-        return <MessageSquare className="h-4 w-4 text-slate-600 dark:text-slate-400" />;
+        return (
+          <MessageSquare className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+        );
       default:
         return <Clock className="h-4 w-4 text-slate-500" />;
     }
@@ -118,7 +134,8 @@ export function CandidateTimeline({
   };
   const getLocalizedTimelineEvent = (event: ActivityEvent) => {
     const meta = (event.metadata || {}) as Record<string, unknown>;
-    const subType = (meta.subType || meta.action || meta.accessType) as string | undefined;
+    const subType = (meta.subType || meta.action || meta.accessType) as
+      string | undefined;
     const eventKey = subType || event.type;
 
     let fromStageLabel = meta.fromStage ? String(meta.fromStage) : "";
@@ -136,7 +153,8 @@ export function CandidateTimeline({
 
     const interpolationParams: Record<string, string | number> = {
       userName: (meta.userName as string) || event.actorName || "Recruiter",
-      interviewer: (meta.interviewer as string) || event.actorName || "Interviewer",
+      interviewer:
+        (meta.interviewer as string) || event.actorName || "Interviewer",
       fromStage: fromStageLabel,
       toStage: toStageLabel,
       recipientName: (meta.recipientName as string) || event.actorName || "",
@@ -156,8 +174,14 @@ export function CandidateTimeline({
     const localizedDesc = t(descKey, interpolationParams);
 
     return {
-      title: localizedTitle && localizedTitle !== titleKey ? localizedTitle : event.title,
-      description: localizedDesc && localizedDesc !== descKey ? localizedDesc : event.description,
+      title:
+        localizedTitle && localizedTitle !== titleKey
+          ? localizedTitle
+          : event.title,
+      description:
+        localizedDesc && localizedDesc !== descKey
+          ? localizedDesc
+          : event.description,
     };
   };
 
@@ -251,7 +275,7 @@ export function CandidateTimeline({
                 <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-slate-300 dark:border-slate-800/90 dark:bg-slate-900/90 transition-all">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${getBadgeClass(
                             event.type,
@@ -260,7 +284,12 @@ export function CandidateTimeline({
                           {title}
                         </span>
                         <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {event.timestamp || ((event as { createdAt?: string }).createdAt ? new Date((event as { createdAt?: string }).createdAt!).toLocaleDateString() : "")}
+                          {event.timestamp ||
+                            ((event as { createdAt?: string }).createdAt
+                              ? new Date(
+                                  (event as { createdAt?: string }).createdAt!,
+                                ).toLocaleDateString()
+                              : "")}
                         </span>
                       </div>
                       <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -298,10 +327,10 @@ export function CandidateTimeline({
                           <span>{t("timeline.deliveredViaProvider")}</span>
                         </div>
                         <p className="text-xs text-slate-800 dark:text-slate-200">
-                          {((event.metadata?.body as string) ||
+                          {(event.metadata?.body as string) ||
                             (event.metadata?.subject as string) ||
                             event.description ||
-                            t("timeline.noEmailPreview"))}
+                            t("timeline.noEmailPreview")}
                         </p>
                       </div>
                     </div>
@@ -316,7 +345,9 @@ export function CandidateTimeline({
                         {event.actorName}
                       </strong>
                       {event.actorRole && (
-                        <span className="text-[10px] text-slate-400">({event.actorRole})</span>
+                        <span className="text-[10px] text-slate-400">
+                          ({event.actorRole})
+                        </span>
                       )}
                     </span>
                   </div>

@@ -51,7 +51,9 @@ export class PrismaService
       return fn(existing);
     }
     return this.$transaction(async (txClient) => {
-      return this.als.run(txClient as PrismaService, () => fn(txClient as PrismaService));
+      return this.als.run(txClient as PrismaService, () =>
+        fn(txClient as PrismaService),
+      );
     }) as Promise<T>;
   }
 
@@ -67,7 +69,9 @@ export class PrismaService
         backendEnv.SEED_DEMO_ON_BOOT &&
         backendEnv.NODE_ENV !== "production"
       ) {
-        const existingUser = await this.user.findFirst({ select: { id: true } });
+        const existingUser = await this.user.findFirst({
+          select: { id: true },
+        });
         if (!existingUser) {
           const hashedPassword = bcrypt.hashSync(DEMO_PASSWORD, 10);
           const adminUserId = crypto.randomUUID();
@@ -155,7 +159,11 @@ export async function runInTransaction<T>(
   prisma: PrismaService,
   fn: (tx: PrismaService) => Promise<T>,
 ): Promise<T> {
-  const p = prisma as unknown as { transaction?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T>; executeTx?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T>; $transaction?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T> };
+  const p = prisma as unknown as {
+    transaction?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T>;
+    executeTx?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T>;
+    $transaction?: (fn: (tx: PrismaService) => Promise<T>) => Promise<T>;
+  };
   if (typeof p.transaction === "function") {
     return p.transaction(fn);
   }

@@ -3,11 +3,7 @@
 import { Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import {
-  useJob,
-  useAllJobs,
-  useJobApplications,
-} from "@/hooks/use-queries";
+import { useJob, useAllJobs, useJobApplications } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
 import { ApplicationsDataTable } from "@/components/applications/applications-data-table";
 

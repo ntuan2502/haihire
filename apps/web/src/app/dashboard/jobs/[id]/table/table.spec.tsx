@@ -32,7 +32,9 @@ vi.mock("@/hooks/use-queries", () => ({
 }));
 
 vi.mock("@/components/applications/applications-data-table", () => ({
-  ApplicationsDataTable: () => <div data-testid="applications-data-table">Table</div>,
+  ApplicationsDataTable: () => (
+    <div data-testid="applications-data-table">Table</div>
+  ),
 }));
 
 describe("JobTablePage", () => {

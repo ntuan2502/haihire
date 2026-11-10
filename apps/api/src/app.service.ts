@@ -101,7 +101,8 @@ export class AppService {
       downServices.push("minio");
     }
 
-    const isAllOk = postgresStatus === "up" && redisStatus === "up" && minioStatus === "up";
+    const isAllOk =
+      postgresStatus === "up" && redisStatus === "up" && minioStatus === "up";
 
     return {
       status: isAllOk ? "ok" : "degraded",
@@ -116,4 +117,3 @@ export class AppService {
     };
   }
 }
-

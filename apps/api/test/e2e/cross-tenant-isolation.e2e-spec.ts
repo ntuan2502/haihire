@@ -15,8 +15,18 @@ import { Readable } from "node:stream";
 
 interface MockDb {
   organizations: Array<{ id: string; name: string }>;
-  orgMembers: Array<{ id: string; userId: string; organizationId: string; role: string }>;
-  jobs: Array<{ id: string; organizationId: string; title: string; status: string }>;
+  orgMembers: Array<{
+    id: string;
+    userId: string;
+    organizationId: string;
+    role: string;
+  }>;
+  jobs: Array<{
+    id: string;
+    organizationId: string;
+    title: string;
+    status: string;
+  }>;
   candidates: Array<{
     id: string;
     organizationId: string;
@@ -92,8 +102,18 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         { id: "org-beta-2", name: "Beta Financial Partners" },
       ],
       orgMembers: [
-        { id: "mem-a", userId: "usr-alpha-1", organizationId: "org-alpha-1", role: "ADMIN" },
-        { id: "mem-b", userId: "usr-beta-2", organizationId: "org-beta-2", role: "ADMIN" },
+        {
+          id: "mem-a",
+          userId: "usr-alpha-1",
+          organizationId: "org-alpha-1",
+          role: "ADMIN",
+        },
+        {
+          id: "mem-b",
+          userId: "usr-beta-2",
+          organizationId: "org-beta-2",
+          role: "ADMIN",
+        },
       ],
       jobs: [
         {
@@ -110,7 +130,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
           name: "Charlie Alpha",
           email: "charlie@alpha-candidate.com",
           phone: "+84901234567",
-          resumeUrl: "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/cv.pdf",
+          resumeUrl:
+            "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/cv.pdf",
           resumeFileName: "cv.pdf",
           resumeMimeType: "application/pdf",
           resumeFileSize: 1048576,
@@ -124,7 +145,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
           candidateId: "cand-alpha-1",
           stage: "NEW",
           notes: "Confidential salary expectation: $150k",
-          resumeUrl: "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/cv.pdf",
+          resumeUrl:
+            "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/cv.pdf",
           resumeFileName: "cv.pdf",
           resumeMimeType: "application/pdf",
           resumeFileSize: 1048576,
@@ -136,7 +158,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         {
           id: "cdoc-alpha-1",
           candidateId: "cand-alpha-1",
-          fileUrl: "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/portfolio.pdf",
+          fileUrl:
+            "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/portfolio.pdf",
           fileName: "portfolio.pdf",
           mimeType: "application/pdf",
           fileSize: 204800,
@@ -147,7 +170,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         {
           id: "adoc-alpha-1",
           applicationId: "app-alpha-1",
-          fileUrl: "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/cv.pdf",
+          fileUrl:
+            "http://minio:9000/haihire-resumes/org-alpha-1/cand-alpha-1/cv.pdf",
           fileName: "cv.pdf",
           mimeType: "application/pdf",
           fileSize: 1048576,
@@ -192,7 +216,10 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
       queueEmail: vi.fn().mockResolvedValue(true),
     };
 
-    candidatesService = new CandidatesService(mockPrisma as never, mockMinioService as never);
+    candidatesService = new CandidatesService(
+      mockPrisma as never,
+      mockMinioService as never,
+    );
     applicationsService = createTestApplicationsService(
       mockPrisma as never,
       mockMinioService as never,
@@ -223,7 +250,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         candidatesController.findOne("cand-alpha-1", { user: userB }),
       ).rejects.toSatisfy((err: unknown) => {
         const isForbiddenOrNotFound =
-          err instanceof AppForbiddenException || err instanceof AppNotFoundException;
+          err instanceof AppForbiddenException ||
+          err instanceof AppNotFoundException;
         const status = (err as { getStatus?: () => number })?.getStatus?.();
         return isForbiddenOrNotFound && (status === 403 || status === 404);
       });
@@ -235,7 +263,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         applicationsController.findOne("app-alpha-1", { user: userB }),
       ).rejects.toSatisfy((err: unknown) => {
         const isForbiddenOrNotFound =
-          err instanceof AppForbiddenException || err instanceof AppNotFoundException;
+          err instanceof AppForbiddenException ||
+          err instanceof AppNotFoundException;
         const status = (err as { getStatus?: () => number })?.getStatus?.();
         return isForbiddenOrNotFound && (status === 403 || status === 404);
       });
@@ -254,7 +283,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         ),
       ).rejects.toSatisfy((err: unknown) => {
         const isForbiddenOrNotFound =
-          err instanceof AppForbiddenException || err instanceof AppNotFoundException;
+          err instanceof AppForbiddenException ||
+          err instanceof AppNotFoundException;
         const status = (err as { getStatus?: () => number })?.getStatus?.();
         return isForbiddenOrNotFound && (status === 403 || status === 404);
       });
@@ -273,7 +303,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         ),
       ).rejects.toSatisfy((err: unknown) => {
         const isForbiddenOrNotFound =
-          err instanceof AppForbiddenException || err instanceof AppNotFoundException;
+          err instanceof AppForbiddenException ||
+          err instanceof AppNotFoundException;
         const status = (err as { getStatus?: () => number })?.getStatus?.();
         return isForbiddenOrNotFound && (status === 403 || status === 404);
       });
@@ -288,7 +319,8 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
         ),
       ).rejects.toSatisfy((err: unknown) => {
         const isForbiddenOrNotFound =
-          err instanceof AppForbiddenException || err instanceof AppNotFoundException;
+          err instanceof AppForbiddenException ||
+          err instanceof AppNotFoundException;
         const status = (err as { getStatus?: () => number })?.getStatus?.();
         return isForbiddenOrNotFound && (status === 403 || status === 404);
       });
@@ -302,12 +334,16 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
       await expect(
         applicationsController.updateStage(
           "app-alpha-1",
-          { stage: "OFFER" as unknown as import("@haihire/shared").RecruitmentStage },
+          {
+            stage:
+              "OFFER" as unknown as import("@haihire/shared").RecruitmentStage,
+          },
           { user: userB },
         ),
       ).rejects.toSatisfy((err: unknown) => {
         const isForbiddenOrNotFound =
-          err instanceof AppForbiddenException || err instanceof AppNotFoundException;
+          err instanceof AppForbiddenException ||
+          err instanceof AppNotFoundException;
         const status = (err as { getStatus?: () => number })?.getStatus?.();
         return isForbiddenOrNotFound && (status === 403 || status === 404);
       });
@@ -318,11 +354,15 @@ describe("Cross-Tenant Isolation E2E Security Test Suite (P0)", () => {
     });
 
     it("Case 7: Sanity check - Legitimate User A accessing their own Candidate A and Application A succeeds", async () => {
-      const candidate = await candidatesController.findOne("cand-alpha-1", { user: userA });
+      const candidate = await candidatesController.findOne("cand-alpha-1", {
+        user: userA,
+      });
       expect(candidate).toBeDefined();
       expect(candidate.name).toBe("Charlie Alpha");
 
-      const application = await applicationsController.findOne("app-alpha-1", { user: userA });
+      const application = await applicationsController.findOne("app-alpha-1", {
+        user: userA,
+      });
       expect(application).toBeDefined();
       expect(application.id).toBe("app-alpha-1");
     });

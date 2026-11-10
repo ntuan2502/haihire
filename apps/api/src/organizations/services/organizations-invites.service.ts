@@ -474,8 +474,7 @@ export class OrganizationsInvitesService {
       }
 
       const assignedRole = (link.role === "ADMIN" ? "ADMIN" : "MEMBER") as
-        | "ADMIN"
-        | "MEMBER";
+        "ADMIN" | "MEMBER";
 
       // Record persistent membership in OrganizationMember
       const newMemberId = crypto.randomUUID();

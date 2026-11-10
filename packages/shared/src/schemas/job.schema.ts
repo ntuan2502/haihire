@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  JobType,
-  JobStatus,
-  WorkplaceType,
-  ExperienceLevel,
-} from "../jobs";
+import { JobType, JobStatus, WorkplaceType, ExperienceLevel } from "../jobs";
 
 export const createJobSchema = z.object({
   title: z.string().min(1, "Job title is required"),

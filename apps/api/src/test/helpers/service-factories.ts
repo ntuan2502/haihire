@@ -8,16 +8,24 @@ import { EventsService } from "../../events/events.service";
 import { PermissionResolverService } from "../../auth/permission-resolver.service";
 import { OrganizationsService } from "../../organizations/organizations.service";
 import {
-  OrganizationsCoreService, OrganizationsMembersService,
-  OrganizationsInvitesService, OrganizationsRolesService, OrganizationsAuditLogService,
+  OrganizationsCoreService,
+  OrganizationsMembersService,
+  OrganizationsInvitesService,
+  OrganizationsRolesService,
+  OrganizationsAuditLogService,
 } from "../../organizations/services";
 import {
-  EmailDispatchService, EmailTemplatesService, EmailSettingsService, EmailSystemService,
+  EmailDispatchService,
+  EmailTemplatesService,
+  EmailSettingsService,
+  EmailSystemService,
 } from "../../email/services";
 import { ApplicationsService } from "../../applications/applications.service";
 import {
-  ApplicationsQueryService, ApplicationsSagaService,
-  ApplicationsStageService, ApplicationsDocumentsService,
+  ApplicationsQueryService,
+  ApplicationsSagaService,
+  ApplicationsStageService,
+  ApplicationsDocumentsService,
 } from "../../applications/services";
 
 export function createTestApplicationsService(
@@ -60,7 +68,12 @@ export function createTestOrganizationsService(
     new OrganizationsCoreService(prisma, auditLog),
     new OrganizationsMembersService(prisma, events, auditLog),
     new OrganizationsInvitesService(prisma),
-    new OrganizationsRolesService(prisma, new PermissionResolverService(prisma), auditLog, events),
+    new OrganizationsRolesService(
+      prisma,
+      new PermissionResolverService(prisma),
+      auditLog,
+      events,
+    ),
     auditLog,
   );
 }

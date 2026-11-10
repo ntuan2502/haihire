@@ -1,4 +1,9 @@
-import type { Application, Candidate, CandidateDocument, Gender } from "@/types";
+import type {
+  Application,
+  Candidate,
+  CandidateDocument,
+  Gender,
+} from "@/types";
 import { inferCandidateName } from "@haihire/shared";
 export { cn } from "cn";
 
@@ -127,11 +132,8 @@ export function parseCandidateNotes(
   const parsedGender = structured?.gender?.trim() || "";
 
   // If first/last are not in structured, infer from candidateName
-  const { firstName: inferredFirst, lastName: inferredLast } = inferCandidateName(
-    candidateName,
-    parsedFirst,
-    parsedLast,
-  );
+  const { firstName: inferredFirst, lastName: inferredLast } =
+    inferCandidateName(candidateName, parsedFirst, parsedLast);
 
   const effectiveName =
     [inferredFirst, inferredLast].filter(Boolean).join(" ") ||
@@ -250,7 +252,12 @@ export function getGenderLabel(
   gender: Gender | string | null | undefined,
   t: (key: string) => string,
 ): string {
-  if (!gender || gender === "—" || gender === "NOT_SPECIFIED" || gender === "Not specified") {
+  if (
+    !gender ||
+    gender === "—" ||
+    gender === "NOT_SPECIFIED" ||
+    gender === "Not specified"
+  ) {
     return "—";
   }
   const upper = gender.toUpperCase();
@@ -263,21 +270,29 @@ export function getGenderLabel(
 /**
  * Get unified candidate display name from candidate application or notes
  */
-export function getCandidateDisplayName(candidate?: {
-  name?: string | null;
-  candidateName?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  notes?: string | null;
-} | null): string {
+export function getCandidateDisplayName(
+  candidate?: {
+    name?: string | null;
+    candidateName?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    notes?: string | null;
+  } | null,
+): string {
   if (!candidate) return "—";
   if (candidate.firstName || candidate.lastName) {
-    const combined = [candidate.firstName, candidate.lastName].filter(Boolean).join(" ");
+    const combined = [candidate.firstName, candidate.lastName]
+      .filter(Boolean)
+      .join(" ");
     if (combined.trim()) return combined.trim();
   }
   if (candidate.candidateName) return candidate.candidateName;
   if (candidate.name) return candidate.name;
-  const { effectiveName } = parseCandidateNotes(candidate.notes, candidate.candidateName, candidate);
+  const { effectiveName } = parseCandidateNotes(
+    candidate.notes,
+    candidate.candidateName,
+    candidate,
+  );
   return effectiveName || "—";
 }
 
@@ -340,7 +355,9 @@ export interface CandidateItem {
 /**
  * Aggregate raw application records into unique candidates in Talent Pool
  */
-export function aggregateCandidates(applications: Application[]): CandidateItem[] {
+export function aggregateCandidates(
+  applications: Application[],
+): CandidateItem[] {
   const map = new Map<string, CandidateItem>();
 
   applications.forEach((app) => {
@@ -408,4 +425,3 @@ export function getJobPublicUrl(job: {
   const jobSlug = slugify(job.title) || job.id;
   return `/careers/${orgSlug}/${jobSlug}`;
 }
-

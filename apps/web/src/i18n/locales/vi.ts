@@ -1193,7 +1193,8 @@ export const vi: TranslationSchema = {
       "Ghi lại điểm mạnh, điểm cần cải thiện hoặc lý do đưa ra khuyến nghị tuyển dụng trên...",
     saveScorecard: "Lưu phiếu đánh giá",
     savingScorecard: "Đang lưu...",
-    scorecardNoPermission: "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
+    scorecardNoPermission:
+      "Bạn không có quyền nộp hoặc chỉnh sửa đánh giá phỏng vấn.",
     recommendations: {
       strongYes: "Tuyển ngay",
       strongYesDesc: "Rất xuất sắc, đạt trọn vẹn tiêu chí",
@@ -1536,7 +1537,8 @@ export const vi: TranslationSchema = {
       "Mô-đun này cung cấp các tích hợp cấp doanh nghiệp, chính sách bảo vệ dữ liệu và mô hình AI tùy chỉnh.",
     viewUpgradePlans: "Xem các gói nâng cấp",
     changePasswordTitle: "Đổi mật khẩu",
-    changePasswordSub: "Cập nhật mật khẩu tài khoản định kỳ để bảo đảm an toàn thông tin",
+    changePasswordSub:
+      "Cập nhật mật khẩu tài khoản định kỳ để bảo đảm an toàn thông tin",
     currentPassword: "Mật khẩu hiện tại",
     currentPasswordPlaceholder: "Nhập mật khẩu hiện tại",
     newPassword: "Mật khẩu mới",

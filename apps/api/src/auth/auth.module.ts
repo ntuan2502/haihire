@@ -22,13 +22,7 @@ import { env } from "../config/env";
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-
-    PermissionResolverService,
-    RolesGuard,
-  ],
+  providers: [AuthService, JwtStrategy, PermissionResolverService, RolesGuard],
   exports: [
     AuthService,
     JwtModule,

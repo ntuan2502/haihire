@@ -48,7 +48,9 @@ describe("DtoPipe", () => {
           statusCode: number;
         };
         expect(response.statusCode).toBe(400);
-        expect(response.message.some((msg) => msg.includes("title"))).toBe(true);
+        expect(response.message.some((msg) => msg.includes("title"))).toBe(
+          true,
+        );
       }
     });
   });

@@ -21,7 +21,10 @@ export function parseDomain(urlStr?: string | null): string | null {
   if (!urlStr) return null;
   try {
     let normalized = urlStr.trim();
-    if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+    if (
+      !normalized.startsWith("http://") &&
+      !normalized.startsWith("https://")
+    ) {
       normalized = `https://${normalized}`;
     }
     const parsed = new URL(normalized);
@@ -52,7 +55,8 @@ export class SourcingLinksService {
     },
   ): Promise<PaginatedResult<TrackingLinkItem>> {
     const page = pagination.page && pagination.page > 0 ? pagination.page : 1;
-    const limit = pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
+    const limit =
+      pagination.limit && pagination.limit > 0 ? pagination.limit : 20;
 
     const links = await this.prisma.trackingLink.findMany({
       where: { organizationId },
@@ -102,31 +106,37 @@ export class SourcingLinksService {
     }
 
     // Sort by createdAt desc
-    filtered.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+    filtered.sort(
+      (a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt),
+    );
 
     // Get jobs to map job titles (scoped by organizationId)
-    const jobIds = Array.from(new Set(filtered.map((l) => l.jobId).filter(Boolean))) as string[];
-    const jobs = jobIds.length > 0
-      ? await this.prisma.job.findMany({
-          where: {
-            organizationId,
-            id: { in: jobIds },
-          },
-          select: { id: true, title: true },
-        })
-      : [];
+    const jobIds = Array.from(
+      new Set(filtered.map((l) => l.jobId).filter(Boolean)),
+    ) as string[];
+    const jobs =
+      jobIds.length > 0
+        ? await this.prisma.job.findMany({
+            where: {
+              organizationId,
+              id: { in: jobIds },
+            },
+            select: { id: true, title: true },
+          })
+        : [];
     const jobTitleMap = new Map(jobs.map((j) => [j.id, j.title]));
 
     // Count applications for each link (scoped to links belonging to this organization)
     const scopedLinkIds = filtered.map((l) => l.id);
-    const allApps = scopedLinkIds.length > 0
-      ? await this.prisma.application.findMany({
-          where: {
-            trackingLinkId: { in: scopedLinkIds },
-          },
-          select: { trackingLinkId: true },
-        })
-      : [];
+    const allApps =
+      scopedLinkIds.length > 0
+        ? await this.prisma.application.findMany({
+            where: {
+              trackingLinkId: { in: scopedLinkIds },
+            },
+            select: { trackingLinkId: true },
+          })
+        : [];
     const appCountMap = new Map<string, number>();
     for (const app of allApps) {
       if (app.trackingLinkId) {
@@ -154,10 +164,11 @@ export class SourcingLinksService {
         source: l.source as SourcingChannel,
         customSource: l.customSource,
         jobId: l.jobId,
-        jobTitle: l.jobId ? jobTitleMap.get(l.jobId) ?? null : null,
+        jobTitle: l.jobId ? (jobTitleMap.get(l.jobId) ?? null) : null,
         campaign: l.campaign,
         medium: l.medium,
-        utmSource: l.utmSource ?? (l.source ? String(l.source).toLowerCase() : null),
+        utmSource:
+          l.utmSource ?? (l.source ? String(l.source).toLowerCase() : null),
         utmMedium: l.utmMedium ?? l.medium ?? null,
         utmCampaign: l.utmCampaign ?? l.campaign ?? null,
         utmTerm: l.utmTerm ?? null,
@@ -304,9 +315,11 @@ export class SourcingLinksService {
     };
     if (dto.name !== undefined) updateData.name = dto.name.trim();
     if (dto.source !== undefined) updateData.source = dto.source;
-    if (dto.customSource !== undefined) updateData.customSource = dto.customSource?.trim() || null;
+    if (dto.customSource !== undefined)
+      updateData.customSource = dto.customSource?.trim() || null;
     if (dto.jobId !== undefined) updateData.jobId = dto.jobId || null;
-    if (dto.utmSource !== undefined) updateData.utmSource = dto.utmSource?.trim() || null;
+    if (dto.utmSource !== undefined)
+      updateData.utmSource = dto.utmSource?.trim() || null;
     if (dto.utmMedium !== undefined) {
       updateData.utmMedium = dto.utmMedium?.trim() || null;
       updateData.medium = dto.utmMedium?.trim() || null;
@@ -315,8 +328,10 @@ export class SourcingLinksService {
       updateData.utmCampaign = dto.utmCampaign?.trim() || null;
       updateData.campaign = dto.utmCampaign?.trim() || null;
     }
-    if (dto.utmTerm !== undefined) updateData.utmTerm = dto.utmTerm?.trim() || null;
-    if (dto.utmContent !== undefined) updateData.utmContent = dto.utmContent?.trim() || null;
+    if (dto.utmTerm !== undefined)
+      updateData.utmTerm = dto.utmTerm?.trim() || null;
+    if (dto.utmContent !== undefined)
+      updateData.utmContent = dto.utmContent?.trim() || null;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
     await this.prisma.trackingLink.update({

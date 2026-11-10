@@ -1,9 +1,6 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import crypto from "node:crypto";
-import {
-  APP_ERROR_CODES,
-  type CandidateDocument,
-} from "@haihire/shared";
+import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -13,7 +10,10 @@ import {
 import { PrismaService } from "../../prisma/prisma.service";
 import { MinioService } from "../../minio/minio.service";
 import { ActivitiesService } from "../../activities/activities.service";
-import { validateUploadedFile, sanitizeFilename } from "../../common/upload-utils";
+import {
+  validateUploadedFile,
+  sanitizeFilename,
+} from "../../common/upload-utils";
 import { fixUtf8String } from "../../common/doc-utils";
 import { toTimestamp, toInstant } from "../../common/date.util";
 import { ApplicationsQueryService } from "./applications-query.service";
@@ -34,7 +34,8 @@ export class ApplicationsDocumentsService {
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
   ) {
-    this.query = queryService || new ApplicationsQueryService(prisma, activitiesService);
+    this.query =
+      queryService || new ApplicationsQueryService(prisma, activitiesService);
   }
 
   async uploadDocument(
@@ -67,7 +68,11 @@ export class ApplicationsDocumentsService {
     };
 
     try {
-      uploadResult = await this.minioService.uploadFile(file, "resumes", targetOrgId);
+      uploadResult = await this.minioService.uploadFile(
+        file,
+        "resumes",
+        targetOrgId,
+      );
       uploadResult.originalName = cleanOriginalName;
     } catch {
       throw new AppServiceUnavailableException(
@@ -153,7 +158,9 @@ export class ApplicationsDocumentsService {
 
       const targetObj = this.minioService.extractObjectName(targetUrl);
       const isAllowed = allowedUrls.some(
-        (u) => u === targetUrl || this.minioService.extractObjectName(u) === targetObj,
+        (u) =>
+          u === targetUrl ||
+          this.minioService.extractObjectName(u) === targetObj,
       );
       if (!isAllowed) {
         throw new AppForbiddenException(
@@ -189,7 +196,8 @@ export class ApplicationsDocumentsService {
     }
 
     if (currentUser?.id && app.candidateId && this.activitiesService) {
-      const appOrgId = app?.job?.organizationId || app?.candidate?.organizationId || "default";
+      const appOrgId =
+        app?.job?.organizationId || app?.candidate?.organizationId || "default";
       this.activitiesService
         .createActivity({
           organizationId: appOrgId,
@@ -230,7 +238,8 @@ export class ApplicationsDocumentsService {
   ) {
     const app = await this.query.findOne(id, tenantOrgId);
 
-    const organizationId = app.job?.organizationId || app.candidate?.organizationId;
+    const organizationId =
+      app.job?.organizationId || app.candidate?.organizationId;
     if (!organizationId) {
       throw new AppForbiddenException(
         APP_ERROR_CODES.APPLICATION_INVALID_ORGANIZATION,
@@ -269,7 +278,9 @@ export class ApplicationsDocumentsService {
     return this.query.findOne(id, tenantOrgId);
   }
 
-  async getCandidateDocuments(candidateId: string): Promise<CandidateDocument[]> {
+  async getCandidateDocuments(
+    candidateId: string,
+  ): Promise<CandidateDocument[]> {
     try {
       const queried = await this.prisma.candidateDocument.findMany({
         where: { candidateId },
@@ -287,7 +298,9 @@ export class ApplicationsDocumentsService {
       });
       return queried.map((d) => ({
         ...d,
-        createdAt: d.createdAt ? new Date(toTimestamp(d.createdAt)).toISOString() : new Date().toISOString(),
+        createdAt: d.createdAt
+          ? new Date(toTimestamp(d.createdAt)).toISOString()
+          : new Date().toISOString(),
       }));
     } catch {
       return [];

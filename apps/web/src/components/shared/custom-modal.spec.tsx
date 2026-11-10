@@ -14,7 +14,7 @@ describe("CustomModal Component", () => {
         badge={<span data-testid="test-badge">Badge</span>}
       >
         <div data-testid="modal-content">Content Body</div>
-      </CustomModal>
+      </CustomModal>,
     );
 
     expect(screen.getByText("Test Modal Title")).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("CustomModal Component", () => {
     render(
       <CustomModal isOpen={true} onClose={handleClose} title="Escapable Modal">
         <div>Content</div>
-      </CustomModal>
+      </CustomModal>,
     );
 
     const closeBtn = screen.getByRole("button", { name: "Close" });
@@ -50,7 +50,7 @@ describe("CustomModal Component", () => {
         {({ isMaximized }) => (
           <div data-testid="is-maximized">{isMaximized ? "MAX" : "NORMAL"}</div>
         )}
-      </CustomModal>
+      </CustomModal>,
     );
 
     expect(screen.getByTestId("is-maximized").textContent).toBe("NORMAL");

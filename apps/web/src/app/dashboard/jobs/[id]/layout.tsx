@@ -282,16 +282,66 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
         {/* Tier 2: Feature Navigation Tabs (Dedicated horizontal scrollable bar) */}
         <div className="flex items-center gap-1 px-4 py-1.5 sm:px-6 overflow-x-auto no-scrollbar bg-slate-50/60 dark:bg-slate-950/40 text-xs font-medium text-slate-500 dark:text-slate-400">
           {[
-            { id: "pipeline", label: t("jobs.tabs.pipeline"), icon: Columns3, implemented: true },
-            { id: "promote", label: t("jobs.tabs.promote"), icon: Megaphone, implemented: false },
-            { id: "table", label: t("jobs.tabs.table"), icon: Table, implemented: true },
-            { id: "import", label: t("jobs.tabs.import"), icon: Download, implemented: false },
-            { id: "inbox", label: t("jobs.tabs.inbox"), icon: Mail, implemented: false },
-            { id: "form", label: t("jobs.tabs.applicationForm"), icon: FileText, implemented: false },
-            { id: "automation", label: t("jobs.tabs.automation"), icon: Zap, implemented: false },
-            { id: "tracking", label: t("jobs.tabs.sourceTracking"), icon: BarChart2, implemented: true },
-            { id: "ai", label: t("jobs.tabs.aiAnalysis"), icon: Sparkles, implemented: false },
-            { id: "settings", label: t("jobs.tabs.settings"), icon: Settings, implemented: true },
+            {
+              id: "pipeline",
+              label: t("jobs.tabs.pipeline"),
+              icon: Columns3,
+              implemented: true,
+            },
+            {
+              id: "promote",
+              label: t("jobs.tabs.promote"),
+              icon: Megaphone,
+              implemented: false,
+            },
+            {
+              id: "table",
+              label: t("jobs.tabs.table"),
+              icon: Table,
+              implemented: true,
+            },
+            {
+              id: "import",
+              label: t("jobs.tabs.import"),
+              icon: Download,
+              implemented: false,
+            },
+            {
+              id: "inbox",
+              label: t("jobs.tabs.inbox"),
+              icon: Mail,
+              implemented: false,
+            },
+            {
+              id: "form",
+              label: t("jobs.tabs.applicationForm"),
+              icon: FileText,
+              implemented: false,
+            },
+            {
+              id: "automation",
+              label: t("jobs.tabs.automation"),
+              icon: Zap,
+              implemented: false,
+            },
+            {
+              id: "tracking",
+              label: t("jobs.tabs.sourceTracking"),
+              icon: BarChart2,
+              implemented: true,
+            },
+            {
+              id: "ai",
+              label: t("jobs.tabs.aiAnalysis"),
+              icon: Sparkles,
+              implemented: false,
+            },
+            {
+              id: "settings",
+              label: t("jobs.tabs.settings"),
+              icon: Settings,
+              implemented: true,
+            },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeNavTab === tab.id;
@@ -302,7 +352,11 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
                 type="button"
                 disabled={!isImplemented}
                 onClick={() => isImplemented && handleNavTabClick(tab.id)}
-                title={!isImplemented ? `${tab.label} (${t("common.comingSoon")})` : undefined}
+                title={
+                  !isImplemented
+                    ? `${tab.label} (${t("common.comingSoon")})`
+                    : undefined
+                }
                 className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 ${
                   !isImplemented
                     ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
@@ -327,11 +381,7 @@ function JobDetailLayoutContent({ children }: { children: ReactNode }) {
   );
 }
 
-export default function JobDetailLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function JobDetailLayout({ children }: { children: ReactNode }) {
   return (
     <AuthGuard>
       <Suspense fallback={<LoadingSpinner fullScreen />}>

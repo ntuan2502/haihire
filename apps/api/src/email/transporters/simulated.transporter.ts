@@ -1,5 +1,9 @@
 import { Logger } from "@nestjs/common";
-import type { EmailSendPayload, EmailSendResult, IEmailTransporter } from "./transporter.interface";
+import type {
+  EmailSendPayload,
+  EmailSendResult,
+  IEmailTransporter,
+} from "./transporter.interface";
 import crypto from "node:crypto";
 
 export class SimulatedTransporter implements IEmailTransporter {

@@ -161,7 +161,9 @@ export function CandidateDrawerHeader({
 
           <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-0.5">
             <Clock className="h-3 w-3" />
-            <span>{t("applications.applied")} {formatDate(currentApp.createdAt)}</span>
+            <span>
+              {t("applications.applied")} {formatDate(currentApp.createdAt)}
+            </span>
           </p>
         </div>
       </div>

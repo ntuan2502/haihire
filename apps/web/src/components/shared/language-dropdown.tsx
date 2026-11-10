@@ -30,14 +30,19 @@ export function LanguageDropdown({
       <DropdownMenuTrigger
         className={cn(
           "flex items-center justify-center font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
-          size === "sm" ? "h-7 w-7 rounded-lg text-xs" : "h-8 w-8 rounded-xl text-xs",
-          className
+          size === "sm"
+            ? "h-7 w-7 rounded-lg text-xs"
+            : "h-8 w-8 rounded-xl text-xs",
+          className,
         )}
         title={current.label}
         aria-label={current.label}
       >
         <span
-          className={cn("leading-none select-none", size === "sm" ? "text-sm" : "text-base")}
+          className={cn(
+            "leading-none select-none",
+            size === "sm" ? "text-sm" : "text-base",
+          )}
           role="img"
           aria-label={current.label}
         >
@@ -62,7 +67,7 @@ export function LanguageDropdown({
                 "w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer outline-none",
                 isSelected
                   ? "bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
               )}
             >
               <div className="flex items-center gap-2">

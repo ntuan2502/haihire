@@ -35,7 +35,9 @@ export class OrganizationsMembersService {
   private async backfillMemberships() {
     // Single batched query across all 3 tables (O(1) database roundtrips on startup)
     const [allOrgs, allUsers, allMembers] = await Promise.all([
-      this.prisma.organization.findMany({ select: { id: true, ownerId: true } }),
+      this.prisma.organization.findMany({
+        select: { id: true, ownerId: true },
+      }),
       this.prisma.user.findMany({
         select: {
           id: true,
@@ -65,7 +67,10 @@ export class OrganizationsMembersService {
           const id = crypto.randomUUID();
           await this.prisma.organizationMember.upsert({
             where: {
-              organizationId_userId: { organizationId: org.id, userId: org.ownerId },
+              organizationId_userId: {
+                organizationId: org.id,
+                userId: org.ownerId,
+              },
             },
             create: {
               id,
@@ -89,7 +94,10 @@ export class OrganizationsMembersService {
           const id = crypto.randomUUID();
           await this.prisma.organizationMember.upsert({
             where: {
-              organizationId_userId: { organizationId: user.organizationId, userId: user.id },
+              organizationId_userId: {
+                organizationId: user.organizationId,
+                userId: user.id,
+              },
             },
             create: {
               id,
@@ -129,16 +137,15 @@ export class OrganizationsMembersService {
     });
 
     // 1. Fetch all memberships recorded in OrganizationMember for this organization
-    const memberships =
-      await this.prisma.organizationMember.findMany({
-        where: { organizationId: currentOrgId },
-        select: {
-          id: true,
-          userId: true,
-          role: true,
-          createdAt: true,
-        },
-      });
+    const memberships = await this.prisma.organizationMember.findMany({
+      where: { organizationId: currentOrgId },
+      select: {
+        id: true,
+        userId: true,
+        role: true,
+        createdAt: true,
+      },
+    });
 
     const memberUserIds = new Set(memberships.map((m) => m.userId));
     if (org?.ownerId) {
@@ -277,15 +284,14 @@ export class OrganizationsMembersService {
       );
     }
 
-    const orgMembers =
-      await this.prisma.organizationMember.findMany({
-        where: { organizationId: targetOrgId },
-        select: {
-          id: true,
-          userId: true,
-          role: true,
-        },
-      });
+    const orgMembers = await this.prisma.organizationMember.findMany({
+      where: { organizationId: targetOrgId },
+      select: {
+        id: true,
+        userId: true,
+        role: true,
+      },
+    });
 
     const membership = orgMembers.find((m) => m.userId === targetMemberId);
 
@@ -449,14 +455,13 @@ export class OrganizationsMembersService {
 
       // If target user is currently viewing this organization, fallback to another org or null
       if (targetUser && targetUser.organizationId === targetOrgId) {
-        const remainingMembership =
-          await tx.organizationMember.findFirst({
-            where: { userId: targetMemberId },
-            select: {
-              organizationId: true,
-              role: true,
-            },
-          });
+        const remainingMembership = await tx.organizationMember.findFirst({
+          where: { userId: targetMemberId },
+          select: {
+            organizationId: true,
+            role: true,
+          },
+        });
 
         const fallbackOrgId = remainingMembership
           ? remainingMembership.organizationId

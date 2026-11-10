@@ -33,7 +33,12 @@ export function AuthGuard({ children, requireOrg = true }: AuthGuardProps) {
   }, [isAuthenticated, user, loading, requireOrg, router]);
 
   if (loading) {
-    return <LoadingSpinner fullScreen text={t("common.loading") || "Loading workspace..."} />;
+    return (
+      <LoadingSpinner
+        fullScreen
+        text={t("common.loading") || "Loading workspace..."}
+      />
+    );
   }
 
   if (!isAuthenticated) {

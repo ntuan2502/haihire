@@ -17,15 +17,25 @@ describe("Frontend utils", () => {
     ["  Tran   Van Minh  ", "Tran", "Van Minh"],
     ["Madonna", "Madonna", ""],
     ["   ", "", ""],
-  ])("infers candidate names consistently for %j", (name, firstName, lastName) => {
-    expect(parseCandidateNotes(undefined, name)).toMatchObject({ firstName, lastName });
-  });
+  ])(
+    "infers candidate names consistently for %j",
+    (name, firstName, lastName) => {
+      expect(parseCandidateNotes(undefined, name)).toMatchObject({
+        firstName,
+        lastName,
+      });
+    },
+  );
 
   it("keeps explicit candidate name fields instead of inferring missing parts", () => {
-    expect(parseCandidateNotes(undefined, "Tran Van Minh", { firstName: " Minh " }))
-      .toMatchObject({ firstName: "Minh", lastName: "" });
-    expect(parseCandidateNotes(undefined, "Tran Van Minh", { lastName: " Tran Van " }))
-      .toMatchObject({ firstName: "", lastName: "Tran Van" });
+    expect(
+      parseCandidateNotes(undefined, "Tran Van Minh", { firstName: " Minh " }),
+    ).toMatchObject({ firstName: "Minh", lastName: "" });
+    expect(
+      parseCandidateNotes(undefined, "Tran Van Minh", {
+        lastName: " Tran Van ",
+      }),
+    ).toMatchObject({ firstName: "", lastName: "Tran Van" });
   });
   describe("cn (classnames utility)", () => {
     it("merges class names correctly", () => {

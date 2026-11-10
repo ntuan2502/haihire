@@ -77,7 +77,6 @@ interface MockDbState {
   interviews: MockInterview[];
 }
 
-
 describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => {
   let mockDbState: MockDbState;
 
@@ -184,8 +183,8 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
             if (
               snapshot.applications.length < mockDbState.applications.length
             ) {
-              mockDbState.applications = mockDbState.applications.filter(
-                (a) => snapshot.applications.some((s) => s.id === a.id),
+              mockDbState.applications = mockDbState.applications.filter((a) =>
+                snapshot.applications.some((s) => s.id === a.id),
               );
             }
             for (const j of snapshot.jobs) {
@@ -308,7 +307,11 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
             JSON.stringify(mockDbState),
           ) as MockDbState;
           const txDb = createDbInterface(snapshot);
-          const crashFn = vi.fn().mockRejectedValue(new Error("Simulated DB Crash on Application write"));
+          const crashFn = vi
+            .fn()
+            .mockRejectedValue(
+              new Error("Simulated DB Crash on Application write"),
+            );
           txDb.application.create = crashFn;
           try {
             return await txFn(txDb);

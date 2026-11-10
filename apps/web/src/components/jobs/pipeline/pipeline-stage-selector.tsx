@@ -14,7 +14,11 @@ interface PipelineStageSelectorProps {
   onToggleFullscreen: () => void;
   isListCollapsed: boolean;
   onToggleCollapse: () => void;
-  onDropCandidate?: (candidateId: string, fromStage: ApplicationStage, toStage: ApplicationStage) => void;
+  onDropCandidate?: (
+    candidateId: string,
+    fromStage: ApplicationStage,
+    toStage: ApplicationStage,
+  ) => void;
 }
 
 export function PipelineStageSelector({
@@ -100,7 +104,9 @@ export function PipelineStageSelector({
           type="button"
           onClick={onToggleFullscreen}
           className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title={isFullscreen ? t("common.exitFullscreen") : t("common.fullscreen")}
+          title={
+            isFullscreen ? t("common.exitFullscreen") : t("common.fullscreen")
+          }
         >
           {isFullscreen ? (
             <Minimize2 className="h-3.5 w-3.5" />

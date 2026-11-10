@@ -32,7 +32,9 @@ function JobPipelinePageContent() {
   return (
     <div
       className={`flex-1 min-h-0 flex flex-col overflow-hidden ${
-        pipeline.isFullscreen ? "fixed inset-0 z-50 bg-white dark:bg-slate-950" : ""
+        pipeline.isFullscreen
+          ? "fixed inset-0 z-50 bg-white dark:bg-slate-950"
+          : ""
       }`}
     >
       {/* 1. Pipeline Stages Sub-header */}
@@ -87,7 +89,9 @@ function JobPipelinePageContent() {
           onToggleOverviewPopover={() =>
             pipeline.setIsOverviewPopoverOpen((prev) => !prev)
           }
-          onCloseOverviewPopover={() => pipeline.setIsOverviewPopoverOpen(false)}
+          onCloseOverviewPopover={() =>
+            pipeline.setIsOverviewPopoverOpen(false)
+          }
           overviewBtnRef={pipeline.overviewBtnRef}
           candidateDocuments={pipeline.candidateDocuments}
           onPreviewDoc={(doc) => pipeline.setPreviewDoc(doc)}

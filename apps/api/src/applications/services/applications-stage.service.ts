@@ -29,7 +29,8 @@ export class ApplicationsStageService {
     @Inject(ApplicationsQueryService)
     queryService?: ApplicationsQueryService,
   ) {
-    this.query = queryService || new ApplicationsQueryService(prisma, activitiesService);
+    this.query =
+      queryService || new ApplicationsQueryService(prisma, activitiesService);
   }
 
   async updateStage(
@@ -43,7 +44,13 @@ export class ApplicationsStageService {
 
     // Validate state transition
     if (dto.stage !== oldStage) {
-      const allowedNextStages = (VALID_APPLICATION_STAGE_TRANSITIONS as Record<string, readonly string[]>)[oldStage] || [];
+      const allowedNextStages =
+        (
+          VALID_APPLICATION_STAGE_TRANSITIONS as Record<
+            string,
+            readonly string[]
+          >
+        )[oldStage] || [];
       if (!allowedNextStages.includes(dto.stage)) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.APPLICATION_INVALID_STAGE_TRANSITION,
@@ -75,7 +82,8 @@ export class ApplicationsStageService {
     const updated = await this.query.findOne(id, tenantOrgId);
 
     // Record activity log
-    const orgId = updated.job?.organizationId || updated.candidate?.organizationId;
+    const orgId =
+      updated.job?.organizationId || updated.candidate?.organizationId;
     if (orgId && updated.candidate && oldStage !== dto.stage) {
       await this.activitiesService.createActivity({
         organizationId: orgId,
@@ -99,7 +107,10 @@ export class ApplicationsStageService {
       // If rejected and rejection template enabled, send rejection email
       if (dto.stage === "REJECTED" && updated.candidate.email) {
         try {
-          const template = await this.emailService.getTemplateByType(orgId, "REJECTION");
+          const template = await this.emailService.getTemplateByType(
+            orgId,
+            "REJECTION",
+          );
           if (template && template.enabled) {
             let orgName = "Company";
             const org = await this.prisma.organization.findFirst({

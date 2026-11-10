@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { authApi } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { Lock, KeyRound, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Lock,
+  KeyRound,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 
 export default function AccountSettingsPage() {
   const { user, logout, setSession } = useAuth();

@@ -1,4 +1,9 @@
-import { Processor, WorkerHost, OnWorkerEvent, InjectQueue } from "@nestjs/bullmq";
+import {
+  Processor,
+  WorkerHost,
+  OnWorkerEvent,
+  InjectQueue,
+} from "@nestjs/bullmq";
 import { Job, Queue } from "bullmq";
 import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import { MinioService } from "../minio/minio.service";
@@ -32,7 +37,9 @@ export class OrphanCleanupProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<OrphanCleanupJobData>): Promise<{ success: boolean; objectName: string }> {
+  async process(
+    job: Job<OrphanCleanupJobData>,
+  ): Promise<{ success: boolean; objectName: string }> {
     const { objectName } = job.data;
     this.logger.log(
       `[OrphanCleanup] Processing deletion of orphan file: ${objectName} (Attempt: ${job.attemptsMade + 1}/${job.opts.attempts || 5})`,
@@ -40,11 +47,15 @@ export class OrphanCleanupProcessor extends WorkerHost {
 
     try {
       await this.minioService.deleteFile(objectName);
-      this.logger.log(`[OrphanCleanup] Successfully deleted orphan file: ${objectName}`);
+      this.logger.log(
+        `[OrphanCleanup] Successfully deleted orphan file: ${objectName}`,
+      );
       return { success: true, objectName };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`[OrphanCleanup] Failed attempt ${job.attemptsMade + 1} to delete ${objectName}: ${msg}`);
+      this.logger.warn(
+        `[OrphanCleanup] Failed attempt ${job.attemptsMade + 1} to delete ${objectName}: ${msg}`,
+      );
       throw err;
     }
   }
@@ -64,10 +75,15 @@ export class OrphanCleanupProcessor extends WorkerHost {
             finalError: err.message,
             totalAttempts: job.attemptsMade,
           });
-          this.logger.log(`[OrphanCleanup] Enqueued '${job.data.objectName}' to Dead-Letter Queue '${ORPHAN_CLEANUP_DLQ}'`);
+          this.logger.log(
+            `[OrphanCleanup] Enqueued '${job.data.objectName}' to Dead-Letter Queue '${ORPHAN_CLEANUP_DLQ}'`,
+          );
         } catch (dlqErr: unknown) {
-          const dlqMsg = dlqErr instanceof Error ? dlqErr.message : String(dlqErr);
-          this.logger.error(`[OrphanCleanup] Failed to enqueue to DLQ: ${dlqMsg}`);
+          const dlqMsg =
+            dlqErr instanceof Error ? dlqErr.message : String(dlqErr);
+          this.logger.error(
+            `[OrphanCleanup] Failed to enqueue to DLQ: ${dlqMsg}`,
+          );
         }
       }
 

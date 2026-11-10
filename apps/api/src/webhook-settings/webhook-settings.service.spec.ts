@@ -49,15 +49,22 @@ describe("WebhookSettingsService", () => {
     const webhookTable: MockWebhookTable = {
       findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi.fn().mockResolvedValue(null),
-      create: vi.fn().mockImplementation((args: { data?: Record<string, unknown> } | Record<string, unknown>) =>
-        Promise.resolve({
-          ...(args?.data || args),
-          createdAt: 1775534400000,
-          updatedAt: 1775534400000,
-        }),
-      ),
+      create: vi
+        .fn()
+        .mockImplementation(
+          (
+            args: { data?: Record<string, unknown> } | Record<string, unknown>,
+          ) =>
+            Promise.resolve({
+              ...(args?.data || args),
+              createdAt: 1775534400000,
+              updatedAt: 1775534400000,
+            }),
+        ),
       update: vi.fn().mockImplementation((args: unknown) => {
-        const payload = (args as { data?: Record<string, unknown> })?.data || (args as Record<string, unknown>);
+        const payload =
+          (args as { data?: Record<string, unknown> })?.data ||
+          (args as Record<string, unknown>);
         return Promise.resolve({
           id: "setting-1",
           organizationId: "org-1",
@@ -110,7 +117,9 @@ describe("WebhookSettingsService", () => {
 
   describe("create", () => {
     it("Case 1: Happy path creates Telegram webhook with encrypted URL and returns masked URL", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        null,
+      );
 
       const result = await service.create("org-1", "user-1", {
         eventType: "DLQ_ALERT",
@@ -123,24 +132,31 @@ describe("WebhookSettingsService", () => {
       expect(mockEncryption.encrypt).toHaveBeenCalledWith(
         "https://api.telegram.org/bot123456:ABC-DEF/sendMessage",
       );
-      expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.create).toHaveBeenCalledWith(
+      expect(
+        mockPrisma.db.orm.public.OrganizationWebhookSetting.create,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             organizationId: "org-1",
             eventType: "DLQ_ALERT",
             provider: "TELEGRAM",
-            webhookUrl: "enc:https://api.telegram.org/bot123456:ABC-DEF/sendMessage",
+            webhookUrl:
+              "enc:https://api.telegram.org/bot123456:ABC-DEF/sendMessage",
             chatId: "-100123456789",
           }),
         }),
       );
-      expect(result.webhookUrl).toBe("https://api.telegram.org/bot***/sendMessage");
+      expect(result.webhookUrl).toBe(
+        "https://api.telegram.org/bot***/sendMessage",
+      );
       expect(result.provider).toBe("TELEGRAM");
       expect(result.chatId).toBe("-100123456789");
     });
 
     it("Case 2: Happy path creates Generic webhook and encrypts secretToken", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        null,
+      );
 
       const result = await service.create("org-1", "user-1", {
         eventType: "JOB_POSTED",
@@ -149,7 +165,9 @@ describe("WebhookSettingsService", () => {
         secretToken: "super-secret-hmac-key",
       });
 
-      expect(mockEncryption.encrypt).toHaveBeenCalledWith("super-secret-hmac-key");
+      expect(mockEncryption.encrypt).toHaveBeenCalledWith(
+        "super-secret-hmac-key",
+      );
       expect(result.webhookUrl).toBe("https://my-company.com/***");
       expect(result.secretToken).toBe("••••••••••••••••");
     });
@@ -186,12 +204,14 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 6: Throws error when duplicate [organizationId, eventType, provider] already exists", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "existing-id",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "TELEGRAM",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "existing-id",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+        },
+      );
 
       await expect(
         service.create("org-1", "user-1", {
@@ -206,56 +226,64 @@ describe("WebhookSettingsService", () => {
 
   describe("findAll & findOne", () => {
     it("Case 7: findAll returns list of masked settings for the organization", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.all.mockResolvedValue([
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.all.mockResolvedValue(
+        [
+          {
+            id: "s-1",
+            organizationId: "org-1",
+            eventType: "DLQ_ALERT",
+            provider: "TELEGRAM",
+            webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
+            secretToken: null,
+            chatId: "-100",
+            isEnabled: true,
+            createdAt: 1775534400000,
+            updatedAt: 1775534400000,
+            createdBy: "u1",
+            updatedBy: "u1",
+          },
+          {
+            id: "s-2",
+            organizationId: "org-1",
+            eventType: "ORPHAN_SPIKE",
+            provider: "DISCORD",
+            webhookUrl: "enc:https://discord.com/api/webhooks/999/secrettoken",
+            secretToken: null,
+            chatId: null,
+            isEnabled: true,
+            createdAt: 1775534400000,
+            updatedAt: 1775534400000,
+            createdBy: "u1",
+            updatedBy: "u1",
+          },
+        ],
+      );
+
+      const list = await service.findAll("org-1");
+      expect(list).toHaveLength(2);
+      expect(list[0].webhookUrl).toBe(
+        "https://api.telegram.org/bot***/sendMessage",
+      );
+      expect(list[1].webhookUrl).toBe(
+        "https://discord.com/api/webhooks/999/***",
+      );
+    });
+
+    it("Case 8: findOne returns masked setting", async () => {
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
         {
           id: "s-1",
           organizationId: "org-1",
           eventType: "DLQ_ALERT",
-          provider: "TELEGRAM",
-          webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
-          secretToken: null,
-          chatId: "-100",
-          isEnabled: true,
-          createdAt: 1775534400000,
-          updatedAt: 1775534400000,
-          createdBy: "u1",
-          updatedBy: "u1",
-        },
-        {
-          id: "s-2",
-          organizationId: "org-1",
-          eventType: "ORPHAN_SPIKE",
-          provider: "DISCORD",
-          webhookUrl: "enc:https://discord.com/api/webhooks/999/secrettoken",
-          secretToken: null,
+          provider: "GENERIC",
+          webhookUrl: "enc:https://hooks.slack.com/services/T00/B00/X00",
+          secretToken: "enc:mysecret",
           chatId: null,
           isEnabled: true,
           createdAt: 1775534400000,
           updatedAt: 1775534400000,
-          createdBy: "u1",
-          updatedBy: "u1",
         },
-      ]);
-
-      const list = await service.findAll("org-1");
-      expect(list).toHaveLength(2);
-      expect(list[0].webhookUrl).toBe("https://api.telegram.org/bot***/sendMessage");
-      expect(list[1].webhookUrl).toBe("https://discord.com/api/webhooks/999/***");
-    });
-
-    it("Case 8: findOne returns masked setting", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "s-1",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "GENERIC",
-        webhookUrl: "enc:https://hooks.slack.com/services/T00/B00/X00",
-        secretToken: "enc:mysecret",
-        chatId: null,
-        isEnabled: true,
-        createdAt: 1775534400000,
-        updatedAt: 1775534400000,
-      });
+      );
 
       const res = await service.findOne("s-1", "org-1");
       expect(res.webhookUrl).toBe("https://hooks.slack.com/***");
@@ -263,12 +291,14 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 9: findOne blocks cross-tenant access", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "s-1",
-        organizationId: "org-2", // different org
-        eventType: "DLQ_ALERT",
-        provider: "TELEGRAM",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "s-1",
+          organizationId: "org-2", // different org
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+        },
+      );
 
       await expect(service.findOne("s-1", "org-1")).rejects.toThrow(
         AppForbiddenException,
@@ -276,7 +306,9 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 10: findOne throws 404 when setting not found", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        null,
+      );
 
       await expect(service.findOne("non-existent", "org-1")).rejects.toThrow(
         AppNotFoundException,
@@ -286,26 +318,32 @@ describe("WebhookSettingsService", () => {
 
   describe("update & delete", () => {
     it("Case 11: update preserves existing encrypted URL when masked URL is passed", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "TELEGRAM",
-        webhookUrl: "enc:https://api.telegram.org/bot999/sendMessage",
-        chatId: "-100999",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+          webhookUrl: "enc:https://api.telegram.org/bot999/sendMessage",
+          chatId: "-100999",
+        },
+      );
 
       await service.update("setting-1", "org-1", "user-1", {
         webhookUrl: "https://api.telegram.org/bot***/sendMessage", // masked URL from UI
         isEnabled: false,
       });
 
-      expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
+      expect(
+        mockPrisma.db.orm.public.OrganizationWebhookSetting.update,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.not.objectContaining({ webhookUrl: expect.anything() }),
         }),
       );
-      expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
+      expect(
+        mockPrisma.db.orm.public.OrganizationWebhookSetting.update,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ isEnabled: false }),
         }),
@@ -313,12 +351,14 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 12: update rejects cross-tenant modification", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-OTHER",
-        eventType: "DLQ_ALERT",
-        provider: "TELEGRAM",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-OTHER",
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+        },
+      );
 
       await expect(
         service.update("setting-1", "org-1", "user-1", { isEnabled: false }),
@@ -326,14 +366,18 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 13: delete successfully removes setting from DB", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-1",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-1",
+        },
+      );
 
       const res = await service.delete("setting-1", "org-1");
       expect(res).toEqual({ success: true });
-      expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.delete).toHaveBeenCalled();
+      expect(
+        mockPrisma.db.orm.public.OrganizationWebhookSetting.delete,
+      ).toHaveBeenCalled();
     });
   });
 
@@ -362,14 +406,16 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 15: tests connection using stored setting ID and decrypted credentials", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-db",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "TELEGRAM",
-        webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
-        chatId: "-100123",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-db",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+          webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
+          chatId: "-100123",
+        },
+      );
 
       const mockProvider = {
         send: vi.fn().mockResolvedValue({ success: true }),
@@ -412,14 +458,16 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 17: update with new unmasked URL validates and encrypts it", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "TELEGRAM",
-        webhookUrl: "enc:https://api.telegram.org/botold/sendMessage",
-        chatId: "-1001",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+          webhookUrl: "enc:https://api.telegram.org/botold/sendMessage",
+          chatId: "-1001",
+        },
+      );
 
       await service.update("setting-1", "org-1", "user-1", {
         webhookUrl: "https://api.telegram.org/botnew-token:123/sendMessage",
@@ -428,24 +476,29 @@ describe("WebhookSettingsService", () => {
       expect(mockEncryption.encrypt).toHaveBeenCalledWith(
         "https://api.telegram.org/botnew-token:123/sendMessage",
       );
-      expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
+      expect(
+        mockPrisma.db.orm.public.OrganizationWebhookSetting.update,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            webhookUrl: "enc:https://api.telegram.org/botnew-token:123/sendMessage",
+            webhookUrl:
+              "enc:https://api.telegram.org/botnew-token:123/sendMessage",
           }),
         }),
       );
     });
 
     it("Case 18: update with secretToken handles new secret, empty string, and masked string", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-gen",
-        organizationId: "org-1",
-        eventType: "JOB_POSTED",
-        provider: "GENERIC",
-        webhookUrl: "enc:https://example.com/hook",
-        secretToken: "enc:old-secret",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-gen",
+          organizationId: "org-1",
+          eventType: "JOB_POSTED",
+          provider: "GENERIC",
+          webhookUrl: "enc:https://example.com/hook",
+          secretToken: "enc:old-secret",
+        },
+      );
 
       // 1. New secret
       await service.update("setting-gen", "org-1", "user-1", {
@@ -457,7 +510,9 @@ describe("WebhookSettingsService", () => {
       await service.update("setting-gen", "org-1", "user-1", {
         secretToken: "",
       });
-      expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
+      expect(
+        mockPrisma.db.orm.public.OrganizationWebhookSetting.update,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ secretToken: null }),
         }),
@@ -467,7 +522,9 @@ describe("WebhookSettingsService", () => {
       await service.update("setting-gen", "org-1", "user-1", {
         secretToken: "••••••••••••••••",
       });
-      expect(mockPrisma.db.orm.public.OrganizationWebhookSetting.update).toHaveBeenCalledWith(
+      expect(
+        mockPrisma.db.orm.public.OrganizationWebhookSetting.update,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.not.objectContaining({ secretToken: expect.anything() }),
         }),
@@ -497,7 +554,9 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 20: update throws 404 when setting does not exist", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        null,
+      );
 
       await expect(
         service.update("non-existent", "org-1", "user-1", { isEnabled: true }),
@@ -505,7 +564,9 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 21: delete throws 404 when setting not found", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        null,
+      );
 
       await expect(service.delete("missing", "org-1")).rejects.toThrow(
         AppNotFoundException,
@@ -513,10 +574,12 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 22: delete throws 403 on cross-tenant deletion attempt", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-OTHER",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-OTHER",
+        },
+      );
 
       await expect(service.delete("setting-1", "org-1")).rejects.toThrow(
         AppForbiddenException,
@@ -540,10 +603,12 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 25: testConnection throws 403 when stored setting belongs to another org", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-cross",
-        organizationId: "org-OTHER",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-cross",
+          organizationId: "org-OTHER",
+        },
+      );
 
       await expect(
         service.testConnection("org-1", { id: "setting-cross" }),
@@ -567,12 +632,14 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 27: testConnection throws error when stored webhookUrl decryption fails", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-corrupt",
-        organizationId: "org-1",
-        provider: "TELEGRAM",
-        webhookUrl: "invalid-cipher-text",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-corrupt",
+          organizationId: "org-1",
+          provider: "TELEGRAM",
+          webhookUrl: "invalid-cipher-text",
+        },
+      );
       mockEncryption.decrypt.mockReturnValue(null);
 
       await expect(
@@ -581,11 +648,15 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 29: update throws AppNotFoundException when update returns null", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-1",
-      });
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.update.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-1",
+        },
+      );
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.update.mockResolvedValue(
+        null,
+      );
 
       await expect(
         service.update("setting-1", "org-1", "user-1", { isEnabled: true }),
@@ -593,7 +664,9 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 30: testConnection throws 404 when stored setting ID is not found", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        null,
+      );
 
       await expect(
         service.testConnection("org-1", { id: "non-existent-id" }),
@@ -625,14 +698,16 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 32: testConnection using stored setting ID decrypts secretToken when present", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-generic",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "GENERIC",
-        webhookUrl: "enc:https://custom-webhook.com/alert",
-        secretToken: "enc:my-hmac-secret",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-generic",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "GENERIC",
+          webhookUrl: "enc:https://custom-webhook.com/alert",
+          secretToken: "enc:my-hmac-secret",
+        },
+      );
 
       const mockProvider = {
         send: vi.fn().mockResolvedValue({ success: true }),
@@ -655,14 +730,16 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 33: update throws 400 WEBHOOK_PROVIDER_MISMATCH when new webhookUrl violates provider validation", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "TELEGRAM",
-        webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
-        chatId: "-100",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "TELEGRAM",
+          webhookUrl: "enc:https://api.telegram.org/bot123/sendMessage",
+          chatId: "-100",
+        },
+      );
 
       await expect(
         service.update("setting-1", "org-1", "user-1", {
@@ -672,13 +749,15 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 34: update provider without webhookUrl throws when existing URL is incompatible with new provider", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "GENERIC",
-        webhookUrl: "enc:https://generic-api.com/hooks",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "GENERIC",
+          webhookUrl: "enc:https://generic-api.com/hooks",
+        },
+      );
 
       // Changing to TELEGRAM requires https://api.telegram.org/bot... and chatId
       await expect(
@@ -689,13 +768,15 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 35: update provider without webhookUrl succeeds when existing URL is compatible and handles decrypt error", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-1",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "GENERIC",
-        webhookUrl: "https://discord.com/api/webhooks/123/xyz",
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-1",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "GENERIC",
+          webhookUrl: "https://discord.com/api/webhooks/123/xyz",
+        },
+      );
       mockEncryption.decrypt.mockImplementationOnce(() => {
         throw new Error("Decrypt error");
       });
@@ -708,7 +789,9 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 36: create throws 400 when encryptionService fails to encrypt URL", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(null);
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        null,
+      );
       mockEncryption.encrypt.mockReturnValueOnce(null);
 
       await expect(
@@ -721,15 +804,17 @@ describe("WebhookSettingsService", () => {
     });
 
     it("Case 37: mapToResponse gracefully falls back to raw URL when decrypt throws", async () => {
-      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue({
-        id: "setting-fallback",
-        organizationId: "org-1",
-        eventType: "DLQ_ALERT",
-        provider: "GENERIC",
-        webhookUrl: "https://raw-url.com/hook",
-        createdAt: 1775534400000,
-        updatedAt: 1775534400000,
-      });
+      mockPrisma.db.orm.public.OrganizationWebhookSetting.first.mockResolvedValue(
+        {
+          id: "setting-fallback",
+          organizationId: "org-1",
+          eventType: "DLQ_ALERT",
+          provider: "GENERIC",
+          webhookUrl: "https://raw-url.com/hook",
+          createdAt: 1775534400000,
+          updatedAt: 1775534400000,
+        },
+      );
       mockEncryption.decrypt.mockImplementationOnce(() => {
         throw new Error("Key failure");
       });

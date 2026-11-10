@@ -25,15 +25,17 @@ import {
   OverviewSectionsPopover,
   type OverviewSectionsState,
 } from "@/components/applications/overview-sections-popover";
-import type { Application, ApplicationStage, CandidateDocument, Interview, Job } from "@/types";
+import type {
+  Application,
+  ApplicationStage,
+  CandidateDocument,
+  Interview,
+  Job,
+} from "@/types";
 import type { StageConfig } from "@/lib/stages";
 import { StageSelector } from "./stage-selector";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
-import {
-  formatDate,
-  getCandidateDisplayName,
-  getInitials,
-} from "@/lib/utils";
+import { formatDate, getCandidateDisplayName, getInitials } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 interface PipelineCandidateDetailProps {
@@ -288,11 +290,26 @@ export function PipelineCandidateDetail({
 
             {/* Other tabs */}
             {[
-              { id: "documents", label: t("applications.tabs.documents"), count: candidateDocuments.length },
-              { id: "interviews", label: t("applications.tabs.interviews"), count: candidateInterviews.length },
-              { id: "notes", label: t("applications.tabs.notes"), count: candidateNotesList.length },
+              {
+                id: "documents",
+                label: t("applications.tabs.documents"),
+                count: candidateDocuments.length,
+              },
+              {
+                id: "interviews",
+                label: t("applications.tabs.interviews"),
+                count: candidateInterviews.length,
+              },
+              {
+                id: "notes",
+                label: t("applications.tabs.notes"),
+                count: candidateNotesList.length,
+              },
               { id: "timeline", label: t("applications.tabs.timeline") },
-              { id: "properties", label: t("applications.sections.properties") },
+              {
+                id: "properties",
+                label: t("applications.sections.properties"),
+              },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -333,7 +350,9 @@ export function PipelineCandidateDetail({
                     <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                        style={{ width: `${selectedCandidate.matchScore || 75}%` }}
+                        style={{
+                          width: `${selectedCandidate.matchScore || 75}%`,
+                        }}
                       />
                     </div>
                   </div>

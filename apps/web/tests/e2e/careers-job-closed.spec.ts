@@ -20,15 +20,21 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
     // Verify <h1> has job title
     const heading = page.locator("h1");
     await expect(heading.first()).toBeVisible();
-    expect(await heading.first().innerText()).toContain("Senior Backend Engineer");
+    expect(await heading.first().innerText()).toContain(
+      "Senior Backend Engineer",
+    );
 
     // Verify apply button is present
-    const applyButton = page.getByRole("button", { name: /ứng tuyển ngay|apply now/i });
+    const applyButton = page.getByRole("button", {
+      name: /ứng tuyển ngay|apply now/i,
+    });
     await expect(applyButton.first()).toBeVisible();
 
     // Verify ZERO React 19 script tag warnings
     const scriptWarnings = rawConsoleLogs.filter((log) =>
-      log.text.includes("Encountered a script tag while rendering React component"),
+      log.text.includes(
+        "Encountered a script tag while rendering React component",
+      ),
     );
     expect(scriptWarnings).toHaveLength(0);
   });
@@ -54,20 +60,31 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
     // Verify heading contains job title
     const heading = page.locator("h1");
     await expect(heading.first()).toBeVisible();
-    expect(await heading.first().innerText()).toContain("Information Security & SecOps Specialist");
+    expect(await heading.first().innerText()).toContain(
+      "Information Security & SecOps Specialist",
+    );
 
     // Verify closed notice badge or text
-    const closedBadge = page.getByText(/vị trí này đã đóng|this position is closed/i);
+    const closedBadge = page.getByText(
+      /vị trí này đã đóng|this position is closed/i,
+    );
     await expect(closedBadge.first()).toBeVisible();
 
     // Verify link to view other jobs at the organization exists
-    const viewOtherLink = page.getByRole("link", { name: /xem các vị trí khác|view other positions/i });
+    const viewOtherLink = page.getByRole("link", {
+      name: /xem các vị trí khác|view other positions/i,
+    });
     await expect(viewOtherLink.first()).toBeVisible();
-    await expect(viewOtherLink.first()).toHaveAttribute("href", "/careers/admin");
+    await expect(viewOtherLink.first()).toHaveAttribute(
+      "href",
+      "/careers/admin",
+    );
 
     // CRITICAL ACCEPTANCE CRITERIA: Verify ZERO React 19 script tag warnings
     const scriptWarnings = rawConsoleLogs.filter((log) =>
-      log.text.includes("Encountered a script tag while rendering React component"),
+      log.text.includes(
+        "Encountered a script tag while rendering React component",
+      ),
     );
     expect(scriptWarnings).toHaveLength(0);
   });
@@ -82,7 +99,9 @@ test.describe("E2E: Careers Job Status Handling & React 19 Script Warning Fix (T
     expect(response?.status()).toBe(404);
   });
 
-  test("Case 4: Non-existent job slug returns 404 Not Found", async ({ page }) => {
+  test("Case 4: Non-existent job slug returns 404 Not Found", async ({
+    page,
+  }) => {
     const response = await page.goto(
       "/careers/admin/non-existent-career-opening-slug-404",
       { waitUntil: "networkidle" },

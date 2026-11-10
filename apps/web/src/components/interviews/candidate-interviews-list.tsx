@@ -50,7 +50,8 @@ export function CandidateInterviewsList({
   hideIfEmpty = false,
 }: CandidateInterviewsListProps) {
   const { t } = useI18n();
-  const [interviewToCancel, setInterviewToCancel] = useState<ScheduledInterviewInfo | null>(null);
+  const [interviewToCancel, setInterviewToCancel] =
+    useState<ScheduledInterviewInfo | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
   const handleConfirmCancel = async () => {
@@ -184,13 +185,17 @@ export function CandidateInterviewsList({
               </div>
 
               <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-200 dark:border-emerald-900/60 shrink-0">
-                {idx === 0 ? t("interviews.currentScheduleBadge") : t("interviews.completedScheduleBadge")}
+                {idx === 0
+                  ? t("interviews.currentScheduleBadge")
+                  : t("interviews.completedScheduleBadge")}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800/80 text-xs">
               <div className="space-y-1">
-                <span className="text-slate-400 block">{t("interviews.timeLabel")}</span>
+                <span className="text-slate-400 block">
+                  {t("interviews.timeLabel")}
+                </span>
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                   {t("interviews.atTime", {
@@ -201,7 +206,9 @@ export function CandidateInterviewsList({
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">{t("interviews.formatLabelShort")}</span>
+                <span className="text-slate-400 block">
+                  {t("interviews.formatLabelShort")}
+                </span>
                 {scheduled.format === "OFFICE" ? (
                   <span className="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5 shrink-0" />
@@ -216,7 +223,9 @@ export function CandidateInterviewsList({
               </div>
 
               <div className="space-y-1">
-                <span className="text-slate-400 block">{t("interviews.tableHeaders.interviewer")}</span>
+                <span className="text-slate-400 block">
+                  {t("interviews.tableHeaders.interviewer")}
+                </span>
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                   {scheduled.interviewer}
@@ -265,10 +274,19 @@ export function CandidateInterviewsList({
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
                     <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                    <span>{t("interviews.ratingResult", { score: scheduled.scorecard.overallRating })}</span>
+                    <span>
+                      {t("interviews.ratingResult", {
+                        score: scheduled.scorecard.overallRating,
+                      })}
+                    </span>
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/70 shadow-2xs">
-                    {t("interviews.recommendationLabel", { recommendation: getRecommendationLabel(scheduled.scorecard.recommendation, t) })}
+                    {t("interviews.recommendationLabel", {
+                      recommendation: getRecommendationLabel(
+                        scheduled.scorecard.recommendation,
+                        t,
+                      ),
+                    })}
                   </span>
                 </div>
 
@@ -280,7 +298,9 @@ export function CandidateInterviewsList({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/60">
                     {scheduled.scorecard.technicalScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.technicalCriteria")}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                          {t("interviews.technicalCriteria")}
+                        </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.technicalScore}/5
@@ -289,7 +309,9 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.communicationScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.communicationCriteria")}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                          {t("interviews.communicationCriteria")}
+                        </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.communicationScore}/5
@@ -298,7 +320,9 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.cultureScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.cultureFitCriteria")}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                          {t("interviews.cultureFitCriteria")}
+                        </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.cultureScore}/5
@@ -307,7 +331,9 @@ export function CandidateInterviewsList({
                     )}
                     {scheduled.scorecard.problemSolvingScore && (
                       <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-amber-200/50 dark:border-amber-900/40">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">{t("interviews.problemSolvingCriteria")}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                          {t("interviews.problemSolvingCriteria")}
+                        </span>
                         <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1 mt-0.5">
                           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                           {scheduled.scorecard.problemSolvingScore}/5
@@ -349,7 +375,9 @@ export function CandidateInterviewsList({
                     onClick={() => onSchedule(scheduled)}
                     className="text-xs font-semibold cursor-pointer"
                   >
-                    {idx === 0 ? t("interviews.editScheduleBtn") : t("interviews.updateBtn")}
+                    {idx === 0
+                      ? t("interviews.editScheduleBtn")
+                      : t("interviews.updateBtn")}
                   </Button>
                 )}
               </div>

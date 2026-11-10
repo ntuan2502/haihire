@@ -53,9 +53,7 @@ export class ApplicationsQueryService {
     }
 
     const take =
-      options?.limit && options.limit > 0
-        ? Math.min(options.limit, 100)
-        : 100;
+      options?.limit && options.limit > 0 ? Math.min(options.limit, 100) : 100;
     const skip =
       options?.offset && options.offset > 0 ? options.offset : undefined;
 
@@ -135,8 +133,7 @@ export class ApplicationsQueryService {
       );
     }
     const targetOrgId = tenantOrgId || organizationId || undefined;
-    const rawLimit =
-      options?.limit && options.limit > 0 ? options.limit : 20;
+    const rawLimit = options?.limit && options.limit > 0 ? options.limit : 20;
     const defaultLimit = Math.min(rawLimit, 100);
     const defaultPage = options?.page && options.page > 0 ? options.page : 1;
 

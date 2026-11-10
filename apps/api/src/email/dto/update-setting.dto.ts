@@ -29,7 +29,6 @@ export class UpdateEmailSettingDto {
   @IsOptional()
   smtpPass?: string;
 
-
   @IsString()
   @IsOptional()
   resendApiKey?: string;

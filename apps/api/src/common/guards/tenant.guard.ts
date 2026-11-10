@@ -29,11 +29,10 @@ export class TenantGuard implements CanActivate {
 
     // Check persistent membership across organizations
     try {
-      const userMemberships =
-        await this.prisma.organizationMember.findMany({
-          where: { userId: req.user.id },
-          select: { organizationId: true },
-        });
+      const userMemberships = await this.prisma.organizationMember.findMany({
+        where: { userId: req.user.id },
+        select: { organizationId: true },
+      });
 
       const isMember = userMemberships.some(
         (m) => m.organizationId === requestedOrgId,

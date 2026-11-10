@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { WizardStepDetails, type WizardStepDetailsProps, type Step1TouchedState } from "./wizard-step-details";
+import {
+  WizardStepDetails,
+  type WizardStepDetailsProps,
+  type Step1TouchedState,
+} from "./wizard-step-details";
 
 // Mock i18n
 vi.mock("@/i18n", () => ({
@@ -8,7 +12,8 @@ vi.mock("@/i18n", () => ({
     t: (key: string, _params?: Record<string, string | number>) => {
       const translations: Record<string, string> = {
         "jobs.wizard.jobDetailsTitle": "Chi tiết công việc",
-        "jobs.wizard.jobDetailsDesc": "Điền các thông tin cơ bản cho vị trí tuyển dụng.",
+        "jobs.wizard.jobDetailsDesc":
+          "Điền các thông tin cơ bản cho vị trí tuyển dụng.",
         "jobs.wizard.saveChangesLink": "Lưu thay đổi",
         "jobs.wizard.jobTitleLabel": "Tiêu đề công việc",
         "jobs.wizard.departmentLabel": "Phòng ban",
@@ -23,21 +28,27 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.workplaceLabel": "Nơi làm việc",
         "jobs.wizard.compensationTitle": "Mức lương & Đãi ngộ",
         "jobs.wizard.compensationOptional": "Tùy chọn",
-        "jobs.wizard.compensationHintClosed": "Nhấp để thiết lập khoảng lương cho vị trí này",
-        "jobs.wizard.compensationHintOpen": "Mức lương minh bạch giúp thu hút nhiều ứng viên tiềm năng hơn.",
+        "jobs.wizard.compensationHintClosed":
+          "Nhấp để thiết lập khoảng lương cho vị trí này",
+        "jobs.wizard.compensationHintOpen":
+          "Mức lương minh bạch giúp thu hút nhiều ứng viên tiềm năng hơn.",
         "jobs.wizard.payNegotiableDetail": "Mức lương thỏa thuận khi phỏng vấn",
         "jobs.wizard.minSalary": "Lương tối thiểu",
         "jobs.wizard.maxSalary": "Lương tối đa",
         "jobs.wizard.currency": "Tiền tệ",
         "jobs.wizard.perPeriod": "Kỳ hạn",
         "jobs.wizard.descriptionTitle": "Mô tả công việc",
-        "jobs.wizard.descriptionHelpText": "Tóm tắt trách nhiệm chính và mục tiêu của vai trò này",
+        "jobs.wizard.descriptionHelpText":
+          "Tóm tắt trách nhiệm chính và mục tiêu của vai trò này",
         "jobs.wizard.charsCount": "ký tự",
         "jobs.wizard.requirementsTitle": "Yêu cầu ứng viên",
-        "jobs.wizard.requirementsNotice": "Liệt kê kỹ năng chuyên môn, kinh nghiệm cần thiết",
+        "jobs.wizard.requirementsNotice":
+          "Liệt kê kỹ năng chuyên môn, kinh nghiệm cần thiết",
         "jobs.wizard.continueToPublish": "Tiếp tục sang bước xuất bản",
-        "jobs.wizard.errors.titleRequired": "Tiêu đề công việc không được để trống",
-        "jobs.wizard.errors.descRequired": "Mô tả công việc không được để trống",
+        "jobs.wizard.errors.titleRequired":
+          "Tiêu đề công việc không được để trống",
+        "jobs.wizard.errors.descRequired":
+          "Mô tả công việc không được để trống",
         "jobs.wizard.employmentTypeError": "Vui lòng chọn hình thức làm việc",
         "jobs.wizard.experienceLevelError": "Vui lòng chọn cấp bậc",
         "jobs.wizard.workplaceError": "Vui lòng chọn nơi làm việc",
@@ -64,7 +75,9 @@ describe("WizardStepDetails Component Tests", () => {
     salaryPer: false,
   };
 
-  const createProps = (overrides: Partial<WizardStepDetailsProps> = {}): WizardStepDetailsProps => ({
+  const createProps = (
+    overrides: Partial<WizardStepDetailsProps> = {},
+  ): WizardStepDetailsProps => ({
     jobTitle: "",
     setJobTitle: vi.fn(),
     department: "",
@@ -128,14 +141,18 @@ describe("WizardStepDetails Component Tests", () => {
     const props = createProps({ showTitleError: true });
     render(<WizardStepDetails {...props} />);
 
-    expect(screen.getByText("Tiêu đề công việc không được để trống")).toBeInTheDocument();
+    expect(
+      screen.getByText("Tiêu đề công việc không được để trống"),
+    ).toBeInTheDocument();
   });
 
   it("displays validation error when showDescriptionError is true", () => {
     const props = createProps({ showDescriptionError: true });
     render(<WizardStepDetails {...props} />);
 
-    expect(screen.getByText("Mô tả công việc không được để trống")).toBeInTheDocument();
+    expect(
+      screen.getByText("Mô tả công việc không được để trống"),
+    ).toBeInTheDocument();
   });
 
   it("toggles compensation accordion when clicked", () => {

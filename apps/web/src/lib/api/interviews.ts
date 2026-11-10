@@ -1,5 +1,10 @@
 import { api } from "./client";
-import type { Interview, CreateInterviewInput, UpdateInterviewInput, PaginatedResult } from "@/types";
+import type {
+  Interview,
+  CreateInterviewInput,
+  UpdateInterviewInput,
+  PaginatedResult,
+} from "@/types";
 import type { InterviewScorecard } from "../interviews";
 
 export const interviewsApi = {
@@ -13,7 +18,9 @@ export const interviewsApi = {
     tab?: string;
     sortBy?: string;
   }): Promise<PaginatedResult<Interview>> => {
-    const response = await api.get<PaginatedResult<Interview>>("/interviews", { params });
+    const response = await api.get<PaginatedResult<Interview>>("/interviews", {
+      params,
+    });
     return response.data;
   },
 
@@ -27,7 +34,10 @@ export const interviewsApi = {
     return response.data;
   },
 
-  update: async (id: string, data: UpdateInterviewInput): Promise<Interview> => {
+  update: async (
+    id: string,
+    data: UpdateInterviewInput,
+  ): Promise<Interview> => {
     const response = await api.patch<Interview>(`/interviews/${id}`, data);
     return response.data;
   },
@@ -42,7 +52,9 @@ export const interviewsApi = {
     return response.data;
   },
 
-  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+  delete: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/interviews/${id}`);
     return response.data;
   },

@@ -24,7 +24,9 @@ export function useCandidateActivities(
 ) {
   const { user } = useAuth();
   const effectiveOrgId =
-    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+    params?.organizationId !== undefined
+      ? params.organizationId
+      : user?.organizationId;
 
   return useQuery<PaginatedActivitiesResult>({
     queryKey: queryKeys.candidateActivities(
@@ -57,7 +59,9 @@ export function useApplicationActivities(
 ) {
   const { user } = useAuth();
   const effectiveOrgId =
-    params?.organizationId !== undefined ? params.organizationId : user?.organizationId;
+    params?.organizationId !== undefined
+      ? params.organizationId
+      : user?.organizationId;
 
   return useQuery<PaginatedActivitiesResult>({
     queryKey: queryKeys.applicationActivities(

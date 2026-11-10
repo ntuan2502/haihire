@@ -1,9 +1,4 @@
-import {
-  IsIn,
-  IsBoolean,
-  IsOptional,
-  IsString,
-} from "class-validator";
+import { IsIn, IsBoolean, IsOptional, IsString } from "class-validator";
 import {
   type WebhookEventType,
   type WebhookProviderType,

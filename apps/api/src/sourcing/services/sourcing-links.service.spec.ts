@@ -1,5 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { APP_ERROR_CODES, SourcingChannel, resolveChannelFromDomain } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  SourcingChannel,
+  resolveChannelFromDomain,
+} from "@haihire/shared";
 import { SourcingLinksService, parseDomain } from "./sourcing-links.service";
 import {
   createMockTable,
@@ -132,12 +136,22 @@ describe("SourcingLinksService", () => {
     });
 
     it("resolves channel from domain correctly", () => {
-      expect(resolveChannelFromDomain("linkedin.com")).toBe(SourcingChannel.LINKEDIN);
-      expect(resolveChannelFromDomain("indeed.com")).toBe(SourcingChannel.INDEED);
-      expect(resolveChannelFromDomain("google.com")).toBe(SourcingChannel.GOOGLE_JOBS);
-      expect(resolveChannelFromDomain("twitter.com")).toBe(SourcingChannel.TWITTER_X);
+      expect(resolveChannelFromDomain("linkedin.com")).toBe(
+        SourcingChannel.LINKEDIN,
+      );
+      expect(resolveChannelFromDomain("indeed.com")).toBe(
+        SourcingChannel.INDEED,
+      );
+      expect(resolveChannelFromDomain("google.com")).toBe(
+        SourcingChannel.GOOGLE_JOBS,
+      );
+      expect(resolveChannelFromDomain("twitter.com")).toBe(
+        SourcingChannel.TWITTER_X,
+      );
       expect(resolveChannelFromDomain("x.com")).toBe(SourcingChannel.TWITTER_X);
-      expect(resolveChannelFromDomain("customdomain.org")).toBe(SourcingChannel.OTHER);
+      expect(resolveChannelFromDomain("customdomain.org")).toBe(
+        SourcingChannel.OTHER,
+      );
       expect(resolveChannelFromDomain(null)).toBe(SourcingChannel.DIRECT);
     });
   });

@@ -1,9 +1,7 @@
 import { createTestOrganizationsService } from "../test/helpers/service-factories";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { OrganizationsService } from "./organizations.service";
-import {
-  createMockPrismaService,
-} from "../test/helpers/prisma-composer-mock";
+import { createMockPrismaService } from "../test/helpers/prisma-composer-mock";
 import {
   BadRequestException,
   ConflictException,
@@ -296,7 +294,13 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
       const updateManySpy = vi
         .spyOn(
-          (mockPrismaService as unknown as { inviteLink: { updateMany: (...args: unknown[]) => Promise<{ count: number }> } }).inviteLink,
+          (
+            mockPrismaService as unknown as {
+              inviteLink: {
+                updateMany: (...args: unknown[]) => Promise<{ count: number }>;
+              };
+            }
+          ).inviteLink,
           "updateMany",
         )
         .mockResolvedValueOnce({ count: 0 });
@@ -315,7 +319,13 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
 
       const updateManySpy = vi
         .spyOn(
-          (mockPrismaService as unknown as { inviteLink: { updateMany: (...args: unknown[]) => Promise<{ count: number }> } }).inviteLink,
+          (
+            mockPrismaService as unknown as {
+              inviteLink: {
+                updateMany: (...args: unknown[]) => Promise<{ count: number }>;
+              };
+            }
+          ).inviteLink,
           "updateMany",
         )
         .mockResolvedValueOnce({ count: 0 });
@@ -519,15 +529,27 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       }
 
       const orgSelectSpy = vi.spyOn(
-        (mockPrismaService as unknown as { organization: { findMany: (...args: unknown[]) => unknown } }).organization,
+        (
+          mockPrismaService as unknown as {
+            organization: { findMany: (...args: unknown[]) => unknown };
+          }
+        ).organization,
         "findMany",
       );
       const userSelectSpy = vi.spyOn(
-        (mockPrismaService as unknown as { user: { findMany: (...args: unknown[]) => unknown } }).user,
+        (
+          mockPrismaService as unknown as {
+            user: { findMany: (...args: unknown[]) => unknown };
+          }
+        ).user,
         "findMany",
       );
       const memberSelectSpy = vi.spyOn(
-        (mockPrismaService as unknown as { organizationMember: { findMany: (...args: unknown[]) => unknown } }).organizationMember,
+        (
+          mockPrismaService as unknown as {
+            organizationMember: { findMany: (...args: unknown[]) => unknown };
+          }
+        ).organizationMember,
         "findMany",
       );
 
@@ -540,7 +562,11 @@ describe("OrganizationsService - Multi-Tenant Organization Management", () => {
       expect(memberSelectSpy).toHaveBeenCalledTimes(1);
 
       // Verify members were upserted for the owners
-      const upsertSpy = (mockPrismaService as unknown as { organizationMember: { upsert: unknown } }).organizationMember.upsert;
+      const upsertSpy = (
+        mockPrismaService as unknown as {
+          organizationMember: { upsert: unknown };
+        }
+      ).organizationMember.upsert;
       expect(upsertSpy).toHaveBeenCalled();
     });
   });

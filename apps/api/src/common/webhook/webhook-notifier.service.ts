@@ -73,7 +73,9 @@ export class WebhookNotifierService {
         if (settings.length > 0) {
           for (const setting of settings) {
             try {
-              const decryptedUrl = this.encryptionService.decrypt(setting.webhookUrl);
+              const decryptedUrl = this.encryptionService.decrypt(
+                setting.webhookUrl,
+              );
               if (!decryptedUrl) {
                 this.logger.error(
                   `Failed to decrypt webhook URL for setting ${setting.id}`,
@@ -82,7 +84,8 @@ export class WebhookNotifierService {
               }
 
               const decryptedSecret = setting.secretToken
-                ? this.encryptionService.decrypt(setting.secretToken) || undefined
+                ? this.encryptionService.decrypt(setting.secretToken) ||
+                  undefined
                 : undefined;
 
               const providerConfig: WebhookProviderConfig = {
@@ -100,7 +103,10 @@ export class WebhookNotifierService {
                 );
               }
             } catch (providerErr: unknown) {
-              const msg = providerErr instanceof Error ? providerErr.message : String(providerErr);
+              const msg =
+                providerErr instanceof Error
+                  ? providerErr.message
+                  : String(providerErr);
               this.logger.error(
                 `Org webhook dispatch exception for provider ${setting.provider}: ${msg}`,
               );
@@ -137,7 +143,10 @@ export class WebhookNotifierService {
     this.logger.warn("No webhook config available, skipping alert");
   }
 
-  buildDlqMessage(payload: DlqAlertPayload, eventId: string = randomUUID()): WebhookMessage {
+  buildDlqMessage(
+    payload: DlqAlertPayload,
+    eventId: string = randomUUID(),
+  ): WebhookMessage {
     return {
       eventId,
       eventType: "DLQ_ALERT",

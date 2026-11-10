@@ -8,7 +8,8 @@ describe("getDocumentUrl (client.ts)", () => {
   });
 
   it("appends disposition=inline for document download URLs", () => {
-    const url = "/applications/app-1/documents/download?url=https%3A%2F%2Fminio%2Fcv.pdf";
+    const url =
+      "/applications/app-1/documents/download?url=https%3A%2F%2Fminio%2Fcv.pdf";
     const result = getDocumentUrl(url);
     expect(result).toContain("disposition=inline");
     expect(result).toContain("/applications/app-1/documents/download");
@@ -61,7 +62,10 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
   });
 
   it("attempts to refresh token and retries request on 401 error", async () => {
-    localStorage.setItem("haihire_recruiter_refresh_token", "valid-refresh-token");
+    localStorage.setItem(
+      "haihire_recruiter_refresh_token",
+      "valid-refresh-token",
+    );
 
     const postSpy = vi.spyOn(axios, "post").mockResolvedValueOnce({
       data: {
@@ -71,9 +75,11 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
     });
 
     // Mock the interceptor response error handling
-    const interceptor = (api.interceptors.response as unknown as {
-      handlers: Array<{ rejected?: (err: unknown) => Promise<unknown> }>;
-    }).handlers[0]?.rejected;
+    const interceptor = (
+      api.interceptors.response as unknown as {
+        handlers: Array<{ rejected?: (err: unknown) => Promise<unknown> }>;
+      }
+    ).handlers[0]?.rejected;
 
     expect(interceptor).toBeDefined();
 
@@ -110,12 +116,17 @@ describe("Silent Token Refresh Response Interceptor (client.ts)", () => {
   });
 
   it("does not loop on /auth/login or /auth/refresh 401 errors", async () => {
-    localStorage.setItem("haihire_recruiter_refresh_token", "valid-refresh-token");
+    localStorage.setItem(
+      "haihire_recruiter_refresh_token",
+      "valid-refresh-token",
+    );
     const postSpy = vi.spyOn(axios, "post");
 
-    const interceptor = (api.interceptors.response as unknown as {
-      handlers: Array<{ rejected?: (err: unknown) => Promise<unknown> }>;
-    }).handlers[0]?.rejected;
+    const interceptor = (
+      api.interceptors.response as unknown as {
+        handlers: Array<{ rejected?: (err: unknown) => Promise<unknown> }>;
+      }
+    ).handlers[0]?.rejected;
 
     if (interceptor) {
       const loginError = {

@@ -17,7 +17,10 @@ export const LandingBentoGrid: React.FC = () => {
   const { t } = useI18n();
 
   return (
-    <section id="features" className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+    <section
+      id="features"
+      className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20"
+    >
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-16">
         <p className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-cyan-400 mb-2">
@@ -63,7 +66,9 @@ export const LandingBentoGrid: React.FC = () => {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">95%</span>
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                  95%
+                </span>
                 <div className="w-24 sm:w-32 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 w-[95%]" />
                 </div>

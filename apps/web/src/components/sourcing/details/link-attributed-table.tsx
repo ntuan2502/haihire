@@ -43,12 +43,22 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <th className="py-3 px-5">{t("sourcing.details.colCandidate")}</th>
+                <th className="py-3 px-5">
+                  {t("sourcing.details.colCandidate")}
+                </th>
                 <th className="py-3 px-4">{t("sourcing.details.colJob")}</th>
-                <th className="py-3 px-4">{t("sourcing.details.colReferrer")}</th>
-                <th className="py-3 px-4">{t("sourcing.details.colCampaign")}</th>
-                <th className="py-3 px-4 text-center">{t("sourcing.details.colStatus")}</th>
-                <th className="py-3 px-5 text-right">{t("sourcing.details.colApplied")}</th>
+                <th className="py-3 px-4">
+                  {t("sourcing.details.colReferrer")}
+                </th>
+                <th className="py-3 px-4">
+                  {t("sourcing.details.colCampaign")}
+                </th>
+                <th className="py-3 px-4 text-center">
+                  {t("sourcing.details.colStatus")}
+                </th>
+                <th className="py-3 px-5 text-right">
+                  {t("sourcing.details.colApplied")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">

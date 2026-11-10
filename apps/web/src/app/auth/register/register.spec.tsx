@@ -35,7 +35,8 @@ vi.mock("@/i18n", () => ({
         "auth.recruiterSignUp": "Đăng ký tuyển dụng",
         "auth.registerTitle": "Tạo tài khoản mới",
         "auth.registerSubtitle": "Bắt đầu quản lý quy trình tuyển dụng",
-        "auth.errorRegisterRequired": "Vui lòng nhập đầy đủ họ tên, email và mật khẩu.",
+        "auth.errorRegisterRequired":
+          "Vui lòng nhập đầy đủ họ tên, email và mật khẩu.",
         "auth.errorPasswordMinLength": "Mật khẩu phải có tối thiểu 6 ký tự.",
         "auth.fullNameLabel": "Họ và tên",
         "auth.fullNamePlaceholder": "Nguyễn Văn A",
@@ -64,7 +65,9 @@ describe("RegisterPage Component Tests", () => {
 
     expect(screen.getByText("Tạo tài khoản mới")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Nguyễn Văn A")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("recruiter@company.com")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("recruiter@company.com"),
+    ).toBeInTheDocument();
   });
 
   it("shows error when submitting empty fields", async () => {
@@ -75,7 +78,7 @@ describe("RegisterPage Component Tests", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Vui lòng nhập đầy đủ họ tên, email và mật khẩu.")
+        screen.getByText("Vui lòng nhập đầy đủ họ tên, email và mật khẩu."),
       ).toBeInTheDocument();
     });
     expect(mockRegister).not.toHaveBeenCalled();
@@ -97,14 +100,17 @@ describe("RegisterPage Component Tests", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Mật khẩu phải có tối thiểu 6 ký tự.")
+        screen.getByText("Mật khẩu phải có tối thiểu 6 ký tự."),
       ).toBeInTheDocument();
     });
     expect(mockRegister).not.toHaveBeenCalled();
   });
 
   it("submits valid registration form and calls register", async () => {
-    mockRegister.mockResolvedValueOnce({ id: "user-new", organizationId: null });
+    mockRegister.mockResolvedValueOnce({
+      id: "user-new",
+      organizationId: null,
+    });
 
     render(<RegisterPage />);
 
@@ -123,7 +129,7 @@ describe("RegisterPage Component Tests", () => {
       expect(mockRegister).toHaveBeenCalledWith(
         "Trần Tuyển Dụng",
         "tran@company.com",
-        "Password123!"
+        "Password123!",
       );
       expect(mockPush).toHaveBeenCalledWith("/auth/onboarding");
     });

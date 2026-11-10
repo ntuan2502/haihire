@@ -10,14 +10,21 @@ interface PageProps {
 export const revalidate = 60;
 
 const getApiBase = () => {
-  return process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:13001";
+  return (
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://127.0.0.1:13001"
+  );
 };
 
 async function fetchOrg(slug: string): Promise<Organization | null> {
   try {
-    const res = await fetch(`${getApiBase()}/organizations/public/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetch(
+      `${getApiBase()}/organizations/public/${encodeURIComponent(slug)}`,
+      {
+        next: { revalidate: 60 },
+      },
+    );
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -39,7 +46,9 @@ async function fetchJobs(orgSlug: string): Promise<Job[]> {
   }
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { orgSlug } = await params;
   const org = await fetchOrg(orgSlug);
 
@@ -67,7 +76,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function OrgCareersPage({ params }: PageProps) {
   const { orgSlug } = await params;
-  const [org, jobs] = await Promise.all([fetchOrg(orgSlug), fetchJobs(orgSlug)]);
+  const [org, jobs] = await Promise.all([
+    fetchOrg(orgSlug),
+    fetchJobs(orgSlug),
+  ]);
 
   if (!org) {
     notFound();
@@ -82,7 +94,9 @@ export default async function OrgCareersPage({ params }: PageProps) {
         <ul>
           {jobs.map((job) => (
             <li key={job.id}>
-              <a href={`/careers/${orgSlug}/${job.id}`}>{`${job.title} - ${job.department} (${job.location})`}</a>
+              <a
+                href={`/careers/${orgSlug}/${job.id}`}
+              >{`${job.title} - ${job.department} (${job.location})`}</a>
               <p>{job.description}</p>
             </li>
           ))}

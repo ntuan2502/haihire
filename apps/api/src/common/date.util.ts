@@ -3,7 +3,9 @@ export function toTimestamp(val: unknown): number {
   if (typeof val === "number") return val;
   if (val instanceof Date) return val.getTime();
   if (typeof val === "object" && val !== null && "epochMilliseconds" in val) {
-    return Number((val as { epochMilliseconds: number | bigint }).epochMilliseconds);
+    return Number(
+      (val as { epochMilliseconds: number | bigint }).epochMilliseconds,
+    );
   }
   const parsed = new Date(String(val)).getTime();
   return Number.isNaN(parsed) ? 0 : parsed;

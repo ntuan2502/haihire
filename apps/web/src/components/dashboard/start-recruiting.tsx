@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Briefcase,
-  Plus,
-  ArrowRight,
-} from "lucide-react";
+import { Briefcase, Plus, ArrowRight } from "lucide-react";
 import { useI18n } from "@/i18n";
 
 interface StartRecruitingProps {
@@ -13,9 +9,7 @@ interface StartRecruitingProps {
   onImportFromFile?: () => void;
 }
 
-export function StartRecruiting({
-  onOpenCreateJob,
-}: StartRecruitingProps) {
+export function StartRecruiting({ onOpenCreateJob }: StartRecruitingProps) {
   const { t } = useI18n();
 
   return (

@@ -55,7 +55,8 @@ export const STAGE_CONFIG_MAP: Record<ApplicationStage, StageConfig> = {
     cardBorder: "border-blue-100 dark:border-blue-900/40",
     activePill:
       "bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800",
-    pillBadge: "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300",
+    pillBadge:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300",
     btnBg: "bg-blue-600",
     btnHover: "hover:bg-blue-700",
   },
@@ -114,7 +115,8 @@ export const STAGE_CONFIG_MAP: Record<ApplicationStage, StageConfig> = {
     cardBorder: "border-teal-100 dark:border-teal-900/40",
     activePill:
       "bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800",
-    pillBadge: "bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-300",
+    pillBadge:
+      "bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-300",
     btnBg: "bg-teal-600",
     btnHover: "hover:bg-teal-700",
   },
@@ -153,7 +155,8 @@ export const STAGE_CONFIG_MAP: Record<ApplicationStage, StageConfig> = {
     cardBorder: "border-rose-100 dark:border-rose-900/40",
     activePill:
       "bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",
-    pillBadge: "bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300",
+    pillBadge:
+      "bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300",
     btnBg: "bg-rose-600",
     btnHover: "hover:bg-rose-700",
   },
@@ -197,11 +200,16 @@ export function getStageInfo(
 /**
  * Hook to get unified stage metadata with localized label
  */
-export function useStageInfo(stage?: ApplicationStage | string | null): StageConfig {
+export function useStageInfo(
+  stage?: ApplicationStage | string | null,
+): StageConfig {
   const { t } = useI18n();
   const rawInfo = getStageInfo(stage);
 
-  const stageKeyMap: Record<ApplicationStage, "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"> = {
+  const stageKeyMap: Record<
+    ApplicationStage,
+    "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"
+  > = {
     APPLIED: "applied",
     SCREENING: "screening",
     INTERVIEW: "interview",
@@ -212,7 +220,9 @@ export function useStageInfo(stage?: ApplicationStage | string | null): StageCon
 
   const stageId = rawInfo.id as ApplicationStage;
   const translationKey = stageKeyMap[stageId];
-  const localizedLabel = translationKey ? t(`pipeline.stages.${translationKey}` as const) : rawInfo.label;
+  const localizedLabel = translationKey
+    ? t(`pipeline.stages.${translationKey}` as const)
+    : rawInfo.label;
 
   return {
     ...rawInfo,
@@ -227,7 +237,10 @@ export function useStageInfo(stage?: ApplicationStage | string | null): StageCon
 export function usePipelineStages(): StageConfig[] {
   const { t } = useI18n();
 
-  const stageKeyMap: Record<ApplicationStage, "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"> = {
+  const stageKeyMap: Record<
+    ApplicationStage,
+    "applied" | "screening" | "interview" | "offer" | "hired" | "rejected"
+  > = {
     APPLIED: "applied",
     SCREENING: "screening",
     INTERVIEW: "interview",
@@ -239,7 +252,9 @@ export function usePipelineStages(): StageConfig[] {
   return STAGES_ORDER.map((stage) => {
     const raw = STAGE_CONFIG_MAP[stage];
     const key = stageKeyMap[stage];
-    const localizedLabel = key ? t(`pipeline.stages.${key}` as const) : raw.label;
+    const localizedLabel = key
+      ? t(`pipeline.stages.${key}` as const)
+      : raw.label;
     return {
       ...raw,
       label: localizedLabel,
@@ -280,7 +295,10 @@ export function getTransitionDisabledReason(
   if (fromStage === "HIRED") {
     if (t) {
       try {
-        const msg = t("pipeline.tooltips.cannotMoveHired", { from: fromStage, to: toStage });
+        const msg = t("pipeline.tooltips.cannotMoveHired", {
+          from: fromStage,
+          to: toStage,
+        });
         if (msg && msg !== "pipeline.tooltips.cannotMoveHired") return msg;
       } catch {
         // Fallback
@@ -292,7 +310,10 @@ export function getTransitionDisabledReason(
   if (fromStage === "REJECTED") {
     if (t) {
       try {
-        const msg = t("pipeline.tooltips.cannotMoveRejected", { from: fromStage, to: toStage });
+        const msg = t("pipeline.tooltips.cannotMoveRejected", {
+          from: fromStage,
+          to: toStage,
+        });
         if (msg && msg !== "pipeline.tooltips.cannotMoveRejected") return msg;
       } catch {
         // Fallback
@@ -303,7 +324,10 @@ export function getTransitionDisabledReason(
 
   if (t) {
     try {
-      const msg = t("pipeline.tooltips.invalidTransition", { from: fromStage, to: toStage });
+      const msg = t("pipeline.tooltips.invalidTransition", {
+        from: fromStage,
+        to: toStage,
+      });
       if (msg && msg !== "pipeline.tooltips.invalidTransition") return msg;
     } catch {
       // Fallback
@@ -311,4 +335,3 @@ export function getTransitionDisabledReason(
   }
   return `Không thể chuyển từ ${fromStage} sang ${toStage}`;
 }
-

@@ -1,7 +1,13 @@
-import { createMockTable, createMockPrismaService } from "../test/helpers/prisma-composer-mock";
+import {
+  createMockTable,
+  createMockPrismaService,
+} from "../test/helpers/prisma-composer-mock";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NotFoundException } from "@nestjs/common";
-import { AppBadRequestException, AppForbiddenException } from "../common/app-exception";
+import {
+  AppBadRequestException,
+  AppForbiddenException,
+} from "../common/app-exception";
 import { InterviewsService } from "./interviews.service";
 import { formatInterviewRecord } from "./constants";
 
@@ -153,7 +159,9 @@ describe("InterviewsService", () => {
   });
 
   it("should throw NotFoundException when interview id does not exist", async () => {
-    await expect(service.findOne("non-existent")).rejects.toThrow(NotFoundException);
+    await expect(service.findOne("non-existent")).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it("should create a new interview and advance application stage to INTERVIEW", async () => {
@@ -215,7 +223,9 @@ describe("InterviewsService", () => {
   });
 
   it("should throw AppForbiddenException when accessing an interview belonging to another organization", async () => {
-    await expect(service.findOne("intv-1", "other-org")).rejects.toThrow(AppForbiddenException);
+    await expect(service.findOne("intv-1", "other-org")).rejects.toThrow(
+      AppForbiddenException,
+    );
   });
 
   it("should allow findOne when tenant organization matches", async () => {
@@ -246,7 +256,9 @@ describe("InterviewsService", () => {
   });
 
   it("should throw AppForbiddenException when deleting an interview from another organization", async () => {
-    await expect(service.remove("intv-1", "other-org")).rejects.toThrow(AppForbiddenException);
+    await expect(service.remove("intv-1", "other-org")).rejects.toThrow(
+      AppForbiddenException,
+    );
   });
 
   it("should delete an interview", async () => {
@@ -273,7 +285,10 @@ describe("InterviewsService", () => {
       const result = formatInterviewRecord(raw);
       expect(result.date).toBe("2026-10-06");
       expect(result.time).toBe("09:30");
-      expect(result.scorecard).toEqual({ overallRating: 4, recommendation: "YES" });
+      expect(result.scorecard).toEqual({
+        overallRating: 4,
+        recommendation: "YES",
+      });
       expect(result.interviewer).toBe("Alice Recruiter");
     });
 
@@ -299,4 +314,3 @@ describe("InterviewsService", () => {
     });
   });
 });
-

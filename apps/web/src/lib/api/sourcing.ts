@@ -16,7 +16,9 @@ export const sourcingApi = {
     timeRange?: TimeRangeFilter;
     jobId?: string;
   }): Promise<SourcingStats> => {
-    const response = await api.get<SourcingStats>("/sourcing/stats", { params });
+    const response = await api.get<SourcingStats>("/sourcing/stats", {
+      params,
+    });
     return response.data;
   },
 
@@ -27,9 +29,12 @@ export const sourcingApi = {
     jobId?: string;
     isActive?: boolean;
   }): Promise<PaginatedResult<TrackingLinkItem>> => {
-    const response = await api.get<PaginatedResult<TrackingLinkItem>>("/sourcing/links", {
-      params,
-    });
+    const response = await api.get<PaginatedResult<TrackingLinkItem>>(
+      "/sourcing/links",
+      {
+        params,
+      },
+    );
     return response.data;
   },
 
@@ -37,13 +42,18 @@ export const sourcingApi = {
     id: string,
     params?: { timeRange?: TimeRangeFilter },
   ): Promise<TrackingLinkDetail> => {
-    const response = await api.get<TrackingLinkDetail>(`/sourcing/links/${id}`, {
-      params,
-    });
+    const response = await api.get<TrackingLinkDetail>(
+      `/sourcing/links/${id}`,
+      {
+        params,
+      },
+    );
     return response.data;
   },
 
-  createLink: async (data: CreateTrackingLinkDto): Promise<TrackingLinkItem> => {
+  createLink: async (
+    data: CreateTrackingLinkDto,
+  ): Promise<TrackingLinkItem> => {
     const response = await api.post<TrackingLinkItem>("/sourcing/links", data);
     return response.data;
   },
@@ -52,12 +62,17 @@ export const sourcingApi = {
     id: string,
     data: UpdateTrackingLinkDto,
   ): Promise<{ success: boolean }> => {
-    const response = await api.patch<{ success: boolean }>(`/sourcing/links/${id}`, data);
+    const response = await api.patch<{ success: boolean }>(
+      `/sourcing/links/${id}`,
+      data,
+    );
     return response.data;
   },
 
   deleteLink: async (id: string): Promise<{ success: boolean }> => {
-    const response = await api.delete<{ success: boolean }>(`/sourcing/links/${id}`);
+    const response = await api.delete<{ success: boolean }>(
+      `/sourcing/links/${id}`,
+    );
     return response.data;
   },
 
@@ -79,7 +94,10 @@ export const sourcingApi = {
     token: string;
     referrer?: string;
   }): Promise<{ success: boolean }> => {
-    const response = await api.post<{ success: boolean }>("/sourcing/public/click", data);
+    const response = await api.post<{ success: boolean }>(
+      "/sourcing/public/click",
+      data,
+    );
     return response.data;
   },
 };

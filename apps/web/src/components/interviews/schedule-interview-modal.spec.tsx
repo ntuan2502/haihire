@@ -37,14 +37,17 @@ vi.mock("@/i18n", () => ({
       const dict: Record<string, string> = {
         "interviews.modalTitle": "Lên lịch phỏng vấn",
         "interviews.editScheduleBtn": "Chỉnh sửa lịch phỏng vấn",
-        "interviews.modalSubtitle": "Thiết lập thời gian và người tham gia phỏng vấn",
+        "interviews.modalSubtitle":
+          "Thiết lập thời gian và người tham gia phỏng vấn",
         "interviews.confirmSchedule": "Xác nhận lên lịch",
         "interviews.updateSchedule": "Cập nhật lịch phỏng vấn",
         "interviews.errors.selectDate": "Vui lòng chọn ngày phỏng vấn.",
         "interviews.errors.selectTime": "Vui lòng chọn giờ phỏng vấn.",
         "interviews.errors.selectType": "Vui lòng chọn hình thức phỏng vấn.",
-        "interviews.errors.selectFormat": "Vui lòng chọn phương thức phỏng vấn.",
-        "interviews.errors.enterInterviewer": "Vui lòng nhập tên người phỏng vấn.",
+        "interviews.errors.selectFormat":
+          "Vui lòng chọn phương thức phỏng vấn.",
+        "interviews.errors.enterInterviewer":
+          "Vui lòng nhập tên người phỏng vấn.",
         "interviews.errors.candidateNotFound": "Không tìm thấy ứng viên.",
         "interviews.errors.saveFailed": "Lưu lịch phỏng vấn thất bại.",
       };
@@ -81,9 +84,7 @@ describe("ScheduleInterviewModal Component", () => {
 
   function renderWithClient(ui: React.ReactElement) {
     return render(
-      <QueryClientProvider client={queryClient}>
-        {ui}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
     );
   }
 
@@ -105,7 +106,7 @@ describe("ScheduleInterviewModal Component", () => {
         onClose={vi.fn()}
         jobs={[mockJob]}
         applications={[mockCandidate]}
-      />
+      />,
     );
 
     expect(screen.queryByText("Lên lịch phỏng vấn")).not.toBeInTheDocument();
@@ -120,7 +121,7 @@ describe("ScheduleInterviewModal Component", () => {
         applications={[mockCandidate]}
         selectedApplicationId="app-1"
         selectedJobId="job-1"
-      />
+      />,
     );
 
     expect(screen.getByText("Lên lịch phỏng vấn")).toBeInTheDocument();
@@ -136,14 +137,16 @@ describe("ScheduleInterviewModal Component", () => {
         applications={[mockCandidate]}
         selectedApplicationId="app-1"
         selectedJobId="job-1"
-      />
+      />,
     );
 
     const submitBtn = screen.getByRole("button", { name: "Xác nhận lên lịch" });
     fireEvent.submit(submitBtn.closest("form")!);
 
     await waitFor(() => {
-      expect(screen.getByText("Vui lòng chọn ngày phỏng vấn.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Vui lòng chọn ngày phỏng vấn."),
+      ).toBeInTheDocument();
     });
     expect(mockCreateMutateAsync).not.toHaveBeenCalled();
   });
@@ -171,11 +174,13 @@ describe("ScheduleInterviewModal Component", () => {
         selectedApplicationId="app-1"
         selectedJobId="job-1"
         editingInterview={existingInterview}
-      />
+      />,
     );
 
     expect(screen.getByText("Chỉnh sửa lịch phỏng vấn")).toBeInTheDocument();
-    const updateBtn = screen.getByRole("button", { name: "Cập nhật lịch phỏng vấn" });
+    const updateBtn = screen.getByRole("button", {
+      name: "Cập nhật lịch phỏng vấn",
+    });
     fireEvent.click(updateBtn);
 
     await waitFor(() => {
@@ -213,15 +218,19 @@ describe("ScheduleInterviewModal Component", () => {
         selectedApplicationId="app-1"
         selectedJobId="job-1"
         editingInterview={existingInterview}
-      />
+      />,
     );
 
-    const updateBtn = screen.getByRole("button", { name: "Cập nhật lịch phỏng vấn" });
+    const updateBtn = screen.getByRole("button", {
+      name: "Cập nhật lịch phỏng vấn",
+    });
     fireEvent.click(updateBtn);
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["applications"] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ["applications"],
+      });
     });
   });
 });

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { WebhookNotifierService, type DlqAlertPayload } from "./webhook-notifier.service";
+import {
+  WebhookNotifierService,
+  type DlqAlertPayload,
+} from "./webhook-notifier.service";
 import { WebhookProviderFactory } from "./webhook-provider.factory";
 import { Logger } from "@nestjs/common";
 import { env } from "../../config/env";
@@ -36,7 +39,9 @@ describe("WebhookNotifierService", () => {
       configurable: true,
     });
 
-    const warnSpy = vi.spyOn(Logger.prototype, "warn").mockImplementation(() => {});
+    const warnSpy = vi
+      .spyOn(Logger.prototype, "warn")
+      .mockImplementation(() => {});
     const factorySpy = vi.spyOn(WebhookProviderFactory, "create");
 
     await expect(service.notifyDlq(sampleDlqPayload)).resolves.not.toThrow();
@@ -70,8 +75,11 @@ describe("WebhookNotifierService", () => {
     });
     expect(mockProvider.send).toHaveBeenCalledTimes(1);
 
-    const sentMessage = (mockProvider.send as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(sentMessage.eventId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    const sentMessage = (mockProvider.send as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
+    expect(sentMessage.eventId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
     expect(sentMessage.eventType).toBe("DLQ_ALERT");
     expect(sentMessage.title).toBe("🚨 HaiHire DLQ Alert");
     expect(sentMessage.severity).toBe("critical");
@@ -80,10 +88,16 @@ describe("WebhookNotifierService", () => {
       expect.arrayContaining([
         { label: "Queue", value: "orphan-cleanup-dlq" },
         { label: "Job", value: "dead-letter-cleanup" },
-        { label: "Object", value: "tenants/org-1/resumes/permanent-orphan.pdf" },
+        {
+          label: "Object",
+          value: "tenants/org-1/resumes/permanent-orphan.pdf",
+        },
         { label: "Reason", value: "transaction-rollback-compensation-failed" },
         { label: "Attempts", value: "5" },
-        { label: "Error", value: "MinIO Connection Refused (503 Service Unavailable)" },
+        {
+          label: "Error",
+          value: "MinIO Connection Refused (503 Service Unavailable)",
+        },
       ]),
     );
   });
@@ -107,7 +121,9 @@ describe("WebhookNotifierService", () => {
       }),
     };
     vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
-    const errorSpy = vi.spyOn(Logger.prototype, "error").mockImplementation(() => {});
+    const errorSpy = vi
+      .spyOn(Logger.prototype, "error")
+      .mockImplementation(() => {});
 
     await expect(service.notifyDlq(sampleDlqPayload)).resolves.not.toThrow();
 
@@ -127,15 +143,21 @@ describe("WebhookNotifierService", () => {
     });
 
     const mockProvider: WebhookProvider = {
-      send: vi.fn().mockRejectedValue(new Error("Fatal TLS certificate validation crash")),
+      send: vi
+        .fn()
+        .mockRejectedValue(new Error("Fatal TLS certificate validation crash")),
     };
     vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
-    const errorSpy = vi.spyOn(Logger.prototype, "error").mockImplementation(() => {});
+    const errorSpy = vi
+      .spyOn(Logger.prototype, "error")
+      .mockImplementation(() => {});
 
     await expect(service.notifyDlq(sampleDlqPayload)).resolves.not.toThrow();
 
     expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Webhook notify failed: Fatal TLS certificate validation crash"),
+      expect.stringContaining(
+        "Webhook notify failed: Fatal TLS certificate validation crash",
+      ),
     );
   });
 
@@ -149,7 +171,10 @@ describe("WebhookNotifierService", () => {
 
   it("Case 6: buildDlqMessage sets severity to 'critical' when attemptsMade >= 5 and assigns eventId", () => {
     const criticalPayload = { ...sampleDlqPayload, attemptsMade: 5 };
-    const message = service.buildDlqMessage(criticalPayload, "12345678-1234-1234-1234-123456789abc");
+    const message = service.buildDlqMessage(
+      criticalPayload,
+      "12345678-1234-1234-1234-123456789abc",
+    );
     expect(message.severity).toBe("critical");
     expect(message.eventType).toBe("DLQ_ALERT");
     expect(message.eventId).toBe("12345678-1234-1234-1234-123456789abc");
@@ -176,7 +201,9 @@ describe("WebhookNotifierService", () => {
     });
 
     const mockSend = vi.fn().mockResolvedValue({ success: true });
-    vi.spyOn(WebhookProviderFactory, "create").mockReturnValue({ send: mockSend });
+    vi.spyOn(WebhookProviderFactory, "create").mockReturnValue({
+      send: mockSend,
+    });
 
     await service.notifyDlq(sampleDlqPayload);
     await service.notifyDlq(sampleDlqPayload);
@@ -257,7 +284,9 @@ describe("WebhookNotifierService", () => {
     const mockProvider: WebhookProvider = {
       send: vi.fn().mockResolvedValue({ success: true, statusCode: 200 }),
     };
-    const factorySpy = vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
+    const factorySpy = vi
+      .spyOn(WebhookProviderFactory, "create")
+      .mockReturnValue(mockProvider);
 
     await orgAwareService.notifyDlq(sampleDlqPayload, "org-123");
 
@@ -269,7 +298,9 @@ describe("WebhookNotifierService", () => {
     });
     expect(mockProvider.send).toHaveBeenCalledTimes(1);
     // Verified global discord was NOT called
-    expect(factorySpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: "DISCORD" }));
+    expect(factorySpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "DISCORD" }),
+    );
   });
 
   it("Case 11: decrypts webhookUrl and secretToken before creating provider", async () => {
@@ -304,11 +335,15 @@ describe("WebhookNotifierService", () => {
     const mockProvider: WebhookProvider = {
       send: vi.fn().mockResolvedValue({ success: true, statusCode: 200 }),
     };
-    const factorySpy = vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
+    const factorySpy = vi
+      .spyOn(WebhookProviderFactory, "create")
+      .mockReturnValue(mockProvider);
 
     await orgAwareService.notifyDlq(sampleDlqPayload, "org-123");
 
-    expect(mockEncryption.decrypt).toHaveBeenCalledWith("enc:https://custom-webhook.internal/dlq");
+    expect(mockEncryption.decrypt).toHaveBeenCalledWith(
+      "enc:https://custom-webhook.internal/dlq",
+    );
     expect(mockEncryption.decrypt).toHaveBeenCalledWith("enc:my-hmac-secret");
     expect(factorySpy).toHaveBeenCalledWith({
       type: "GENERIC",
@@ -345,7 +380,9 @@ describe("WebhookNotifierService", () => {
     const mockProvider: WebhookProvider = {
       send: vi.fn().mockResolvedValue({ success: true, statusCode: 200 }),
     };
-    const factorySpy = vi.spyOn(WebhookProviderFactory, "create").mockReturnValue(mockProvider);
+    const factorySpy = vi
+      .spyOn(WebhookProviderFactory, "create")
+      .mockReturnValue(mockProvider);
 
     await orgAwareService.notifyDlq(sampleDlqPayload, "org-without-settings");
 
@@ -430,9 +467,13 @@ describe("WebhookNotifierService", () => {
       writable: true,
     });
 
-    const warnSpy = vi.spyOn(Logger.prototype, "warn").mockImplementation(() => {});
+    const warnSpy = vi
+      .spyOn(Logger.prototype, "warn")
+      .mockImplementation(() => {});
 
-    await expect(orgAwareService.notifyDlq(sampleDlqPayload, "org-empty")).resolves.not.toThrow();
+    await expect(
+      orgAwareService.notifyDlq(sampleDlqPayload, "org-empty"),
+    ).resolves.not.toThrow();
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("No webhook config available, skipping alert"),

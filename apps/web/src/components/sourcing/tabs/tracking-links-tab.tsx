@@ -97,11 +97,21 @@ export function TrackingLinksTab({
                   <th className="py-3.5 px-5">{t("sourcing.links.name")}</th>
                   <th className="py-3.5 px-4">{t("sourcing.links.source")}</th>
                   <th className="py-3.5 px-4">{t("sourcing.links.job")}</th>
-                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.clicks")}</th>
-                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.apps")}</th>
-                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.cvr")}</th>
-                  <th className="py-3.5 px-4 text-center">{t("sourcing.links.status")}</th>
-                  <th className="py-3.5 px-5 text-right">{t("sourcing.links.actions")}</th>
+                  <th className="py-3.5 px-4 text-center">
+                    {t("sourcing.links.clicks")}
+                  </th>
+                  <th className="py-3.5 px-4 text-center">
+                    {t("sourcing.links.apps")}
+                  </th>
+                  <th className="py-3.5 px-4 text-center">
+                    {t("sourcing.links.cvr")}
+                  </th>
+                  <th className="py-3.5 px-4 text-center">
+                    {t("sourcing.links.status")}
+                  </th>
+                  <th className="py-3.5 px-5 text-right">
+                    {t("sourcing.links.actions")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
@@ -188,13 +198,22 @@ export function TrackingLinksTab({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleCopyLink(link.token, link.id, link.jobId, link.jobTitle)}
+                            onClick={() =>
+                              handleCopyLink(
+                                link.token,
+                                link.id,
+                                link.jobId,
+                                link.jobTitle,
+                              )
+                            }
                             className="h-8 px-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 gap-1 text-[11px] font-semibold cursor-pointer"
                           >
                             {isCopied ? (
                               <>
                                 <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                <span className="text-emerald-600">{t("sourcing.links.linkCopied")}</span>
+                                <span className="text-emerald-600">
+                                  {t("sourcing.links.linkCopied")}
+                                </span>
                               </>
                             ) : (
                               <>
@@ -232,7 +251,9 @@ export function TrackingLinksTab({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => onToggleStatus(link.id, link.isActive)}
+                            onClick={() =>
+                              onToggleStatus(link.id, link.isActive)
+                            }
                             className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                             title={t("sourcing.links.toggleStatus")}
                           >

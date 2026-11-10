@@ -204,7 +204,12 @@ describe("ApplicationsSagaService", () => {
       candidateName: "Impersonator",
       candidateEmail: "existing@example.com",
     });
-    expect(Object.keys(result).sort()).toEqual(["createdAt", "id", "jobId", "stage"]);
+    expect(Object.keys(result).sort()).toEqual([
+      "createdAt",
+      "id",
+      "jobId",
+      "stage",
+    ]);
     expect(JSON.stringify(result)).not.toContain("Confidential");
     expect(result).not.toHaveProperty("candidate");
     expect(result).not.toHaveProperty("resumeUrl");
@@ -381,7 +386,8 @@ describe("ApplicationsSagaService", () => {
         service.create({
           jobId: "job-1",
           candidateId: "cand-with-cv",
-          resumeUrl: "https://minio.local/tenants/org-1/resumes/tampered-cv.pdf",
+          resumeUrl:
+            "https://minio.local/tenants/org-1/resumes/tampered-cv.pdf",
         }),
       ).rejects.toThrow("Referenced resume does not belong to this candidate.");
     });

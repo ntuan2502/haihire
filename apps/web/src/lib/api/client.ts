@@ -97,8 +97,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error?.config as
-      | (InternalAxiosRequestConfig & { _retry?: boolean })
-      | undefined;
+      (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
     if (
       error?.response?.status === 401 &&
@@ -166,8 +165,7 @@ api.interceptors.response.use(
         }
 
         const maxAge = 60 * 60 * 24 * 7;
-        const secure =
-          window.location.protocol === "https:" ? "; Secure" : "";
+        const secure = window.location.protocol === "https:" ? "; Secure" : "";
         document.cookie = `haihire_token=${newAccessToken}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
 
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;

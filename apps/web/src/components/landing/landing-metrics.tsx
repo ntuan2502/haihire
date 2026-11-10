@@ -14,7 +14,8 @@ export const LandingMetrics: React.FC = () => {
       desc: t("landing.metric1Desc"),
       icon: Clock,
       color: "text-blue-600 dark:text-cyan-400",
-      bgBorder: "border-blue-200/80 bg-blue-50/60 dark:border-cyan-500/20 dark:bg-cyan-950/20",
+      bgBorder:
+        "border-blue-200/80 bg-blue-50/60 dark:border-cyan-500/20 dark:bg-cyan-950/20",
     },
     {
       value: t("landing.metric2Value"),
@@ -22,7 +23,8 @@ export const LandingMetrics: React.FC = () => {
       desc: t("landing.metric2Desc"),
       icon: Zap,
       color: "text-blue-700 dark:text-blue-400",
-      bgBorder: "border-blue-200/80 bg-blue-50/60 dark:border-blue-500/20 dark:bg-blue-950/20",
+      bgBorder:
+        "border-blue-200/80 bg-blue-50/60 dark:border-blue-500/20 dark:bg-blue-950/20",
     },
     {
       value: t("landing.metric3Value"),
@@ -30,7 +32,8 @@ export const LandingMetrics: React.FC = () => {
       desc: t("landing.metric3Desc"),
       icon: ShieldCheck,
       color: "text-emerald-600 dark:text-emerald-400",
-      bgBorder: "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-500/20 dark:bg-emerald-950/20",
+      bgBorder:
+        "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-500/20 dark:bg-emerald-950/20",
     },
     {
       value: t("landing.metric4Value"),
@@ -38,7 +41,8 @@ export const LandingMetrics: React.FC = () => {
       desc: t("landing.metric4Desc"),
       icon: DollarSign,
       color: "text-amber-600 dark:text-amber-400",
-      bgBorder: "border-amber-200/80 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-950/20",
+      bgBorder:
+        "border-amber-200/80 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-950/20",
     },
   ];
 
@@ -62,7 +66,9 @@ export const LandingMetrics: React.FC = () => {
               className={`rounded-2xl border p-6 backdrop-blur-sm transition-all hover:scale-[1.02] shadow-2xs ${m.bgBorder}`}
             >
               <div className="flex items-center justify-between mb-4">
-                <span className={`text-4xl sm:text-5xl font-black tracking-tight ${m.color}`}>
+                <span
+                  className={`text-4xl sm:text-5xl font-black tracking-tight ${m.color}`}
+                >
                   {m.value}
                 </span>
                 <div className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-slate-900/60 shadow-2xs">

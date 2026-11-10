@@ -229,10 +229,12 @@ export class WebhookSettingsService {
       );
     }
 
-    const targetEventType = dto.eventType || (existing.eventType as WebhookEventType);
-    const targetProvider = dto.provider || (existing.provider as WebhookProviderType);
+    const targetEventType =
+      dto.eventType || (existing.eventType as WebhookEventType);
+    const targetProvider =
+      dto.provider || (existing.provider as WebhookProviderType);
     const targetChatId =
-      dto.chatId !== undefined ? (dto.chatId?.trim() || null) : existing.chatId;
+      dto.chatId !== undefined ? dto.chatId?.trim() || null : existing.chatId;
 
     // Check unique conflict if eventType or provider changed
     if (
@@ -329,7 +331,8 @@ export class WebhookSettingsService {
       } else if (!trimmedSecret) {
         updatePayload.secretToken = null;
       } else {
-        updatePayload.secretToken = this.encryptionService.encrypt(trimmedSecret);
+        updatePayload.secretToken =
+          this.encryptionService.encrypt(trimmedSecret);
       }
     }
 
@@ -437,7 +440,8 @@ export class WebhookSettingsService {
       secretTokenToUse = existing.secretToken
         ? this.encryptionService.decrypt(existing.secretToken) || undefined
         : undefined;
-      eventTypeToUse = (existing.eventType as WebhookEventType) || eventTypeToUse;
+      eventTypeToUse =
+        (existing.eventType as WebhookEventType) || eventTypeToUse;
     } else {
       // Test ad-hoc configuration
       if (!dto.provider || !dto.webhookUrl) {

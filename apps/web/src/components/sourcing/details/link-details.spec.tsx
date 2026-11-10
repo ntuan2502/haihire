@@ -64,9 +64,7 @@ describe("Link Details Components", () => {
       />,
     );
 
-    expect(
-      screen.getByText("LinkedIn Company Page - All Roles"),
-    ).toBeDefined();
+    expect(screen.getByText("LinkedIn Company Page - All Roles")).toBeDefined();
     expect(screen.getByText("LinkedIn")).toBeDefined();
   });
 
@@ -90,10 +88,7 @@ describe("Link Details Components", () => {
 
   it("renders LinkPipelineCard with breakdown data", () => {
     render(
-      <LinkPipelineCard
-        breakdown={mockBreakdown}
-        totalApplications={2}
-      />,
+      <LinkPipelineCard breakdown={mockBreakdown} totalApplications={2} />,
     );
 
     expect(screen.getByText("100%")).toBeDefined();

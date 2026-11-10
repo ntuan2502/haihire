@@ -39,7 +39,11 @@ function createWrapper() {
   return {
     queryClient,
     wrapper: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(QueryClientProvider, { client: queryClient }, children),
+      React.createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        children,
+      ),
   };
 }
 
@@ -91,7 +95,9 @@ describe("use-webhook-setting-queries", () => {
       id: "new-setting",
     } as unknown as WebhookSettingResponse);
 
-    const { result } = renderHook(() => useCreateWebhookSettingMutation(), { wrapper });
+    const { result } = renderHook(() => useCreateWebhookSettingMutation(), {
+      wrapper,
+    });
 
     await result.current.mutateAsync({
       eventType: "DLQ_ALERT",
@@ -100,10 +106,14 @@ describe("use-webhook-setting-queries", () => {
       chatId: "123",
     });
 
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["webhook-settings"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["webhook-settings"],
+    });
 
     // Test onError invalidation
-    vi.mocked(webhookSettingsApi.createWebhookSetting).mockRejectedValue(new Error("Failed"));
+    vi.mocked(webhookSettingsApi.createWebhookSetting).mockRejectedValue(
+      new Error("Failed"),
+    );
     try {
       await result.current.mutateAsync({
         eventType: "DLQ_ALERT",
@@ -126,17 +136,23 @@ describe("use-webhook-setting-queries", () => {
       isEnabled: false,
     } as unknown as WebhookSettingResponse);
 
-    const { result } = renderHook(() => useUpdateWebhookSettingMutation(), { wrapper });
+    const { result } = renderHook(() => useUpdateWebhookSettingMutation(), {
+      wrapper,
+    });
 
     await result.current.mutateAsync({
       id: "setting-1",
       data: { isEnabled: false },
     });
 
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["webhook-settings"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["webhook-settings"],
+    });
 
     // Test onError invalidation
-    vi.mocked(webhookSettingsApi.updateWebhookSetting).mockRejectedValue(new Error("Update failed"));
+    vi.mocked(webhookSettingsApi.updateWebhookSetting).mockRejectedValue(
+      new Error("Update failed"),
+    );
     try {
       await result.current.mutateAsync({
         id: "setting-1",
@@ -157,14 +173,20 @@ describe("use-webhook-setting-queries", () => {
       success: true,
     });
 
-    const { result } = renderHook(() => useDeleteWebhookSettingMutation(), { wrapper });
+    const { result } = renderHook(() => useDeleteWebhookSettingMutation(), {
+      wrapper,
+    });
 
     await result.current.mutateAsync("setting-to-delete");
 
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["webhook-settings"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["webhook-settings"],
+    });
 
     // Test onError invalidation
-    vi.mocked(webhookSettingsApi.deleteWebhookSetting).mockRejectedValue(new Error("Delete failed"));
+    vi.mocked(webhookSettingsApi.deleteWebhookSetting).mockRejectedValue(
+      new Error("Delete failed"),
+    );
     try {
       await result.current.mutateAsync("setting-to-delete");
     } catch {
@@ -183,17 +205,23 @@ describe("use-webhook-setting-queries", () => {
       message: "Test ok",
     });
 
-    const { result } = renderHook(() => useTestWebhookSettingMutation(), { wrapper });
+    const { result } = renderHook(() => useTestWebhookSettingMutation(), {
+      wrapper,
+    });
 
     await result.current.mutateAsync({
       provider: "DISCORD",
       webhookUrl: "https://discord.com/api/webhooks/1/2",
     });
 
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["webhook-settings"] });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["webhook-settings"],
+    });
 
     // Test onError invalidation
-    vi.mocked(webhookSettingsApi.testWebhookSetting).mockRejectedValue(new Error("Test failed"));
+    vi.mocked(webhookSettingsApi.testWebhookSetting).mockRejectedValue(
+      new Error("Test failed"),
+    );
     try {
       await result.current.mutateAsync({
         provider: "DISCORD",

@@ -22,7 +22,6 @@ import { EventsModule } from "../events/events.module";
     OrganizationsInvitesService,
     OrganizationsRolesService,
     OrganizationsAuditLogService,
-
   ],
   exports: [
     OrganizationsService,

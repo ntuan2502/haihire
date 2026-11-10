@@ -59,8 +59,12 @@ for (const check of checks) {
     continue;
   }
 
-  const missingInTarget = Array.from(exampleKeys).filter((k) => !targetKeys.has(k));
-  const extraInTarget = Array.from(targetKeys).filter((k) => !exampleKeys.has(k));
+  const missingInTarget = Array.from(exampleKeys).filter(
+    (k) => !targetKeys.has(k),
+  );
+  const extraInTarget = Array.from(targetKeys).filter(
+    (k) => !exampleKeys.has(k),
+  );
 
   if (missingInTarget.length > 0) {
     console.error(
@@ -90,9 +94,13 @@ for (const check of checks) {
 
 console.log("=================================================");
 if (hasError) {
-  console.error("❌ Environment check failed! Please synchronize .env and .env.example files.");
+  console.error(
+    "❌ Environment check failed! Please synchronize .env and .env.example files.",
+  );
   process.exit(1);
 } else {
-  console.log("✨ All environment variables are completely synchronized and documented!");
+  console.log(
+    "✨ All environment variables are completely synchronized and documented!",
+  );
   process.exit(0);
 }

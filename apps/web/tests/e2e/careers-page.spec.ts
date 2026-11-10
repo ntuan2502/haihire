@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
-const CAREER_PAGE_URL = "/careers/admin/senior-backend-engineer-nestjs-postgresql?ref=lnk-x-fresh-zero";
+const CAREER_PAGE_URL =
+  "/careers/admin/senior-backend-engineer-nestjs-postgresql?ref=lnk-x-fresh-zero";
 
 test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)", () => {
   test("renders career job details without script warnings or hydration errors (unmasked console audit)", async ({
@@ -26,13 +27,21 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
     expect(headingText).toContain("Senior Backend Engineer");
 
     // 2. Verify OpenGraph meta tags in <head>
-    const ogTitle = await page.locator('meta[property="og:title"]').getAttribute("content");
+    const ogTitle = await page
+      .locator('meta[property="og:title"]')
+      .getAttribute("content");
     expect(ogTitle).toContain("Senior Backend Engineer");
 
-    const ogUrl = await page.locator('meta[property="og:url"]').getAttribute("content");
-    expect(ogUrl).toContain("/careers/admin/senior-backend-engineer-nestjs-postgresql");
+    const ogUrl = await page
+      .locator('meta[property="og:url"]')
+      .getAttribute("content");
+    expect(ogUrl).toContain(
+      "/careers/admin/senior-backend-engineer-nestjs-postgresql",
+    );
 
-    const ogSiteName = await page.locator('meta[property="og:site_name"]').getAttribute("content");
+    const ogSiteName = await page
+      .locator('meta[property="og:site_name"]')
+      .getAttribute("content");
     expect(ogSiteName).toBe("HaiHire Enterprise ATS");
 
     // 3. Verify JSON-LD Structured Data
@@ -44,7 +53,9 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
 
     // 4. Verify ZERO React 19 script tag warnings across ALL console messages
     const scriptTagErrors = rawConsoleLogs.filter((log) =>
-      log.text.includes("Encountered a script tag while rendering React component"),
+      log.text.includes(
+        "Encountered a script tag while rendering React component",
+      ),
     );
     expect(scriptTagErrors).toHaveLength(0);
 
@@ -66,7 +77,8 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
       rawConsoleLogs.push({ type: msg.type(), text: msg.text() });
     });
 
-    const targetUrl = "/careers/admin/senior-technical-recruiter-hr?ref=lnk-techinasia-fair";
+    const targetUrl =
+      "/careers/admin/senior-technical-recruiter-hr?ref=lnk-techinasia-fair";
     const response = await page.goto(targetUrl, {
       waitUntil: "networkidle",
     });
@@ -75,11 +87,15 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
 
     const heading = page.locator("h1");
     await expect(heading.first()).toBeVisible();
-    expect(await heading.first().innerText()).toContain("Senior Technical Recruiter");
+    expect(await heading.first().innerText()).toContain(
+      "Senior Technical Recruiter",
+    );
 
     // Verify ZERO script tag warnings from React 19 across all console messages
     const scriptTagErrors = rawConsoleLogs.filter((log) =>
-      log.text.includes("Encountered a script tag while rendering React component"),
+      log.text.includes(
+        "Encountered a script tag while rendering React component",
+      ),
     );
     expect(scriptTagErrors).toHaveLength(0);
   });
@@ -98,8 +114,15 @@ test.describe("E2E Flow 1: Careers Page & SEO Metadata Verification (Phase 18.1)
     // Inspect documentElement immediately
     const themeEvaluation = await page.evaluate(() => {
       const isDark = document.documentElement.classList.contains("dark");
-      const navEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
-      const themeInitDuration = navEntry ? Math.max(0, navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart) : 0;
+      const navEntry = performance.getEntriesByType("navigation")[0] as
+        PerformanceNavigationTiming | undefined;
+      const themeInitDuration = navEntry
+        ? Math.max(
+            0,
+            navEntry.domContentLoadedEventEnd -
+              navEntry.domContentLoadedEventStart,
+          )
+        : 0;
       return { isDark, themeInitDuration };
     });
 

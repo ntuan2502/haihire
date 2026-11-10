@@ -1,5 +1,10 @@
 import { Logger } from "@nestjs/common";
-import type { EmailSendPayload, EmailSendResult, IEmailTransporter, TransporterConfig } from "./transporter.interface";
+import type {
+  EmailSendPayload,
+  EmailSendResult,
+  IEmailTransporter,
+  TransporterConfig,
+} from "./transporter.interface";
 
 export class SendGridTransporter implements IEmailTransporter {
   private readonly logger = new Logger(SendGridTransporter.name);
@@ -36,7 +41,9 @@ export class SendGridTransporter implements IEmailTransporter {
 
       if (!response.ok) {
         const errorText = await response.text();
-        this.logger.error(`[SENDGRID EMAIL FAILED] Status: ${response.status} - ${errorText}`);
+        this.logger.error(
+          `[SENDGRID EMAIL FAILED] Status: ${response.status} - ${errorText}`,
+        );
         return {
           success: false,
           status: "FAILED",
@@ -44,14 +51,18 @@ export class SendGridTransporter implements IEmailTransporter {
         };
       }
 
-      this.logger.log(`[SENDGRID EMAIL SENT] Status: 202 Accepted | To: ${payload.to}`);
+      this.logger.log(
+        `[SENDGRID EMAIL SENT] Status: 202 Accepted | To: ${payload.to}`,
+      );
       return {
         success: true,
         status: "SENT",
       };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      this.logger.error(`[SENDGRID EMAIL FAILED] Network error: ${errorMessage}`);
+      this.logger.error(
+        `[SENDGRID EMAIL FAILED] Network error: ${errorMessage}`,
+      );
       return {
         success: false,
         status: "FAILED",

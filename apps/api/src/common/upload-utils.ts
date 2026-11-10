@@ -10,11 +10,7 @@ export const ALLOWED_RESUME_MIME_TYPES = new Set([
   "application/octet-stream", // Fallback for some OS/browser uploads of docx
 ]);
 
-export const ALLOWED_RESUME_EXTENSIONS = new Set([
-  ".pdf",
-  ".doc",
-  ".docx",
-]);
+export const ALLOWED_RESUME_EXTENSIONS = new Set([".pdf", ".doc", ".docx"]);
 
 /**
  * Sanitize filename to prevent path traversal attacks.
@@ -46,7 +42,9 @@ export function validateMagicBytes(buffer: Buffer, ext: string): boolean {
 
   // 1. PDF: %PDF- (0x25 0x50 0x44 0x46 0x2D) header and %%EOF trailer
   if (normalizedExt === ".pdf") {
-    const header = buffer.subarray(0, Math.min(buffer.length, 1024)).toString("binary");
+    const header = buffer
+      .subarray(0, Math.min(buffer.length, 1024))
+      .toString("binary");
     if (!header.includes("%PDF-")) {
       return false;
     }
@@ -58,12 +56,11 @@ export function validateMagicBytes(buffer: Buffer, ext: string): boolean {
 
   // 2. DOCX: ZIP archive header PK\x03\x04 (0x50 0x4B 0x03 0x04) and EOCD trailer PK\x05\x06 (0x50 0x4B 0x05 0x06)
   if (normalizedExt === ".docx") {
-    const hasHeader = (
+    const hasHeader =
       buffer[0] === 0x50 &&
       buffer[1] === 0x4b &&
       buffer[2] === 0x03 &&
-      buffer[3] === 0x04
-    );
+      buffer[3] === 0x04;
     if (!hasHeader) return false;
 
     const windowSize = Math.min(buffer.length, 65557);
@@ -116,7 +113,9 @@ export function validateUploadedFile(file?: Express.Multer.File | null) {
 
   if (file.buffer) {
     if (ext === ".pdf") {
-      const header = file.buffer.subarray(0, Math.min(file.buffer.length, 1024)).toString("binary");
+      const header = file.buffer
+        .subarray(0, Math.min(file.buffer.length, 1024))
+        .toString("binary");
       if (!header.includes("%PDF-")) {
         throw new AppBadRequestException(
           APP_ERROR_CODES.VALIDATION_ERROR,

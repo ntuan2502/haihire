@@ -193,7 +193,9 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     expect(ownTenant.status()).toBe(200);
   });
 
-  test("candidate creation rejects a foreign organization in the body", async ({ request }) => {
+  test("candidate creation rejects a foreign organization in the body", async ({
+    request,
+  }) => {
     const response = await request.post("/api/candidates", {
       headers: { Authorization: `Bearer ${authToken}`, Cookie: alphaCookies },
       data: {
@@ -208,19 +210,30 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
     });
   });
 
-  test("document deletion cannot target another tenant's candidate or application", async ({ request }) => {
+  test("document deletion cannot target another tenant's candidate or application", async ({
+    request,
+  }) => {
     for (const path of [
       `/api/candidates/${SEED_BETA_CANDIDATE_ID}/documents`,
       `/api/applications/${betaAppId}/documents`,
     ]) {
-      const response = await request.delete(`${path}?documentId=${randomUUID()}`, {
-        headers: { Authorization: `Bearer ${authToken}`, Cookie: alphaCookies },
-      });
+      const response = await request.delete(
+        `${path}?documentId=${randomUUID()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            Cookie: alphaCookies,
+          },
+        },
+      );
       expect(response.status(), path).toBe(403);
     }
   });
 
-  test("a public application response contains only its acknowledgement fields", async ({ playwright, baseURL }) => {
+  test("a public application response contains only its acknowledgement fields", async ({
+    playwright,
+    baseURL,
+  }) => {
     const anonymous = await playwright.request.newContext({ baseURL });
     try {
       const response = await anonymous.post("/api/applications/apply", {
@@ -234,7 +247,12 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
       });
       expect(response.status()).toBe(201);
       const body = await response.json();
-      expect(Object.keys(body).sort()).toEqual(["createdAt", "id", "jobId", "stage"]);
+      expect(Object.keys(body).sort()).toEqual([
+        "createdAt",
+        "id",
+        "jobId",
+        "stage",
+      ]);
       expect(body).toMatchObject({ id: expect.any(String), jobId: betaJobId });
     } finally {
       await anonymous.dispose();

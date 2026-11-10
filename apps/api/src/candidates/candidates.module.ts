@@ -18,7 +18,6 @@ import {
     CandidatesCrudService,
     CandidatesDocumentsService,
     CandidatesProfileService,
-
   ],
   exports: [
     CandidatesService,

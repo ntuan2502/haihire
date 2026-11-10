@@ -47,7 +47,8 @@ export function ApplicationDocumentsSection({
                     {doc.name}
                   </h4>
                   <p className="text-[11px] text-slate-400">
-                    {doc.type || t("candidates.resume")} • {formatDate(doc.createdAt, "short")}
+                    {doc.type || t("candidates.resume")} •{" "}
+                    {formatDate(doc.createdAt, "short")}
                   </p>
                 </div>
               </div>
@@ -75,7 +76,9 @@ export function ApplicationDocumentsSection({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-slate-400 py-1">{t("applications.noDocumentsUploaded")}</p>
+        <p className="text-xs text-slate-400 py-1">
+          {t("applications.noDocumentsUploaded")}
+        </p>
       )}
     </div>
   );

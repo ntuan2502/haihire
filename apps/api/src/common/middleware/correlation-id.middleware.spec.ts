@@ -31,7 +31,10 @@ describe("CorrelationIdMiddleware & CorrelationLogger", () => {
     middleware.use(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(res.setHeader).toHaveBeenCalledWith("X-Request-ID", expect.any(String));
+    expect(res.setHeader).toHaveBeenCalledWith(
+      "X-Request-ID",
+      expect.any(String),
+    );
     expect(responseHeaderValue).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     );
@@ -93,39 +96,30 @@ describe("CorrelationIdMiddleware & CorrelationLogger", () => {
     const logger = new CorrelationLogger();
 
     it("formats message with [requestId] prefix when inside correlation context", () => {
-      const formatted = correlationStorage.run({ requestId: "trace-999" }, () => {
-        // Access protected formatMessage via prototype
-        return (logger as unknown as {
-          formatMessage: (
-            level: string,
-            msg: unknown,
-            pid: string,
-            formattedLevel: string,
-            context?: string,
-          ) => string;
-        }).formatMessage("log", "User logged in", "", "", "AuthService");
-      });
+      const formatted = correlationStorage.run(
+        { requestId: "trace-999" },
+        () => {
+          // Access protected formatMessage via prototype
+          return (
+            logger as unknown as {
+              formatMessage: (
+                level: string,
+                msg: unknown,
+                pid: string,
+                formattedLevel: string,
+                context?: string,
+              ) => string;
+            }
+          ).formatMessage("log", "User logged in", "", "", "AuthService");
+        },
+      );
 
       expect(formatted).toBe("[trace-999] [AuthService] User logged in\n");
     });
 
     it("formats message with [no-correlation] fallback when outside correlation context", () => {
-      const formatted = (logger as unknown as {
-        formatMessage: (
-          level: string,
-          msg: unknown,
-          pid: string,
-          formattedLevel: string,
-          context?: string,
-        ) => string;
-      }).formatMessage("log", "Background daemon tick", "", "", "CronService");
-
-      expect(formatted).toBe("[no-correlation] [CronService] Background daemon tick\n");
-    });
-
-    it("handles logs without a context parameter cleanly", () => {
-      const formatted = correlationStorage.run({ requestId: "trace-simple" }, () => {
-        return (logger as unknown as {
+      const formatted = (
+        logger as unknown as {
           formatMessage: (
             level: string,
             msg: unknown,
@@ -133,8 +127,31 @@ describe("CorrelationIdMiddleware & CorrelationLogger", () => {
             formattedLevel: string,
             context?: string,
           ) => string;
-        }).formatMessage("log", "Simple un-contextual message", "", "");
-      });
+        }
+      ).formatMessage("log", "Background daemon tick", "", "", "CronService");
+
+      expect(formatted).toBe(
+        "[no-correlation] [CronService] Background daemon tick\n",
+      );
+    });
+
+    it("handles logs without a context parameter cleanly", () => {
+      const formatted = correlationStorage.run(
+        { requestId: "trace-simple" },
+        () => {
+          return (
+            logger as unknown as {
+              formatMessage: (
+                level: string,
+                msg: unknown,
+                pid: string,
+                formattedLevel: string,
+                context?: string,
+              ) => string;
+            }
+          ).formatMessage("log", "Simple un-contextual message", "", "");
+        },
+      );
 
       expect(formatted).toBe("[trace-simple] Simple un-contextual message\n");
     });

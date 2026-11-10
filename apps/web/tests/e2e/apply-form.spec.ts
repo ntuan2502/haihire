@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
 
-const CAREER_PAGE_URL = "/careers/admin/senior-backend-engineer-nestjs-postgresql";
+const CAREER_PAGE_URL =
+  "/careers/admin/senior-backend-engineer-nestjs-postgresql";
 
 test.describe("Apply Form E2E Flow", () => {
-  test("submitting with invalid email triggers validation error", async ({ page }) => {
+  test("submitting with invalid email triggers validation error", async ({
+    page,
+  }) => {
     await page.goto(CAREER_PAGE_URL);
     await page.waitForLoadState("networkidle");
 
@@ -15,7 +18,9 @@ test.describe("Apply Form E2E Flow", () => {
     // Fill invalid email (e.g. invalid-email-format without proper domain)
     // Note: To bypass browser HTML5 email validation and hit React / API validation:
     await page.evaluate(() => {
-      const emailInput = document.querySelector("form input[type='email']") as HTMLInputElement;
+      const emailInput = document.querySelector(
+        "form input[type='email']",
+      ) as HTMLInputElement;
       if (emailInput) {
         emailInput.type = "text";
         emailInput.value = "invalid-email-format";
@@ -34,14 +39,18 @@ test.describe("Apply Form E2E Flow", () => {
     await page.locator("form button[type='submit']").click();
 
     // Verify error alert appears
-    const errorAlert = page.locator("form .p-3\\.5.rounded-2xl, form [class*='text-rose']");
+    const errorAlert = page.locator(
+      "form .p-3\\.5.rounded-2xl, form [class*='text-rose']",
+    );
     await expect(errorAlert.first()).toBeVisible({ timeout: 5000 });
     const errorText = await errorAlert.first().textContent();
     expect(errorText).toBeTruthy();
     expect(errorText?.length).toBeGreaterThan(0);
   });
 
-  test("submitting valid application creates application and shows success UI", async ({ page }) => {
+  test("submitting valid application creates application and shows success UI", async ({
+    page,
+  }) => {
     const response = await page.goto(CAREER_PAGE_URL);
     expect(response?.status()).toBe(200);
     await page.waitForLoadState("networkidle");
@@ -67,15 +76,21 @@ test.describe("Apply Form E2E Flow", () => {
     await page.setInputFiles("input[type='file']", {
       name: "tri-resume.pdf",
       mimeType: "application/pdf",
-      buffer: Buffer.from("%PDF-1.4\n1 0 obj\n<< /Title (Resume) >>\nendobj\n%%EOF"),
+      buffer: Buffer.from(
+        "%PDF-1.4\n1 0 obj\n<< /Title (Resume) >>\nendobj\n%%EOF",
+      ),
     });
 
     // Verify file name appears in UI
-    await expect(page.locator("text=tri-resume.pdf")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("text=tri-resume.pdf")).toBeVisible({
+      timeout: 5000,
+    });
 
     // Intercept POST request to verify HTTP response
     const submitResponsePromise = page.waitForResponse(
-      (res) => res.url().includes("/applications") && res.request().method() === "POST",
+      (res) =>
+        res.url().includes("/applications") &&
+        res.request().method() === "POST",
       { timeout: 15000 },
     );
 
@@ -86,11 +101,15 @@ test.describe("Apply Form E2E Flow", () => {
     expect([200, 201]).toContain(submitResponse.status());
 
     // Verify Success screen is displayed
-    const successTitle = page.locator("text=/Application Submitted|Ứng tuyển thành công/i");
+    const successTitle = page.locator(
+      "text=/Application Submitted|Ứng tuyển thành công/i",
+    );
     await expect(successTitle.first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("EC4: uploading file > 10MB displays size limit error and blocks submission", async ({ page }) => {
+  test("EC4: uploading file > 10MB displays size limit error and blocks submission", async ({
+    page,
+  }) => {
     await page.goto(CAREER_PAGE_URL);
     await page.waitForLoadState("networkidle");
 
@@ -106,4 +125,3 @@ test.describe("Apply Form E2E Flow", () => {
     await expect(errorText.first()).toBeVisible({ timeout: 5000 });
   });
 });
-

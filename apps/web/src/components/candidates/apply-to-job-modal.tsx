@@ -56,7 +56,8 @@ export function ApplyToJobModal({
               (candidate && a.candidateId === candidate.id) ||
               (candidate &&
                 a.candidateEmail &&
-                a.candidateEmail.toLowerCase() === candidate.email.toLowerCase()),
+                a.candidateEmail.toLowerCase() ===
+                  candidate.email.toLowerCase()),
           )
           .map((a) => a.jobId),
       ),
@@ -81,8 +82,10 @@ export function ApplyToJobModal({
         formData.append("notes", candidate.notes);
       }
 
-      const effectiveResumeUrl = candidate.resumeUrl || candidate.rawApp?.resumeUrl;
-      const effectiveResumeFileName = candidate.resumeFileName || candidate.rawApp?.resumeFileName;
+      const effectiveResumeUrl =
+        candidate.resumeUrl || candidate.rawApp?.resumeUrl;
+      const effectiveResumeFileName =
+        candidate.resumeFileName || candidate.rawApp?.resumeFileName;
 
       if (effectiveResumeUrl) {
         formData.append("resumeUrl", effectiveResumeUrl);

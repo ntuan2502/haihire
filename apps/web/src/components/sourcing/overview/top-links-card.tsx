@@ -43,7 +43,10 @@ export function TopLinksCard({ links, onViewAll }: TopLinksCardProps) {
       ) : (
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {links.map((link) => (
-            <div key={link.id} className="py-3 first:pt-0 last:pb-0 space-y-1.5">
+            <div
+              key={link.id}
+              className="py-3 first:pt-0 last:pb-0 space-y-1.5"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-slate-900 dark:text-white truncate">

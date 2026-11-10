@@ -66,15 +66,14 @@ export class OrganizationsRolesService {
       }
     }
 
-    const overrides =
-      await this.prisma.organizationRolePermission.findMany({
-        where: { organizationId },
-        select: {
-          role: true,
-          permission: true,
-          granted: true,
-        },
-      });
+    const overrides = await this.prisma.organizationRolePermission.findMany({
+      where: { organizationId },
+      select: {
+        role: true,
+        permission: true,
+        granted: true,
+      },
+    });
 
     for (const record of overrides) {
       const role = record.role as Role;
@@ -215,7 +214,9 @@ export class OrganizationsRolesService {
       const existing = await tx.organizationRolePermission.findMany({
         where: { ...where, organizationId },
       });
-      const toDelete = existing.filter((item: { role: Role; id: string }) => item.role !== Role.ADMIN);
+      const toDelete = existing.filter(
+        (item: { role: Role; id: string }) => item.role !== Role.ADMIN,
+      );
       deletedCount = toDelete.length;
 
       if (toDelete.length > 0) {

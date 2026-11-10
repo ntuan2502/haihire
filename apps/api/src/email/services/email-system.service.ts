@@ -171,10 +171,18 @@ export class EmailSystemService {
   }
 
   async getSystemLogs(options?: GetLogsOptions) {
-    const result = await queryEmailLogs(this.prisma, { scope: "SYSTEM" }, options);
+    const result = await queryEmailLogs(
+      this.prisma,
+      { scope: "SYSTEM" },
+      options,
+    );
     return {
       ...result,
-      data: result.data.map((l) => ({ ...l, recipientName: l.recipientName || "Recipient", recipientEmail: l.recipientEmail || "" })),
+      data: result.data.map((l) => ({
+        ...l,
+        recipientName: l.recipientName || "Recipient",
+        recipientEmail: l.recipientEmail || "",
+      })),
     };
   }
 }

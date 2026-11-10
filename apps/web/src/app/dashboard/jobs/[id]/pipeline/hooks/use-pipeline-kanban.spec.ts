@@ -71,9 +71,15 @@ const mockApplications: Application[] = [
 vi.mock("@/hooks/use-queries", () => ({
   useJob: () => ({ data: mockJob, isLoading: false }),
   useJobApplications: () => ({ data: mockApplications, isLoading: false }),
-  useUpdateCandidateMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateCandidateMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
   useUpdateStageMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useDeleteApplicationMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteApplicationMutation: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
 }));
 
 describe("usePipelineKanban", () => {
@@ -91,7 +97,9 @@ describe("usePipelineKanban", () => {
     expect(result.current.stageCounts.SCREENING).toBe(1);
     expect(result.current.stageCounts.INTERVIEW).toBe(0);
     expect(result.current.filteredCandidates.length).toBe(1);
-    expect(result.current.filteredCandidates[0]?.candidateName).toBe("Alice Walker");
+    expect(result.current.filteredCandidates[0]?.candidateName).toBe(
+      "Alice Walker",
+    );
   });
 
   it("updates stage and navigates when handleSelectStage is called", () => {

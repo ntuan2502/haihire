@@ -6,12 +6,17 @@ import { execSync } from "node:child_process";
  * to prevent human reporting discrepancies (IVV3-01).
  */
 function analyzeTestChanges(baseRef = "HEAD~1", targetRef = "HEAD") {
-  console.log(`Analyzing test changes between [${baseRef}] and [${targetRef}]...\n`);
+  console.log(
+    `Analyzing test changes between [${baseRef}] and [${targetRef}]...\n`,
+  );
 
   try {
-    const diff = execSync(`git diff ${baseRef}..${targetRef} -- "*.spec.ts" "*.spec.tsx"`, {
-      encoding: "utf-8",
-    });
+    const diff = execSync(
+      `git diff ${baseRef}..${targetRef} -- "*.spec.ts" "*.spec.tsx"`,
+      {
+        encoding: "utf-8",
+      },
+    );
 
     const lines = diff.split("\n");
     let addedCount = 0;

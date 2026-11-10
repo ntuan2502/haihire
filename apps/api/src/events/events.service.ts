@@ -108,9 +108,7 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
     this.events$.next(event);
   }
 
-  async resolveUserOrgIds(
-    userId: string,
-  ): Promise<Set<string>> {
+  async resolveUserOrgIds(userId: string): Promise<Set<string>> {
     if (!this.prisma) throw new Error("PrismaService not available");
     const memberships = await this.prisma.organizationMember.findMany({
       where: { userId },
@@ -163,14 +161,17 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
             where: { id: userId },
             select: { id: true, tokenVersion: true },
           });
-          if (!user || (user.tokenVersion ?? 0) !== (currentPayload.tokenVersion ?? 0)) {
+          if (
+            !user ||
+            (user.tokenVersion ?? 0) !== (currentPayload.tokenVersion ?? 0)
+          ) {
             throw new Error("User session revoked");
           }
           const orgIds = await this.resolveUserOrgIds(userId);
           const allowed = event.targetUserId
             ? event.targetUserId === userId
             : !event.organizationId || orgIds.has(event.organizationId);
-          return allowed ? { data: event } as MessageEvent : null;
+          return allowed ? ({ data: event } as MessageEvent) : null;
         } catch {
           throw new AppUnauthorizedException(
             APP_ERROR_CODES.SSE_UNAUTHORIZED,

@@ -11,7 +11,10 @@ interface ChannelBadgeProps {
   size?: "sm" | "md";
 }
 
-const CHANNEL_STYLES: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+const CHANNEL_STYLES: Record<
+  string,
+  { bg: string; text: string; border: string; dot: string }
+> = {
   [SourcingChannel.LINKEDIN]: {
     bg: "bg-blue-50 dark:bg-blue-950/60",
     text: "text-blue-700 dark:text-blue-300",
@@ -116,7 +119,8 @@ export function ChannelBadge({
 }: ChannelBadgeProps) {
   const { t } = useI18n();
 
-  const style = CHANNEL_STYLES[channel] || CHANNEL_STYLES[SourcingChannel.OTHER];
+  const style =
+    CHANNEL_STYLES[channel] || CHANNEL_STYLES[SourcingChannel.OTHER];
   const translatedName =
     customLabel ||
     (t as (key: string) => string)(`sourcing.channels.${channel}`) ||

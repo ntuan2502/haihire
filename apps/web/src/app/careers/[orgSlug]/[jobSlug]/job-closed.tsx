@@ -4,7 +4,11 @@ import Link from "next/link";
 import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
 import { useI18n } from "@/i18n";
-import { getJobTypeLabel, getWorkplaceLabel, getExperienceLevelLabel } from "@/lib/jobs";
+import {
+  getJobTypeLabel,
+  getWorkplaceLabel,
+  getExperienceLevelLabel,
+} from "@/lib/jobs";
 import {
   Briefcase,
   Building2,

@@ -28,13 +28,19 @@ describe("ConfirmDestructiveModal component", () => {
         confirmMatchText="Alice Johnson"
         confirmButtonLabel="candidates.deleteCandidate"
         cancelButtonLabel="common.cancel"
-      />
+      />,
     );
 
-    expect(screen.getByText("applications.deleteCandidateHeading")).toBeInTheDocument();
-    expect(screen.getByText("applications.deleteCandidateWarning")).toBeInTheDocument();
+    expect(
+      screen.getByText("applications.deleteCandidateHeading"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("applications.deleteCandidateWarning"),
+    ).toBeInTheDocument();
 
-    const confirmButton = screen.getByRole("button", { name: "candidates.deleteCandidate" });
+    const confirmButton = screen.getByRole("button", {
+      name: "candidates.deleteCandidate",
+    });
     expect(confirmButton).toBeDisabled();
 
     const input = screen.getByRole("textbox");
@@ -60,7 +66,7 @@ describe("ConfirmDestructiveModal component", () => {
         description="interviews.cancelWarning"
         confirmMatchText="CANCEL"
         confirmButtonLabel="common.confirm"
-      />
+      />,
     );
 
     const input = screen.getByRole("textbox");
@@ -81,7 +87,7 @@ describe("ConfirmDestructiveModal component", () => {
         title="applications.deleteDocumentHeading"
         description="applications.deleteDocumentWarning"
         confirmButtonLabel="common.delete"
-      />
+      />,
     );
 
     const confirmButton = screen.getByRole("button", { name: "common.delete" });

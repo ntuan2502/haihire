@@ -13,10 +13,7 @@ import { useRouter } from "next/navigation";
 import { AuthGuard } from "@/components/shared/auth-guard";
 import { Navbar } from "@/components/layout";
 import { useAuth } from "@/context/auth-context";
-import {
-  useAllJobs,
-  useCreateCandidateMutation,
-} from "@/hooks/use-queries";
+import { useAllJobs, useCreateCandidateMutation } from "@/hooks/use-queries";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
@@ -51,7 +48,9 @@ function AddCandidatePageContent() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [gender, setGender] = useState<Gender | "NOT_SPECIFIED">("NOT_SPECIFIED");
+  const [gender, setGender] = useState<Gender | "NOT_SPECIFIED">(
+    "NOT_SPECIFIED",
+  );
   const [dateOfBirth, setDateOfBirth] = useState("");
 
   // File Upload State
@@ -137,7 +136,8 @@ function AddCandidatePageContent() {
       }
       formData.append("email", email.trim());
       if (phone.trim()) formData.append("phone", phone.trim());
-      if (user?.organizationId) formData.append("organizationId", user.organizationId);
+      if (user?.organizationId)
+        formData.append("organizationId", user.organizationId);
 
       if (selectedFile) {
         formData.append("resume", selectedFile);
@@ -170,7 +170,9 @@ function AddCandidatePageContent() {
             className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{t("common.back")}: {t("candidates.title")}</span>
+            <span>
+              {t("common.back")}: {t("candidates.title")}
+            </span>
           </Link>
         </div>
 
@@ -227,7 +229,9 @@ function AddCandidatePageContent() {
                 </div>
                 <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
                   <CheckCircle2 className="h-3 w-3" />
-                  {t("candidates.cvAttached", { size: (selectedFile.size / 1024).toFixed(0) })}
+                  {t("candidates.cvAttached", {
+                    size: (selectedFile.size / 1024).toFixed(0),
+                  })}
                 </p>
               </div>
             ) : (
@@ -255,7 +259,8 @@ function AddCandidatePageContent() {
           {/* First Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.firstName")} <span className="text-rose-500">*</span>
+              {t("candidates.firstName")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -269,7 +274,8 @@ function AddCandidatePageContent() {
           {/* Last Name */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.lastName")} <span className="text-rose-500">*</span>
+              {t("candidates.lastName")}{" "}
+              <span className="text-rose-500">*</span>
             </label>
             <Input
               required
@@ -336,7 +342,10 @@ function AddCandidatePageContent() {
                 value={gender}
                 onChange={(val) => setGender(val as Gender | "NOT_SPECIFIED")}
                 options={[
-                  { value: "NOT_SPECIFIED", label: t("candidates.notSpecified") },
+                  {
+                    value: "NOT_SPECIFIED",
+                    label: t("candidates.notSpecified"),
+                  },
                   { value: "MALE", label: t("candidates.male") },
                   { value: "FEMALE", label: t("candidates.female") },
                   { value: "OTHER", label: t("candidates.otherGender") },

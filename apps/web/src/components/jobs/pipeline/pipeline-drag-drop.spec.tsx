@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { ApplicationStage } from "@haihire/shared";
 import { PipelineStageSelector } from "./pipeline-stage-selector";
-import { canTransition, getTransitionDisabledReason, PIPELINE_STAGES } from "@/lib/stages";
+import {
+  canTransition,
+  getTransitionDisabledReason,
+  PIPELINE_STAGES,
+} from "@/lib/stages";
 import { toast } from "sonner";
 
 vi.mock("sonner", () => ({
@@ -47,7 +51,8 @@ describe("Kanban Drag-and-Drop State Machine Alignment (C3 Acceptance Criteria)"
         const reason = getTransitionDisabledReason(
           fromStage,
           toStage,
-          (key, params) => `Không thể chuyển từ ${params?.from} sang ${params?.to}`,
+          (key, params) =>
+            `Không thể chuyển từ ${params?.from} sang ${params?.to}`,
         );
         toast.error(reason);
         return;
@@ -160,8 +165,6 @@ describe("Kanban Drag-and-Drop State Machine Alignment (C3 Acceptance Criteria)"
     appliedPill.dispatchEvent(dropEvent);
 
     expect(mockApiCall).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining("HIRED"),
-    );
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("HIRED"));
   });
 });

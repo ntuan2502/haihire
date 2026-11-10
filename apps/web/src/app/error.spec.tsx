@@ -9,7 +9,9 @@ import { I18nProvider } from "@/i18n";
 
 describe("Next.js Error Boundaries & Not-Found Integration Tests", () => {
   const mockReset = vi.fn();
-  const sampleError = new Error("Integration test error") as Error & { digest?: string };
+  const sampleError = new Error("Integration test error") as Error & {
+    digest?: string;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,7 +25,9 @@ describe("Next.js Error Boundaries & Not-Found Integration Tests", () => {
     );
 
     expect(screen.getByTestId("error-fallback-default")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /try again|thử lại/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /try again|thử lại/i }),
+    ).toBeInTheDocument();
   });
 
   it("2. DashboardError renders ErrorFallback with compact variant and dashboard link", () => {
@@ -34,7 +38,9 @@ describe("Next.js Error Boundaries & Not-Found Integration Tests", () => {
     );
 
     expect(screen.getByTestId("error-fallback-compact")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /dashboard|tổng quan/i })).toHaveAttribute("href", "/dashboard");
+    expect(
+      screen.getByRole("link", { name: /dashboard|tổng quan/i }),
+    ).toHaveAttribute("href", "/dashboard");
 
     const tryAgain = screen.getByRole("button", { name: /try again|thử lại/i });
     fireEvent.click(tryAgain);
@@ -49,7 +55,9 @@ describe("Next.js Error Boundaries & Not-Found Integration Tests", () => {
     );
 
     expect(screen.getByTestId("error-fallback-default")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /go home|về trang chủ/i })).toHaveAttribute("href", "/careers");
+    expect(
+      screen.getByRole("link", { name: /go home|về trang chủ/i }),
+    ).toHaveAttribute("href", "/careers");
   });
 
   it("4. NotFound component renders 404 page with navigation links", () => {
@@ -62,7 +70,11 @@ describe("Next.js Error Boundaries & Not-Found Integration Tests", () => {
     expect(screen.getByTestId("not-found-page")).toBeInTheDocument();
     expect(screen.getByText("404")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /go home|về trang chủ/i })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: /dashboard|tổng quan/i })).toHaveAttribute("href", "/dashboard");
+    expect(
+      screen.getByRole("link", { name: /go home|về trang chủ/i }),
+    ).toHaveAttribute("href", "/");
+    expect(
+      screen.getByRole("link", { name: /dashboard|tổng quan/i }),
+    ).toHaveAttribute("href", "/dashboard");
   });
 });

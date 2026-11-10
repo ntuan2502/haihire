@@ -1,15 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  cleanupOrphans,
-  extractObjectNameFromUrl,
-} from "./orphan-cleanup";
+import { cleanupOrphans, extractObjectNameFromUrl } from "./orphan-cleanup";
 import { EventEmitter } from "node:events";
 import type * as Minio from "minio";
 
 describe("orphan-cleanup", () => {
   describe("extractObjectNameFromUrl", () => {
     it("extracts object key from full http URL", () => {
-      const url = "http://localhost:9000/haihire-resumes/tenants/org-1/resumes/doc1.pdf";
+      const url =
+        "http://localhost:9000/haihire-resumes/tenants/org-1/resumes/doc1.pdf";
       expect(extractObjectNameFromUrl(url, "haihire-resumes")).toBe(
         "tenants/org-1/resumes/doc1.pdf",
       );
@@ -85,7 +83,9 @@ describe("orphan-cleanup", () => {
           findMany: vi.fn().mockResolvedValue([]),
         },
         application: {
-          findMany: vi.fn().mockRejectedValue(new Error("Connection reset by peer")),
+          findMany: vi
+            .fn()
+            .mockRejectedValue(new Error("Connection reset by peer")),
         },
       };
 
@@ -139,9 +139,11 @@ describe("orphan-cleanup", () => {
 
       const mockDb = {
         candidateDocument: {
-          findMany: vi.fn().mockResolvedValue([
-            { url: "tenants/org-1/resumes/active-ref.pdf" },
-          ]),
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              { url: "tenants/org-1/resumes/active-ref.pdf" },
+            ]),
         },
         application: {
           findMany: vi.fn().mockResolvedValue([]),
@@ -152,9 +154,21 @@ describe("orphan-cleanup", () => {
       };
 
       const items = [
-        { name: "tenants/org-1/resumes/active-ref.pdf", size: 1024, lastModified: fortyDaysAgo },
-        { name: "tenants/org-1/resumes/recent-orphan.pdf", size: 2048, lastModified: fiveDaysAgo },
-        { name: "tenants/org-1/resumes/old-orphan.pdf", size: 4096, lastModified: fortyDaysAgo },
+        {
+          name: "tenants/org-1/resumes/active-ref.pdf",
+          size: 1024,
+          lastModified: fortyDaysAgo,
+        },
+        {
+          name: "tenants/org-1/resumes/recent-orphan.pdf",
+          size: 2048,
+          lastModified: fiveDaysAgo,
+        },
+        {
+          name: "tenants/org-1/resumes/old-orphan.pdf",
+          size: 4096,
+          lastModified: fortyDaysAgo,
+        },
       ];
 
       mockMinioClient.listObjects.mockReturnValue(createMockStream(items));
@@ -174,8 +188,12 @@ describe("orphan-cleanup", () => {
       expect(report.preservedGraceCount).toBe(1);
       expect(report.deletedCount).toBe(1);
       expect(report.bytesFreed).toBe(4096);
-      expect(report.deletedFiles).toEqual(["tenants/org-1/resumes/old-orphan.pdf"]);
-      expect(report.preservedFiles).toEqual(["tenants/org-1/resumes/recent-orphan.pdf"]);
+      expect(report.deletedFiles).toEqual([
+        "tenants/org-1/resumes/old-orphan.pdf",
+      ]);
+      expect(report.preservedFiles).toEqual([
+        "tenants/org-1/resumes/recent-orphan.pdf",
+      ]);
 
       expect(mockMinioClient.removeObject).toHaveBeenCalledTimes(1);
       expect(mockMinioClient.removeObject).toHaveBeenCalledWith(
@@ -196,7 +214,11 @@ describe("orphan-cleanup", () => {
       };
 
       const items = [
-        { name: "tenants/org-1/resumes/old-orphan.pdf", size: 4096, lastModified: fortyDaysAgo },
+        {
+          name: "tenants/org-1/resumes/old-orphan.pdf",
+          size: 4096,
+          lastModified: fortyDaysAgo,
+        },
       ];
 
       mockMinioClient.listObjects.mockReturnValue(createMockStream(items));

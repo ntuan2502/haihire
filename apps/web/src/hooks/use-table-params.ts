@@ -203,12 +203,9 @@ export function useTableParams(options?: UseTableParamsOptions) {
     [updateUrl],
   );
 
-  const getParam = useCallback(
-    (key: string, defaultValue = ""): string => {
-      return currentParamsRef.current.get(key) ?? defaultValue;
-    },
-    [],
-  );
+  const getParam = useCallback((key: string, defaultValue = ""): string => {
+    return currentParamsRef.current.get(key) ?? defaultValue;
+  }, []);
 
   return {
     page,

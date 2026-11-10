@@ -9,12 +9,14 @@ vi.mock("@/i18n", () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
         "applications.noInterviews": "Chưa có lịch phỏng vấn",
-        "applications.noInterviewsDesc": "Lên lịch phỏng vấn đầu tiên cho ứng viên này.",
+        "applications.noInterviewsDesc":
+          "Lên lịch phỏng vấn đầu tiên cho ứng viên này.",
         "applications.scheduleInterview": "Lên lịch phỏng vấn",
         "applications.sections.interviews": "Phỏng vấn",
         "interviews.types.hrScreening": "HR Sơ loại",
         "interviews.types.technical": "Kỹ thuật",
-        "interviews.latestUpcomingSchedule": "Lịch phỏng vấn gần nhất / sắp tới",
+        "interviews.latestUpcomingSchedule":
+          "Lịch phỏng vấn gần nhất / sắp tới",
         "interviews.currentScheduleBadge": "Lịch hiện tại",
         "interviews.completedScheduleBadge": "Đã qua",
         "interviews.cancelThisSchedule": "Hủy lịch này",
@@ -70,7 +72,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
             },
           ],
         }}
-      />
+      />,
     );
 
     expect(screen.getByText("HR Sơ loại")).toBeInTheDocument();
@@ -99,7 +101,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
           ],
         }}
         onCancelInterview={handleCancel}
-      />
+      />,
     );
 
     const cancelButton = screen.getByText("Hủy lịch này");
@@ -153,7 +155,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
           ],
         }}
         onSchedule={handleSchedule}
-      />
+      />,
     );
 
     const editButton = screen.getByText("Chỉnh sửa lịch phỏng vấn");
@@ -161,7 +163,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
 
     expect(handleSchedule).toHaveBeenCalledTimes(1);
     expect(handleSchedule).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "intv-uuid-12345" })
+      expect.objectContaining({ id: "intv-uuid-12345" }),
     );
   });
 });

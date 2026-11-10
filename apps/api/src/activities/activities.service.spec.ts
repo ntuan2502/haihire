@@ -13,23 +13,33 @@ describe("ActivitiesService", () => {
       activityLog: {
         create: vi
           .fn()
-          .mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
-            inMemoryActivities.push(data);
-            return data;
-          }),
+          .mockImplementation(
+            async ({ data }: { data: Record<string, unknown> }) => {
+              inMemoryActivities.push(data);
+              return data;
+            },
+          ),
         count: vi
           .fn()
-          .mockImplementation(async ({ where }: { where: Record<string, unknown> }) => {
-            return inMemoryActivities.filter((a) => {
-              if (where.candidateId && a.candidateId !== where.candidateId)
-                return false;
-              if (where.applicationId && a.applicationId !== where.applicationId)
-                return false;
-              if (where.organizationId && a.organizationId !== where.organizationId)
-                return false;
-              return true;
-            }).length;
-          }),
+          .mockImplementation(
+            async ({ where }: { where: Record<string, unknown> }) => {
+              return inMemoryActivities.filter((a) => {
+                if (where.candidateId && a.candidateId !== where.candidateId)
+                  return false;
+                if (
+                  where.applicationId &&
+                  a.applicationId !== where.applicationId
+                )
+                  return false;
+                if (
+                  where.organizationId &&
+                  a.organizationId !== where.organizationId
+                )
+                  return false;
+                return true;
+              }).length;
+            },
+          ),
         findMany: vi
           .fn()
           .mockImplementation(
@@ -46,9 +56,15 @@ describe("ActivitiesService", () => {
                 .filter((a) => {
                   if (where.candidateId && a.candidateId !== where.candidateId)
                     return false;
-                  if (where.applicationId && a.applicationId !== where.applicationId)
+                  if (
+                    where.applicationId &&
+                    a.applicationId !== where.applicationId
+                  )
                     return false;
-                  if (where.organizationId && a.organizationId !== where.organizationId)
+                  if (
+                    where.organizationId &&
+                    a.organizationId !== where.organizationId
+                  )
                     return false;
                   return true;
                 })

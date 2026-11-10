@@ -29,9 +29,15 @@ export class SourcingService {
   private readonly metrics: SourcingMetricsService;
 
   constructor(
-    @Optional() @Inject(SourcingLinksService) linksOrPrisma?: SourcingLinksService | PrismaService,
-    @Optional() @Inject(SourcingLockService) lockOrActivities?: SourcingLockService | ActivitiesService,
-    @Optional() @Inject(SourcingMetricsService) metricsOrRedis?: SourcingMetricsService | RedisLockClient,
+    @Optional()
+    @Inject(SourcingLinksService)
+    linksOrPrisma?: SourcingLinksService | PrismaService,
+    @Optional()
+    @Inject(SourcingLockService)
+    lockOrActivities?: SourcingLockService | ActivitiesService,
+    @Optional()
+    @Inject(SourcingMetricsService)
+    metricsOrRedis?: SourcingMetricsService | RedisLockClient,
     @Optional() @Inject("REDIS_CLIENT") redisClient?: RedisLockClient,
   ) {
     if (linksOrPrisma instanceof SourcingLinksService) {
@@ -44,7 +50,8 @@ export class SourcingService {
       // new SourcingService(mockPrisma as never, mockActivitiesService as never, mockRedis)
       const prisma = linksOrPrisma as PrismaService;
       const activities = lockOrActivities as ActivitiesService;
-      const redis = (redisClient ?? metricsOrRedis) as RedisLockClient | undefined;
+      const redis = (redisClient ?? metricsOrRedis) as
+        RedisLockClient | undefined;
       this.links = new SourcingLinksService(prisma, activities);
       this.lock = new SourcingLockService(prisma, redis);
       this.metrics = new SourcingMetricsService(prisma, this.links);
@@ -101,8 +108,15 @@ export class SourcingService {
     referrer?: string,
     ip?: string,
     userAgent?: string,
-    lockOptions?: { maxWaitMs?: number; retryIntervalMs?: number; lockTtlMs?: number },
-  ): Promise<{ success: boolean; link?: { token: string; source: string; jobId?: string | null } }> {
+    lockOptions?: {
+      maxWaitMs?: number;
+      retryIntervalMs?: number;
+      lockTtlMs?: number;
+    },
+  ): Promise<{
+    success: boolean;
+    link?: { token: string; source: string; jobId?: string | null };
+  }> {
     return this.lock.recordClick(token, referrer, ip, userAgent, lockOptions);
   }
 

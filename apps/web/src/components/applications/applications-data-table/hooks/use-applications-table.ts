@@ -54,7 +54,9 @@ export function useApplicationsTable({
       : localCurrentPage;
 
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
-  const [deleteModalApp, setDeleteModalApp] = useState<Application | null>(null);
+  const [deleteModalApp, setDeleteModalApp] = useState<Application | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [editingInterview, setEditingInterview] =
@@ -65,7 +67,7 @@ export function useApplicationsTable({
   const [scoreFilter, setScoreFilter] = useState<string>("ALL");
   const [localJobFilter, setLocalJobFilter] = useState<string>("ALL");
   const currentJobFilter =
-    propJobFilter !== undefined ? (propJobFilter || "ALL") : localJobFilter;
+    propJobFilter !== undefined ? propJobFilter || "ALL" : localJobFilter;
 
   // Stage filters
   const [localStageFilters, setLocalStageFilters] = useState<string[]>([]);
@@ -194,13 +196,41 @@ export function useApplicationsTable({
 
   const stageTabs = useMemo(
     () => [
-      { id: "ALL", label: t("common.all"), count: stageCounts?.ALL ?? filterSort.totalCount },
-      { id: "APPLIED", label: t("pipeline.stages.applied"), count: stageCounts?.APPLIED },
-      { id: "SCREENING", label: t("pipeline.stages.screening"), count: stageCounts?.SCREENING },
-      { id: "INTERVIEW", label: t("pipeline.stages.interview"), count: stageCounts?.INTERVIEW },
-      { id: "OFFER", label: t("pipeline.stages.offer"), count: stageCounts?.OFFER },
-      { id: "HIRED", label: t("pipeline.stages.hired"), count: stageCounts?.HIRED },
-      { id: "REJECTED", label: t("pipeline.stages.rejected"), count: stageCounts?.REJECTED },
+      {
+        id: "ALL",
+        label: t("common.all"),
+        count: stageCounts?.ALL ?? filterSort.totalCount,
+      },
+      {
+        id: "APPLIED",
+        label: t("pipeline.stages.applied"),
+        count: stageCounts?.APPLIED,
+      },
+      {
+        id: "SCREENING",
+        label: t("pipeline.stages.screening"),
+        count: stageCounts?.SCREENING,
+      },
+      {
+        id: "INTERVIEW",
+        label: t("pipeline.stages.interview"),
+        count: stageCounts?.INTERVIEW,
+      },
+      {
+        id: "OFFER",
+        label: t("pipeline.stages.offer"),
+        count: stageCounts?.OFFER,
+      },
+      {
+        id: "HIRED",
+        label: t("pipeline.stages.hired"),
+        count: stageCounts?.HIRED,
+      },
+      {
+        id: "REJECTED",
+        label: t("pipeline.stages.rejected"),
+        count: stageCounts?.REJECTED,
+      },
     ],
     [t, stageCounts, filterSort.totalCount],
   );

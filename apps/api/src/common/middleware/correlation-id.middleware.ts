@@ -3,7 +3,9 @@ import type { Request, Response, NextFunction } from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 
-export const correlationStorage = new AsyncLocalStorage<{ requestId: string }>();
+export const correlationStorage = new AsyncLocalStorage<{
+  requestId: string;
+}>();
 
 @Injectable()
 export class CorrelationIdMiddleware implements NestMiddleware {

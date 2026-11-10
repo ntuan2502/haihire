@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { cn } from "cn";
-import {
-  ArrowLeft,
-  Eye,
-  Check,
-  CheckCircle2,
-  Save,
-} from "lucide-react";
+import { ArrowLeft, Eye, Check, CheckCircle2, Save } from "lucide-react";
 import type { Job } from "@/types";
 import type { StepId } from "./types";
 

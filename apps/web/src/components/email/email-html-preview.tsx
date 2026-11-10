@@ -7,7 +7,11 @@ interface EmailHtmlPreviewProps {
 }
 
 /** Isolate untrusted email markup from application scripts, cookies and storage. */
-export function EmailHtmlPreview({ body, title, className }: EmailHtmlPreviewProps) {
+export function EmailHtmlPreview({
+  body,
+  title,
+  className,
+}: EmailHtmlPreviewProps) {
   return (
     <iframe
       title={title}

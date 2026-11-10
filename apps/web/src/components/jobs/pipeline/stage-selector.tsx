@@ -40,9 +40,10 @@ export function StageSelector({
     return pipelineStages.map((stage) => {
       const allowed = canTransition(currentStage, stage.id);
       const isCurrent = currentStage === stage.id;
-      const reason = !allowed && !isCurrent
-        ? getTransitionDisabledReason(currentStage, stage.id, t)
-        : "";
+      const reason =
+        !allowed && !isCurrent
+          ? getTransitionDisabledReason(currentStage, stage.id, t)
+          : "";
       return {
         ...stage,
         allowed,
@@ -116,7 +117,9 @@ export function StageSelector({
               <span>{stage.actionLabel}</span>
               <span
                 className={`h-4 w-4 rounded-full text-[10px] flex items-center justify-center ${
-                  stage.allowed ? "bg-white/20" : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+                  stage.allowed
+                    ? "bg-white/20"
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-500"
                 }`}
               >
                 {stage.stepNumber}

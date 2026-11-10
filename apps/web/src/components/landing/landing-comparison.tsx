@@ -27,7 +27,10 @@ export const LandingComparison: React.FC = () => {
   ];
 
   return (
-    <section id="comparison" className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
+    <section
+      id="comparison"
+      className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20"
+    >
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-16">
         <p className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-cyan-400 mb-2">
@@ -57,7 +60,10 @@ export const LandingComparison: React.FC = () => {
 
             <div className="space-y-4">
               {comparisonRows.map((row, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 text-slate-700 dark:text-slate-300 text-sm leading-relaxed"
+                >
                   <XCircle className="h-5 w-5 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
                   <span>{row.oldText}</span>
                 </div>
@@ -80,7 +86,10 @@ export const LandingComparison: React.FC = () => {
 
             <div className="space-y-4">
               {comparisonRows.map((row, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-slate-800 dark:text-slate-200 text-sm leading-relaxed font-medium">
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 text-slate-800 dark:text-slate-200 text-sm leading-relaxed font-medium"
+                >
                   <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span>{row.newText}</span>
                 </div>

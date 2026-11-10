@@ -85,8 +85,10 @@ describe("StageSelector Component", () => {
 
       // APPLIED button should be disabled with tooltip
       const buttons = screen.getAllByRole("button");
-      const appliedButton = buttons.find((btn) =>
-        btn.textContent?.includes("New") || btn.textContent?.includes("APPLIED"),
+      const appliedButton = buttons.find(
+        (btn) =>
+          btn.textContent?.includes("New") ||
+          btn.textContent?.includes("APPLIED"),
       );
 
       expect(appliedButton).toBeDefined();
@@ -114,8 +116,10 @@ describe("StageSelector Component", () => {
       );
 
       const buttons = screen.getAllByRole("button");
-      const interviewButton = buttons.find((btn) =>
-        btn.textContent?.includes("Interview") || btn.textContent?.includes("INTERVIEW"),
+      const interviewButton = buttons.find(
+        (btn) =>
+          btn.textContent?.includes("Interview") ||
+          btn.textContent?.includes("INTERVIEW"),
       );
 
       expect(interviewButton).toBeDefined();

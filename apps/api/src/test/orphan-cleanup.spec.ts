@@ -40,7 +40,11 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
     }>;
     let dlqJobs: Array<{
       name: string;
-      data: { objectName?: string; finalError?: string; totalAttempts?: number };
+      data: {
+        objectName?: string;
+        finalError?: string;
+        totalAttempts?: number;
+      };
     }>;
 
     beforeEach(() => {
@@ -49,18 +53,36 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
 
       mockQueue = {
         name: ORPHAN_CLEANUP_QUEUE,
-        add: vi.fn().mockImplementation(async (name: string, data: OrphanCleanupJobData, opts?: { attempts?: number; backoff?: { type?: string; delay?: number } }) => {
-          enqueuedJobs.push({ name, data, opts });
-          return { id: "job-123" } as Job;
-        }),
+        add: vi.fn().mockImplementation(
+          async (
+            name: string,
+            data: OrphanCleanupJobData,
+            opts?: {
+              attempts?: number;
+              backoff?: { type?: string; delay?: number };
+            },
+          ) => {
+            enqueuedJobs.push({ name, data, opts });
+            return { id: "job-123" } as Job;
+          },
+        ),
       } as unknown as Queue;
 
       mockDlq = {
         name: ORPHAN_CLEANUP_DLQ,
-        add: vi.fn().mockImplementation(async (name: string, data: { objectName?: string; finalError?: string; totalAttempts?: number }) => {
-          dlqJobs.push({ name, data });
-          return { id: "dlq-123" } as Job;
-        }),
+        add: vi.fn().mockImplementation(
+          async (
+            name: string,
+            data: {
+              objectName?: string;
+              finalError?: string;
+              totalAttempts?: number;
+            },
+          ) => {
+            dlqJobs.push({ name, data });
+            return { id: "dlq-123" } as Job;
+          },
+        ),
       } as unknown as Queue;
 
       mockPrisma = createMockPrismaService({
@@ -75,7 +97,9 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         candidate: [],
         candidateDocument: [],
         application: [],
-      }) as unknown as PrismaService & { transaction: ReturnType<typeof vi.fn> };
+      }) as unknown as PrismaService & {
+        transaction: ReturnType<typeof vi.fn>;
+      };
 
       mockMinio = {
         uploadFile: vi.fn().mockResolvedValue({
@@ -86,7 +110,9 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
           mimeType: "application/pdf",
         }),
         deleteFile: vi.fn().mockResolvedValue(undefined),
-        extractObjectName: vi.fn().mockReturnValue("tenants/org-1/resumes/test.pdf"),
+        extractObjectName: vi
+          .fn()
+          .mockReturnValue("tenants/org-1/resumes/test.pdf"),
       } as unknown as MinioService & {
         uploadFile: ReturnType<typeof vi.fn>;
         deleteFile: ReturnType<typeof vi.fn>;
@@ -118,7 +144,9 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       );
 
       // Simulate DB transaction crash
-      mockPrisma.transaction.mockRejectedValueOnce(new Error("DB Constraint Crash"));
+      mockPrisma.transaction.mockRejectedValueOnce(
+        new Error("DB Constraint Crash"),
+      );
 
       const mockFile = {
         fieldname: "resume",
@@ -131,13 +159,19 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
 
       await expect(
         appService.create(
-          { jobId: "job-1", candidateName: "John", candidateEmail: "john@test.com" },
+          {
+            jobId: "job-1",
+            candidateName: "John",
+            candidateEmail: "john@test.com",
+          },
           mockFile,
         ),
       ).rejects.toThrow("DB Constraint Crash");
 
       // Verify normal compensating delete succeeded
-      expect(mockMinio.deleteFile).toHaveBeenCalledWith("tenants/org-1/resumes/test.pdf");
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "tenants/org-1/resumes/test.pdf",
+      );
       // Queue must remain completely empty!
       expect(enqueuedJobs.length).toBe(0);
     });
@@ -152,8 +186,12 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       );
 
       // Simulate DB transaction crash AND MinIO network failure during compensating action
-      mockPrisma.transaction.mockRejectedValueOnce(new Error("DB Constraint Crash"));
-      mockMinio.deleteFile.mockRejectedValueOnce(new Error("MinIO Connection Refused (503 Service Unavailable)"));
+      mockPrisma.transaction.mockRejectedValueOnce(
+        new Error("DB Constraint Crash"),
+      );
+      mockMinio.deleteFile.mockRejectedValueOnce(
+        new Error("MinIO Connection Refused (503 Service Unavailable)"),
+      );
 
       const mockFile = {
         fieldname: "resume",
@@ -166,19 +204,31 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
 
       await expect(
         appService.create(
-          { jobId: "job-1", candidateName: "John", candidateEmail: "john@test.com" },
+          {
+            jobId: "job-1",
+            candidateName: "John",
+            candidateEmail: "john@test.com",
+          },
           mockFile,
         ),
       ).rejects.toThrow("DB Constraint Crash");
 
       // Verify delete was attempted
-      expect(mockMinio.deleteFile).toHaveBeenCalledWith("tenants/org-1/resumes/test.pdf");
+      expect(mockMinio.deleteFile).toHaveBeenCalledWith(
+        "tenants/org-1/resumes/test.pdf",
+      );
       // Enqueued to cleanup queue with retry parameters!
       expect(enqueuedJobs.length).toBe(1);
       expect(enqueuedJobs[0].name).toBe("cleanup");
-      expect(enqueuedJobs[0].data.objectName).toBe("tenants/org-1/resumes/test.pdf");
-      expect(enqueuedJobs[0].data.reason).toBe("transaction-rollback-compensation-failed");
-      expect(enqueuedJobs[0].data.originalError).toContain("MinIO Connection Refused");
+      expect(enqueuedJobs[0].data.objectName).toBe(
+        "tenants/org-1/resumes/test.pdf",
+      );
+      expect(enqueuedJobs[0].data.reason).toBe(
+        "transaction-rollback-compensation-failed",
+      );
+      expect(enqueuedJobs[0].data.originalError).toContain(
+        "MinIO Connection Refused",
+      );
       expect(enqueuedJobs[0].opts?.attempts).toBe(5);
       expect(enqueuedJobs[0].opts?.backoff?.type).toBe("exponential");
     });
@@ -187,7 +237,9 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       const processor = new OrphanCleanupProcessor(mockMinio, mockDlq);
 
       // Attempt 1 fails, attempt 2 succeeds
-      mockMinio.deleteFile.mockRejectedValueOnce(new Error("Temporary MinIO Timeout"));
+      mockMinio.deleteFile.mockRejectedValueOnce(
+        new Error("Temporary MinIO Timeout"),
+      );
 
       const mockJobFail = {
         id: "job-1",
@@ -196,7 +248,9 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         opts: { attempts: 5 },
       } as unknown as Job<OrphanCleanupJobData>;
 
-      await expect(processor.process(mockJobFail)).rejects.toThrow("Temporary MinIO Timeout");
+      await expect(processor.process(mockJobFail)).rejects.toThrow(
+        "Temporary MinIO Timeout",
+      );
 
       // Attempt 2 succeeds
       mockMinio.deleteFile.mockResolvedValueOnce(undefined);
@@ -217,7 +271,11 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         notifyDlq: vi.fn().mockResolvedValue(undefined),
       } as unknown as WebhookNotifierService;
 
-      const processor = new OrphanCleanupProcessor(mockMinio, mockDlq, mockWebhookNotifier);
+      const processor = new OrphanCleanupProcessor(
+        mockMinio,
+        mockDlq,
+        mockWebhookNotifier,
+      );
 
       const terminalJob = {
         id: "job-perm-fail",
@@ -236,7 +294,9 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       // 1. Verify enqueued into Dead-Letter Queue
       expect(dlqJobs.length).toBe(1);
       expect(dlqJobs[0].name).toBe("dead-letter-cleanup");
-      expect(dlqJobs[0].data.objectName).toBe("tenants/org-1/resumes/permanent-orphan.pdf");
+      expect(dlqJobs[0].data.objectName).toBe(
+        "tenants/org-1/resumes/permanent-orphan.pdf",
+      );
       expect(dlqJobs[0].data.finalError).toBe("Bucket Does Not Exist");
       expect(dlqJobs[0].data.totalAttempts).toBe(5);
 
@@ -261,7 +321,11 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         notifyDlq: vi.fn().mockResolvedValue(undefined),
       } as unknown as WebhookNotifierService;
 
-      const processor = new OrphanCleanupProcessor(mockMinio, mockDlq, mockWebhookNotifier);
+      const processor = new OrphanCleanupProcessor(
+        mockMinio,
+        mockDlq,
+        mockWebhookNotifier,
+      );
 
       const retryJob = {
         id: "job-retry",
@@ -274,7 +338,10 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         opts: { attempts: 5 },
       } as unknown as Job<OrphanCleanupJobData>;
 
-      await processor.onFailed(retryJob, new Error("Temporary S3 Socket Timeout"));
+      await processor.onFailed(
+        retryJob,
+        new Error("Temporary S3 Socket Timeout"),
+      );
 
       expect(dlqJobs.length).toBe(0);
       expect(mockWebhookNotifier.notifyDlq).not.toHaveBeenCalled();
@@ -293,11 +360,31 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       // - orphan-old: no reference, 45 days old -> DELETE
       // - orphan-new: no reference, 5 days old -> KEEP (grace period)
       const mockMinioObjects = [
-        { name: "tenants/org-1/resumes/active-1.pdf", size: 1000, lastModified: new Date(now - 10 * DAY_MS) },
-        { name: "tenants/org-1/resumes/active-2.pdf", size: 2000, lastModified: new Date(now - 40 * DAY_MS) },
-        { name: "tenants/org-1/resumes/active-3.pdf", size: 3000, lastModified: new Date(now - 2 * DAY_MS) },
-        { name: "tenants/org-1/resumes/orphan-old.pdf", size: 5000, lastModified: new Date(now - 45 * DAY_MS) },
-        { name: "tenants/org-1/resumes/orphan-new.pdf", size: 4000, lastModified: new Date(now - 5 * DAY_MS) },
+        {
+          name: "tenants/org-1/resumes/active-1.pdf",
+          size: 1000,
+          lastModified: new Date(now - 10 * DAY_MS),
+        },
+        {
+          name: "tenants/org-1/resumes/active-2.pdf",
+          size: 2000,
+          lastModified: new Date(now - 40 * DAY_MS),
+        },
+        {
+          name: "tenants/org-1/resumes/active-3.pdf",
+          size: 3000,
+          lastModified: new Date(now - 2 * DAY_MS),
+        },
+        {
+          name: "tenants/org-1/resumes/orphan-old.pdf",
+          size: 5000,
+          lastModified: new Date(now - 45 * DAY_MS),
+        },
+        {
+          name: "tenants/org-1/resumes/orphan-new.pdf",
+          size: 4000,
+          lastModified: new Date(now - 5 * DAY_MS),
+        },
       ];
 
       const deletedFromMinio: string[] = [];
@@ -319,9 +406,11 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
           }, 5);
           return stream;
         }),
-        removeObject: vi.fn().mockImplementation(async (_bucket: string, objectName: string) => {
-          deletedFromMinio.push(objectName);
-        }),
+        removeObject: vi
+          .fn()
+          .mockImplementation(async (_bucket: string, objectName: string) => {
+            deletedFromMinio.push(objectName);
+          }),
       } as unknown as Minio.Client;
 
       const mockDb = {
@@ -330,21 +419,29 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
             CandidateDocument: {
               select: vi.fn().mockReturnValue({
                 all: vi.fn().mockResolvedValue([
-                  { url: "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-1.pdf" },
+                  {
+                    url: "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-1.pdf",
+                  },
                 ]),
               }),
             },
             Application: {
               select: vi.fn().mockReturnValue({
                 all: vi.fn().mockResolvedValue([
-                  { resumeUrl: "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-2.pdf" },
+                  {
+                    resumeUrl:
+                      "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-2.pdf",
+                  },
                 ]),
               }),
             },
             Candidate: {
               select: vi.fn().mockReturnValue({
                 all: vi.fn().mockResolvedValue([
-                  { resumeUrl: "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-3.pdf" },
+                  {
+                    resumeUrl:
+                      "http://minio:9000/haihire-resumes/tenants/org-1/resumes/active-3.pdf",
+                  },
                 ]),
               }),
             },
@@ -367,9 +464,15 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       expect(report.bytesFreed).toBe(5000);
 
       // Verify file lists
-      expect(report.preservedFiles).toEqual(["tenants/org-1/resumes/orphan-new.pdf"]);
-      expect(report.deletedFiles).toEqual(["tenants/org-1/resumes/orphan-old.pdf"]);
-      expect(deletedFromMinio).toEqual(["tenants/org-1/resumes/orphan-old.pdf"]);
+      expect(report.preservedFiles).toEqual([
+        "tenants/org-1/resumes/orphan-new.pdf",
+      ]);
+      expect(report.deletedFiles).toEqual([
+        "tenants/org-1/resumes/orphan-old.pdf",
+      ]);
+      expect(deletedFromMinio).toEqual([
+        "tenants/org-1/resumes/orphan-old.pdf",
+      ]);
     });
 
     it("Test 6: Dry-run mode simulates deletion without deleting any files from MinIO", async () => {
@@ -377,7 +480,11 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
       const DAY_MS = 24 * 60 * 60 * 1000;
 
       const mockMinioObjects = [
-        { name: "tenants/org-1/resumes/orphan-old.pdf", size: 8000, lastModified: new Date(now - 60 * DAY_MS) },
+        {
+          name: "tenants/org-1/resumes/orphan-old.pdf",
+          size: 8000,
+          lastModified: new Date(now - 60 * DAY_MS),
+        },
       ];
 
       const deletedFromMinio: string[] = [];
@@ -399,17 +506,31 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
           }, 5);
           return stream;
         }),
-        removeObject: vi.fn().mockImplementation(async (_bucket: string, objectName: string) => {
-          deletedFromMinio.push(objectName);
-        }),
+        removeObject: vi
+          .fn()
+          .mockImplementation(async (_bucket: string, objectName: string) => {
+            deletedFromMinio.push(objectName);
+          }),
       } as unknown as Minio.Client;
 
       const mockDb = {
         orm: {
           public: {
-            CandidateDocument: { select: vi.fn().mockReturnValue({ all: vi.fn().mockResolvedValue([]) }) },
-            Application: { select: vi.fn().mockReturnValue({ all: vi.fn().mockResolvedValue([]) }) },
-            Candidate: { select: vi.fn().mockReturnValue({ all: vi.fn().mockResolvedValue([]) }) },
+            CandidateDocument: {
+              select: vi
+                .fn()
+                .mockReturnValue({ all: vi.fn().mockResolvedValue([]) }),
+            },
+            Application: {
+              select: vi
+                .fn()
+                .mockReturnValue({ all: vi.fn().mockResolvedValue([]) }),
+            },
+            Candidate: {
+              select: vi
+                .fn()
+                .mockReturnValue({ all: vi.fn().mockResolvedValue([]) }),
+            },
           },
         },
       } as unknown as CleanupOptions["dbClient"];

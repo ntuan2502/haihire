@@ -41,13 +41,17 @@ export default function EmailTemplatesSettingsPage() {
   const { data: remoteSettings } = useEmailSettings();
 
   // Templates state
-  const [templates, setTemplates] = useState<Record<EmailTemplateType, EmailTemplate>>(
-    DEFAULT_EMAIL_TEMPLATES,
+  const [templates, setTemplates] = useState<
+    Record<EmailTemplateType, EmailTemplate>
+  >(DEFAULT_EMAIL_TEMPLATES);
+  const [selectedType, setSelectedType] = useState<EmailTemplateType>(
+    "APPLICATION_CONFIRMATION",
   );
-  const [selectedType, setSelectedType] =
-    useState<EmailTemplateType>("APPLICATION_CONFIRMATION");
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  const [templateToast, setTemplateToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [templateToast, setTemplateToast] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Sync remote templates when fetched
   useEffect(() => {
@@ -69,7 +73,8 @@ export default function EmailTemplatesSettingsPage() {
     }
   }, [remoteTemplates]);
 
-  const activeTemplate = templates[selectedType] || DEFAULT_EMAIL_TEMPLATES[selectedType];
+  const activeTemplate =
+    templates[selectedType] || DEFAULT_EMAIL_TEMPLATES[selectedType];
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const senderName = remoteSettings?.fromName || t("email.defaultSenderName");
@@ -116,7 +121,8 @@ export default function EmailTemplatesSettingsPage() {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const currentBody = activeTemplate.body || "";
-    const nextBody = currentBody.substring(0, start) + varKey + currentBody.substring(end);
+    const nextBody =
+      currentBody.substring(0, start) + varKey + currentBody.substring(end);
 
     setTemplates((prev) => ({
       ...prev,
@@ -143,7 +149,10 @@ export default function EmailTemplatesSettingsPage() {
           enabled: Boolean(activeTemplate.enabled),
         },
       });
-      setTemplateToast({ type: "success", text: t("email.templateSavedSuccess") });
+      setTemplateToast({
+        type: "success",
+        text: t("email.templateSavedSuccess"),
+      });
       setTimeout(() => setTemplateToast(null), 3000);
     } catch (err: unknown) {
       const msg = getApiErrorMessage(err, t, "email.templateSaveError");
@@ -157,7 +166,10 @@ export default function EmailTemplatesSettingsPage() {
       ...prev,
       [selectedType]: { ...DEFAULT_EMAIL_TEMPLATES[selectedType] },
     }));
-    setTemplateToast({ type: "success", text: t("email.templateResetSuccess") });
+    setTemplateToast({
+      type: "success",
+      text: t("email.templateResetSuccess"),
+    });
     setTimeout(() => setTemplateToast(null), 3000);
   };
 
@@ -214,7 +226,9 @@ export default function EmailTemplatesSettingsPage() {
                       : "bg-slate-100 border-slate-200 text-slate-500 dark:bg-slate-800 dark:border-slate-700"
                   }`}
                 >
-                  {tpl.enabled ? t("email.statusEnabled") : t("email.statusDisabled")}
+                  {tpl.enabled
+                    ? t("email.statusEnabled")
+                    : t("email.statusDisabled")}
                 </span>
               </div>
 

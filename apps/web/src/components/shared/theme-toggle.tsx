@@ -62,11 +62,18 @@ export function ThemeToggle({
           aria-label={t("theme.toggleTheme")}
           className={cn(
             "flex items-center justify-center font-semibold opacity-60 pointer-events-none select-none bg-slate-100 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
-            size === "sm" ? "h-7 w-7 rounded-lg text-xs" : "h-8 w-8 rounded-xl text-xs",
-            className
+            size === "sm"
+              ? "h-7 w-7 rounded-lg text-xs"
+              : "h-8 w-8 rounded-xl text-xs",
+            className,
           )}
         >
-          <Sun className={cn(size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4", "text-amber-500")} />
+          <Sun
+            className={cn(
+              size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4",
+              "text-amber-500",
+            )}
+          />
         </button>
       </div>
     );
@@ -81,13 +88,20 @@ export function ThemeToggle({
       <DropdownMenuTrigger
         className={cn(
           "flex items-center justify-center font-semibold transition-all cursor-pointer shadow-xs active:scale-95 outline-none select-none bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200",
-          size === "sm" ? "h-7 w-7 rounded-lg text-xs" : "h-8 w-8 rounded-xl text-xs",
-          className
+          size === "sm"
+            ? "h-7 w-7 rounded-lg text-xs"
+            : "h-8 w-8 rounded-xl text-xs",
+          className,
         )}
         title={t("theme.toggleTheme")}
         aria-label={t("theme.toggleTheme")}
       >
-        <CurrentIcon className={cn(size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4", currentOption.iconColor)} />
+        <CurrentIcon
+          className={cn(
+            size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4",
+            currentOption.iconColor,
+          )}
+        />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
@@ -107,7 +121,7 @@ export function ThemeToggle({
                 "w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer outline-none",
                 isSelected
                   ? "bg-blue-50/80 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
               )}
             >
               <div className="flex items-center gap-2">

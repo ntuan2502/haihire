@@ -25,7 +25,8 @@ describe("upload-utils resumeFileFilter", () => {
   it("should accept valid docx file", () => {
     const mockFile = {
       originalname: "candidate_cv.docx",
-      mimetype: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      mimetype:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     } as Express.Multer.File;
 
     const cb = vi.fn();
@@ -64,7 +65,9 @@ describe("upload-utils resumeFileFilter", () => {
 
   describe("Magic Bytes & Content Verification", () => {
     it("should accept valid PDF binary signature %PDF- with %%EOF trailer", () => {
-      const validPdfBuffer = Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF");
+      const validPdfBuffer = Buffer.from(
+        "%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF",
+      );
       expect(validateMagicBytes(validPdfBuffer, ".pdf")).toBe(true);
     });
 
@@ -74,7 +77,9 @@ describe("upload-utils resumeFileFilter", () => {
     });
 
     it("should reject PDF truncated 99% (only missing %%EOF)", () => {
-      const truncated99 = Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj\ntrailer\n<< /Root 1 0 R >>\n");
+      const truncated99 = Buffer.from(
+        "%PDF-1.7\n1 0 obj\n<<>>\nendobj\ntrailer\n<< /Root 1 0 R >>\n",
+      );
       expect(validateMagicBytes(truncated99, ".pdf")).toBe(false);
     });
 
@@ -101,7 +106,9 @@ describe("upload-utils resumeFileFilter", () => {
     });
 
     it("should reject DOCX truncated 90% (missing EOCD trailer)", () => {
-      const truncatedDocx = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x00]);
+      const truncatedDocx = Buffer.from([
+        0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x00,
+      ]);
       expect(validateMagicBytes(truncatedDocx, ".docx")).toBe(false);
     });
 
@@ -133,7 +140,9 @@ describe("upload-utils resumeFileFilter", () => {
     });
 
     it("should reject fake DOCX with non-zip content", () => {
-      const fakeDocxBuffer = Buffer.from("This is plain text pretending to be docx");
+      const fakeDocxBuffer = Buffer.from(
+        "This is plain text pretending to be docx",
+      );
       expect(validateMagicBytes(fakeDocxBuffer, ".docx")).toBe(false);
     });
 
@@ -150,7 +159,9 @@ describe("upload-utils resumeFileFilter", () => {
 
     describe("Cross-Platform Filename Sanitization & Security Edge Cases", () => {
       it("should strip deep Windows backslash path traversal", () => {
-        expect(sanitizeFilename("..\\..\\windows\\system32\\boot.ini")).toBe("boot.ini");
+        expect(sanitizeFilename("..\\..\\windows\\system32\\boot.ini")).toBe(
+          "boot.ini",
+        );
       });
 
       it("should strip Unix forward slash path traversal", () => {
@@ -218,14 +229,17 @@ describe("upload-utils resumeFileFilter", () => {
         expect.unreachable("Should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(AppBadRequestException);
-        expect((err as AppBadRequestException).code).toBe(APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE);
+        expect((err as AppBadRequestException).code).toBe(
+          APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
+        );
       }
     });
 
     it("should reject truncated DOCX via validateUploadedFile with UPLOAD_TRUNCATED_FILE", () => {
       const truncatedDocxFile = {
         originalname: "truncated_resume.docx",
-        mimetype: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        mimetype:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         buffer: Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x00]),
       } as Express.Multer.File;
 
@@ -234,8 +248,12 @@ describe("upload-utils resumeFileFilter", () => {
         expect.unreachable("Should have thrown");
       } catch (err) {
         expect(err).toBeInstanceOf(AppBadRequestException);
-        expect((err as AppBadRequestException).code).toBe(APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE);
-        expect((err as AppBadRequestException).message).toContain("DOCX file appears truncated or corrupt");
+        expect((err as AppBadRequestException).code).toBe(
+          APP_ERROR_CODES.UPLOAD_TRUNCATED_FILE,
+        );
+        expect((err as AppBadRequestException).message).toContain(
+          "DOCX file appears truncated or corrupt",
+        );
       }
     });
 

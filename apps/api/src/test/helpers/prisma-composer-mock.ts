@@ -88,7 +88,10 @@ export interface MockTable<T = MockRecord> {
     include?: unknown;
   }): Promise<T | null>;
   update(args: Partial<T> | { where?: unknown; data: Partial<T> }): Promise<T>;
-  updateMany(args?: { where?: unknown; data: Partial<T> }): Promise<{ count: number }>;
+  updateMany(args?: {
+    where?: unknown;
+    data: Partial<T>;
+  }): Promise<{ count: number }>;
   delete(args: { where: unknown }): Promise<T>;
   deleteMany(args?: { where?: unknown }): Promise<{ count: number }>;
 }
@@ -219,7 +222,10 @@ export function createQueryBuilder<T = MockRecord>(
     where(predicate: PredicateFn<T>): QueryBuilder<T> {
       return createQueryBuilder(store, {
         ...state,
-        predicates: [...state.predicates, predicate as unknown as PredicateFn<MockRecord>],
+        predicates: [
+          ...state.predicates,
+          predicate as unknown as PredicateFn<MockRecord>,
+        ],
       });
     },
 
@@ -293,7 +299,11 @@ export function createQueryBuilder<T = MockRecord>(
     async updateAll(patch: Partial<T>): Promise<T[]> {
       const updatedRows: T[] = [];
       for (const item of store) {
-        if (state.predicates.every((p) => evaluatePredicate(item as MockRecord, p))) {
+        if (
+          state.predicates.every((p) =>
+            evaluatePredicate(item as MockRecord, p),
+          )
+        ) {
           Object.assign(item as object, patch);
           updatedRows.push(projectRecord(item, state.fields));
         }
@@ -315,7 +325,9 @@ export function createQueryBuilder<T = MockRecord>(
       let match: T | undefined;
       if (args.conflictOn) {
         match = store.find((item) =>
-          Object.entries(args.conflictOn!).every(([k, v]) => (item as MockRecord)[k] === v),
+          Object.entries(args.conflictOn!).every(
+            ([k, v]) => (item as MockRecord)[k] === v,
+          ),
         );
       }
       if (match) {
@@ -338,7 +350,12 @@ export function createQueryBuilder<T = MockRecord>(
       let removedCount = 0;
       for (let i = store.length - 1; i >= 0; i--) {
         const item = store[i];
-        if (item && state.predicates.every((p) => evaluatePredicate(item as MockRecord, p))) {
+        if (
+          item &&
+          state.predicates.every((p) =>
+            evaluatePredicate(item as MockRecord, p),
+          )
+        ) {
           store.splice(i, 1);
           removedCount++;
         }
@@ -350,7 +367,12 @@ export function createQueryBuilder<T = MockRecord>(
       let removedCount = 0;
       for (let i = store.length - 1; i >= 0; i--) {
         const item = store[i];
-        if (item && state.predicates.every((p) => evaluatePredicate(item as MockRecord, p))) {
+        if (
+          item &&
+          state.predicates.every((p) =>
+            evaluatePredicate(item as MockRecord, p),
+          )
+        ) {
           store.splice(i, 1);
           removedCount++;
         }
@@ -382,7 +404,10 @@ export function createQueryBuilder<T = MockRecord>(
   };
 }
 
-export function matchPrismaWhere<T extends MockRecord>(item: T, where?: unknown): boolean {
+export function matchPrismaWhere<T extends MockRecord>(
+  item: T,
+  where?: unknown,
+): boolean {
   if (!where || typeof where !== "object") return true;
   for (const [key, val] of Object.entries(where as Record<string, unknown>)) {
     if (key === "AND") {
@@ -406,8 +431,14 @@ export function matchPrismaWhere<T extends MockRecord>(item: T, where?: unknown)
       continue;
     }
     if (typeof val === "object" && !(val instanceof Date)) {
-      if ("in" in val && (!Array.isArray(val.in) || !val.in.includes(itemVal))) return false;
-      if ("notIn" in val && Array.isArray(val.notIn) && val.notIn.includes(itemVal)) return false;
+      if ("in" in val && (!Array.isArray(val.in) || !val.in.includes(itemVal)))
+        return false;
+      if (
+        "notIn" in val &&
+        Array.isArray(val.notIn) &&
+        val.notIn.includes(itemVal)
+      )
+        return false;
       if ("equals" in val && itemVal !== val.equals) return false;
       if ("not" in val && itemVal === val.not) return false;
       const v = val as Record<string, unknown>;
@@ -441,11 +472,19 @@ export function projectPrismaSelect<T>(item: T, select?: unknown): T {
   return res as unknown as T;
 }
 
-export function applyPrismaPatch<T extends object>(target: T, patch?: unknown): void {
+export function applyPrismaPatch<T extends object>(
+  target: T,
+  patch?: unknown,
+): void {
   if (!patch || typeof patch !== "object") return;
   const targetObj = target as Record<string, unknown>;
   for (const [k, v] of Object.entries(patch as Record<string, unknown>)) {
-    if (v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
+    if (
+      v &&
+      typeof v === "object" &&
+      !Array.isArray(v) &&
+      !(v instanceof Date)
+    ) {
       const obj = v as Record<string, unknown>;
       if ("increment" in obj && typeof obj.increment === "number") {
         targetObj[k] = (Number(targetObj[k]) || 0) + obj.increment;
@@ -473,126 +512,175 @@ export function createMockTable<T = MockRecord>(
     where: vi.fn((predicate: PredicateFn<T>): QueryBuilder<T> => {
       return createQueryBuilder(store).where(predicate);
     }),
-    create: vi.fn(async (data: Partial<T> | { data: Partial<T> }): Promise<T> => {
-      const payload = data && typeof data === "object" && "data" in data && (data as { data: Partial<T> }).data ? (data as { data: Partial<T> }).data : data;
-      const record = { ...payload } as T;
-      store.push(record);
-      return { ...record };
-    }),
-    upsert: vi.fn(async (args: {
-      create: Partial<T>;
-      update: Partial<T>;
-      conflictOn?: Record<string, unknown>;
-      where?: Record<string, unknown>;
-    }): Promise<T> => {
-      const conflictCriteria = args.conflictOn || args.where;
-      let match: T | undefined;
-      if (conflictCriteria) {
-        match = store.find((item) =>
-          Object.entries(conflictCriteria).every(([k, v]) => (item as MockRecord)[k] === v),
-        );
-      }
-      if (match) {
-        applyPrismaPatch(match as object, args.update);
-        return { ...match };
-      } else {
-        const record = { ...args.create } as T;
+    create: vi.fn(
+      async (data: Partial<T> | { data: Partial<T> }): Promise<T> => {
+        const payload =
+          data &&
+          typeof data === "object" &&
+          "data" in data &&
+          (data as { data: Partial<T> }).data
+            ? (data as { data: Partial<T> }).data
+            : data;
+        const record = { ...payload } as T;
         store.push(record);
         return { ...record };
-      }
-    }),
+      },
+    ),
+    upsert: vi.fn(
+      async (args: {
+        create: Partial<T>;
+        update: Partial<T>;
+        conflictOn?: Record<string, unknown>;
+        where?: Record<string, unknown>;
+      }): Promise<T> => {
+        const conflictCriteria = args.conflictOn || args.where;
+        let match: T | undefined;
+        if (conflictCriteria) {
+          match = store.find((item) =>
+            Object.entries(conflictCriteria).every(
+              ([k, v]) => (item as MockRecord)[k] === v,
+            ),
+          );
+        }
+        if (match) {
+          applyPrismaPatch(match as object, args.update);
+          return { ...match };
+        } else {
+          const record = { ...args.create } as T;
+          store.push(record);
+          return { ...record };
+        }
+      },
+    ),
     count: vi.fn(async (args?: { where?: unknown }): Promise<number> => {
       if (!args?.where) return store.length;
-      return store.filter((item) => matchPrismaWhere(item as MockRecord, args.where)).length;
+      return store.filter((item) =>
+        matchPrismaWhere(item as MockRecord, args.where),
+      ).length;
     }),
-    findMany: vi.fn(async (args?: {
-      where?: unknown;
-      select?: unknown;
-      include?: unknown;
-      skip?: number;
-      take?: number;
-      orderBy?: unknown;
-    }): Promise<T[]> => {
-      let filtered = store.filter((item) => matchPrismaWhere(item as MockRecord, args?.where));
-      if (args?.orderBy) {
-        const [sortKey, sortDir] = Object.entries(args.orderBy)[0] || [];
-        if (sortKey) {
-          filtered.sort((a, b) => {
-            const va = (a as MockRecord)[sortKey];
-            const vb = (b as MockRecord)[sortKey];
-            const sa = String(va ?? "");
-            const sb = String(vb ?? "");
-            if (sa < sb) return sortDir === "desc" ? 1 : -1;
-            if (sa > sb) return sortDir === "desc" ? -1 : 1;
-            return 0;
-          });
+    findMany: vi.fn(
+      async (args?: {
+        where?: unknown;
+        select?: unknown;
+        include?: unknown;
+        skip?: number;
+        take?: number;
+        orderBy?: unknown;
+      }): Promise<T[]> => {
+        let filtered = store.filter((item) =>
+          matchPrismaWhere(item as MockRecord, args?.where),
+        );
+        if (args?.orderBy) {
+          const [sortKey, sortDir] = Object.entries(args.orderBy)[0] || [];
+          if (sortKey) {
+            filtered.sort((a, b) => {
+              const va = (a as MockRecord)[sortKey];
+              const vb = (b as MockRecord)[sortKey];
+              const sa = String(va ?? "");
+              const sb = String(vb ?? "");
+              if (sa < sb) return sortDir === "desc" ? 1 : -1;
+              if (sa > sb) return sortDir === "desc" ? -1 : 1;
+              return 0;
+            });
+          }
         }
-      }
-      if (args?.skip && args.skip > 0) filtered = filtered.slice(args.skip);
-      if (args?.take !== undefined && args.take >= 0) filtered = filtered.slice(0, args.take);
-      return filtered.map((item) => projectPrismaSelect(item, args?.select));
-    }),
-    findFirst: vi.fn(async (args?: {
-      where?: unknown;
-      select?: unknown;
-      include?: unknown;
-      orderBy?: unknown;
-    }): Promise<T | null> => {
-      const results = await table.findMany({ ...args, take: 1 });
-      return results[0] || null;
-    }),
-    findUnique: vi.fn(async (args?: {
-      where?: unknown;
-      select?: unknown;
-      include?: unknown;
-    }): Promise<T | null> => {
-      return table.findFirst(args);
-    }),
-    update: vi.fn(async (args: Partial<T> | { where?: unknown; data: Partial<T> }): Promise<T> => {
-      const isWrapped = args && typeof args === "object" && "data" in args && "where" in args;
-      const where = isWrapped ? (args as { where?: unknown }).where : undefined;
-      const data = isWrapped ? (args as { data: Partial<T> }).data : (args as Partial<T>);
-      const target = where ? store.find((item) => matchPrismaWhere(item as MockRecord, where)) : store[0];
-      if (target) {
-        applyPrismaPatch(target as object, data);
-        return { ...target };
-      }
-      return { ...data } as T;
-    }),
-    updateMany: vi.fn(async (args?: { where?: unknown; data: Partial<T> }): Promise<{ count: number }> => {
-      let count = 0;
-      for (const item of store) {
-        if (matchPrismaWhere(item as MockRecord, args?.where)) {
-          applyPrismaPatch(item as object, args?.data);
-          count++;
+        if (args?.skip && args.skip > 0) filtered = filtered.slice(args.skip);
+        if (args?.take !== undefined && args.take >= 0)
+          filtered = filtered.slice(0, args.take);
+        return filtered.map((item) => projectPrismaSelect(item, args?.select));
+      },
+    ),
+    findFirst: vi.fn(
+      async (args?: {
+        where?: unknown;
+        select?: unknown;
+        include?: unknown;
+        orderBy?: unknown;
+      }): Promise<T | null> => {
+        const results = await table.findMany({ ...args, take: 1 });
+        return results[0] || null;
+      },
+    ),
+    findUnique: vi.fn(
+      async (args?: {
+        where?: unknown;
+        select?: unknown;
+        include?: unknown;
+      }): Promise<T | null> => {
+        return table.findFirst(args);
+      },
+    ),
+    update: vi.fn(
+      async (
+        args: Partial<T> | { where?: unknown; data: Partial<T> },
+      ): Promise<T> => {
+        const isWrapped =
+          args && typeof args === "object" && "data" in args && "where" in args;
+        const where = isWrapped
+          ? (args as { where?: unknown }).where
+          : undefined;
+        const data = isWrapped
+          ? (args as { data: Partial<T> }).data
+          : (args as Partial<T>);
+        const target = where
+          ? store.find((item) => matchPrismaWhere(item as MockRecord, where))
+          : store[0];
+        if (target) {
+          applyPrismaPatch(target as object, data);
+          return { ...target };
         }
-      }
-      return { count };
-    }),
+        return { ...data } as T;
+      },
+    ),
+    updateMany: vi.fn(
+      async (args?: {
+        where?: unknown;
+        data: Partial<T>;
+      }): Promise<{ count: number }> => {
+        let count = 0;
+        for (const item of store) {
+          if (matchPrismaWhere(item as MockRecord, args?.where)) {
+            applyPrismaPatch(item as object, args?.data);
+            count++;
+          }
+        }
+        return { count };
+      },
+    ),
     delete: vi.fn(async (args: { where: unknown }): Promise<T> => {
-      const idx = store.findIndex((item) => matchPrismaWhere(item as MockRecord, args.where));
+      const idx = store.findIndex((item) =>
+        matchPrismaWhere(item as MockRecord, args.where),
+      );
       if (idx !== -1) {
         const [removed] = store.splice(idx, 1);
         return removed;
       }
       return {} as T;
     }),
-    deleteMany: vi.fn(async (args?: { where?: unknown }): Promise<{ count: number }> => {
-      let count = 0;
-      for (let i = store.length - 1; i >= 0; i--) {
-        if (matchPrismaWhere(store[i] as MockRecord, args?.where)) {
-          store.splice(i, 1);
-          count++;
+    deleteMany: vi.fn(
+      async (args?: { where?: unknown }): Promise<{ count: number }> => {
+        let count = 0;
+        for (let i = store.length - 1; i >= 0; i--) {
+          if (matchPrismaWhere(store[i] as MockRecord, args?.where)) {
+            store.splice(i, 1);
+            count++;
+          }
         }
-      }
-      return { count };
-    }),
+        return { count };
+      },
+    ),
   };
 
   return table;
 }
 
-export function createMockPrismaService(tableMap: Record<string, unknown> = {}): PrismaService & { db: { orm: { public: Record<string, MockTable<object>> } }; client: { orm: { public: Record<string, MockTable<object>> } }; [key: string]: unknown } {
+export function createMockPrismaService(
+  tableMap: Record<string, unknown> = {},
+): PrismaService & {
+  db: { orm: { public: Record<string, MockTable<object>> } };
+  client: { orm: { public: Record<string, MockTable<object>> } };
+  [key: string]: unknown;
+} {
   const dynamicTables: Record<string, MockTable<object>> = {};
 
   const getTable = (prop: string): MockTable<object> => {
@@ -613,9 +701,12 @@ export function createMockPrismaService(tableMap: Record<string, unknown> = {}):
     return dynamicTables[lower];
   };
 
-  const ormProxy = new Proxy({}, {
-    get: (_, modelName: string) => getTable(modelName),
-  });
+  const ormProxy = new Proxy(
+    {},
+    {
+      get: (_, modelName: string) => getTable(modelName),
+    },
+  );
 
   const dbProxy = {
     orm: {
@@ -637,7 +728,8 @@ export function createMockPrismaService(tableMap: Record<string, unknown> = {}):
   });
 
   const txSpy = vi.fn(async (fn: unknown) => {
-    if (typeof fn === "function") return (fn as (client: unknown) => unknown)(proxyInstance);
+    if (typeof fn === "function")
+      return (fn as (client: unknown) => unknown)(proxyInstance);
     if (Array.isArray(fn)) return Promise.all(fn);
     return fn;
   });

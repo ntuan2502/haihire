@@ -9,12 +9,21 @@ const rootPkgPath = path.join(rootDir, "package.json");
 function parseSemver(v: string): [number, number, number] {
   const match = v.match(/^(\d+)\.(\d+)\.(\d+)/);
   if (!match) {
-    throw new Error(`Invalid SemVer format: '${v}'. Expected format like 1.0.0`);
+    throw new Error(
+      `Invalid SemVer format: '${v}'. Expected format like 1.0.0`,
+    );
   }
-  return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3], 10)];
+  return [
+    parseInt(match[1], 10),
+    parseInt(match[2], 10),
+    parseInt(match[3], 10),
+  ];
 }
 
-function bumpSemver(current: string, type: "major" | "minor" | "patch"): string {
+function bumpSemver(
+  current: string,
+  type: "major" | "minor" | "patch",
+): string {
   const [major, minor, patch] = parseSemver(current);
   switch (type) {
     case "major":
@@ -28,7 +37,9 @@ function bumpSemver(current: string, type: "major" | "minor" | "patch"): string 
 
 function checkTagExists(tag: string): boolean {
   try {
-    const existing = execSync(`git tag -l "${tag}"`, { encoding: "utf-8" }).trim();
+    const existing = execSync(`git tag -l "${tag}"`, {
+      encoding: "utf-8",
+    }).trim();
     return existing.length > 0;
   } catch {
     return false;
@@ -37,45 +48,62 @@ function checkTagExists(tag: string): boolean {
 
 export function bumpVersion(
   bumpTypeOrVersion = "patch",
-  options: { dryRun?: boolean; tag?: boolean } = {}
+  options: { dryRun?: boolean; tag?: boolean } = {},
 ): string {
   const rootPkg = JSON.parse(fs.readFileSync(rootPkgPath, "utf-8"));
   const currentVersion = rootPkg.version || "1.0.0";
   let newVersion: string;
 
   if (["major", "minor", "patch"].includes(bumpTypeOrVersion)) {
-    newVersion = bumpSemver(currentVersion, bumpTypeOrVersion as "major" | "minor" | "patch");
+    newVersion = bumpSemver(
+      currentVersion,
+      bumpTypeOrVersion as "major" | "minor" | "patch",
+    );
   } else if (/^\d+\.\d+\.\d+/.test(bumpTypeOrVersion)) {
     newVersion = bumpTypeOrVersion;
   } else {
     throw new Error(
-      `Invalid bump argument: '${bumpTypeOrVersion}'. Expected 'major', 'minor', 'patch', or explicit version 'x.y.z'.`
+      `Invalid bump argument: '${bumpTypeOrVersion}'. Expected 'major', 'minor', 'patch', or explicit version 'x.y.z'.`,
     );
   }
 
   const tagName = `v${newVersion}`;
   if (!/^v\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$/.test(tagName)) {
-    throw new Error(`[INVALID TAG FORMAT] Tag '${tagName}' does not conform to 'v{semver}' specification.`);
+    throw new Error(
+      `[INVALID TAG FORMAT] Tag '${tagName}' does not conform to 'v{semver}' specification.`,
+    );
   }
 
   const tagAlreadyExists = checkTagExists(tagName);
   if (options.tag && tagAlreadyExists) {
     throw new Error(
       `[IMMUTABILITY VIOLATION] Git tag '${tagName}' already exists locally! ` +
-      `Release tags are strictly immutable. Never force-push or overwrite an existing release tag. ` +
-      `Please bump to a subsequent patch or minor version instead.`
+        `Release tags are strictly immutable. Never force-push or overwrite an existing release tag. ` +
+        `Please bump to a subsequent patch or minor version instead.`,
     );
   }
 
-  console.log("==================================================================");
-  console.log("             HAIHIRE MONOREPO VERSION BUMP TOOL                  ");
-  console.log("==================================================================");
+  console.log(
+    "==================================================================",
+  );
+  console.log(
+    "             HAIHIRE MONOREPO VERSION BUMP TOOL                  ",
+  );
+  console.log(
+    "==================================================================",
+  );
   console.log(`Current Version: ${currentVersion}`);
-  console.log(`Target Version:  ${newVersion} ${options.dryRun ? "(DRY RUN)" : ""}`);
+  console.log(
+    `Target Version:  ${newVersion} ${options.dryRun ? "(DRY RUN)" : ""}`,
+  );
   if (options.tag) {
-    console.log(`Release Tag:     ${tagName} (${tagAlreadyExists ? "ALREADY EXISTS!" : "Available"})`);
+    console.log(
+      `Release Tag:     ${tagName} (${tagAlreadyExists ? "ALREADY EXISTS!" : "Available"})`,
+    );
   }
-  console.log("------------------------------------------------------------------");
+  console.log(
+    "------------------------------------------------------------------",
+  );
 
   syncVersions(newVersion, options.dryRun);
 
@@ -83,15 +111,21 @@ export function bumpVersion(
     if (options.dryRun) {
       console.log(`[DRY RUN] Would create Git tag: ${tagName} (skipped)`);
     } else {
-      console.log("------------------------------------------------------------------");
+      console.log(
+        "------------------------------------------------------------------",
+      );
       console.log(`Creating immutable Git tag: ${tagName}...`);
       try {
         // Enforce safe tag creation: never use -f or --force
-        execSync(`git tag -a ${tagName} -m "Release ${tagName}"`, { stdio: "inherit" });
+        execSync(`git tag -a ${tagName} -m "Release ${tagName}"`, {
+          stdio: "inherit",
+        });
         console.log(`[SUCCESS] Git tag '${tagName}' created locally.`);
         console.log(`Tip: To publish tag, run: git push origin ${tagName}`);
       } catch (err: unknown) {
-        console.error(`[ERROR] Failed to create git tag '${tagName}': ${err instanceof Error ? err.message : String(err)}`);
+        console.error(
+          `[ERROR] Failed to create git tag '${tagName}': ${err instanceof Error ? err.message : String(err)}`,
+        );
         throw err;
       }
     }
@@ -101,7 +135,10 @@ export function bumpVersion(
 }
 
 // CLI execution
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}` || process.argv[1].endsWith("bump-version.ts")) {
+if (
+  import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}` ||
+  process.argv[1].endsWith("bump-version.ts")
+) {
   const args = process.argv.slice(2);
   const isDryRun = args.includes("--dry-run");
   const shouldTag = args.includes("--tag");
@@ -110,7 +147,9 @@ if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}` || proce
   try {
     bumpVersion(bumpArg, { dryRun: isDryRun, tag: shouldTag });
   } catch (err: unknown) {
-    console.error(`[ERROR] ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `[ERROR] ${err instanceof Error ? err.message : String(err)}`,
+    );
     process.exit(1);
   }
 }

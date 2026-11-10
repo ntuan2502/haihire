@@ -16,8 +16,6 @@ function findWorkspaceRoot(): string {
 
 const repoRoot = findWorkspaceRoot();
 
-
-
 const rootEnv = path.resolve(repoRoot, ".env");
 if (fs.existsSync(rootEnv)) {
   process.loadEnvFile(rootEnv);

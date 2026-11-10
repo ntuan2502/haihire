@@ -53,7 +53,9 @@ export function useAttributionLogQuery(params?: {
   source?: SourcingChannel;
 }) {
   return useQuery({
-    queryKey: queryKeys.sourcingAttributionLog(params as Record<string, unknown>),
+    queryKey: queryKeys.sourcingAttributionLog(
+      params as Record<string, unknown>,
+    ),
     queryFn: () => sourcingApi.getAttributionLog(params),
     staleTime: 30 * 1000,
   });

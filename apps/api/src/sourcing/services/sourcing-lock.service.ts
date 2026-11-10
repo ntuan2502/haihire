@@ -5,8 +5,19 @@ import { toInstant } from "../../common/date.util";
 import { parseDomain } from "./sourcing-links.service";
 
 export interface RedisLockClient {
-  set(key: string, value: string, mode: "PX", duration: number, flag: "NX"): Promise<string | null>;
-  eval(script: string, numKeys: number, key: string, arg: string): Promise<unknown>;
+  set(
+    key: string,
+    value: string,
+    mode: "PX",
+    duration: number,
+    flag: "NX",
+  ): Promise<string | null>;
+  eval(
+    script: string,
+    numKeys: number,
+    key: string,
+    arg: string,
+  ): Promise<unknown>;
 }
 
 @Injectable()
@@ -24,10 +35,16 @@ export class SourcingLockService {
   private async withClickLock<T>(
     token: string,
     fn: () => Promise<T>,
-    options?: { maxWaitMs?: number; retryIntervalMs?: number; lockTtlMs?: number },
+    options?: {
+      maxWaitMs?: number;
+      retryIntervalMs?: number;
+      lockTtlMs?: number;
+    },
   ): Promise<T> {
     if (!this.redis) {
-      this.logger.warn(`Redis client not configured for token ${token}, proceeding without distributed lock`);
+      this.logger.warn(
+        `Redis client not configured for token ${token}, proceeding without distributed lock`,
+      );
       return fn();
     }
 
@@ -93,14 +110,25 @@ export class SourcingLockService {
     referrer?: string,
     ip?: string,
     userAgent?: string,
-    lockOptions?: { maxWaitMs?: number; retryIntervalMs?: number; lockTtlMs?: number },
-  ): Promise<{ success: boolean; link?: { token: string; source: string; jobId?: string | null } }> {
+    lockOptions?: {
+      maxWaitMs?: number;
+      retryIntervalMs?: number;
+      lockTtlMs?: number;
+    },
+  ): Promise<{
+    success: boolean;
+    link?: { token: string; source: string; jobId?: string | null };
+  }> {
     if (!token) return { success: false };
 
     return this.withClickLock(
       token,
       async () => {
-        let recordedLink: { token: string; source: string; jobId?: string | null } | null = null;
+        let recordedLink: {
+          token: string;
+          source: string;
+          jobId?: string | null;
+        } | null = null;
 
         await runInTransaction(this.prisma, async (tx) => {
           const link = await tx.trackingLink.findFirst({
@@ -121,7 +149,9 @@ export class SourcingLockService {
           }
 
           const domain = parseDomain(referrer);
-          const ipHash = ip ? crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16) : null;
+          const ipHash = ip
+            ? crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16)
+            : null;
 
           // Atomic update of click counter inside transaction
           await tx.trackingLink.update({

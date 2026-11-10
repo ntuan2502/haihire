@@ -10,7 +10,8 @@ export const ApplicationStage = {
   HIRED: "HIRED",
   REJECTED: "REJECTED",
 } as const;
-export type ApplicationStage = (typeof ApplicationStage)[keyof typeof ApplicationStage];
+export type ApplicationStage =
+  (typeof ApplicationStage)[keyof typeof ApplicationStage];
 
 export const APPLICATION_STAGES = [
   ApplicationStage.APPLIED,
@@ -21,10 +22,23 @@ export const APPLICATION_STAGES = [
   ApplicationStage.REJECTED,
 ] as const;
 
-export const VALID_APPLICATION_STAGE_TRANSITIONS: Record<ApplicationStage, readonly ApplicationStage[]> = {
-  [ApplicationStage.APPLIED]: [ApplicationStage.SCREENING, ApplicationStage.INTERVIEW, ApplicationStage.REJECTED],
-  [ApplicationStage.SCREENING]: [ApplicationStage.INTERVIEW, ApplicationStage.REJECTED],
-  [ApplicationStage.INTERVIEW]: [ApplicationStage.OFFER, ApplicationStage.REJECTED],
+export const VALID_APPLICATION_STAGE_TRANSITIONS: Record<
+  ApplicationStage,
+  readonly ApplicationStage[]
+> = {
+  [ApplicationStage.APPLIED]: [
+    ApplicationStage.SCREENING,
+    ApplicationStage.INTERVIEW,
+    ApplicationStage.REJECTED,
+  ],
+  [ApplicationStage.SCREENING]: [
+    ApplicationStage.INTERVIEW,
+    ApplicationStage.REJECTED,
+  ],
+  [ApplicationStage.INTERVIEW]: [
+    ApplicationStage.OFFER,
+    ApplicationStage.REJECTED,
+  ],
   [ApplicationStage.OFFER]: [ApplicationStage.HIRED, ApplicationStage.REJECTED],
   [ApplicationStage.HIRED]: [],
   [ApplicationStage.REJECTED]: [],
@@ -49,7 +63,10 @@ export interface Application {
   interviews?: Interview[];
   createdAt: string;
   updatedAt: string;
-  job?: Pick<Job, "id" | "title" | "department" | "location" | "status" | "type">;
+  job?: Pick<
+    Job,
+    "id" | "title" | "department" | "location" | "status" | "type"
+  >;
 }
 
 export interface CreateApplicationInput {

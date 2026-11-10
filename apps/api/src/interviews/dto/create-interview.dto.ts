@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber, IsIn } from "class-validator";
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsIn,
+} from "class-validator";
 import {
   INTERVIEW_TYPES,
   type InterviewType,

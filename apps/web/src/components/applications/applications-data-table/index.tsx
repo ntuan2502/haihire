@@ -13,12 +13,7 @@ import { CandidateQuickDrawer } from "./drawer/candidate-quick-drawer";
 import { ApplicationsFilterDrawer } from "./filters/applications-filter-drawer";
 
 export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
-  const {
-    jobs,
-    loading = false,
-    fixedJobId,
-    onViewInPipeline,
-  } = props;
+  const { jobs, loading = false, fixedJobId, onViewInPipeline } = props;
 
   const table = useApplicationsTable(props);
   const { t, canEdit } = table;
@@ -143,11 +138,14 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           onConfirm={table.handleConfirmDelete}
           candidateName={table.deleteModalApp.candidateName}
           jobTitle={
-            table.deleteModalApp.jobId && table.jobMap.get(table.deleteModalApp.jobId)
+            table.deleteModalApp.jobId &&
+            table.jobMap.get(table.deleteModalApp.jobId)
               ? `${table.jobMap.get(table.deleteModalApp.jobId)!.title} (${
-                  table.jobMap.get(table.deleteModalApp.jobId)!.type === "FULL_TIME"
+                  table.jobMap.get(table.deleteModalApp.jobId)!.type ===
+                  "FULL_TIME"
                     ? t("jobs.fullTime")
-                    : table.jobMap.get(table.deleteModalApp.jobId)!.type === "PART_TIME"
+                    : table.jobMap.get(table.deleteModalApp.jobId)!.type ===
+                        "PART_TIME"
                       ? t("jobs.partTime")
                       : table.jobMap.get(table.deleteModalApp.jobId)!.type
                 })`

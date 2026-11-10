@@ -49,7 +49,7 @@ describe("WizardHeader Component Tests", () => {
         onStepClick={vi.fn()}
         onOpenPreview={vi.fn()}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Danh sách việc làm")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("WizardHeader Component Tests", () => {
         onStepClick={vi.fn()}
         onOpenPreview={vi.fn()}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Đã tự động lưu nháp")).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("WizardHeader Component Tests", () => {
         onStepClick={vi.fn()}
         onOpenPreview={onOpenPreview}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     const previewBtn = screen.getByText("Xem trước với tư cách ứng viên");
@@ -110,7 +110,7 @@ describe("WizardHeader Component Tests", () => {
         onStepClick={vi.fn()}
         onOpenPreview={vi.fn()}
         onSaveJob={onSaveJob}
-      />
+      />,
     );
 
     const saveBtn = screen.getByText("Lưu & Tiếp tục");
@@ -131,7 +131,7 @@ describe("WizardHeader Component Tests", () => {
         onStepClick={vi.fn()}
         onOpenPreview={vi.fn()}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     const saveBtn = screen.getByText("Lưu & Tiếp tục").closest("button");

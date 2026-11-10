@@ -139,36 +139,34 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
               return newUser;
             },
           ),
-        update: vi
-          .fn()
-          .mockImplementation(
-            async ({
-              where,
-              data,
-            }: {
-              where: { id: string };
-              data: {
-                tokenVersion?: number | { increment?: number };
-                password?: string;
-              };
-            }) => {
-              const user = mockUsers.find((u) => u.id === where.id);
-              if (user) {
-                if (
-                  typeof data.tokenVersion === "object" &&
-                  data.tokenVersion?.increment
-                ) {
-                  user.tokenVersion += data.tokenVersion.increment;
-                } else if (typeof data.tokenVersion === "number") {
-                  user.tokenVersion = data.tokenVersion;
-                }
-                if (data.password) {
-                  user.password = data.password;
-                }
+        update: vi.fn().mockImplementation(
+          async ({
+            where,
+            data,
+          }: {
+            where: { id: string };
+            data: {
+              tokenVersion?: number | { increment?: number };
+              password?: string;
+            };
+          }) => {
+            const user = mockUsers.find((u) => u.id === where.id);
+            if (user) {
+              if (
+                typeof data.tokenVersion === "object" &&
+                data.tokenVersion?.increment
+              ) {
+                user.tokenVersion += data.tokenVersion.increment;
+              } else if (typeof data.tokenVersion === "number") {
+                user.tokenVersion = data.tokenVersion;
               }
-              return user;
-            },
-          ),
+              if (data.password) {
+                user.password = data.password;
+              }
+            }
+            return user;
+          },
+        ),
       },
       organization: {
         findUnique: vi.fn().mockImplementation(async () => ({
@@ -327,7 +325,10 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
   describe("Logout & Password Revocation Flow", () => {
     it("preserves both revocations when two logout requests read the same version", async () => {
-      await Promise.all([authService.logout("usr-admin"), authService.logout("usr-admin")]);
+      await Promise.all([
+        authService.logout("usr-admin"),
+        authService.logout("usr-admin"),
+      ]);
       expect(mockUsers[0].tokenVersion).toBe(2);
     });
 
@@ -388,7 +389,9 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
       });
 
       await expect(
-        authServiceWithRedis.refreshToken({ refreshToken: "valid-looking-token" }),
+        authServiceWithRedis.refreshToken({
+          refreshToken: "valid-looking-token",
+        }),
       ).rejects.toThrow("Compromised refresh token reuse detected");
 
       expect(mockUsers[0].tokenVersion).toBe(1);
@@ -396,7 +399,9 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
 
     it("15. Should resolve permissions using getMyPermissions", async () => {
       const mockResolver = {
-        resolveAllPermissions: vi.fn().mockResolvedValue(["candidate:view", "candidate:create"]),
+        resolveAllPermissions: vi
+          .fn()
+          .mockResolvedValue(["candidate:view", "candidate:create"]),
       };
       const authServiceWithResolver = new AuthService(
         mockPrismaService as never,
@@ -412,7 +417,10 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
         isOwner: false,
       });
 
-      expect(result.permissions).toEqual(["candidate:view", "candidate:create"]);
+      expect(result.permissions).toEqual([
+        "candidate:view",
+        "candidate:create",
+      ]);
       expect(mockResolver.resolveAllPermissions).toHaveBeenCalledWith(
         "org-1",
         "MEMBER",

@@ -1,6 +1,7 @@
 import type { Job, Application, ApplicationStage } from "@/types";
 
-export type SortField = "candidate" | "email" | "job" | "status" | "score" | "applied";
+export type SortField =
+  "candidate" | "email" | "job" | "status" | "score" | "applied";
 export type SortDirection = "asc" | "desc";
 
 export interface ApplicationsDataTableProps {

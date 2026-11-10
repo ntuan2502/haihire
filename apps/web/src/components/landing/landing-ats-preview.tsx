@@ -11,7 +11,13 @@ import {
   type OverviewSectionsState,
   DEFAULT_OVERVIEW_SECTIONS,
 } from "@/components/applications/overview-sections-popover";
-import type { Application, ApplicationStage, CandidateDocument, Interview, Job } from "@/types";
+import type {
+  Application,
+  ApplicationStage,
+  CandidateDocument,
+  Interview,
+  Job,
+} from "@/types";
 import { usePipelineStages, useStageInfo } from "@/lib/stages";
 import { useI18n } from "@/i18n";
 import { BrandLogo } from "@/components/shared";
@@ -21,14 +27,17 @@ export const LandingAtsPreview: React.FC = () => {
   const pipelineStages = usePipelineStages();
 
   // Active Stage Filter
-  const [selectedStage, setSelectedStage] = useState<ApplicationStage>("SCREENING");
+  const [selectedStage, setSelectedStage] =
+    useState<ApplicationStage>("SCREENING");
 
   // Selected Candidate ID
   const [selectedAppId, setSelectedAppId] = useState<string>("app-1");
 
   // Search & Sort states
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">("score");
+  const [sortBy, setSortBy] = useState<"score" | "newest" | "oldest" | "name">(
+    "score",
+  );
 
   // Detail view states
   const [candidateTab, setCandidateTab] = useState<string>("overview");
@@ -61,8 +70,10 @@ export const LandingAtsPreview: React.FC = () => {
       experienceLevel: "SENIOR_LEVEL",
       workplace: "HYBRID",
       status: "PUBLISHED",
-      description: "Phát triển và mở rộng hệ thống tuyển dụng thông minh HaiHire ATS.",
-      requirements: "Ít nhất 4 năm kinh nghiệm với React, Node.js, TypeScript, PostgreSQL.",
+      description:
+        "Phát triển và mở rộng hệ thống tuyển dụng thông minh HaiHire ATS.",
+      requirements:
+        "Ít nhất 4 năm kinh nghiệm với React, Node.js, TypeScript, PostgreSQL.",
       salaryRange: "2,500 - 3,500 USD",
       isPublished: true,
       createdAt: "2026-09-01T08:00:00Z",
@@ -206,10 +217,14 @@ export const LandingAtsPreview: React.FC = () => {
           return (b.matchScore || 0) - (a.matchScore || 0);
         }
         if (sortBy === "newest") {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         }
         if (sortBy === "oldest") {
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         }
         if (sortBy === "name") {
           return a.candidateName.localeCompare(b.candidateName);
@@ -228,7 +243,9 @@ export const LandingAtsPreview: React.FC = () => {
     );
   }, [filteredCandidates, applications, selectedAppId]);
 
-  const currentStageConfig = useStageInfo(selectedCandidate?.stage || selectedStage);
+  const currentStageConfig = useStageInfo(
+    selectedCandidate?.stage || selectedStage,
+  );
 
   const currentIndex = useMemo(() => {
     if (!selectedCandidate) return -1;
@@ -261,7 +278,9 @@ export const LandingAtsPreview: React.FC = () => {
 
   const handleDeleteCandidate = () => {
     if (!selectedCandidate) return;
-    const remaining = applications.filter((app) => app.id !== selectedCandidate.id);
+    const remaining = applications.filter(
+      (app) => app.id !== selectedCandidate.id,
+    );
     setApplications(remaining);
     const nextCandidate =
       remaining.find((app) => app.stage === selectedStage) || remaining[0];
@@ -305,7 +324,8 @@ export const LandingAtsPreview: React.FC = () => {
           linkOrLocation: "https://meet.google.com/haihire-tech-interview",
           interviewer: "Nguyễn Văn Trưởng (Engineering Lead)",
           round: 1,
-          notes: "Phỏng vấn kỹ thuật trực tuyến về React 19, TypeScript và tối ưu hóa hệ thống.",
+          notes:
+            "Phỏng vấn kỹ thuật trực tuyến về React 19, TypeScript và tối ưu hóa hệ thống.",
           createdAt: "2026-09-24T08:00:00Z",
           updatedAt: "2026-09-24T08:00:00Z",
         },
@@ -337,7 +357,8 @@ export const LandingAtsPreview: React.FC = () => {
           linkOrLocation: "https://meet.google.com/haihire-final-round",
           interviewer: "Hoàng Minh Tuấn (CTO)",
           round: 2,
-          notes: "Vòng phỏng vấn chuyên sâu System Design và định hướng sản phẩm.",
+          notes:
+            "Vòng phỏng vấn chuyên sâu System Design và định hướng sản phẩm.",
           createdAt: "2026-09-23T14:20:00Z",
           updatedAt: "2026-09-24T10:00:00Z",
         },
@@ -358,7 +379,8 @@ export const LandingAtsPreview: React.FC = () => {
             communicationScore: 4,
             cultureScore: 4,
             problemSolvingScore: 5,
-            feedback: "Nền tảng kỹ thuật rất tốt, giải quyết bài toán concurrency xuất sắc.",
+            feedback:
+              "Nền tảng kỹ thuật rất tốt, giải quyết bài toán concurrency xuất sắc.",
             evaluatedBy: "Phan Đình Nam",
             evaluatedAt: "2026-09-25T10:45:00Z",
           },
@@ -385,11 +407,13 @@ export const LandingAtsPreview: React.FC = () => {
             communicationScore: 5,
             cultureScore: 5,
             problemSolvingScore: 5,
-            feedback: "Ứng viên rất phù hợp với vị trí Backend và định hướng của công ty.",
+            feedback:
+              "Ứng viên rất phù hợp với vị trí Backend và định hướng của công ty.",
             evaluatedBy: "Đỗ Mai Linh",
             evaluatedAt: "2026-09-22T16:00:00Z",
           },
-          notes: "Phỏng vấn trực tiếp tại văn phòng, thống nhất mức đãi ngộ và lộ trình công việc.",
+          notes:
+            "Phỏng vấn trực tiếp tại văn phòng, thống nhất mức đãi ngộ và lộ trình công việc.",
           createdAt: "2026-09-20T09:00:00Z",
           updatedAt: "2026-09-22T16:00:00Z",
         },
@@ -439,7 +463,8 @@ export const LandingAtsPreview: React.FC = () => {
             communicationScore: 3,
             cultureScore: 3,
             problemSolvingScore: 2,
-            feedback: "Kỹ năng nền tảng chưa đáp ứng yêu cầu của vị trí hiện tại.",
+            feedback:
+              "Kỹ năng nền tảng chưa đáp ứng yêu cầu của vị trí hiện tại.",
             evaluatedBy: "Đỗ Mai Linh",
             evaluatedAt: "2026-09-22T11:45:00Z",
           },
@@ -480,7 +505,10 @@ export const LandingAtsPreview: React.FC = () => {
       : `${t("common.showing")} 1-${filteredCandidates.length} ${t("common.of")} ${filteredCandidates.length} ${t("nav.candidates").toLowerCase()}`;
 
   return (
-    <section id="demo" className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20">
+    <section
+      id="demo"
+      className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20"
+    >
       {/* Background Atmosphere Glow */}
       <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-3/4 h-96 bg-blue-600/15 dark:bg-blue-600/20 blur-[120px] rounded-full" />
 
@@ -538,9 +566,13 @@ export const LandingAtsPreview: React.FC = () => {
         {/* 3. Job Breadcrumb */}
         <div className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 px-3 sm:px-6 py-2 flex items-center justify-between text-xs overflow-hidden">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">{t("nav.jobs")}</span>
+            <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">
+              {t("nav.jobs")}
+            </span>
             <span className="text-slate-400 shrink-0">/</span>
-            <span className="font-bold text-slate-900 dark:text-white truncate">{mockJob.title}</span>
+            <span className="font-bold text-slate-900 dark:text-white truncate">
+              {mockJob.title}
+            </span>
             <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full ml-1 shrink-0">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span>{mockJob.location}</span>
@@ -593,7 +625,9 @@ export const LandingAtsPreview: React.FC = () => {
               <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
                 <CustomSelect
                   value={sortBy}
-                  onChange={(val) => setSortBy(val as "score" | "newest" | "oldest" | "name")}
+                  onChange={(val) =>
+                    setSortBy(val as "score" | "newest" | "oldest" | "name")
+                  }
                   size="sm"
                   icon={ArrowUpDown}
                   options={[
@@ -673,7 +707,9 @@ export const LandingAtsPreview: React.FC = () => {
               setOverviewSections((prev) => ({ ...prev, [key]: !prev[key] }))
             }
             isOverviewPopoverOpen={isOverviewPopoverOpen}
-            onToggleOverviewPopover={() => setIsOverviewPopoverOpen((prev) => !prev)}
+            onToggleOverviewPopover={() =>
+              setIsOverviewPopoverOpen((prev) => !prev)
+            }
             onCloseOverviewPopover={() => setIsOverviewPopoverOpen(false)}
             overviewBtnRef={overviewBtnRef}
             candidateDocuments={candidateDocuments}

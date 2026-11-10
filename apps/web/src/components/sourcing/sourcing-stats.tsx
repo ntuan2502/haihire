@@ -65,4 +65,3 @@ export function SourcingStatsCards({ stats, isLoading }: SourcingStatsProps) {
     </div>
   );
 }
-

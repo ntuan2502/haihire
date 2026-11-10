@@ -33,7 +33,6 @@ import {
   ],
   controllers: [EmailController],
   providers: [
-
     EncryptionService,
     EmailService,
     EmailDispatchService,

@@ -25,7 +25,10 @@ export {
   INTERVIEW_FORMATS,
 };
 
-export const INTERVIEW_TYPE_OPTIONS: { value: InterviewType; labelKey: string }[] = [
+export const INTERVIEW_TYPE_OPTIONS: {
+  value: InterviewType;
+  labelKey: string;
+}[] = [
   { value: "HR_SCREENING", labelKey: "interviews.types.hrScreening" },
   { value: "TECHNICAL", labelKey: "interviews.types.technical" },
   { value: "CULTURE_FIT", labelKey: "interviews.types.cultureFit" },
@@ -140,7 +143,11 @@ export function getInterviewsFromApplication(
 ): ScheduledInterviewInfo[] {
   if (!app) return [];
 
-  if (app.interviews && Array.isArray(app.interviews) && app.interviews.length > 0) {
+  if (
+    app.interviews &&
+    Array.isArray(app.interviews) &&
+    app.interviews.length > 0
+  ) {
     const list: ScheduledInterviewInfo[] = app.interviews.map((inv) => {
       let scorecard: InterviewScorecard | undefined;
       if (inv.scorecard) {
@@ -161,7 +168,8 @@ export function getInterviewsFromApplication(
         const dt = new Date(inv.scheduledAt);
         if (!isNaN(dt.getTime())) {
           if (!date) date = dt.toISOString().split("T")[0];
-          if (!time) time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
+          if (!time)
+            time = dt.toISOString().split("T")[1]?.slice(0, 5) || "00:00";
         }
       }
 

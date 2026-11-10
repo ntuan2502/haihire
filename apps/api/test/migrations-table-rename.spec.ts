@@ -44,8 +44,12 @@ describe("Database Migration: Table Rename to snake_case (H-01)", () => {
   it("should include deduplication and unique constraint on organization_member (H-08)", () => {
     const migrationContent = fs.readFileSync(migrationPath, "utf8");
     expect(migrationContent).toContain("organization_member");
-    expect(migrationContent).toContain("organization_member_organizationId_userId_key");
-    expect(migrationContent).toContain("UNIQUE (\"organizationId\", \"userId\")");
-    expect(migrationContent).toContain("DELETE FROM \"public\".\"organization_member\"");
+    expect(migrationContent).toContain(
+      "organization_member_organizationId_userId_key",
+    );
+    expect(migrationContent).toContain('UNIQUE ("organizationId", "userId")');
+    expect(migrationContent).toContain(
+      'DELETE FROM "public"."organization_member"',
+    );
   });
 });

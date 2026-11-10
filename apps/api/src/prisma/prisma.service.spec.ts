@@ -11,14 +11,18 @@ describe("PrismaService transaction context", () => {
     baseClient = prisma.tx;
     transactions = [];
     // Stub the database boundary; transaction(), tx, and ALS remain the real implementation.
-    vi.spyOn(prisma, "$transaction").mockImplementation((async (callback: (tx: PrismaService) => Promise<unknown>) => {
+    vi.spyOn(prisma, "$transaction").mockImplementation((async (
+      callback: (tx: PrismaService) => Promise<unknown>,
+    ) => {
       const tx = { marker: Symbol("transaction") } as unknown as PrismaService;
       transactions.push(tx);
       return callback(tx);
     }) as unknown as PrismaService["$transaction"]);
   });
 
-  afterEach(() => { vi.restoreAllMocks(); });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("uses the base client outside transactions", () => {
     expect(prisma.tx === baseClient).toBe(true);
@@ -44,14 +48,19 @@ describe("PrismaService transaction context", () => {
   it("keeps simultaneous asynchronous transactions isolated", async () => {
     let entered = 0;
     let release!: () => void;
-    const bothEntered = new Promise<void>((resolve) => { release = resolve; });
-    const branch = () => prisma.transaction(async (tx) => {
-      if (++entered === 2) release();
-      await bothEntered;
-      expect(prisma.tx).toBe(tx);
-      await prisma.transaction(async (nested) => { expect(nested).toBe(tx); });
-      return tx;
+    const bothEntered = new Promise<void>((resolve) => {
+      release = resolve;
     });
+    const branch = () =>
+      prisma.transaction(async (tx) => {
+        if (++entered === 2) release();
+        await bothEntered;
+        expect(prisma.tx).toBe(tx);
+        await prisma.transaction(async (nested) => {
+          expect(nested).toBe(tx);
+        });
+        return tx;
+      });
     const [first, second] = await Promise.all([branch(), branch()]);
     expect(first).not.toBe(second);
     expect(transactions).toHaveLength(2);
@@ -60,9 +69,13 @@ describe("PrismaService transaction context", () => {
 
   it("propagates failure and clears context before the next transaction", async () => {
     const failure = new Error("write failed");
-    await expect(prisma.transaction(async () => {
-      await prisma.transaction(async () => { throw failure; });
-    })).rejects.toBe(failure);
+    await expect(
+      prisma.transaction(async () => {
+        await prisma.transaction(async () => {
+          throw failure;
+        });
+      }),
+    ).rejects.toBe(failure);
     expect(prisma.tx === baseClient).toBe(true);
     await prisma.transaction(async (tx) => {
       expect(tx).not.toBe(transactions[0]);
@@ -74,7 +87,12 @@ describe("PrismaService transaction context", () => {
 
   it("disconnects prisma client and ends the pool on onModuleDestroy", async () => {
     const disconnectSpy = vi.spyOn(prisma, "$disconnect").mockResolvedValue();
-    const endSpy = vi.spyOn((prisma as unknown as { pool: { end: () => Promise<void> } }).pool, "end").mockResolvedValue();
+    const endSpy = vi
+      .spyOn(
+        (prisma as unknown as { pool: { end: () => Promise<void> } }).pool,
+        "end",
+      )
+      .mockResolvedValue();
     await prisma.onModuleDestroy();
     expect(disconnectSpy).toHaveBeenCalledTimes(1);
     expect(endSpy).toHaveBeenCalledTimes(1);

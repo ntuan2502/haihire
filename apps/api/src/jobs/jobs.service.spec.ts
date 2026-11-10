@@ -1,4 +1,7 @@
-import { createMockTable, createMockPrismaService } from "../test/helpers/prisma-composer-mock";
+import {
+  createMockTable,
+  createMockPrismaService,
+} from "../test/helpers/prisma-composer-mock";
 import { describe, it, expect, beforeEach } from "vitest";
 import { JobsService } from "./jobs.service";
 import { JobsController } from "./jobs.controller";

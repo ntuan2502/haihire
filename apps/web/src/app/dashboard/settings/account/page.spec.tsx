@@ -32,15 +32,18 @@ vi.mock("@/i18n", () => ({
         "settings.currentPassword": "Mật khẩu hiện tại",
         "settings.currentPasswordPlaceholder": "Nhập mật khẩu hiện tại",
         "settings.newPassword": "Mật khẩu mới",
-        "settings.newPasswordPlaceholder": "Nhập mật khẩu mới (tối thiểu 6 ký tự)",
+        "settings.newPasswordPlaceholder":
+          "Nhập mật khẩu mới (tối thiểu 6 ký tự)",
         "settings.confirmNewPassword": "Xác nhận mật khẩu mới",
         "settings.confirmNewPasswordPlaceholder": "Nhập lại mật khẩu mới",
         "settings.updatePasswordBtn": "Cập nhật mật khẩu",
         "settings.updatingPassword": "Đang cập nhật mật khẩu...",
         "settings.passwordChangedSuccess": "Đổi mật khẩu thành công.",
         "settings.passwordMismatchError": "Mật khẩu xác nhận không khớp.",
-        "settings.passwordTooShortError": "Mật khẩu mới phải có ít nhất 6 ký tự.",
-        "settings.currentPasswordRequiredError": "Vui lòng nhập mật khẩu hiện tại.",
+        "settings.passwordTooShortError":
+          "Mật khẩu mới phải có ít nhất 6 ký tự.",
+        "settings.currentPasswordRequiredError":
+          "Vui lòng nhập mật khẩu hiện tại.",
         "errors.INVALID_CURRENT_PASSWORD": "Mật khẩu hiện tại không chính xác.",
       };
       return dict[key] || key;
@@ -59,7 +62,9 @@ describe("AccountSettingsPage Component", () => {
     expect(screen.getByDisplayValue("Recruiter Alice")).toBeInTheDocument();
     expect(screen.getByDisplayValue("alice@example.com")).toBeInTheDocument();
     expect(screen.getByText("Đổi mật khẩu")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Nhập mật khẩu hiện tại")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Nhập mật khẩu hiện tại"),
+    ).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText("Nhập mật khẩu mới (tối thiểu 6 ký tự)"),
     ).toBeInTheDocument();

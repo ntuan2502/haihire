@@ -11,23 +11,28 @@ vi.mock("@/i18n", () => ({
         "jobs.wizard.readyToGo": "Sẵn sàng đăng tuyển",
         "jobs.wizard.publishDistributionTitle": "Trạng thái & Phân phối",
         "jobs.wizard.publishNow": "Đăng tin ngay",
-        "jobs.wizard.publishNowDesc": "Tin tuyển dụng sẽ được hiển thị công khai trên trang sự nghiệp.",
+        "jobs.wizard.publishNowDesc":
+          "Tin tuyển dụng sẽ được hiển thị công khai trên trang sự nghiệp.",
         "jobs.wizard.openPublished": "Đang mở tuyển dụng",
         "jobs.wizard.saveDraft": "Lưu bản nháp",
-        "jobs.wizard.saveDraftDesc": "Chỉ lưu nội dung để xem lại nội bộ, chưa công khai.",
+        "jobs.wizard.saveDraftDesc":
+          "Chỉ lưu nội dung để xem lại nội bộ, chưa công khai.",
         "jobs.wizard.closeJob": "Đóng tin tuyển dụng",
         "jobs.wizard.closeJobDesc": "Tạm dừng nhận thêm hồ sơ ứng tuyển mới.",
         "jobs.wizard.summaryTitle": "Tóm tắt tin tuyển dụng",
-        "jobs.wizard.summaryDesc": "Xem lại các thông số chính trước khi xác nhận",
+        "jobs.wizard.summaryDesc":
+          "Xem lại các thông số chính trước khi xác nhận",
         "jobs.wizard.requiredOption": "Bắt buộc",
         "jobs.wizard.offOption": "Tắt",
         "jobs.wizard.resumeSub": "Hồ sơ CV",
         "jobs.wizard.questionsSub": "Câu hỏi sàng lọc",
         "jobs.wizard.questionsCountText": "câu hỏi",
         "jobs.wizard.dangerZoneTitle": "Vùng nguy hiểm",
-        "jobs.wizard.dangerZoneDesc": "Các thao tác không thể phục hồi đối với tin tuyển dụng này.",
+        "jobs.wizard.dangerZoneDesc":
+          "Các thao tác không thể phục hồi đối với tin tuyển dụng này.",
         "jobs.wizard.deletePermanentTitle": "Xóa vĩnh viễn tin tuyển dụng này",
-        "jobs.wizard.deletePermanentDesc": "Thao tác này sẽ xóa toàn bộ đơn ứng tuyển liên quan.",
+        "jobs.wizard.deletePermanentDesc":
+          "Thao tác này sẽ xóa toàn bộ đơn ứng tuyển liên quan.",
         "jobs.wizard.deleteJobAction": "Xóa tin",
         "jobs.wizard.backAction": "Quay lại",
         "jobs.wizard.saveAndUpdateJob": "Lưu & Cập nhật tin",
@@ -70,7 +75,7 @@ describe("WizardStepPublish Component Tests", () => {
         onCancel={vi.fn()}
         onBack={vi.fn()}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Sẵn sàng đăng tuyển")).toBeInTheDocument();
@@ -96,7 +101,7 @@ describe("WizardStepPublish Component Tests", () => {
         onCancel={vi.fn()}
         onBack={vi.fn()}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     const draftCard = screen.getByText("Lưu bản nháp");
@@ -122,7 +127,7 @@ describe("WizardStepPublish Component Tests", () => {
         onCancel={vi.fn()}
         onBack={vi.fn()}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Vùng nguy hiểm")).toBeInTheDocument();
@@ -148,7 +153,7 @@ describe("WizardStepPublish Component Tests", () => {
         onCancel={vi.fn()}
         onBack={vi.fn()}
         onSaveJob={onSaveJob}
-      />
+      />,
     );
 
     const saveButtons = screen.getAllByText("Đăng tin ngay");
@@ -176,7 +181,7 @@ describe("WizardStepPublish Component Tests", () => {
         onCancel={vi.fn()}
         onBack={onBack}
         onSaveJob={vi.fn()}
-      />
+      />,
     );
 
     const backBtn = screen.getByText("Quay lại");

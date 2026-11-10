@@ -82,19 +82,13 @@ function TrackingLinkDetailContent() {
       ? slugify(detail.link.jobTitle)
       : detail.link.jobId;
 
-    return buildPublicTrackingUrl(
-      origin,
-      orgSlug,
-      detail.link.token,
-      jobSlug,
-      {
-        utmSource: detail.link.utmSource,
-        utmMedium: detail.link.utmMedium,
-        utmCampaign: detail.link.utmCampaign,
-        utmTerm: detail.link.utmTerm,
-        utmContent: detail.link.utmContent,
-      },
-    );
+    return buildPublicTrackingUrl(origin, orgSlug, detail.link.token, jobSlug, {
+      utmSource: detail.link.utmSource,
+      utmMedium: detail.link.utmMedium,
+      utmCampaign: detail.link.utmCampaign,
+      utmTerm: detail.link.utmTerm,
+      utmContent: detail.link.utmContent,
+    });
   }, [detail?.link, orgSlug]);
 
   const handleCopy = async () => {

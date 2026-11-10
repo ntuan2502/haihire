@@ -85,10 +85,15 @@ describe("Application Stage State Machine (canTransition)", () => {
       return key;
     };
 
-    expect(getTransitionDisabledReason("HIRED", "APPLIED", mockT)).toContain("HIRED không thể quay lại APPLIED");
-    expect(getTransitionDisabledReason("REJECTED", "OFFER", mockT)).toContain("REJECTED không thể chuyển sang OFFER");
-    expect(getTransitionDisabledReason("SCREENING", "APPLIED", mockT)).toContain("Không thể chuyển từ SCREENING sang APPLIED");
+    expect(getTransitionDisabledReason("HIRED", "APPLIED", mockT)).toContain(
+      "HIRED không thể quay lại APPLIED",
+    );
+    expect(getTransitionDisabledReason("REJECTED", "OFFER", mockT)).toContain(
+      "REJECTED không thể chuyển sang OFFER",
+    );
+    expect(
+      getTransitionDisabledReason("SCREENING", "APPLIED", mockT),
+    ).toContain("Không thể chuyển từ SCREENING sang APPLIED");
     expect(getTransitionDisabledReason("APPLIED", "APPLIED", mockT)).toBe("");
   });
 });
-

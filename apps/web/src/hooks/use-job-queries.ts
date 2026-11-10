@@ -1,6 +1,11 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { jobsApi, organizationsApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Job, Organization, PaginatedResult } from "@/types";
@@ -80,7 +85,10 @@ export function useAllJobs(organizationId?: string | null) {
     queryKey: ["jobs", "all", effectiveOrgId],
     queryFn: async () => {
       if (!effectiveOrgId) return [];
-      const res = await jobsApi.getAll({ organizationId: effectiveOrgId, limit: 1000 });
+      const res = await jobsApi.getAll({
+        organizationId: effectiveOrgId,
+        limit: 1000,
+      });
       return res.data;
     },
     enabled: Boolean(effectiveOrgId),
@@ -145,7 +153,11 @@ export function usePublicJobs(orgSlug: string | null) {
     queryKey: ["jobs", "public-list", orgSlug],
     queryFn: async () => {
       if (!orgSlug) return [];
-      const res = await jobsApi.getAll({ organizationSlug: orgSlug, status: "PUBLISHED", limit: 1000 });
+      const res = await jobsApi.getAll({
+        organizationSlug: orgSlug,
+        status: "PUBLISHED",
+        limit: 1000,
+      });
       return res.data;
     },
     enabled: Boolean(orgSlug),
@@ -156,7 +168,8 @@ export function usePublicJob(orgSlug: string | null, jobSlug: string | null) {
   return useQuery<Job>({
     queryKey: ["jobs", "public-detail", orgSlug, jobSlug],
     queryFn: () => {
-      if (!orgSlug || !jobSlug) throw new Error("Org slug and Job slug are required");
+      if (!orgSlug || !jobSlug)
+        throw new Error("Org slug and Job slug are required");
       return jobsApi.getBySlug(orgSlug, jobSlug);
     },
     enabled: Boolean(orgSlug && jobSlug),

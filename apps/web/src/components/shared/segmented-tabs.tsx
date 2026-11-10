@@ -73,7 +73,9 @@ export function SegmentedTabs<T extends string = string>({
               onClick={handleClick}
               className={cn(
                 "flex items-center gap-1.5 rounded-lg font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
-                size === "sm" ? "px-3 py-1.5 text-xs" : "px-3.5 py-2 text-xs sm:text-sm",
+                size === "sm"
+                  ? "px-3 py-1.5 text-xs"
+                  : "px-3.5 py-2 text-xs sm:text-sm",
                 isActive
                   ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs ring-1 ring-slate-900/5 dark:ring-white/10"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-800/40",
@@ -122,7 +124,9 @@ export function SegmentedTabs<T extends string = string>({
             onClick={() => onChange?.(tab.id)}
             className={cn(
               "flex items-center gap-1.5 rounded-lg font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 select-none",
-              size === "sm" ? "px-3 py-1.5 text-xs" : "px-3.5 py-2 text-xs sm:text-sm",
+              size === "sm"
+                ? "px-3 py-1.5 text-xs"
+                : "px-3.5 py-2 text-xs sm:text-sm",
               isActive
                 ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-800/40",

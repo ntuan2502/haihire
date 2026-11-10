@@ -10,7 +10,7 @@
 | Metric                           | Value                  | Reference / Notes                 |
 | :------------------------------- | :--------------------- | :-------------------------------- |
 | **Release Target**               | `Unreleased`           | Fresh baseline (post-reset)       |
-| **Commit Baseline**              | `4d43d3b` (2026-11-09) | Author: ntuan2502                 |
+| **Commit Baseline**              | `bfcf5e3` (2026-11-09) | Author: ntuan2502                 |
 | **Workspace Unit Tests**         | `1268 passed`          | Backend: 794, Frontend: 474       |
 | **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle  |
 | **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates  |
@@ -167,7 +167,7 @@ Critical architectural choices, trade-offs, and pre-release package rationales a
 
 ---
 
-## ⚠️ Known Limitations (v0.3.0 Release)
+## ⚠️ Known Limitations (v0.1.0 Release)
 
 1. **Transitive High CVEs in Build Tooling:** 11 High CVEs exist in transitive Hono dependencies via `@prisma/composer-prisma-cloud` (see [D-001](docs/decisions/DECISIONS.md#d-001)). Mitigated via production network isolation and container security policies. Scheduled for exit upon Prisma 8 GA.
 2. **Next.js Direct Path Rewrites:** Direct proxy rewrites (`/jobs/*`, `/organizations/*`) are retained in Next.js config without `/api` prefix (see [D-002](docs/decisions/DECISIONS.md#d-002)) to prevent breaking changes. Scheduled for `/api/v1` migration in v0.4.0.

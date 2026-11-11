@@ -205,6 +205,7 @@ _Planned for phased refactoring in Wave 5 (v0.3.0) and v0.4.0._
 - **OrganizationAuditLog (P1):** Dedicated administrative audit logging entity and service for enterprise governance events (`OWNERSHIP_TRANSFERRED`, `ORG_DELETED`, `MEMBER_ROLE_CHANGED`), strictly decoupling tenant administration from recruitment candidate activity (see [D-009](../decisions/DECISIONS.md#d-009)).
 - **API v1 Standardization (P2):** Unified API route normalization migrating legacy un-prefixed Next.js rewrite endpoints to canonical `/api/v1/*` contracts (see [D-002](../decisions/DECISIONS.md#d-002)).
 - **Reverse Proxy Selection (P2):** Finalize production ingress reverse proxy and TLS termination technology (evaluating Caddy vs Nginx vs Cloudflare Tunnel) alongside infrastructure deployment (see [D-008](../decisions/DECISIONS.md#d-008)).
+- **Custom Candidate & Job Properties (P2):** Configurable structured metadata fields spanning organization-wide candidate properties (reusable across applications, e.g., salary expectations, notice period, portfolio URLs) and job-specific application properties (role-scoped qualifying attributes, e.g., stack proficiency or relocation eligibility). Deferred from premature UI placeholders until backed by normalized `CustomPropertyDefinition` and `CustomPropertyValue` models with typed validation, RBAC visibility gating (`isSensitive`), candidate filtering, and Career Form binding.
 
 ---
 

@@ -1,4 +1,4 @@
-import { Sparkles, FileCheck, SlidersHorizontal } from "lucide-react";
+import { Sparkles, FileCheck } from "lucide-react";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { ApplicationNotesCard } from "./application-notes-card";
@@ -88,34 +88,6 @@ export function ApplicationOverviewTab({
 
       {/* 5. Notes */}
       {overviewSections.notes && <ApplicationNotesCard app={app} />}
-
-      {/* 6. Properties */}
-      {overviewSections.properties && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-            <span>{t("applications.sections.properties")}</span>
-          </h3>
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
-            <button
-              type="button"
-              disabled
-              className="opacity-50 cursor-not-allowed transition-colors"
-              title="Properties (Coming soon)"
-            >
-              {t("applications.addOrgProperty")}
-            </button>
-            <button
-              type="button"
-              disabled
-              className="opacity-50 cursor-not-allowed transition-colors"
-              title="Properties (Coming soon)"
-            >
-              {t("applications.manageJobProperties")}
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }

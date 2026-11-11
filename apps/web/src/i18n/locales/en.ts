@@ -47,7 +47,6 @@ export const en: TranslationSchema = {
     other: "Other",
     updated: "Updated",
     details: "Details",
-    properties: "Properties",
     yes: "Yes",
     no: "No",
     preview: "Preview",
@@ -551,7 +550,6 @@ export const en: TranslationSchema = {
     noResponsesSubtitle:
       "Candidate has not submitted any application form responses yet.",
     timelineApplied: "Applied to {job} on {date}",
-    noCustomProperties: "No custom properties defined for this candidate yet.",
     noCandidatesInStage: "No candidates in {stage}",
     switchStageHint: "Switch to another pipeline stage to review candidates.",
     tooltips: {
@@ -982,7 +980,6 @@ export const en: TranslationSchema = {
     noDocuments: "No documents attached.",
     candidateDetail: "Candidate Detail",
     openFullPage: "Open full page",
-    addProperty: "Add org-wide property",
     allStages: "All stages",
     backToDocuments: "Back to documents",
     clickToPreview: "Click to preview",
@@ -1084,8 +1081,6 @@ export const en: TranslationSchema = {
     noInterviewsDesc: "Schedule an interview to start the process.",
     noResponses: "No application form responses.",
     noDocumentsUploaded: "No documents uploaded.",
-    addOrgProperty: "+ Add org-wide property",
-    manageJobProperties: "Manage job-specific properties",
     submitApplicationTitle: "Submit Candidate Application",
     submitApplicationDesc:
       "Upload candidate resume (PDF) and store directly into MinIO object storage.",
@@ -1138,7 +1133,6 @@ export const en: TranslationSchema = {
       responses: "Responses",
       notes: "Notes",
       timeline: "Timeline",
-      properties: "Properties",
     },
     sections: {
       sectionsTitle: "Sections",
@@ -1151,7 +1145,6 @@ export const en: TranslationSchema = {
       documents: "Documents",
       responses: "Responses",
       notes: "Notes",
-      properties: "Properties",
     },
     placeholders: {
       firstName: "e.g. Jane",

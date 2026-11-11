@@ -45,7 +45,6 @@ export interface TranslationSchema {
     other: string;
     updated: string;
     details: string;
-    properties: string;
     yes: string;
     no: string;
     preview: string;
@@ -478,7 +477,6 @@ export interface TranslationSchema {
     noResponsesTitle: string;
     noResponsesSubtitle: string;
     timelineApplied: string;
-    noCustomProperties: string;
     noCandidatesInStage: string;
     switchStageHint: string;
     tooltips: {
@@ -873,7 +871,6 @@ export interface TranslationSchema {
     noDocuments: string;
     candidateDetail: string;
     openFullPage: string;
-    addProperty: string;
     allStages: string;
     backToDocuments: string;
     clickToPreview: string;
@@ -968,8 +965,6 @@ export interface TranslationSchema {
     noInterviewsDesc: string;
     noResponses: string;
     noDocumentsUploaded: string;
-    addOrgProperty: string;
-    manageJobProperties: string;
     submitApplicationTitle: string;
     submitApplicationDesc: string;
     applicationSubmittedSuccess: string;
@@ -1011,7 +1006,6 @@ export interface TranslationSchema {
       responses: string;
       notes: string;
       timeline: string;
-      properties: string;
     };
     sections: {
       sectionsTitle: string;
@@ -1024,7 +1018,6 @@ export interface TranslationSchema {
       documents: string;
       responses: string;
       notes: string;
-      properties: string;
     };
     placeholders: {
       firstName: string;

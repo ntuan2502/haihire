@@ -16,7 +16,6 @@ import {
   CandidateResponsesTab,
   CandidateInboxTab,
   CandidateTimelineTab,
-  CandidatePropertiesTab,
 } from "./candidate-misc-tabs";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, ApplicationStage, CandidateDocument } from "@/types";
@@ -175,7 +174,6 @@ export function CandidateQuickDrawer({
             { id: "responses", label: t("applications.tabs.responses") },
             { id: "notes", label: t("applications.tabs.notes") },
             { id: "timeline", label: t("applications.tabs.timeline") },
-            { id: "properties", label: t("applications.tabs.properties") },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -243,8 +241,6 @@ export function CandidateQuickDrawer({
           {drawerTab === "timeline" && (
             <CandidateTimelineTab currentApp={currentApp} />
           )}
-
-          {drawerTab === "properties" && <CandidatePropertiesTab />}
         </div>
       </div>
     </SlideOver>

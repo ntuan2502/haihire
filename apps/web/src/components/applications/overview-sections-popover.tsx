@@ -11,7 +11,6 @@ export interface OverviewSectionsState {
   documents: boolean;
   responses: boolean;
   notes: boolean;
-  properties: boolean;
 }
 
 export const DEFAULT_OVERVIEW_SECTIONS: OverviewSectionsState = {
@@ -20,7 +19,6 @@ export const DEFAULT_OVERVIEW_SECTIONS: OverviewSectionsState = {
   documents: true,
   responses: true,
   notes: true,
-  properties: true,
 };
 
 interface OverviewSectionsPopoverProps {
@@ -47,7 +45,6 @@ export function OverviewSectionsPopover({
     { key: "documents", label: t("applications.sections.documents") },
     { key: "responses", label: t("applications.sections.responses") },
     { key: "notes", label: t("applications.sections.notes") },
-    { key: "properties", label: t("applications.sections.properties") },
   ];
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(
     null,

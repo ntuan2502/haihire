@@ -12,7 +12,6 @@ import {
   History,
   Mail,
   Phone,
-  SlidersHorizontal,
   Sparkles,
   Trash2,
   User,
@@ -311,10 +310,6 @@ export function PipelineCandidateDetail({
                 count: candidateNotesList?.length,
               },
               { id: "timeline", label: t("applications.tabs.timeline") },
-              {
-                id: "properties",
-                label: t("applications.sections.properties"),
-              },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -512,19 +507,6 @@ export function PipelineCandidateDetail({
                     job: job?.title || "",
                     date: formatDate(selectedCandidate.createdAt),
                   })}
-                </p>
-              </div>
-            )}
-
-            {/* Properties Tab */}
-            {candidateTab === "properties" && (
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{t("applications.sections.properties")}</span>
-                </h4>
-                <p className="text-xs text-slate-400">
-                  {t("pipeline.noCustomProperties")}
                 </p>
               </div>
             )}

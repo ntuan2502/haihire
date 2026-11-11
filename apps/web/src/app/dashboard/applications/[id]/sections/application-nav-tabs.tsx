@@ -95,7 +95,6 @@ export function ApplicationNavTabs({
         { id: "responses", label: t("applications.tabs.responses") },
         { id: "notes", label: t("applications.tabs.notes") },
         { id: "timeline", label: t("applications.tabs.timeline") },
-        { id: "properties", label: t("applications.tabs.properties") },
       ].map((tab) => (
         <button
           key={tab.id}

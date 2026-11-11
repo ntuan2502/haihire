@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Calendar,
-  Clock,
-  Mail,
-  MessageSquare,
-  Phone,
-  Plus,
-} from "lucide-react";
+import { Calendar, Clock, Mail, MessageSquare, Phone } from "lucide-react";
 import { formatDate, type CandidateItem } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
@@ -151,20 +144,6 @@ export function CandidateDrawerDetails({
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Card 2: Properties */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2">
-        <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-          {t("common.properties")}
-        </h3>
-        <button
-          type="button"
-          className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span>{t("candidates.addProperty")}</span>
-        </button>
       </div>
     </>
   );

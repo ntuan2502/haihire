@@ -382,7 +382,7 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       ).toBeInTheDocument();
     });
 
-    it("switches to other tab panels: ai, notes, properties, timeline, documents", () => {
+    it("switches to other tab panels: ai, notes, timeline, documents", () => {
       renderWithClient(<ApplicationDetailPage />);
 
       // AI tab
@@ -395,13 +395,6 @@ describe("ApplicationDetailPage Component - Characterization Tests", () => {
       fireEvent.click(notesTab);
       expect(
         screen.getByPlaceholderText("Nhập ghi chú tại đây..."),
-      ).toBeInTheDocument();
-
-      // Properties tab
-      const propTab = screen.getByRole("button", { name: "Thuộc tính" });
-      fireEvent.click(propTab);
-      expect(
-        screen.getByText(/\+? Thêm thuộc tính tổ chức/i),
       ).toBeInTheDocument();
 
       // Timeline tab

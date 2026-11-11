@@ -47,7 +47,6 @@ export const vi: TranslationSchema = {
     other: "Khác",
     updated: "Cập nhật",
     details: "Chi tiết",
-    properties: "Thuộc tính",
     yes: "Có",
     no: "Không",
     preview: "Xem trước",
@@ -554,7 +553,6 @@ export const vi: TranslationSchema = {
     noResponsesSubtitle:
       "Ứng viên chưa gửi câu trả lời nào cho biểu mẫu ứng tuyển.",
     timelineApplied: "Đã ứng tuyển vào vị trí {job} lúc {date}",
-    noCustomProperties: "Chưa có thuộc tính tùy chỉnh nào cho ứng viên này.",
     noCandidatesInStage: "Không có ứng viên nào trong giai đoạn {stage}",
     switchStageHint: "Chuyển sang giai đoạn tuyển dụng khác để xem ứng viên.",
     tooltips: {
@@ -987,7 +985,6 @@ export const vi: TranslationSchema = {
     noDocuments: "Chưa có tài liệu đính kèm nào.",
     candidateDetail: "Chi tiết ứng viên",
     openFullPage: "Mở toàn trang",
-    addProperty: "Thêm thuộc tính tổ chức",
     allStages: "Tất cả giai đoạn",
     backToDocuments: "Quay lại danh sách tài liệu",
     clickToPreview: "Nhấn để xem trước",
@@ -1089,8 +1086,6 @@ export const vi: TranslationSchema = {
     noInterviewsDesc: "Lên lịch phỏng vấn để bắt đầu tiến trình đánh giá.",
     noResponses: "Chưa có phản hồi từ biểu mẫu ứng tuyển.",
     noDocumentsUploaded: "Chưa có tài liệu nào được tải lên.",
-    addOrgProperty: "+ Thêm thuộc tính tổ chức",
-    manageJobProperties: "Quản lý thuộc tính theo công việc",
     submitApplicationTitle: "Nộp hồ sơ ứng tuyển",
     submitApplicationDesc:
       "Tải lên CV ứng viên (PDF) và lưu trữ trực tiếp vào kho lưu trữ MinIO.",
@@ -1142,7 +1137,6 @@ export const vi: TranslationSchema = {
       responses: "Câu trả lời",
       notes: "Ghi chú",
       timeline: "Dòng thời gian",
-      properties: "Thuộc tính",
     },
     sections: {
       sectionsTitle: "Các phần hiển thị",
@@ -1155,7 +1149,6 @@ export const vi: TranslationSchema = {
       documents: "Tài liệu",
       responses: "Câu trả lời",
       notes: "Ghi chú",
-      properties: "Thuộc tính",
     },
     placeholders: {
       firstName: "VD: Văn A",

@@ -1,4 +1,4 @@
-import { Mail, Sparkles, FileCheck, SlidersHorizontal } from "lucide-react";
+import { Mail, Sparkles, FileCheck } from "lucide-react";
 import { CandidateInterviewsList } from "@/components/interviews/candidate-interviews-list";
 import { ApplicationDocumentsSection } from "@/components/applications/application-documents-section";
 import { CandidateTimeline } from "@/components/timeline/candidate-timeline";
@@ -101,29 +101,6 @@ export function ApplicationTabContent({
       )}
 
       {activeTab === "notes" && <ApplicationNotesCard app={app} />}
-
-      {activeTab === "properties" && (
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
-            <span>{t("applications.sections.properties")}</span>
-          </h3>
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-400 flex-wrap">
-            <button
-              type="button"
-              className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-            >
-              {t("applications.addOrgProperty")}
-            </button>
-            <button
-              type="button"
-              className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-            >
-              {t("applications.manageJobProperties")}
-            </button>
-          </div>
-        </div>
-      )}
 
       {activeTab === "inbox" && (
         <div className="rounded-2xl border border-slate-200/90 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center space-y-2">

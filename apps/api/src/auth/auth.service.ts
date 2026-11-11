@@ -9,6 +9,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import { UpdateUserPreferencesDto } from "./dto/update-user-preferences.dto";
 import {
   AppUnauthorizedException,
   AppConflictException,
@@ -16,6 +17,7 @@ import {
 } from "../common/app-exception";
 import {
   APP_ERROR_CODES,
+  canonicalizeTimezone,
   Role,
   type Permission,
   PERMISSIONS,
@@ -24,6 +26,31 @@ import {
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "./constants";
 import { env } from "../config/env";
 import { toInstant } from "../common/date.util";
+
+const USER_PROFILE_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  role: true,
+  avatarUrl: true,
+  preferredLanguage: true,
+  preferredTimezone: true,
+  organizationId: true,
+  createdAt: true,
+} as const;
+
+const ORG_SUMMARY_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  ownerId: true,
+  defaultLanguage: true,
+  timezone: true,
+  dateFormat: true,
+  timeFormat: true,
+  nameDisplayOrder: true,
+  defaultCurrency: true,
+} as const;
 
 @Injectable()
 export class AuthService {
@@ -46,15 +73,9 @@ export class AuthService {
     let user = await this.prisma.user.findFirst({
       where: { email: normalizedEmail },
       select: {
-        id: true,
-        email: true,
-        name: true,
+        ...USER_PROFILE_SELECT,
         password: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
         tokenVersion: true,
-        createdAt: true,
       },
     });
 
@@ -114,15 +135,9 @@ export class AuthService {
               organizationId: orgId,
             },
             select: {
-              id: true,
-              email: true,
-              name: true,
+              ...USER_PROFILE_SELECT,
               password: true,
-              role: true,
-              avatarUrl: true,
-              organizationId: true,
               tokenVersion: true,
-              createdAt: true,
             },
           });
         } else {
@@ -144,15 +159,9 @@ export class AuthService {
               organizationId: null,
             },
             select: {
-              id: true,
-              email: true,
-              name: true,
+              ...USER_PROFILE_SELECT,
               password: true,
-              role: true,
-              avatarUrl: true,
-              organizationId: true,
               tokenVersion: true,
-              createdAt: true,
             },
           });
         }
@@ -180,12 +189,7 @@ export class AuthService {
     if (sanitizedUser.organizationId) {
       organization = await this.prisma.organization.findUnique({
         where: { id: sanitizedUser.organizationId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          ownerId: true,
-        },
+        select: ORG_SUMMARY_SELECT,
       });
     }
 
@@ -261,6 +265,8 @@ export class AuthService {
       name: dto.name.trim(),
       role: "MEMBER" as const,
       avatarUrl: null,
+      preferredLanguage: null,
+      preferredTimezone: null,
       organizationId: null,
       organization: null,
       isOwner: false,
@@ -437,6 +443,8 @@ export class AuthService {
       name: string;
       role: string;
       avatarUrl: string | null;
+      preferredLanguage: string | null;
+      preferredTimezone: string | null;
       organizationId: string | null;
       createdAt: Date | string;
     };
@@ -480,13 +488,7 @@ export class AuthService {
         updatedAt: toInstant(),
       },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
-        createdAt: true,
+        ...USER_PROFILE_SELECT,
         tokenVersion: true,
       },
     });
@@ -520,6 +522,8 @@ export class AuthService {
         name: updatedUser.name,
         role: updatedUser.role,
         avatarUrl: updatedUser.avatarUrl,
+        preferredLanguage: updatedUser.preferredLanguage,
+        preferredTimezone: updatedUser.preferredTimezone,
         organizationId: updatedUser.organizationId,
         createdAt: updatedUser.createdAt,
       },
@@ -529,15 +533,7 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatarUrl: true,
-        organizationId: true,
-        createdAt: true,
-      },
+      select: USER_PROFILE_SELECT,
     });
 
     if (!user) {
@@ -552,12 +548,7 @@ export class AuthService {
     if (user.organizationId) {
       organization = await this.prisma.organization.findUnique({
         where: { id: user.organizationId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          ownerId: true,
-        },
+        select: ORG_SUMMARY_SELECT,
       });
 
       if (organization && organization.ownerId === user.id) {
@@ -567,9 +558,44 @@ export class AuthService {
 
     return {
       ...user,
+      preferredTimezone: user.preferredTimezone
+        ? canonicalizeTimezone(user.preferredTimezone)
+        : user.preferredTimezone,
       isOwner,
-      organization,
+      organization: organization
+        ? {
+            ...organization,
+            timezone: canonicalizeTimezone(organization.timezone),
+          }
+        : organization,
     };
+  }
+
+  async updatePreferences(userId: string, dto: UpdateUserPreferencesDto) {
+    const data: {
+      preferredLanguage?: string | null;
+      preferredTimezone?: string | null;
+      updatedAt: Date;
+    } = {
+      updatedAt: toInstant(),
+    };
+
+    if (dto.preferredLanguage !== undefined) {
+      data.preferredLanguage = dto.preferredLanguage;
+    }
+    if (dto.preferredTimezone !== undefined) {
+      data.preferredTimezone = dto.preferredTimezone
+        ? canonicalizeTimezone(dto.preferredTimezone)
+        : null;
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: { id: true },
+    });
+
+    return this.getProfile(userId);
   }
 
   async getMyPermissions(user: {

@@ -767,8 +767,8 @@ export const vi: TranslationSchema = {
       customizeFormDesc:
         "Chỉnh sửa biểu mẫu bên trái và theo dõi bản xem trước cập nhật trực tiếp. Các trường bị khóa là bắt buộc và không thể tắt.",
       personalInfoTitle: "Thông tin cá nhân",
-      firstNameLabel: "Họ và tên đệm",
-      lastNameLabel: "Tên",
+      firstNameLabel: "Tên",
+      lastNameLabel: "Họ và tên đệm",
       emailLabel: "Địa chỉ Email",
       phoneLabel: "Số điện thoại",
       phoneChooseHint: "Chọn xem ứng viên có thấy trường này hay không.",
@@ -997,12 +997,17 @@ export const vi: TranslationSchema = {
       "Gán ứng viên này vào một công việc để bắt đầu quy trình tuyển dụng.",
     trySelectingDifferentStage: "Thử chọn một bộ lọc giai đoạn khác.",
     placeholders: {
-      firstName: "VD: Văn A",
-      lastName: "VD: Nguyễn",
-      displayName: "VD: Nguyễn Văn A",
-      email: "VD: nguyenvana@example.com",
+      firstName: "VD: An",
+      lastName: "VD: Nguyễn Văn",
+      displayName: "VD: Nguyễn Văn An",
+      email: "VD: an.nguyen@example.com",
       phone: "VD: 0912 345 678",
       dob: "dd/mm/yyyy",
+    },
+    errors: {
+      firstNameRequired: "Vui lòng nhập tên ứng viên.",
+      lastNameRequired: "Vui lòng nhập họ và tên đệm.",
+      validEmailRequired: "Vui lòng nhập địa chỉ email hợp lệ.",
     },
     createFailed: "Không thể thêm ứng viên. Vui lòng thử lại sau.",
     updateFailed: "Không thể cập nhật ứng viên. Vui lòng thử lại sau.",
@@ -1166,9 +1171,9 @@ export const vi: TranslationSchema = {
       notes: "Ghi chú",
     },
     placeholders: {
-      firstName: "VD: Văn A",
-      lastName: "VD: Nguyễn",
-      email: "VD: ungvien@example.com",
+      firstName: "VD: An",
+      lastName: "VD: Nguyễn Văn",
+      email: "VD: an.nguyen@example.com",
       phone: "VD: +84 901 234 567",
       quickNotes: "VD: 5+ năm kinh nghiệm React, có thể nhận việc ngay",
     },
@@ -1578,6 +1583,22 @@ export const vi: TranslationSchema = {
     passwordMismatchError: "Mật khẩu xác nhận không khớp.",
     passwordTooShortError: "Mật khẩu mới phải có ít nhất 6 ký tự.",
     currentPasswordRequiredError: "Vui lòng nhập mật khẩu hiện tại.",
+    accountPreferences: {
+      title: "Tùy chọn Ngôn ngữ & Múi giờ cá nhân",
+      subtitle:
+        "Ghi đè cài đặt mặc định của tổ chức cho giao diện và lịch hiển thị của riêng bạn.",
+      languageLabel: "Ngôn ngữ giao diện ưu tiên",
+      languageHint:
+        "Chọn ngôn ngữ riêng hoặc tự động tuân theo ngôn ngữ mặc định của tổ chức.",
+      timezoneLabel: "Múi giờ ưu tiên",
+      timezoneHint:
+        "Dùng để hiển thị giờ phỏng vấn và mốc thời gian hoạt động cho tài khoản của bạn.",
+      followOrgDefault: "Theo mặc định tổ chức",
+      saveBtn: "Lưu tùy chọn",
+      savingBtn: "Đang lưu...",
+      saveSuccess: "Đã lưu tùy chọn ngôn ngữ & múi giờ cá nhân.",
+      saveError: "Không thể lưu tùy chọn cá nhân. Vui lòng thử lại.",
+    },
     tabs: {
       general: "Chung",
       generalSub: "Hồ sơ tổ chức",
@@ -1611,6 +1632,67 @@ export const vi: TranslationSchema = {
     placeholders: {
       orgName: "VD: Acme Corp",
       orgSlug: "ten-to-chuc",
+    },
+    localization: {
+      title: "Ngôn ngữ & Khu vực",
+      description:
+        "Thiết lập chuẩn hiển thị theo khu vực cho toàn tổ chức, múi giờ, tiền tệ mặc định và ngôn ngữ giao diện cá nhân của bạn.",
+      personalCardTitle: "Ngôn ngữ giao diện cá nhân",
+      personalCardSub:
+        "Áp dụng ngay cho phiên làm việc hiện tại của bạn trên thanh điều hướng, nút bấm và thông báo.",
+      personalLanguageLabel: "Ngôn ngữ hiển thị",
+      personalLanguageHint:
+        "Lựa chọn cá nhân này sẽ được ưu tiên hơn ngôn ngữ mặc định của tổ chức trên trình duyệt hiện tại.",
+      orgCardTitle: "Chuẩn khu vực của tổ chức",
+      orgCardSub:
+        "Cấu hình mặc định toàn không gian làm việc cho hồ sơ ứng viên, lịch phỏng vấn, mốc thời gian và tin tuyển dụng mới.",
+      defaultLanguageLabel: "Ngôn ngữ mặc định của tổ chức",
+      defaultLanguageHint:
+        "Áp dụng cho thành viên mới hoặc tài khoản chưa chọn ngôn ngữ cá nhân riêng.",
+      timezoneLabel: "Múi giờ chính",
+      timezoneHint:
+        "Dùng để hiển thị ngày giờ lịch phỏng vấn và nhật ký hoạt động.",
+      timezoneSearchPlaceholder: "Tìm múi giờ, thành phố hoặc UTC...",
+      timezoneNoMatch: "Không tìm thấy múi giờ phù hợp.",
+      dateFormatLabel: "Định dạng ngày",
+      dateFormatHint: "Ví dụ minh họa cho ngày 27 tháng 08 năm 2026.",
+      timeFormatLabel: "Định dạng giờ",
+      timeFormat24H: "Đồng hồ 24 giờ (14:30)",
+      timeFormat12H: "Đồng hồ 12 giờ (2:30 PM)",
+      nameOrderLabel: "Thứ tự hiển thị tên ứng viên",
+      nameOrderFirstLast: "Tên + Họ và tên đệm (Phương Tây)",
+      nameOrderFirstLastExample: "VD: An Nguyễn Văn",
+      nameOrderLastFirst: "Họ và tên đệm + Tên (Truyền thống)",
+      nameOrderLastFirstExample: "VD: Nguyễn Văn An",
+      currencyLabel: "Tiền tệ lương mặc định",
+      currencyHint:
+        "Tự động chọn sẵn đơn vị tiền tệ khi tạo tin tuyển dụng mới.",
+      previewTitle: "Xem trước định dạng trực tiếp",
+      previewSub:
+        "Kiểm tra cách hiển thị họ tên, lịch hẹn, mốc thời gian và mức lương tương ứng.",
+      previewCandidateName: "Tên ứng viên",
+      previewDate: "Định dạng ngày",
+      previewTime: "Giờ phỏng vấn",
+      previewRelativeTime: "Thời gian tương đối",
+      previewSalary: "Mẫu mức lương",
+      previewTimezone: "Múi giờ áp dụng",
+      resetButton: "Khôi phục",
+      saveSuccess: "Đã lưu cài đặt ngôn ngữ & khu vực thành công.",
+      saveError: "Không thể lưu cài đặt khu vực. Vui lòng thử lại.",
+      adminOnlyHint:
+        "Chỉ Quản trị viên mới có quyền chỉnh sửa chuẩn khu vực cấp tổ chức. Bạn vẫn có thể đổi ngôn ngữ giao diện cá nhân ở mục trên.",
+      unsavedChanges: "Có thay đổi chưa lưu",
+      currencies: {
+        VND: "VND (₫) — Việt Nam Đồng",
+        USD: "USD ($) — Đô la Mỹ",
+        EUR: "EUR (€) — Euro",
+        SGD: "SGD (S$) — Đô la Singapore",
+        JPY: "JPY (¥) — Yên Nhật",
+      },
+      languages: {
+        vi: "Tiếng Việt (Vietnamese)",
+        en: "Tiếng Anh (English)",
+      },
     },
     integrations: {
       title: "Tích hợp & Webhook",

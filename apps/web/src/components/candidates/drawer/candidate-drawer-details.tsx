@@ -1,7 +1,11 @@
 "use client";
 
 import { Calendar, Clock, Mail, Phone } from "lucide-react";
-import { formatDate, type CandidateItem } from "@/lib/utils";
+import {
+  formatDate,
+  getCandidateDisplayName,
+  type CandidateItem,
+} from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 export interface CandidateDrawerDetailsProps {
@@ -21,12 +25,16 @@ export function CandidateDrawerDetails({
 }: CandidateDrawerDetailsProps) {
   const { t } = useI18n();
 
+  const candidateDisplayName = getCandidateDisplayName(
+    candidate.candidate ?? candidate,
+  );
+
   return (
     <>
       {/* Candidate Name & Contact Header */}
       <div className="space-y-1">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-          {candidate.name}
+          {candidateDisplayName}
         </h2>
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
           <span className="flex items-center gap-1">
@@ -72,7 +80,7 @@ export function CandidateDrawerDetails({
               {t("candidates.displayName")}
             </span>
             <span className="font-semibold text-slate-900 dark:text-white truncate block mt-0.5">
-              {details.displayName || candidate.name || "—"}
+              {details.displayName || candidateDisplayName || "—"}
             </span>
           </div>
 

@@ -14,6 +14,7 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useAllJobs } from "@/hooks/use-queries";
 import { usePersistedColumns } from "@/hooks/use-persisted-columns";
 import { useI18n } from "@/i18n";
+import { getCandidateDisplayName } from "@/lib/utils";
 import { useCandidatesFilterSort } from "./hooks/use-candidates-filter-sort";
 import { useCandidatesDrawerState } from "./hooks/use-candidates-drawer-state";
 import { CandidatesToolbar } from "./toolbar/candidates-toolbar";
@@ -215,7 +216,10 @@ export function CandidatesView() {
           isOpen={!!drawerState.candidateToDelete}
           onClose={() => drawerState.setCandidateToDelete(null)}
           onConfirm={drawerState.handleConfirmDeleteCandidate}
-          candidateName={drawerState.candidateToDelete.name}
+          candidateName={getCandidateDisplayName(
+            drawerState.candidateToDelete.candidate ??
+              drawerState.candidateToDelete,
+          )}
           isDeleting={drawerState.deleteCandidateMutation.isPending}
         />
       )}

@@ -11,15 +11,15 @@ export class CreateApplicationDto {
 
   @IsString()
   @IsOptional()
-  candidateName?: string;
-
-  @IsString()
-  @IsOptional()
   firstName?: string;
 
   @IsString()
   @IsOptional()
   lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  displayName?: string | null;
 
   @IsEmail()
   @IsOptional()

@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { Clock, ArrowRight, FileText } from "lucide-react";
-import { getInitials, formatRelativeTime } from "@/lib/utils";
+import {
+  getCandidateDisplayName,
+  getInitials,
+  formatRelativeTime,
+} from "@/lib/utils";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { useI18n } from "@/i18n";
 import type { Job, Application } from "@/types";
@@ -56,6 +60,7 @@ export function DashboardRecentApplications({
         <div className="flex-1 overflow-y-auto pt-1 pr-1.5 -mr-1.5 divide-y divide-slate-100 dark:divide-slate-800/80">
           {applications.map((app) => {
             const candidateJob = jobs.find((j) => j.id === app.jobId);
+            const candidateDisplay = getCandidateDisplayName(app);
 
             return (
               <Link
@@ -66,14 +71,14 @@ export function DashboardRecentApplications({
                 <div className="flex items-center gap-2.5 min-w-0">
                   {/* Avatar with Initials */}
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100/80 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs">
-                    {getInitials(app.candidateName)}
+                    {getInitials(candidateDisplay)}
                   </div>
 
                   {/* Name + Status + Role */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors truncate max-w-[130px]">
-                        {app.candidateName}
+                        {candidateDisplay}
                       </span>
                       <StageBadge stage={app.stage} />
                     </div>

@@ -5,7 +5,11 @@ import type { AttributedApplicationDetailItem } from "@haihire/shared";
 import { StageBadge } from "@/components/shared/stage-badge";
 import { Users } from "lucide-react";
 import Link from "next/link";
-import { getInitials, formatRelativeTime } from "@/lib/utils";
+import {
+  getCandidateDisplayName,
+  getInitials,
+  formatRelativeTime,
+} from "@/lib/utils";
 
 interface LinkAttributedTableProps {
   items: AttributedApplicationDetailItem[];
@@ -63,7 +67,8 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
               {items.map((item) => {
-                const initials = getInitials(item.candidateName);
+                const displayName = getCandidateDisplayName(item);
+                const initials = getInitials(displayName);
                 const appliedTime = formatRelativeTime(item.appliedAt);
 
                 return (
@@ -82,7 +87,7 @@ export function LinkAttributedTable({ items }: LinkAttributedTableProps) {
                             href={`/dashboard/candidates?id=${item.candidateId}`}
                             className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
                           >
-                            {item.candidateName}
+                            {displayName}
                           </Link>
                           <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                             {item.candidateEmail}

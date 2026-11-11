@@ -4,7 +4,7 @@ import { useI18n } from "@/i18n";
 import type { RecentAttributedCandidateItem } from "@haihire/shared";
 import { ChannelBadge } from "../channel-badge";
 import { Clock } from "lucide-react";
-import { getInitials } from "@/lib/utils";
+import { getCandidateDisplayName, getInitials } from "@/lib/utils";
 import Link from "next/link";
 
 interface RecentAttributedCardProps {
@@ -47,7 +47,8 @@ export function RecentAttributedCard({
       ) : (
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {candidates.map((cand) => {
-            const initials = getInitials(cand.candidateName);
+            const displayName = getCandidateDisplayName(cand);
+            const initials = getInitials(displayName);
 
             return (
               <div
@@ -63,7 +64,7 @@ export function RecentAttributedCard({
                       href={`/dashboard/candidates?id=${cand.candidateId}`}
                       className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
                     >
-                      {cand.candidateName}
+                      {displayName}
                     </Link>
                     <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                       {cand.jobTitle}

@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { getCandidateDisplayName } from "@/lib/utils";
 import { DocumentPreviewModal } from "@/components/applications/document-preview-modal";
 import { DeleteApplicationModal } from "@/components/applications/delete-application-modal";
 import { RejectApplicationModal } from "@/components/applications/reject-application-modal";
@@ -133,7 +134,7 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           isOpen={true}
           onClose={() => table.setDeleteModalApp(null)}
           onConfirm={table.handleConfirmDelete}
-          candidateName={table.deleteModalApp.candidateName}
+          candidateName={getCandidateDisplayName(table.deleteModalApp)}
           jobTitle={
             table.deleteModalApp.jobId &&
             table.jobMap.get(table.deleteModalApp.jobId)
@@ -158,7 +159,7 @@ export function ApplicationsDataTable(props: ApplicationsDataTableProps) {
           isOpen={!!drawer.pendingRejectApp}
           onClose={() => drawer.setPendingRejectApp(null)}
           onConfirm={drawer.handleConfirmReject}
-          candidateName={drawer.pendingRejectApp.candidateName}
+          candidateName={getCandidateDisplayName(drawer.pendingRejectApp)}
           candidateEmail={drawer.pendingRejectApp.candidateEmail}
           jobTitle={
             table.jobMap.get(drawer.pendingRejectApp.jobId)?.title ||

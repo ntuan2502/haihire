@@ -94,7 +94,16 @@ export class SourcingMetricsService {
       candidateIds,
     );
     const candidateMap = new Map(
-      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
+      candidates.map((c) => [
+        c.id,
+        {
+          name: c.name,
+          firstName: c.firstName ?? null,
+          lastName: c.lastName ?? null,
+          displayName: c.displayName ?? null,
+          email: c.email,
+        },
+      ]),
     );
 
     const trackingLinks =
@@ -230,6 +239,9 @@ export class SourcingMetricsService {
           applicationId: app.id,
           candidateId: app.candidateId,
           candidateName: candidateInfo?.name || "Unknown Candidate",
+          firstName: candidateInfo?.firstName ?? null,
+          lastName: candidateInfo?.lastName ?? null,
+          displayName: candidateInfo?.displayName ?? null,
           candidateEmail: candidateInfo?.email || "",
           jobTitle: jobTitleMap.get(app.jobId) || "Job",
           source:
@@ -378,7 +390,16 @@ export class SourcingMetricsService {
       candidateIds,
     );
     const candMap = new Map(
-      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
+      candidates.map((c) => [
+        c.id,
+        {
+          name: c.name,
+          firstName: c.firstName ?? null,
+          lastName: c.lastName ?? null,
+          displayName: c.displayName ?? null,
+          email: c.email,
+        },
+      ]),
     );
 
     const appJobIds = Array.from(new Set(filteredApps.map((a) => a.jobId)));
@@ -400,6 +421,9 @@ export class SourcingMetricsService {
             applicationId: a.id,
             candidateId: a.candidateId,
             candidateName: cand?.name || "Unknown Candidate",
+            firstName: cand?.firstName ?? null,
+            lastName: cand?.lastName ?? null,
+            displayName: cand?.displayName ?? null,
             candidateEmail: cand?.email || "",
             jobId: a.jobId,
             jobTitle: jobInfo?.title || jobTitle || "Role",
@@ -534,14 +558,27 @@ export class SourcingMetricsService {
       candidateIds,
     );
     const candidateMap = new Map(
-      candidates.map((c) => [c.id, { name: c.name, email: c.email }]),
+      candidates.map((c) => [
+        c.id,
+        {
+          name: c.name,
+          firstName: c.firstName ?? null,
+          lastName: c.lastName ?? null,
+          displayName: c.displayName ?? null,
+          email: c.email,
+        },
+      ]),
     );
 
     if (pagination.search) {
       const q = pagination.search.toLowerCase();
       filtered = filtered.filter((a) => {
         const c = candidateMap.get(a.candidateId);
-        const nameMatch = c?.name?.toLowerCase().includes(q);
+        const nameMatch =
+          c?.name?.toLowerCase().includes(q) ||
+          c?.firstName?.toLowerCase().includes(q) ||
+          c?.lastName?.toLowerCase().includes(q) ||
+          c?.displayName?.toLowerCase().includes(q);
         const emailMatch = c?.email?.toLowerCase().includes(q);
         const campaignMatch = a.utmCampaign?.toLowerCase().includes(q);
         return nameMatch || emailMatch || campaignMatch;
@@ -563,6 +600,9 @@ export class SourcingMetricsService {
         applicationId: a.id,
         candidateId: a.candidateId,
         candidateName: c?.name || "Unknown Candidate",
+        firstName: c?.firstName ?? null,
+        lastName: c?.lastName ?? null,
+        displayName: c?.displayName ?? null,
         candidateEmail: c?.email || "",
         jobId: a.jobId,
         jobTitle: jobTitleMap.get(a.jobId) || "Job",

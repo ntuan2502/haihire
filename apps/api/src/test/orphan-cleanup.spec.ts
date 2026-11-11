@@ -161,7 +161,8 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         appService.create(
           {
             jobId: "job-1",
-            candidateName: "John",
+            firstName: "John",
+            lastName: "Doe",
             candidateEmail: "john@test.com",
           },
           mockFile,
@@ -206,7 +207,8 @@ describe("MinIO Compensating DLQ & Orphan File Cleanup Verification (Phase 17 It
         appService.create(
           {
             jobId: "job-1",
-            candidateName: "John",
+            firstName: "John",
+            lastName: "Doe",
             candidateEmail: "john@test.com",
           },
           mockFile,

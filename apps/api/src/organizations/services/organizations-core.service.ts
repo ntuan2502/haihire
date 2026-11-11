@@ -10,8 +10,40 @@ import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  canonicalizeTimezone,
+  normalizeOrgLocalization,
+  type OrganizationLocalizationSettings,
+} from "@haihire/shared";
 import { OrganizationsAuditLogService } from "./organizations-audit-log.service";
+
+const ORG_CORE_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  ownerId: true,
+  defaultLanguage: true,
+  timezone: true,
+  dateFormat: true,
+  timeFormat: true,
+  nameDisplayOrder: true,
+  defaultCurrency: true,
+  createdAt: true,
+} as const;
+
+const ORG_PUBLIC_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  defaultLanguage: true,
+  timezone: true,
+  dateFormat: true,
+  timeFormat: true,
+  nameDisplayOrder: true,
+  defaultCurrency: true,
+  createdAt: true,
+} as const;
 
 @Injectable()
 export class OrganizationsCoreService {
@@ -23,6 +55,16 @@ export class OrganizationsCoreService {
     @Inject(OrganizationsAuditLogService)
     private readonly auditLog?: OrganizationsAuditLogService,
   ) {}
+
+  private withLocalization<T extends Record<string, unknown>>(
+    org: T,
+  ): Omit<T, keyof OrganizationLocalizationSettings> &
+    OrganizationLocalizationSettings {
+    return {
+      ...org,
+      ...normalizeOrgLocalization(org),
+    };
+  }
 
   async create(userId: string, dto: CreateOrgDto) {
     const normalizedSlug = dto.slug.toLowerCase().trim();
@@ -69,13 +111,7 @@ export class OrganizationsCoreService {
 
     const org = await this.prisma.organization.findFirst({
       where: { slug: normalizedSlug },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        ownerId: true,
-        createdAt: true,
-      },
+      select: ORG_CORE_SELECT,
     });
 
     if (!org) {
@@ -109,7 +145,7 @@ export class OrganizationsCoreService {
     });
 
     return {
-      organization: org,
+      organization: this.withLocalization(org),
       message: "Organization created successfully",
     };
   }
@@ -127,16 +163,12 @@ export class OrganizationsCoreService {
       return null;
     }
 
-    return this.prisma.organization.findFirst({
+    const org = await this.prisma.organization.findFirst({
       where: { id: user.organizationId as string },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        ownerId: true,
-        createdAt: true,
-      },
+      select: ORG_CORE_SELECT,
     });
+
+    return org ? this.withLocalization(org) : null;
   }
 
   async getMyOrgs(userId: string) {
@@ -154,13 +186,7 @@ export class OrganizationsCoreService {
 
     const ownedOrgs = await this.prisma.organization.findMany({
       where: { ownerId: userId },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        ownerId: true,
-        createdAt: true,
-      },
+      select: ORG_CORE_SELECT,
     });
 
     // Query all persistent memberships for this user
@@ -184,17 +210,11 @@ export class OrganizationsCoreService {
       memberOrgIds.length > 0
         ? await this.prisma.organization.findMany({
             where: { id: { in: memberOrgIds } },
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              ownerId: true,
-              createdAt: true,
-            },
+            select: ORG_CORE_SELECT,
           })
         : [];
 
-    return [...ownedOrgs, ...memberOrgs];
+    return [...ownedOrgs, ...memberOrgs].map((o) => this.withLocalization(o));
   }
 
   async switchOrg(userId: string, targetOrgId: string) {
@@ -216,13 +236,7 @@ export class OrganizationsCoreService {
 
     const org = await this.prisma.organization.findFirst({
       where: { id: targetOrgId },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        ownerId: true,
-        createdAt: true,
-      },
+      select: ORG_CORE_SELECT,
     });
 
     if (!org) {
@@ -297,10 +311,12 @@ export class OrganizationsCoreService {
       },
     });
 
+    const normalizedOrg = this.withLocalization(org);
+
     return {
       success: true,
-      organization: org,
-      user: { ...updatedUser, organization: org, isOwner },
+      organization: normalizedOrg,
+      user: { ...updatedUser, organization: normalizedOrg, isOwner },
     };
   }
 
@@ -363,27 +379,61 @@ export class OrganizationsCoreService {
       }
     }
 
-    const updateData: { name?: string; slug?: string } = {};
+    const updateData: {
+      name?: string;
+      slug?: string;
+      defaultLanguage?: string;
+      timezone?: string;
+      dateFormat?: string;
+      timeFormat?: string;
+      nameDisplayOrder?: string;
+      defaultCurrency?: string;
+    } = {};
     if (dto.name) updateData.name = dto.name.trim();
     if (dto.slug) updateData.slug = dto.slug.toLowerCase().trim();
+
+    const localizationKeys = [
+      "defaultLanguage",
+      "timezone",
+      "dateFormat",
+      "timeFormat",
+      "nameDisplayOrder",
+      "defaultCurrency",
+    ] as const;
+    const localizationChanges: Record<string, string> = {};
+    for (const key of localizationKeys) {
+      const value = dto[key];
+      if (value !== undefined) {
+        const storedValue =
+          key === "timezone" ? canonicalizeTimezone(value) : value;
+        updateData[key] = storedValue;
+        localizationChanges[key] = storedValue;
+      }
+    }
 
     if (Object.keys(updateData).length > 0) {
       await this.prisma.organization.update({
         where: { id: orgId },
         data: updateData,
       });
+
+      if (Object.keys(localizationChanges).length > 0) {
+        await this.auditLog?.logOrg(
+          orgId,
+          userId,
+          "ORG_LOCALIZATION_UPDATED",
+          "ORGANIZATION",
+          localizationChanges,
+        );
+      }
     }
 
-    return this.prisma.organization.findFirst({
+    const updatedOrg = await this.prisma.organization.findFirst({
       where: { id: orgId },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        ownerId: true,
-        createdAt: true,
-      },
+      select: ORG_CORE_SELECT,
     });
+
+    return updatedOrg ? this.withLocalization(updatedOrg) : null;
   }
 
   async deleteMyOrg(userId: string) {
@@ -604,12 +654,7 @@ export class OrganizationsCoreService {
   async getPublicOrg(slug: string) {
     const org = await this.prisma.organization.findFirst({
       where: { slug },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        createdAt: true,
-      },
+      select: ORG_PUBLIC_SELECT,
     });
 
     if (!org) {
@@ -620,6 +665,6 @@ export class OrganizationsCoreService {
       );
     }
 
-    return org;
+    return this.withLocalization(org);
   }
 }

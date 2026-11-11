@@ -11,11 +11,14 @@ import {
   formatDate,
   resolveCandidateProfile,
   parseCandidateDocuments,
+  getCandidateDisplayName,
 } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
 
 export function useCandidateDetailState() {
   const params = useParams();
   const { user, canEdit } = useAuth();
+  const { localization } = useLocalization();
   const candidateIdStr = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const isCandidateIdValid = isValidUuid(candidateIdStr);
@@ -91,12 +94,18 @@ export function useCandidateDetailState() {
     );
   }, [candidateDocuments, documentFilter]);
 
-  const parsedNotes = resolveCandidateProfile(candidate?.name, candidate);
+  const parsedNotes = resolveCandidateProfile(
+    candidate?.name,
+    candidate,
+    localization,
+  );
   const gender = candidate?.gender || parsedNotes.gender;
   const dob = candidate?.dateOfBirth
     ? formatDate(candidate.dateOfBirth)
     : parsedNotes.dob;
-  const candidateName = candidate?.name || "Candidate";
+  const candidateName = candidate
+    ? getCandidateDisplayName(candidate, localization)
+    : "Candidate";
   const candidateEmail = candidate?.email || "—";
   const candidatePhone = candidate?.phone || "";
   const candidateCreated = formatDate(candidate?.createdAt);

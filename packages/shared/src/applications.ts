@@ -78,7 +78,9 @@ export interface Application {
 export interface CreateApplicationInput {
   jobId: string;
   candidateId?: string;
-  candidateName?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string | null;
   candidateEmail?: string;
   candidatePhone?: string;
   notes?: string;

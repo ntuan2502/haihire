@@ -311,8 +311,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: "int-1-1",
           applicationId: "app-1",
-          date: "2026-09-28",
-          time: "10:30",
+          scheduledAt: "2026-09-28T03:30:00.000Z",
           type: "TECHNICAL",
           format: "MEET",
           linkOrLocation: "https://meet.google.com/haihire-tech-interview",
@@ -328,8 +327,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: "int-2-1",
           applicationId: "app-2",
-          date: "2026-09-29",
-          time: "09:00",
+          scheduledAt: "2026-09-29T02:00:00.000Z",
           type: "HR_SCREENING",
           format: "MEET",
           linkOrLocation: "https://meet.google.com/haihire-hr-screening",
@@ -344,8 +342,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: "int-3-1",
           applicationId: "app-3",
-          date: "2026-09-27",
-          time: "14:00",
+          scheduledAt: "2026-09-27T07:00:00.000Z",
           type: "FINAL_ROUND",
           format: "MEET",
           linkOrLocation: "https://meet.google.com/haihire-final-round",
@@ -359,8 +356,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: "int-3-2",
           applicationId: "app-3",
-          date: "2026-09-25",
-          time: "09:30",
+          scheduledAt: "2026-09-25T02:30:00.000Z",
           type: "TECHNICAL",
           format: "MEET",
           linkOrLocation: "https://meet.google.com/haihire-tech-interview",
@@ -387,8 +383,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: "int-4-1",
           applicationId: "app-4",
-          date: "2026-09-22",
-          time: "15:00",
+          scheduledAt: "2026-09-22T08:00:00.000Z",
           type: "FINAL_ROUND",
           format: "OFFICE",
           linkOrLocation: "Phòng họp Sapphire, Tầng 12 Tòa nhà HaiHire, Hà Nội",
@@ -416,8 +411,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: "int-5-1",
           applicationId: "app-5",
-          date: "2026-09-18",
-          time: "10:00",
+          scheduledAt: "2026-09-18T03:00:00.000Z",
           type: "FINAL_ROUND",
           format: "OFFICE",
           linkOrLocation: "Phòng họp Diamond, Tầng 12 Tòa nhà HaiHire, Hà Nội",
@@ -443,8 +437,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: "int-6-1",
           applicationId: "app-6",
-          date: "2026-09-22",
-          time: "11:00",
+          scheduledAt: "2026-09-22T04:00:00.000Z",
           type: "HR_SCREENING",
           format: "MEET",
           linkOrLocation: "https://meet.google.com/haihire-hr-screening",
@@ -478,8 +471,7 @@ export const LandingAtsPreview: React.FC = () => {
         {
           id: `int-${selectedCandidate.id}`,
           applicationId: selectedCandidate.id,
-          date: "2026-09-28",
-          time: "10:30",
+          scheduledAt: "2026-09-28T03:30:00.000Z",
           type: "TECHNICAL",
           format: "MEET",
           linkOrLocation: "https://meet.google.com/haihire-tech-interview",

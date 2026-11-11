@@ -1,4 +1,4 @@
-import { getCandidateDisplayName } from "@/lib/utils";
+import { formatTime, getCandidateDisplayName } from "@/lib/utils";
 import type { CalendarEventItem } from "../types";
 
 export interface CalendarEventChipProps {
@@ -9,7 +9,7 @@ export interface CalendarEventChipProps {
 export function CalendarEventChip({ event, onClick }: CalendarEventChipProps) {
   const candidateName = getCandidateDisplayName(event.application);
   const hasScorecard = Boolean(event.interview.scorecard);
-  const timeStr = event.interview.time || "10:00";
+  const timeStr = formatTime(event.interview.scheduledAt);
 
   return (
     <button
@@ -21,7 +21,7 @@ export function CalendarEventChip({ event, onClick }: CalendarEventChipProps) {
           ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-950 dark:text-emerald-200"
           : "bg-blue-50 dark:bg-blue-950/50 border-blue-500 text-blue-950 dark:text-blue-200"
       }`}
-      title={`${event.interview.time || ""} ${candidateName} • ${event.job?.title || ""}`}
+      title={`${timeStr} ${candidateName} • ${event.job?.title || ""}`}
     >
       <span className="font-bold shrink-0 text-[10px] opacity-75 font-mono">
         {timeStr}

@@ -3,7 +3,11 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
 import { Inter } from "next/font/google";
-import { ThemeProvider, QueryProvider } from "@/components/providers";
+import {
+  ThemeProvider,
+  QueryProvider,
+  LocalizationProvider,
+} from "@/components/providers";
 import { AuthProvider } from "@/context/auth-context";
 import {
   I18nProvider,
@@ -63,7 +67,9 @@ export default async function RootLayout({
         >
           <QueryProvider>
             <I18nProvider initialLocale={locale}>
-              <AuthProvider>{children}</AuthProvider>
+              <AuthProvider>
+                <LocalizationProvider>{children}</LocalizationProvider>
+              </AuthProvider>
               <Toaster
                 richColors
                 position="top-right"

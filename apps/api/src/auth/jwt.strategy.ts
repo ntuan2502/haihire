@@ -64,6 +64,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         name: true,
         role: true,
         avatarUrl: true,
+        preferredLanguage: true,
+        preferredTimezone: true,
         organizationId: true,
         tokenVersion: true,
         createdAt: true,
@@ -92,6 +94,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       name: string;
       slug: string;
       ownerId: string;
+      defaultLanguage?: string;
+      timezone?: string;
+      dateFormat?: string;
+      timeFormat?: string;
+      nameDisplayOrder?: string;
+      defaultCurrency?: string;
     } | null = null;
     if (user.organizationId) {
       const org = await this.prisma.organization.findUnique({
@@ -101,6 +109,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           name: true,
           slug: true,
           ownerId: true,
+          defaultLanguage: true,
+          timezone: true,
+          dateFormat: true,
+          timeFormat: true,
+          nameDisplayOrder: true,
+          defaultCurrency: true,
         },
       });
 

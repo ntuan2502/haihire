@@ -142,7 +142,8 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     // 3. Candidate & Application Step
     const createdCandidate = await candidatesService.create(
       {
-        name: "Nguyen Van A",
+        firstName: "A",
+        lastName: "Nguyen Van",
         email: "nguyenvana@example.com",
         phone: "+84901234567",
       },
@@ -150,7 +151,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
       "org-test-1",
     );
     expect(createdCandidate).toBeDefined();
-    expect(createdCandidate.name).toBe("Nguyen Van A");
+    expect(createdCandidate.name).toBe("A Nguyen Van");
 
     const createdApp = await applicationsService.create({
       candidateId: createdCandidate.id,
@@ -172,7 +173,7 @@ describe("ATS End-to-End Core Lifecycle Flow (E2E Integration)", () => {
     expect(pagedCandidates.limit).toBe(10);
     expect(pagedCandidates.totalPages).toBe(1);
     expect(pagedCandidates.data.length).toBe(1);
-    expect(pagedCandidates.data[0].name).toBe("Nguyen Van A");
+    expect(pagedCandidates.data[0].name).toBe("A Nguyen Van");
 
     // 5. Kanban Stage Transition (Move from APPLIED to INTERVIEW)
     const updatedApp = await applicationsService.updateStage(createdApp.id, {

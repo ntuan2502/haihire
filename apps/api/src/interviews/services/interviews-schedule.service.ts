@@ -1,6 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  formatCandidateDisplayName,
+  formatInterviewDateTimeInTimezone,
+  type NameDisplayOrder,
+} from "@haihire/shared";
 import {
   AppBadRequestException,
   AppForbiddenException,
@@ -92,23 +97,14 @@ export class InterviewsScheduleService {
       dto.scorecard,
     );
 
-    let scheduledInstant: Date;
-    if (dto.scheduledAt) {
-      const parsed = new Date(dto.scheduledAt);
-      scheduledInstant = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
-      );
-    } else {
-      const rawDate = dto.date || new Date().toISOString().split("T")[0];
-      const rawTime =
-        dto.time && dto.time.length === 5
-          ? `${dto.time}:00`
-          : dto.time || "00:00:00";
-      const parsed = new Date(`${rawDate}T${rawTime}Z`);
-      scheduledInstant = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
+    const parsedScheduledAt = new Date(dto.scheduledAt);
+    if (isNaN(parsedScheduledAt.getTime())) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.VALIDATION_ERROR,
+        "Invalid scheduledAt timestamp.",
       );
     }
+    const scheduledInstant = toInstant(parsedScheduledAt);
 
     await this.prisma.interview.create({
       data: {
@@ -162,19 +158,41 @@ export class InterviewsScheduleService {
 
     // Record activity log & optionally send interview invitation email
     if (candidate && orgId) {
+      const orgSettings = this.prisma.organization?.findFirst
+        ? await this.prisma.organization.findFirst({
+            where: { id: orgId },
+            select: {
+              name: true,
+              timezone: true,
+              dateFormat: true,
+              timeFormat: true,
+              nameDisplayOrder: true,
+            },
+          })
+        : null;
+      const orgOrder: NameDisplayOrder =
+        orgSettings?.nameDisplayOrder === "LAST_FIRST"
+          ? "LAST_FIRST"
+          : "FIRST_LAST";
+      const resolvedCandidateName =
+        formatCandidateDisplayName(candidate, orgOrder) || candidate.name;
+      const formattedEmailDt = formatInterviewDateTimeInTimezone(
+        scheduledInstant,
+        orgSettings ?? undefined,
+      );
+
       await this.activitiesService.createActivity({
         organizationId: orgId,
         candidateId: candidate.id,
         applicationId: app.id,
         type: "INTERVIEW_SCHEDULED",
         title: `Interview Scheduled (${dto.type})`,
-        description: `Round ${dto.round || 1} interview on ${dto.date} at ${dto.time} with ${dto.interviewer}`,
+        description: `Round ${dto.round || 1} interview on ${formattedEmailDt.date} at ${formattedEmailDt.time} with ${dto.interviewer}`,
         actorName: dto.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
           interviewId: id,
-          date: dto.date,
-          time: dto.time,
+          scheduledAt: scheduledInstant.toISOString(),
           format: dto.format || "MEET",
           type: dto.type,
           interviewer: dto.interviewer,
@@ -189,19 +207,12 @@ export class InterviewsScheduleService {
             "INTERVIEW_INVITATION",
           );
           if (template && template.enabled) {
-            let orgName = "Company";
-            const org = await this.prisma.organization.findFirst({
-              where: { id: orgId },
-              select: { name: true },
-            });
-            if (org?.name) {
-              orgName = org.name;
-            }
+            const orgName = orgSettings?.name || "Company";
 
             await this.emailService.sendEmail(
               {
                 to: candidate.email,
-                recipientName: candidate.name,
+                recipientName: resolvedCandidateName,
                 subject: template.subject,
                 body: template.body,
                 templateType: "INTERVIEW_INVITATION",
@@ -209,7 +220,7 @@ export class InterviewsScheduleService {
                 applicationId: app.id,
                 variables: buildDynamicEmailContext({
                   candidate: {
-                    name: candidate.name,
+                    name: resolvedCandidateName,
                     email: candidate.email,
                     phone: candidate.phone,
                   },
@@ -220,8 +231,8 @@ export class InterviewsScheduleService {
                   },
                   organization: { name: orgName },
                   interview: {
-                    date: dto.date,
-                    time: dto.time,
+                    date: formattedEmailDt.date,
+                    time: formattedEmailDt.time,
                     format: dto.format || "Google Meet",
                     linkOrLocation:
                       dto.linkOrLocation || "https://meet.google.com",
@@ -251,25 +262,18 @@ export class InterviewsScheduleService {
     dto: UpdateInterviewDto,
     tenantOrgId?: string | null,
   ) {
-    const existing = await this.queryService.findOne(id, tenantOrgId);
+    await this.queryService.findOne(id, tenantOrgId);
 
     const updateData: InterviewUpdatePayload = {};
     if (dto.scheduledAt !== undefined) {
       const parsed = new Date(dto.scheduledAt);
-      updateData.scheduledAt = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
-      );
-    } else if (dto.date !== undefined || dto.time !== undefined) {
-      const newDate = dto.date !== undefined ? dto.date : existing.date;
-      const rawTime = dto.time !== undefined ? dto.time : existing.time;
-      const newTime =
-        rawTime && rawTime.length === 5
-          ? `${rawTime}:00`
-          : rawTime || "00:00:00";
-      const parsed = new Date(`${newDate}T${newTime}Z`);
-      updateData.scheduledAt = toInstant(
-        !isNaN(parsed.getTime()) ? parsed : Date.now(),
-      );
+      if (isNaN(parsed.getTime())) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.VALIDATION_ERROR,
+          "Invalid scheduledAt timestamp.",
+        );
+      }
+      updateData.scheduledAt = toInstant(parsed);
     }
 
     if (dto.type !== undefined) updateData.type = dto.type as InterviewType;
@@ -296,6 +300,20 @@ export class InterviewsScheduleService {
     const candidate = updated.application?.candidate;
     if (candidate && candidate.organizationId) {
       const isScorecardUpdate = dto.scorecard !== undefined;
+      const orgSettings = this.prisma.organization?.findFirst
+        ? await this.prisma.organization.findFirst({
+            where: { id: candidate.organizationId },
+            select: {
+              timezone: true,
+              dateFormat: true,
+              timeFormat: true,
+            },
+          })
+        : null;
+      const formattedUpdateDt = formatInterviewDateTimeInTimezone(
+        updated.scheduledAt,
+        orgSettings ?? undefined,
+      );
       await this.activitiesService.createActivity({
         organizationId: candidate.organizationId,
         candidateId: candidate.id,
@@ -306,15 +324,14 @@ export class InterviewsScheduleService {
           : `Interview Updated (${updated.type})`,
         description: isScorecardUpdate
           ? `Scorecard submitted by ${updated.interviewer}`
-          : `Interview schedule updated to ${updated.time} on ${updated.date}`,
+          : `Interview schedule updated to ${formattedUpdateDt.time} on ${formattedUpdateDt.date}`,
         actorName: updated.interviewer,
         actorRole: "INTERVIEWER",
         metadata: {
           interviewId: id,
           type: updated.type,
           interviewer: updated.interviewer,
-          date: updated.date,
-          time: updated.time,
+          scheduledAt: updated.scheduledAt,
           changes: Object.keys(updateData),
         },
       });

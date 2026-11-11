@@ -12,6 +12,7 @@ describe("AuthController", () => {
     changePassword: ReturnType<typeof vi.fn>;
     logout: ReturnType<typeof vi.fn>;
     getProfile: ReturnType<typeof vi.fn>;
+    updatePreferences: ReturnType<typeof vi.fn>;
     getMyPermissions: ReturnType<typeof vi.fn>;
   };
 
@@ -28,6 +29,7 @@ describe("AuthController", () => {
       changePassword: vi.fn(),
       logout: vi.fn(),
       getProfile: vi.fn(),
+      updatePreferences: vi.fn(),
       getMyPermissions: vi.fn(),
     };
     mockResponse = {
@@ -253,6 +255,30 @@ describe("AuthController", () => {
 
       expect(mockAuthService.getMyPermissions).toHaveBeenCalledWith(user);
       expect(result).toBe(expectedPermissions);
+    });
+
+    it("updatePreferences delegates to authService.updatePreferences", async () => {
+      const dto = {
+        preferredLanguage: "en" as const,
+        preferredTimezone: "Asia/Tokyo",
+      };
+      const expectedUser = {
+        id: "u-1",
+        preferredLanguage: "en",
+        preferredTimezone: "Asia/Tokyo",
+      };
+      mockAuthService.updatePreferences.mockResolvedValue(expectedUser);
+
+      const result = await controller.updatePreferences(
+        { user: { id: "u-1" } },
+        dto,
+      );
+
+      expect(mockAuthService.updatePreferences).toHaveBeenCalledWith(
+        "u-1",
+        dto,
+      );
+      expect(result).toBe(expectedUser);
     });
   });
 });

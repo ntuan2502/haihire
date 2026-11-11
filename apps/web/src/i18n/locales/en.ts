@@ -952,9 +952,9 @@ export const en: TranslationSchema = {
     chooseFile: "Choose a file",
     cvAttached: "CV attached ({size} KB)",
     removeFile: "Remove file",
-    firstName: "First Name",
-    lastName: "Last Name",
-    displayName: "Display Name",
+    firstName: "First name",
+    lastName: "Last name",
+    displayName: "Display name",
     displayNameHint: "(optional — overrides default name format)",
     gender: "Gender",
     dateOfBirth: "Date of Birth",
@@ -998,6 +998,11 @@ export const en: TranslationSchema = {
       email: "e.g. jane.doe@example.com",
       phone: "e.g. +1 (555) 123-4567",
       dob: "mm/dd/yyyy",
+    },
+    errors: {
+      firstNameRequired: "First name is required.",
+      lastNameRequired: "Last name is required.",
+      validEmailRequired: "Please enter a valid email address.",
     },
     createFailed: "Failed to create candidate. Please try again.",
     updateFailed: "Failed to update candidate. Please try again.",
@@ -1572,6 +1577,22 @@ export const en: TranslationSchema = {
     passwordMismatchError: "New passwords do not match.",
     passwordTooShortError: "Password must be at least 6 characters.",
     currentPasswordRequiredError: "Current password is required.",
+    accountPreferences: {
+      title: "Language & Timezone Preferences",
+      subtitle:
+        "Override organization defaults for your personal workspace interface and schedule times.",
+      languageLabel: "Preferred interface language",
+      languageHint:
+        "Choose a personal UI language or automatically follow the organization default.",
+      timezoneLabel: "Preferred timezone",
+      timezoneHint:
+        "Used when rendering interview schedules and activity timestamps for your account.",
+      followOrgDefault: "Follow organization default",
+      saveBtn: "Save Preferences",
+      savingBtn: "Saving...",
+      saveSuccess: "Personal language & timezone preferences saved.",
+      saveError: "Failed to save personal preferences. Please try again.",
+    },
     tabs: {
       general: "General",
       generalSub: "Organization profile",
@@ -1605,6 +1626,67 @@ export const en: TranslationSchema = {
     placeholders: {
       orgName: "e.g. Acme Corp",
       orgSlug: "company-slug",
+    },
+    localization: {
+      title: "Language & Region",
+      description:
+        "Configure organization-wide regional formats, timezone, currency defaults, and your personal interface language.",
+      personalCardTitle: "Personal Interface Language",
+      personalCardSub:
+        "Applies immediately to your current session across navigation, buttons, and messages.",
+      personalLanguageLabel: "Interface language",
+      personalLanguageHint:
+        "Your personal choice overrides the organization default language on this browser.",
+      orgCardTitle: "Organization Regional Standards",
+      orgCardSub:
+        "Workspace-wide defaults applied across candidate profiles, interviews, timestamps, and new jobs.",
+      defaultLanguageLabel: "Default organization language",
+      defaultLanguageHint:
+        "Used for workspace members who have not chosen a personal language override.",
+      timezoneLabel: "Timezone",
+      timezoneHint:
+        "Used when rendering scheduled interview dates and activity timestamps.",
+      timezoneSearchPlaceholder: "Search timezone, city, or UTC offset...",
+      timezoneNoMatch: "No matching timezone found.",
+      dateFormatLabel: "Date format",
+      dateFormatHint: "Example for August 27, 2026.",
+      timeFormatLabel: "Time format",
+      timeFormat24H: "24-hour clock (14:30)",
+      timeFormat12H: "12-hour clock (2:30 PM)",
+      nameOrderLabel: "Candidate name display order",
+      nameOrderFirstLast: "First name + Last name",
+      nameOrderFirstLastExample: "e.g. An Nguyễn Văn",
+      nameOrderLastFirst: "Last name + First name",
+      nameOrderLastFirstExample: "e.g. Nguyễn Văn An",
+      currencyLabel: "Default salary currency",
+      currencyHint:
+        "Automatically pre-selected when creating new job openings.",
+      previewTitle: "Live Format Preview",
+      previewSub:
+        "Verify how names, schedules, timestamps, and salaries appear with these settings.",
+      previewCandidateName: "Candidate Name",
+      previewDate: "Date Format",
+      previewTime: "Interview Time",
+      previewRelativeTime: "Activity Timestamp",
+      previewSalary: "Salary Sample",
+      previewTimezone: "Active Timezone",
+      resetButton: "Reset",
+      saveSuccess: "Localization & regional settings saved successfully.",
+      saveError: "Failed to save localization settings. Please try again.",
+      adminOnlyHint:
+        "Organization regional defaults are managed by Admins. You can still customize your personal interface language above.",
+      unsavedChanges: "Unsaved regional changes",
+      currencies: {
+        VND: "VND (₫) — Vietnamese Dong",
+        USD: "USD ($) — US Dollar",
+        EUR: "EUR (€) — Euro",
+        SGD: "SGD (S$) — Singapore Dollar",
+        JPY: "JPY (¥) — Japanese Yen",
+      },
+      languages: {
+        vi: "Vietnamese (Tiếng Việt)",
+        en: "English (US/UK)",
+      },
     },
     integrations: {
       title: "Integrations & Webhooks",
@@ -1842,7 +1924,7 @@ export const en: TranslationSchema = {
     applicationFormTitle: "Submit Your Application",
     applicationFormSubtitle:
       "Fill in your information and attach your CV to apply for this role.",
-    lastName: "Last name & Middle name",
+    lastName: "Last name",
     firstName: "First name",
     email: "Email address",
     phone: "Phone number (Optional)",
@@ -1861,7 +1943,7 @@ export const en: TranslationSchema = {
     contactEmail: "Contact email:",
     attachedFile: "Attached resume:",
     applyAnother: "Apply for another position",
-    errorLastName: "Please enter your last name and middle name.",
+    errorLastName: "Please enter your last name.",
     errorFirstName: "Please enter your first name.",
     errorEmail: "Please enter a valid email address.",
     errorResume: "Please attach your resume file (PDF/DOCX).",
@@ -1870,9 +1952,9 @@ export const en: TranslationSchema = {
     fileInvalidType:
       "Unsupported file format. Please upload PDF, DOC, or DOCX.",
     placeholders: {
-      lastName: "e.g. John",
-      firstName: "e.g. Doe",
-      email: "john.doe@example.com",
+      lastName: "e.g. Doe",
+      firstName: "e.g. Jane",
+      email: "jane.doe@example.com",
       phone: "+1 (555) 123-4567",
       notes:
         "Share more about yourself, your availability, or why you are interested in this position...",

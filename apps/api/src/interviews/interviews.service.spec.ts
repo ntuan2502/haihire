@@ -44,6 +44,7 @@ describe("InterviewsService", () => {
     name: string;
     firstName: string;
     lastName: string;
+    displayName?: string | null;
     email: string;
     phone: string;
   }
@@ -55,10 +56,24 @@ describe("InterviewsService", () => {
     organizationId: string;
   }
 
+  interface MockOrg {
+    id: string;
+    name: string;
+    timezone?: string;
+    dateFormat?: string;
+    timeFormat?: string;
+    nameDisplayOrder?: string;
+  }
+
   let mockInterviews: MockInterview[];
   let mockApps: MockApp[];
   let mockCandidates: MockCandidate[];
   let mockJobs: MockJob[];
+  let mockOrgs: MockOrg[];
+  let mockEmailService: {
+    getTemplateByType: ReturnType<typeof vi.fn>;
+    sendEmail: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     mockInterviews = [
@@ -96,6 +111,7 @@ describe("InterviewsService", () => {
         name: "Alice Johnson",
         firstName: "Alice",
         lastName: "Johnson",
+        displayName: null,
         email: "alice@example.com",
         phone: "123456789",
       },
@@ -110,14 +126,16 @@ describe("InterviewsService", () => {
       },
     ];
 
+    mockOrgs = [
+      { id: "org-1", name: "Org 1" },
+      { id: "org-2", name: "Org 2" },
+    ];
+
     const interviewTable = createMockTable(mockInterviews);
     const appTable = createMockTable(mockApps);
     const candidateTable = createMockTable(mockCandidates);
     const jobTable = createMockTable(mockJobs);
-    const orgTable = createMockTable([
-      { id: "org-1", name: "Org 1" },
-      { id: "org-2", name: "Org 2" },
-    ]);
+    const orgTable = createMockTable(mockOrgs);
 
     mockPrismaService = createMockPrismaService({
       interview: interviewTable,
@@ -131,7 +149,7 @@ describe("InterviewsService", () => {
       findByCandidate: vi.fn().mockResolvedValue([]),
     };
 
-    const mockEmailService = {
+    mockEmailService = {
       getTemplateByType: vi.fn().mockResolvedValue(null),
       sendEmail: vi.fn().mockResolvedValue({}),
     };
@@ -168,8 +186,7 @@ describe("InterviewsService", () => {
     mockApps[0].stage = "APPLIED";
     const created = await service.create({
       applicationId: "app-1",
-      date: "2026-09-25",
-      time: "14:00",
+      scheduledAt: "2026-09-25T14:00:00.000Z",
       type: "CULTURE_FIT",
       format: "ZOOM",
       linkOrLocation: "https://zoom.us/test",
@@ -186,8 +203,7 @@ describe("InterviewsService", () => {
     await expect(
       service.create({
         applicationId: "app-1",
-        date: "2026-09-25",
-        time: "14:00",
+        scheduledAt: "2026-09-25T14:00:00.000Z",
         type: "TECHNICAL",
         interviewer: "Lead Engineer",
       }),
@@ -200,8 +216,7 @@ describe("InterviewsService", () => {
       service.create(
         {
           applicationId: "app-1",
-          date: "2026-09-25",
-          time: "14:00",
+          scheduledAt: "2026-09-25T14:00:00.000Z",
           type: "TECHNICAL",
           interviewer: "Lead Engineer",
         },
@@ -214,8 +229,7 @@ describe("InterviewsService", () => {
     mockApps[0].stage = "OFFER";
     await service.create({
       applicationId: "app-1",
-      date: "2026-09-25",
-      time: "14:00",
+      scheduledAt: "2026-09-25T14:00:00.000Z",
       type: "FINAL_ROUND",
       interviewer: "Director",
     });
@@ -235,11 +249,11 @@ describe("InterviewsService", () => {
 
   it("should update an existing interview", async () => {
     const updated = await service.update("intv-1", {
-      time: "11:30",
+      scheduledAt: "2026-09-20T11:30:00.000Z",
       notes: "Updated notes",
     });
 
-    expect(updated.time).toBe("11:30");
+    expect(updated.scheduledAt).toBe("2026-09-20T11:30:00.000Z");
     expect(updated.notes).toBe("Updated notes");
   });
 
@@ -248,7 +262,7 @@ describe("InterviewsService", () => {
       service.update(
         "intv-1",
         {
-          time: "11:30",
+          scheduledAt: "2026-09-20T11:30:00.000Z",
         },
         "other-org",
       ),
@@ -267,8 +281,52 @@ describe("InterviewsService", () => {
     expect(mockInterviews).toHaveLength(0);
   });
 
+  it("formats invitation email date/time in org timezone/format and candidate name using nameDisplayOrder", async () => {
+    mockOrgs[0] = {
+      id: "org-1",
+      name: "HaiHire Corp",
+      timezone: "Asia/Ho_Chi_Minh",
+      dateFormat: "DD/MM/YYYY",
+      timeFormat: "12H",
+      nameDisplayOrder: "LAST_FIRST",
+    };
+    mockCandidates[0] = {
+      ...mockCandidates[0],
+      firstName: "An",
+      lastName: "Nguyễn Văn",
+      displayName: null,
+      name: "An Nguyễn Văn",
+    };
+    mockEmailService.getTemplateByType.mockResolvedValueOnce({
+      enabled: true,
+      subject: "Mời phỏng vấn",
+      body: "Body",
+    });
+
+    await service.create(
+      {
+        applicationId: "app-1",
+        scheduledAt: "2026-10-20T18:30:00.000Z", // 2026-10-21 01:30 AM in Asia/Ho_Chi_Minh
+        type: "TECHNICAL",
+        format: "MEET",
+        interviewer: "Lead Engineer",
+        sendInvitationEmail: true,
+      },
+      "org-1",
+    );
+
+    expect(mockEmailService.sendEmail).toHaveBeenCalledTimes(1);
+    const [emailPayload] = mockEmailService.sendEmail.mock.calls[0];
+    expect(emailPayload.recipientName).toBe("Nguyễn Văn An");
+    expect(emailPayload.variables).toMatchObject({
+      candidate_name: "Nguyễn Văn An",
+      interview_date: "21/10/2026",
+      interview_time: "1:30 AM",
+    });
+  });
+
   describe("formatInterviewRecord", () => {
-    it("should parse scheduledAt into date and time and parse JSON scorecard", () => {
+    it("should serialize scheduledAt to UTC ISO string and parse JSON scorecard", () => {
       const raw = {
         id: "intv-test",
         applicationId: "app-test",
@@ -283,8 +341,9 @@ describe("InterviewsService", () => {
       };
 
       const result = formatInterviewRecord(raw);
-      expect(result.date).toBe("2026-10-06");
-      expect(result.time).toBe("09:30");
+      expect(result.scheduledAt).toBe("2026-10-06T09:30:00.000Z");
+      expect(result).not.toHaveProperty("date");
+      expect(result).not.toHaveProperty("time");
       expect(result.scorecard).toEqual({
         overallRating: 4,
         recommendation: "YES",
@@ -292,7 +351,7 @@ describe("InterviewsService", () => {
       expect(result.interviewer).toBe("Alice Recruiter");
     });
 
-    it("should handle null scorecard and valid fallback time", () => {
+    it("should handle null scorecard cleanly", () => {
       const raw = {
         id: "intv-test-2",
         applicationId: "app-test",
@@ -307,8 +366,9 @@ describe("InterviewsService", () => {
       };
 
       const result = formatInterviewRecord(raw);
-      expect(result.date).toBe("2026-10-07");
-      expect(result.time).toBe("14:00");
+      expect(result.scheduledAt).toBe("2026-10-07T14:00:00.000Z");
+      expect(result).not.toHaveProperty("date");
+      expect(result).not.toHaveProperty("time");
       expect(result.scorecard).toBeNull();
       expect(result.notes).toBeNull();
     });

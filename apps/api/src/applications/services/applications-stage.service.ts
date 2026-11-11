@@ -1,6 +1,7 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
+  formatCandidateDisplayName,
   VALID_APPLICATION_STAGE_TRANSITIONS,
 } from "@haihire/shared";
 import {
@@ -148,18 +149,25 @@ export class ApplicationsStageService {
           );
           if (template && template.enabled) {
             let orgName = "Company";
+            let orgOrder: "FIRST_LAST" | "LAST_FIRST" = "FIRST_LAST";
             const org = await this.prisma.organization.findFirst({
               where: { id: orgId },
-              select: { name: true },
+              select: { name: true, nameDisplayOrder: true },
             });
             if (org?.name) {
               orgName = org.name;
             }
+            if (org?.nameDisplayOrder === "LAST_FIRST") {
+              orgOrder = "LAST_FIRST";
+            }
+            const resolvedCandidateName =
+              formatCandidateDisplayName(updated.candidate, orgOrder) ||
+              updated.candidate.name;
 
             await this.emailService.sendEmail(
               {
                 to: updated.candidate.email,
-                recipientName: updated.candidate.name,
+                recipientName: resolvedCandidateName,
                 subject: template.subject,
                 body: template.body,
                 templateType: "REJECTION",
@@ -167,7 +175,7 @@ export class ApplicationsStageService {
                 applicationId: updated.id,
                 variables: buildDynamicEmailContext({
                   candidate: {
-                    name: updated.candidate.name,
+                    name: resolvedCandidateName,
                     email: updated.candidate.email,
                     phone: updated.candidate.phone,
                   },

@@ -3,7 +3,11 @@
 import { useRouter } from "next/navigation";
 import { Mail, Phone, Eye, Pencil, Trash2 } from "lucide-react";
 import { useHasPermission } from "@/hooks/use-has-permission";
-import { formatDate, type CandidateItem } from "@/lib/utils";
+import {
+  formatDate,
+  getCandidateDisplayName,
+  type CandidateItem,
+} from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import type { CandidateVisibleColumns } from "../toolbar/candidates-column-picker";
 
@@ -44,7 +48,7 @@ export function CandidateTableRow({
             }}
             className="text-left font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
           >
-            {candidate.name}
+            {getCandidateDisplayName(candidate.candidate ?? candidate)}
           </button>
         </td>
       )}

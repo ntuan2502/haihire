@@ -1,9 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { combineDateTimeInTimezone } from "@haihire/shared";
+import { setActiveLocalization, resetActiveLocalization } from "@/lib/utils";
 import { ScheduleInterviewModal } from "./schedule-interview-modal";
 import type { Application, Job } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
+
+afterEach(() => {
+  resetActiveLocalization();
+});
 
 const mockCreateMutateAsync = vi.fn();
 const mockUpdateMutateAsync = vi.fn();
@@ -152,14 +158,19 @@ describe("ScheduleInterviewModal Component", () => {
   });
 
   it("submits update when editing an existing interview", async () => {
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
     mockUpdateMutateAsync.mockResolvedValueOnce({ id: "int-existing" });
     const handleClose = vi.fn();
 
+    const expectedIso = combineDateTimeInTimezone(
+      "2026-10-20",
+      "15:00",
+      "Asia/Ho_Chi_Minh",
+    );
     const existingInterview: ScheduledInterviewInfo = {
       id: "int-existing",
       applicationId: "app-1",
-      date: "2026-10-20",
-      time: "15:00",
+      scheduledAt: expectedIso,
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",
@@ -187,8 +198,51 @@ describe("ScheduleInterviewModal Component", () => {
       expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
         id: "int-existing",
         data: expect.objectContaining({
-          date: "2026-10-20",
-          time: "15:00",
+          scheduledAt: "2026-10-20T08:00:00.000Z",
+          interviewer: "Tran Tech Lead",
+        }),
+      });
+      expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("decodes and re-encodes scheduledAt in non-local organization timezone (America/New_York)", async () => {
+    setActiveLocalization({ timezone: "America/New_York" });
+    mockUpdateMutateAsync.mockResolvedValueOnce({ id: "int-ny" });
+    const handleClose = vi.fn();
+
+    // 2026-10-20 15:00 EDT (UTC-4) = 19:00:00Z
+    const existingInterview: ScheduledInterviewInfo = {
+      id: "int-ny",
+      applicationId: "app-1",
+      scheduledAt: "2026-10-20T19:00:00.000Z",
+      type: "TECHNICAL",
+      format: "MEET",
+      interviewer: "Tran Tech Lead",
+    };
+
+    renderWithClient(
+      <ScheduleInterviewModal
+        isOpen={true}
+        onClose={handleClose}
+        jobs={[mockJob]}
+        applications={[mockCandidate]}
+        selectedApplicationId="app-1"
+        selectedJobId="job-1"
+        editingInterview={existingInterview}
+      />,
+    );
+
+    const updateBtn = screen.getByRole("button", {
+      name: "Cập nhật lịch phỏng vấn",
+    });
+    fireEvent.click(updateBtn);
+
+    await waitFor(() => {
+      expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
+        id: "int-ny",
+        data: expect.objectContaining({
+          scheduledAt: "2026-10-20T19:00:00.000Z",
           interviewer: "Tran Tech Lead",
         }),
       });
@@ -197,13 +251,13 @@ describe("ScheduleInterviewModal Component", () => {
   });
 
   it("invalidates queries on error in catch block (e.g. 409 conflict)", async () => {
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
     mockUpdateMutateAsync.mockRejectedValueOnce(new Error("Conflict 409"));
 
     const existingInterview: ScheduledInterviewInfo = {
       id: "int-existing",
       applicationId: "app-1",
-      date: "2026-10-20",
-      time: "15:00",
+      scheduledAt: "2026-10-20T08:00:00.000Z",
       type: "TECHNICAL",
       format: "MEET",
       interviewer: "Tran Tech Lead",

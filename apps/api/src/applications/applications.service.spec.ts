@@ -485,7 +485,9 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
 
     it("should update candidate personal information", async () => {
       const updated = await service.updateCandidate("app-1", {
-        candidateName: "Alice Nguyen (Updated)",
+        firstName: "Alice",
+        lastName: "Nguyen",
+        displayName: "Alice Nguyen (Updated)",
         candidatePhone: "0999999999",
       });
 
@@ -505,7 +507,8 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
       await expect(
         service.create({
           jobId: "non-existent-job",
-          candidateName: "Test Candidate",
+          firstName: "Test",
+          lastName: "Candidate",
           candidateEmail: "test@example.com",
         }),
       ).rejects.toThrow();
@@ -542,7 +545,8 @@ describe("ApplicationsService - Multi-Tenant Candidate & Application Management"
     it("should create application and new candidate when valid info provided", async () => {
       const created = await service.create({
         jobId: "job-org1-a",
-        candidateName: "David Beckham",
+        firstName: "David",
+        lastName: "Beckham",
         candidateEmail: "david@example.com",
         candidatePhone: "0123456789",
       });

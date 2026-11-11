@@ -275,7 +275,8 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
       const result = await appService.create(
         {
           jobId: "job-1",
-          candidateName: "John Doe",
+          firstName: "John",
+          lastName: "Doe",
           candidateEmail: "john@example.com",
         },
         mockFile,
@@ -335,7 +336,8 @@ describe("Database Transactions & Saga Pattern Verification (Phase 16A)", () => 
         appService.create(
           {
             jobId: "job-1",
-            candidateName: "Fatal Candidate",
+            firstName: "Fatal",
+            lastName: "Candidate",
             candidateEmail: "fatal@example.com",
           },
           mockFile,

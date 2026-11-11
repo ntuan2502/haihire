@@ -1,5 +1,10 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
-import { APP_ERROR_CODES, type CandidateDocument } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  formatCandidateDisplayName,
+  type CandidateDocument,
+} from "@haihire/shared";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import {
   AppForbiddenException,
   AppNotFoundException,
@@ -33,6 +38,7 @@ export class CandidatesProfileService {
         name: true,
         firstName: true,
         lastName: true,
+        displayName: true,
         gender: true,
         dateOfBirth: true,
         email: true,
@@ -118,10 +124,28 @@ export class CandidatesProfileService {
       interviewsByApp.set(intv.applicationId, list);
     }
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      candidate.organizationId,
+    );
+    const resolvedCandidateName = formatCandidateDisplayName(
+      candidate,
+      nameOrder,
+    );
+
     const populatedApps = applications.map((app) => ({
       ...app,
       job: jobMap.get(app.jobId) || null,
-      candidateName: candidate.name,
+      candidate: {
+        id: candidate.id,
+        name: candidate.name,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        displayName: candidate.displayName ?? null,
+        email: candidate.email,
+        phone: candidate.phone,
+      },
+      candidateName: resolvedCandidateName || candidate.name,
       candidateEmail: candidate.email,
       candidatePhone: candidate.phone,
       interviews: interviewsByApp.get(app.id) || [],

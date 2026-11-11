@@ -65,7 +65,7 @@ export function CandidateDetailModals({
           candidate
             ? {
                 id: candidate.id,
-                name: candidate.name,
+                name: candidateName,
                 email: candidate.email,
                 phone: candidate.phone || undefined,
                 resumeUrl: candidate.resumeUrl,

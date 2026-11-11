@@ -1,6 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import crypto from "node:crypto";
-import { APP_ERROR_CODES, inferCandidateName } from "@haihire/shared";
+import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  buildCandidateSearchName,
+  resolveOrgNameDisplayOrder,
+} from "../../common/candidate-name.util";
 import {
   AppBadRequestException,
   AppConflictException,
@@ -82,6 +86,9 @@ export class CandidatesCrudService {
       );
       where.OR = [
         { name: { contains: q, mode: "insensitive" } },
+        { firstName: { contains: q, mode: "insensitive" } },
+        { lastName: { contains: q, mode: "insensitive" } },
+        { displayName: { contains: q, mode: "insensitive" } },
         { email: { contains: q, mode: "insensitive" } },
         { phone: { contains: q } },
         ...(noteMatchIds.length > 0 ? [{ id: { in: noteMatchIds } }] : []),
@@ -184,6 +191,7 @@ export class CandidatesCrudService {
         name: c.name,
         firstName: c.firstName,
         lastName: c.lastName,
+        displayName: c.displayName ?? null,
         resumeFileName: c.resumeFileName,
         applicationsCount: apps.length,
         applications: apps,
@@ -275,21 +283,29 @@ export class CandidatesCrudService {
       }
     }
 
-    const inferredName = inferCandidateName(
-      dto.name,
-      dto.firstName,
-      dto.lastName,
+    const firstName = dto.firstName?.trim() || "";
+    const lastName = dto.lastName?.trim() || "";
+    if (!firstName || !lastName) {
+      throw new AppBadRequestException(
+        APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+        "First name and last name are required.",
+      );
+    }
+    const displayName = dto.displayName?.trim() || null;
+    const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
+    const name = buildCandidateSearchName(
+      { firstName, lastName, displayName },
+      nameOrder,
     );
-    const firstName = inferredName.firstName || null;
-    const lastName = inferredName.lastName || null;
 
     const created = await this.prisma.candidate.create({
       data: {
         id: crypto.randomUUID(),
         organizationId: orgId,
-        name: dto.name.trim(),
+        name,
         firstName,
         lastName,
+        displayName,
         gender: dto.gender ? dto.gender : null,
         dateOfBirth,
         email,
@@ -313,11 +329,55 @@ export class CandidatesCrudService {
     const existing = await this.profileService.findOne(id, tenantOrgId);
 
     const updatePayload: Record<string, unknown> = {};
-    if (dto.name !== undefined) updatePayload.name = dto.name.trim();
-    if (dto.firstName !== undefined)
-      updatePayload.firstName = dto.firstName?.trim() || null;
-    if (dto.lastName !== undefined)
-      updatePayload.lastName = dto.lastName?.trim() || null;
+    if (dto.firstName !== undefined) {
+      const trimmed = dto.firstName.trim();
+      if (!trimmed) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+          "First name cannot be empty.",
+        );
+      }
+      updatePayload.firstName = trimmed;
+    }
+    if (dto.lastName !== undefined) {
+      const trimmed = dto.lastName.trim();
+      if (!trimmed) {
+        throw new AppBadRequestException(
+          APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+          "Last name cannot be empty.",
+        );
+      }
+      updatePayload.lastName = trimmed;
+    }
+    if (dto.displayName !== undefined) {
+      updatePayload.displayName = dto.displayName?.trim() || null;
+    }
+    if (
+      dto.firstName !== undefined ||
+      dto.lastName !== undefined ||
+      dto.displayName !== undefined
+    ) {
+      const nextFirstName =
+        (updatePayload.firstName as string | undefined) ?? existing.firstName;
+      const nextLastName =
+        (updatePayload.lastName as string | undefined) ?? existing.lastName;
+      const nextDisplayName =
+        dto.displayName !== undefined
+          ? (updatePayload.displayName as string | null)
+          : (existing.displayName ?? null);
+      const nameOrder = await resolveOrgNameDisplayOrder(
+        this.prisma,
+        existing.organizationId,
+      );
+      updatePayload.name = buildCandidateSearchName(
+        {
+          firstName: nextFirstName,
+          lastName: nextLastName,
+          displayName: nextDisplayName,
+        },
+        nameOrder,
+      );
+    }
     if (dto.gender !== undefined) {
       updatePayload.gender = dto.gender ? dto.gender : null;
     }

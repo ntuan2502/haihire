@@ -5,13 +5,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { organizationsApi, authApi } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import type { Organization, User, InviteLink } from "@/types";
-import type { Role, Permission } from "@haihire/shared";
+import type {
+  Role,
+  Permission,
+  OrganizationLocalizationSettings,
+} from "@haihire/shared";
 import { queryKeys } from "./query-keys";
 
-export function useMyOrg() {
+export function useMyOrg(options?: { enabled?: boolean }) {
   return useQuery<Organization | null>({
     queryKey: queryKeys.myOrg(),
     queryFn: () => organizationsApi.getMyOrg(),
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -44,11 +49,20 @@ export function useSwitchOrgMutation() {
 
 export function useUpdateMyOrgMutation() {
   const queryClient = useQueryClient();
+  const { updateUserOrg } = useAuth();
 
   return useMutation({
-    mutationFn: (data: { name?: string; slug?: string }) =>
-      organizationsApi.updateMyOrg(data),
-    onSuccess: () => {
+    mutationFn: (
+      data: {
+        name?: string;
+        slug?: string;
+      } & Partial<OrganizationLocalizationSettings>,
+    ) => organizationsApi.updateMyOrg(data),
+    onSuccess: (updatedOrg) => {
+      if (updatedOrg) {
+        updateUserOrg(updatedOrg);
+        queryClient.setQueryData(queryKeys.myOrg(), updatedOrg);
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.myOrg() });
     },
     onError: () => {

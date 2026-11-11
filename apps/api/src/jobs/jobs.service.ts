@@ -1,5 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  formatCandidateDisplayName,
+  type NameDisplayOrder,
+} from "@haihire/shared";
 import {
   ExperienceLevel,
   JobStatus,
@@ -17,6 +21,7 @@ import { CreateJobDto } from "./dto/create-job.dto";
 import { UpdateJobDto } from "./dto/update-job.dto";
 import crypto from "node:crypto";
 import { toInstant } from "../common/date.util";
+import { formatInterviewRecord } from "../interviews/constants";
 
 @Injectable()
 export class JobsService {
@@ -318,6 +323,12 @@ export class JobsService {
           id: true,
           name: true,
           slug: true,
+          defaultLanguage: true,
+          timezone: true,
+          dateFormat: true,
+          timeFormat: true,
+          nameDisplayOrder: true,
+          defaultCurrency: true,
         },
       });
     }
@@ -359,6 +370,9 @@ export class JobsService {
             select: {
               id: true,
               name: true,
+              firstName: true,
+              lastName: true,
+              displayName: true,
               email: true,
               phone: true,
               resumeUrl: true,
@@ -379,30 +393,21 @@ export class JobsService {
     const interviewsByApp = new Map<string, Array<Record<string, unknown>>>();
     for (const intv of jobInterviews) {
       const list = interviewsByApp.get(intv.applicationId) || [];
-      let parsedScorecard: Record<string, unknown> | null = null;
-      if (intv.scorecard) {
-        try {
-          parsedScorecard = JSON.parse(intv.scorecard) as Record<
-            string,
-            unknown
-          >;
-        } catch {
-          parsedScorecard = null;
-        }
-      }
-      list.push({
-        ...intv,
-        type: intv.type || "",
-        linkOrLocation: intv.linkOrLocation || "",
-        interviewer: intv.interviewer || "",
-        scorecard: parsedScorecard,
-        notes: intv.notes || null,
-      });
+      list.push(formatInterviewRecord(intv));
       interviewsByApp.set(intv.applicationId, list);
     }
 
+    const orgOrder: NameDisplayOrder =
+      (organization as { nameDisplayOrder?: string } | null)
+        ?.nameDisplayOrder === "LAST_FIRST"
+        ? "LAST_FIRST"
+        : "FIRST_LAST";
+
     const populatedApps = applications.map((a) => {
       const candidate = candidateMap.get(a.candidateId);
+      const resolvedCandidateName = candidate
+        ? formatCandidateDisplayName(candidate, orgOrder) || candidate.name
+        : "Unknown";
       if (!fullCandidateAccess) {
         return {
           id: a.id,
@@ -416,11 +421,14 @@ export class JobsService {
             ? {
                 id: candidate.id,
                 name: candidate.name,
+                firstName: candidate.firstName,
+                lastName: candidate.lastName,
+                displayName: candidate.displayName ?? null,
                 email: candidate.email,
                 phone: candidate.phone,
               }
             : undefined,
-          candidateName: candidate?.name || "Unknown",
+          candidateName: resolvedCandidateName,
           candidateEmail: candidate?.email || "",
           candidatePhone: candidate?.phone || null,
           interviews: [],
@@ -429,7 +437,7 @@ export class JobsService {
       return {
         ...a,
         candidate,
-        candidateName: candidate?.name || "Unknown",
+        candidateName: resolvedCandidateName,
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: a.resumeUrl || candidate?.resumeUrl || "",

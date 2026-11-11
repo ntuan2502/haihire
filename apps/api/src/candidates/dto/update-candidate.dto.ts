@@ -4,15 +4,15 @@ import { Gender } from "./create-candidate.dto";
 export class UpdateCandidateDto {
   @IsString()
   @IsOptional()
-  name?: string;
-
-  @IsString()
-  @IsOptional()
   firstName?: string;
 
   @IsString()
   @IsOptional()
   lastName?: string;
+
+  @IsString()
+  @IsOptional()
+  displayName?: string | null;
 
   @IsEnum(Gender)
   @IsOptional()

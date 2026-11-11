@@ -16,15 +16,15 @@ export class CreateCandidateDto {
 
   @IsString()
   @IsNotEmpty()
-  name: string;
+  firstName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
 
   @IsString()
   @IsOptional()
-  firstName?: string;
-
-  @IsString()
-  @IsOptional()
-  lastName?: string;
+  displayName?: string | null;
 
   @IsEnum(Gender)
   @IsOptional()

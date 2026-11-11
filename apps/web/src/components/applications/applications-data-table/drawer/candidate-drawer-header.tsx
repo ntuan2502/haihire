@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { StageSelector } from "@/components/jobs/pipeline/stage-selector";
 import { StageBadge } from "@/components/shared/stage-badge";
-import { getInitials, formatDate } from "@/lib/utils";
+import { getCandidateDisplayName, getInitials, formatDate } from "@/lib/utils";
 import type { Application, ApplicationStage } from "@/types";
 import { useI18n } from "@/i18n";
 
@@ -131,13 +131,13 @@ export function CandidateDrawerHeader({
       {/* Candidate Header Card */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-start gap-4">
         <div className="h-11 w-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
-          {getInitials(currentApp.candidateName)}
+          {getInitials(getCandidateDisplayName(currentApp))}
         </div>
 
         <div className="space-y-1 flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
-              {currentApp.candidateName}
+              {getCandidateDisplayName(currentApp)}
             </h2>
             <StageBadge stage={currentApp.stage} />
           </div>

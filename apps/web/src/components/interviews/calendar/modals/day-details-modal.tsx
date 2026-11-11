@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Clock, MapPin, Plus, Star, Video } from "lucide-react";
 import { CustomModal } from "@/components/shared";
-import { getCandidateDisplayName } from "@/lib/utils";
+import { formatTime, getCandidateDisplayName } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import type { CalendarEventItem, DayDetailsInfo } from "../types";
 
@@ -96,6 +96,7 @@ export function DayDetailsModal({
             events.map((evt, idx) => {
               const candidateName = getCandidateDisplayName(evt.application);
               const hasScorecard = Boolean(evt.interview.scorecard);
+              const formattedTime = formatTime(evt.interview.scheduledAt);
 
               return (
                 <button
@@ -105,7 +106,7 @@ export function DayDetailsModal({
                     onClose();
                     onSelectEvent(evt);
                   }}
-                  aria-label={`Interview with ${candidateName} at ${evt.interview.time || "10:00"}`}
+                  aria-label={`Interview with ${candidateName} at ${formattedTime}`}
                   className={`w-full text-left p-3.5 sm:p-4 rounded-xl border cursor-pointer transition-all hover:scale-[1.006] active:scale-[0.995] flex items-center justify-between gap-4 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     hasScorecard
                       ? "bg-emerald-50/70 hover:bg-emerald-100/70 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100"
@@ -114,7 +115,7 @@ export function DayDetailsModal({
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <span className="font-bold text-blue-600 dark:text-blue-400 shrink-0 font-mono text-xs px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/60">
-                      {evt.interview.time || "10:00"}
+                      {formattedTime}
                     </span>
                     <div className="min-w-0">
                       <div className="font-semibold text-sm truncate text-slate-900 dark:text-white">

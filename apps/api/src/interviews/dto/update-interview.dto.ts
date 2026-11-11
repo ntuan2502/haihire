@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsNumber, IsIn } from "class-validator";
+import {
+  IsISO8601,
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsIn,
+} from "class-validator";
 import {
   INTERVIEW_TYPES,
   type InterviewType,
@@ -7,17 +13,9 @@ import {
 } from "../constants";
 
 export class UpdateInterviewDto {
-  @IsString()
+  @IsISO8601()
   @IsOptional()
   scheduledAt?: string;
-
-  @IsString()
-  @IsOptional()
-  date?: string;
-
-  @IsString()
-  @IsOptional()
-  time?: string;
 
   @IsString()
   @IsOptional()

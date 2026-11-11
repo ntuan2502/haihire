@@ -201,7 +201,8 @@ describe("ApplicationsSagaService", () => {
     });
     const result = await service.create({
       jobId: "job-1",
-      candidateName: "Impersonator",
+      firstName: "Impersonator",
+      lastName: "User",
       candidateEmail: "existing@example.com",
     });
     expect(Object.keys(result).sort()).toEqual([
@@ -222,7 +223,8 @@ describe("ApplicationsSagaService", () => {
         service.create(
           {
             jobId: "job-1",
-            candidateName: "Test",
+            firstName: "Test",
+            lastName: "User",
             candidateEmail: "test@example.com",
           },
           undefined,
@@ -236,7 +238,8 @@ describe("ApplicationsSagaService", () => {
         service.create(
           {
             jobId: "",
-            candidateName: "Test",
+            firstName: "Test",
+            lastName: "User",
             candidateEmail: "test@example.com",
           },
           undefined,
@@ -250,7 +253,8 @@ describe("ApplicationsSagaService", () => {
         service.create(
           {
             jobId: "job-999",
-            candidateName: "Test",
+            firstName: "Test",
+            lastName: "User",
             candidateEmail: "test@example.com",
           },
           undefined,
@@ -264,7 +268,8 @@ describe("ApplicationsSagaService", () => {
         service.create(
           {
             jobId: "job-draft",
-            candidateName: "Test",
+            firstName: "Test",
+            lastName: "User",
             candidateEmail: "test@example.com",
           },
           undefined,
@@ -280,7 +285,8 @@ describe("ApplicationsSagaService", () => {
         service.create(
           {
             jobId: "job-no-org",
-            candidateName: "Test",
+            firstName: "Test",
+            lastName: "User",
             candidateEmail: "test@example.com",
           },
           undefined,
@@ -296,7 +302,8 @@ describe("ApplicationsSagaService", () => {
     it("handles direct resumeUrl without Multer file upload", async () => {
       const result = await service.create({
         jobId: "job-1",
-        candidateName: "Resume URL Candidate",
+        firstName: "Resume URL",
+        lastName: "Candidate",
         candidateEmail: "direct-url@example.com",
         resumeUrl: "https://external.s3.com/my-cv.pdf",
         resumeFileName: "my-cv.pdf",
@@ -314,7 +321,8 @@ describe("ApplicationsSagaService", () => {
 
       const result = await service.create({
         jobId: "job-1",
-        candidateName: "Existing Candidate Updated Name",
+        firstName: "Existing",
+        lastName: "Candidate",
         candidateEmail: "existing@example.com",
       });
 
@@ -367,7 +375,8 @@ describe("ApplicationsSagaService", () => {
       await expect(
         service.create({
           jobId: "job-1",
-          candidateName: "Attacker",
+          firstName: "Attacker",
+          lastName: "User",
           candidateEmail: "attacker@test.local",
           resumeUrl: "https://minio.local/tenants/other-org/resumes/secret.pdf",
         }),
@@ -398,7 +407,8 @@ describe("ApplicationsSagaService", () => {
     it("inherits UTM attributes and source channel from tracking link via dto.ref", async () => {
       const result = await service.create({
         jobId: "job-1",
-        candidateName: "Attributed User",
+        firstName: "Attributed",
+        lastName: "User",
         candidateEmail: "attr@example.com",
         ref: "ref-linkedin",
       });
@@ -460,7 +470,8 @@ describe("ApplicationsSagaService", () => {
         if (!tc) continue;
         const result = await service.create({
           jobId: "job-1",
-          candidateName: `Referrer User ${i}`,
+          firstName: "Referrer",
+          lastName: `User ${i}`,
           candidateEmail: `ref-${i}@example.com`,
           referrer: tc.referrer,
         });
@@ -479,7 +490,8 @@ describe("ApplicationsSagaService", () => {
     it("falls back to dto.sourceChannel when neither ref nor referrer is matched", async () => {
       const result = await service.create({
         jobId: "job-1",
-        candidateName: "Direct Source User",
+        firstName: "Direct Source",
+        lastName: "User",
         candidateEmail: "direct-source@example.com",
         sourceChannel: SourcingChannel.CAREER_SITE,
       });
@@ -515,7 +527,8 @@ describe("ApplicationsSagaService", () => {
         service.create(
           {
             jobId: "job-1",
-            candidateName: "Rollback User",
+            firstName: "Rollback",
+            lastName: "User",
             candidateEmail: "rb@example.com",
           },
           fakeFile,
@@ -570,7 +583,8 @@ describe("ApplicationsSagaService", () => {
         service.create(
           {
             jobId: "job-1",
-            candidateName: "DLQ Err User",
+            firstName: "DLQ Err",
+            lastName: "User",
             candidateEmail: "dlq@example.com",
           },
           fakeFile,
@@ -594,7 +608,8 @@ describe("ApplicationsSagaService", () => {
 
       const result = await service.create({
         jobId: "job-1",
-        candidateName: "Email User",
+        firstName: "Email",
+        lastName: "User",
         candidateEmail: "email-user@example.com",
       });
 

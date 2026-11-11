@@ -5,10 +5,9 @@ export const createApplicationSchema = z
   .object({
     jobId: z.string().min(1, "Job ID is required"),
     candidateId: z.string().optional(),
-    name: z.string().optional(),
-    candidateName: z.string().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
+    displayName: z.string().nullable().optional(),
     email: z.string().email("Invalid email address").optional(),
     candidateEmail: z
       .string()
@@ -29,13 +28,13 @@ export const createApplicationSchema = z
   .refine(
     (data) => {
       if (data.candidateId) return true;
-      const hasName = Boolean(data.candidateName || data.name);
+      const hasName = Boolean(data.firstName?.trim() && data.lastName?.trim());
       const hasEmail = Boolean(data.candidateEmail || data.email);
       return hasName && hasEmail;
     },
     {
       message:
-        "Either candidateId or both candidateName (or name) and candidateEmail (or email) are required",
+        "Either candidateId or both firstName/lastName and candidateEmail (or email) are required",
       path: ["candidateEmail"],
     },
   );

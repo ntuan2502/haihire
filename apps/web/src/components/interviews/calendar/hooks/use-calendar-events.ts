@@ -1,5 +1,8 @@
 import { useMemo } from "react";
+import { extractDateTimeInTimezone } from "@haihire/shared";
 import { getInterviewsFromApplication } from "@/lib/interviews";
+import { resolveEffectiveTimezone } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { formatLocalDate } from "./use-calendar-date-math";
 import type { Application, Job } from "@/types";
 import type { CalendarEventItem } from "../types";
@@ -13,7 +16,13 @@ export function useCalendarEvents({
   applications,
   jobs,
 }: UseCalendarEventsProps) {
-  // Map of all interview events grouped by YYYY-MM-DD
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
+
+  // Map of all interview events grouped by YYYY-MM-DD in effectiveTimezone
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEventItem[]>();
 
@@ -22,8 +31,12 @@ export function useCalendarEvents({
       const job = jobs.find((j) => String(j.id) === String(app.jobId));
 
       allInterviews.forEach((intv) => {
-        if (!intv.date) return;
-        const dateKey = intv.date; // "YYYY-MM-DD"
+        if (!intv.scheduledAt) return;
+        const { date: dateKey } = extractDateTimeInTimezone(
+          intv.scheduledAt,
+          effectiveTimezone,
+        );
+        if (!dateKey) return;
         if (!map.has(dateKey)) {
           map.set(dateKey, []);
         }
@@ -33,22 +46,26 @@ export function useCalendarEvents({
           interview: intv,
           job,
           dateKey,
-          dayOfMonth: intv.date
-            ? parseInt(intv.date.split("-")[2], 10)
-            : undefined,
+          dayOfMonth: parseInt(dateKey.split("-")[2], 10),
         });
       });
     });
 
-    // Sort events within each day by time
+    // Sort events within each day chronologically
     map.forEach((events) => {
-      events.sort((a, b) =>
-        (a.interview.time || "").localeCompare(b.interview.time || ""),
-      );
+      events.sort((a, b) => {
+        const msA = a.interview.scheduledAt
+          ? new Date(a.interview.scheduledAt).getTime()
+          : 0;
+        const msB = b.interview.scheduledAt
+          ? new Date(b.interview.scheduledAt).getTime()
+          : 0;
+        return msA - msB;
+      });
     });
 
     return map;
-  }, [applications, jobs]);
+  }, [applications, jobs, effectiveTimezone]);
 
   // Record dictionary representation for easy lookup
   const eventsByDateKey = useMemo(() => {

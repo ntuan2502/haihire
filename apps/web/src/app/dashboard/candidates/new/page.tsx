@@ -26,12 +26,15 @@ import {
   X,
   CheckCircle2,
 } from "lucide-react";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 
 function AddCandidatePageContent() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { localization } = useLocalization();
+  const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
   const { t } = useI18n();
   const canCreateCandidate = useHasPermission("candidate:create");
 
@@ -107,29 +110,38 @@ function AddCandidatePageContent() {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!firstName.trim()) {
-      setErrorMsg("First name is required.");
-      return;
-    }
-    if (!lastName.trim()) {
-      setErrorMsg("Last name is required.");
-      return;
+    if (isLastFirst) {
+      if (!lastName.trim()) {
+        setErrorMsg(t("candidates.errors.lastNameRequired"));
+        return;
+      }
+      if (!firstName.trim()) {
+        setErrorMsg(t("candidates.errors.firstNameRequired"));
+        return;
+      }
+    } else {
+      if (!firstName.trim()) {
+        setErrorMsg(t("candidates.errors.firstNameRequired"));
+        return;
+      }
+      if (!lastName.trim()) {
+        setErrorMsg(t("candidates.errors.lastNameRequired"));
+        return;
+      }
     }
     if (!email.trim() || !email.includes("@")) {
-      setErrorMsg("Please enter a valid email address.");
+      setErrorMsg(t("candidates.errors.validEmailRequired"));
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const effectiveDisplayName = displayName.trim()
-        ? displayName.trim()
-        : `${firstName.trim()} ${lastName.trim()}`.trim();
-
       const formData = new FormData();
-      formData.append("name", effectiveDisplayName);
       formData.append("firstName", firstName.trim());
       formData.append("lastName", lastName.trim());
+      if (displayName.trim()) {
+        formData.append("displayName", displayName.trim());
+      }
       if (gender && gender !== "NOT_SPECIFIED") {
         formData.append("gender", gender);
       }
@@ -258,34 +270,54 @@ function AddCandidatePageContent() {
             )}
           </div>
 
-          {/* First Name */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.firstName")}{" "}
-              <span className="text-rose-500">*</span>
-            </label>
-            <Input
-              required
-              placeholder={t("candidates.placeholders.firstName")}
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
-            />
-          </div>
-
-          {/* Last Name */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.lastName")}{" "}
-              <span className="text-rose-500">*</span>
-            </label>
-            <Input
-              required
-              placeholder={t("candidates.placeholders.lastName")}
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(isLastFirst
+              ? [
+                  {
+                    key: "lastName",
+                    label: t("candidates.lastName"),
+                    placeholder: t("candidates.placeholders.lastName"),
+                    value: lastName,
+                    onChange: setLastName,
+                  },
+                  {
+                    key: "firstName",
+                    label: t("candidates.firstName"),
+                    placeholder: t("candidates.placeholders.firstName"),
+                    value: firstName,
+                    onChange: setFirstName,
+                  },
+                ]
+              : [
+                  {
+                    key: "firstName",
+                    label: t("candidates.firstName"),
+                    placeholder: t("candidates.placeholders.firstName"),
+                    value: firstName,
+                    onChange: setFirstName,
+                  },
+                  {
+                    key: "lastName",
+                    label: t("candidates.lastName"),
+                    placeholder: t("candidates.placeholders.lastName"),
+                    value: lastName,
+                    onChange: setLastName,
+                  },
+                ]
+            ).map((field) => (
+              <div key={field.key} className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {field.label} <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  required
+                  placeholder={field.placeholder}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+                />
+              </div>
+            ))}
           </div>
 
           {/* Display Name */}

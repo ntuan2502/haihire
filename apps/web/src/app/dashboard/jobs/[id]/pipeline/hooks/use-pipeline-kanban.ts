@@ -26,7 +26,11 @@ import {
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import { downloadAuthenticatedFile } from "@/lib/api";
 import { useI18n } from "@/i18n";
-import { parseCandidateDocuments, fixUtf8String } from "@/lib/utils";
+import {
+  getCandidateDisplayName,
+  parseCandidateDocuments,
+  fixUtf8String,
+} from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 
 export function usePipelineKanban(jobId: string) {
@@ -194,7 +198,12 @@ export function usePipelineKanban(jobId: string) {
         if (!searchQuery.trim()) return true;
         const q = searchQuery.toLowerCase();
         return (
+          getCandidateDisplayName(app).toLowerCase().includes(q) ||
           app.candidateName.toLowerCase().includes(q) ||
+          (app.candidate?.firstName &&
+            app.candidate.firstName.toLowerCase().includes(q)) ||
+          (app.candidate?.lastName &&
+            app.candidate.lastName.toLowerCase().includes(q)) ||
           app.candidateEmail.toLowerCase().includes(q)
         );
       })
@@ -240,7 +249,9 @@ export function usePipelineKanban(jobId: string) {
           );
         }
         if (sortBy === "name") {
-          return a.candidateName.localeCompare(b.candidateName);
+          return getCandidateDisplayName(a).localeCompare(
+            getCandidateDisplayName(b),
+          );
         }
         return 0;
       });

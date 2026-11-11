@@ -1,5 +1,5 @@
 import { Clock, Star, Video } from "lucide-react";
-import { getCandidateDisplayName } from "@/lib/utils";
+import { formatTime, getCandidateDisplayName } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import type { Application } from "@/types";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
@@ -32,7 +32,7 @@ export function CalendarWeekCard({
       <div className="flex items-center justify-between gap-1 text-xs">
         <span className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1">
           <Clock className="h-3 w-3 text-blue-500" />
-          {event.interview.time}
+          {formatTime(event.interview.scheduledAt)}
         </span>
 
         {hasScorecard ? (

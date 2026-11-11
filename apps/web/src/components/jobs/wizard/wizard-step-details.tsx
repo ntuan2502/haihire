@@ -448,9 +448,10 @@ export function WizardStepDetails({
                         { value: "USD", label: "USD ($)" },
                         { value: "VND", label: "VND (₫)" },
                         { value: "EUR", label: "EUR (€)" },
+                        { value: "SGD", label: "SGD (S$)" },
+                        { value: "JPY", label: "JPY (¥)" },
                         { value: "NOK", label: "NOK (kr)" },
                         { value: "GBP", label: "GBP (£)" },
-                        { value: "SGD", label: "SGD (S$)" },
                       ]}
                       className="w-full"
                       triggerClassName={cn(

@@ -444,8 +444,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       });
       await result.current.mutateAsync({
         applicationId: "app-1",
-        date: "2026-10-10",
-        time: "10:00",
+        scheduledAt: "2026-10-10T03:00:00.000Z",
       } as never);
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
@@ -456,8 +455,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(
         result.current.mutateAsync({
           applicationId: "app-1",
-          date: "2026-10-10",
-          time: "10:00",
+          scheduledAt: "2026-10-10T03:00:00.000Z",
         } as never),
       ).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
@@ -477,7 +475,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       });
       await result.current.mutateAsync({
         id: "int-1",
-        data: { time: "11:00" } as never,
+        data: { scheduledAt: "2026-10-10T04:00:00.000Z" } as never,
       });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
       expect(spy).toHaveBeenCalledWith({
@@ -491,7 +489,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(
         result.current.mutateAsync({
           id: "int-1",
-          data: { time: "11:00" } as never,
+          data: { scheduledAt: "2026-10-10T04:00:00.000Z" } as never,
         }),
       ).rejects.toThrow();
       expect(spy).toHaveBeenCalledWith({ queryKey: ["interviews"] });
@@ -693,7 +691,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       });
       await result.current.mutateAsync({
         id: "app-1",
-        data: { candidateName: "Updated Name" } as never,
+        data: { firstName: "Updated" },
       });
       expect(spy).toHaveBeenCalledWith({ queryKey: ["applications"] });
 
@@ -703,7 +701,7 @@ describe("Mutation Hooks onError Cache Invalidation Standardization", () => {
       await expect(
         result.current.mutateAsync({
           id: "app-1",
-          data: { candidateName: "Updated Name" } as never,
+          data: { firstName: "Updated" },
         }),
       ).rejects.toThrow();
       expect(spy).toHaveBeenCalledTimes(2);

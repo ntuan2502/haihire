@@ -20,6 +20,7 @@ describe("OrganizationsController", () => {
   const mockService = {
     create: vi.fn(),
     getMyOrg: vi.fn(),
+    updateMyOrg: vi.fn(),
     deleteMyOrg: vi.fn(),
     transferOwnership: vi.fn(),
     updateMemberRole: vi.fn(),
@@ -468,6 +469,35 @@ describe("OrganizationsController", () => {
 
     it("rejects regular MEMBER without org:manage_members -> 403 Forbidden", () => {
       const context = createMockContext(memberReq, controller.getInviteLinks);
+      expect(() => rolesGuard.canActivate(context)).toThrow(
+        AppForbiddenException,
+      );
+    });
+  });
+
+  describe("PATCH /organizations/my", () => {
+    it("allows ADMIN with org:update to update localization fields", async () => {
+      const context = createMockContext(ownerReq, controller.updateMyOrg);
+      expect(rolesGuard.canActivate(context)).toBe(true);
+
+      const dto = {
+        defaultLanguage: "vi" as const,
+        timezone: "Asia/Ho_Chi_Minh",
+        dateFormat: "DD/MM/YYYY" as const,
+        timeFormat: "24H" as const,
+        nameDisplayOrder: "LAST_FIRST" as const,
+        defaultCurrency: "VND" as const,
+      };
+      const expected = { id: "org-1", name: "Acme", slug: "acme", ...dto };
+      mockService.updateMyOrg.mockResolvedValueOnce(expected);
+
+      const result = await controller.updateMyOrg(ownerReq, dto);
+      expect(mockService.updateMyOrg).toHaveBeenCalledWith("user-owner", dto);
+      expect(result).toEqual(expected);
+    });
+
+    it("rejects non-admin MEMBER without org:update -> 403 Forbidden", () => {
+      const context = createMockContext(memberReq, controller.updateMyOrg);
       expect(() => rolesGuard.canActivate(context)).toThrow(
         AppForbiddenException,
       );

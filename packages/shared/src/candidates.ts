@@ -1,18 +1,30 @@
 import type { Application } from "./applications";
+import type { NameDisplayOrder } from "./organizations";
 
-export function inferCandidateName(
-  name?: string | null,
-  firstName?: string | null,
-  lastName?: string | null,
-): { firstName: string; lastName: string } {
-  const first = firstName?.trim() || "";
-  const last = lastName?.trim() || "";
-  if (first || last) return { firstName: first, lastName: last };
-  const parts = name?.trim().split(/\s+/) || [];
-  return {
-    firstName: parts[0] || "",
-    lastName: parts.slice(1).join(" "),
-  };
+export function formatCandidateDisplayName(
+  candidate:
+    | {
+        displayName?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        name?: string | null;
+        candidateName?: string | null;
+      }
+    | null
+    | undefined,
+  order: NameDisplayOrder = "FIRST_LAST",
+): string {
+  if (!candidate) return "";
+  const custom = candidate.displayName?.trim();
+  if (custom) return custom;
+
+  const first = candidate.firstName?.trim() || "";
+  const last = candidate.lastName?.trim() || "";
+  if (first || last) {
+    const parts = order === "LAST_FIRST" ? [last, first] : [first, last];
+    return parts.filter(Boolean).join(" ").trim();
+  }
+  return (candidate.candidateName || candidate.name || "").trim();
 }
 
 export const Gender = {
@@ -47,6 +59,7 @@ export interface Candidate {
   name: string;
   firstName?: string | null;
   lastName?: string | null;
+  displayName?: string | null;
   gender?: Gender | null;
   dateOfBirth?: string | null;
   email: string;
@@ -80,9 +93,9 @@ export interface CandidateNote {
 }
 
 export interface CreateCandidateInput {
-  name: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string | null;
   gender?: Gender;
   dateOfBirth?: string;
   email: string;
@@ -94,9 +107,9 @@ export interface CreateCandidateInput {
 }
 
 export interface UpdateCandidateInput {
-  name?: string;
   firstName?: string;
   lastName?: string;
+  displayName?: string | null;
   gender?: Gender;
   dateOfBirth?: string;
   email?: string;

@@ -22,6 +22,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
     password: string;
     role: "ADMIN" | "MEMBER";
     avatarUrl: string | null;
+    preferredLanguage?: string | null;
+    preferredTimezone?: string | null;
     organizationId: string | null;
     tokenVersion: number;
     createdAt: Date;
@@ -37,6 +39,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
         password: hashedPassword,
         role: DEMO_ACCOUNTS.ADMIN.role,
         avatarUrl: null,
+        preferredLanguage: null,
+        preferredTimezone: null,
         organizationId: "org-1",
         tokenVersion: 0,
         createdAt: new Date(),
@@ -48,6 +52,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
         password: hashedPassword,
         role: DEMO_ACCOUNTS.MEMBER.role,
         avatarUrl: null,
+        preferredLanguage: null,
+        preferredTimezone: null,
         organizationId: "org-1",
         tokenVersion: 0,
         createdAt: new Date(),
@@ -148,6 +154,8 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
             data: {
               tokenVersion?: number | { increment?: number };
               password?: string;
+              preferredLanguage?: string | null;
+              preferredTimezone?: string | null;
             };
           }) => {
             const user = mockUsers.find((u) => u.id === where.id);
@@ -162,6 +170,12 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
               }
               if (data.password) {
                 user.password = data.password;
+              }
+              if (data.preferredLanguage !== undefined) {
+                user.preferredLanguage = data.preferredLanguage;
+              }
+              if (data.preferredTimezone !== undefined) {
+                user.preferredTimezone = data.preferredTimezone;
               }
             }
             return user;
@@ -426,6 +440,26 @@ describe("AuthService - Authentication & RBAC (ADMIN and MEMBER)", () => {
         "MEMBER",
         false,
       );
+    });
+
+    it("16. Should persist and clear user personal language and timezone overrides", async () => {
+      const updated = await authService.updatePreferences("usr-member", {
+        preferredLanguage: "en",
+        preferredTimezone: "Asia/Tokyo",
+      });
+
+      expect(updated.preferredLanguage).toBe("en");
+      expect(updated.preferredTimezone).toBe("Asia/Tokyo");
+      expect(mockUsers[1].preferredLanguage).toBe("en");
+      expect(mockUsers[1].preferredTimezone).toBe("Asia/Tokyo");
+
+      const cleared = await authService.updatePreferences("usr-member", {
+        preferredLanguage: null,
+        preferredTimezone: null,
+      });
+
+      expect(cleared.preferredLanguage).toBeNull();
+      expect(cleared.preferredTimezone).toBeNull();
     });
   });
 });

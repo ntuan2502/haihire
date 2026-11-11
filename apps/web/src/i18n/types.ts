@@ -887,6 +887,11 @@ export interface TranslationSchema {
       phone: string;
       dob: string;
     };
+    errors: {
+      firstNameRequired: string;
+      lastNameRequired: string;
+      validEmailRequired: string;
+    };
     createFailed: string;
     updateFailed: string;
     invalidCandidateId: string;
@@ -1409,6 +1414,19 @@ export interface TranslationSchema {
     passwordMismatchError: string;
     passwordTooShortError: string;
     currentPasswordRequiredError: string;
+    accountPreferences: {
+      title: string;
+      subtitle: string;
+      languageLabel: string;
+      languageHint: string;
+      timezoneLabel: string;
+      timezoneHint: string;
+      followOrgDefault: string;
+      saveBtn: string;
+      savingBtn: string;
+      saveSuccess: string;
+      saveError: string;
+    };
     tabs: {
       general: string;
       generalSub: string;
@@ -1442,6 +1460,58 @@ export interface TranslationSchema {
     placeholders: {
       orgName: string;
       orgSlug: string;
+    };
+    localization: {
+      title: string;
+      description: string;
+      personalCardTitle: string;
+      personalCardSub: string;
+      personalLanguageLabel: string;
+      personalLanguageHint: string;
+      orgCardTitle: string;
+      orgCardSub: string;
+      defaultLanguageLabel: string;
+      defaultLanguageHint: string;
+      timezoneLabel: string;
+      timezoneHint: string;
+      timezoneSearchPlaceholder: string;
+      timezoneNoMatch: string;
+      dateFormatLabel: string;
+      dateFormatHint: string;
+      timeFormatLabel: string;
+      timeFormat24H: string;
+      timeFormat12H: string;
+      nameOrderLabel: string;
+      nameOrderFirstLast: string;
+      nameOrderFirstLastExample: string;
+      nameOrderLastFirst: string;
+      nameOrderLastFirstExample: string;
+      currencyLabel: string;
+      currencyHint: string;
+      previewTitle: string;
+      previewSub: string;
+      previewCandidateName: string;
+      previewDate: string;
+      previewTime: string;
+      previewRelativeTime: string;
+      previewSalary: string;
+      previewTimezone: string;
+      resetButton: string;
+      saveSuccess: string;
+      saveError: string;
+      adminOnlyHint: string;
+      unsavedChanges: string;
+      currencies: {
+        VND: string;
+        USD: string;
+        EUR: string;
+        SGD: string;
+        JPY: string;
+      };
+      languages: {
+        vi: string;
+        en: string;
+      };
     };
     integrations: {
       title: string;

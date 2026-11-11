@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { Mail, Building2, Trash2, Eye } from "lucide-react";
-import { formatRelativeTime, getStageInfo } from "@/lib/utils";
+import {
+  formatRelativeTime,
+  getCandidateDisplayName,
+  getStageInfo,
+} from "@/lib/utils";
 import { getJobTypeLabel } from "@/lib/jobs";
 import type { Application, Job } from "@/types";
 import { useI18n } from "@/i18n";
@@ -51,7 +55,7 @@ export function ApplicationsTableRow({
             }}
             className="text-left font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded cursor-pointer"
           >
-            {application.candidateName}
+            {getCandidateDisplayName(application)}
           </button>
         </td>
       )}

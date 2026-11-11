@@ -9,7 +9,7 @@
 | Metric                           | Value                  | Reference / Notes                 |
 | :------------------------------- | :--------------------- | :-------------------------------- |
 | **Release Target**               | `Unreleased`           | Fresh baseline (post-reset)       |
-| **Commit Baseline**              | `37989b0` (2026-11-10) | Author: ntuan2502                 |
+| **Commit Baseline**              | `2ae9697` (2026-11-11) | Author: ntuan2502                 |
 | **Workspace Unit Tests**         | `1268 passed`          | Backend: 794, Frontend: 474       |
 | **E2E Playwright Specs**         | `23 specs`             | End-to-end recruitment lifecycle  |
 | **CI Architecture Gates**        | `18/18 gates`          | `pnpm check:all` mandatory gates  |

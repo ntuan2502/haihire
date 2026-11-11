@@ -43,6 +43,7 @@ vi.mock("@/components/providers", () => ({
     return children;
   },
   QueryProvider: ({ children }: { children: ReactNode }) => children,
+  LocalizationProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
 vi.mock("@/context/auth-context", () => ({

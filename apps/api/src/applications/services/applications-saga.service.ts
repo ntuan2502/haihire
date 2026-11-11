@@ -5,9 +5,13 @@ import crypto from "node:crypto";
 import {
   APP_ERROR_CODES,
   SourcingChannel,
-  inferCandidateName,
+  formatCandidateDisplayName,
   resolveChannelFromDomain,
 } from "@haihire/shared";
+import {
+  buildCandidateSearchName,
+  resolveOrgNameDisplayOrder,
+} from "../../common/candidate-name.util";
 import { parseDomain } from "../../sourcing/services";
 import {
   AppBadRequestException,
@@ -174,44 +178,55 @@ export class ApplicationsSagaService {
 
         // 2. Resolve or create Candidate
         let candidateId = dto.candidateId;
-        let applicantName = dto.candidateName?.trim() || "";
+        const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
+        let applicantName = "";
 
         if (!candidateId) {
-          if (!dto.candidateEmail || !dto.candidateName) {
+          const firstName = dto.firstName?.trim() || "";
+          const lastName = dto.lastName?.trim() || "";
+          if (!dto.candidateEmail || !firstName || !lastName) {
             throw new AppBadRequestException(
               APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
-              "Either candidateId or both candidateName and candidateEmail are required.",
+              "Either candidateId or both firstName/lastName and candidateEmail are required.",
             );
           }
 
           const email = dto.candidateEmail.trim().toLowerCase();
+          const displayName = dto.displayName?.trim() || null;
+          applicantName = buildCandidateSearchName(
+            { firstName, lastName, displayName },
+            nameOrder,
+          );
 
           const existingCandidate = await tx.candidate.findFirst({
             where: {
               organizationId: orgId,
               email,
             },
-            select: { id: true },
+            select: {
+              id: true,
+              name: true,
+              firstName: true,
+              lastName: true,
+              displayName: true,
+            },
           });
 
           if (existingCandidate) {
             candidateId = existingCandidate.id;
-          } else {
-            const inferredName = inferCandidateName(
-              dto.candidateName,
-              dto.firstName,
-              dto.lastName,
+            applicantName = buildCandidateSearchName(
+              existingCandidate,
+              nameOrder,
             );
-            const firstName = inferredName.firstName || null;
-            const lastName = inferredName.lastName || null;
-
+          } else {
             const newCandidate = await tx.candidate.create({
               data: {
                 id: crypto.randomUUID(),
                 organizationId: orgId,
-                name: dto.candidateName.trim(),
+                name: applicantName,
                 firstName,
                 lastName,
+                displayName,
                 email,
                 phone: dto.candidatePhone?.trim() || null,
                 resumeUrl: uploadResult.url || null,
@@ -230,6 +245,9 @@ export class ApplicationsSagaService {
             select: {
               id: true,
               name: true,
+              firstName: true,
+              lastName: true,
+              displayName: true,
               organizationId: true,
               resumeUrl: true,
               resumeFileName: true,
@@ -244,9 +262,10 @@ export class ApplicationsSagaService {
               `Candidate with ID ${candidateId} not found`,
             );
           }
-          if (!applicantName && existingCandidate.name) {
-            applicantName = existingCandidate.name;
-          }
+          applicantName = buildCandidateSearchName(
+            existingCandidate,
+            nameOrder,
+          );
           if (
             job.organizationId &&
             existingCandidate.organizationId !== job.organizationId
@@ -477,18 +496,25 @@ export class ApplicationsSagaService {
           );
           if (template && template.enabled) {
             let orgName = "Company";
+            let orgOrder: "FIRST_LAST" | "LAST_FIRST" = "FIRST_LAST";
             const org = await this.prisma.organization.findFirst({
               where: { id: orgId },
-              select: { name: true },
+              select: { name: true, nameDisplayOrder: true },
             });
             if (org?.name) {
               orgName = org.name;
             }
+            if (org?.nameDisplayOrder === "LAST_FIRST") {
+              orgOrder = "LAST_FIRST";
+            }
+            const resolvedCandidateName =
+              formatCandidateDisplayName(result.candidate, orgOrder) ||
+              result.candidate.name;
 
             await this.emailService.sendEmail(
               {
                 to: result.candidate.email,
-                recipientName: result.candidate.name,
+                recipientName: resolvedCandidateName,
                 subject: template.subject,
                 body: template.body,
                 templateType: "APPLICATION_CONFIRMATION",
@@ -496,7 +522,7 @@ export class ApplicationsSagaService {
                 applicationId: result.id,
                 variables: buildDynamicEmailContext({
                   candidate: {
-                    name: result.candidate.name,
+                    name: resolvedCandidateName,
                     email: result.candidate.email,
                     phone: result.candidate.phone,
                   },

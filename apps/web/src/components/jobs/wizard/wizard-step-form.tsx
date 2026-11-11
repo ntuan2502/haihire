@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import {
   Lock,
@@ -52,6 +53,18 @@ export function WizardStepForm({
   onContinue,
 }: WizardStepFormProps) {
   const { t } = useI18n();
+  const { localization } = useLocalization();
+  const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
+
+  const nameFieldRows = isLastFirst
+    ? [
+        { key: "lastName", label: t("jobs.wizard.lastNameLabel") },
+        { key: "firstName", label: t("jobs.wizard.firstNameLabel") },
+      ]
+    : [
+        { key: "firstName", label: t("jobs.wizard.firstNameLabel") },
+        { key: "lastName", label: t("jobs.wizard.lastNameLabel") },
+      ];
 
   return (
     <div className="space-y-6">
@@ -71,25 +84,20 @@ export function WizardStepForm({
         </h3>
 
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
-              <span>{t("jobs.wizard.firstNameLabel")}</span>
-              <Lock className="h-3 w-3 text-slate-400" />
+          {nameFieldRows.map((row) => (
+            <div
+              key={row.key}
+              className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50"
+            >
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
+                <span>{row.label}</span>
+                <Lock className="h-3 w-3 text-slate-400" />
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                {t("jobs.wizard.mandatoryBadge")}
+              </span>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
-              {t("jobs.wizard.mandatoryBadge")}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
-              <span>{t("jobs.wizard.lastNameLabel")}</span>
-              <Lock className="h-3 w-3 text-slate-400" />
-            </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
-              {t("jobs.wizard.mandatoryBadge")}
-            </span>
-          </div>
+          ))}
 
           <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50">
             <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">

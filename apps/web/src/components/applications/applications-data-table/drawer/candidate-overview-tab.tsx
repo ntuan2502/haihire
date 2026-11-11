@@ -7,6 +7,7 @@ import { ApplicationNotesStream } from "@/components/applications/application-no
 import type { OverviewSectionsState } from "@/components/applications/overview-sections-popover";
 import type { ScheduledInterviewInfo } from "@/lib/interviews";
 import type { Application, CandidateDocument } from "@/types";
+import { getCandidateDisplayName } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 
 interface CandidateOverviewTabProps {
@@ -96,7 +97,7 @@ export function CandidateOverviewTab({
                 {t("candidates.displayName")}
               </p>
               <p className="font-semibold text-slate-900 dark:text-white">
-                {currentApp.candidateName}
+                {getCandidateDisplayName(currentApp)}
               </p>
             </div>
             <div>

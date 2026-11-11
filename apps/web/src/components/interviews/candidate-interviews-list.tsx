@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMemo, useState } from "react";
+import { formatDate, formatTime } from "@/lib/utils";
 import { CancelInterviewModal } from "./cancel-interview-modal";
 import {
   getInterviewsFromApplication,
@@ -155,7 +156,7 @@ export function CandidateInterviewsList({
       <div className="space-y-4">
         {allInterviews.map((scheduled, idx) => (
           <div
-            key={`${scheduled.date}-${scheduled.time}-${idx}`}
+            key={scheduled.id || `${scheduled.scheduledAt}-${idx}`}
             className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4"
           >
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -199,8 +200,8 @@ export function CandidateInterviewsList({
                 <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                   {t("interviews.atTime", {
-                    date: scheduled.date,
-                    time: scheduled.time,
+                    date: formatDate(scheduled.scheduledAt),
+                    time: formatTime(scheduled.scheduledAt),
                   })}
                 </span>
               </div>

@@ -45,7 +45,14 @@ export class SourcingQueryService {
         organizationId,
         id: { in: candidateIds },
       },
-      select: { id: true, name: true, email: true },
+      select: {
+        id: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
+        email: true,
+      },
     });
   }
 

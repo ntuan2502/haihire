@@ -21,6 +21,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<User>;
   logout: () => Promise<void> | void;
   updateUserOrg: (org: Organization, updatedRole?: string) => void;
+  updateUser: (updatedFields: Partial<User>) => void;
   refreshUser: () => Promise<User | null>;
   setSession: (accessToken: string, refreshToken?: string, user?: User) => void;
   isAuthenticated: boolean;
@@ -386,6 +387,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthCookies(token, true);
   };
 
+  const updateUser = useCallback((updatedFields: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next: User = { ...prev, ...updatedFields };
+      if (typeof window !== "undefined") {
+        localStorage.setItem(USER_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
   const isOwner = Boolean(
     user?.isOwner ||
     (user?.organization?.ownerId && user.organization.ownerId === user.id),
@@ -404,6 +416,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         updateUserOrg,
+        updateUser,
         refreshUser,
         setSession,
         isAuthenticated: !!user,
@@ -434,6 +447,7 @@ export function useAuth(): AuthContextType {
       },
       logout: async () => {},
       updateUserOrg: () => {},
+      updateUser: () => {},
       refreshUser: async () => null,
       setSession: () => {},
       isAuthenticated: false,

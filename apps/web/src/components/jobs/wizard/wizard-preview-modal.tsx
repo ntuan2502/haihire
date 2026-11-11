@@ -9,6 +9,7 @@ import {
   DevicePreviewSelector,
 } from "@/components/shared";
 import { useI18n } from "@/i18n";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { cn } from "cn";
 import {
   Briefcase,
@@ -75,6 +76,8 @@ export function WizardPreviewModal({
   orgName,
 }: WizardPreviewModalProps) {
   const { t } = useI18n();
+  const { localization } = useLocalization();
+  const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
 
   return (
     <CustomModal
@@ -240,7 +243,7 @@ export function WizardPreviewModal({
                   </div>
 
                   <div className="space-y-3.5">
-                    {/* First name + middle name / Last name */}
+                    {/* First name + Last name dynamically ordered by org nameDisplayOrder */}
                     <div
                       className={cn(
                         "grid gap-3",
@@ -249,30 +252,45 @@ export function WizardPreviewModal({
                           : "grid-cols-1",
                       )}
                     >
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          {t("careers.lastName")}{" "}
-                          <span className="text-rose-500">*</span>
-                        </label>
-                        <Input
-                          type="text"
-                          placeholder={t("careers.placeholders.lastName")}
-                          disabled
-                          className="h-8 text-xs cursor-not-allowed opacity-80"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          {t("careers.firstName")}{" "}
-                          <span className="text-rose-500">*</span>
-                        </label>
-                        <Input
-                          type="text"
-                          placeholder={t("careers.placeholders.firstName")}
-                          disabled
-                          className="h-8 text-xs cursor-not-allowed opacity-80"
-                        />
-                      </div>
+                      {(isLastFirst
+                        ? [
+                            {
+                              key: "lastName",
+                              label: t("careers.lastName"),
+                              placeholder: t("careers.placeholders.lastName"),
+                            },
+                            {
+                              key: "firstName",
+                              label: t("careers.firstName"),
+                              placeholder: t("careers.placeholders.firstName"),
+                            },
+                          ]
+                        : [
+                            {
+                              key: "firstName",
+                              label: t("careers.firstName"),
+                              placeholder: t("careers.placeholders.firstName"),
+                            },
+                            {
+                              key: "lastName",
+                              label: t("careers.lastName"),
+                              placeholder: t("careers.placeholders.lastName"),
+                            },
+                          ]
+                      ).map((field) => (
+                        <div key={field.key} className="space-y-1">
+                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            {field.label}{" "}
+                            <span className="text-rose-500">*</span>
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder={field.placeholder}
+                            disabled
+                            className="h-8 text-xs cursor-not-allowed opacity-80"
+                          />
+                        </div>
+                      ))}
                     </div>
 
                     {/* Email */}

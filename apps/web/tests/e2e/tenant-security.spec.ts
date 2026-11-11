@@ -239,7 +239,8 @@ test.describe("Tenant Isolation — HTTP E2E Security Verification", () => {
       const response = await anonymous.post("/api/applications/apply", {
         data: {
           jobId: betaJobId,
-          candidateName: "Public Applicant",
+          firstName: "Public",
+          lastName: "Applicant",
           candidateEmail: `public-response-${randomUUID()}@example.com`,
           candidatePhone: "+84900000000",
           notes: "Private application note",

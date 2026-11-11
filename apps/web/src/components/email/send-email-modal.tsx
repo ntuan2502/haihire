@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { CustomSelect, CustomModal } from "@/components/shared";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { formatDate, formatTime, getCandidateDisplayName } from "@/lib/utils";
 import { EmailHtmlPreview } from "./email-html-preview";
 
 import { useEmailTemplates, useSendEmailMutation } from "@/hooks/use-queries";
@@ -32,7 +33,10 @@ export interface SendEmailModalProps {
   onClose: () => void;
   candidate?: {
     id?: string;
-    name: string;
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    displayName?: string | null;
     email: string;
     phone?: string | null;
   } | null;
@@ -40,8 +44,7 @@ export interface SendEmailModalProps {
   organizationName?: string;
   defaultTemplateType?: EmailTemplateType;
   interviewDetails?: {
-    date?: string;
-    time?: string;
+    scheduledAt?: string;
     format?: string;
     linkOrLocation?: string;
     interviewer?: string;
@@ -61,6 +64,9 @@ export function SendEmailModal({
 }: SendEmailModalProps) {
   const { t } = useI18n();
 
+  const candidateDisplayName = candidate
+    ? getCandidateDisplayName(candidate)
+    : "";
   const effectiveJobTitle = jobTitle || t("email.defaultJobTitle");
   const effectiveOrgName = organizationName || t("email.defaultOrgName");
 
@@ -79,12 +85,16 @@ export function SendEmailModal({
   // Variables map for interpolation
   const variablesMap = useMemo(() => {
     return {
-      candidate_name: candidate?.name || t("email.defaultCandidateName"),
+      candidate_name: candidateDisplayName || t("email.defaultCandidateName"),
       candidate_email: candidate?.email || "candidate@example.com",
       job_title: effectiveJobTitle,
       company_name: effectiveOrgName,
-      interview_date: interviewDetails?.date || "22/09/2026",
-      interview_time: interviewDetails?.time || "14:30",
+      interview_date: interviewDetails?.scheduledAt
+        ? formatDate(interviewDetails.scheduledAt)
+        : "22/09/2026",
+      interview_time: interviewDetails?.scheduledAt
+        ? formatTime(interviewDetails.scheduledAt)
+        : "14:30",
       interview_format: interviewDetails?.format || "Google Meet",
       interview_link:
         interviewDetails?.linkOrLocation ||
@@ -93,7 +103,14 @@ export function SendEmailModal({
         interviewDetails?.interviewer || t("email.defaultInterviewerName"),
       sender_name: t("email.defaultSenderName"),
     };
-  }, [candidate, effectiveJobTitle, effectiveOrgName, interviewDetails, t]);
+  }, [
+    candidateDisplayName,
+    candidate?.email,
+    effectiveJobTitle,
+    effectiveOrgName,
+    interviewDetails,
+    t,
+  ]);
 
   // Sync template when selected type changes or modal opens
   useEffect(() => {
@@ -131,7 +148,7 @@ export function SendEmailModal({
     try {
       const log = await sendEmailMutation.mutateAsync({
         to: candidate.email,
-        recipientName: candidate.name,
+        recipientName: candidateDisplayName,
         subject,
         body,
         templateType: selectedType,
@@ -159,7 +176,7 @@ export function SendEmailModal({
       title={t("email.modalTitle")}
       badge={
         <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-          {candidate.name}
+          {candidateDisplayName}
         </span>
       }
       size="lg"
@@ -169,7 +186,7 @@ export function SendEmailModal({
       <div className="px-6 py-2.5 border-b border-slate-200/60 dark:border-white/10 bg-white dark:bg-[#202020] flex items-center justify-between text-xs shrink-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-slate-900 dark:text-white">
-            {candidate.name}
+            {candidateDisplayName}
           </span>
           <span className="text-slate-400">•</span>
           <span className="text-slate-500 dark:text-slate-400">
@@ -228,7 +245,7 @@ export function SendEmailModal({
             <User className="h-3.5 w-3.5 text-slate-400" />
             <span>{t("email.recipient")}:</span>
             <strong className="font-semibold text-slate-900 dark:text-white">
-              {candidate.name}
+              {candidateDisplayName}
             </strong>
             <span className="text-slate-400">({candidate.email})</span>
           </div>
@@ -335,7 +352,7 @@ export function SendEmailModal({
                 <strong className="text-slate-700 dark:text-slate-300">
                   {t("email.thRecipient")}:
                 </strong>{" "}
-                {candidate.name} &lt;{candidate.email}&gt;
+                {candidateDisplayName} &lt;{candidate.email}&gt;
               </div>
             </div>
             <EmailHtmlPreview

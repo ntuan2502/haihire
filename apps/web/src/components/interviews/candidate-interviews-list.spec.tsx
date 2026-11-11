@@ -38,8 +38,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
   const mockInterview: ScheduledInterviewInfo = {
     id: "intv-uuid-12345",
     applicationId: "app-uuid-67890",
-    date: "2026-09-30",
-    time: "10:00",
+    scheduledAt: "2026-09-30T03:00:00.000Z",
     type: "HR_SCREENING",
     format: "OFFICE",
     linkOrLocation: "Phòng họp A",
@@ -61,8 +60,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
             {
               id: mockInterview.id,
               applicationId: mockInterview.applicationId,
-              date: mockInterview.date,
-              time: mockInterview.time,
+              scheduledAt: mockInterview.scheduledAt,
               type: mockInterview.type,
               format: mockInterview.format,
               linkOrLocation: mockInterview.linkOrLocation,
@@ -90,8 +88,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
             {
               id: mockInterview.id,
               applicationId: mockInterview.applicationId,
-              date: mockInterview.date,
-              time: mockInterview.time,
+              scheduledAt: mockInterview.scheduledAt,
               type: mockInterview.type,
               format: mockInterview.format,
               linkOrLocation: mockInterview.linkOrLocation,
@@ -145,8 +142,7 @@ describe("CandidateInterviewsList Regression & Component Tests", () => {
             {
               id: mockInterview.id,
               applicationId: mockInterview.applicationId,
-              date: mockInterview.date,
-              time: mockInterview.time,
+              scheduledAt: mockInterview.scheduledAt,
               type: mockInterview.type,
               format: mockInterview.format,
               linkOrLocation: mockInterview.linkOrLocation,

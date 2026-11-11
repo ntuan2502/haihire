@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Job, JobType, WorkplaceType, ExperienceLevel } from "@/types";
+import { getActiveDefaultCurrency } from "@/lib/utils";
 import {
   type ScreeningQuestion,
   type ScoringCriterion,
@@ -32,7 +33,10 @@ export function useJobWizardFormState(initialJob?: Job | null) {
   const [minSalary, setMinSalary] = useState(initialSalary.min);
   const [maxSalary, setMaxSalary] = useState(initialSalary.max);
   const [currency, setCurrency] = useState<string | null>(
-    initialSalary.currency,
+    initialSalary.currency ??
+      (!initialJob && !initialSalary.negotiable
+        ? getActiveDefaultCurrency()
+        : null),
   );
   const [salaryPer, setSalaryPer] = useState<string | null>(initialSalary.per);
 
@@ -184,7 +188,7 @@ export function useJobWizardFormState(initialJob?: Job | null) {
     setPayNegotiable(false);
     setMinSalary("");
     setMaxSalary("");
-    setCurrency(null);
+    setCurrency(getActiveDefaultCurrency());
     setSalaryPer(null);
   };
 

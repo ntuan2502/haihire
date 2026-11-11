@@ -16,9 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/shared/custom-select";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { inferCandidateName } from "@haihire/shared";
 import { normalizeDateForInput, isValidUuid } from "@/lib/utils";
 import type { Gender } from "@/types";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 
@@ -26,6 +26,8 @@ function EditCandidatePageContent() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { localization } = useLocalization();
+  const isLastFirst = localization.nameDisplayOrder === "LAST_FIRST";
   const { t } = useI18n();
   const canUpdateCandidate = useHasPermission("candidate:update");
 
@@ -63,10 +65,9 @@ function EditCandidatePageContent() {
   // Pre-fill form when candidate data is loaded
   useEffect(() => {
     if (candidate && !isInitialized) {
-      const inferred = inferCandidateName(candidate.name || "");
-      setFirstName(candidate.firstName || inferred.firstName || "");
-      setLastName(candidate.lastName || inferred.lastName || "");
-      setDisplayName(candidate.name || "");
+      setFirstName(candidate.firstName || "");
+      setLastName(candidate.lastName || "");
+      setDisplayName(candidate.displayName || "");
       setEmail(candidate.email || "");
       setPhone(candidate.phone || "");
 
@@ -94,31 +95,39 @@ function EditCandidatePageContent() {
 
     setErrorMsg("");
 
-    if (!firstName.trim()) {
-      setErrorMsg("First name is required.");
-      return;
-    }
-    if (!lastName.trim()) {
-      setErrorMsg("Last name is required.");
-      return;
+    if (isLastFirst) {
+      if (!lastName.trim()) {
+        setErrorMsg(t("candidates.errors.lastNameRequired"));
+        return;
+      }
+      if (!firstName.trim()) {
+        setErrorMsg(t("candidates.errors.firstNameRequired"));
+        return;
+      }
+    } else {
+      if (!firstName.trim()) {
+        setErrorMsg(t("candidates.errors.firstNameRequired"));
+        return;
+      }
+      if (!lastName.trim()) {
+        setErrorMsg(t("candidates.errors.lastNameRequired"));
+        return;
+      }
     }
     if (!email.trim() || !email.includes("@")) {
-      setErrorMsg("Please enter a valid email address.");
+      setErrorMsg(t("candidates.errors.validEmailRequired"));
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const effectiveDisplayName = displayName.trim()
-        ? displayName.trim()
-        : `${firstName.trim()} ${lastName.trim()}`.trim();
 
       await updateCandidateDetailsMutation.mutateAsync({
         id: candidate.id,
         data: {
-          name: effectiveDisplayName,
           firstName: firstName.trim(),
           lastName: lastName.trim(),
+          displayName: displayName.trim() || null,
           gender: gender && gender !== "NOT_SPECIFIED" ? gender : undefined,
           dateOfBirth: dateOfBirth ? dateOfBirth : undefined,
           email: email.trim(),
@@ -229,34 +238,54 @@ function EditCandidatePageContent() {
             </div>
           )}
 
-          {/* First Name */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.firstName")}{" "}
-              <span className="text-rose-500">*</span>
-            </label>
-            <Input
-              required
-              placeholder={t("candidates.placeholders.firstName")}
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
-            />
-          </div>
-
-          {/* Last Name */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              {t("candidates.lastName")}{" "}
-              <span className="text-rose-500">*</span>
-            </label>
-            <Input
-              required
-              placeholder={t("candidates.placeholders.lastName")}
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(isLastFirst
+              ? [
+                  {
+                    key: "lastName",
+                    label: t("candidates.lastName"),
+                    placeholder: t("candidates.placeholders.lastName"),
+                    value: lastName,
+                    onChange: setLastName,
+                  },
+                  {
+                    key: "firstName",
+                    label: t("candidates.firstName"),
+                    placeholder: t("candidates.placeholders.firstName"),
+                    value: firstName,
+                    onChange: setFirstName,
+                  },
+                ]
+              : [
+                  {
+                    key: "firstName",
+                    label: t("candidates.firstName"),
+                    placeholder: t("candidates.placeholders.firstName"),
+                    value: firstName,
+                    onChange: setFirstName,
+                  },
+                  {
+                    key: "lastName",
+                    label: t("candidates.lastName"),
+                    placeholder: t("candidates.placeholders.lastName"),
+                    value: lastName,
+                    onChange: setLastName,
+                  },
+                ]
+            ).map((field) => (
+              <div key={field.key} className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {field.label} <span className="text-rose-500">*</span>
+                </label>
+                <Input
+                  required
+                  placeholder={field.placeholder}
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  className="h-10 text-xs bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl"
+                />
+              </div>
+            ))}
           </div>
 
           {/* Email */}

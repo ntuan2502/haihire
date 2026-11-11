@@ -54,7 +54,7 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
     fixtureJobId = ((await jobResponse.json()) as { id: string }).id;
     const email = `kanban-${uniqueId}@example.com`;
     const candidateResponse = await page.request.post("/api/candidates", {
-      data: { name: "Kanban Fixture", email },
+      data: { firstName: "Kanban", lastName: "Fixture", email },
     });
     expect(candidateResponse.ok()).toBe(true);
     fixtureCandidateId = ((await candidateResponse.json()) as { id: string })
@@ -63,7 +63,8 @@ test.describe("Kanban Drag and Drop E2E Flow", () => {
       data: {
         jobId: fixtureJobId,
         candidateEmail: email,
-        candidateName: "Kanban Fixture",
+        firstName: "Kanban",
+        lastName: "Fixture",
       },
     });
     expect(applyResponse.ok()).toBe(true);

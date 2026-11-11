@@ -1,8 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+import { extractDateTimeInTimezone } from "@haihire/shared";
+import { setActiveLocalization, resetActiveLocalization } from "@/lib/utils";
 import { useCalendarDateMath, formatLocalDate } from "./use-calendar-date-math";
 import { useCalendarEvents } from "./use-calendar-events";
 import type { Application, Job } from "@/types";
+
+afterEach(() => {
+  resetActiveLocalization();
+});
 
 describe("useCalendarDateMath", () => {
   it("formats local date properly", () => {
@@ -116,8 +122,7 @@ describe("useCalendarEvents", () => {
       interviews: [
         {
           id: "intv-1",
-          date: "2026-10-20",
-          time: "14:00",
+          scheduledAt: "2026-10-20T07:00:00.000Z", // 14:00 in Asia/Ho_Chi_Minh
           type: "TECHNICAL",
           format: "ONLINE",
           linkOrLocation: "https://meet.google.com/xyz",
@@ -126,8 +131,7 @@ describe("useCalendarEvents", () => {
         },
         {
           id: "intv-2",
-          date: "2026-10-20",
-          time: "10:00",
+          scheduledAt: "2026-10-20T03:00:00.000Z", // 10:00 in Asia/Ho_Chi_Minh
           type: "CULTURE_FIT",
           format: "ONLINE",
           linkOrLocation: "https://meet.google.com/xyz",
@@ -136,8 +140,7 @@ describe("useCalendarEvents", () => {
         },
         {
           id: "intv-no-date",
-          date: "",
-          time: "09:00",
+          scheduledAt: "",
           type: "TECHNICAL",
           format: "ONLINE",
           linkOrLocation: "https://meet.google.com/xyz",
@@ -150,7 +153,9 @@ describe("useCalendarEvents", () => {
     },
   ];
 
-  it("groups and sorts events by date and time, filtering out dateless interviews", () => {
+  it("groups and sorts events by scheduledAt in organization timezone, filtering out invalid/empty timestamps", () => {
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
+
     const { result } = renderHook(() =>
       useCalendarEvents({
         applications: mockApplications,
@@ -161,9 +166,19 @@ describe("useCalendarEvents", () => {
     const oct20Events = result.current.eventsByDate.get("2026-10-20");
     expect(oct20Events).toBeDefined();
     expect(oct20Events!.length).toBe(2);
-    // Sorted by time: 10:00 first, then 14:00
-    expect(oct20Events![0].interview.time).toBe("10:00");
-    expect(oct20Events![1].interview.time).toBe("14:00");
+    // Sorted chronologically: 10:00 first, then 14:00
+    expect(
+      extractDateTimeInTimezone(
+        oct20Events![0].interview.scheduledAt,
+        "Asia/Ho_Chi_Minh",
+      ).time,
+    ).toBe("10:00");
+    expect(
+      extractDateTimeInTimezone(
+        oct20Events![1].interview.scheduledAt,
+        "Asia/Ho_Chi_Minh",
+      ).time,
+    ).toBe("14:00");
     expect(oct20Events![0].job?.title).toBe("Backend Engineer");
 
     // eventsByDateKey matches map
@@ -179,5 +194,38 @@ describe("useCalendarEvents", () => {
 
     // getEventsForDate on empty day
     expect(result.current.getEventsForDate("2026-10-21")).toEqual([]);
+  });
+
+  it("buckets interviews across UTC day boundary according to organization timezone", () => {
+    const rolloverApp: Application[] = [
+      {
+        ...mockApplications[0],
+        interviews: [
+          {
+            id: "intv-rollover",
+            scheduledAt: "2026-10-20T22:00:00.000Z",
+            type: "TECHNICAL",
+            format: "MEET",
+            linkOrLocation: "https://meet.google.com/xyz",
+            interviewer: "Jane Doe",
+            status: "SCHEDULED",
+          },
+        ],
+      },
+    ];
+
+    setActiveLocalization({ timezone: "Asia/Ho_Chi_Minh" });
+    const { result: vnResult } = renderHook(() =>
+      useCalendarEvents({ applications: rolloverApp, jobs: mockJobs }),
+    );
+    expect(vnResult.current.getEventsForDate("2026-10-21")).toHaveLength(1);
+    expect(vnResult.current.getEventsForDate("2026-10-20")).toHaveLength(0);
+
+    setActiveLocalization({ timezone: "America/New_York" });
+    const { result: nyResult } = renderHook(() =>
+      useCalendarEvents({ applications: rolloverApp, jobs: mockJobs }),
+    );
+    expect(nyResult.current.getEventsForDate("2026-10-20")).toHaveLength(1);
+    expect(nyResult.current.getEventsForDate("2026-10-21")).toHaveLength(0);
   });
 });

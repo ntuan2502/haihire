@@ -24,7 +24,11 @@ import {
   useUpdateStageMutation,
   useOrgMembers,
 } from "@/hooks/use-queries";
-import { getCandidateDisplayName } from "@/lib/utils";
+import {
+  extractDateTimeInTimezone,
+  combineDateTimeInTimezone,
+} from "@haihire/shared";
+import { getCandidateDisplayName, resolveEffectiveTimezone } from "@/lib/utils";
 import {
   type ScheduledInterviewInfo,
   normalizeInterviewType,
@@ -32,6 +36,7 @@ import {
 } from "@/lib/interviews";
 import { canTransition } from "@/lib/stages";
 import { getApiErrorMessage } from "@/lib/api-error";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import type {
   Application,
@@ -65,6 +70,11 @@ export function ScheduleInterviewModal({
   onInterviewScheduled,
 }: ScheduleInterviewModalProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
   const queryClient = useQueryClient();
   const { data: members = [] } = useOrgMembers();
   const createInterviewMutation = useCreateInterviewMutation();
@@ -117,12 +127,16 @@ export function ScheduleInterviewModal({
     if (editingInterview) {
       // Update schedule: populate form fields with existing interview data
       const initialJobId = selectedJobId || candidateToUse?.jobId || "";
+      const { date, time } = extractDateTimeInTimezone(
+        editingInterview.scheduledAt,
+        effectiveTimezone,
+      );
       setModalJobId(initialJobId);
       setModalCandidateId(
         editingInterview.applicationId || selectedApplicationId || "",
       );
-      setInterviewDate(editingInterview.date || "");
-      setInterviewTime(editingInterview.time || "");
+      setInterviewDate(date);
+      setInterviewTime(time);
       setInterviewType(normalizeInterviewType(editingInterview.type));
       setInterviewFormat(
         (editingInterview.format as InterviewFormat) || "MEET",
@@ -150,6 +164,7 @@ export function ScheduleInterviewModal({
     initialDate,
     editingInterview,
     applications,
+    effectiveTimezone,
   ]);
 
   // When candidate changes manually, keep other fields empty
@@ -192,26 +207,30 @@ export function ScheduleInterviewModal({
       return;
     }
 
-    const interviewInfo: ScheduledInterviewInfo = {
-      id: editingInterview?.id,
-      applicationId: candidate.id,
-      date: interviewDate,
-      time: interviewTime,
-      type: interviewType as InterviewType,
-      format: interviewFormat as InterviewFormat,
-      linkOrLocation: linkOrLocation.trim(),
-      interviewer: interviewerName.trim(),
-      notes: interviewNotes.trim(),
-    };
-
     try {
+      const scheduledAt = combineDateTimeInTimezone(
+        interviewDate,
+        interviewTime,
+        effectiveTimezone,
+      );
+
+      const interviewInfo: ScheduledInterviewInfo = {
+        id: editingInterview?.id,
+        applicationId: candidate.id,
+        scheduledAt,
+        type: interviewType as InterviewType,
+        format: interviewFormat as InterviewFormat,
+        linkOrLocation: linkOrLocation.trim(),
+        interviewer: interviewerName.trim(),
+        notes: interviewNotes.trim(),
+      };
+
       if (editingInterview?.id) {
         // Update existing interview schedule
         await updateInterviewMutation.mutateAsync({
           id: editingInterview.id,
           data: {
-            date: interviewDate,
-            time: interviewTime,
+            scheduledAt,
             type: interviewType as InterviewType,
             format: (interviewFormat as InterviewFormat) || "MEET",
             linkOrLocation: linkOrLocation.trim(),
@@ -223,8 +242,7 @@ export function ScheduleInterviewModal({
         // Create new interview schedule
         await createInterviewMutation.mutateAsync({
           applicationId: candidate.id,
-          date: interviewDate,
-          time: interviewTime,
+          scheduledAt,
           type: interviewType as InterviewType,
           format: (interviewFormat as InterviewFormat) || "MEET",
           linkOrLocation: linkOrLocation.trim(),

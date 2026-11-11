@@ -1,6 +1,15 @@
 import { api } from "./client";
 import type { Organization, User, InviteLink } from "@/types";
-import type { Role, Permission } from "@haihire/shared";
+import type {
+  Role,
+  Permission,
+  OrganizationLocalizationSettings,
+} from "@haihire/shared";
+
+export type UpdateOrgPayload = {
+  name?: string;
+  slug?: string;
+} & Partial<OrganizationLocalizationSettings>;
 
 export const organizationsApi = {
   getPublicOrg: async (slug: string): Promise<Organization> => {
@@ -36,10 +45,7 @@ export const organizationsApi = {
     return response.data;
   },
 
-  updateMyOrg: async (data: {
-    name?: string;
-    slug?: string;
-  }): Promise<Organization> => {
+  updateMyOrg: async (data: UpdateOrgPayload): Promise<Organization> => {
     const response = await api.patch<Organization>("/organizations/my", data);
     return response.data;
   },

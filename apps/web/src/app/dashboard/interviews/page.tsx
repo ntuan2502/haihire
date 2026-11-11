@@ -16,8 +16,9 @@ import {
   useDeleteInterviewMutation,
 } from "@/hooks/use-queries";
 import { LoadingSpinner } from "@/components/shared/loading-spinner";
+import { extractDateTimeInTimezone } from "@haihire/shared";
 import { type ScheduledInterviewInfo } from "@/lib/interviews";
-import { getCandidateDisplayName } from "@/lib/utils";
+import { getCandidateDisplayName, resolveEffectiveTimezone } from "@/lib/utils";
 import { InterviewsCalendarView } from "@/components/interviews/interviews-calendar-view";
 import { InterviewsTableView } from "@/components/interviews/interviews-table-view";
 import { InterviewScorecardModal } from "@/components/interviews/interview-scorecard-modal";
@@ -30,6 +31,7 @@ import {
   type ViewMode,
   type SortOption,
 } from "@/components/interviews/dashboard";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import type { Application } from "@/types";
@@ -38,6 +40,11 @@ function InterviewsPageContent() {
   const router = useRouter();
   const { user, canEdit: _canEdit } = useAuth();
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
 
   const canCreateInterview = useHasPermission("interview:create");
   const canDeleteInterview = useHasPermission("interview:delete");
@@ -297,7 +304,12 @@ function InterviewsPageContent() {
                 handleOpenScheduleModal(undefined, dateStr)
               }
               onEditSchedule={(app, intv) =>
-                handleOpenScheduleModal(app, intv.date, intv)
+                handleOpenScheduleModal(
+                  app,
+                  extractDateTimeInTimezone(intv.scheduledAt, effectiveTimezone)
+                    .date,
+                  intv,
+                )
               }
               onOpenScorecard={(app, intv) => handleOpenScorecard(app, intv)}
               onVisibleRangeChange={setCalendarRange}

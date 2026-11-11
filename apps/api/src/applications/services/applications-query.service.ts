@@ -2,13 +2,19 @@ import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   APP_ERROR_CODES,
   APPLICATION_STAGES,
+  formatCandidateDisplayName,
   type ApplicationStage,
   type ApplicationStats,
 } from "@haihire/shared";
 import {
+  AppBadRequestException,
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
+import {
+  buildCandidateSearchName,
+  resolveOrgNameDisplayOrder,
+} from "../../common/candidate-name.util";
 import { PrismaService, runInTransaction } from "../../prisma/prisma.service";
 import { ActivitiesService } from "../../activities/activities.service";
 import { UpdateCandidateDto } from "../dto/update-candidate.dto";
@@ -127,12 +133,18 @@ export class ApplicationsQueryService {
       interviewsByApp.set(intv.applicationId, list);
     }
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      job.organizationId,
+    );
     const populated = applications.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
       return {
         ...app,
         candidate,
-        candidateName: candidate?.name || "Unknown",
+        candidateName: candidate
+          ? formatCandidateDisplayName(candidate, nameOrder) || candidate.name
+          : "Unknown",
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -243,6 +255,9 @@ export class ApplicationsQueryService {
           deletedAt: null,
           OR: [
             { name: { contains: q, mode: "insensitive" } },
+            { firstName: { contains: q, mode: "insensitive" } },
+            { lastName: { contains: q, mode: "insensitive" } },
+            { displayName: { contains: q, mode: "insensitive" } },
             { email: { contains: q, mode: "insensitive" } },
             { phone: { contains: q, mode: "insensitive" } },
           ],
@@ -311,6 +326,10 @@ export class ApplicationsQueryService {
       interviewsByApp.set(intv.applicationId, list);
     }
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      targetOrgId,
+    );
     const data = pagedApps.map((app) => {
       const candidate = candidateMap.get(app.candidateId);
       const job = jobMap.get(app.jobId);
@@ -318,7 +337,9 @@ export class ApplicationsQueryService {
         ...app,
         job,
         candidate,
-        candidateName: candidate?.name || "Unknown",
+        candidateName: candidate
+          ? formatCandidateDisplayName(candidate, nameOrder) || candidate.name
+          : "Unknown",
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -472,11 +493,18 @@ export class ApplicationsQueryService {
       })
     ).map((intv) => formatInterviewRecord(intv));
 
+    const nameOrder = await resolveOrgNameDisplayOrder(
+      this.prisma,
+      appOrgId || tenantOrgId,
+    );
+
     return {
       ...app,
       job: job || null,
       candidate: candidate || null,
-      candidateName: candidate?.name || "Unknown",
+      candidateName: candidate
+        ? formatCandidateDisplayName(candidate, nameOrder) || candidate.name
+        : "Unknown",
       candidateEmail: candidate?.email || "",
       candidatePhone: candidate?.phone || null,
       resumeUrl: app.resumeUrl || candidate?.resumeUrl || "",
@@ -499,8 +527,52 @@ export class ApplicationsQueryService {
     // Update candidate profile directly
     if (existing.candidateId) {
       const candidateUpdate: Record<string, unknown> = {};
-      if (dto.candidateName !== undefined)
-        candidateUpdate.name = dto.candidateName;
+      if (dto.firstName !== undefined) {
+        const trimmed = dto.firstName.trim();
+        if (!trimmed) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+            "First name cannot be empty.",
+          );
+        }
+        candidateUpdate.firstName = trimmed;
+      }
+      if (dto.lastName !== undefined) {
+        const trimmed = dto.lastName.trim();
+        if (!trimmed) {
+          throw new AppBadRequestException(
+            APP_ERROR_CODES.CANDIDATE_INFO_REQUIRED,
+            "Last name cannot be empty.",
+          );
+        }
+        candidateUpdate.lastName = trimmed;
+      }
+      if (dto.displayName !== undefined) {
+        candidateUpdate.displayName = dto.displayName?.trim() || null;
+      }
+      if (
+        dto.firstName !== undefined ||
+        dto.lastName !== undefined ||
+        dto.displayName !== undefined
+      ) {
+        const orgId = existing.job?.organizationId || tenantOrgId;
+        const nameOrder = await resolveOrgNameDisplayOrder(this.prisma, orgId);
+        candidateUpdate.name = buildCandidateSearchName(
+          {
+            firstName:
+              (candidateUpdate.firstName as string | undefined) ??
+              existing.candidate?.firstName,
+            lastName:
+              (candidateUpdate.lastName as string | undefined) ??
+              existing.candidate?.lastName,
+            displayName:
+              dto.displayName !== undefined
+                ? (candidateUpdate.displayName as string | null)
+                : (existing.candidate?.displayName ?? null),
+          },
+          nameOrder,
+        );
+      }
       if (dto.candidateEmail !== undefined)
         candidateUpdate.email = dto.candidateEmail.toLowerCase();
       if (dto.candidatePhone !== undefined)

@@ -15,13 +15,22 @@ import {
   Pencil,
   Calendar,
 } from "lucide-react";
-import { getInitials, getCandidateDisplayName } from "@/lib/utils";
+import { extractDateTimeInTimezone } from "@haihire/shared";
+import {
+  addDaysToYmd,
+  formatDate,
+  formatTime,
+  getInitials,
+  getCandidateDisplayName,
+  resolveEffectiveTimezone,
+} from "@/lib/utils";
 import {
   getInterviewsFromApplication,
   getInterviewTypeLabel,
   getRecommendationLabel,
   type ScheduledInterviewInfo,
 } from "@/lib/interviews";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import type { Application, Job } from "@/types";
 
@@ -68,6 +77,11 @@ export function InterviewsTableView({
   canEdit = true,
 }: InterviewsTableViewProps) {
   const { t } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   const visibleColumnCount =
@@ -122,21 +136,28 @@ export function InterviewsTableView({
     );
   };
 
-  const getRelativeDateBadge = (dateStr?: string) => {
-    if (!dateStr) return null;
-    const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    const tomorrowDt = new Date(now.getTime() + 86400000);
-    const tomorrow = tomorrowDt.toISOString().split("T")[0];
+  const getRelativeDateBadge = (scheduledAt?: string) => {
+    if (!scheduledAt) return null;
+    const { date: dateYmd } = extractDateTimeInTimezone(
+      scheduledAt,
+      effectiveTimezone,
+    );
+    if (!dateYmd) return null;
 
-    if (dateStr === today) {
+    const todayYmd = extractDateTimeInTimezone(
+      new Date(),
+      effectiveTimezone,
+    ).date;
+    const tomorrowYmd = addDaysToYmd(todayYmd, 1);
+
+    if (dateYmd === todayYmd) {
       return (
         <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
           {t("dashboard.today")}
         </span>
       );
     }
-    if (dateStr === tomorrow) {
+    if (dateYmd === tomorrowYmd) {
       return (
         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-300/80 dark:border-blue-800">
           {t("dashboard.tomorrow")}
@@ -252,10 +273,12 @@ export function InterviewsTableView({
                               <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">
                                 <Clock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                                 <span>
-                                  {currentInterview.date} •{" "}
-                                  {currentInterview.time}
+                                  {formatDate(currentInterview.scheduledAt)} •{" "}
+                                  {formatTime(currentInterview.scheduledAt)}
                                 </span>
-                                {getRelativeDateBadge(currentInterview.date)}
+                                {getRelativeDateBadge(
+                                  currentInterview.scheduledAt,
+                                )}
                               </div>
                               <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
                                 <span className="inline-block px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-[10px] font-bold border border-blue-200/80 dark:border-blue-900/60">
@@ -504,7 +527,7 @@ export function InterviewsTableView({
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             {previousInterviews.map((prev, pIdx) => (
                               <div
-                                key={`${prev.date}-${prev.time}-${pIdx}`}
+                                key={prev.id || `${prev.scheduledAt}-${pIdx}`}
                                 className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-1.5"
                               >
                                 <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
@@ -516,7 +539,8 @@ export function InterviewsTableView({
                                       : getInterviewTypeLabel(prev.type, t)}
                                   </span>
                                   <span className="text-[10px] text-slate-400 font-normal">
-                                    {prev.date} ({prev.time})
+                                    {formatDate(prev.scheduledAt)} (
+                                    {formatTime(prev.scheduledAt)})
                                   </span>
                                 </div>
 

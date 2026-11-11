@@ -346,7 +346,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       await expect(
         service.create(
           {
-            name: "Duplicate Email Candidate",
+            firstName: "Duplicate",
+            lastName: "Email Candidate",
             email: "nguyenvana@example.com",
             organizationId: "org-1",
           },
@@ -356,10 +357,11 @@ describe("CandidatesService (Characterization Tests)", () => {
       ).rejects.toThrow(AppConflictException);
     });
 
-    it("parses full name into first/last and parses dateOfBirth into Temporal.Instant", async () => {
+    it("computes search name from structured firstName/lastName/displayName and parses dateOfBirth", async () => {
       const created = await service.create(
         {
-          name: "Tran Van Minh",
+          firstName: "Minh",
+          lastName: "Tran Van",
           email: "tranvanminh@example.com",
           dateOfBirth: "1995-05-20",
           phone: "0988776655",
@@ -369,11 +371,25 @@ describe("CandidatesService (Characterization Tests)", () => {
       );
 
       expect(created).toBeDefined();
-      expect(created.name).toBe("Tran Van Minh");
-      expect(created.firstName).toBe("Tran");
-      expect(created.lastName).toBe("Van Minh");
+      expect(created.name).toBe("Minh Tran Van");
+      expect(created.firstName).toBe("Minh");
+      expect(created.lastName).toBe("Tran Van");
+      expect(created.displayName).toBeNull();
       expect(created.email).toBe("tranvanminh@example.com");
       expect(created.dateOfBirth).toBeDefined();
+
+      const customCreated = await service.create(
+        {
+          firstName: "An",
+          lastName: "Nguyen Van",
+          displayName: "Andy Nguyen",
+          email: "andynguyen@example.com",
+        },
+        undefined,
+        "org-1",
+      );
+      expect(customCreated.displayName).toBe("Andy Nguyen");
+      expect(customCreated.name).toBe("Andy Nguyen");
     });
   });
 
@@ -442,7 +458,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       const updated = await service.update(
         "cand-1",
         {
-          name: "Nguyen Van A Updated",
+          firstName: "A Updated",
+          lastName: "Nguyen Van",
           phone: "0999888777",
           dateOfBirth: "1992-08-15",
         },
@@ -450,7 +467,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       );
 
       expect(updated).toBeDefined();
-      expect(updated.name).toBe("Nguyen Van A Updated");
+      expect(updated.firstName).toBe("A Updated");
+      expect(updated.name).toBe("A Updated Nguyen Van");
       expect(updated.phone).toBe("0999888777");
       expect(updated.dateOfBirth).toBeDefined();
     });
@@ -503,7 +521,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       await expect(
         service.create(
           {
-            name: "Hacker Candidate",
+            firstName: "Hacker",
+            lastName: "Candidate",
             email: "hacker@test.local",
             organizationId: "org-1",
             resumeUrl:
@@ -532,7 +551,8 @@ describe("CandidatesService (Characterization Tests)", () => {
       await expect(
         service.create(
           {
-            name: "Attacker",
+            firstName: "Attacker",
+            lastName: "User",
             email: "attacker@example.com",
             organizationId: "org-2",
           },

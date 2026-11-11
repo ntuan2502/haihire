@@ -5,56 +5,350 @@ import type {
   CandidateLatestNoteSummary,
   Gender,
 } from "@/types";
-import { inferCandidateName } from "@haihire/shared";
+import {
+  DEFAULT_ORG_LOCALIZATION,
+  formatCandidateDisplayName,
+  normalizeOrgLocalization,
+  type CurrencyCode,
+  type DateFormat,
+  type NameDisplayOrder,
+  type OrgLanguage,
+  type OrganizationLocalizationSettings,
+  type TimeFormat,
+} from "@haihire/shared";
 export { cn } from "cn";
 
+export type LocalizationOverrides = Partial<OrganizationLocalizationSettings>;
+
+let activeOrgLocalization: OrganizationLocalizationSettings | null = null;
+let activeUiLocale: OrgLanguage | null = null;
+
 /**
- * Format a date into consistent string formats (e.g. "08/27/2026", "8/27/2026", "Aug 27, 2026")
+ * Activate runtime organization formatting preferences for utilities across the app.
+ */
+export function setActiveLocalization(
+  orgSettings?: Partial<OrganizationLocalizationSettings> | null,
+  uiLocale?: OrgLanguage | null,
+): void {
+  activeOrgLocalization = orgSettings
+    ? normalizeOrgLocalization(orgSettings)
+    : null;
+  activeUiLocale = uiLocale ?? activeOrgLocalization?.defaultLanguage ?? null;
+}
+
+/**
+ * Reset active runtime formatting preferences back to stateless test/default fallbacks.
+ */
+export function resetActiveLocalization(): void {
+  activeOrgLocalization = null;
+  activeUiLocale = null;
+}
+
+export function isRuntimeLocalizationActive(): boolean {
+  return activeOrgLocalization !== null;
+}
+
+export function getActiveLocalization(): OrganizationLocalizationSettings {
+  return activeOrgLocalization ?? { ...DEFAULT_ORG_LOCALIZATION };
+}
+
+/**
+ * Resolve the effective IANA timezone from LocalizationProvider state with
+ * stateless runtime/default fallback so hooks behave identically in tests.
+ */
+export function resolveEffectiveTimezone(
+  configuredTimezone?: string | null,
+  isConfigured = false,
+): string {
+  if (isConfigured && configuredTimezone) return configuredTimezone;
+  if (isRuntimeLocalizationActive()) {
+    return getActiveLocalization().timezone;
+  }
+  return (
+    Intl.DateTimeFormat().resolvedOptions().timeZone ||
+    DEFAULT_ORG_LOCALIZATION.timezone
+  );
+}
+
+/**
+ * Shift a pure YYYY-MM-DD calendar date by N days using UTC calendar math
+ * so local browser timezone DST transitions never skip or repeat dates.
+ */
+export function addDaysToYmd(ymd: string, days: number): string {
+  const parts = ymd.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return "";
+  const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + days));
+  return dt.toISOString().slice(0, 10);
+}
+
+export function getActiveDefaultCurrency(): CurrencyCode | null {
+  return activeOrgLocalization ? activeOrgLocalization.defaultCurrency : null;
+}
+
+function extractCalendarParts(
+  dateInput: string | Date,
+  timezone?: string,
+): { year: number; month: number; day: number; isDateOnly: boolean } | null {
+  if (typeof dateInput === "string") {
+    const trimmed = dateInput.trim();
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    if (dateOnlyMatch) {
+      return {
+        year: Number(dateOnlyMatch[1]),
+        month: Number(dateOnlyMatch[2]),
+        day: Number(dateOnlyMatch[3]),
+        isDateOnly: true,
+      };
+    }
+  }
+
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (isNaN(date.getTime())) return null;
+
+  if (timezone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(date);
+      const year = Number(parts.find((p) => p.type === "year")?.value);
+      const month = Number(parts.find((p) => p.type === "month")?.value);
+      const day = Number(parts.find((p) => p.type === "day")?.value);
+      if (year && month && day) {
+        return { year, month, day, isDateOnly: false };
+      }
+    } catch {
+      // Fall back to local calendar components when runtime rejects timezone
+    }
+  }
+
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+    isDateOnly: false,
+  };
+}
+
+function formatCalendarParts(
+  parts: { year: number; month: number; day: number },
+  dateFormat: DateFormat,
+  padded: boolean,
+): string {
+  const m = padded ? String(parts.month).padStart(2, "0") : String(parts.month);
+  const d = padded ? String(parts.day).padStart(2, "0") : String(parts.day);
+  const y = String(parts.year);
+
+  if (dateFormat === "DD/MM/YYYY") return `${d}/${m}/${y}`;
+  if (dateFormat === "YYYY-MM-DD") return `${y}-${m}-${d}`;
+  return `${m}/${d}/${y}`;
+}
+
+/**
+ * Format a date into consistent string formats respecting active organization localization.
  */
 export function formatDate(
   dateInput?: string | Date | null,
   style: "standard" | "numeric" | "short" = "numeric",
+  overrides?: LocalizationOverrides,
+): string {
+  if (!dateInput) return "—";
+  const effectiveTimezone =
+    overrides?.timezone ?? activeOrgLocalization?.timezone;
+  const effectiveDateFormat: DateFormat =
+    overrides?.dateFormat ?? activeOrgLocalization?.dateFormat ?? "MM/DD/YYYY";
+  const effectiveLang: OrgLanguage =
+    overrides?.defaultLanguage ?? activeUiLocale ?? "en";
+
+  const parts = extractCalendarParts(dateInput, effectiveTimezone);
+  if (!parts) return "—";
+
+  if (style === "short") {
+    return formatCalendarParts(parts, effectiveDateFormat, false);
+  }
+
+  if (style === "numeric") {
+    return formatCalendarParts(parts, effectiveDateFormat, true);
+  }
+
+  const parsedDate =
+    typeof dateInput === "string"
+      ? parts.isDateOnly
+        ? new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
+        : new Date(dateInput)
+      : dateInput;
+
+  return new Intl.DateTimeFormat(effectiveLang === "vi" ? "vi-VN" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    ...(parts.isDateOnly
+      ? { timeZone: "UTC" }
+      : effectiveTimezone
+        ? { timeZone: effectiveTimezone }
+        : {}),
+  }).format(parsedDate);
+}
+
+/**
+ * Format a clock string (e.g. "14:30") or timestamp according to 24H / 12H preference.
+ */
+export function formatTime(
+  timeOrDateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
+): string {
+  if (!timeOrDateInput) return "—";
+  const effectiveTimeFormat: TimeFormat =
+    overrides?.timeFormat ?? activeOrgLocalization?.timeFormat ?? "24H";
+  const effectiveTimezone =
+    overrides?.timezone ?? activeOrgLocalization?.timezone;
+
+  let hour: number | null = null;
+  let minute: number | null = null;
+
+  if (typeof timeOrDateInput === "string") {
+    const clockMatch = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(
+      timeOrDateInput.trim(),
+    );
+    if (clockMatch) {
+      const parsedHour = Number(clockMatch[1]);
+      const parsedMin = Number(clockMatch[2]);
+      if (
+        parsedHour >= 0 &&
+        parsedHour <= 23 &&
+        parsedMin >= 0 &&
+        parsedMin <= 59
+      ) {
+        hour = parsedHour;
+        minute = parsedMin;
+      }
+    }
+  }
+
+  if (hour === null || minute === null) {
+    const date =
+      typeof timeOrDateInput === "string"
+        ? new Date(timeOrDateInput)
+        : timeOrDateInput;
+    if (isNaN(date.getTime())) {
+      return typeof timeOrDateInput === "string" ? timeOrDateInput : "—";
+    }
+    if (effectiveTimezone) {
+      try {
+        const timeParts = new Intl.DateTimeFormat("en-GB", {
+          timeZone: effectiveTimezone,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).formatToParts(date);
+        const hPart = Number(timeParts.find((p) => p.type === "hour")?.value);
+        const mPart = Number(timeParts.find((p) => p.type === "minute")?.value);
+        if (!isNaN(hPart) && !isNaN(mPart)) {
+          hour = hPart === 24 ? 0 : hPart;
+          minute = mPart;
+        }
+      } catch {
+        // Fall through to local time
+      }
+    }
+    if (hour === null || minute === null) {
+      hour = date.getHours();
+      minute = date.getMinutes();
+    }
+  }
+
+  const mm = String(minute).padStart(2, "0");
+  if (effectiveTimeFormat === "12H") {
+    const period = hour >= 12 ? "PM" : "AM";
+    const h12 = hour % 12 || 12;
+    return `${h12}:${mm} ${period}`;
+  }
+
+  return `${String(hour).padStart(2, "0")}:${mm}`;
+}
+
+/**
+ * Combine localized date and time formatting.
+ */
+export function formatDateTime(
+  dateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
+): string {
+  const datePart = formatDate(dateInput, "numeric", overrides);
+  if (datePart === "—") return "—";
+  const timePart = formatTime(dateInput, overrides);
+  return timePart === "—" ? datePart : `${datePart} ${timePart}`;
+}
+
+/**
+ * Format numeric currency according to currency code and organization defaults.
+ */
+export function formatCurrency(
+  amount?: number | null,
+  currencyCode?: CurrencyCode | string | null,
+  overrides?: LocalizationOverrides,
+): string {
+  if (amount === null || amount === undefined || isNaN(amount)) return "—";
+  const currency =
+    currencyCode ??
+    overrides?.defaultCurrency ??
+    activeOrgLocalization?.defaultCurrency ??
+    DEFAULT_ORG_LOCALIZATION.defaultCurrency;
+
+  const localeByCurrency: Record<string, string> = {
+    VND: "vi-VN",
+    USD: "en-US",
+    EUR: "en-IE",
+    SGD: "en-SG",
+    JPY: "ja-JP",
+  };
+
+  try {
+    return new Intl.NumberFormat(localeByCurrency[currency] || "en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: currency === "VND" || currency === "JPY" ? 0 : 2,
+    }).format(amount);
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
+
+/**
+ * Format relative time respecting active interface/organization language.
+ */
+export function formatRelativeTime(
+  dateInput?: string | Date | null,
+  overrides?: LocalizationOverrides,
 ): string {
   if (!dateInput) return "—";
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
   if (isNaN(date.getTime())) return "—";
 
-  if (style === "short") {
-    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-  }
-
-  if (style === "numeric") {
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
-/**
- * Format relative time (e.g., "0m ago", "2h ago", "3d ago", "Just now")
- */
-export function formatRelativeTime(dateInput?: string | Date | null): string {
-  if (!dateInput) return "—";
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-  if (isNaN(date.getTime())) return "—";
+  const lang: OrgLanguage =
+    overrides?.defaultLanguage ?? activeUiLocale ?? "en";
 
   const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const diffInSeconds = Math.max(
+    0,
+    Math.floor((now.getTime() - date.getTime()) / 1000),
+  );
 
-  if (diffInSeconds < 60) return "Just now";
+  if (diffInSeconds < 60) return lang === "vi" ? "Vừa xong" : "Just now";
   const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInMinutes < 60) {
+    return lang === "vi"
+      ? `${diffInMinutes} phút trước`
+      : `${diffInMinutes}m ago`;
+  }
   const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInHours < 24) {
+    return lang === "vi" ? `${diffInHours} giờ trước` : `${diffInHours}h ago`;
+  }
   const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays}d ago`;
+  return lang === "vi" ? `${diffInDays} ngày trước` : `${diffInDays}d ago`;
 }
 
 /**
@@ -91,9 +385,11 @@ export function resolveCandidateProfile(
   structured?: {
     firstName?: string | null;
     lastName?: string | null;
+    displayName?: string | null;
     gender?: string | null;
     dateOfBirth?: string | Date | null;
   } | null,
+  overrides?: LocalizationOverrides,
 ): {
   gender: string;
   dob: string;
@@ -115,6 +411,7 @@ export function resolveCandidateProfile(
 
   const parsedFirst = structured?.firstName?.trim() || "";
   const parsedLast = structured?.lastName?.trim() || "";
+  const parsedDisplay = structured?.displayName?.trim() || "";
 
   let parsedDob = "";
   if (structured?.dateOfBirth) {
@@ -125,22 +422,28 @@ export function resolveCandidateProfile(
   }
 
   const parsedGender = structured?.gender?.trim() || "";
-
-  // If first/last are not in structured, infer from candidateName
-  const { firstName: inferredFirst, lastName: inferredLast } =
-    inferCandidateName(candidateName, parsedFirst, parsedLast);
+  const nameOrder: NameDisplayOrder =
+    overrides?.nameDisplayOrder ??
+    activeOrgLocalization?.nameDisplayOrder ??
+    DEFAULT_ORG_LOCALIZATION.nameDisplayOrder;
 
   const effectiveName =
-    [inferredFirst, inferredLast].filter(Boolean).join(" ") ||
-    candidateName ||
-    "—";
+    formatCandidateDisplayName(
+      {
+        displayName: parsedDisplay || null,
+        firstName: parsedFirst,
+        lastName: parsedLast,
+        name: candidateName,
+      },
+      nameOrder,
+    ) || "—";
 
   return {
     gender: parsedGender || "—",
     dob: parsedDob || "—",
-    firstName: inferredFirst,
-    lastName: inferredLast,
-    displayName: "",
+    firstName: parsedFirst,
+    lastName: parsedLast,
+    displayName: parsedDisplay,
     effectiveName,
   };
 }
@@ -221,30 +524,58 @@ export function getGenderLabel(
 }
 
 /**
- * Get unified candidate display name from candidate profile or application
+ * Get unified candidate display name respecting organization name display order.
  */
-export function getCandidateDisplayName(
+export interface CandidateNameInput {
+  name?: string | null;
+  displayName?: string | null;
+  candidateName?: string | null;
+  candidateFirstName?: string | null;
+  candidateLastName?: string | null;
+  candidateDisplayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   candidate?: {
     name?: string | null;
-    candidateName?: string | null;
+    displayName?: string | null;
     firstName?: string | null;
     lastName?: string | null;
-  } | null,
+  } | null;
+}
+
+/**
+ * Get unified candidate display name respecting explicit displayName override
+ * and organization name display order.
+ */
+export function getCandidateDisplayName(
+  candidate?: CandidateNameInput | null,
+  overrides?: LocalizationOverrides,
 ): string {
   if (!candidate) return "—";
-  if (candidate.firstName || candidate.lastName) {
-    const combined = [candidate.firstName, candidate.lastName]
-      .filter(Boolean)
-      .join(" ");
-    if (combined.trim()) return combined.trim();
-  }
-  if (candidate.candidateName) return candidate.candidateName;
-  if (candidate.name) return candidate.name;
-  const { effectiveName } = resolveCandidateProfile(
-    candidate.candidateName,
-    candidate,
+  const nameOrder: NameDisplayOrder =
+    overrides?.nameDisplayOrder ??
+    activeOrgLocalization?.nameDisplayOrder ??
+    DEFAULT_ORG_LOCALIZATION.nameDisplayOrder;
+
+  const nested = candidate.candidate;
+  const formatted = formatCandidateDisplayName(
+    {
+      displayName:
+        candidate.displayName ??
+        candidate.candidateDisplayName ??
+        nested?.displayName,
+      firstName:
+        candidate.firstName ??
+        candidate.candidateFirstName ??
+        nested?.firstName,
+      lastName:
+        candidate.lastName ?? candidate.candidateLastName ?? nested?.lastName,
+      name: candidate.name ?? nested?.name,
+      candidateName: candidate.candidateName,
+    },
+    nameOrder,
   );
-  return effectiveName || "—";
+  return formatted || "—";
 }
 
 /**

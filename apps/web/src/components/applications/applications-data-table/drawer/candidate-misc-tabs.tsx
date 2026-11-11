@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles, FileCheck, Mail, Clock } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getCandidateDisplayName } from "@/lib/utils";
 import type { Application } from "@/types";
 import { useI18n } from "@/i18n";
 
@@ -42,7 +42,7 @@ export function CandidateResponsesTab({
             {t("candidates.displayName")}
           </p>
           <p className="font-semibold text-slate-900 dark:text-white">
-            {currentApp.candidateName}
+            {getCandidateDisplayName(currentApp)}
           </p>
         </div>
         <div>

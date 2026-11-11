@@ -53,6 +53,12 @@ The tenant boundary root entity.
 - `name` (`String`)
 - `slug` (`String` Unique)
 - `ownerId` (`String`, Foreign Key referencing `User(id)` with `onDelete: Restrict`)
+- `defaultLanguage` (`String`, default `"vi"`)
+- `timezone` (`String`, IANA timezone identifier, default `"Asia/Ho_Chi_Minh"`)
+- `dateFormat` (`String`, `"DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD"`, default `"DD/MM/YYYY"`)
+- `timeFormat` (`String`, `"24H" | "12H"`, default `"24H"`)
+- `nameDisplayOrder` (`String`, `"FIRST_LAST" | "LAST_FIRST"`, default `"FIRST_LAST"`)
+- `defaultCurrency` (`String`, `"VND" | "USD" | "EUR" | "SGD" | "JPY"`, default `"VND"`)
 - `createdAt`, `updatedAt` (`DateTime`)
 - **Key Invariants:** `ownerId` is non-nullable; an organization cannot be deleted if users or active owner constraints are unresolved.
 
@@ -64,6 +70,8 @@ Universal user identity across tenants.
 - `email` (`String` Unique)
 - `passwordHash` (`String`)
 - `name` (`String?`)
+- `preferredLanguage` (`String?` nullable personal language override: `'vi'` | `'en'`; `null` follows organization default)
+- `preferredTimezone` (`String?` nullable personal IANA timezone override; `null` follows organization default)
 - `role` (`Role` Enum: `ADMIN`, `RECRUITER`, `HIRING_MANAGER`, `INTERVIEWER`, `MEMBER`)
 - `organizationId` (`String?`, Foreign Key referencing `Organization(id)`)
 - `tokenVersion` (`Int` default 0, for instant JWT invalidation)
@@ -113,7 +121,8 @@ Applicant profile.
 
 - `id` (`String` UUID, Primary Key)
 - `organizationId` (`String`, `onDelete: Cascade`)
-- `name` (`String`), `email` (`String`), `phone` (`String?`)
+- `firstName` (`String?`), `lastName` (`String?`), `displayName` (`String?`), `name` (`String`, server-maintained search index)
+- `email` (`String`), `phone` (`String?`)
 - `deletedAt` (`DateTime?`, for 30-day soft-delete)
 - **Key Indices:** `@@unique([organizationId, email])`, `@@index([organizationId, deletedAt])`
 

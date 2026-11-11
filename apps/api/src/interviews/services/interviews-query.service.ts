@@ -1,9 +1,14 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { APP_ERROR_CODES } from "@haihire/shared";
+import {
+  APP_ERROR_CODES,
+  formatCandidateDisplayName,
+  type NameDisplayOrder,
+} from "@haihire/shared";
 import {
   AppForbiddenException,
   AppNotFoundException,
 } from "../../common/app-exception";
+import { resolveOrgNameDisplayOrder } from "../../common/candidate-name.util";
 import { PrismaService } from "../../prisma/prisma.service";
 import { formatInterviewRecord } from "../constants";
 
@@ -75,6 +80,9 @@ export class InterviewsQueryService {
     interface CandidateRecord {
       id: string;
       name: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      displayName?: string | null;
       email?: string | null;
       phone?: string | null;
       organizationId?: string | null;
@@ -175,6 +183,9 @@ export class InterviewsQueryService {
             deletedAt: null,
             OR: [
               { name: { contains: q, mode: "insensitive" } },
+              { firstName: { contains: q, mode: "insensitive" } },
+              { lastName: { contains: q, mode: "insensitive" } },
+              { displayName: { contains: q, mode: "insensitive" } },
               { email: { contains: q, mode: "insensitive" } },
             ],
           },
@@ -308,6 +319,7 @@ export class InterviewsQueryService {
           name: true,
           firstName: true,
           lastName: true,
+          displayName: true,
           email: true,
           phone: true,
           organizationId: true,
@@ -337,15 +349,22 @@ export class InterviewsQueryService {
       }
     }
 
+    const orgOrder: NameDisplayOrder = targetOrgId
+      ? await resolveOrgNameDisplayOrder(this.prisma, targetOrgId)
+      : "FIRST_LAST";
+
     const data = interviews.map((intv) => {
       const formatted = formatInterviewRecord(intv);
       const app = appsMap.get(intv.applicationId);
       const candidate = app ? candidatesMap.get(app.candidateId) : undefined;
       const job = app ? jobsMap.get(app.jobId) : undefined;
+      const resolvedCandidateName = candidate
+        ? formatCandidateDisplayName(candidate, orgOrder) || candidate.name
+        : "Candidate";
 
       return {
         ...formatted,
-        candidateName: candidate ? candidate.name : "Candidate",
+        candidateName: resolvedCandidateName,
         candidateEmail: candidate?.email || "",
         candidatePhone: candidate?.phone || null,
         jobTitle: job ? job.title : undefined,
@@ -359,7 +378,7 @@ export class InterviewsQueryService {
                 ? { ...candidate, name: candidate.name }
                 : undefined,
               job: job ? { ...job, title: job.title } : undefined,
-              candidateName: candidate ? candidate.name : "Candidate",
+              candidateName: resolvedCandidateName,
               candidateEmail: candidate?.email || "",
               candidatePhone: candidate?.phone || null,
               interviews: [formatted],
@@ -415,6 +434,12 @@ export class InterviewsQueryService {
     }
 
     const formatted = formatInterviewRecord(intv);
+    const orgOrder: NameDisplayOrder = interviewOrgId
+      ? await resolveOrgNameDisplayOrder(this.prisma, interviewOrgId)
+      : "FIRST_LAST";
+    const resolvedCandidateName = candidate
+      ? formatCandidateDisplayName(candidate, orgOrder) || candidate.name
+      : "Candidate";
 
     return {
       ...formatted,
@@ -428,7 +453,7 @@ export class InterviewsQueryService {
             job: job ? { ...job, title: job.title } : undefined,
           }
         : undefined,
-      candidateName: candidate ? candidate.name : "Candidate",
+      candidateName: resolvedCandidateName,
       candidateEmail: candidate?.email,
       jobTitle: job ? job.title : undefined,
     };

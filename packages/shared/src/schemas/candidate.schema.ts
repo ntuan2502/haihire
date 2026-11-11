@@ -3,9 +3,9 @@ import { Gender } from "../candidates";
 
 export const createCandidateSchema = z.object({
   organizationId: z.string().optional(),
-  name: z.string().min(1, "Candidate name is required"),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
+  firstName: z.string().trim().min(1, "First name is required"),
+  lastName: z.string().trim().min(1, "Last name is required"),
+  displayName: z.string().trim().nullable().optional(),
   gender: z.nativeEnum(Gender).optional(),
   dateOfBirth: z.string().optional(),
   email: z.string().email("Invalid email address"),

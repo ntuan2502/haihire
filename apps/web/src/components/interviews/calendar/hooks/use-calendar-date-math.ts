@@ -1,4 +1,10 @@
 import { useState, useMemo } from "react";
+import {
+  combineDateTimeInTimezone,
+  extractDateTimeInTimezone,
+} from "@haihire/shared";
+import { resolveEffectiveTimezone } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
 import { useI18n } from "@/i18n";
 import type {
   CalendarDateInfo,
@@ -20,13 +26,18 @@ export function formatLocalDate(
 
 export function useCalendarDateMath(initialDate: Date = new Date()) {
   const { t, locale } = useI18n();
+  const { localization, isConfigured } = useLocalization();
+  const effectiveTimezone = resolveEffectiveTimezone(
+    localization.timezone,
+    isConfigured,
+  );
   const [calendarMode, setCalendarMode] = useState<CalendarViewMode>("month");
   const [currentDate, setCurrentDate] = useState<Date>(() => initialDate);
 
-  const todayStr = useMemo(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  }, []);
+  const todayStr = useMemo(
+    () => extractDateTimeInTimezone(new Date(), effectiveTimezone).date,
+    [effectiveTimezone],
+  );
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -179,21 +190,26 @@ export function useCalendarDateMath(initialDate: Date = new Date()) {
   );
 
   const visibleRange = useMemo(() => {
-    if (calendarMode === "week") {
-      const start = weekDays[0]?.dateStr;
-      const end = weekDays[weekDays.length - 1]?.dateStr;
-      return {
-        startDate: start ? `${start}T00:00:00.000Z` : undefined,
-        endDate: end ? `${end}T23:59:59.999Z` : undefined,
-      };
-    }
-    const start = monthDays[0]?.dateStr;
-    const end = monthDays[monthDays.length - 1]?.dateStr;
-    return {
-      startDate: start ? `${start}T00:00:00.000Z` : undefined,
-      endDate: end ? `${end}T23:59:59.999Z` : undefined,
-    };
-  }, [calendarMode, monthDays, weekDays]);
+    const start =
+      calendarMode === "week" ? weekDays[0]?.dateStr : monthDays[0]?.dateStr;
+    const end =
+      calendarMode === "week"
+        ? weekDays[weekDays.length - 1]?.dateStr
+        : monthDays[monthDays.length - 1]?.dateStr;
+
+    const startDate = start
+      ? combineDateTimeInTimezone(start, "00:00", effectiveTimezone)
+      : undefined;
+    const endDate = end
+      ? new Date(
+          new Date(
+            combineDateTimeInTimezone(end, "23:59", effectiveTimezone),
+          ).getTime() + 59999,
+        ).toISOString()
+      : undefined;
+
+    return { startDate, endDate };
+  }, [calendarMode, monthDays, weekDays, effectiveTimezone]);
 
   return {
     calendarMode,

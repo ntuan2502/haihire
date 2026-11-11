@@ -1,5 +1,6 @@
 import { ExternalLink, Star, Video } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { formatDate, formatTime } from "@/lib/utils";
 import {
   getInterviewTypeLabel,
   getRecommendationLabel,
@@ -34,8 +35,8 @@ export function EventDetailsCard({ event }: EventDetailsCardProps) {
           <span className="text-slate-400">{t("interviews.timeLabel")}:</span>
           <span className="font-bold text-blue-600 dark:text-blue-400">
             {t("interviews.atTime", {
-              date: event.interview.date,
-              time: event.interview.time,
+              date: formatDate(event.interview.scheduledAt),
+              time: formatTime(event.interview.scheduledAt),
             })}
           </span>
         </div>

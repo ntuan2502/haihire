@@ -87,7 +87,9 @@ export const applicationsApi = {
   updateCandidate: async (
     id: string,
     data: {
-      candidateName?: string;
+      firstName?: string;
+      lastName?: string;
+      displayName?: string | null;
       candidateEmail?: string;
       candidatePhone?: string;
       resumeUrl?: string;

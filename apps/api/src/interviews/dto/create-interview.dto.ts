@@ -1,4 +1,5 @@
 import {
+  IsISO8601,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -17,17 +18,9 @@ export class CreateInterviewDto {
   @IsNotEmpty()
   applicationId!: string;
 
-  @IsString()
-  @IsOptional()
-  scheduledAt?: string;
-
-  @IsString()
-  @IsOptional()
-  date?: string;
-
-  @IsString()
-  @IsOptional()
-  time?: string;
+  @IsISO8601()
+  @IsNotEmpty()
+  scheduledAt!: string;
 
   @IsString()
   @IsNotEmpty()

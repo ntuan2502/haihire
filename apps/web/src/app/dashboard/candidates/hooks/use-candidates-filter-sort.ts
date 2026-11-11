@@ -4,7 +4,8 @@ import { useState, useMemo } from "react";
 import { useTableParams } from "@/hooks/use-table-params";
 import { useCandidates } from "@/hooks/use-queries";
 import { useI18n } from "@/i18n";
-import type { CandidateItem } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
+import { getCandidateDisplayName, type CandidateItem } from "@/lib/utils";
 
 export type SortField = "name" | "email" | "phone" | "applications" | "added";
 export type SortDirection = "asc" | "desc";
@@ -14,6 +15,7 @@ export function useCandidatesFilterSort(
   options?: { enabled?: boolean },
 ) {
   const { t } = useI18n();
+  const { localization } = useLocalization();
 
   // URL Query State for Pagination & Search
   const {
@@ -53,7 +55,7 @@ export function useCandidatesFilterSort(
   const candidateRows: CandidateItem[] = useMemo(() => {
     return rawCandidates.map((cand) => ({
       id: cand.id,
-      name: cand.name,
+      name: getCandidateDisplayName(cand, localization),
       email: cand.email,
       phone: cand.phone || "—",
       applicationsCount:
@@ -68,7 +70,7 @@ export function useCandidatesFilterSort(
       resumeMimeType: cand.resumeMimeType,
       candidate: cand,
     }));
-  }, [rawCandidates]);
+  }, [rawCandidates, localization]);
 
   // Compute status counts for segmented tabs
   const candidateCounts = useMemo(() => {

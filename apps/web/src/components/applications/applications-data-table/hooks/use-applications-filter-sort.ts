@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { getCandidateDisplayName } from "@/lib/utils";
 import type { Application, Job } from "@/types";
 import type { SortField, SortDirection } from "../types";
 
@@ -67,7 +68,12 @@ export function useApplicationsFilterSort({
       list = list.filter((app) => {
         const job = app.jobId ? jobMap.get(app.jobId) : null;
         return (
+          getCandidateDisplayName(app).toLowerCase().includes(q) ||
           app.candidateName.toLowerCase().includes(q) ||
+          (app.candidate?.firstName &&
+            app.candidate.firstName.toLowerCase().includes(q)) ||
+          (app.candidate?.lastName &&
+            app.candidate.lastName.toLowerCase().includes(q)) ||
           app.candidateEmail.toLowerCase().includes(q) ||
           (app.candidatePhone &&
             app.candidatePhone.toLowerCase().includes(q)) ||
@@ -79,7 +85,9 @@ export function useApplicationsFilterSort({
       let diff = 0;
       switch (sortField) {
         case "candidate":
-          diff = a.candidateName.localeCompare(b.candidateName);
+          diff = getCandidateDisplayName(a).localeCompare(
+            getCandidateDisplayName(b),
+          );
           break;
         case "email":
           diff = a.candidateEmail.localeCompare(b.candidateEmail);

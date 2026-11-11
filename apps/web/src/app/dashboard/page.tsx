@@ -102,19 +102,11 @@ function DashboardContent() {
         updatedAt: intv.updatedAt,
       };
       const job = jobs.find((j) => j.id === (app.jobId || intv.jobId));
-      const fallbackDate = intv.scheduledAt ? new Date(intv.scheduledAt) : null;
-      const date =
-        intv.date ||
-        (fallbackDate ? fallbackDate.toISOString().split("T")[0] : "");
-      const time =
-        intv.time ||
-        (fallbackDate ? fallbackDate.toTimeString().slice(0, 5) : "00:00");
 
       const scheduledInfo: ScheduledInterviewInfo = {
         id: intv.id,
         applicationId: intv.applicationId,
-        date,
-        time,
+        scheduledAt: intv.scheduledAt,
         type: intv.type,
         format: intv.format,
         linkOrLocation: intv.linkOrLocation,
@@ -132,9 +124,13 @@ function DashboardContent() {
     }
 
     results.sort((a, b) => {
-      const dtA = `${a.interview.date} ${a.interview.time || "00:00"}`;
-      const dtB = `${b.interview.date} ${b.interview.time || "00:00"}`;
-      return dtA.localeCompare(dtB);
+      const msA = a.interview.scheduledAt
+        ? new Date(a.interview.scheduledAt).getTime()
+        : 0;
+      const msB = b.interview.scheduledAt
+        ? new Date(b.interview.scheduledAt).getTime()
+        : 0;
+      return msA - msB;
     });
 
     return results;

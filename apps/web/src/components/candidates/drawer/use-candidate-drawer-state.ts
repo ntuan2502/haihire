@@ -16,8 +16,10 @@ import {
   resolveCandidateProfile,
   fixUtf8String,
   getGenderLabel,
+  getCandidateDisplayName,
   type CandidateItem,
 } from "@/lib/utils";
+import { useLocalization } from "@/components/providers/localization-provider";
 import {
   getInterviewsFromApplication,
   type ScheduledInterviewInfo,
@@ -34,6 +36,7 @@ export function useCandidateDrawerState({
   candidate,
 }: UseCandidateDrawerStateProps) {
   const { t } = useI18n();
+  const { localization } = useLocalization();
 
   // Fetch full details and notes count of the candidate
   const { data: fullCandidate } = useCandidate(candidate?.id || null);
@@ -69,7 +72,11 @@ export function useCandidateDrawerState({
       };
     }
     const cand = fullCandidate || candidate.candidate;
-    const profile = resolveCandidateProfile(cand?.name || candidate.name, cand);
+    const profile = resolveCandidateProfile(
+      cand?.name || candidate.name,
+      cand,
+      localization,
+    );
     const genderLabel = getGenderLabel(cand?.gender, t);
     const dobFormatted = cand?.dateOfBirth
       ? formatDate(cand.dateOfBirth, "short")
@@ -79,9 +86,12 @@ export function useCandidateDrawerState({
       dob: dobFormatted,
       firstName: cand?.firstName || profile.firstName || "",
       lastName: cand?.lastName || profile.lastName || "",
-      displayName: cand?.name || candidate.name || "",
+      displayName:
+        profile.displayName ||
+        getCandidateDisplayName(cand ?? candidate, localization) ||
+        "",
     };
-  }, [candidate, fullCandidate, t]);
+  }, [candidate, fullCandidate, localization, t]);
 
   const selectedCandidateApps = useMemo(() => {
     if (!candidate) return [];

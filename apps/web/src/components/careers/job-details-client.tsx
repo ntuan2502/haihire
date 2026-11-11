@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CareersHeader } from "@/components/careers/careers-header";
 import { CareersFooter } from "@/components/careers/careers-footer";
+import { formatCandidateDisplayName } from "@haihire/shared";
 import { useI18n } from "@/i18n";
 import { getApiErrorMessage } from "@/lib/api-error";
 import {
@@ -58,6 +59,9 @@ export function JobDetailsClient({
 }: JobDetailsClientProps) {
   const router = useRouter();
   const { t } = useI18n();
+  const nameDisplayOrder =
+    org?.nameDisplayOrder === "LAST_FIRST" ? "LAST_FIRST" : "FIRST_LAST";
+  const isLastFirst = nameDisplayOrder === "LAST_FIRST";
   const applyMutation = useCreateApplicationMutation();
   const searchParams = useSearchParams();
   const refParam = searchParams.get("ref");
@@ -143,13 +147,24 @@ export function JobDetailsClient({
 
     if (!job?.id) return;
 
-    if (!lastName.trim()) {
-      setSubmitError(t("careers.errorLastName"));
-      return;
-    }
-    if (!firstName.trim()) {
-      setSubmitError(t("careers.errorFirstName"));
-      return;
+    if (isLastFirst) {
+      if (!lastName.trim()) {
+        setSubmitError(t("careers.errorLastName"));
+        return;
+      }
+      if (!firstName.trim()) {
+        setSubmitError(t("careers.errorFirstName"));
+        return;
+      }
+    } else {
+      if (!firstName.trim()) {
+        setSubmitError(t("careers.errorFirstName"));
+        return;
+      }
+      if (!lastName.trim()) {
+        setSubmitError(t("careers.errorLastName"));
+        return;
+      }
     }
     if (!candidateEmail.trim() || !candidateEmail.includes("@")) {
       setSubmitError(t("careers.errorEmail"));
@@ -161,10 +176,8 @@ export function JobDetailsClient({
     }
 
     try {
-      const fullName = `${lastName.trim()} ${firstName.trim()}`.trim();
       const formData = new FormData();
       formData.append("jobId", job.id);
-      formData.append("candidateName", fullName);
       formData.append("firstName", firstName.trim());
       formData.append("lastName", lastName.trim());
       formData.append("candidateEmail", candidateEmail.trim());
@@ -380,7 +393,10 @@ export function JobDetailsClient({
                     </h3>
                     <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
                       {t("careers.submitSuccessDesc", {
-                        name: `${lastName} ${firstName}`.trim(),
+                        name: formatCandidateDisplayName(
+                          { firstName, lastName },
+                          nameDisplayOrder,
+                        ),
                         jobTitle: job.title,
                         orgName,
                       })}
@@ -412,43 +428,59 @@ export function JobDetailsClient({
                   )}
 
                   {/* Name inputs */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label
-                        htmlFor="career-lastName"
-                        className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-                      >
-                        {t("careers.lastName")}{" "}
-                        <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        id="career-lastName"
-                        type="text"
-                        required
-                        placeholder={t("careers.placeholders.lastName")}
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label
-                        htmlFor="career-firstName"
-                        className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
-                      >
-                        {t("careers.firstName")}{" "}
-                        <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        id="career-firstName"
-                        type="text"
-                        required
-                        placeholder={t("careers.placeholders.firstName")}
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
-                      />
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(isLastFirst
+                      ? [
+                          {
+                            id: "career-lastName",
+                            label: t("careers.lastName"),
+                            placeholder: t("careers.placeholders.lastName"),
+                            value: lastName,
+                            onChange: setLastName,
+                          },
+                          {
+                            id: "career-firstName",
+                            label: t("careers.firstName"),
+                            placeholder: t("careers.placeholders.firstName"),
+                            value: firstName,
+                            onChange: setFirstName,
+                          },
+                        ]
+                      : [
+                          {
+                            id: "career-firstName",
+                            label: t("careers.firstName"),
+                            placeholder: t("careers.placeholders.firstName"),
+                            value: firstName,
+                            onChange: setFirstName,
+                          },
+                          {
+                            id: "career-lastName",
+                            label: t("careers.lastName"),
+                            placeholder: t("careers.placeholders.lastName"),
+                            value: lastName,
+                            onChange: setLastName,
+                          },
+                        ]
+                    ).map((field) => (
+                      <div key={field.id} className="space-y-1.5">
+                        <label
+                          htmlFor={field.id}
+                          className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+                        >
+                          {field.label} <span className="text-rose-500">*</span>
+                        </label>
+                        <Input
+                          id={field.id}
+                          type="text"
+                          required
+                          placeholder={field.placeholder}
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60"
+                        />
+                      </div>
+                    ))}
                   </div>
 
                   {/* Email & Phone */}

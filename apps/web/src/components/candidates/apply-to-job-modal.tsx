@@ -73,7 +73,6 @@ export function ApplyToJobModal({
       const formData = new FormData();
       formData.append("jobId", String(job.id));
       formData.append("candidateId", candidate.id);
-      formData.append("candidateName", candidate.name);
       formData.append("candidateEmail", candidate.email);
       if (candidate.phone) {
         formData.append("candidatePhone", candidate.phone);

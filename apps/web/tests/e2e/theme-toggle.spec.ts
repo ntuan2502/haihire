@@ -65,4 +65,53 @@ test.describe("Theme Toggle E2E Flow", () => {
       timeout: 5000,
     });
   });
+
+  test("follows OS dark mode when System theme is selected and persists across reload", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/auth/login");
+    await page.waitForLoadState("networkidle");
+
+    // Switch to explicit light first so System selection is tested as an active change
+    const toggleButton = page
+      .locator(
+        "button[aria-label*='theme' i], button[aria-label*='giao diện' i]",
+      )
+      .first();
+    await expect(toggleButton).toBeVisible({ timeout: 5000 });
+    await toggleButton.click();
+
+    await page
+      .locator(
+        "[role='menuitem']:has-text('Light'), [role='menuitem']:has-text('Sáng')",
+      )
+      .first()
+      .click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/, {
+      timeout: 5000,
+    });
+
+    // Select System option while OS colorScheme is dark
+    await toggleButton.click();
+    await page
+      .locator(
+        "[role='menuitem']:has-text('System'), [role='menuitem']:has-text('Hệ thống')",
+      )
+      .first()
+      .click();
+
+    await expect(page.locator("html")).toHaveClass(/dark/, { timeout: 5000 });
+
+    // Persist System dark across full page reload
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("html")).toHaveClass(/dark/, { timeout: 5000 });
+
+    // Live update when OS switches back to light
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(page.locator("html")).not.toHaveClass(/dark/, {
+      timeout: 5000,
+    });
+  });
 });

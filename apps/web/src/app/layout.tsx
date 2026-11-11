@@ -43,7 +43,7 @@ export default async function RootLayout({
     >
       <head>
         <Script id="theme-init" strategy="beforeInteractive">
-          {`try{var d=document.documentElement,t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){d.classList.add('dark');}else{d.classList.remove('dark');}}catch(_){}`}
+          {`try{var d=document.documentElement,t=localStorage.getItem('theme'),isDark=t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(isDark){d.classList.add('dark');d.classList.remove('light');d.style.colorScheme='dark';}else{d.classList.remove('dark');d.classList.add('light');d.style.colorScheme='light';}}catch(_){}`}
         </Script>
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-200">
@@ -57,8 +57,8 @@ export default async function RootLayout({
         </a>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
           <QueryProvider>
